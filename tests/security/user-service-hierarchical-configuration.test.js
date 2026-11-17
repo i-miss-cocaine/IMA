@@ -47,7 +47,7 @@ function harness(opts={}){
  const dep=[dh];if(opts.department!==false)dep.push(["OVR-1","CFG-1","feature.flag","INST-1","D-1",JSON.stringify("department"),"TEXTO","1.1","ACTIVO","created","U-DIR","updated","U-DIR","test"]);
  const sheets={ConfiguracionSistema:sheet(sys),ConfiguracionDepartamental:sheet(dep)},ss={getSheetByName:n=>sheets[n]||null},calls=[];
  const ctx={SPREADSHEET_ID:"TEST",Date,Math,JSON,Number,String,Object,Array,isFinite,SpreadsheetApp:{openById:()=>ss},
-  getUserVerifiedRole:p=>(p._verifiedUserId=p._verifiedUserId||"U-1",opts.role||p.role||"Director"),getIdentityInstitutionId_:()=>"INST-1",
+  getUserVerifiedRole:p=>(p._verifiedUserId=p._verifiedUserId||"U-1",opts.role||p.role||"Director"),getIdentityInstitutionId_:()=>Object.prototype.hasOwnProperty.call(options,"institutionId")?options.institutionId:"INST-1",
   configurationDepartmentContext_:(p,d)=>{if(!opts.departments||!opts.departments.includes(d))throw Error("CONFIGURATION_DEPARTMENT_SCOPE_DENIED");return{status:"success",departmentIds:opts.departments};},
   configurationRoleAllowed_:(s,r,k,a,sc)=>{calls.push(sc);return opts.readAllowed?opts.readAllowed(sc,r):true;},
   PUBLIC_ACTIONS:[],getDynamicPermissionsForRole:(r,p)=>p==="manageDepartmentalConfiguration"&&opts.departmentManager===true,logStructuredEvent:()=>{}};
@@ -144,6 +144,11 @@ function writeHarness(options={}){
  assert.equal(JSON.stringify(h.department.rows),before,"scope overrides cannot change the base configuration type");
 }
 {
+ const h=writeHarness({institutionId:""});
+ assert.throws(()=>h.ctx.saveSystemConfiguration({clave:"feature.flag",ambito:"INSTITUCIONAL",tipo:"TEXTO",valor:"x"}),/CONFIGURATION_INSTITUTION_REQUIRED/);
+ assert.equal(h.stats().releases,0,"invalid institution scope is rejected before acquiring the write lock");
+}
+{
  const h=writeHarness({role:"Coordinador"});
  const before=JSON.stringify({system:h.system.rows,department:h.department.rows});
  assert.throws(()=>h.ctx.saveSystemConfiguration({clave:"feature.flag",ambito:"DEPARTAMENTAL",departamentoId:"D-1",tipo:"TEXTO",valor:"forged",politicaAlcance:"PERSONALIZABLE",actualizarPolitica:true}),/CONFIGURATION_POLICY_CHANGE_FORBIDDEN/);
@@ -194,6 +199,16 @@ function writeHarness(options={}){
  assert.equal(result.valor,"institution","a D-1 override is never visible in D-2");
  assert.equal(result.origenEfectivo,"INSTITUCIONAL");
  assert.equal(result.valorDepartamental,null);
+}
+{
+ const h=harness({institutionId:"",personal:true});
+ assert.equal(h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}).valor,"global","no institution context cannot read institution or personal overrides");
+ assert.equal(h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"}).code,"CONFIGURATION_INSTITUTION_REQUIRED");
+}
+{
+ const h=harness({institutionId:"INST-2",departments:["D-1"]});
+ const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"});
+ assert.equal(result.valor,"global","overrides from another institution are not inherited");
 }
 {
  const h=harness({policy:{policy:"GLOBAL_OBLIGATORIO",allowedScopes:["GLOBAL"],inheritance:false,override:false}});
