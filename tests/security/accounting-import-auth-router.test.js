@@ -114,6 +114,8 @@ const accountingRuntime = {
     if (payload.sessionToken === "THROW") throw new Error("INTERNAL_SECRET_PATH");
     return { status: "success", validForImport: true, filasValidas: 1 };
   },
+  getImportMappingProfiles: () => ({ status: "success", profiles: [{ profileId: "PROFILE-1" }] }),
+  saveImportMappingProfile: () => ({ status: "success", profileId: "PROFILE-1", version: 1 }),
   importDataWithColumnMapping(payload) {
     if (payload.previewConfirmed !== true || !payload.previewHash) throw new Error("IMPORT_PREVIEW_INVALID_OR_STALE");
     if (payload.previewHash === "constructor") throw new Error("constructor");
@@ -142,6 +144,10 @@ vm.runInNewContext(accountingFns.join("\n") + "\nthis.api = { auth: getVerifiedA
   assert.equal(accountingRuntime.validateApiContractsTestSuite().todasPruebasPasaron, true);
   const ok = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "validateImportPreview", payload: { sessionToken: "SIGNED-LIVE-SESSION" } }) } });
   assert.equal(JSON.parse(ok.value).validForImport, true);
+  const profiles = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "getImportMappingProfiles", payload: { sessionToken: "SIGNED-LIVE-SESSION" } }) } });
+  assert.equal(JSON.parse(profiles.value).profiles[0].profileId, "PROFILE-1");
+  const savedProfile = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "saveImportMappingProfile", payload: { sessionToken: "SIGNED-LIVE-SESSION" } }) } });
+  assert.equal(JSON.parse(savedProfile.value).version, 1);
   const deniedAction = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "deleteAll", payload: {} }) } });
   assert.equal(JSON.parse(deniedAction.value).code, "ACTION_NOT_ALLOWED");
   const missingConfirmation = accountingRuntime.api.post({ postData: { contents: JSON.stringify({ action: "importDataWithColumnMapping", payload: {} }) } });
