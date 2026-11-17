@@ -48,8 +48,8 @@ const duplicateAcademicRuntime=ownerRuntime(academic,"ACADEMIC","handleTrustedMi
 assert.equal(duplicateAcademicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"estudiante",targetIds:["EXP-1"]}}).code,"MIGRATION_SNAPSHOT_DUPLICATE_TARGET_ID");
 assert.equal(academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigrationTargetExistenceSnapshot",payload:{sessionToken:"SIGNED-SESSION",institutionId:"INST-1",entityType:"persona",targetIds:["EXP-1"]}}).code,"MIGRATION_SNAPSHOT_CONTRACT_INVALID");
 
-const accountingFunctions=["isAccountingTrustedAppsScriptEndpoint_","accountingComputeHmacSignature_","requestAccountingTrustedOwnerSnapshot_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_"].map(name=>extract(accounting,name));
-let remoteData={status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["EXP-1"],targetRows:[{ExpedienteID:"EXP-1",__rowHash:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]};
+const accountingFunctions=["isAccountingTrustedAppsScriptEndpoint_","accountingComputeHmacSignature_","requestAccountingTrustedOwnerSnapshot_","normalizeMigrationNaturalKey_","migrationDuplicateKeyDefinitions_","buildMigrationDuplicateRequests_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_"].map(name=>extract(accounting,name));
+let remoteData={status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["EXP-1"],targetRows:[{ExpedienteID:"EXP-1",__rowHash:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}],duplicateMatches:[]};
 let envelopeSeen=null;
 const accountingRuntime={
  Date,String,JSON,Array,Object,Number,Math,RegExp,Error,
@@ -69,7 +69,7 @@ assert.equal(target.verified,true);assert.deepEqual(Array.from(target.existingTa
 assert.equal(envelopeSeen.action,"getMigrationTargetExistenceSnapshot");assert.equal(envelopeSeen.targetService,"ACADEMIC");
 const signedBody=[envelopeSeen.requestId,envelopeSeen.timestamp,envelopeSeen.correlationId,envelopeSeen.sourceService,envelopeSeen.targetService,envelopeSeen.action,JSON.stringify(envelopeSeen.payload)].join("|");
 assert.equal(envelopeSeen.hmacSignature,crypto.createHmac("sha256",secret).update(signedBody).digest("hex"));
-remoteData={status:"success",verified:true,service:"USER",sheet:"Personas",idField:"PersonaID",institutionId:"INST-1",existingTargetIds:["PER-1"],targetRows:[]};
+remoteData={status:"success",verified:true,service:"USER",sheet:"Personas",idField:"PersonaID",institutionId:"INST-1",existingTargetIds:["PER-1"],targetRows:[],duplicateMatches:[]};
 const related=accountingRuntime.api.related([{PersonaId:"PER-1"}],"empleado","INST-1",{sessionToken:"SIGNED-SESSION"});
 assert.equal(related.verified,true);assert.deepEqual(Array.from(related.existingTargetIds),["PER-1"]);
 remoteData={status:"error",code:"MIGRATION_OWNER_SERVICE_NOT_CONFIGURED"};
