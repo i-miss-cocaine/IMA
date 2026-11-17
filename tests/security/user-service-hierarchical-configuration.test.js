@@ -133,7 +133,9 @@ function writeHarness(options={}){
  assert.equal(h.department.rows[1][5],JSON.stringify("department-updated"));
  assert.equal(h.department.rows[1][7],"1.1");
  assert.equal(h.department.rows[1][12],"U-1","audit actor comes from the signed session");
- assert.equal(h.stats().releases,1,"script lock is released after the write");
+ h.ctx.saveSystemConfiguration({clave:"feature.flag",ambito:"DEPARTAMENTAL",departamentoId:"D-1",tipo:"TEXTO",valor:"second-update"});
+ assert.equal(h.department.rows[1][7],"1.2","each scope increments its own version");
+ assert.equal(h.stats().releases,2,"script lock is released after every write");
 }
 {
  const h=writeHarness();
@@ -169,8 +171,12 @@ function writeHarness(options={}){
  assert.equal(result.status,"success");
  assert.equal(result.restablecida,true);
  assert.equal(h.department.rows[1][8],"INACTIVO","reset deactivates the override and restores inheritance");
+ assert.equal(h.department.rows[1][7],"1.1","reset increments the override version");
  assert.equal(h.department.rows[1][12],"U-1");
- assert.equal(h.stats().releases,1);
+ const saved=h.ctx.saveSystemConfiguration({clave:"feature.flag",ambito:"DEPARTAMENTAL",departamentoId:"D-1",tipo:"TEXTO",valor:"after-reset"});
+ assert.equal(saved.status,"success");assert.equal(h.department.rows.length,2,"a reset override is reactivated rather than duplicated");
+ assert.equal(h.department.rows[1][8],"ACTIVO");assert.equal(h.department.rows[1][7],"1.2");
+ assert.equal(h.stats().releases,2);
 }
 {
  const h=harness({personal:true,role:"Estudiante"});
