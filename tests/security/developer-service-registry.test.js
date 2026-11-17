@@ -74,7 +74,7 @@ function harness(initial, options) {
     Utilities: { getUuid() { uuidCounter++; return "UUID-" + uuidCounter; } },
     ROLE_PERMISSIONS: {
       Administrador: ["*"],
-      Desarrollador: ["registerServiceInstance", "updateServiceStatus"],
+      Desarrollador: ["registerServiceInstance", "updateServiceStatus", "auditInterServiceCalls"],
       Director: ["getCentralServiceRegistry"]
     },
     verifySessionToken(token) {
@@ -99,10 +99,10 @@ function harness(initial, options) {
     "developerDeleteRowByKey_", "developerCreateServiceHistoryId_",
     "developerParseServiceRegistryRows_", "developerMapServiceRegistryRow_",
     "getCentralServiceRegistry", "registerServiceInstance_", "updateServiceStatus_",
-    "registerServiceInstance", "updateServiceStatus", "doPost"
+    "registerServiceInstance", "updateServiceStatus", "auditInterServiceCalls", "doPost"
   ];
   const code = source.slice(start, end) + names.map(name => extractFunction(source, name)).join("\n");
-  const api = new Function("context", "with(context){" + code + ";return {getCentralServiceRegistry,registerServiceInstance_,updateServiceStatus_,registerServiceInstance,updateServiceStatus,doPost};}")(context);
+  const api = new Function("context", "with(context){" + code + ";return {getCentralServiceRegistry,registerServiceInstance_,updateServiceStatus_,registerServiceInstance,updateServiceStatus,auditInterServiceCalls,doPost};}")(context);
   return { ...api, sheets, logs, context, lockState };
 }
 function registerService(h, payload) {
@@ -344,5 +344,38 @@ result = h.doPost({ postData: { contents: JSON.stringify({ action: "updateServic
 assert.equal(result.code, "INVALID_SESSION_TOKEN");
 assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo", "invalid session must not mutate the service state");
 assert.equal(h.sheets.HistorialServiciosDistribuidos, undefined);
+
+
+const usageHeaders = ["EventID","Direction","SourceService","TargetService","Action","RequestID","CorrelationID","CredentialType","CredentialID","CredentialVersion","OccurredAt"];
+const usageRows = [
+  usageHeaders,
+  ["REQ-2:OUTBOUND","OUTBOUND","ACCOUNTING","ACADEMIC","getMigrationTargetExistenceSnapshot","REQ-2","CORR-2","IMA_MIGRATION_HMAC_SECRET","CRED-ACCOUNTING-v2","v2","2026-11-17T14:02:00.000Z"],
+  ["REQ-1:INBOUND","INBOUND","ACCOUNTING","USER","writeMigratedEntity","REQ-1","CORR-1","IMA_MIGRATION_HMAC_SECRET","CRED-ACCOUNTING-v1","v1","2026-11-17T14:01:00.000Z"]
+];
+h = harness({ AuditoriaUsoCredenciales: sheet(usageRows) });
+result = h.auditInterServiceCalls({ correlationId: "CORR-1", direction: "INBOUND", limit: 10 });
+assert.equal(result.status, "success");
+assert.equal(result.total, 1);
+assert.equal(result.auditLogs[0].credentialVersion, "v1");
+assert.equal(result.auditLogs[0].requestId, "REQ-1");
+assert.ok(!JSON.stringify(result).includes("SECRET-VALUE"), "usage audit must never expose raw credential material");
+result = h.auditInterServiceCalls({ sourceService: "accounting", targetService: "academic", limit: 1 });
+assert.equal(result.total, 1);
+assert.equal(result.auditLogs[0].credentialId, "CRED-ACCOUNTING-v2");
+assert.equal(result.truncated, false);
+assert.throws(() => h.auditInterServiceCalls({ direction: "SIDEWAYS" }), /CREDENTIAL_USAGE_AUDIT_QUERY_INVALID/);
+assert.throws(() => h.auditInterServiceCalls({ limit: 201 }), /CREDENTIAL_USAGE_AUDIT_QUERY_INVALID/);
+h = harness({ AuditoriaUsoCredenciales: sheet([["WrongHeader"]]) });
+assert.throws(() => h.auditInterServiceCalls({}), /CREDENTIAL_USAGE_AUDIT_SCHEMA_MISMATCH/);
+h = harness();
+result = h.auditInterServiceCalls({});
+assert.deepEqual(result.auditLogs, []);
+assert.equal(result.total, 0);
+
+h = harness({ AuditoriaUsoCredenciales: sheet(usageRows) });
+result = h.doPost({ postData: { contents: JSON.stringify({ action: "auditInterServiceCalls", sessionToken: "valid", correlationId: "CORR-1" }) } });
+assert.equal(result.status, "success");
+assert.equal(result.auditLogs.length, 1, "authenticated developer action exposes the filtered usage record");
+assert.equal(result.auditLogs[0].correlationId, "CORR-1");
 
 console.log("Developer service registry contract PASS.");
