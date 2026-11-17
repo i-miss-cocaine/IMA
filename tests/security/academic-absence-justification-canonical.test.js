@@ -632,5 +632,5 @@ assert.match(userSource, /ACADEMIC_SERVICE_URL/);
 assert.match(userSource, /ABSENCE_REVIEW_REQUIRES_CANONICAL_WORKFLOW/);
 assert.match(userSource, /const solRow = solData\[idx\];\s*if \(String\(solRow\[3\] \|\| ""\) === "Justificación de Ausencia"\)/);
 assert.match(source, /request\.sourceService === "USER"/);
-assert.match(source, /verifyInterServiceEnvelope\(envelope, "ACADEMIC", secret\)/);
+assert.match(source, /verifyInterServiceEnvelope\\(envelope, "ACADEMIC", "IMA_MIGRATION_HMAC_SECRET"\\)/);
 console.log("PASS: canonical absence justification, exact session ownership, idempotency, approval/rejection/revocation, partial-write recovery and trusted interservice contract");
