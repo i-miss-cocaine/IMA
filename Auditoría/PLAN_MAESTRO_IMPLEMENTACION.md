@@ -5783,9 +5783,9 @@ Realizar un inventario focalizado de los caminos académicos de creación de reg
 | TASK-153 / AUD-NG-386: C1.514, C1.520, C1.522–C1.528, C1.533–C1.547, C1.551, C1.555, C1.557, C1.560, C1.562, C1.564, C1.566, C1.568, C1.570, C1.571, C1.579 | Revisión requerida | Los contratos verifican pérdida/revocación de identidad o RBAC durante una misma ejecución y esperan una segunda autorización. Actualizar código y expectativas al modelo de validación única en el límite de entrada. |
 | F34-TASK03 / C1.752 | Revisión requerida | El ABAC contextual docente para justificaciones debe alinearse con los privilegios por rol ya definidos y no añadir controles por archivo/evidencia. |
 | F34-TASK04 / C1.753; TASK-105 / C1.754 (solo subflujo de evidencia); TASK-106 / C1.755 | Revisión requerida | Revisar hash, integridad y verificaciones por adjunto; conservar únicamente lo indispensable para guardar/recuperar correctamente el contenido y los requisitos funcionales explícitos. |
-| TASK-134 / C1.779 | Revisión requerida | uploadStudentDocument revalida identidad/rol y ámbito después del lock; eliminar la repetición de autorización en la misma acción, manteniendo la validación de rol al entrar y las operaciones mínimas de almacenamiento. |
-| TASK-142 / C1.780 y C1.782 | Revisión requerida | Revisar tokens HMAC de un solo uso, autorización adicional y auditoría por documento para PREVIEW/DOWNLOAD académico. Mantener el permiso de rol por acción, sin controles redundantes por archivo. |
-| AUD-NG-158 / C1.781 | Revisión requerida | createTask/updateTask/createStudyMaterial/deleteStudyMaterial aplican ABAC y revalidan identidad/ámbito después de adquirir lock. Mantener actor real, fecha y usuario asociados al registro; revisar los controles adicionales frente al modelo de rol/privilegios. |
+| TASK-134 / C1.779 | Revisión requerida | C1.812 retiró la revalidación de identidad/rol después del lock y simplificó la carga/lectura, asociando actor, fecha y expediente. Mantener revisión beta real de Drive/Sheets y confirmar que no reaparezcan controles por adjunto. |
+| TASK-142 / C1.780 y C1.782 | Revisión requerida | C1.811/C1.812 retiraron el token/stream de un solo uso y el endpoint SHA-256 por documento; el acceso directo conserva RBAC y ámbito funcional. Falta validar la integración UI/Drive real y las superficies documentales restantes, sin reintroducir controles por adjunto. |
+| AUD-NG-158 / C1.781 | Revisión requerida | C1.813 simplifica uploadFile y materiales docentes, conserva las asignaciones de aula/tarea y autoría como reglas funcionales, y retira validaciones de contenido por archivo. createTask/updateTask y los flujos de notas/calificaciones siguen pendientes; eliminar solo RBAC/identidad repetidos y permisos dinámicos adicionales, conservando actor, fecha y usuario. |
 
 ## Trabajo que no se reabre automáticamente
 
@@ -5852,4 +5852,52 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Node CLI local NOT RUN; Apps Script/Sheets/Drive reales y beta NOT RUN.
 - TASK-142 permanece Revisión requerida. Este checkpoint no cierra notas/materiales docentes ni las subcapacidades reabiertas por C1.809.
 
-**Siguiente ejecución:** revisar createTask/updateTask/createStudyMaterial/deleteStudyMaterial y flujos docentes de notas/materiales frente al mandato C1.808. Mantener RBAC por acción en el dispatcher, actor/fecha/usuario reales y asignaciones funcionales; retirar solo controles ABAC o revalidaciones redundantes demostradas por contratos y consumidores.
+**Nota de continuidad C1.813:** el estado anterior describía correctamente el corte de C1.812. La siguiente iteración incorporó uploadFile, createStudyMaterial, deleteStudyMaterial y getStudyMaterials en Task-Service; createTask/updateTask y los flujos de notas/calificaciones siguen abiertos.
+
+# Addendum de ejecución — C1.813 / simplificación Task-Service de cargas y materiales docentes
+
+**Identificador:** IMA-EXEC-20261117-TASK-MATERIAL-UPLOAD-SIMPLIFICATION-01  
+**Checkpoint anterior:** C1.812.  
+**HEAD inicial:** a4c05140078902ebcf57d8665e4c1718b24f229e.  
+**HEAD final de implementación y contratos:** 28e8b744482910ebe49a0b55f2cc962cc8c2702c.
+
+**Explicación y relación con C1.812:** C1.812 cerró el subflujo de documentos del expediente, pero dejó pendientes los materiales docentes y las cargas generales de Task-Service. C1.813 continúa el mismo mandato C1.808 sobre esos caminos. No se amplía la autorización interservicio ni se añade una validación de contenido por cada archivo.
+
+- uploadFile dejó de depender de validateTaskUploadFile_ y de una lista cerrada de MIME/extensiones para el contenido. Admite documentos, imágenes, videos y tipos genéricos; infiere MIME desde el data URI o extensión y conserva decodificación Base64 y límite operativo de 50 MiB.
+- Se mantiene una protección mínima de nombre (rutas, caracteres de control y extensiones ejecutables/doble extensión) y se conserva la comprobación funcional de que el estudiante puede entregar a esa tarea o el docente puede administrar la tarea. Esta comprobación se hace una vez por acción de carga; no se inspecciona ni se reautoriza cada adjunto.
+- La ruta de carpetas reutiliza el perfil devuelto por la comprobación de acceso del estudiante o los datos de la tarea para grado/sección; no vuelve a consultar el perfil del usuario solo para construir la ruta.
+- createStudyMaterial registra campos, autor y fecha. Se conservan las asignaciones activas de aula para docentes y el permiso administrativo para materiales generales; no se consulta Drive para revalidar la existencia del archivo en el registro del material.
+- deleteStudyMaterial conserva la titularidad del material y la eliminación lógica; getStudyMaterials conserva audiencia/estado/fecha y ámbito de aula. Son reglas funcionales de recurso, no verificaciones de integridad por archivo.
+- createTask ya no solicita el permiso dinámico adicional registerResourceOwnership además del RBAC de entrada. Aún mantiene el ámbito departamental y el registro de ownership; no se declara terminado el flujo de creación/edición de tareas.
+- uploadFile sigue guardando metadatos de asociación (tarea, usuario, fecha, MIME, tamaño y carpeta). El rollback se limita a retirar el archivo si falla el registro de sus metadatos; no se usa como autorización adicional.
+
+**Archivos runtime y contratos:**
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- tests/security/task-service-resource-ownership.test.js
+- tests/security/task-service-upload-contract.test.js
+- tests/security/task-service-deadline-history.test.js
+
+**Commits relevantes de C1.813:**
+- e4ac52c15ecab7c9197c862dac594a0e6c35e970 — primera simplificación de upload/materiales.
+- dd2abe52f85d1b60923de924a437aa5fe8d72762 — contratos de materiales y carga genérica.
+- f4ad900af11a67a36fb152329d549019f65fc962 — preservación de ownership funcional de tarea/aula/material.
+- 8059482c948c8f8da9298174e25c876ae2b919cf — fixture de asignación de aula.
+- 5a9f9b70c9c071e810d22afbfe040811ce53e42f — documentación de límites RBAC/ownership.
+- fb4429fd23a092c58fd66c18af1eb2011bf99f24 — evita una lectura adicional de perfil para construir la carpeta.
+- dace282c98ccf4a93a68bd0e121bdf1af2da595e — elimina el permiso dinámico redundante registerResourceOwnership.
+- 2ea6b4b86e744039681fada4ba46d1506c427611, d55d8d0da336ff1ebf1833e08fa64eeabec1ba7b, 1b1648a59aa23a8db1d2dcc04adb2aa0dbe4279d, 1223ccdc15a2cfc42621c680eb8418b0a0580c87 y 28e8b744482910ebe49a0b55f2cc962cc8c2702c — contratos de ownership, carga, aula, fixture administrativo y corrección del harness.
+
+**Verificación CI:**
+- Task-Service security local contracts, run 44155426842: SUCCESS. Pasaron task-service-security-contract, task-service-resource-ownership, task-service-grade-submission-history, task-service-deadline-history, task-service-upload-contract y task-service-single-auth-context.
+- Task-Service backup and restore contract, run 44154540342: SUCCESS.
+- Academic-Service single authorization context, run 44152560639: SUCCESS (C1.812).
+- Accounting Import Preflight, run 44152855886: SUCCESS (C1.812).
+- Department Reference Consumers, run 44152616978: SUCCESS (C1.812).
+- Department Scope, run 44154540443: FAILURE solo en Phase 22 document management suite, porque el contrato busca configureSchoolDocumentTemplate y esa función no existe en ACCOUNTING. No se atribuye a C1.813.
+- Node CLI local: NOT RUN; Node se ejecutó en GitHub Actions. Apps Script/Sheets/Drive reales y despliegue beta: NOT RUN.
+
+**Estado:** C1.813 completa el subalcance de cargas/materiales docentes, pero no cierra AUD-NG-158, TASK-142 ni TASK-153. Se mantienen Revisión requerida las tareas reabiertas por C1.809. Se preservan las reglas funcionales de asignación de aula/tarea y autoría; no se añade validación de contenido por adjunto.
+
+**Siguiente tarea elegible (C1.814):** revisar createTask/updateTask y los flujos de notas/calificaciones. Mantener RBAC por acción en el dispatcher y reutilizar actor/contexto; retirar revalidaciones o permisos dinámicos redundantes, y registrar los campos del formulario, fecha y usuario. Conservar solo existencia del registro, asignación funcional y controles de integridad de escritura que sean necesarios.
+

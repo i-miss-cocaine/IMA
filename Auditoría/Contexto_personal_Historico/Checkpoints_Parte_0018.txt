@@ -581,3 +581,63 @@ Revisión de regresión:
 Estado: incremento parcial aprobado para carga documental de expediente; no cierra TASK-142 ni las demás tareas Revisión requerida de C1.809. No se modificó la rama base.
 Siguiente acción elegible: revisar las operaciones docentes createTask/updateTask/createStudyMaterial/deleteStudyMaterial y los flujos de notas/materiales, retirar solo revalidaciones ABAC redundantes según C1.808, preservando RBAC de entrada, actor/fecha/usuario, asignación funcional y controles de integridad necesarios.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.813 — IMA-EXEC-20261117-TASK-MATERIAL-UPLOAD-SIMPLIFICATION-01
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.812
+HEAD inicial: a4c05140078902ebcf57d8665e4c1718b24f229e
+HEAD final de implementación/contratos: 28e8b744482910ebe49a0b55f2cc962cc8c2702c
+
+Explicación del checkpoint:
+- C1.812 simplificó el archivo documental del expediente; C1.813 extiende el mismo criterio a la carga general y a los materiales docentes de Task-Service. La nota de C1.812 que decía que esos flujos seguían pendientes era correcta en el corte anterior; C1.813 registra su continuación posterior.
+- uploadFile deja de aplicar allowlist cerrada de MIME/extensiones y validación binaria avanzada. Acepta documentos, imágenes, videos y tipos genéricos. Mantiene Base64, límite 50 MiB y saneamiento mínimo del nombre.
+- Se conserva la comprobación funcional de acceso a la tarea (estudiante) o gestión de la tarea (docente), una vez por acción. No se realiza inspección de contenido ni autorización por cada adjunto.
+- Se evita una consulta adicional de perfil solo para crear carpetas: se reutiliza el perfil devuelto por el acceso estudiantil o el grado/sección de la tarea.
+- createStudyMaterial registra los campos, autor y fecha; conserva la asignación activa de aula del docente y la restricción administrativa de material general. No consulta Drive para volver a validar el archivo al guardar el registro.
+- deleteStudyMaterial conserva la titularidad y la eliminación lógica. getStudyMaterials conserva filtros de audiencia, estado, fecha y aula. Estas son reglas funcionales de recurso, no controles binarios por archivo.
+- createTask ya no requiere el permiso dinámico adicional registerResourceOwnership; conserva el ámbito departamental y la escritura de ownership. createTask/updateTask y las notas/calificaciones permanecen en revisión.
+
+Archivos runtime y pruebas:
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- tests/security/task-service-resource-ownership.test.js
+- tests/security/task-service-upload-contract.test.js
+- tests/security/task-service-deadline-history.test.js
+
+Commits relevantes:
+- e4ac52c15ecab7c9197c862dac594a0e6c35e970
+- dd2abe52f85d1b60923de924a437aa5fe8d72762
+- f4ad900af11a67a36fb152329d549019f65fc962
+- 8059482c948c8f8da9298174e25c876ae2b919cf
+- 5a9f9b70c9c071e810d22afbfe040811ce53e42f
+- fb4429fd23a092c58fd66c18af1eb2011bf99f24
+- dace282c98ccf4a93a68bd0e121bdf1af2da595e
+- 2ea6b4b86e744039681fada4ba46d1506c427611
+- d55d8d0da336ff1ebf1833e08fa64eeabec1ba7b
+- 1b1648a59aa23a8db1d2dcc04adb2aa0dbe4279d
+- 1223ccdc15a2cfc42621c680eb8418b0a0580c87
+- 28e8b744482910ebe49a0b55f2cc962cc8c2702c
+
+Verificación:
+- Task-Service security local contracts, run 44155426842: SUCCESS.
+- Task-Service backup and restore contract, run 44154540342: SUCCESS.
+- Academic-Service single authorization context, run 44152560639: SUCCESS.
+- Accounting Import Preflight, run 44152855886: SUCCESS.
+- Department Reference Consumers, run 44152616978: SUCCESS.
+- Department Scope, run 44154540443: FAILURE en Phase 22 porque tests/regression/phase22-document-management-suite-contract.test.js busca configureSchoolDocumentTemplate, función ausente en ACCOUNTING. No se atribuye a esta iteración.
+- Node CLI local NOT RUN. Node en GitHub Actions sí se ejecutó.
+- Apps Script/Sheets/Drive reales y despliegue beta NOT RUN.
+
+Estado:
+- C1.813 completa el subalcance de cargas/materiales docentes, no la tarea padre AUD-NG-158 ni TASK-142/TASK-153.
+- Las tareas reabiertas por C1.809 continúan Revisión requerida; no se marcan completadas.
+- La rama base no se modificó.
+
+Siguiente tarea:
+- C1.814: revisar createTask/updateTask y notas/calificaciones. Mantener RBAC de entrada, reutilizar actor/contexto y registrar fecha/usuario. Retirar validaciones o permisos dinámicos redundantes, sin eliminar asignación funcional de aula/tarea ni la integridad básica de escritura.
+===============================================================================
+
