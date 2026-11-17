@@ -56,7 +56,7 @@ La Fase 25 evalúa la capacidad de la plataforma para conectarse, sincronizarse 
 | **F25-001** | Catálogo Centralizado de Integraciones | P0 | Implementada parcialmente | Existen tablas aisladas (`IntegracionesPasarelas`, `CatalogoSpreadsheets`); falta un catálogo unificado `CatalogoIntegracionesExternas`. |
 | **F25-002** | Importación de Archivos Excel y CSV | P0 | Completa y verificada | Implementado en `importDataWithColumnMapping` y validación previa en `validateImportPreview`. |
 | **F25-003** | Perfiles de Mapeo de Columnas | P0 | Completa en código y CI; beta pendiente | Hoja `PerfilesMapeoColumnas`, endpoints de guardado/listado, versionado append-only, aislamiento propietario/institución, validación de encabezados/huella y contrato Node 24 PASS; BETA-FUNC-112 pendiente. |
-| **F25-004** | Validación y Detección de Duplicados | P0 | Implementada parcialmente | Valida identificador obligatorio; requiere detección avanzada de duplicados por DNI/correo antes de escribir. |
+| **F25-004** | Validación y Detección de Duplicados | P0 | Completa en código y CI; beta pendiente | DNI/correo y claves naturales normalizados; coincidencias exactas/posibles; referencias activas; políticas RECHAZAR/ACTUALIZAR/VINCULAR; auditoría, idempotencia y unicidad revalidada bajo lock. BETA-FUNC-114 pendiente. |
 | **F25-005** | Vista Previa de Importación | P0 | Completa y verificada | Implementado en `validateImportPreview` (`totalFilas`, `filasValidas`, `filasFallidas`, muestra de errores). |
 | **F25-006** | Exportación a Excel y CSV | P0 | Completa y verificada | Implementado en `exportAcademicGradesData` y generación de estructura SACE exportable. |
 | **F25-007** | Integración con Google Sheets Externas | P1 | Completa y verificada | Implementado en `resolveSpreadsheetSource` y lectura por lotes en `batchSpreadsheetReadOperations`. |
@@ -123,7 +123,7 @@ La Fase 25 presenta una base sólida y madura en la generación de archivos ofic
 | **F25-001** | Catálogo Integraciones | Implementada parcialmente | 100% | Sí | `accounting:5254` | Ninguno | Unificar catálogo |
 | **F25-002** | Importación Excel/CSV | Completa y verificada | 100% | Sí | `accounting:10203`| Ninguno | Mantener importador |
 | **F25-003** | Perfiles de Mapeo | Completa en código y CI | 100% | Sí | `saveImportMappingProfile`, `getImportMappingProfiles`, `accounting-import-mapping-profiles.test.js` | BETA-FUNC-112 | Validación beta desplegada |
-| **F25-004** | Validación Duplicados | Implementada parcialmente | 100% | Sí | `accounting:10175`| Ninguno | Añadir check DNI |
+| **F25-004** | Validación Duplicados | Completa en código y CI | 100% | Sí | `backend/accounting-service/Code.gs`, USER/ACADEMIC snapshots y writers; contratos Node 24 PASS | BETA-FUNC-114 | DNI/correo, claves naturales, referencias, políticas y revalidación concurrente bajo lock |
 | **F25-005** | Vista Previa Cargas | Completa y verificada | 100% | Sí | `accounting:10167`| Ninguno | Mantener validación |
 | **F25-006** | Exportación Excel/CSV | Completa y verificada | 100% | Sí | `accounting:10321`| Ninguno | Mantener exportación |
 | **F25-007** | Conexión Google Sheets | Completa y verificada | 100% | Sí | `accounting:9557` | Ninguno | Mantener resolución |
