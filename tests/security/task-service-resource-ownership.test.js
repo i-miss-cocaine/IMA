@@ -256,7 +256,7 @@ console.log("TASK-153 staff/student department intersection contract passed.");
     normalizeString:value=>String(value||"").trim().toLowerCase(),
     Utilities:{getUuid:()=>"TASK-"+(++uuid)}
   };
-  vm.runInNewContext(extractFunction("resolveTaskServiceOwnershipDepartment_")+"\n"+extractFunction("createTask")+"\\nthis.create=createTask;",context);
+  vm.runInNewContext(extractFunction("resolveTaskServiceOwnershipDepartment_")+"\n"+extractFunction("createTask")+"\nthis.create=createTask;",context);
   const first=context.create({sessionToken:"T1",_verifiedUserId:"TEACHER-2",_verifiedRole:"Administrador",profesorId:"TEACHER-2",
     titulo:"Task 6A",asignatura:"Math",gradoAsignado:"6",seccionAsignada:"A",departmentId:"D1"});
   assert.equal(first.status,"success");
