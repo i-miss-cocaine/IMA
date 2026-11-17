@@ -89,7 +89,7 @@ function computeMigrationCredentialFingerprint_(secret) {
 function getMigrationHmacSecret_(sourceService, purpose) {
   var service = String(sourceService || "").trim().toUpperCase();
   var mode = String(purpose || "VERIFY").trim().toUpperCase();
-  if (["USER", "ACADEMIC", "ACCOUNTING"].indexOf(service) === -1) throw new Error("MIGRATION_SOURCE_SERVICE_INVALID");
+  if (["USER", "ACADEMIC", "ACCOUNTING", "DEVELOPER"].indexOf(service) === -1) throw new Error("MIGRATION_SOURCE_SERVICE_INVALID");
   if (mode !== "SIGN" && mode !== "VERIFY") throw new Error("MIGRATION_SECRET_PURPOSE_INVALID");
   if (mode === "SIGN" && service !== IMA_LOCAL_SERVICE_ID_) throw new Error("MIGRATION_SECRET_SOURCE_MISMATCH");
 
