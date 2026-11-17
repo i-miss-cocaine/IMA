@@ -112,6 +112,7 @@ const accountingRuntime = {
     },
     getUuid: () => "12345678-1234-1234-1234-123456789012"
   },
+  recordInterServiceCredentialUsage_: event => { auditEvents.push(event); return { recorded: true }; },
   UrlFetchApp: { fetch(url, options) {
     assert.equal(url, "https://script.google.com/macros/s/AKfycbUSER123/exec");
     assert.equal(options.method, "post");
@@ -141,6 +142,10 @@ vm.runInNewContext(registryBootstrap + "\n" + accountingFns.join("\n") + "\nthis
   assert.equal(identity.authorized, true);
   assert.equal(identity.userId, "U-1");
   assert.equal(lastEnvelope.action, "verifyAccountingSession");
+  assert.equal(auditEvents.length, 1, "ACCOUNTING outbound authorization request is audited");
+  assert.equal(auditEvents[0].direction, "OUTBOUND");
+  assert.equal(auditEvents[0].sourceService, "ACCOUNTING");
+  assert.equal(auditEvents[0].targetService, "USER");
   assert.equal(auditEvents.length, 1, "ACCOUNTING outbound authorization request is audited");
   assert.equal(auditEvents[0].direction, "OUTBOUND");
   assert.equal(auditEvents[0].sourceService, "ACCOUNTING");
