@@ -168,11 +168,17 @@ console.log("TASK-153 staff/student department intersection contract passed.");
   assert(createFn.includes("sh.deleteRow(rowIndex)"), "classroom creation must compensate failed ownership registration");
   assert(accessFn.includes('assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL"'), "classroom writes must enforce owner scope");
   assert(accessFn.includes("scope.institutionWide!==true"), "General content requires institution-wide authorization");
-  for (const name of ["getVirtualClassrooms","getPosts","getStudyMaterials"]) {
-    assert(extractFunction(name).includes("getTaskServiceAuthorizedClassrooms(payload)"), name + " must consume owner-filtered classrooms");
+  for (const name of ["getVirtualClassrooms","getPosts"]) {
+    assert(extractFunction(name).includes("getTaskServiceAuthorizedClassrooms(payload)"), name + " retains parent classroom filtering");
   }
-  for (const name of ["createPost","updatePost","deletePost","createStudyMaterial","deleteStudyMaterial"]) {
-    assert(extractFunction(name).includes("assertTaskServiceClassroomAccess(payload"), name + " must enforce parent classroom ownership");
+  assert.doesNotMatch(extractFunction("getStudyMaterials"),/getTaskServiceAuthorizedClassrooms\(/,
+    "study material listing relies on the action RBAC and does not revalidate every classroom");
+  for (const name of ["createPost","updatePost","deletePost"]) {
+    assert(extractFunction(name).includes("assertTaskServiceClassroomAccess(payload"), name + " retains post classroom ownership");
+  }
+  for (const name of ["createStudyMaterial","deleteStudyMaterial"]) {
+    assert.doesNotMatch(extractFunction(name),/assertTaskServiceClassroomAccess\(|getTaskServiceAuthorizedClassrooms\(/,
+      name + " relies on the action-level role permission instead of another classroom authorization");
   }
 
   const classroomRows = [

@@ -724,20 +724,23 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   assert.throws(()=>deleteContext.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",postId:"POST-1"}),/RESOURCE_SCOPE_DENIED/);
   assert.equal(postMutation,false,"foreign post is not soft-deleted by a department-scoped administrator");
 
+  let savedMaterial=null;
   const materialContext = {
     SPREADSHEET_ID:"LOCAL",
     SpreadsheetApp:{openById:()=>({})},
-    getVerifiedTaskIdentity_:()=>({authorized:true,userId:"ADMIN-1",role:"Administrador"}),
-    isTaskServiceAdministrativeRole:role=>role==="Administrador",
-    assertTaskServiceClassroomAccess:(_payload,classId)=>{assert.equal(classId,"General");throw new Error("AUTH_PERMISSION_DENIED");},
-    getOrCreateSheet:()=>{materialSheetAccess=true;return {getLastRow:()=>0,appendRow:()=>{}};},
-    DriveApp:{getFileById:()=>{driveAccess=true;return {isTrashed:()=>false};}},
-    extractTaskServiceFileId:value=>String(value)
+    getVerifiedTaskIdentity_:()=>({authorized:true,userId:"TEACHER-1",role:"Profesor"}),
+    assertTaskServiceClassroomAccess:()=>{throw new Error("REDUNDANT_CLASSROOM_AUTHORIZATION");},
+    getOrCreateSheet:()=>{materialSheetAccess=true;return {getLastRow:()=>0,appendRow:row=>{savedMaterial=row;}};},
+    Utilities:{getUuid:()=>"MAT-1"},
+    DriveApp:{getFileById:()=>{driveAccess=true;throw new Error("REDUNDANT_DRIVE_LOOKUP");}}
   };
   vm.runInNewContext(extractFunction("createStudyMaterial")+"\nthis.run=createStudyMaterial;",materialContext);
-  assert.throws(()=>materialContext.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",aulaId:"General",titulo:"General material",archivoUrl:"https://example.test/file"}),/AUTH_PERMISSION_DENIED/);
-  assert.equal(materialSheetAccess,false,"general material is not persisted without institution-wide scope");
-  assert.equal(driveAccess,false,"Drive is not accessed before general-scope authorization");
+  const created=materialContext.run({_verifiedUserId:"TEACHER-1",_verifiedRole:"Profesor",aulaId:"General",titulo:"General material",archivoUrl:"https://example.test/file",driveId:"FILE-1"});
+  assert.equal(created.status,"success");
+  assert.equal(materialSheetAccess,true,"authorized material is persisted without another classroom check");
+  assert.equal(driveAccess,false,"material registration does not make an extra Drive existence call");
+  assert.equal(savedMaterial[1],"General");assert.equal(savedMaterial[10],"TEACHER-1");
+  assert.ok(savedMaterial[11] instanceof Date,"material records capture publication date and author");
 }
 console.log("TASK-153 administrative content mutation scope contracts passed.");
 
