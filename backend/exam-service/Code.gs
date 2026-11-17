@@ -776,7 +776,7 @@ function parseExamQuestionListField_(value) {
 function normalizeExamQuestionDefinition_(input, defaults) {
   const q = input && typeof input === "object" && !Array.isArray(input) ? input : {};
   const fallback = defaults && typeof defaults === "object" ? defaults : {};
-  let type = normalizeString(q.tipo || q.preguntaTipo || fallback.tipo).replace(/\\s+/g, "_");
+  let type = normalizeString(q.tipo || q.preguntaTipo || fallback.tipo || "opcion_multiple").replace(/\\s+/g, "_");
   if (type === "respuesta_breve" || type === "respuesta_corta") type = "completacion";
   const allowedTypes = ["opcion_multiple", "verdadero_falso", "completacion", "termino_pareado",
     "seleccion_multiple", "respuesta_extensa", "numerica", "ordenamiento", "adjunto"];
