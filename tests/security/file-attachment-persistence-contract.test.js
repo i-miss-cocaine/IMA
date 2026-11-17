@@ -151,7 +151,8 @@ assert.ok(result.comprobanteId, "voucher receipt must return its internal identi
 assert.equal(result.comprobanteGrupoId, rows[1][voucherMap.ComprobanteGrupoID]);
 assert.equal(result.versionNumero, 1);
 assert.equal(rows.length, 2);
-assert.equal(rows[1][voucherMap.ComprobanteUrl], "private-file-id");
+assert.equal(voucherMap.ComprobanteUrl, 8);
+assert.equal(rows[1][8], "private-file-id");
 assert.equal(rows[1][voucherMap.SHA256], "a".repeat(64));
 assert.equal(rows[1][voucherMap.SolicitudID], rows[1][voucherMap.ComprobanteGrupoID]);
 assert.equal(rows[1][voucherMap.EvidenciaID], rows[1][voucherMap.ComprobanteID]);
