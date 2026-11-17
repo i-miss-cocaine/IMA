@@ -32,7 +32,8 @@ function ownerRuntime(source,service,handlerName,snapshotName,rows,expectedSheet
   migrationStableJson_:value=>JSON.stringify(value),
   migrationHash_:value=>crypto.createHash("sha256").update(String(value)).digest("hex"),
   SPREADSHEET_ID:"TEST",
-  SpreadsheetApp:{openById:()=>({getSheetByName:name=>name===expectedSheet?{getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:(additionalSheets[name]||null)})}
+  recordInterServiceCredentialUsage_:event=>{auditEvents.push(event);return{recorded:true};},
+ SpreadsheetApp:{openById:()=>({getSheetByName:name=>name===expectedSheet?{getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})}:(additionalSheets[name]||null)})}
  };
  vm.createContext(runtime);
  vm.runInContext(snapshot+"\n"+handler+"\nthis.handle= "+handlerName+";",runtime);
@@ -69,7 +70,7 @@ assert.equal(academicRuntime.handle({sourceService:"ACCOUNTING",action:"getMigra
 
 const accountingFunctions=["computeMigrationCredentialFingerprint_","getMigrationHmacSecret_","resolveInterServiceSecret_","isAccountingTrustedAppsScriptEndpoint_","accountingComputeHmacSignature_","requestAccountingTrustedOwnerSnapshot_","normalizeMigrationNaturalKey_","migrationDuplicateKeyDefinitions_","buildMigrationDuplicateRequests_","buildMigrationReferenceRequests_","buildMigrationTargetExistenceSnapshot_","buildAccountingRelatedPersonExistenceSnapshot_"].map(name=>extract(accounting,name));
 let remoteData={status:"success",verified:true,service:"ACADEMIC",sheet:"ExpedientesEstudiantes",idField:"ExpedienteID",institutionId:"INST-1",existingTargetIds:["EXP-1"],targetRows:[{ExpedienteID:"EXP-1",__rowHash:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}],duplicateMatches:[],referenceErrors:[]};
-let envelopeSeen=null;
+let envelopeSeen=null,auditEvents=[];
 const credentialHeaders=["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
 const credentialFingerprint=crypto.createHash("sha256").update(secret,"utf8").digest("hex");
 const credentialRows=[credentialHeaders,["CRED-ACCOUNTING-v1","ACCOUNTING","IMA_MIGRATION_HMAC_SECRET","v1","ACTIVE",credentialFingerprint,"2026-11-17T00:00:00Z","operator-test","",""]];
@@ -99,7 +100,7 @@ assert.equal(accountingRuntime.api.endpoint("http://script.google.com/macros/s/A
 assert.equal(accountingRuntime.api.endpoint("https://script.google.com/macros/s/AKfycbACADEMIC123/exec?x=1"),false);
 const target=accountingRuntime.api.target(schema,[{ExpedienteID:"EXP-1"}],"INST-1",{}, {sessionToken:"SIGNED-SESSION"});
 assert.equal(target.verified,true);assert.deepEqual(Array.from(target.existingTargetIds),["EXP-1"]);assert.equal(target.targetRows[0].__rowHash,"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-assert.equal(envelopeSeen.action,"getMigrationTargetExistenceSnapshot");assert.equal(envelopeSeen.targetService,"ACADEMIC");
+assert.equal(envelopeSeen.action,"getMigrationTargetExistenceSnapshot");assert.equal(envelopeSeen.targetService,"ACADEMIC");assert.ok(auditEvents.some(event=>event.direction==="OUTBOUND"&&event.sourceService==="ACCOUNTING"&&event.targetService==="ACADEMIC"));
 const signedBody=[envelopeSeen.requestId,envelopeSeen.timestamp,envelopeSeen.correlationId,envelopeSeen.sourceService,envelopeSeen.targetService,envelopeSeen.action,JSON.stringify(envelopeSeen.payload)].join("|");
 assert.equal(envelopeSeen.hmacSignature,crypto.createHmac("sha256",secret).update(signedBody).digest("hex"));
 remoteData={status:"success",verified:true,service:"USER",sheet:"Personas",idField:"PersonaID",institutionId:"INST-1",existingTargetIds:["PER-1"],targetRows:[],duplicateMatches:[]};
