@@ -198,7 +198,10 @@ assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"staffA",e
 assert.equal(context.getStudentDocuments({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"student",expedienteId:"EXP-STUDENT"}).documents,d=>d.documentoId),["DOC-S"]);
 assert.equal(context.getStudentDocuments(actor("admin")).code,"RESOURCE_SCOPE_DENIED","institution-wide scope does not bypass explicit target binding");
-context.documentScopeAssertionCalls=0;\nconst adminDocuments=context.getStudentDocuments({sessionToken:"admin",expedienteId:"EXP-B"});\nassert.deepEqual(Array.from(adminDocuments.documents,d=>d.documentoId),["DOC-B","DOC-B2"]);\nassert.equal(context.documentScopeAssertionCalls,1,"document listing checks the target once, not once per attachment");
+context.documentScopeAssertionCalls=0;
+const adminDocuments=context.getStudentDocuments({sessionToken:"admin",expedienteId:"EXP-B"});
+assert.deepEqual(Array.from(adminDocuments.documents,d=>d.documentoId),["DOC-B","DOC-B2"]);
+assert.equal(context.documentScopeAssertionCalls,1,"document listing checks the target once, not once per attachment");
 assert.equal(context.getStudentDocuments(actor("auditor")).code,"RESOURCE_SCOPE_DENIED");
 assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"auditor",expedienteId:"EXP-B"}).documents,d=>d.documentoId),["DOC-B","DOC-B2"]);
 assert.equal(context.getStudentFile({sessionToken:"auditor",expedienteId:"EXP-B"}).status,"success",
