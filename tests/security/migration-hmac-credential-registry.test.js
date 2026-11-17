@@ -248,7 +248,8 @@ const userVerificationProps = Object.assign({}, userProps, {
   revokedEnvelope.hmacSignature = crypto.createHmac("sha256", oldSecret).update(revokedBody).digest("hex");
   expectCode(() => h.api.verify(revokedEnvelope, "ACADEMIC", TYPE), "INVALID_INTERSERVICE_SIGNATURE");
   assert.equal(h.state.cacheWrites, 2, "revoked signatures do not reserve replay IDs");
-  assert.equal(h.api.verify(newEnvelope, "ACADEMIC", TYPE).valid, true,
+  const activeAfterRevocation = h.api.create("USER", "ACADEMIC", "sampleAction", { rotation: "active-after-revocation" }, TYPE);
+  assert.equal(h.api.verify(activeAfterRevocation, "ACADEMIC", TYPE).valid, true,
     "revoking the previous key does not invalidate the active key");
 }
 process.stdout.write("Migration HMAC credential registry: catalog validation, version rotation, revocation, dedicated-key enforcement, HMAC verification and replay protection PASS.\n");
