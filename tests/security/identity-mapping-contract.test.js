@@ -148,7 +148,7 @@ function extractBalancedFunction(source,name){const start=source.indexOf("functi
 function runMigrationEnvelopeFixture(source,target){
  const secret="local-fixture-secret-0123456789-abcdef",cache=new Map(),calls=[];
  const isUser=target==="USER";
- const names=["computeHmacSignature","computeMigrationCredentialFingerprint_","getMigrationHmacSecret_","resolveInterServiceSecret_","verifyInterServiceEnvelope","handleTrustedMigrationEnvelope_"];
+ const names=["computeHmacSignature","computeMigrationCredentialFingerprint_","getMigrationHmacSecret_","getMigrationHmacSecrets_","resolveInterServiceSecret_","verifyInterServiceEnvelope","handleTrustedMigrationEnvelope_"];
  const code=names.map(n=>extractBalancedFunction(source,n)).join(String.fromCharCode(10));
  const credentialHeaders=["CredentialID","ServiceID","CredentialType","Version","Status","Fingerprint","CreatedAt","CreatedBy","RevokedAt","RevokedBy"];
  const digest=crypto.createHash("sha256").update(secret).digest("hex");
