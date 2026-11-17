@@ -1240,19 +1240,46 @@ function auditTeacherJustificationDenied_(action,payload,role,code) {
   } catch (_) {}
 }
 
+function getRequestSessionToken_(payload) { return payload && (payload.sessionToken || payload.authToken || payload.token) || ""; }
+function getRequestPermissionAction_(action, payload) {
+  const secureDocumentAction=["createStudentDocumentAccessToken","getSecureDocumentStream"].indexOf(action)!==-1;
+  const requestedDocumentOperation=String(payload&&payload.operation||"DOWNLOAD").trim().toUpperCase();
+  return secureDocumentAction?(requestedDocumentOperation==="PREVIEW"?"previewStudentDocument":"getStudentDocumentFile"):action;
+}
+function getVerifiedRequestSessionClaims_(payload) {
+  const token=getRequestSessionToken_(payload);if(!token)return null;
+  if(payload&&payload._imaVerifiedSessionToken===token&&payload._imaVerifiedSessionClaims)return payload._imaVerifiedSessionClaims;
+  const claims=verifySessionToken(token);
+  if(claims&&payload&&typeof payload==="object"){payload._imaVerifiedSessionToken=token;payload._imaVerifiedSessionClaims=claims;}
+  return claims;
+}
+function getCachedRequestAuthorization_(permissionAction,payload) {
+  const token=getRequestSessionToken_(payload),cache=payload&&payload._imaAuthorizationCache;
+  if(!token||!cache||cache.token!==token||!cache.actions||!Object.prototype.hasOwnProperty.call(cache.actions,permissionAction))return null;
+  return {authorized:true,role:cache.actions[permissionAction]};
+}
+function cacheRequestAuthorization_(permissionAction,payload,role) {
+  const token=getRequestSessionToken_(payload);if(!token||!payload||typeof payload!=="object")return;
+  let cache=payload._imaAuthorizationCache;if(!cache||cache.token!==token||!cache.actions)cache={token:token,actions:{}};
+  cache.actions[permissionAction]=role||payload._verifiedRole||"";payload._imaAuthorizationCache=cache;
+}
+function clearRequestAuthorizationContext_(payload) {
+  if(!payload||typeof payload!=="object")return;
+  delete payload._imaVerifiedSessionToken;delete payload._imaVerifiedSessionClaims;delete payload._imaAuthorizationCache;
+  delete payload._imaVerifiedAcademicIdentity;delete payload._imaVerifiedDepartmentScope;
+  delete payload._verifiedUserId;delete payload._verifiedRole;delete payload._delegatedFrom;delete payload._delegationId;delete payload._executorUserId;
+}
 function validateRolePermission(action, payload) {
+  const permissionAction=getRequestPermissionAction_(action,payload);
+  const cachedAuthorization=getCachedRequestAuthorization_(permissionAction,payload);
+  if(cachedAuthorization)return cachedAuthorization;
   if (PUBLIC_ACTIONS.indexOf(action) !== -1) return { authorized: true };
-  const secureDocumentAction = ["createStudentDocumentAccessToken", "getSecureDocumentStream"].indexOf(action) !== -1;
-  const requestedDocumentOperation = String(payload && payload.operation || "DOWNLOAD").trim().toUpperCase();
-  const permissionAction = secureDocumentAction ?
-    (requestedDocumentOperation === "PREVIEW" ? "previewStudentDocument" : "getStudentDocumentFile") : action;
-
   let userRole = "Estudiante";
   let verifiedUserId = null;
   const token = payload && (payload.sessionToken || payload.authToken || payload.token);
 
   if (token) {
-    const claims = verifySessionToken(token);
+    const claims = getVerifiedRequestSessionClaims_(payload);
     if (!claims) {
       auditTeacherJustificationDenied_(action,payload,"Token Inválido/Expirado","SESSION_TOKEN_INVALID");
       return { authorized: false, role: "Token Inválido/Expirado" };
@@ -1269,6 +1296,7 @@ function validateRolePermission(action, payload) {
   }
 
   if (["getSchoolYearConfigs", "getAcademicJornadas", "getCurricularDistribution", "getInstitutionalActivities", "getExtracurricularActivities", "getUnifiedInstitutionalCalendar"].indexOf(action) !== -1) {
+    cacheRequestAuthorization_(permissionAction,payload,userRole);
     return { authorized: true, role: userRole };
   }
 
@@ -1285,10 +1313,11 @@ function validateRolePermission(action, payload) {
 
   const dynamicCheck = getDynamicPermissionsForRole(userRole, permissionAction);
   if (dynamicCheck !== null) {
-    if (dynamicCheck === true) return { authorized: true, role: userRole };
+    if (dynamicCheck === true) { cacheRequestAuthorization_(permissionAction,payload,userRole); return { authorized: true, role: userRole }; }
   } else {
     const permitted = ROLE_PERMISSIONS[userRole] || [];
     if (permitted.indexOf("*") !== -1 || permitted.indexOf(permissionAction) !== -1) {
+      cacheRequestAuthorization_(permissionAction,payload,userRole);
       return { authorized: true, role: userRole };
     }
   }
@@ -1302,7 +1331,7 @@ function validateRolePermission(action, payload) {
         payload._delegationId = activeDel.delId;
         payload._executorUserId = verifiedId;
       }
-      return { authorized: true, role: userRole + " (Delegado de " + activeDel.delegante + ")" };
+      const delegatedRole=userRole+" (Delegado de "+activeDel.delegante+")";cacheRequestAuthorization_(permissionAction,payload,delegatedRole);return {authorized:true,role:delegatedRole};
     }
   }
 
@@ -1523,6 +1552,7 @@ function doPost(e) {
     if (request && request.sourceService === "USER") return respond(handleTrustedAbsenceJustificationEnvelope_(request));
     if (request && request.sourceService) return respond(handleTrustedMigrationEnvelope_(request));
     const { action, payload } = request;
+    clearRequestAuthorizationContext_(payload);
     if (payload && payload.skipLock && !payload.isInternalCall) {
       delete payload.skipLock;
     }
@@ -1530,13 +1560,6 @@ function doPost(e) {
     if (!authCheck.authorized) {
       logStructuredEvent("ACADEMIC", action, "WARN", "AUTH_PERMISSION_DENIED", `Acceso denegado a ${action} para rol ${authCheck.role}`, payload, authCheck.role);
       return respond({ status: "error", code: "AUTH_PERMISSION_DENIED", message: "Acceso denegado: El rol " + authCheck.role + " no tiene permiso para la acción " + action + "." });
-    }
-
-    if (action.indexOf("get") !== 0) {
-      const cachedResult = checkAndRegisterIdempotencyKey(action, payload);
-      if (cachedResult) {
-        return respond(cachedResult);
-      }
     }
 
     let result;
@@ -1829,10 +1852,6 @@ function doPost(e) {
 
       case "ping": result = { status: "success", service: "ACADEMIC", timestamp: new Date().toISOString(), dbConnected: true }; break;
       default: result = { status: "error", message: `Acción no reconocida: ${action}` };
-    }
-
-    if (action.indexOf("get") !== 0 && result && result.status === "success") {
-      saveIdempotentResult(action, payload, result);
     }
 
     return respond(result);
@@ -3902,10 +3921,13 @@ function getHierarchicalConfigurationCatalog(payload) { return requestHierarchic
 function resolveHierarchicalConfiguration(payload) { return requestHierarchicalConfigurationFromUser_("resolveHierarchicalConfiguration", payload); }
 
 function getVerifiedAcademicIdentity_(payload) {
-  const token = payload && (payload.sessionToken || payload.authToken || payload.token);
-  const claims = token ? verifySessionToken(token) : null;
-  if (!claims || !claims.userId || !claims.role) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
-  return { authorized: true, userId: String(claims.userId).trim(), role: String(claims.role).trim() };
+  const token=getRequestSessionToken_(payload),cached=payload&&payload._imaVerifiedAcademicIdentity;
+  if(cached&&cached.token===token&&cached.actor)return Object.assign({},cached.actor);
+  const claims=getVerifiedRequestSessionClaims_(payload);
+  if(!claims||!claims.userId||!claims.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
+  const actor={authorized:true,userId:String(claims.userId).trim(),role:String(claims.role).trim()};
+  if(payload&&typeof payload==="object"){payload._verifiedUserId=actor.userId;payload._verifiedRole=actor.role;payload._imaVerifiedAcademicIdentity={token:token,actor:actor};}
+  return Object.assign({},actor);
 }
 
 
@@ -3943,7 +3965,11 @@ function getVerifiedDepartmentScopeForSession_(payload, ss, actor, sessionActor,
   if(!actor||actor.authorized!==true||!actor.userId||!actor.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
   var verifiedSessionActor=sessionActor||actor;
   if(!verifiedSessionActor||verifiedSessionActor.authorized!==true||!verifiedSessionActor.userId||!verifiedSessionActor.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
-  var token=payload&&(payload.sessionToken||payload.authToken||payload.token),claims=token?verifySessionToken(token):null;
+  var token=getRequestSessionToken_(payload);
+  var cacheKey=[token,String(actor.userId||""),String(actor.role||""),String(verifiedSessionActor.userId||""),String(verifiedSessionActor.role||""),String(delegatedMembershipId||""),String(payload&&payload.activeDepartmentId||"")].join("|");
+  var cachedScope=payload&&payload._imaVerifiedDepartmentScope;
+  if(cachedScope&&cachedScope.key===cacheKey&&cachedScope.scope)return Object.assign({},cachedScope.scope,{scopes:(cachedScope.scope.scopes||[]).slice(),departmentIds:(cachedScope.scope.departmentIds||[]).slice()});
+  var claims=getVerifiedRequestSessionClaims_(payload);
   if(!claims||String(claims.userId||"").trim()!==String(verifiedSessionActor.userId).trim()||String(claims.role||"").trim()!==String(verifiedSessionActor.role).trim())return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
   var delegatedSubject=String(actor.userId).trim()!==String(verifiedSessionActor.userId).trim()||String(actor.role).trim()!==String(verifiedSessionActor.role).trim();
   var institutionId="";try{institutionId=String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID")||"").trim();}catch(_){}
@@ -3986,7 +4012,9 @@ function getVerifiedDepartmentScopeForSession_(payload, ss, actor, sessionActor,
     scopes=scopes.filter(function(scope){if(scope.scopeType!=="DEPARTAMENTO")return false;var selected=scope.scopeValues.filter(function(v){return v===activeDepartmentId;});if(!selected.length)return false;scope.scopeValues=selected;return true;});
     departmentIds=[activeDepartmentId];institutionWide=false;
   }
-  return {authorized:true,userId:String(actor.userId),role:String(actor.role),institutionId:institutionId,membershipId:membershipId||null,scopes:scopes,departmentIds:departmentIds,institutionWide:institutionWide,activeDepartmentId:activeDepartmentId||null};
+  var verifiedScope={authorized:true,userId:String(actor.userId),role:String(actor.role),institutionId:institutionId,membershipId:membershipId||null,scopes:scopes,departmentIds:departmentIds,institutionWide:institutionWide,activeDepartmentId:activeDepartmentId||null};
+  if(payload&&typeof payload==="object")payload._imaVerifiedDepartmentScope={key:cacheKey,scope:verifiedScope};
+  return Object.assign({},verifiedScope,{scopes:scopes.slice(),departmentIds:departmentIds.slice()});
 }
 
 function getVerifiedAcademicDepartmentScope_(payload, ss, identity) {

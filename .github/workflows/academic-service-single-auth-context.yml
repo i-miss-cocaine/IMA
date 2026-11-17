@@ -1,0 +1,30 @@
+name: Academic-Service single authorization context
+on:
+  push:
+    branches: [NG_beta_0.0.0.1_work]
+    paths:
+      - 'backend/academic-service/Code.gs'
+      - 'tests/security/academic-service-single-auth-context.test.js'
+      - 'tests/security/academic-interservice-replay-guard.test.js'
+      - 'tests/security/academic-migration-writer.test.js'
+      - 'tests/security/academic-multilevel-file-validation.test.js'
+      - 'tests/security/academic-student-document-private-storage.test.js'
+  pull_request:
+    branches: [NG_beta_0.0.0.1_work]
+    paths:
+      - 'backend/academic-service/Code.gs'
+      - 'tests/security/academic-service-single-auth-context.test.js'
+jobs:
+  local-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check backend/academic-service/Code.gs
+      - run: node tests/security/academic-service-single-auth-context.test.js
+      - run: node tests/security/academic-interservice-replay-guard.test.js
+      - run: node tests/security/academic-migration-writer.test.js
+      - run: node tests/security/academic-multilevel-file-validation.test.js
+      - run: node tests/security/academic-student-document-private-storage.test.js
