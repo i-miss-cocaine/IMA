@@ -2563,7 +2563,7 @@ function developerMapServiceRegistryRow_(row) {
   if (row[9] !== "" && row[9] !== null && row[9] !== undefined) {
     try { permissions = typeof row[9] === "string" ? JSON.parse(row[9]) : row[9]; }
     catch (error) { throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID"); }
-    if (!Array.isArray(permissions) || permissions.some(function(value) { return typeof value !== "string" || !value.trim(); })) {
+    if (!Array.isArray(permissions) || permissions.some(function(value) { return typeof value !== "string" || !value.trim() || value.indexOf("*") !== -1; })) {
       throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID");
     }
     var seen = {};
