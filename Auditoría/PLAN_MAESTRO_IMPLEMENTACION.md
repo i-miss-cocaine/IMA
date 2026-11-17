@@ -5923,3 +5923,14 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Beta:** BETA-FUNC-122 pendiente para verificar permisos reales de Drive, comentarios, versiones, devolución, calificación y eliminación con rollback.
 - **Estado:** C1.814 completado en código y CI; beta y política de retención siguen pendientes.
 - **Siguiente:** C1.815 — definir la retención de historial al eliminar entregas y ejecutar BETA-FUNC-122.
+
+
+
+### C1.815 — cierre de AUD-NG-165: privacidad, versiones y baja lógica de entregas
+- **Requisito:** AUD-NG-165 de `pendientes/Docente/Pendientes.md`, derivado de TAREA-10. Mantiene separados los alcances de AUD-NG-002 (autenticación), AUD-NG-124 (calificaciones/rúbricas) y AUD-NG-158 (autoría/ámbito docente).
+- **Resultado:** comentarios privados filtrados por rol/relación; autoría desde identidad verificada; denegaciones registradas sin contenido privado; versiones limitadas a propietario/docente autorizado; preview de versión actual e histórica con relación única; devolución bajo lock y rollback; eliminación lógica idempotente con trazabilidad y referencias conservadas; reentrega reactiva el mismo registro y crea nueva versión.
+- **Verificación local:** Task-Service security local contracts run 44171548172 SUCCESS (Node 22.23.4), incluyendo 13 contratos de mutación, 30 de acceso, reentrega, ownership, grade history 14/14, deadline, upload, single-auth y `node --check js/teacher.js`. Backup/restore run 44171274487 SUCCESS.
+- **Hallazgo externo independiente:** Department Scope run 44171274513 FAIL en Phase22 porque el contrato busca `configureSchoolDocumentTemplate` y esa función no existe en ACCOUNTING. No corresponde a Task-Service ni bloquea AUD-NG-165.
+- **Beta:** BETA-FUNC-122 queda Pendiente beta; validar Drive/Sheets y permisos efectivos en despliegue. No se declara prueba beta ejecutada.
+- **Estado:** AUD-NG-165 completada en código/contratos locales; C1.815 registra la resolución.
+- **Siguiente tarea elegible:** revisar el siguiente pendiente del Plan Maestro, manteniendo AUD-NG-149/121/152 abiertos para sus requisitos propios y sin reabrir AUD-NG-165 por pruebas beta.

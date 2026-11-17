@@ -88,3 +88,14 @@ Calidad insuficiente por exposición de comentarios privados, consulta de versio
 
 **Evidencia requerida:** pruebas con roles y relaciones válidas/no válidas, acceso cruzado por IDs, comentarios privados, suplantación de autor, consulta de versiones, eliminación con historial preservado, concurrencia/idempotencia, límites de intentos, estados de publicación y revisión parcial/rectificación. La auditoría actual fue estática y no acredita estos comportamientos.
 
+
+
+
+## Resolución AUD-NG-165 — 2026-11-17
+- **Estado:** implementación completada y contratos locales aprobados; validación desplegada Pendiente beta (BETA-FUNC-122).
+- **Lecturas:** `getSubmissionComments` y `getSubmissionVersions` pasan por identidad/relación contextual; estudiantes y responsables reciben solo comentarios públicos de entregas propias/vinculadas; el personal solo accede a tareas dentro de su asignación/ámbito. La consulta por `entregaId` no sustituye el control de relación.
+- **Escrituras:** `addSubmissionComment` deriva autor/rol de identidad verificada, impide que estudiantes eleven `esPrivado` y serializa la inicialización de cabecera/append mediante ScriptLock. Los intentos denegados registran operación, rol y motivo técnico sin guardar contenido de comentarios.
+- **Versiones y preview:** el historial no devuelve URLs crudas de Drive. La previsualización autoriza tanto el archivo vigente como archivos históricos de `EntregasVersiones`, verifica vínculo tarea/estudiante/entrega único y deniega referencias ambiguas.
+- **Devolución/eliminación:** `returnSubmissionForRevision` valida docente/tarea y registra comentario privado con actor real bajo lock y rollback. `deleteSubmission` aplica baja lógica idempotente y conserva fila, archivo, versiones y comentarios con actor/rol/fecha/motivo. La reentrega reactiva la misma fila, añade versión y limpia calificación y metadatos de eliminación sin sobrescribir el historial.
+- **Pruebas:** GitHub Actions Task-Service security local contracts run 44171548172 SUCCESS; 13 contratos de mutación, 30 de acceso contextual, contrato de reentrega, ownership, historial de calificaciones/fechas, upload, single-auth y `node --check js/teacher.js` PASS (Node.js 22.23.4). Task-Service backup/restore run 44171274487 SUCCESS.
+- **Pendiente beta:** comprobar permisos efectivos de Drive/Sheets, cuentas reales sintéticas, preview de versiones, comentarios privados, rollback, baja lógica y reentrega en Apps Script desplegado mediante BETA-FUNC-122.

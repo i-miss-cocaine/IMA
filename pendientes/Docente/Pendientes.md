@@ -980,7 +980,7 @@
 ---
 
 <!-- ID: AUD-NG-165 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-165] Proteger la privacidad y el acceso contextual a comentarios y versiones de entregas
+### [x] [AUD-NG-165] Proteger la privacidad y el acceso contextual a comentarios y versiones de entregas
 - **Origen:** Auditoría de completadas.md / TAREA-10.
 - **Severidad:** Alto (P1; privacidad de entregas y retroalimentación).
 - **Archivos:** backend/task-service/Code.gs; js/student.js; js/teacher.js; student-dashboard.html; teacher-dashboard.html.
@@ -988,10 +988,14 @@
 - **Problema:** getSubmissionComments devuelve también registros esPrivado=true a cualquier rol que tenga permiso de consulta (incluidos estudiante, padre, tutor y responsable) y no valida propiedad/relación con el expediente. getSubmissionVersions permite consultar por entregaId sin comprobar que la entrega pertenezca al usuario o al ámbito docente. addSubmissionComment confía en autorId, rolAutor y esPrivado recibidos del cliente. returnSubmissionForRevision usa profesorId del payload para identificar al autor. deleteSubmission elimina la fila principal y el archivo, pero no elimina ni marca de forma coherente las versiones/comentarios relacionados.
 - **Criterios de aceptación:** comentarios privados solo visibles para docentes asignados y roles expresamente autorizados; estudiantes y responsables solo reciben comentarios públicos de entregas propias/vinculadas; versiones filtradas por propietario o asignación docente aun cuando se consulte por entregaId; autor y rol derivados del token verificado; el cliente no puede elevar esPrivado ni suplantar docentes; devoluciones verifican propiedad de la tarea; borrado lógico conserva trazabilidad y referencias; pruebas negativas con dos estudiantes, dos docentes y responsables no vinculados.
 - **Tareas relacionadas (no duplicadas):** AUD-NG-002 (consultas públicas), AUD-NG-124 (propiedad/calificaciones), AUD-NG-158 (ABAC de escrituras docentes).
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código y contratos locales (2026-11-17). **Pendiente beta:** BETA-FUNC-122.
 
 Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas existentes.
 
+- **Evidencia local:** Task-Service security local contracts run 44171548172 SUCCESS (Node.js 22.23.4): security contract, ownership, grade history 14/14, mutation 13 tests, access 30 tests, resubmission, deadline history, upload, single-auth y `node --check js/teacher.js` PASS. Task-Service backup/restore run 44171274487 SUCCESS.
+- **Cobertura:** dos estudiantes, dos docentes, responsables vinculados/no vinculados, consulta por entrega/tarea, autoría falsificada, notas privadas, versiones históricas, preview, denegaciones registradas sin contenido privado, borrado lógico idempotente, reentrega, timeout de lock y serialización de comentarios.
+- **Decisión de integridad:** deleteSubmission conserva fila, Drive, EntregasVersiones y ComentariosEntregas; registra estado/actor/rol/fecha/motivo. La reentrega reactiva la misma entrega, crea nueva versión y limpia nota/deletion metadata; enlaces externos permanecen en el historial de versiones.
+- **Limitación:** privacidad efectiva de permisos Drive, Sheets y despliegue real queda Pendiente beta en BETA-FUNC-122.
 ---
 
 <!-- ID: AUD-NG-166 | Fuentes: Pendientes.md -->

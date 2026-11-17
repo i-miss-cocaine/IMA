@@ -1822,3 +1822,22 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** IDs sintéticos, actor/rol, aula/tarea, MIME/tamaño, IDs de Drive, estado de privacidad, filas de metadatos/ownership antes/después, respuestas allow/deny y logs saneados; sin tokens ni PII.
 - **Estado:** Pendiente de validación beta real en Apps Script/Sheets/Drive. Los contratos Node.js y GitHub Actions PASS no sustituyen esta comprobación desplegada.
 =============================================================================
+
+
+
+=============================================================================
+### BETA-FUNC-122 — TASK-SERVICE — privacidad, versiones, devolución, baja lógica y reentrega
+- **Módulos/roles:** Task-Service / Estudiante, Padre, Tutor, Responsable, Profesor y Administrador.
+- **Requisito:** AUD-NG-165; comprobar privacidad de comentarios, propiedad/ámbito de versiones, preview autorizado, autoría verificada, devolución y conservación del historial al eliminar una entrega.
+- **Precondiciones:** deployment beta aislado; dos docentes con aulas distintas; dos estudiantes; responsable vinculado a un estudiante y otro no vinculado; entrega PDF con dos o más versiones; tarea con rúbrica; archivos Drive privados; hojas Entregas, EntregasVersiones, ComentariosEntregas, HistorialCalificaciones y Tareas.
+- **Pasos:**
+  1. Publicar comentario como estudiante con autorId/rolAutor/esPrivado falsificados; comprobar autor/rol derivados de sesión y visibilidad pública. Crear nota privada como docente asignado; comprobar que docente autorizado la ve y estudiante, padre, tutor y responsable solo reciben comentarios públicos.
+  2. Consultar comentarios/versiones por entregaId y tareaId. Verificar que la respuesta de versiones no contiene archivoUrl crudo. Solicitar preview de archivo vigente y de una versión anterior usando getSubmissionDocumentPreviewUrl; permitir propietario, responsable vinculado y docente asignado; denegar estudiante/responsable no vinculado y docente de otra aula. Duplicar sintéticamente una referencia fileId entre dos entregas y comprobar denegación por ambigüedad.
+  3. Intentar devolver una entrega como docente asignado y como docente ajeno; comprobar que solo el primero puede cambiar estado. Verificar comentario privado con actor/rol/fecha de sesión. Simular fallo al append de ComentariosEntregas y lock ocupado; comprobar rollback del estado y ausencia de escrituras parciales.
+  4. Calificar con nota válida y rúbrica; comprobar rango/precisión, historial append-only con actor/rol/fecha/motivo y serialización de escrituras simultáneas. Probar docente ajeno y entrega ajena: denegación sin modificar calificación.
+  5. Eliminar una entrega de prueba como docente asignado. Comprobar baja lógica: fila Entregas permanece con Estado=Eliminada, EliminadaPor, EliminadaRol, EliminadaEn y MotivoEliminacion; el archivo Drive permanece sin enviar a papelera; EntregasVersiones y ComentariosEntregas mantienen sus filas y referencias. Repetir deleteSubmission y comprobar idempotencia sin sobrescribir fecha/actor/motivo. Simular fallo de escritura de fila y lock ocupado; comprobar que no hay cambios parciales.
+  6. Reentregar como estudiante propietario. Comprobar que se reactiva el mismo EntregaID, se incrementa VersionNum, se agrega nueva fila en EntregasVersiones, se actualiza el archivo vigente, se limpia calificación/comentario y metadata de eliminación, y se conserva el historial anterior. Comprobar que el enlace externo queda en la fila de versión, no en la columna de calificación; previsualizar una versión anterior y verificar denegación si fileId queda asociado a más de una entrega.
+- **Resultado esperado:** comentarios privados protegidos; consultas por IDs no permiten IDOR; actor real; preview actual/histórico autorizado; devolución y comentarios serializados; calificación íntegra; baja lógica trazable e idempotente; reentrega sin pérdida de versiones ni reutilización de nota antigua.
+- **Evidencia requerida:** IDs sintéticos, roles, tarea/entrega, filas antes/después, conteos de versiones/comentarios, actor/fecha/motivo de baja, fileId y estado de Drive, resultados allow/deny, lock/rollback y logs saneados. No guardar tokens, PII ni contenido privado.
+- **Estado:** Pendiente beta. Los contratos Node.js/GitHub Actions PASS no sustituyen la comprobación de permisos reales en Apps Script/Sheets/Drive.
+=============================================================================

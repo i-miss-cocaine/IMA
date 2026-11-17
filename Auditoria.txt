@@ -3006,3 +3006,15 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Node CLI local:** NOT RUN. **Beta real Drive/Sheets:** NOT RUN. No se declaran pruebas de runtime beta.
 - **Siguiente acción:** implementar y probar correcciones de asistencia con ownership, estado pendiente, rollback y locks; después resolver la ruta real de transport-service/identity contract y continuar con los contratos restantes.
 ===============================================================================
+
+
+
+===============================================================================
+### C1.815 — Resolución AUD-NG-165: privacidad y ciclo histórico de entregas
+- **Fecha:** 2026-11-17.
+- **Rama:** NG_beta_0.0.0.1_work.
+- **Resultado:** se limita lectura de comentarios/versiones por identidad, propiedad y asignación; notas privadas se filtran; autoría se deriva de sesión; las denegaciones registran operación/rol/motivo sin contenido; preview acepta versiones históricas solo si su vínculo con una entrega única está verificado.
+- **Integridad:** comentarios serializados con ScriptLock; devolución mantiene actor real y rollback; deleteSubmission es baja lógica idempotente y conserva archivo, fila, versiones y comentarios; reentrega reactiva el mismo registro, incrementa versión y limpia nota/calificación/metadatos de baja sin borrar historia.
+- **Evidencia:** Task-Service security local contracts 44171548172 SUCCESS (13 contratos de mutación, 30 de acceso contextual, reentrega, ownership, calificaciones/fechas, upload, single-auth y node --check js/teacher.js); backup/restore 44171274487 SUCCESS.
+- **Pendiente:** BETA-FUNC-122 requiere Apps Script/Sheets/Drive desplegados. Department Scope 44171274513 falla independientemente en Phase22 por ausencia de configureSchoolDocumentTemplate en ACCOUNTING.
+===============================================================================
