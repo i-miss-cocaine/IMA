@@ -5,6 +5,7 @@ name: Accounting Import Preflight Contract
 # Run session-token HMAC configuration regression alongside inter-service credential rotation coverage.
 # Keep the session verification harness fixtures aligned with current revocation and membership checks.
 # Session-token regression covers only services that implement both getAuthTokenSecret and verifySessionToken.
+# Test harness provides explicit stubs for local session revocation ledgers.
 
 on:
   push:
