@@ -3005,11 +3005,62 @@ function updateServiceStatus(payload) {
 
 // [TAREA-F6-008] [Fase 6: Reestructuración en microservicios independientes] - Auditoría de llamadas inter-servicio y correlación de solicitudes (correlationId)
 function auditInterServiceCalls(payload) {
-  const { correlationId } = payload || {};
+  var filters = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  var correlationId = String(filters.correlationId || "").trim();
+  var requestId = String(filters.requestId || "").trim();
+  var sourceService = String(filters.sourceService || "").trim().toUpperCase();
+  var targetService = String(filters.targetService || "").trim().toUpperCase();
+  var action = String(filters.actionFilter || "").trim();
+  var direction = String(filters.direction || "").trim().toUpperCase();
+  var limit = filters.limit === undefined || filters.limit === null || filters.limit === "" ? 100 : Number(filters.limit);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 200 ||
+      (direction && ["INBOUND", "OUTBOUND"].indexOf(direction) === -1) ||
+      correlationId.length > 128 || requestId.length > 128 ||
+      sourceService.length > 64 || targetService.length > 64 || action.length > 128) {
+    throw new Error("CREDENTIAL_USAGE_AUDIT_QUERY_INVALID");
+  }
+
+  var expectedHeaders = ["EventID","Direction","SourceService","TargetService","Action","RequestID","CorrelationID","CredentialType","CredentialID","CredentialVersion","OccurredAt"];
+  var spreadsheet, sheet, values;
+  try {
+    spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    sheet = spreadsheet.getSheetByName("AuditoriaUsoCredenciales");
+    if (!sheet) return { status: "success", correlationId: correlationId, auditLogs: [], total: 0, truncated: false };
+    values = sheet.getDataRange().getValues();
+  } catch (error) {
+    throw new Error("CREDENTIAL_USAGE_AUDIT_READ_FAILED");
+  }
+  if (!values.length || !values[0] || JSON.stringify(values[0].map(String)) !== JSON.stringify(expectedHeaders)) {
+    throw new Error("CREDENTIAL_USAGE_AUDIT_SCHEMA_MISMATCH");
+  }
+
+  var records = values.slice(1).filter(function(row) {
+    if (!row || !row.length || row.every(function(value) { return value === "" || value === null || value === undefined; })) return false;
+    if (row.length !== expectedHeaders.length) throw new Error("CREDENTIAL_USAGE_AUDIT_ROW_INVALID");
+    return (!correlationId || String(row[6] || "") === correlationId) &&
+      (!requestId || String(row[5] || "") === requestId) &&
+      (!sourceService || String(row[2] || "").trim().toUpperCase() === sourceService) &&
+      (!targetService || String(row[3] || "").trim().toUpperCase() === targetService) &&
+      (!action || String(row[4] || "") === action) &&
+      (!direction || String(row[1] || "").trim().toUpperCase() === direction);
+  }).map(function(row) {
+    var occurredAt = row[10] instanceof Date ? row[10].toISOString() : String(row[10] || "");
+    return {
+      eventId: String(row[0] || ""), direction: String(row[1] || ""),
+      sourceService: String(row[2] || ""), targetService: String(row[3] || ""),
+      action: String(row[4] || ""), requestId: String(row[5] || ""),
+      correlationId: String(row[6] || ""), credentialType: String(row[7] || ""),
+      credentialId: String(row[8] || ""), credentialVersion: String(row[9] || ""),
+      occurredAt: occurredAt
+    };
+  });
+  records.sort(function(left, right) {
+    return String(right.occurredAt).localeCompare(String(left.occurredAt));
+  });
   return {
-    status: "success",
-    correlationId: correlationId || ("CORR-" + Date.now()),
-    auditLogs: []
+    status: "success", correlationId: correlationId,
+    auditLogs: records.slice(0, limit), total: records.length,
+    truncated: records.length > limit
   };
 }
 
