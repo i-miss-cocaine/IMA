@@ -261,7 +261,7 @@ h.context.SpreadsheetApp.flush = function() {
   catch (error) { reentrantError = error.message; }
   originalFlush();
 };
-const outerResult = h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", _verifiedUserId: "first-actor" });
+const outerResult = h.updateServiceStatus_({ serviceId: "SVC-1", newState: "degradado" }, "first-actor");
 assert.equal(outerResult.status, "success");
 assert.equal(reentrantError, "SERVICE_REGISTRY_LOCK_TIMEOUT");
 assert.equal(h.sheets.CatalogoServicios.rows[1][7], "degradado");
@@ -289,7 +289,7 @@ h = harness({
   CatalogoServicios: sheet([registryHeaders, row("SVC-1","Service")]),
   HistorialServiciosDistribuidos: sheet([["wrong","schema"]])
 });
-assert.throws(() => h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado", _verifiedUserId: "verified-actor" }), /SERVICE_REGISTRY_SCHEMA_MISMATCH/);
+assert.throws(() => h.updateServiceStatus_({ serviceId: "SVC-1", newState: "degradado" }, "verified-actor"), /SERVICE_REGISTRY_SCHEMA_MISMATCH/);
 assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo", "invalid history schema must be detected before status mutation");
 
 h = harness();
