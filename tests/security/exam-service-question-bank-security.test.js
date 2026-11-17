@@ -182,7 +182,7 @@ assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",banco
 assert.equal(bankRows.some(r=>r[0]==="BNK-RACE"),false);
 const bankCount=bankRows.length,ownerCount=ownershipRows.length;
 failBankAppend=true;
-assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",textoPregunta:"Rollback"}),/synthetic bank append failure after persistence/);
+assert.throws(()=>runtime.manageQuestionBank({sessionToken:"teacher-token",departmentId:"D1",accion:"crear",areaCurricular:"Ciencias",asignatura:"Biología",grado:"10",tema:"Célula",dificultad:"Media",tipo:"opcion_multiple",textoPregunta:"Rollback",opcionesJSON:{A:"Uno",B:"Dos"},respuestaCorrecta:"A"}),/synthetic bank append failure after persistence/);
 assert.equal(bankRows.length,bankCount);assert.equal(ownershipRows.length,ownerCount);
 assert.equal(lockAcquires,lockReleases+1,"only the contended lock acquisition is unreleased");
 // Cada frontera de persistencia debe conservar el lock compartido frente a una
@@ -213,7 +213,7 @@ for (const kind of ["ownership", "bank"]) {
  const beforeBank = bankRows.length, beforeOwnership = ownershipRows.length;
  const label = "create/" + kind + "/appendRow";
  const run = assertReentrantPersistence(kind, "appendRow", {
-  sessionToken:"teacher-token",departmentId:"D1",accion:"crear",textoPregunta:"Reentrant " + kind
+  sessionToken:"teacher-token",departmentId:"D1",accion:"crear",areaCurricular:"Ciencias",asignatura:"Biología",grado:"10",tema:"Célula",dificultad:"Media",tipo:"opcion_multiple",opcionesJSON:{A:"Uno",B:"Dos"},respuestaCorrecta:"A",textoPregunta:"Reentrant " + kind
  }, label);
  assert.equal(run.result.status, "success");
  assert.equal(bankRows.length, beforeBank + 1, label + ": exactly one question must persist");
