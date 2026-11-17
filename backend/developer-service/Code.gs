@@ -2483,61 +2483,129 @@ function executeOperationalCommand(payload) {
   };
 }
 
+const DEVELOPER_SERVICE_REGISTRY_HEADERS_ = [
+  "ServiceID", "Name", "Department", "OwnerAccount", "EndpointURL",
+  "SpreadsheetID", "DataDomain", "State", "Version", "PermissionsJSON", "RegisteredAt"
+];
+const DEVELOPER_SERVICE_HISTORY_HEADERS_ = [
+  "HistoryID", "ServiceID", "PreviousState", "NewState", "Reason", "UpdatedBy", "UpdatedAt"
+];
+
+function developerLogServiceRegistryIncident_(code) {
+  var safeCode = String(code || "SERVICE_REGISTRY_READ_FAILED").slice(0, 80);
+  try {
+    if (typeof Logger !== "undefined" && Logger && typeof Logger.log === "function") {
+      Logger.log("SERVICE_REGISTRY_INCIDENT:" + safeCode);
+    }
+  } catch (ignored) {}
+  try {
+    if (typeof console !== "undefined" && console && typeof console.error === "function") {
+      console.error("SERVICE_REGISTRY_INCIDENT:" + safeCode);
+    }
+  } catch (ignored) {}
+}
+
+function developerEnsureServiceTable_(ss, name, headers, legacyRowValidator) {
+  if (!ss || typeof ss.getSheetByName !== "function") throw new Error("SERVICE_REGISTRY_STORAGE_UNAVAILABLE");
+  var sheet = ss.getSheetByName(name);
+  if (!sheet) sheet = ss.insertSheet(name);
+  var data = sheet.getDataRange().getValues();
+  if (!data.length || !data.some(function(row) { return (row || []).some(function(value) { return value !== "" && value !== null && value !== undefined; }); })) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers.slice()]);
+    return { sheet: sheet, headers: headers.slice(), rows: [] };
+  }
+  var first = (data[0] || []).map(function(value) { return String(value || "").trim(); });
+  if (JSON.stringify(first) === JSON.stringify(headers)) {
+    return { sheet: sheet, headers: headers.slice(), rows: data.slice(1) };
+  }
+  if (legacyRowValidator && legacyRowValidator(data[0])) {
+    if (typeof sheet.insertRowBefore !== "function") throw new Error("SERVICE_REGISTRY_LEGACY_MIGRATION_UNAVAILABLE");
+    sheet.insertRowBefore(1);
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers.slice()]);
+    return { sheet: sheet, headers: headers.slice(), rows: data };
+  }
+  throw new Error("SERVICE_REGISTRY_SCHEMA_MISMATCH:" + name);
+}
+
+function developerParseServiceRegistryRows_(data) {
+  if (!Array.isArray(data)) throw new Error("SERVICE_REGISTRY_DATA_INVALID");
+  if (!data.length || !data.some(function(row) { return (row || []).some(function(value) { return value !== "" && value !== null && value !== undefined; }); })) {
+    return { state: "EMPTY", rows: [] };
+  }
+  var first = (data[0] || []).map(function(value) { return String(value || "").trim(); });
+  var headerLike = ["ServiceID", "serviceId", "service_id"].indexOf(first[0]) !== -1;
+  if (headerLike) {
+    if (JSON.stringify(first) !== JSON.stringify(DEVELOPER_SERVICE_REGISTRY_HEADERS_)) {
+      throw new Error("SERVICE_REGISTRY_SCHEMA_MISMATCH:CatalogoServicios");
+    }
+    return { state: data.length > 1 ? "READY" : "EMPTY", rows: data.slice(1) };
+  }
+  return { state: "READY", rows: data };
+}
+
+function developerMapServiceRegistryRow_(row) {
+  if (!Array.isArray(row) || row.length < DEVELOPER_SERVICE_REGISTRY_HEADERS_.length) {
+    throw new Error("SERVICE_REGISTRY_ROW_INVALID");
+  }
+  var serviceId = String(row[0] || "").trim(), name = String(row[1] || "").trim();
+  if (!serviceId || !name) throw new Error("SERVICE_REGISTRY_ROW_INVALID");
+  var permissions = [];
+  if (row[9] !== "" && row[9] !== null && row[9] !== undefined) {
+    try { permissions = typeof row[9] === "string" ? JSON.parse(row[9]) : row[9]; }
+    catch (error) { throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID"); }
+    if (!Array.isArray(permissions) || permissions.some(function(value) { return typeof value !== "string" || !value.trim(); })) {
+      throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID");
+    }
+    var seen = {};
+    permissions = permissions.map(function(value) {
+      var normalized = value.trim(), key = "$" + normalized;
+      if (seen[key]) throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID");
+      seen[key] = true;
+      return normalized;
+    });
+  }
+  return {
+    serviceId: serviceId,
+    name: name,
+    departamento: String(row[2] || ""),
+    cuentaPropietaria: String(row[3] || ""),
+    endpointUrl: String(row[4] || ""),
+    spreadsheetAsociado: String(row[5] || ""),
+    dominioDatos: String(row[6] || ""),
+    state: String(row[7] || ""),
+    version: String(row[8] || ""),
+    permisosConcedidos: permissions,
+    registeredAt: row[10] || ""
+  };
+}
+
 // [TASK-047] [F23-Task04] [P0] Arquitectura Distribuida - Catálogo Institucional de Cuentas, Servicios y Permisos Distribuidos
 function getCentralServiceRegistry(payload) {
-  const defaultServices = [
-    { serviceId: "SVC-USER-01", name: "User Service", type: "IDENTITY", state: "Activo", version: "v8.4.0", responsibilities: ["Auth", "Users", "Roles"], cuentaPropietaria: "primary@domain.edu", spreadsheetId: SPREADSHEET_ID },
-    { serviceId: "SVC-ACADEMIC-02", name: "Academic Service", type: "ACADEMIC", state: "Activo", version: "v8.4.0", responsibilities: ["Files", "Enrollments", "Admissions"], cuentaPropietaria: "academic@domain.edu", spreadsheetId: SPREADSHEET_ID },
-    { serviceId: "SVC-TASK-03", name: "Task Service", type: "ACADEMIC_SUB", state: "Activo", version: "v8.4.0", responsibilities: ["Tasks", "Submissions"], cuentaPropietaria: "academic@domain.edu", spreadsheetId: SPREADSHEET_ID },
-    { serviceId: "SVC-EXAM-04", name: "Exam Service", type: "ACADEMIC_SUB", state: "Activo", version: "v8.4.0", responsibilities: ["Exams", "QuestionBank"], cuentaPropietaria: "academic@domain.edu", spreadsheetId: SPREADSHEET_ID },
-    { serviceId: "SVC-ACCOUNTING-05", name: "Accounting Service", type: "FINANCIAL", state: "Activo", version: "v8.4.0", responsibilities: ["Billing", "Payments", "Payroll"], cuentaPropietaria: "accounting@domain.edu", spreadsheetId: SPREADSHEET_ID },
-    { serviceId: "SVC-DEVELOPER-00", name: "Developer Service", type: "CONTROL_PLANE", state: "Activo", version: "v8.4.0", responsibilities: ["ControlPlane", "Diagnostics", "InterServiceAudit"], cuentaPropietaria: "developer@domain.edu", spreadsheetId: SPREADSHEET_ID }
-  ];
-
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "CatalogoServicios");
-    const data = sheet.getDataRange().getValues();
-
-    if (data.length <= 1) {
-      return {
-        status: "success",
-        service: "DEVELOPER",
-        registry: defaultServices,
-        totalServicios: defaultServices.length,
-        timestamp: new Date().toISOString()
-      };
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    if (!ss || typeof ss.getSheetByName !== "function") throw new Error("SERVICE_REGISTRY_STORAGE_UNAVAILABLE");
+    var sheet = ss.getSheetByName("CatalogoServicios");
+    if (!sheet) {
+      return { status: "success", service: "DEVELOPER", registryState: "UNINITIALIZED", source: "CatalogoServicios", registry: [], totalServicios: 0, timestamp: new Date().toISOString() };
     }
-
-    const customServices = data.slice(1).map(r => ({
-      serviceId: r[0],
-      name: r[1],
-      departamento: r[2],
-      cuentaPropietaria: r[3],
-      endpointUrl: r[4],
-      spreadsheetAsociado: r[5],
-      dominioDatos: r[6],
-      state: r[7] || "Activo",
-      version: r[8] || "v1.0.0",
-      permisosConcedidos: r[9] ? JSON.parse(r[9]) : ["*"],
-      registeredAt: r[10]
-    }));
-
+    var parsed = developerParseServiceRegistryRows_(sheet.getDataRange().getValues());
+    var registry = parsed.rows.map(developerMapServiceRegistryRow_);
+    var seen = {};
+    registry.forEach(function(service) {
+      var key = "$" + service.serviceId.toUpperCase();
+      if (seen[key]) throw new Error("SERVICE_REGISTRY_DUPLICATE_ID");
+      seen[key] = true;
+    });
     return {
-      status: "success",
-      service: "DEVELOPER",
-      registry: customServices,
-      totalServicios: customServices.length,
+      status: "success", service: "DEVELOPER", registryState: registry.length ? "READY" : "EMPTY",
+      source: "CatalogoServicios", registry: registry, totalServicios: registry.length,
       timestamp: new Date().toISOString()
     };
-  } catch (e) {
-    return {
-      status: "success",
-      service: "DEVELOPER",
-      registry: defaultServices,
-      totalServicios: defaultServices.length,
-      timestamp: new Date().toISOString()
-    };
+  } catch (error) {
+    var message = String(error && error.message || error);
+    var code = message.indexOf("SERVICE_REGISTRY_") === 0 ? message.split(":")[0] : "SERVICE_REGISTRY_READ_FAILED";
+    developerLogServiceRegistryIncident_(code);
+    return { status: "error", code: code, service: "DEVELOPER", registry: [], totalServicios: 0, timestamp: new Date().toISOString() };
   }
 }
 
@@ -2563,16 +2631,22 @@ function registerServiceInstance(payload) {
   const now = new Date();
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CatalogoServicios");
-  const data = sheet.getDataRange().getValues();
+  const table = developerEnsureServiceTable_(ss, "CatalogoServicios", DEVELOPER_SERVICE_REGISTRY_HEADERS_, function(row) {
+    return Array.isArray(row) && row.length >= 11 && String(row[0] || "").trim() !== "" && String(row[1] || "").trim() !== "";
+  });
+  const sheet = table.sheet;
+  const data = [table.headers].concat(table.rows);
 
   // Detección y rechazo de duplicados
-  const exists = data.slice(1).some(r => String(r[0]).trim().toUpperCase() === sId.toUpperCase());
+  const exists = table.rows.some(r => String(r[0] || "").trim().toUpperCase() === sId.toUpperCase());
   if (exists) {
     throw new Error(`DUPLICATE_SERVICE_REGISTRATION: Ya existe un servicio registrado con el identificador '${sId}'.`);
   }
 
-  const permisosStr = Array.isArray(permisosConcedidos) ? JSON.stringify(permisosConcedidos) : JSON.stringify(["*"]);
+  if (permisosConcedidos !== undefined && (!Array.isArray(permisosConcedidos) || permisosConcedidos.some(function(value) { return typeof value !== "string" || !value.trim(); }))) {
+    throw new Error("INVALID_SERVICE_PERMISSIONS");
+  }
+  const permisosStr = JSON.stringify(permisosConcedidos || []);
 
   sheet.appendRow([
     sId,
@@ -2611,10 +2685,13 @@ function updateServiceStatus(payload) {
 
   const sId = String(serviceId).trim();
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CatalogoServicios");
-  const data = sheet.getDataRange().getValues();
+  const table = developerEnsureServiceTable_(ss, "CatalogoServicios", DEVELOPER_SERVICE_REGISTRY_HEADERS_, function(row) {
+    return Array.isArray(row) && row.length >= 11 && String(row[0] || "").trim() !== "" && String(row[1] || "").trim() !== "";
+  });
+  const sheet = table.sheet;
+  const data = [table.headers].concat(table.rows);
 
-  const idx = data.findIndex(r => String(r[0]).trim().toUpperCase() === sId.toUpperCase());
+  const idx = data.findIndex((r, index) => index > 0 && String(r[0] || "").trim().toUpperCase() === sId.toUpperCase());
   if (idx === -1) {
     throw new Error(`SERVICE_NOT_FOUND: No se encontró el servicio con identificador '${sId}'.`);
   }
@@ -2622,7 +2699,10 @@ function updateServiceStatus(payload) {
   sheet.getRange(idx + 1, 8).setValue(newState);
 
   // Registrar histórico en BitacoraLogs
-  const histSheet = getOrCreateSheet(ss, "HistorialServiciosDistribuidos");
+  const history = developerEnsureServiceTable_(ss, "HistorialServiciosDistribuidos", DEVELOPER_SERVICE_HISTORY_HEADERS_, function(row) {
+    return Array.isArray(row) && row.length >= 7 && String(row[0] || "").indexOf("HIST-SVC-") === 0;
+  });
+  const histSheet = history.sheet;
   const now = new Date();
   histSheet.appendRow([
     "HIST-SVC-" + now.getTime(),
