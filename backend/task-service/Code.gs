@@ -3172,8 +3172,8 @@ function getSubmissionDocumentPreviewUrl(payload) {
     }
     const accessPayload = Object.assign({},payload,{entregaId:deliveryId});
     const access = getTaskServiceSubmissionAccess_(accessPayload,"READ_CONTENT",identity);
-    if (!access.delivery || String(access.delivery[0] || "").trim() !== String(delivery[0] || "").trim() ||
-        extractTaskServiceFileId(access.delivery[4]) !== fileId) {
+    if (!access.delivery || String(access.delivery[0] || "").trim() !== deliveryId ||
+        (!isCurrentFile && !isRecordedVersion)) {
       return { status:"error",code:"AUTH_PERMISSION_DENIED",message:"No tiene autorización sobre el documento solicitado." };
     }
     const file = DriveApp.getFileById(fileId), mimeType = file.getMimeType(), fileName = file.getName(), fileSize = file.getSize();
