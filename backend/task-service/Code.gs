@@ -1818,6 +1818,7 @@ function assertTaskServiceUploadSessionOwner(session,payload) {
 function uploadFile(payload) {
   const request = payload || {};
   const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "");
   const taskId = String(request.tareaId || "").trim();
   const fileData = String(request.fileData || "");
   const fileName = String(request.fileName || "").trim();
@@ -1834,6 +1835,17 @@ function uploadFile(payload) {
   const taskData = getSheetOrThrow(ss,"Tareas").getDataRange().getValues().slice(1)
     .find(row => String(row[0] || "").trim() === taskId);
   if (!taskData) throw new Error("Tarea no encontrada.");
+  let profile;
+  if (role === "Estudiante" || role === "Alumno") {
+    profile = assertTaskServiceStudentCanAccessTask(ss,actorId,taskData);
+  } else if (role === "Profesor") {
+    assertTaskServiceTeacherCanManageTask(request,taskData,"UPLOAD_FILE");
+    profile = getTaskServiceUserProfile(actorId);
+  } else if (isTaskServiceAdministrativeRole(role)) {
+    profile = getTaskServiceUserProfile(actorId);
+  } else {
+    throw new Error("Rol no autorizado para subir archivos.");
+  }
   const parts = fileData.split(",");
   const raw = parts.length > 1 ? parts[1] : parts[0];
   const dataUri = parts[0].match(/^data:([^;]+);base64$/i);
@@ -1852,8 +1864,8 @@ function uploadFile(payload) {
   if (bytes.length > 50 * 1024 * 1024) throw new Error("UPLOAD_SIZE_LIMIT: maximum file size is 50 MB.");
   const blob = Utilities.newBlob(bytes,mimeType,fileName);
   const root = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-  const grade = getOrCreateFolder(root,String(taskData[6] || "General"));
-  const section = getOrCreateFolder(grade,String(taskData[7] || "General"));
+  const grade = getOrCreateFolder(root,String(profile.grado || taskData[6] || "General"));
+  const section = getOrCreateFolder(grade,String(profile.seccion || taskData[7] || "General"));
   const ownerFolder = getOrCreateFolder(section,actorId);
   const partial = getOrCreateFolder(ownerFolder,String(taskData[4] || "General"));
   const subject = getOrCreateFolder(partial,String(taskData[5] || "General"));
@@ -1870,13 +1882,6 @@ function uploadFile(payload) {
   }
   return {status:"success",data:{fileId:file.getId(),folderId:taskFolder.getId(),mimeType:mimeType}};
 }
-
-
-
-/**
- * DEPRECATED: Se utiliza uploadFile con segmentación lógica en cliente.
- * Une todos los chunks y crea el archivo final.
- */
 function finishChunkedUpload() { throw new Error("El protocolo de carga legacy está deshabilitado; utilice carga reanudable autenticada."); }
 
 // [TAREA-10] [Fase 1: Auditoría y planificación de la expansión] - Sistema ampliado de asignaciones, entregas multimodales, revisiones, versiones, rúbricas y retroalimentación.
@@ -2551,6 +2556,8 @@ function deletePost(payload) {
 }
 function getStudyMaterials(payload) {
   const role = payload && payload._verifiedRole;
+  const allowedRows = getTaskServiceAuthorizedClassrooms(payload);
+  const allowedIds = new Set(allowedRows.map(row => String(row[0] || "").trim()));
   const isStaff = ["Profesor","Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role) !== -1;
   const { aulaId,parcial,unidad,tema } = payload || {};
   const data = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos").getDataRange().getValues();
@@ -2559,6 +2566,7 @@ function getStudyMaterials(payload) {
     const state = normalizeString(row[12] || "");
     if (state === "eliminado") return false;
     const classId = String(row[1] || "").trim();
+    if (classId !== "General" && !allowedIds.has(classId)) return false;
     if (aulaId && classId !== String(aulaId).trim()) return false;
     if (!isStaff && ["activo","publicado"].indexOf(state) === -1) return false;
     if (!isStaff && row[11]) {
@@ -2580,11 +2588,23 @@ function createStudyMaterial(payload) {
   const request = payload || {};
   const identity = getVerifiedTaskIdentity_(request);
   const userId = String(identity && identity.userId || "").trim();
+  const role = String(identity && identity.role || "");
   const { aulaId,titulo,descripcion,tipoRecurso,parcial,unidad,tema,archivoUrl,driveId } = request;
   if (!identity || identity.authorized !== true || !userId || !titulo || !archivoUrl) {
     throw new Error("Identidad, título y archivo obligatorios.");
   }
+  if (role !== "Profesor" && !isTaskServiceAdministrativeRole(role)) throw new Error("Acceso denegado.");
   const classId = String(aulaId || "General").trim();
+  if (classId === "General") {
+    if (!isTaskServiceAdministrativeRole(role)) throw new Error("Solo administración puede publicar materiales generales.");
+  } else {
+    const classroom = getTaskServiceClassroomById(classId);
+    if (!classroom || normalizeString(classroom[7] || "Activa") === "desactivada") throw new Error("Aula no válida o inactiva.");
+    if (role === "Profesor") {
+      if (String(classroom[6] || "").trim() !== userId) throw new Error("El aula no está asignada al docente autenticado.");
+      assertTaskServiceTeacherAssignedToOffer(userId,classroom[1]);
+    }
+  }
   const sheet = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos");
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"]);
@@ -2596,12 +2616,22 @@ function createStudyMaterial(payload) {
   return {status:"success",message:"Material educativo publicado.",data:{materialId:id}};
 }
 function deleteStudyMaterial(payload) {
-  const materialId = String(payload && payload.materialId || "").trim();
-  if (!materialId) throw new Error("materialId requerido.");
+  const request = payload || {};
+  const identity = getVerifiedTaskIdentity_(request);
+  const userId = String(identity && identity.userId || "").trim();
+  const role = String(identity && identity.role || "");
+  const materialId = String(request.materialId || "").trim();
+  if (!identity || identity.authorized !== true || !userId || !materialId) {
+    throw new Error("Identidad y materialId requeridos.");
+  }
   const sheet = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos");
   const rows = sheet.getDataRange().getValues();
   const index = rows.findIndex(row => String(row[0] || "").trim() === materialId);
   if (index < 1) throw new Error("Material no encontrado.");
+  const row = rows[index];
+  if (!isTaskServiceAdministrativeRole(role) && (role !== "Profesor" || String(row[10] || "").trim() !== userId)) {
+    throw new Error("El material no pertenece al docente.");
+  }
   sheet.getRange(index + 1,13).setValue("Eliminado");
   return {status:"success",message:"Material eliminado."};
 }

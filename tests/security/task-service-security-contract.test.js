@@ -416,9 +416,9 @@ vm.runInNewContext(
   materialContext
 );
 const studentMaterials = materialContext.getMaterials({_verifiedRole:"Estudiante"});
-assert.deepEqual(studentMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-GEN","M-OTHER"], "students receive current active/published materials without a second classroom ownership check");
+assert.deepEqual(studentMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-GEN"], "students receive only current active/published materials in authorized classrooms");
 const teacherMaterials = materialContext.getMaterials({_verifiedRole:"Profesor"});
-assert.deepEqual(teacherMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-DRAFT","M-EMPTY","M-FUTURE","M-GEN","M-OTHER"], "staff can inspect materials without a repeated classroom scope check, but deleted records remain hidden");
+assert.deepEqual(teacherMaterials.data.map(item => item.materialId).sort(), ["M-CLASS","M-DRAFT","M-EMPTY","M-FUTURE","M-GEN"], "staff can inspect materials in authorized classrooms, but foreign and deleted records remain hidden");
 
 console.log("TASK-636 getStudyMaterials local contract: audience, explicit publication state, future-date and deleted-record guards passed.");
 
@@ -724,23 +724,42 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   assert.throws(()=>deleteContext.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",postId:"POST-1"}),/RESOURCE_SCOPE_DENIED/);
   assert.equal(postMutation,false,"foreign post is not soft-deleted by a department-scoped administrator");
 
-  let savedMaterial=null;
+  let savedMaterial=null, assignedOfferCalls=0;
   const materialContext = {
     SPREADSHEET_ID:"LOCAL",
     SpreadsheetApp:{openById:()=>({})},
     getVerifiedTaskIdentity_:()=>({authorized:true,userId:"TEACHER-1",role:"Profesor"}),
-    assertTaskServiceClassroomAccess:()=>{throw new Error("REDUNDANT_CLASSROOM_AUTHORIZATION");},
+    getTaskServiceClassroomById:id=>id==="CLASS-1"?["CLASS-1","OFFER-1","","","","","TEACHER-1","Activa"]:null,
+    normalizeString:value=>String(value||"").trim().toLowerCase(),
+    assertTaskServiceTeacherAssignedToOffer:(userId,offerId)=>{assert.equal(userId,"TEACHER-1");assert.equal(offerId,"OFFER-1");assignedOfferCalls++;},
+    isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
     getOrCreateSheet:()=>{materialSheetAccess=true;return {getLastRow:()=>0,appendRow:row=>{savedMaterial=row;}};},
-    Utilities:{getUuid:()=>"MAT-1"},
-    DriveApp:{getFileById:()=>{driveAccess=true;throw new Error("REDUNDANT_DRIVE_LOOKUP");}}
+    Utilities:{getUuid:()=>"MAT-1"}
   };
   vm.runInNewContext(extractFunction("createStudyMaterial")+"\nthis.run=createStudyMaterial;",materialContext);
-  const created=materialContext.run({_verifiedUserId:"TEACHER-1",_verifiedRole:"Profesor",aulaId:"General",titulo:"General material",archivoUrl:"https://example.test/file",driveId:"FILE-1"});
+  assert.throws(()=>materialContext.run({_verifiedUserId:"TEACHER-1",_verifiedRole:"Profesor",aulaId:"General",titulo:"General material",archivoUrl:"https://example.test/file"}),/Solo administración/);
+  assert.equal(materialSheetAccess,false,"teachers cannot publish institution-wide materials");
+  const created=materialContext.run({_verifiedUserId:"TEACHER-1",_verifiedRole:"Profesor",aulaId:"CLASS-1",titulo:"Class material",archivoUrl:"https://example.test/file"});
   assert.equal(created.status,"success");
-  assert.equal(materialSheetAccess,true,"authorized material is persisted without another classroom check");
-  assert.equal(driveAccess,false,"material registration does not make an extra Drive existence call");
-  assert.equal(savedMaterial[1],"General");assert.equal(savedMaterial[10],"TEACHER-1");
-  assert.ok(Number.isFinite(Date.parse(savedMaterial[11])),"material records capture publication date and author");
+  assert.equal(materialSheetAccess,true,"assigned teacher can publish without a second RBAC/ABAC pass");
+  assert.equal(assignedOfferCalls,1,"teacher assignment is checked once for the target classroom");
+  assert.equal(savedMaterial[1],"CLASS-1");assert.equal(savedMaterial[10],"TEACHER-1");
+  assert.ok(savedMaterial[11] instanceof Date,"material records capture publication date and author");
+
+  const materialRows=[["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"],
+    ["MAT-OWN","CLASS-1","Own","","Documento","I","U1","T1","","","TEACHER-1",new Date(),"Activo"],
+    ["MAT-OTHER","CLASS-1","Other","","Documento","I","U1","T1","","","TEACHER-2",new Date(),"Activo"]];
+  const deleteContext={
+    SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>({})},
+    getVerifiedTaskIdentity_:()=>({authorized:true,userId:"TEACHER-1",role:"Profesor"}),
+    isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+    getOrCreateSheet:()=>({getDataRange:()=>({getValues:()=>materialRows}),getRange:(row,col)=>({setValue:value=>{materialRows[row-1][col-1]=value;}})})
+  };
+  vm.runInNewContext(extractFunction("deleteStudyMaterial")+"\nthis.run=deleteStudyMaterial;",deleteContext);
+  assert.equal(deleteContext.run({materialId:"MAT-OWN"}).status,"success");
+  assert.equal(materialRows[1][12],"Eliminado","teacher can soft-delete their own material");
+  assert.throws(()=>deleteContext.run({materialId:"MAT-OTHER"}),/no pertenece al docente/);
+  assert.equal(materialRows[2][12],"Activo","teacher cannot delete another author's material");
 }
 console.log("TASK-153 administrative content mutation scope contracts passed.");
 

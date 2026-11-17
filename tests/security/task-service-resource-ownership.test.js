@@ -171,15 +171,17 @@ console.log("TASK-153 staff/student department intersection contract passed.");
   for (const name of ["getVirtualClassrooms","getPosts"]) {
     assert(extractFunction(name).includes("getTaskServiceAuthorizedClassrooms(payload)"), name + " retains parent classroom filtering");
   }
-  assert.doesNotMatch(extractFunction("getStudyMaterials"),/getTaskServiceAuthorizedClassrooms\(/,
-    "study material listing relies on the action RBAC and does not revalidate every classroom");
+  assert(extractFunction("getStudyMaterials").includes("getTaskServiceAuthorizedClassrooms(payload)"),
+    "study material listing remains limited to authorized classrooms");
   for (const name of ["createPost","updatePost","deletePost"]) {
     assert(extractFunction(name).includes("assertTaskServiceClassroomAccess(payload"), name + " retains post classroom ownership");
   }
-  for (const name of ["createStudyMaterial","deleteStudyMaterial"]) {
-    assert.doesNotMatch(extractFunction(name),/assertTaskServiceClassroomAccess\(|getTaskServiceAuthorizedClassrooms\(/,
-      name + " relies on the action-level role permission instead of another classroom authorization");
-  }
+  assert(extractFunction("createStudyMaterial").includes("getTaskServiceClassroomById(classId)"),
+    "material publication validates its target classroom relationship");
+  assert(extractFunction("createStudyMaterial").includes("assertTaskServiceTeacherAssignedToOffer"),
+    "teacher publication requires an active assignment to the classroom offer");
+  assert(extractFunction("deleteStudyMaterial").includes("String(row[10] || "").trim() !== userId"),
+    "teacher deletion is limited to materials authored by the verified actor");
 
   const classroomRows = [
     ["AulaID","OfertaID","Nombre","Grado","Seccion","Asignatura","ProfesorID","Estado"],
