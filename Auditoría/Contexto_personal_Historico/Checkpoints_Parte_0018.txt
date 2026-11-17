@@ -91,3 +91,23 @@ Commits de implementación/verificación:
 HEAD verificado: 0903eed7b9b4baf4168ea5213d1ebcad6fdabe99 en NG_beta_0.0.0.1_work.
 Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e integridad referencial. Su dependencia F25-Task02 queda satisfecha; deben verificarse antes de implementar las políticas de identidad canónica y de merge para no fusionar personas por nombre ni escribir referencias huérfanas.
 ===============================================================================
+
+=============================================================================
+### C1.794 — IMA-EXEC-20261117-F25-TASK03-01
+- **Checkpoint anterior:** C1.793 — F25-TASK02, perfiles de mapeo de importación.
+- **HEAD inicial verificado:** a8652a1e62a6dfa6484c479d65968b9916758d67 (C1.793).
+- **HEAD de cierre de tarea:** 2813582fca3eafcda7352ecc668061e30ce8f61d.
+- **Tarea:** F25-TASK03 — detección avanzada de duplicados e integridad referencial antes de importar.
+- **Resultado:** completada en código y verificaciones locales. La beta desplegada queda pendiente en BETA-FUNC-114, sin bloquear el cierre de implementación.
+- **Implementación:**
+  - ACCOUNTING normaliza y compara DNI/correo, códigos institucionales, PersonaId/UserId y claves naturales de cursos; clasifica coincidencias exactas y posibles. Las coincidencias por nombre requieren revisión manual y excluyen la fila.
+  - UI permite RECHAZAR, ACTUALIZAR y VINCULAR; ACTUALIZAR exige match exacto con el mismo ID canónico y snapshot/hash vigente; VINCULAR solo reconoce un ID canónico ya confirmado e idéntico y omite una escritura redundante. La política elegida y el conteo de vinculados se registran en la auditoría.
+  - USER/ACADEMIC entregan snapshots de duplicados sin revelar DNI/correo; ACADEMIC valida referencias opcionales de grado/sección, departamento activo y expediente activo.
+  - USER, ACADEMIC y ACCOUNTING revalidan claves naturales dentro de LockService antes de escribir, reduciendo carreras entre preflight y commit. Se preservan idempotencia, hash de destino y compensación.
+- **Archivos modificados:** backend/accounting-service/Code.gs; backend/user-service/Code.gs; backend/academic-service/Code.gs; js/accounting.js; tests/security/accounting-import-semantic-preflight.test.js; tests/security/accounting-remote-target-snapshot.test.js; tests/security/accounting-migration-writer.test.js; tests/security/academic-migration-writer.test.js; tests/security/user-migration-writer.test.js (nuevo); tests/security/accounting-migration-import-ui.test.js; .github/workflows/identity-mapping-contract.yml; beta_test.txt; Auditoría/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md; pendientes/Dirección/Pendientes.md.
+- **Verificaciones locales/CI:** Accounting Import Preflight Contract PASS, run 44010695701 (Node.js 24; semantic preflight, snapshots y referencias, importación parcial, idempotencia y UI); USER identity/migration writer PASS, run 44010128015; Academic migration writer PASS, run 44009939154; Accounting migration writer PASS, run 44009952334; remote USER/ACADEMIC snapshots y referencias PASS, run 44010452335; UI Accessibility PASS, run 44010601192. La sintaxis de los servicios modificados fue comprobada por los workflows respectivos.
+- **CI global:** Department Scope Contract mantiene un fallo ajeno a F25-TASK03 en el paso “Run Phase 22 document management suite contract”; los pasos previos de ámbito y los contratos específicos de importación pasan. No se modificó ese módulo fuera del alcance.
+- **Beta pendiente:** BETA-FUNC-114 valida integración desplegada entre ACCOUNTING, USER y ACADEMIC, datos sintéticos, catálogos activos, HMAC y escenarios concurrentes.
+- **Revisión de seguridad:** sin fusión automática por nombre; sin exposición de DNI/correo en snapshots; escrituras duplicadas bloqueadas bajo lock; vínculo solo con identidad canónica coincidente; filas rechazadas excluidas antes de escritura; sin despliegue ni datos reales.
+- **Siguiente tarea elegible:** F26-TASK01 — motor central de precedencia y configuración jerárquica. Revisar dependencias, estado real de USER/Developer y contratos de configuración antes de editar.
+=============================================================================
