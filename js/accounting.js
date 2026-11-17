@@ -3172,7 +3172,7 @@ function renderMigrationImportModule(container) {
       const response = Object.assign({}, responseData || {}, { status: envelope && envelope.status || responseData && responseData.status || "error" });
       const results = document.getElementById("migration-import-results");
       if (results) results.textContent = response && response.status === "success" ?
-        "Importación completada. Registros insertados/actualizados: " + Number(response.registrosEscritos || 0) :
+        "Importación completada. Registros insertados/actualizados: " + Number(response.registrosEscritos || 0) + " · vinculados sin escritura: " + Number(response.registrosVinculados || 0) :
         "La importación no se completó: " + String(response && (response.message || response.code) || "Error desconocido");
       migrationImportState.preview = null;
       migrationImportState.payload = null;
@@ -3199,8 +3199,8 @@ function renderMigrationImportResult(response) {
   const errors = Array.isArray(response.errores) ? response.errores : [];
   const warnings = Array.isArray(response.advertencias) ? response.advertencias : [];
   const valid = Number(response.filasValidas || 0), failed = Number(response.filasFallidas || 0);
-  let html = '<div class="space-y-3"><div class="grid grid-cols-2 md:grid-cols-4 gap-2">' +
-    [['Filas', response.totalFilas], ['Válidas', valid], ['Con errores', failed], ['Coincidencias', Array.isArray(response.duplicateMatches) ? response.duplicateMatches.length : 0], ['Advertencias', warnings.length]].map(item =>
+  let html = '<div class="space-y-3"><div class="grid grid-cols-2 md:grid-cols-6 gap-2">' +
+    [['Filas', response.totalFilas], ['Válidas', valid], ['Con errores', failed], ['Coincidencias', Array.isArray(response.duplicateMatches) ? response.duplicateMatches.length : 0], ['Vinculadas', Number(response.filasVinculadas || 0)], ['Advertencias', warnings.length]].map(item =>
       '<div class="rounded-xl border border-slate-200 bg-white p-3"><div class="text-[10px] font-bold uppercase text-slate-500">' +
       migrationImportEscape(item[0]) + '</div><div class="mt-1 text-lg font-black text-slate-900">' + migrationImportEscape(item[1] || 0) + '</div></div>').join("") +
     '</div><p class="text-xs font-bold ' + (response.validForImport ? "text-emerald-700" : response.validForPartialImport ? "text-amber-700" : "text-rose-700") + '">' +
