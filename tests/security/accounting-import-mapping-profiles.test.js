@@ -117,6 +117,7 @@ function validPayload(overrides = {}) {
   assert.equal(h.context.saveImportMappingProfile(validPayload({ sourceHeaders: ["ID_LEGADO","DNI","DNI"] })).code, "IMPORT_MAPPING_PROFILE_HEADERS_INVALID");
   assert.equal(h.context.saveImportMappingProfile(validPayload({ columnaMapeo: { identificador: "MISSING", campos: { PersonaID: "DNI" } } })).code, "IMPORT_MAPPING_PROFILE_MAPPING_INVALID");
   assert.equal(h.context.saveImportMappingProfile(validPayload({ destinoModulo: "ACCOUNTING" })).code, "MIGRATION_DESTINATION_MISMATCH");
+  assert.equal(h.context.saveImportMappingProfile(validPayload({ columnaMapeo: { identificador: "ID_LEGADO", campos: { CodigoInstitucional: "ID_LEGADO" } } })).code, "IMPORT_MAPPING_PROFILE_REQUIRED_FIELDS_MISSING");
   assert.equal(h.rows.length, 1, "invalid profiles must not write");
 }
 
