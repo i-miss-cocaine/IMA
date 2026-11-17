@@ -9,11 +9,21 @@ on:
       - 'tests/security/academic-migration-writer.test.js'
       - 'tests/security/academic-multilevel-file-validation.test.js'
       - 'tests/security/academic-student-document-private-storage.test.js'
+      - 'backend/user-service/Code.gs'
+      - 'teacher-dashboard.html'
+      - 'js/teacher.js'
+      - 'tests/security/academic-teacher-justification-abac.test.js'
+      - 'tests/security/academic-absence-justification-canonical.test.js'
   pull_request:
     branches: [NG_beta_0.0.0.1_work]
     paths:
       - 'backend/academic-service/Code.gs'
       - 'tests/security/academic-service-single-auth-context.test.js'
+      - 'backend/user-service/Code.gs'
+      - 'teacher-dashboard.html'
+      - 'js/teacher.js'
+      - 'tests/security/academic-teacher-justification-abac.test.js'
+      - 'tests/security/academic-absence-justification-canonical.test.js'
 jobs:
   local-contracts:
     runs-on: ubuntu-latest
@@ -24,6 +34,8 @@ jobs:
           node-version: '22'
       - run: node --check < backend/academic-service/Code.gs
       - run: node tests/security/academic-service-single-auth-context.test.js
+      - run: node tests/security/academic-teacher-justification-abac.test.js
+      - run: node tests/security/academic-absence-justification-canonical.test.js
       - run: node tests/security/academic-interservice-replay-guard.test.js
       - run: node tests/security/academic-migration-writer.test.js
       - run: node tests/security/academic-multilevel-file-validation.test.js
