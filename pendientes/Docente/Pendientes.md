@@ -672,7 +672,7 @@
 ---
 
 <!-- ID: TASK-027 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
-### [ ] [TASK-027] Control de concurrencia e idempotencia en circulación bibliotecaria
+### [x] [TASK-027] Control de concurrencia e idempotencia en circulación bibliotecaria
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección F (PT-20-24, PT-20-25) y Plan de Trabajo P0
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Integridad transaccional, prevención de doble asignación de ejemplares y protección de reintentos)
@@ -693,7 +693,12 @@
 - **Criterios de Aceptación:**
   - Dos solicitudes simultáneas sobre el mismo ejemplar resultan en un préstamo exitoso y un rechazo controlado.
   - Los reintentos de red no duplican las filas de préstamo en `BibliotecaPrestamos`.
-- **Estado:** Pendiente
+- **Estado:** [x] Completada en código, revisión y CI; validación de concurrencia real en beta pendiente.
+- **Evidencia:** commits `a5774ef2f16008579a48055a943d734d4c32ef37` (transacciones y permisos), `bfa405b863386ca114c2e24a043919662aab9c8e` (contrato local), `034567c4f698d622de7d74f0fac27b3c00cc227b` (rechazo de esquema malformado) y `ee53929533621905f1889ccd63dad2a3bf896230` (contención de lock y carreras programadas).
+- **Cierre técnico:** `processLibraryLoan` y `reserveLibraryBook` adquieren ScriptLock antes de leer estado; vuelven a leer el ejemplar bajo el lock; rechazan ejemplares ambiguos/no disponibles; usan clave idempotente por operación, institución, ejemplar, usuario y fecha (o clave explícita validada); registran ledger de idempotencia; actualizan préstamo/ejemplar/ledger con rollback compensatorio ante fallos; liberan lock en finally. Identidad y permiso del operador se verifican server-side.
+- **Contrato Node.js 24:** run `44080687260` SUCCESS; sintaxis ACCOUNTING y test PASS; contrato ejecutado PASS. Casos: préstamo/devolución/reserva, reintentos duplicados, colisión de idempotency key, usuario sin sesión, rol denegado, esquema de ejemplares inválido, lock ocupado, contención reentrante y dos solicitudes programadas sobre el mismo ejemplar; una operación gana y la otra se rechaza, sin duplicar filas.
+- **Límite de evidencia:** la prueba local modela contención determinista y ordenamiento de solicitudes; no sustituye una prueba simultánea con LockService real en Apps Script desplegado.
+- **Siguiente:** BETA-FUNC-117 para dos operadores sintéticos y un mismo ejemplar en el despliegue de prueba.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3568-3600; clave TASK-071; asignación única: Docente -->
 

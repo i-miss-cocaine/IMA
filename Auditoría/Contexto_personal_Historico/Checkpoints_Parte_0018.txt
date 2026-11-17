@@ -156,3 +156,20 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Beta pendiente:** BETA-FUNC-116; validar endpoints Apps Script desplegados, permisos, ámbitos reales, auditoría y concurrencia.
 - **Siguiente revisión:** determinar próxima tarea elegible de PM-02 según dependencias vigentes; F29-TASK17 no es elegible mientras F29-Task13 permanezca pendiente.
 =============================================================================
+
+
+=============================================================================
+### C1.797 — IMA-EXEC-20261117-TASK027-LIBRARY-CIRCULATION-01
+- **Checkpoint anterior:** C1.796 — TASK-060, integración jerárquica ACADEMIC/ACCOUNTING/UI.
+- **HEAD inicial observado:** a5774ef2f16008579a48055a943d734d4c32ef37 ya contenía la implementación transaccional; se verificó su continuidad y se amplió el contrato local.
+- **HEAD de cierre de código/pruebas:** ee53929533621905f1889ccd63dad2a3bf896230.
+- **Tarea:** TASK-027 — Control de concurrencia e idempotencia en circulación bibliotecaria.
+- **Resultado:** completada en código, revisión y CI; validación de LockService/Sheets reales pendiente en beta.
+- **Archivos principales:** backend/accounting-service/Code.gs; tests/security/accounting-library-circulation-concurrency.test.js; .github/workflows/library-circulation-contract.yml.
+- **Implementación:** préstamos/devoluciones y reservas se serializan con ScriptLock; el ejemplar se vuelve a leer bajo lock; se comprueba identidad y permiso del operador; el ledger usa clave idempotente con institución, tipo de operación, ejemplar, usuario y fecha o clave explícita validada; conflictos se rechazan; los cambios coordinados cuentan con rollback compensatorio y liberación de lock en finally.
+- **Pruebas:** contrato Node.js 24 run 44080687260 SUCCESS. Pasos: sintaxis ACCOUNTING, sintaxis del contrato y ejecución del contrato PASS. Casos cubiertos: préstamo, devolución, reserva, reintentos, duplicados, colisión de claves, esquema de ejemplar inválido, sesión/rol denegados, lock timeout, contención reentrante y solicitudes programadas concurrentes; sin duplicación de filas.
+- **Alcance de evidencia:** la concurrencia local se simula mediante un contendor reentrante y solicitudes programadas; no se declara probada la semántica real de LockService ni la consistencia de Sheets desplegados.
+- **Beta:** BETA-FUNC-117 pendiente; prueba con dos operadores y el mismo EjemplarID en entorno desplegado.
+- **Commits:** a5774ef2f16008579a48055a943d734d4c32ef37; bfa405b863386ca114c2e24a043919662aab9c8e; 034567c4f698d622de7d74f0fac27b3c00cc227b; ee53929533621905f1889ccd63dad2a3bf896230.
+- **Siguiente tarea:** continuar triage topológico PM-02. TASK-696 está bloqueada por TASK-153/T153-S01, F29-TASK17 y F37-TASK10; no iniciar su implementación ni migración tenant hasta resolver esas puertas.
+=============================================================================

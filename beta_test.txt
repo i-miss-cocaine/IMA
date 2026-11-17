@@ -1783,3 +1783,22 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** hashes/IDs de despliegue, configuración saneada de endpoint, resultados anonimizados de cada rol/departamento, códigos de rechazo, versiones y eventos de auditoría, capturas UI sin datos personales y resultados de concurrencia.
 - **Estado:** Pendiente de validación beta desplegada; los contratos Node.js y GitHub Actions PASS no prueban despliegues ni permisos reales de Apps Script/Sheets/Drive.
 =============================================================================
+
+
+=============================================================================
+### BETA-FUNC-117 — TASK-027 — Concurrencia e idempotencia de circulación bibliotecaria
+
+- **Precondiciones:** despliegue ACCOUNTING actualizado en un Spreadsheet de prueba; dos operadores sintéticos con permiso de Bibliotecario; dos cuentas prestatarias sintéticas; un ejemplar disponible y otro en préstamo; respaldar las hojas de prueba.
+- **Pasos:**
+  1. Enviar desde dos sesiones de operador, prácticamente al mismo tiempo, una solicitud de préstamo para el mismo EjemplarID y usuarios distintos.
+  2. Confirmar que solo una solicitud registra el préstamo y cambia el ejemplar a `on_loan`; la otra recibe rechazo controlado por indisponibilidad/estado ya cambiado.
+  3. Reintentar la primera solicitud con la misma clave idempotente; confirmar respuesta duplicada sin nueva fila en BibliotecaPrestamos ni cambio adicional de estado.
+  4. Repetir con reserva concurrente para el mismo ejemplar/usuario; confirmar una sola reserva activa y una sola operación idempotente.
+  5. Devolver el ejemplar y repetir la misma clave de devolución; confirmar que no se modifica dos veces el historial.
+  6. Probar un lock ocupado/timeout y confirmar que no se crean filas ni se modifica el ejemplar.
+  7. Verificar claves separadas por institución, operación, ejemplar y prestatario; intentar reutilizar una clave para otra entidad y confirmar conflicto.
+  8. Confirmar actor, fecha, institución, estado y filas de ledger; comprobar que no se alteran préstamos históricos.
+- **Resultado esperado:** una única transición válida por ejemplar, reintentos idempotentes, rollback ante fallos y ausencia de doble asignación.
+- **Evidencia requerida:** IDs sintéticos, recuentos antes/después, resultados de ambas solicitudes, OperationKey parcialmente redactada, actor sintético y eventos de auditoría.
+- **Estado:** Pendiente de validación con LockService y Sheets reales en beta; los contratos Node.js locales no simulan infraestructura desplegada.
+=============================================================================

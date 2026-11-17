@@ -4036,3 +4036,14 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Hierarchical Configuration Contract 44078085385 SUCCESS (Node 24: sintaxis de cuatro servicios/UI/contratos, motor USER, UI y consumidores ACADEMIC/ACCOUNTING). Department Reference Consumers 44078085217 SUCCESS; UI Accessibility and Metadata 44077873551 SUCCESS.
 - Department Scope 44078085205 falla en Phase22 document management; el mismo paso ya falla en 44077873593. No se alteró Phase22.
 - BETA-FUNC-116 pendiente de validación real de despliegues, endpoint IMA_USER_SERVICE_URL, Apps Script/Sheets, roles, membresías, departamentos y concurrencia.
+
+
+[2026-11-17] C1.797 — TASK-027, concurrencia e idempotencia de circulación bibliotecaria
+- Se implementó ScriptLock en processLibraryLoan y reserveLibraryBook antes de la lectura/decisión de disponibilidad; la lectura se realiza dentro de la sección crítica.
+- Se verifica identidad/rol del operador y se limita la operación a roles autorizados.
+- Se agregó ledger de idempotencia con ámbito institución + operación + ejemplar + prestatario + fecha; se rechazan claves reutilizadas para otra operación/entidad.
+- Las escrituras de préstamo/devolución y ledger usan compensación ante fallos; locks liberados en finally. Esquemas requeridos validados y ejemplares duplicados/ambiguos rechazados.
+- Contrato Node.js 24 run 44080687260 SUCCESS: sintaxis ACCOUNTING/test PASS y contrato PASS; incluye reintentos, préstamo/devolución/reserva, conflictos de clave, rol/sesión, schema mismatch, lock timeout, contención reentrante y solicitudes programadas.
+- Limitación explícita: el mock local verifica exclusión/contención y ordenamiento determinista, no el comportamiento real de LockService/Sheets desplegados. BETA-FUNC-117 pendiente.
+- Commits de implementación y pruebas: a5774ef2f16008579a48055a943d734d4c32ef37, bfa405b863386ca114c2e24a043919662aab9c8e, 034567c4f698d622de7d74f0fac27b3c00cc227b, ee53929533621905f1889ccd63dad2a3bf896230.
+- Siguiente revisión elegible PM-02: evaluar TASK-694/695/696 y F29-TASK17 contra dependencias originales; TASK-696 no elegible mientras TASK-153/T153-S01 y F29-TASK17/F37-TASK10 sigan pendientes/bloqueadas.
