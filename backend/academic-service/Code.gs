@@ -967,7 +967,7 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
         !Number.isInteger(Number(item.rowIndex)) || Number(item.rowIndex) < 0 ||
         typeof item.value !== "string" || !item.value.trim() || item.value.length > 180) { invalidDuplicate = true; return; }
     duplicateRequests.push({ field: String(item.field), matchType: String(item.matchType), rowIndex: Number(item.rowIndex),
-      normalized: String(item.value).normalize ? String(item.value).normalize("NFKC").trim().toLowerCase() : String(item.value).trim().toLowerCase() });
+      normalized: (function(value){var v=String(value).normalize?String(value).normalize("NFKC").trim().toLowerCase():String(value).trim().toLowerCase();return v.replace(/\s+/g,"");})(item.value) });
   });
   if (invalidDuplicate) return { status: "error", code: "MIGRATION_SNAPSHOT_DUPLICATE_KEY_INVALID" };
   var sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("ExpedientesEstudiantes");
@@ -993,7 +993,7 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
     if (!id) continue;
     duplicateRequests.forEach(function(request) {
       var raw = columnByField[request.field] === undefined ? "" : String(values[i][columnByField[request.field]] || "");
-      var candidate = raw.normalize ? raw.normalize("NFKC").trim().toLowerCase() : raw.trim().toLowerCase();
+      var candidate = raw.normalize ? raw.normalize("NFKC").trim().toLowerCase() : raw.trim().toLowerCase();candidate=candidate.replace(/\s+/g,"");
       if (candidate && candidate === request.normalized) duplicateMatches.push({
         rowIndex: request.rowIndex, targetId: id, field: request.field, matchType: request.matchType
       });
