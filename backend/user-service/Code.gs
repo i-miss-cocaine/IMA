@@ -1221,7 +1221,7 @@ function manageMigrationCredentialFromEditor_(input, revoke) {
   if (!/^[A-Za-z0-9._-]{1,64}$/.test(version)) {
     throw new Error("CREDENTIAL_PROVISIONING_VERSION_INVALID");
   }
-  if (!revoke && (secret.length < 32 || /\\s/.test(secret))) {
+  if (!revoke && (secret.length < 32 || /\s/.test(secret))) {
     throw new Error("CREDENTIAL_PROVISIONING_SECRET_INVALID");
   }
   if (!revoke && ["ACTIVE", "VERIFY_ONLY"].indexOf(requestedStatus) === -1) {
@@ -1231,7 +1231,7 @@ function manageMigrationCredentialFromEditor_(input, revoke) {
   var actor = "";
   try { actor = String(Session.getActiveUser().getEmail() || "").trim().toLowerCase(); }
   catch (actorError) { throw new Error("CREDENTIAL_PROVISIONING_ACTOR_UNAVAILABLE"); }
-  if (!actor || actor.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(actor)) {
+  if (!actor || actor.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(actor)) {
     throw new Error("CREDENTIAL_PROVISIONING_ACTOR_UNAVAILABLE");
   }
 

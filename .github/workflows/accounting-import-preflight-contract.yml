@@ -26,6 +26,7 @@ on:
       - tests/security/reusable-resource-xss-url-contract.test.js
       - tests/security/accounting-import-auth-router.test.js
       - tests/security/migration-hmac-credential-registry.test.js
+      - tests/security/migration-hmac-credential-provisioning.test.js
       - tests/security/interservice-credential-usage-audit.test.js
       - tests/security/academic-interservice-replay-guard.test.js
       - tests/security/developer-interservice-credential-registry.test.js
@@ -82,6 +83,8 @@ jobs:
         run: node tests/security/interservice-credential-usage-audit.test.js
       - name: Run USER migration HMAC credential registry and replay protection contract
         run: node tests/security/migration-hmac-credential-registry.test.js
+      - name: Run editor-only interservice credential provisioning and recovery contract
+        run: node tests/security/migration-hmac-credential-provisioning.test.js
       - name: Run ACADEMIC interservice HMAC verification and replay guard contract
         run: node tests/security/academic-interservice-replay-guard.test.js
       - name: Run DEVELOPER interservice credential registry, rotation and revocation contract
