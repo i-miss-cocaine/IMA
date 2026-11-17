@@ -14995,63 +14995,72 @@ function getStudentDocuments(payload) {
   if (versionSheet) ensureDocumentVersionHistorySchema_(versionSheet);
   const verRows = versionSheet ? versionSheet.getDataRange().getValues().slice(1) : [];
   const candidates = rows.filter(function(row) {
-    const rowExpId = String(row[1] || "").trim().toLowerCase();
-    const rowSolId = String(row[2] || "").trim().toLowerCase();
-    if (cleanExpId && cleanSolId) return rowExpId === cleanExpId && rowSolId === cleanSolId;
-    if (cleanExpId) return rowExpId === cleanExpId;
-    if (cleanSolId) return rowSolId === cleanSolId;
-    return true;
+    const rowExpId=String(row[1]||"").trim().toLowerCase(),rowSolId=String(row[2]||"").trim().toLowerCase();
+    if(cleanExpId&&cleanSolId)return rowExpId===cleanExpId&&rowSolId===cleanSolId;
+    if(cleanExpId)return rowExpId===cleanExpId;
+    return rowSolId===cleanSolId;
   });
-  const filtered = [];
-  const denied = [];
-  for (let i = 0; i < candidates.length; i++) {
-    const access = assertStudentDocumentScopeAccess_(request, ss, documentSheet, candidates[i], expSheet);
-    if (access && access.authorized) filtered.push(candidates[i]);
-    else denied.push(access || { authorized: false, code: "RESOURCE_SCOPE_DENIED" });
+  const applications=ss.getSheetByName("SolicitudesAdmision");
+  const applicationRows=applications?applications.getDataRange().getValues().slice(1):[];
+  const applicationBindings=Object.create(null);
+  applicationRows.forEach(function(application){
+    const id=String(application[0]||"").trim();if(!id)return;
+    const key="$"+id,entry=applicationBindings[key]||(applicationBindings[key]={count:0,expedienteId:""});
+    entry.count++;entry.expedienteId=String(application[14]||"").trim();
+  });
+  const inconsistentBinding=candidates.some(function(row){
+    const rowExp=String(row[1]||"").trim(),rowSol=String(row[2]||"").trim();
+    if(!rowExp||!rowSol)return false;
+    const binding=applicationBindings["$"+rowSol];
+    return !binding||binding.count!==1||binding.expedienteId!==rowExp;
+  });
+  if(inconsistentBinding)return {status:"error",code:"RESOURCE_OWNER_UNRESOLVED",message:"No existen documentos disponibles."};
+
+  let requestAccess=null;
+  if(cleanExpId&&cleanSolId){
+    requestAccess=assertStudentRequestScopeAccess_(request,ss,cleanExpId,cleanSolId);
+  }else if(cleanExpId){
+    const expedienteRows=expSheet?expSheet.getDataRange().getValues().slice(1):[];
+    const matches=expedienteRows.filter(function(row){return String(row[0]||"").trim().toLowerCase()===cleanExpId;});
+    if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen documentos disponibles."};
+    requestAccess=assertStudentExpedienteScopeAccess_(request,ss,expSheet,matches[0]);
+  }else{
+    requestAccess=assertStudentRequestScopeAccess_(request,ss,"",cleanSolId);
   }
-  if (explicitTarget && denied.length) {
-    const hasReferenceIntent = Object.prototype.hasOwnProperty.call(request, "referenceRequestedFields") ||
-      Object.prototype.hasOwnProperty.call(request, "referenceDocumentIds");
-    if (!hasReferenceIntent) {
-      return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
+  if(!requestAccess||requestAccess.authorized!==true){
+    const hasReferenceIntent=Object.prototype.hasOwnProperty.call(request,"referenceRequestedFields")||Object.prototype.hasOwnProperty.call(request,"referenceDocumentIds");
+    if(!cleanExpId||cleanSolId||!hasReferenceIntent||!candidates.length||String(requestAccess&&requestAccess.code||"")!=="RESOURCE_SCOPE_DENIED"||
+       candidates.some(function(row){return String(row[1]||"").trim().toLowerCase()!==cleanExpId;})){
+      return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"No existen documentos disponibles dentro del ámbito autorizado."};
     }
-    if (!cleanExpId || cleanSolId || filtered.length || denied.length !== candidates.length || !candidates.length ||
-        denied.some(function(access) { return String(access.code || "") !== "RESOURCE_SCOPE_DENIED"; }) ||
-        candidates.some(function(row) { return String(row[1] || "").trim().toLowerCase() !== cleanExpId; })) {
-      return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
+    const requestedFields=Array.isArray(request.referenceRequestedFields)?request.referenceRequestedFields.map(function(value){return String(value||"").trim();}):[];
+    const requestedDocumentIds=Array.isArray(request.referenceDocumentIds)?request.referenceDocumentIds.map(function(value){return String(value||"").trim();}):[];
+    if(!requestedFields.length||!requestedDocumentIds.length||
+       requestedFields.some(function(field,index){return !field||ACADEMIC_DEPARTMENT_REFERENCE_SAFE_FIELDS_.indexOf(field)===-1||requestedFields.indexOf(field)!==index;})||
+       requestedDocumentIds.some(function(id,index){return !id||requestedDocumentIds.indexOf(id)!==index;})){
+      return {status:"error",code:"DEPARTMENT_REFERENCE_REQUEST_INVALID",message:"No existen documentos disponibles."};
     }
-    const expRows = expSheet ? expSheet.getDataRange().getValues().slice(1) : [];
-    const matchingExpedientes = expRows.filter(function(row) { return String(row[0] || "").trim().toLowerCase() === cleanExpId; });
-    if (matchingExpedientes.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
-    const requestedFields = Array.isArray(request.referenceRequestedFields) ? request.referenceRequestedFields.map(function(value) { return String(value || "").trim(); }) : [];
-    const requestedDocumentIds = Array.isArray(request.referenceDocumentIds) ? request.referenceDocumentIds.map(function(value) { return String(value || "").trim(); }) : [];
-    if (!requestedFields.length || !requestedDocumentIds.length ||
-        requestedFields.some(function(field, index) { return !field || ACADEMIC_DEPARTMENT_REFERENCE_SAFE_FIELDS_.indexOf(field) === -1 || requestedFields.indexOf(field) !== index; }) ||
-        requestedDocumentIds.some(function(id, index) { return !id || requestedDocumentIds.indexOf(id) !== index; })) {
-      return { status: "error", code: "DEPARTMENT_REFERENCE_REQUEST_INVALID", message: "No existen documentos disponibles." };
-    }
-    const candidateCounts = Object.create(null);
-    candidates.forEach(function(row) { const id = String(row[0] || "").trim(); if (id) candidateCounts[id] = (candidateCounts[id] || 0) + 1; });
-    if (requestedDocumentIds.some(function(id) { return candidateCounts[id] !== 1; })) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
-    const authorization = authorizeDepartmentReferenceReadViaUser_(request, String(matchingExpedientes[0][0] || "").trim(), requestedFields, requestedDocumentIds);
-    if (!authorization.authorized) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
-    const requestedSet = Object.create(null), fieldSet = Object.create(null);
-    authorization.approvedDocumentIds.forEach(function(id) { requestedSet[String(id)] = true; });
-    authorization.approvedFields.forEach(function(field) { fieldSet[String(field)] = true; });
-    const referenceDocuments = candidates.filter(function(row) { return !!requestedSet[String(row[0] || "").trim()]; }).map(function(row) {
-      const item = { documentoId: String(row[0]) };
-      if (fieldSet.tipoDocumento) item.tipoDocumento = row[3];
-      if (fieldSet.nombreArchivo) item.nombreArchivo = row[4];
-      if (fieldSet.fechaRecepcion) item.fechaRecepcion = row[7];
-      if (fieldSet.fechaVencimiento) item.fechaVencimiento = row[8];
-      if (fieldSet.estadoRevision) item.estadoRevision = row[9];
+    const candidateCounts=Object.create(null);
+    candidates.forEach(function(row){const id=String(row[0]||"").trim();if(id)candidateCounts[id]=(candidateCounts[id]||0)+1;});
+    if(requestedDocumentIds.some(function(id){return candidateCounts[id]!==1;}))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen documentos disponibles."};
+    const authorization=authorizeDepartmentReferenceReadViaUser_(request,cleanExpId,requestedFields,requestedDocumentIds);
+    if(!authorization.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen documentos disponibles."};
+    const requestedSet=Object.create(null),fieldSet=Object.create(null);
+    authorization.approvedDocumentIds.forEach(function(id){requestedSet[String(id)]=true;});
+    authorization.approvedFields.forEach(function(field){fieldSet[String(field)]=true;});
+    const referenceDocuments=candidates.filter(function(row){return !!requestedSet[String(row[0]||"").trim()];}).map(function(row){
+      const item={documentoId:String(row[0])};
+      if(fieldSet.tipoDocumento)item.tipoDocumento=row[3];
+      if(fieldSet.nombreArchivo)item.nombreArchivo=row[4];
+      if(fieldSet.fechaRecepcion)item.fechaRecepcion=row[7];
+      if(fieldSet.fechaVencimiento)item.fechaVencimiento=row[8];
+      if(fieldSet.estadoRevision)item.estadoRevision=row[9];
       return item;
     });
-    if (referenceDocuments.length !== authorization.approvedDocumentIds.length) return { status: "error", code: "RESOURCE_NOT_FOUND", message: "No existen documentos disponibles." };
-    return { status: "success", documents: referenceDocuments, referenceOnly: true, grantId: authorization.grantId, auditEventId: authorization.auditEventId };
+    if(referenceDocuments.length!==authorization.approvedDocumentIds.length)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existen documentos disponibles."};
+    return {status:"success",documents:referenceDocuments,referenceOnly:true,grantId:authorization.grantId,auditEventId:authorization.auditEventId};
   }
-  if (!explicitTarget && candidates.length && !filtered.length) return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
-  const mapped = filtered.map(function(row) {
+  const mapped = candidates.map(function(row) {
     const docId = String(row[0] || "");
     const fileId = String(row[5] || "").trim();
     const version = String(row[13] || "").trim();

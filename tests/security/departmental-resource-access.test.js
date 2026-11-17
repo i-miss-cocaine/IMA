@@ -82,6 +82,7 @@ const rows = {
     ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"],
     ["DOC-A","EXP-A","","ID","a.pdf","FILE-A","url-a","","","Aprobado","","","","1.1","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
     ["DOC-B","EXP-B","","ID","b.pdf","FILE-B","url-b","","","Aprobado","","","","1.0","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
+    ["DOC-B2","EXP-B","","ID","b2.pdf","FILE-B2","url-b2","","","Aprobado","","","","1.0","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
     ["DOC-S","EXP-STUDENT","","ID","s.pdf","FILE-S","url-s","","","Aprobado","","","","1.0","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"],
     ["DOC-MISMATCH","EXP-A","SOL-B","ID","x.pdf","FILE-X","url-x","","","Aprobado","","","","1.0","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
   ],
@@ -114,6 +115,7 @@ const context={
   logStructuredEvent:()=>{}
 };
 vm.runInNewContext(code + "\nthis.assertStudentExpedienteScopeAccess_=assertStudentExpedienteScopeAccess_;this.assertStudentDocumentScopeAccess_=assertStudentDocumentScopeAccess_;this.assertStudentRequestScopeAccess_=assertStudentRequestScopeAccess_;this.validateAcademicResponsibilityAndScopeAccess=validateAcademicResponsibilityAndScopeAccess;this.getStudentFile=getStudentFile;this.getStudentDocumentFile=getStudentDocumentFile;this.getStudentDocuments=getStudentDocuments;this.validateEvidenceFileAndPermissions=validateEvidenceFileAndPermissions;this.assertRecordOwnership=assertRecordOwnership;",context);
+const originalDocumentScopeCheck=context.assertStudentDocumentScopeAccess_;\ncontext.documentScopeAssertionCalls=0;\ncontext.assertStudentDocumentScopeAccess_=function(){context.documentScopeAssertionCalls++;return originalDocumentScopeCheck.apply(context,arguments);};
 const actor=token=>({sessionToken:token});
 const expSheet=makeSheet(rows.ExpedientesEstudiantes);
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("staffA"),ss,expSheet,rows.ExpedientesEstudiantes[1]).authorized,true);
@@ -194,9 +196,9 @@ assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"staffA",e
 assert.equal(context.getStudentDocuments({sessionToken:"staffA",expedienteId:"EXP-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"student",expedienteId:"EXP-STUDENT"}).documents,d=>d.documentoId),["DOC-S"]);
 assert.equal(context.getStudentDocuments(actor("admin")).code,"RESOURCE_SCOPE_DENIED","institution-wide scope does not bypass explicit target binding");
-assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"admin",expedienteId:"EXP-B"}).documents,d=>d.documentoId),["DOC-B"]);
+context.documentScopeAssertionCalls=0;\nconst adminDocuments=context.getStudentDocuments({sessionToken:"admin",expedienteId:"EXP-B"});\nassert.deepEqual(Array.from(adminDocuments.documents,d=>d.documentoId),["DOC-B","DOC-B2"]);\nassert.equal(context.documentScopeAssertionCalls,0,"document listing checks the target once, not once per attachment");
 assert.equal(context.getStudentDocuments(actor("auditor")).code,"RESOURCE_SCOPE_DENIED");
-assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"auditor",expedienteId:"EXP-B"}).documents,d=>d.documentoId),["DOC-B"]);
+assert.deepEqual(Array.from(context.getStudentDocuments({sessionToken:"auditor",expedienteId:"EXP-B"}).documents,d=>d.documentoId),["DOC-B","DOC-B2"]);
 assert.equal(context.getStudentFile({sessionToken:"auditor",expedienteId:"EXP-B"}).status,"success",
   "Auditor with institution-wide scope may read metadata without receiving direct Drive URLs");
 assert.equal(context.getStudentFile({sessionToken:"auditor",expedienteId:"EXP-B"}).studentFile.fotografiaUrl,"",
