@@ -259,7 +259,7 @@ function runMigrationOrchestrationTests(source){
 runMigrationOrchestrationTests(accounting);
 runMigrationEnvelopeFixture(user,"USER");
 runMigrationEnvelopeFixture(academic,"ACADEMIC");
-assert.ok(accounting.includes('getProperty("IMA_MIGRATION_HMAC_SECRET")'));
+assert.ok(accounting.includes('getProperty("IMA_MIGRATION_HMAC_SECRET" + suffix)'));
 assert.ok(accounting.includes('getProperty("IMA_USER_SERVICE_URL")'));
 assert.ok(accounting.includes('IMA_ACADEMIC_SERVICE_URL'));
 assert.ok(accounting.includes("function sendMigrationOwnerRequest_"));
