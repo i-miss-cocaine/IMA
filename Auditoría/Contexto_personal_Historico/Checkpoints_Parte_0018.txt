@@ -499,3 +499,31 @@ Estado:
 Siguiente tarea:
 - Auditar y simplificar PREVIEW/DOWNLOAD académico: localizar todos los consumidores, retirar el doble viaje de token/stream y las comprobaciones por adjunto que no sean necesarias para guardar/recuperar, conservando RBAC de la acción y acceso funcional al expediente cuando corresponda.
 ===============================================================================
+
+
+
+CHECKPOINT C1.811 — IMA-EXEC-20261117-ACADEMIC-DOCUMENT-READ-SINGLE-CHECK-01
+
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.810
+HEAD inicial: c6076cb5774951bd485ea8874356fa8343413583
+HEAD final de código/contratos: db2dcbbcfaab05770b587853fdec0e0f727c30db.
+
+**Motivo y explicación:** C1.808 exige que una acción académica se autorice en su punto de entrada y no encadene servicios para volver a pedir permisos. También prohíbe multiplicar comprobaciones por cada archivo de una misma consulta. La antigua integración de referencias interdepartamentales T153-S05/C1.688–C1.692 dependía de una llamada ACADEMIC→USER con HMAC para solicitar un permiso adicional. Esa ruta contradice el mandato actualizado y sus cierres históricos se suspenden.
+
+- **T153-S05 / C1.688–C1.692 reabierta:** sus hitos de consumidor ACADEMIC, consumidor ACCOUNTING y consola administrativa pasan de cierre histórico a **Revisión requerida**. Se mantiene la evidencia histórica, pero no se acepta la completitud anterior. El HEAD actual no contiene un consumidor de autorización de referencias en ACCOUNTING; la consola y los endpoints USER de concesiones permanecen en inventario para decidir su retirada o alcance separado. No se añadirán a CRUD académico.
+- **ACADEMIC / getStudentDocuments:** se sustituyó el bucle de assertStudentDocumentScopeAccess_ por una sola llamada a assertStudentRequestScopeAccess_ para el expediente/solicitud de la consulta. Los documentos se filtran localmente por ese destino; la cantidad de adjuntos no multiplica comprobaciones de ámbito. Se preserva la comprobación funcional del vínculo expediente/solicitud cuando se consulta por ambos identificadores.
+- **Autorización entre servicios:** se eliminó authorizeDepartmentReferenceReadViaUser_ y su fallback HMAC/UrlFetchApp.fetch de ACADEMIC. Si la comprobación local de ámbito deniega la consulta, se devuelve denegación sin solicitar concesión a USER. La ruta ordinaria ya no consume IMA_DEPARTMENT_REFERENCE_HMAC_SECRET ni crea un segundo viaje de autorización.
+- **PREVIEW/DOWNLOAD:** se confirmó que js/secretary.js consume el endpoint directo getStudentDocumentFile; el contrato comprueba que no se invoquen createStudentDocumentAccessToken ni getSecureDocumentStream. La autorización por rol sigue en el dispatcher y la consulta directa conserva el acceso funcional al expediente/documento. TASK-142 continúa en Revisión requerida hasta completar la auditoría de todas las superficies y controles de carga.
+- **Pruebas añadidas/actualizadas:** tests/security/departmental-resource-access.test.js ahora usa dos documentos del mismo expediente y afirma una sola comprobación de ámbito por consulta; tests/security/academic-department-reference-consumer.test.js afirma ausencia de llamada interservicio, denegación local y un único control por expediente/solicitud. Se conservan pruebas de no enumeración y aislamiento.
+- **GitHub Actions:** Department Reference Consumers Local Contract run 44148585899, Node.js 24: **SUCCESS**; incluye contratos ACADEMIC/ACCOUNTING, regresión de acceso departamental y sintaxis. Accounting Import Preflight run 44148585966: **SUCCESS**. Department Scope run 44148585716: **FAILURE** únicamente en el paso histórico Phase 22 (configureSchoolDocumentTemplate no existe en ACCOUNTING); los pasos ejecutados antes del fallo, incluido academic departmental resource access, academic single authorization context, almacenamiento privado y contratos de integridad, pasaron. No se atribuye ese fallo a C1.811.
+- **Verificación adicional:** Academic-Service single authorization context run 44147882353: **SUCCESS**; Task-Service security local contracts run 44147882405: **SUCCESS**. Los runners ejecutaron Node.js 24. CLI local NOT RUN; Apps Script/Sheets/Drive reales y despliegue beta NOT RUN.
+- **Archivos de código/prueba:** backend/academic-service/Code.gs; tests/security/departmental-resource-access.test.js; tests/security/academic-department-reference-consumer.test.js. No se modificó ACCOUNTING ni USER en esta iteración.
+- **Commits de código/contratos:** b38869c0d3469b73619f6fd5b32b20197b298de0; 40b5d4f6fba8016eb63258793080a0fc527343a2; 0bb3ea2389b5640f16ecf45b1b077d950ac5ac7e; e5fa4a25570300728bdfefe4ace8e52fc124a645; e298e0c972d4fbb2fe6e6f9ebdb3b1eb1630f787; 9e45acbb471c2795ef441f5c7779adf37cccebaa; db2dcbbcfaab05770b587853fdec0e0f727c30db.
+- **Estado:** C1.811 es un incremento parcial de TASK-142/mandato C1.808. No cierra TASK-142 ni las tareas reabiertas por C1.809. T153-S05/C1.688–C1.692 queda Revisión requerida. AUD-NG-086 sigue descartada para CRUD académico; AUD-NG-084 conserva su alcance histórico de migraciones.
+- **Rama base:** sin escrituras ni cambios.
+
+**Siguiente tarea elegible (C1.812):** inventariar uploadStudentDocument y las cargas de materiales/archivos/imágenes/videos. Reducir SHA-256, inspección binaria, deduplicación y verificaciones repetidas por adjunto cuando no sean necesarias para guardar/recuperar; conservar solo validaciones mínimas de procesamiento/almacenamiento, rol en el punto de entrada y captura de fecha/usuario/registro. Después revisar notas y materiales docentes con el mismo criterio.
+===============================================================================

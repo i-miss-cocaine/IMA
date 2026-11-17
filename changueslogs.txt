@@ -4166,3 +4166,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Task-Service security local contracts run 44144320345 SUCCESS; Academic-Service single authorization context run 44144146101 SUCCESS. CLI local NOT RUN; Apps Script/Sheets/Drive real NOT RUN.
 - Department Scope y Accounting Import Preflight mantienen fallos transversales ajenos: Phase22 pide configureSchoolDocumentTemplate ausente en ACCOUNTING; auditor-readonly-role espera formato de declaración que no coincide con el código compacto.
 - Las tareas reabiertas por C1.809 siguen en Revisión requerida; C1.810 es parcial y no cierra TASK-153/TASK-134/TASK-142/AUD-NG-158.
+
+
+[2026-11-17] C1.811 — consulta documental con autorización única y retirada de permiso interservicio ACADEMIC
+- getStudentDocuments valida el expediente/solicitud una sola vez por consulta; el número de adjuntos ya no multiplica comprobaciones de ámbito.
+- Se retiró de ACADEMIC el helper authorizeDepartmentReferenceReadViaUser_ y la llamada HMAC/UrlFetchApp para pedir permisos adicionales a USER. Las denegaciones locales ya no desencadenan una autorización remota.
+- T153-S05/C1.688–C1.692 se reabre como Revisión requerida; no se acepta su cierre histórico bajo el mandato C1.808. El código USER de concesiones queda en revisión, sin extenderlo al CRUD académico.
+- Secretary utiliza getStudentDocumentFile directo; el contrato mantiene ausencia de token/stream de un solo uso.
+- Department Reference Consumers run 44148585899 SUCCESS; Accounting Import Preflight 44148585966 SUCCESS; Department Scope 44148585716 FAILURE solo Phase22 histórico (configureSchoolDocumentTemplate ausente en ACCOUNTING); Academic single-auth 44147882353 SUCCESS.
+- CLI local, Apps Script/Sheets/Drive reales y despliegue beta NOT RUN. HEAD de código: db2dcbbcfaab05770b587853fdec0e0f727c30db.
+- Siguiente: simplificar cargas de documentos/materiales/imágenes/videos y retirar validaciones por adjunto no imprescindibles.
