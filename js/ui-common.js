@@ -3151,45 +3151,7 @@ window.saveDashboardSettingsModal = function() {
  * FASE 29 - GUIADO INTERACTIVO, VISOR DOCUMENTAL Y COMPARADOR DE ENTREGAS
  * =========================================================================== */
 
-window.__helpPreferenceCache = null;
-window.__helpPreferenceLoading = false;
-window.__helpPreferenceWaiters = [];
-window.__helpPreferenceSuppressNextSave = {};
-window.loadUserHelpPreferences_ = function(callback, forceRefresh) {
-    if (window.__helpPreferenceCache && !forceRefresh) { if (callback) callback(window.__helpPreferenceCache); return; }
-    if (window.__helpPreferenceLoading) { if (callback) window.__helpPreferenceWaiters.push(callback); return; }
-    window.__helpPreferenceLoading = true;
-    var settled = false;
-    var finish = function(map) {
-        if (settled) return;
-        settled = true;
-        window.__helpPreferenceCache = map;
-        window.__helpPreferenceLoading = false;
-        var waiters = window.__helpPreferenceWaiters.splice(0);
-        if (callback) callback(map);
-        waiters.forEach(function(fn) { try { fn(map); } catch (e) { console.warn('Help preference callback failed', e); } });
-    };
-    if (!window.sendApiRequest) { finish({}); return; }
-    var fallbackTimer = setTimeout(function() { finish({}); }, 1800);
-    window.sendApiRequest('getUserHelpPreferences', {}, function(res) {
-        clearTimeout(fallbackTimer);
-        var map = {};
-        if (res && res.status === 'success' && Array.isArray(res.preferences)) res.preferences.forEach(function(item) { map[item.tourKey] = item; });
-        finish(map);
-    });
-};
-window.persistHelpGuidePreference_ = function(tourKey, stepIndex, dismissed, callback, retry) {
-    if (!window.sendApiRequest) { if (callback) callback({status:'error',code:'HELP_PREFERENCE_API_UNAVAILABLE'}); return; }
-    window.loadUserHelpPreferences_(function(cache) {
-        var current = cache[tourKey] || {version:0,tourVersion:'1'};
-        var payload = {tourKey:tourKey,stepIndex:stepIndex,dismissed:!!dismissed,tourVersion:current.tourVersion||'1',expectedVersion:Number(current.version||0)};
-        window.sendApiRequest('saveUserHelpPreferences', payload, function(res) {
-            if (res && res.status === 'success') {
-                cache[tourKey] = {tourKey:tourKey,stepIndex:res.stepIndex,dismissed:res.dismissed,tourVersion:res.tourVersion,version:res.version};
-                window.__helpPreferenceCache = cache;
-                if (callback) callback(res);
-            } else if (res && res.code === 'USER_HELP_PREFERENCE_VERSION_CONFLICT' && !retry) {
-                window.__helpPreferenceCacheByUser = {};
+window.__helpPreferenceCacheByUser = {};
 window.__helpPreferenceLoadingByUser = {};
 window.__helpPreferenceWaitersByUser = {};
 window.__helpPreferenceSuppressNextSave = {};
