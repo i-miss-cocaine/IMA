@@ -81,7 +81,8 @@ function harness(options) {
   const source = fs.readFileSync("backend/accounting-service/Code.gs", "utf8");
   const names = ["libraryCirculationActor_", "libraryEnsureSheet_", "libraryOperationKey_", "libraryIdempotencyLookup_", "libraryAppendIdempotency_", "libraryRollbackRow_", "processLibraryLoan", "reserveLibraryBook"];
   const body = names.map(name => extractFunction(source, name)).join("\n");
-  new Function("context", "with(context){" + body + ";return true;}")(context);
+  const exposed = new Function("context", "with(context){" + body + ";return { processLibraryLoan: processLibraryLoan, reserveLibraryBook: reserveLibraryBook };}")(context);
+  Object.assign(context, exposed);
   return { context, sheets, stats: () => ({ held, releases }) };
 }
 
