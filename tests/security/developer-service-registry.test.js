@@ -147,7 +147,7 @@ assert.equal(h.sheets.CatalogoServicios.rows[1][0], "SVC-OLD", "legacy row must 
 assert.equal(h.sheets.CatalogoServicios.rows[2][0], "SVC-NEW");
 
 h = harness();
-assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-BAD", name: "Bad", permisosConcedidos: "read" }), /INVALID_SERVICE_PERMISSIONS/);
+assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-BAD", name: "Bad", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-BAD", permisosConcedidos: "read" }), /INVALID_SERVICE_PERMISSIONS/);
 assert.equal(Object.keys(h.sheets).length, 0, "invalid registration must not create or mutate the registry");
 h = harness();
 assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-NO-OWNER", name: "No owner" }), /SERVICE_OWNER_AND_SPREADSHEET_REQUIRED/);
