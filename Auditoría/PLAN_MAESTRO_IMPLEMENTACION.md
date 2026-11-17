@@ -456,7 +456,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | AUD-NG-078 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | registerServiceInstance, cuentaPropietaria, endpointUrl, spreadsheetAsociado, permisosConcedidos y proyecto Apps Script. | Exigir metadatos verificados y permisos de mínimo privilegio al registrar servicios | `pendientes/Otros/Pendientes.md` |
 | AUD-NG-082 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | doPost, ROLE_PERMISSIONS, authRole, verifySessionToken, registerServiceInstance y updateServiceStatus. | Exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente | `pendientes/Otros/Pendientes.md` |
 | AUD-NG-084 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | getAuthTokenSecret, AUTH_TOKEN_SECRET, SPREADSHEET_ID, customSecret y catálogo de credenciales. | Implementar gestión segura de secretos por servicio con rotación y revocación | `pendientes/Otros/Pendientes.md` |
-| AUD-NG-086 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | verifyInterServiceEnvelope, CatalogoServicios, permisosConcedidos, sourceService, targetService, action y versión del protocolo. | Aplicar autorización por emisor, receptor, acción y versión de contrato | `pendientes/Otros/Pendientes.md` |
+| AUD-NG-086 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | verifyInterServiceEnvelope, CatalogoServicios, permisosConcedidos, sourceService, targetService, action y versión del protocolo. | **DESCARTADA para flujos académicos ordinarios** por mandato de producto C1.808: no implementar autorización interservicio por operación ni llamadas de adquisición/liberación. Revisar dependencias existentes solo para retirar código realmente innecesario, sin afectar otros módulos que lo usen. | `pendientes/Otros/Pendientes.md` |
 | AUD-NG-089 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | recordWorkflowDecisionCorrection, validateRolePermission, _verifiedUserId, decisionIdOriginal, solicitudId, nuevaAccionDecision y LockService. | Autorizar y serializar las correcciones de decisiones históricas | `pendientes/Otros/Pendientes.md` |
 | AUD-NG-093 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | validateRolePermission, doPost, getAcademicInstitutionalReportCatalog, requesterRole, authRole, _verifiedRole y rolesPermitidos. | Derivar el rol del catálogo académico exclusivamente de la sesión verificada | `pendientes/Otros/Pendientes.md` |
 | AUD-NG-094 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | ROLE_PERMISSIONS, validateRolePermission, getDynamicPermissionsForRole, MatrizPermisosRoles, getInstitutionalReportCatalog, generateInstitutionalReport y rolesPermitidos. | Alinear los permisos de consulta y generación con los perfiles publicados en el catálogo | `pendientes/Otros/Pendientes.md` |
@@ -5709,3 +5709,61 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Accounting Import Preflight run 44116081329 sobre HEAD 927384b088af1a60fb1e155000a1a1ed2ef614fc — Node.js 24, SUCCESS. CLI local NOT RUN por indisponibilidad DNS de github.com.
 - BETA-FUNC-121 sigue Pendiente beta para comprobar Script Properties/deployments reales; no bloquea la implementación.
 - Siguiente tarea elegible: AUD-NG-086 — autorización interservicio por emisor, receptor, acción y versión del protocolo.
+
+
+# Mandato obligatorio de producto — simplicidad y rendimiento académico (C1.808)
+
+**Vigencia:** 2026-11-17  
+**Aplicación:** plataforma de gestión académica, especialmente creación/edición de registros, aportes, notas, materiales y adjuntos (archivos, imágenes y videos). Este mandato actualiza prioridades funcionales y de rendimiento; no modifica `Normas_Desarollo.md`, que continúa siendo la única norma operativa.
+
+## Objetivo
+
+Priorizar operaciones académicas fluidas, rápidas y directas. Reducir al mínimo las llamadas de red, las ejecuciones de Apps Script y las validaciones repetidas que no aporten una protección necesaria ni cambien el resultado funcional.
+
+## Flujo obligatorio de una operación académica
+
+1. El usuario inicia sesión con su contraseña almacenada mediante el hash vigente.
+2. La aplicación conserva el contexto de sesión y rol de forma eficiente.
+3. Al ejecutar una acción, el servicio que realiza esa acción comprueba una sola vez la sesión y el permiso del rol correspondiente en el límite de entrada.
+4. El mismo contexto ya verificado se reutiliza durante esa ejecución. El servicio procesa el formulario y los adjuntos requeridos, registra los datos, fecha y usuario responsable, y devuelve el resultado.
+5. No se solicita a otro servicio que vuelva a autorizar la misma operación.
+
+## Prohibiciones de sobrecarga
+
+Para los flujos académicos ordinarios no se debe:
+- Realizar llamadas de red separadas para adquirir y liberar autorizaciones o leases.
+- Revalidar la sesión al adquirir una autorización después de haberla validado para la misma acción.
+- Encadenar llamadas Apps Script a otro servicio únicamente para comprobar permisos o legitimar una operación ya autorizada.
+- Repetir autorización, validación transaccional, firma, anti-replay, auditoría criptográfica o controles equivalentes por cada archivo, imagen, video o evidencia adjunta.
+- Introducir validaciones redundantes de formulario/archivo que no cambien el resultado ni sean necesarias para procesar o almacenar correctamente el contenido.
+- Incluir tutoriales como paso obligatorio o parte del flujo académico.
+
+Las llamadas que sean indispensables para transferir o almacenar el archivo pueden mantenerse por necesidad funcional; no deben convertirse en llamadas adicionales de autorización ni en cadenas de validación entre servicios.
+
+## Controles que sí permanecen
+
+- Autenticación de usuario mediante contraseña con el hash vigente.
+- Comprobación del permiso del rol para cada acción, realizada una vez en el servicio que la ejecuta.
+- Gestión de sesión, cierre remoto y limpieza remota de caché.
+- Invalidación de sesión al eliminar una cuenta, impidiendo nuevos accesos con esa cuenta.
+- Bloqueo temporal tras varios intentos fallidos de inicio de sesión.
+- Validaciones mínimas del formulario y del archivo que sean necesarias para completar la operación, evitar datos imposibles o cumplir los límites reales del almacenamiento. No duplicarlas ni repetirlas en servicios secundarios.
+
+Este mandato no autoriza confiar en un rol declarado por el cliente ni omitir el control de acceso de una acción. La optimización consiste en validar en el punto correcto una sola vez y reutilizar el contexto verificado.
+
+## Criterios de aceptación y pruebas
+
+- Una operación académica ordinaria no ejecuta una llamada de adquisición y otra de liberación de autorización.
+- La misma operación no provoca una segunda llamada Apps Script cuyo único propósito sea revalidar sesión, rol o autorización.
+- Adjuntar varios archivos no multiplica las llamadas de autorización ni dispara verificaciones de seguridad por archivo.
+- El registro guarda los campos del formulario, fecha y usuario responsable; los adjuntos quedan asociados al registro.
+- Un usuario con rol permitido puede completar el flujo sin pasos tutoriales ni esperas de validación redundante; un rol no permitido sigue sin poder ejecutar la acción.
+- Las pruebas miden llamadas Apps Script/API y latencia antes/después con fixtures locales; se prueban acceso permitido/denegado, sesión expirada y eliminación de cuenta sin añadir validaciones redundantes al camino exitoso.
+
+## Tratamiento del trabajo de seguridad interservicio existente
+
+AUD-NG-084 queda como trabajo histórico ya integrado, no como requisito para cada operación académica. No ampliar su provisioning, rotación, firma o catálogo para envolver CRUD académico o subida de adjuntos. AUD-NG-086 queda descartada para flujos académicos ordinarios. Antes de borrar o desactivar componentes existentes, identificar todos sus consumidores; conservar únicamente los usos funcionales que sigan siendo necesarios para otros módulos y retirar solo lo que se demuestre innecesario. No convertir una limpieza documental en una reescritura masiva.
+
+## Próxima tarea elegible
+
+Realizar un inventario focalizado de los caminos académicos de creación de registros, notas y adjuntos: localizar llamadas de adquisición/liberación, revalidaciones de sesión, llamadas encadenadas de autorización y validaciones repetidas. Medir llamadas y latencia con pruebas locales. Eliminar únicamente las sobrecargas demostradas, manteniendo el control de rol en el punto de entrada y los cinco controles de seguridad enumerados arriba.

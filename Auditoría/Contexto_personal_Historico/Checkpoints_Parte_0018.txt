@@ -394,3 +394,20 @@ Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e int
 - **Rama base:** NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación al HEAD de código: 3949 ahead / 0 behind. Sin escrituras en rama base.
 - **Siguiente tarea elegible:** AUD-NG-086 — autorización interservicio por emisor, receptor, acción y versión del protocolo; revisar el contrato vigente y sus consumidores antes de modificar.
 =============================================================================
+
+=============================================================================
+### C1.808 — IMA-EXEC-20261117-ACADEMIC-FLOW-SIMPLIFICATION-01
+- **Checkpoint anterior:** C1.807 — AUD-NG-084 completada en código/CI.
+- **HEAD inicial:** 9b7f7747319599b8bb2f502530919506f5b70588.
+- **Cambio de producto:** se incorpora mandato obligatorio para simplificar flujos académicos y minimizar llamadas Apps Script/API.
+- **Requisito de arquitectura:** una sola comprobación de sesión y rol en el punto de entrada de la acción; reutilizar contexto verificado durante la ejecución. No llamadas de adquisición/liberación de autorización, no segunda llamada para revalidar sesión/rol, ni llamadas encadenadas entre servicios cuyo único fin sea autorizar de nuevo la misma operación.
+- **Adjuntos:** asociar archivos, imágenes y videos al registro con datos del formulario, fecha y usuario responsable. No multiplicar validaciones/autorizaciones por adjunto. Mantener únicamente operaciones de transferencia/almacenamiento y validaciones mínimas necesarias.
+- **Controles conservados:** contraseña con hash vigente; RBAC por acción una vez; cierre remoto y limpieza de caché; invalidación de sesión al eliminar cuenta; bloqueo temporal tras varios intentos fallidos. Se eliminan tutoriales del flujo.
+- **AUD-NG-086:** descartada para flujos académicos ordinarios. No implementar autorización interservicio por operación.
+- **AUD-NG-084:** trabajo histórico ya integrado; no extender HMAC/provisioning a CRUD académico ni adjuntos. Cualquier retirada de código existente requiere identificar consumidores y pruebas focalizadas.
+- **Normativa:** Normas_Desarollo.md v1.4 sigue siendo la única norma operativa. Este mandato actualiza el alcance funcional y los criterios de aceptación del Plan Maestro, no la normativa.
+- **Archivos modificados:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0018.txt; changueslogs.txt.
+- **Verificaciones:** comprobación de HEAD y rama antes de editar; comprobación de coincidencia exacta de la fila AUD-NG-086; revisión de coherencia del mandato con Normas_Desarollo.md. No se modificó código de ejecución en esta actualización documental.
+- **Siguiente tarea elegible:** inventario y medición focalizada de los flujos académicos de registro, notas y adjuntos; localizar sobrecarga de autorización/validación y reducirla con pruebas locales.
+- **Rama base:** sin modificaciones.
+=============================================================================

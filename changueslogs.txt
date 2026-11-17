@@ -4140,3 +4140,13 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - CLI local NOT RUN por fallo DNS de github.com; no se declara ejecución local. El runner Actions ejecutó los comandos Node reales.
 - AUD-NG-084 completada en código/CI. BETA-FUNC-121 permanece Pendiente beta para validar Script Properties y deployments reales con acceso autorizado.
 - Siguiente tarea elegible: AUD-NG-086, autorización por emisor/receptor/acción/versión.
+
+
+
+[2026-11-17] C1.808 — Mandato obligatorio de simplificación de flujos académicos
+- Se actualizó el Plan Maestro para priorizar rapidez, fluidez y reducción de llamadas API/Apps Script en registros, notas, aportes y adjuntos.
+- Se establece una sola comprobación de sesión/rol en el punto de entrada por acción; se prohíben llamadas de adquisición/liberación de autorización y llamadas encadenadas cuyo único propósito sea revalidar la misma acción.
+- Los archivos, imágenes y videos se asocian al registro junto con fecha y usuario responsable; no se multiplican validaciones/autorizaciones por adjunto. Se permiten llamadas necesarias para transferir/almacenar contenido.
+- Se conservan contraseña con hash vigente, RBAC por acción, cierre remoto/limpieza de caché, invalidación de sesión al borrar cuenta y bloqueo temporal tras varios intentos fallidos. Tutoriales fuera del flujo.
+- AUD-NG-086 descartada para flujos académicos ordinarios. AUD-NG-084 se mantiene como histórico integrado, sin extender su complejidad a CRUD académico; retirar código existente requiere rastrear consumidores.
+- Siguiente tarea: inventario y medición de flujos de registros, notas y adjuntos.
