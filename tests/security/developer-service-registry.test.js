@@ -132,7 +132,7 @@ assert.deepEqual(result.registry, []);
 assert.ok(!JSON.stringify(result).includes("primary@domain.edu"), "no demo service accounts may leak");
 
 h = harness();
-result = h.registerServiceInstance({ serviceId: "SVC-NEW", name: "New service", permisosConcedidos: ["read"] });
+result = h.registerServiceInstance({ serviceId: "SVC-NEW", name: "New service", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-NEW", permisosConcedidos: ["read"] });
 assert.equal(result.status, "success");
 assert.deepEqual(h.sheets.CatalogoServicios.rows[0], registryHeaders);
 assert.equal(h.sheets.CatalogoServicios.rows.length, 2);
