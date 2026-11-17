@@ -189,19 +189,16 @@ function writeHarness(options={}){
 {
  const h=harness({departments:["D-1"]});
  h.sheets.ConfiguracionSistema.rows.push(h.sheets.ConfiguracionSistema.rows[2].slice());
- const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"});
  assert.throws(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}),/CONFIGURATION_INSTITUTION_CONFLICT/,"duplicate institutional rows fail closed");
 }
 {
  const h=harness({departments:["D-1"]});
  h.sheets.ConfiguracionDepartamental.rows.push(h.sheets.ConfiguracionDepartamental.rows[1].slice());
- const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"});
  assert.throws(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag",departamentoId:"D-1"}),/CONFIGURATION_DEPARTMENT_CONFLICT/,"duplicate departmental overrides fail closed");
 }
 {
  const h=harness({personal:true,departments:["D-1"]});
  h.sheets.ConfiguracionSistema.rows.push(h.sheets.ConfiguracionSistema.rows[3].slice());
- const result=h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"});
  assert.throws(()=>h.ctx.resolveHierarchicalConfiguration({clave:"feature.flag"}),/CONFIGURATION_PERSONAL_CONFLICT/,"duplicate personal overrides fail closed");
 }
 {
