@@ -18715,6 +18715,11 @@ function uploadStudentDocument(payload) {
   if(!access||!access.authorized)return {status:"error",code:access&&access.code||"RESOURCE_SCOPE_DENIED",message:"Acceso denegado."};
   const actor=getVerifiedAcademicIdentity_(p);
   if(!actor||actor.authorized!==true||!actor.userId)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const normalizedFileName=fileName.trim(),lowerFileName=normalizedFileName.toLowerCase();
+  if(/[\/\\\u0000-\u001F]/.test(normalizedFileName))throw new Error("FILE_INVALID_NAME");
+  const blockedExtensions=[".exe",".bat",".cmd",".sh",".msi",".dll",".com",".scr",".vbs",".js",".jar",".ps1",".apk"];
+  const nameParts=lowerFileName.split(".");
+  if(blockedExtensions.some(ext=>lowerFileName.endsWith(ext))||nameParts.slice(1,-1).some(part=>blockedExtensions.indexOf("."+part)!==-1))throw new Error("DANGEROUS_FILE_EXTENSION");
   let base64=String(fileData),mimeType="";
   if(/^data:/i.test(base64)){const comma=base64.indexOf(","),header=comma>=0?base64.slice(0,comma):"",m=header.match(/^data:([^;,]+)(?:;[^,]*)?;base64$/i);if(comma<0||!m)throw new Error("FILE_DATA_URI_INVALID");mimeType=String(m[1]||"").toLowerCase();base64=base64.slice(comma+1);}
   base64=base64.replace(/\s/g,"");if(!base64)throw new Error("FILE_DATA_EMPTY");

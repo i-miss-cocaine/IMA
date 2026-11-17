@@ -251,6 +251,15 @@ function upload(h,pdf,label="ACTA") {
 
 {
   const h=makeHarness();
+  assert.throws(()=>h.context.upload({expedienteId:"EXP-1",solicitudId:"SOL-1",tipoDocumento:"ARCHIVO",
+    fileName:"material.pdf.exe",fileData:"data:application/octet-stream;base64,"+Buffer.from("blocked").toString("base64"),
+    _verifiedUserId:"USER-1",_verifiedRole:"Secretary"}),/DANGEROUS_FILE_EXTENSION/);
+  assert.equal(h.files.size,0,"executable extensions must be rejected before Drive writes");
+  assert.equal(h.sheets.DocumentosEstudiante.rows.length,1,"rejected upload must not create a document row");
+}
+
+{
+  const h=makeHarness();
   const result=h.context.upload({expedienteId:"EXP-1",solicitudId:"SOL-1",tipoDocumento:"VIDEO",
     fileName:"clase.mp4",fileData:"data:video/mp4;base64,"+Buffer.from("video-bytes").toString("base64"),
     _verifiedUserId:"USER-1",_verifiedRole:"Secretary"});
