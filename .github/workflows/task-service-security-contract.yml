@@ -39,6 +39,7 @@ jobs:
       - run: node tests/security/task-service-security-contract.test.js
       - run: node tests/security/task-service-resource-ownership.test.js
       - run: node tests/security/task-service-grade-submission-history.test.js
+      - run: node tests/security/task-service-submission-mutation-contract.test.js
       - run: node tests/security/task-service-deadline-history.test.js
       - run: node tests/security/task-service-upload-contract.test.js
       - run: node tests/security/task-service-single-auth-context.test.js

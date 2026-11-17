@@ -17,4 +17,8 @@ t(()=>{const p={sessionToken:"valid"};rt.validate("createTask",p);rt.validate("g
 t(()=>{const p={sessionToken:"valid"};rt.validate("createTask",p);assert.equal(rt.identity(p).userId,"T1");assert.equal(rt.identity(p).userId,"T1");assert.equal(verifyCalls,3,"task identity reuses verified session claims");});
 t(()=>{const p={sessionToken:"valid",_imaAuthorizationCache:{token:"valid",actions:{createTask:"Administrador"}},_imaVerifiedSessionToken:"valid",_imaVerifiedSessionClaims:{userId:"ATTACKER",role:"Administrador"}};rt.clear(p);assert.equal(rt.validate("createTask",p).authorized,true);assert.equal(verifyCalls,4);assert.equal(rt.identity(p).userId,"T1");});
 t(()=>{const p={sessionToken:"valid"};rt.validate("createTask",p);p.sessionToken="invalid";assert.equal(rt.validate("createTask",p).authorized,false);assert.equal(verifyCalls,6);});
+const previewFn = extract("getSubmissionDocumentPreviewUrl");
+assert(previewFn.includes("getVerifiedTaskIdentity_(payload)"));
+assert(!previewFn.includes("getVerifiedRequestSessionClaims_(payload)"), "preview reuses the dispatcher-verified identity instead of validating the session twice");
+assert(previewFn.includes('getTaskServiceSubmissionAccess_(accessPayload,"READ_CONTENT",identity)'));
 console.log("task-service-single-auth-context: PASS ("+n+"/5)");
