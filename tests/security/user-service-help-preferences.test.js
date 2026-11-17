@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 
 const source = fs.readFileSync("backend/user-service/Code.gs", "utf8");
+assert.doesNotThrow(() => new Function(source), "user-service Code.gs must parse after help preference changes");
 function extractFunction(name) {
   const start = source.indexOf("function " + name + "(");
   assert.notEqual(start, -1, "missing function " + name);
