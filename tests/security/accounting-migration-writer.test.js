@@ -51,7 +51,7 @@ const spreadsheet = {
 let lockCount = 0, releaseCount = 0, lockBusy = false, permission = true, identity = {
   authorized: true, userId: "U-1", role: "Administrador", institutionId: "INST-1"
 };
-let remoteResponse = { status: "success", accepted: true }, lastEnvelope = null;
+let remoteResponse = { status: "success", accepted: true }, lastEnvelope = null, auditEvents = [];
 const secret = "migration-transport-secret-with-more-than-32-characters";
 const runtime = {
   MIGRATION_WRITER_SCHEMAS_: schemas,
@@ -60,6 +60,7 @@ const runtime = {
   SPREADSHEET_ID: "SHEET-1",
   Date, String, JSON, Array, Object, Number, Math, RegExp, Error,
   getVerifiedAccountingIdentity_: () => identity,
+  recordInterServiceCredentialUsage_: event => { auditEvents.push(event); return { recorded: true }; },
   accountingHasInstitutionalImportPermission_: () => permission,
   migrationHash_: value => crypto.createHash("sha256").update(String(value)).digest("hex"),
   resolveInterServiceSecret_: (sourceService, credentialType, purpose) => {
@@ -184,6 +185,7 @@ const payload = {
   const result = runtime.api.send("USER", "registerMigratedResourceOwnership", { sessionToken: "SIGNED", resourceId: "EMP-1" });
   assert.equal(result.accepted, true);
   assert.equal(lastEnvelope.sourceService, "ACCOUNTING");
+  assert.ok(auditEvents.some(event => event.direction === "OUTBOUND" && event.sourceService === "ACCOUNTING"), "migration owner request usage is audited");
   assert.equal(lastEnvelope.targetService, "USER");
   assert.equal(lastEnvelope.action, "registerMigratedResourceOwnership");
   runtime.api.send("ACADEMIC", "writeMigratedEntity", { sessionToken: "SIGNED", tipoEntidad: "estudiante", idNuevoPlataforma: "EST-1", datos: { PersonaID: "PER-1" } });
