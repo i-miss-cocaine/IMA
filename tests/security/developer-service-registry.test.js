@@ -114,6 +114,12 @@ assert.equal(result.code, "SERVICE_REGISTRY_PERMISSIONS_INVALID");
 assert.equal(result.totalServicios, 0);
 assert.ok(h.logs.some(value => value.includes("SERVICE_REGISTRY_PERMISSIONS_INVALID")));
 
+h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-WILDCARD","Wildcard stored permissions",'["read","*"]')]) });
+result = h.getCentralServiceRegistry({});
+assert.equal(result.status, "error");
+assert.equal(result.code, "SERVICE_REGISTRY_PERMISSIONS_INVALID");
+assert.equal(result.totalServicios, 0);
+
 h = harness({ CatalogoServicios: sheet([["ServiceID","WrongHeader","Department","OwnerAccount","EndpointURL","SpreadsheetID","DataDomain","State","Version","PermissionsJSON","RegisteredAt"], row("SVC-1","Service")]) });
 result = h.getCentralServiceRegistry({});
 assert.equal(result.status, "error");
