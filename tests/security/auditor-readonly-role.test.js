@@ -38,9 +38,9 @@ const accountingAuditor = accountingRoles.roles.Auditor || [];
 
 assert.ok(academicAuditor.includes("getStudentDocuments"));
 assert.ok(academicAuditor.includes("getStudentFile"));
-assert.ok(academicAuditor.includes("getStudentDocumentFile"), "the internal permission key authorizes only the tokenized proxy");
+assert.ok(academicAuditor.includes("getStudentDocumentFile"), "Auditor can read authorized documents through the direct endpoint");
 assert.ok(academicAuditor.includes("previewStudentDocument"), "preview is a separate read-only permission for the tokenized proxy");
-assert.ok(academicAuditor.includes("verifyDocumentIntegritySha256"));
+assert.equal(academicAuditor.includes("verifyDocumentIntegritySha256"), false, "per-document SHA-256 verification is no longer an exposed academic action");
 assert.ok(academicAuditor.includes("getPendingDocumentsReport"));
 assert.ok(userAuditor.includes("getLegacyDocumentInventory"));
 assert.ok(userAuditor.includes("getAuditReport"));
@@ -125,6 +125,7 @@ assert.match(user.source,/if \(actorRole === "Auditor"\)[\s\S]*scope\.institutio
 assert.match(academic.source,/function getStudentDocumentFile\(payload\)/,"ACADEMIC exposes one direct document read endpoint");
 assert.match(academic.source,/action !== "getStudentDocumentFile"/,"only the direct document endpoint maps PREVIEW to its own RBAC action");
 assert.match(academic.source,/case "getStudentDocumentFile": result = getStudentDocumentFile\(payload\); break;/,"the dispatcher routes direct document reads");
+assert.doesNotMatch(academic.source,/function verifyDocumentIntegritySha256\(|case "verifyDocumentIntegritySha256":/,"the removed per-document integrity endpoint is not exposed by the service");
 assert.match(accounting,/request\.action === "validateImportPreview"/);
 assert.match(accounting,/request\.action === "getAccountingMigrationFileAudit"/,
   "ACCOUNTING exposes a read-only institution-bound audit endpoint for Auditor");
