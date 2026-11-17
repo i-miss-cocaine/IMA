@@ -158,6 +158,10 @@ assert.deepEqual(h.sheets.CatalogoServicios.rows[0], registryHeaders);
 assert.equal(h.sheets.CatalogoServicios.rows[1][0], "SVC-OLD", "legacy row must be preserved");
 assert.equal(h.sheets.CatalogoServicios.rows[2][0], "SVC-NEW");
 
+h = harness({ CatalogoServicios: sheet([row("SVC-OLD","Existing legacy"), ["broken"]]) });
+assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-NEW", name: "New service", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-NEW" }), /SERVICE_REGISTRY_SCHEMA_MISMATCH/);
+assert.deepEqual(h.sheets.CatalogoServicios.rows, [row("SVC-OLD","Existing legacy"), ["broken"]], "invalid legacy rows must not be shifted or rewritten");
+
 h = harness();
 assert.throws(() => h.registerServiceInstance({ serviceId: "SVC-BAD", name: "Bad", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-BAD", permisosConcedidos: "read" }), /INVALID_SERVICE_PERMISSIONS/);
 assert.equal(Object.keys(h.sheets).length, 0, "invalid registration must not create or mutate the registry");
@@ -186,4 +190,4 @@ h = harness({
 assert.throws(() => h.updateServiceStatus({ serviceId: "SVC-1", newState: "degradado" }), /SERVICE_REGISTRY_SCHEMA_MISMATCH/);
 assert.equal(h.sheets.CatalogoServicios.rows[1][7], "Activo", "invalid history schema must be detected before status mutation");
 
-console.log("Developer service registry contract PASS (36 assertions).");
+console.log("Developer service registry contract PASS.");

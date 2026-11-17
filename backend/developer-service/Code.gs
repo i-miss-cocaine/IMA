@@ -2518,7 +2518,7 @@ function developerEnsureServiceTable_(ss, name, headers, legacyRowValidator) {
   if (JSON.stringify(first) === JSON.stringify(headers)) {
     return { sheet: sheet, headers: headers.slice(), rows: data.slice(1) };
   }
-  if (legacyRowValidator && legacyRowValidator(data[0])) {
+  if (legacyRowValidator && data.every(legacyRowValidator)) {
     if (typeof sheet.insertRowBefore !== "function") throw new Error("SERVICE_REGISTRY_LEGACY_MIGRATION_UNAVAILABLE");
     sheet.insertRowBefore(1);
     sheet.getRange(1, 1, 1, headers.length).setValues([headers.slice()]);
