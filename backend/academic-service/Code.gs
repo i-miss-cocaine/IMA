@@ -17286,107 +17286,123 @@ function getSectionEquivalences(payload) {
 // [F9-Task03] [P0] - Consolidar la administración de escalas, ponderaciones y métodos de cálculo académico
 // [TAREA-12] [Fase 1 - Evaluación Unificada] - Unificación de la evaluación académica, rúbricas analíticas, ponderaciones, inalterabilidad de periodos cerrados y compatibilidad SACE / Cuadro de Honor.
 function calculateUnifiedAcademicGrade(payload) {
-  const { userId, asignaturaId, periodoId, actividades, esAnoHistoricoAnterior, periodoCerrado, metodoEvaluacion } = payload || {};
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const actividades = p.actividades;
+  const metodo = String(p.metodoEvaluacion || "PromedioPonderado").trim();
+  const supportedMethods = ["PromedioPonderado", "PromedioAritmetico", "PuntosObtenidos"];
+  if (supportedMethods.indexOf(metodo) === -1) throw new Error("ACADEMIC_GRADE_METHOD_INVALID");
+  if (!Array.isArray(actividades)) throw new Error("ACADEMIC_GRADE_ACTIVITIES_INVALID");
+  const emptyResult = {
+    status: "no_grade", userId: p.userId || null, asignaturaId: p.asignaturaId || null,
+    periodoId: p.periodoId || null, metodoEvaluacion: metodo, notaFinal: null,
+    estadoCalificacion: "SinCalificacion", ponderacionesPorCategoria: {},
+    ponderacionPendiente: 0, ponderacionExenta: 0, esCuadroHonor: null,
+    equivalenciaSACE: null, compatibilidadSACE: "No verificada"
+  };
+  if (!actividades.length) return emptyResult;
 
-  if (esAnoHistoricoAnterior) {
-    throw new Error("Las calificaciones de años escolares anteriores son inalterables.");
-  }
+  const parseBoundedNumber = (raw, min, max, errorCode, allowEmpty) => {
+    if (raw === null || raw === undefined || String(raw).trim() === "") {
+      if (allowEmpty) return null;
+      throw new Error(errorCode);
+    }
+    if (typeof raw !== "number" && typeof raw !== "string") throw new Error(errorCode);
+    const text = String(raw).trim();
+    if (!/^(?:0|[1-9]\d*)(?:\.\d{1,4})?$/.test(text)) throw new Error(errorCode);
+    const value = Number(text);
+    if (!Number.isFinite(value) || value < min || value > max) throw new Error(errorCode);
+    return value;
+  };
 
-  if (periodoCerrado) {
-    throw new Error("El periodo académico se encuentra cerrado. Se requiere rectificación autorizada por Secretaría.");
-  }
+  const seen = Object.create(null);
+  const evaluated = [];
+  let totalConfiguredWeight = 0, pendingWeight = 0, exemptWeight = 0;
+  let weightedContribution = 0, pointsObtainedTotal = 0, pointsPossibleTotal = 0;
+  const ponderacionesPorCategoria = Object.create(null);
 
-  if (!Array.isArray(actividades) || actividades.length === 0) {
-    return {
-      status: "success",
-      notaFinal: 0,
-      estadoCalificacion: "Sin Actividades",
-      ponderacionesPorCategoria: {},
-      cuadroHonor: false,
-      equivalenciaSACE: "Insuficiente",
-      compatibilidadSACE: "Pendiente"
-    };
-  }
+  actividades.forEach((activity, index) => {
+    if (!activity || typeof activity !== "object" || Array.isArray(activity)) {
+      throw new Error("ACADEMIC_GRADE_ACTIVITY_INVALID");
+    }
+    const activityId = String(activity.evaluacionId || activity.actividadId || activity.categoriaId || ("ACT-" + index)).trim();
+    if (seen[activityId]) throw new Error("ACADEMIC_GRADE_ACTIVITY_DUPLICATE");
+    seen[activityId] = true;
+    const weight = parseBoundedNumber(activity.porcentajePonderacion, 0, 100,
+      "ACADEMIC_GRADE_WEIGHT_INVALID", false);
+    totalConfiguredWeight += weight;
+    const state = String(activity.estado || "").trim().toUpperCase();
+    const category = String(activity.categoria || activity.categoriaId || activityId).trim();
 
-  const metodo = metodoEvaluacion || "PromedioPonderado";
-  let acumuladoPonderado = 0;
-  let totalPonderacion = 0;
-  let sumaAritmetica = 0;
-  let totalActividadesEvaluadas = 0;
-  let puntosObtenidosTotal = 0;
-  let puntosPosiblesTotal = 0;
-  const ponderacionesPorCategoria = {};
-
-  actividades.forEach(act => {
-    const estado = String(act.estado || "").toUpperCase();
-    if (estado === "EXENTO" || estado === "AUSENTE_JUSTIFICADO") {
+    if (state === "EXENTO" || state === "AUSENTE_JUSTIFICADO") {
+      exemptWeight += weight;
       return;
     }
 
-    const notaRaw = act.notaObtenida;
-    const esPendiente = notaRaw === null || notaRaw === undefined || notaRaw === "" || estado === "PENDIENTE";
-
-    if (esPendiente) {
+    const rawGrade = activity.notaObtenida;
+    const isPending = state === "PENDIENTE" || state === "NO_EVALUADA" ||
+      state === "AUSENTE" || rawGrade === null || rawGrade === undefined ||
+      String(rawGrade).trim() === "";
+    if (isPending) {
+      pendingWeight += weight;
       return;
     }
 
-    const nota = parseFloat(notaRaw) || 0;
-    const peso = parseFloat(act.porcentajePonderacion) || 0;
-    const puntosPosibles = parseFloat(act.puntosPosibles || 100) || 100;
-    const cat = act.categoria || "General";
-
-    acumuladoPonderado += (nota * (peso / 100));
-    totalPonderacion += peso;
-    sumaAritmetica += nota;
-    totalActividadesEvaluadas++;
-    puntosObtenidosTotal += nota;
-    puntosPosiblesTotal += puntosPosibles;
-
-    ponderacionesPorCategoria[cat] = (ponderacionesPorCategoria[cat] || 0) + (nota * (peso / 100));
+    const grade = parseBoundedNumber(rawGrade, 0, 100, "ACADEMIC_GRADE_VALUE_INVALID", false);
+    const item = { activityId, category, weight, grade };
+    if (metodo === "PuntosObtenidos") {
+      item.pointsObtained = parseBoundedNumber(activity.puntosObtenidos, 0, Number.MAX_SAFE_INTEGER,
+        "ACADEMIC_GRADE_POINTS_INVALID", false);
+      item.pointsPossible = parseBoundedNumber(activity.puntosPosibles, 0.0001, Number.MAX_SAFE_INTEGER,
+        "ACADEMIC_GRADE_POINTS_INVALID", false);
+      if (item.pointsObtained > item.pointsPossible) throw new Error("ACADEMIC_GRADE_POINTS_INVALID");
+      pointsObtainedTotal += item.pointsObtained;
+      pointsPossibleTotal += item.pointsPossible;
+    }
+    evaluated.push(item);
+    weightedContribution += grade * weight / 100;
+    ponderacionesPorCategoria[category] = (ponderacionesPorCategoria[category] || 0) + grade * weight / 100;
   });
 
-  let notaFinalCalculada = 0;
-  let ponderacionInvalida = false;
-  let advertenciaPonderacion = null;
-
-  if (metodo === "PromedioPonderado") {
-    if (totalPonderacion > 0 && Math.abs(totalPonderacion - 100) > 0.01) {
-      ponderacionInvalida = true;
-      advertenciaPonderacion = `La suma de ponderaciones activas (${totalPonderacion.toFixed(1)}%) difiere del 100% requerido.`;
-    }
-    notaFinalCalculada = Math.min(100, Math.round(acumuladoPonderado * 100) / 100);
-  } else if (metodo === "PromedioAritmetico") {
-    notaFinalCalculada = totalActividadesEvaluadas > 0
-      ? Math.min(100, Math.round((sumaAritmetica / totalActividadesEvaluadas) * 100) / 100)
-      : 0;
-  } else if (metodo === "PuntosObtenidos") {
-    notaFinalCalculada = puntosPosiblesTotal > 0
-      ? Math.min(100, Math.round((puntosObtenidosTotal / puntosPosiblesTotal) * 10000) / 100)
-      : 0;
-  } else {
-    notaFinalCalculada = Math.min(100, Math.round(acumuladoPonderado * 100) / 100);
+  if (Math.abs(totalConfiguredWeight - 100) > 0.01) {
+    throw new Error("ACADEMIC_GRADE_WEIGHTS_INVALID");
+  }
+  if (pendingWeight > 0) {
+    return {
+      status: evaluated.length ? "provisional" : "pending",
+      userId: p.userId || null, asignaturaId: p.asignaturaId || null,
+      periodoId: p.periodoId || null, metodoEvaluacion: metodo, notaFinal: null,
+      avancePonderado: Math.round(weightedContribution * 100) / 100,
+      estadoCalificacion: evaluated.length ? "Provisional" : "Pendiente",
+      ponderacionesPorCategoria, ponderacionPendiente: pendingWeight,
+      ponderacionExenta: exemptWeight, esCuadroHonor: null,
+      equivalenciaSACE: null, compatibilidadSACE: "No verificada"
+    };
+  }
+  if (!evaluated.length) {
+    return Object.assign({}, emptyResult, {
+      status: "exempt", estadoCalificacion: "Exenta",
+      ponderacionExenta: exemptWeight
+    });
   }
 
-  const esCuadroHonor = notaFinalCalculada >= 90;
-
-  let equivalenciaSACE = "Insuficiente";
-  if (notaFinalCalculada >= 91) equivalenciaSACE = "Excelente";
-  else if (notaFinalCalculada >= 81) equivalenciaSACE = "Muy Bueno";
-  else if (notaFinalCalculada >= 70) equivalenciaSACE = "Satisfactorio";
-
+  let notaFinalCalculada;
+  if (metodo === "PromedioPonderado") {
+    const evaluatedWeight = evaluated.reduce((sum, item) => sum + item.weight, 0);
+    if (evaluatedWeight <= 0) throw new Error("ACADEMIC_GRADE_WEIGHTS_INVALID");
+    notaFinalCalculada = weightedContribution * 100 / evaluatedWeight;
+  } else if (metodo === "PromedioAritmetico") {
+    notaFinalCalculada = evaluated.reduce((sum, item) => sum + item.grade, 0) / evaluated.length;
+  } else {
+    if (pointsPossibleTotal <= 0) throw new Error("ACADEMIC_GRADE_POINTS_INVALID");
+    notaFinalCalculada = pointsObtainedTotal / pointsPossibleTotal * 100;
+  }
+  notaFinalCalculada = Math.round(notaFinalCalculada * 100) / 100;
   return {
-    status: "success",
-    userId: userId,
-    asignaturaId: asignaturaId,
-    periodoId: periodoId,
-    metodoEvaluacion: metodo,
-    notaFinal: notaFinalCalculada,
-    estadoCalificacion: notaFinalCalculada >= 70 ? "Aprobado" : "Reprobado",
-    equivalenciaSACE: equivalenciaSACE,
-    esCuadroHonor: esCuadroHonor,
-    ponderacionesPorCategoria: ponderacionesPorCategoria,
-    ponderacionInvalida: ponderacionInvalida,
-    advertenciaPonderacion: advertenciaPonderacion
+    status: "success", userId: p.userId || null, asignaturaId: p.asignaturaId || null,
+    periodoId: p.periodoId || null, metodoEvaluacion: metodo, notaFinal: notaFinalCalculada,
+    estadoCalificacion: "Calculada", ponderacionesPorCategoria,
+    ponderacionPendiente: 0, ponderacionExenta: exemptWeight,
+    esCuadroHonor: null, equivalenciaSACE: null, compatibilidadSACE: "No verificada"
   };
 }
 
