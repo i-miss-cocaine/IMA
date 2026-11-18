@@ -1937,6 +1937,20 @@ function purgeSecurityCaches(payload) {
   }
 }
 
+function ensureExamSubmissionSnapshotSchema_(deliverySheet) {
+  const legacyHeaders = ["EntregaExamenID", "ExamenID", "UserID", "FechaEntrega", "RespuestasJSON",
+    "NotaTotal", "Estado", "ComentarioDocente", "TemaAsociado", "AsignaturaAsociada"];
+  const currentHeaders = legacyHeaders.concat(["PreguntasSnapshotJSON"]);
+  const rows = deliverySheet.getDataRange().getValues();
+  const headers = rows.length ? (rows[0] || []).map(value => String(value || "").trim()) : [];
+  if (JSON.stringify(headers) === JSON.stringify(currentHeaders)) return rows;
+  if (JSON.stringify(headers) === JSON.stringify(legacyHeaders)) {
+    deliverySheet.getRange(1, 11, 1, 1).setValues([["PreguntasSnapshotJSON"]]);
+    return deliverySheet.getDataRange().getValues();
+  }
+  throw new Error("EXAM_DELIVERY_SNAPSHOT_SCHEMA_INVALID");
+}
+
 function submitExam(payload) {
   const permission = validateRolePermission("submitExam", payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -1946,31 +1960,26 @@ function submitExam(payload) {
       (role !== "Estudiante" && role !== "Alumno")) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
+  // Construir una sola vez el contexto autorizado; el lock serializa intentos y escritura.
+  const context = getExamReadContext_(payload, undefined, actor);
+  if (!context || !context.studentActor || !context.actor ||
+      String(context.actor.userId || "").trim() !== String(actor.userId).trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_SUBMISSION_LOCK_TIMEOUT");
   try {
-    const lockedPermission = validateRolePermission("submitExam", payload);
-    if (!lockedPermission || lockedPermission.authorized !== true) {
-      throw new Error("RESOURCE_NOT_AVAILABLE");
-    }
-    const lockedActor = getVerifiedExamIdentity_(payload);
-    const lockedRole = String(lockedActor && lockedActor.role || "").trim();
-    if (!lockedActor || lockedActor.authorized !== true || !String(lockedActor.userId || "").trim() ||
-        (lockedRole !== "Estudiante" && lockedRole !== "Alumno")) {
-      throw new Error("RESOURCE_NOT_AVAILABLE");
-    }
-    return submitExamUnlocked_(payload);
+    return submitExamUnlocked_(payload, context);
   } finally {
     lock.releaseLock();
   }
 }
 
-function submitExamUnlocked_(payload) {
+function submitExamUnlocked_(payload, context) {
   const examenId = String((payload && payload.examenId) || "").trim();
   const respuestas = payload && payload.respuestas;
   if (!examenId || !Array.isArray(respuestas)) throw new Error("SUBMISSION_INVALID");
-  const context = getExamReadContext_(payload);
-  const { actor, ss, studentActor, profile, scope } = context;
+  const { actor, ss, studentActor, profile, scope } = context || getExamReadContext_(payload);
   if (!studentActor || actor.role !== "Estudiante" && actor.role !== "Alumno") throw new Error("RESOURCE_NOT_AVAILABLE");
   const examRows = getSheetOrThrow(ss, "Examenes").getDataRange().getValues();
   const examMatches = examRows.slice(1).filter(row => String(row[0]) === examenId);
@@ -1992,7 +2001,8 @@ function submitExamUnlocked_(payload) {
     submittedIds.add(questionId);
   });
   const deliveriesSheet = getSheetOrThrow(ss, "EntregasExamen");
-  const deliveries = deliveriesSheet.getDataRange().getValues().slice(1);
+  const deliveryRowsWithHeaders = ensureExamSubmissionSnapshotSchema_(deliveriesSheet);
+  const deliveries = deliveryRowsWithHeaders.slice(1);
   const previousAttempts = deliveries.filter(row => String(row[1]) === examenId && String(row[2]) === actor.userId).length;
   const configuredAttempts = parseInt(exam[12], 10);
   const allowedAttempts = Number.isSafeInteger(configuredAttempts) && configuredAttempts > 0 ? configuredAttempts : 1;
@@ -2021,7 +2031,9 @@ function submitExamUnlocked_(payload) {
   });
   const nota = questionRows.length ? ((correctas / questionRows.length) * 100).toFixed(2) : "0";
   const entregaExamenId = "EEX-" + Date.now();
-  deliveriesSheet.appendRow([entregaExamenId, examenId, actor.userId, new Date(), JSON.stringify(respuestas), nota, "Pendiente"]);
+  const questionSnapshot = questionRows.map(row => row.slice(0, 14));
+  deliveriesSheet.appendRow([entregaExamenId, examenId, actor.userId, new Date(),
+    JSON.stringify(respuestas), nota, "Pendiente", "", "", "", JSON.stringify(questionSnapshot)]);
   return { status: "success", data: { entregaExamenId, calificacion: nota } };
 }
 
@@ -2063,8 +2075,8 @@ function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
   }
   return Array.from(new Set(studentIds));
 }
-function getExamReadContext_(payload, requestedStudentId) {
-  const actor = getVerifiedExamIdentity_(payload);
+function getExamReadContext_(payload, requestedStudentId, verifiedActor) {
+  const actor = verifiedActor || getVerifiedExamIdentity_(payload);
   if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
@@ -2138,7 +2150,15 @@ function getExamResultUnlocked_(payload, context) {
     if (!assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "READ_RESULT", payload).authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   }
   const answers = JSON.parse(delivery[4] || "[]");
-  const questions = getSheetOrThrow(ss, "PreguntasExamen").getDataRange().getValues().slice(1).filter(row => String(row[1]) === examId);
+  let questions = getSheetOrThrow(ss, "PreguntasExamen").getDataRange().getValues().slice(1).filter(row => String(row[1]) === examId);
+  if (delivery[10] !== undefined && delivery[10] !== null && String(delivery[10]).trim() !== "") {
+    let snapshot;
+    try { snapshot = JSON.parse(delivery[10]); } catch (_) { throw new Error("EXAM_QUESTION_SNAPSHOT_INVALID"); }
+    if (!Array.isArray(snapshot) || snapshot.some(row => !Array.isArray(row) || String(row[1] || "").trim() !== examId)) {
+      throw new Error("EXAM_QUESTION_SNAPSHOT_INVALID");
+    }
+    questions = snapshot;
+  }
   const detailed = questions.map(question => {
     const answer = answers.find(item => item.preguntaId === question[0]), studentAnswer = answer ? answer.respuestaEstudiante : "";
     let correct = false, score = 0;
