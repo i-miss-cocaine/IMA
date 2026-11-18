@@ -17455,7 +17455,8 @@ function auditAcademicGradesIntegrity(payload) {
       });
 
       const notaGuardada = parseFloat(item.notaFinalGuardada);
-      if (!isNaN(notaGuardada) && Math.abs(notaGuardada - calcRes.notaFinal) > 0.01) {
+      if (calcRes.status === "success" && Number.isFinite(calcRes.notaFinal) &&
+          !isNaN(notaGuardada) && Math.abs(notaGuardada - calcRes.notaFinal) > 0.01) {
         discrepanciasCalculo++;
         inconsistencias.push({
           fila: filaNum,
