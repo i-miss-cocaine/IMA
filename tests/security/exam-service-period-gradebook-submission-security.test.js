@@ -98,20 +98,30 @@ function fixture(options = {}) {
       return value;
     },
     getOrCreateSheet(spreadsheet, name) { return spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name); },
+    getGradebookWeightConfigurationFromSheet_(spreadsheet, context) {
+      const sheet = spreadsheet.getSheetByName("PonderacionesEvaluacion");
+      if (!sheet) return [];
+      return sheet.getDataRange().getValues().slice(1).filter(row =>
+        String(row[1]) === String(context.scope.institutionId) &&
+        String(row[2]) === String(context.anoId) &&
+        String(row[3]) === String(context.parcial) &&
+        String(row[4]) === String(context.grado) &&
+        String(row[5]) === String(context.seccion) &&
+        String(row[6]) === String(context.asignatura) &&
+        String(row[11]) === "ACTIVE").map(row => ({ categoriaId: row[7], porcentajePonderacion: row[9] }));
+    },
     normalizeString(value) { return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); },
     SPREADSHEET_ID: "TEST",
     Utilities: { getUuid() { return options.uuid || "U1"; } }
   };
   const names = [
-    "buildGradebookWeightContextKey_",
-    "getGradebookWeightConfigurationFromSheet_",
     "submitGradebookForReview",
     "withAuthorizedPeriodGradebookSubmission_",
     "getAuthorizedPeriodGradebookSubmissionContext_",
     "submitGradebookForReviewUnlocked_"
   ];
-  const vmSource = ['const GRADEBOOK_WEIGHT_HEADERS_ = ["ID","InstitutionID","AnoID","PeriodoID","Grado","Seccion","Asignatura","CategoriaID","Nombre","PorcentajePonderacion","EscalaMaxima","Estado","RegisteredBy","CreatedAt","UpdatedAt"];', ...names.map(extractFunction), "this.submitGradebookForReview = submitGradebookForReview;"].join(String.fromCharCode(10));
-  vm.runInNewContext(vmSource, runtime);
+  vm.runInNewContext(names.map(extractFunction).join("\n") +
+    "\nthis.submitGradebookForReview = submitGradebookForReview;", runtime);
   return {
     runtime, sheets, stats,
     identityCalls: () => identityCalls,
