@@ -4602,15 +4602,14 @@ function withAuthorizedPeriodGradebookSubmission_(payload, mutation) {
 
 function getAuthorizedPeriodGradebookSubmissionContext_(payload) {
   const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
-  // El esquema académico no ofrece una fuente canónica de año; se conserva el
-  // identificador legado fijo y no se acepta uno suministrado por el cliente.
-  const anoId = "ANO-CURRENT";
+  const anoId = String(p.anoId || "").trim();
   const periodoId = String(p.periodoId || "").trim();
   const grado = String(p.grado || "").trim();
   const seccion = String(p.seccion || "").trim();
   const asignatura = String(p.asignatura || "").trim();
-  if (!periodoId || periodoId.length > 120 || !grado || grado.length > 120 ||
-      !seccion || seccion.length > 80 || !asignatura || asignatura.length > 160) {
+  if (!anoId || anoId.length > 120 || !periodoId || periodoId.length > 120 ||
+      !grado || grado.length > 120 || !seccion || seccion.length > 80 ||
+      !asignatura || asignatura.length > 160) {
     throw new Error("GRADEBOOK_SUBMISSION_REQUIRED_CONTEXT_INVALID");
   }
 
@@ -4647,6 +4646,11 @@ function getAuthorizedPeriodGradebookSubmissionContext_(payload) {
     throw new Error("GRADEBOOK_SUBMISSION_ASSIGNMENT_UNVERIFIED");
   }
 
+  const weightConfiguration = getGradebookWeightConfigurationFromSheet_(ss, {
+    scope, anoId, parcial: periodoId, grado, seccion, asignatura
+  });
+  if (!weightConfiguration.length) throw new Error("GRADEBOOK_SUBMISSION_WEIGHTS_NOT_CONFIGURED");
+
   const sheet = ss.getSheetByName("CierresPeriodos");
   const closureHeaders = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"];
   if (sheet) {
@@ -4656,6 +4660,7 @@ function getAuthorizedPeriodGradebookSubmissionContext_(payload) {
       throw new Error("GRADEBOOK_SUBMISSION_SCHEMA_INVALID");
     }
     const sameContext = data.slice(1).filter(row =>
+      normalizeString(row[1]) === normalizeString(anoId) &&
       normalizeString(row[2]) === normalizeString(periodoId) &&
       normalizeString(row[3]) === normalizeString(grado) &&
       normalizeString(row[4]) === normalizeString(seccion) &&
