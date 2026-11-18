@@ -10,6 +10,7 @@ on:
       - 'teacher-dashboard.html'
       - 'tests/security/exam-service-question-modalities-contract.test.js'
       - 'tests/security/exam-service-attachment-submission-contract.test.js'
+      - 'tests/security/exam-service-*.test.js'
       - 'tests/security/exam-service-security-contract.test.js'
       - 'tests/security/exam-service-departmental-access.test.js'
       - 'tests/security/exam-service-read-endpoints-security.test.js'
@@ -44,6 +45,7 @@ on:
     paths:
       - 'backend/exam-service/Code.gs'
       - 'tests/security/exam-service-attachment-submission-contract.test.js'
+      - 'tests/security/exam-service-*.test.js'
       - 'tests/security/exam-service-security-contract.test.js'
       - 'tests/security/exam-service-departmental-access.test.js'
       - 'tests/security/exam-service-read-endpoints-security.test.js'
@@ -133,8 +135,12 @@ jobs:
         run: node --check < backend/exam-service/Code.gs
       - name: Run the complete Exam-Service Node.js contract suite
         run: |
-          set -e
+          failed=0
           for test_file in tests/security/exam-service-*.test.js; do
             echo "Running $test_file"
-            node "$test_file"
+            if ! node "$test_file"; then
+              echo "FAILED: $test_file"
+              failed=1
+            fi
           done
+          exit "$failed"

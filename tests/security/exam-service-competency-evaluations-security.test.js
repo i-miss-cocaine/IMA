@@ -152,7 +152,8 @@ racing = runtime({ beforeAcquire() {
 assert.equal(racing.call({}).total, 4, "read uses the post-lock snapshot");
 
 const missing = runtime({ missingEvaluationSheet: true });
-assert.deepEqual(missing.call({}), { status: "success", total: 0, data: [] });
+assert.equal(JSON.stringify(missing.call({})), JSON.stringify({ status: "success", total: 0, data: [] }),
+  "missing evaluation sheet returns the same JSON contract across VM realms");
 assert.equal(missing.sheets.EvaluacionesCompetencias, undefined, "read does not create a missing sheet");
 assert.throws(() => runtime({ actor: { userId: "DUP", role: "Estudiante" } }).call({}), /RESOURCE_NOT_AVAILABLE/);
 const badDate = runtime().call({}).data.find(row => row.evaluacionCompetenciaId === "EV-BAD-DATE");
