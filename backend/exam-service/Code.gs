@@ -84,12 +84,12 @@ const ROLE_PERMISSIONS = {
   "Tutor": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Responsable": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Dirección": ["*"],
-  "Director": ["reviewPeriodGradebook", "reopenPeriodGradebook", "rectifyStudentGrade", "saveGradebookGrades"],
+  "Director": ["reviewPeriodGradebook", "reopenPeriodGradebook", "rectifyStudentGrade", "saveGradebookGrades", "getGradebookWeightConfiguration", "saveGradebookWeightConfiguration"],
   "Secretaría": ["*"],
   "Profesor": [
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
     "getAllExams", "getTeacherExamActivity", "getExamQuestions", "getStudentExams", "getExamResult",
-    "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
+    "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "getGradebookWeightConfiguration", "saveGradebookWeightConfiguration", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
     "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "submitGradebookForReview",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
     "getExamGradeDistributionAnalytics"
@@ -3207,6 +3207,163 @@ function getCompetencyEvaluationsUnlocked_(payload, context) {
   });
   return { status: "success", total: filtered.length, data: filtered };
 }
+const GRADEBOOK_WEIGHT_HEADERS_ = ["ID", "InstitutionID", "AnoID", "PeriodoID", "Grado", "Seccion",
+  "Asignatura", "CategoriaID", "Nombre", "PorcentajePonderacion", "EscalaMaxima", "Estado",
+  "RegisteredBy", "CreatedAt", "UpdatedAt", "ContextKey"];
+
+function buildGradebookWeightContextKey_(context, categoryId) {
+  const value = context && typeof context === "object" ? context : {};
+  const fields = [value.institutionId, value.anoId, value.parcial || value.periodoId,
+    value.grado, value.seccion, value.asignatura, categoryId];
+  if (fields.some(field => !String(field == null ? "" : field).trim())) {
+    throw new Error("GRADEBOOK_CONTEXT_REQUIRED");
+  }
+  return JSON.stringify(fields.map(field => normalizeString(field)));
+}
+
+function getGradebookWeightConfigurationFromSheet_(ss, context) {
+  const sheet = ss && ss.getSheetByName("PonderacionesEvaluacion");
+  if (!sheet) return [];
+  const rows = sheet.getDataRange().getValues();
+  if (!rows.length) return [];
+  if (GRADEBOOK_WEIGHT_HEADERS_.some((header, index) => String(rows[0][index] || "").trim() !== header) ||
+      rows[0].length !== GRADEBOOK_WEIGHT_HEADERS_.length) {
+    throw new Error("GRADEBOOK_WEIGHT_SCHEMA_INVALID");
+  }
+  const scope = context.scope || {};
+  const matches = rows.slice(1).filter(row =>
+    String(row[1] || "").trim() === String(scope.institutionId || "").trim() &&
+    String(row[2] || "").trim() === String(context.anoId || "").trim() &&
+    normalizeString(row[3]) === normalizeString(context.parcial) &&
+    normalizeString(row[4]) === normalizeString(context.grado) &&
+    normalizeString(row[5]) === normalizeString(context.seccion) &&
+    normalizeString(row[6]) === normalizeString(context.asignatura) &&
+    String(row[11] || "").trim().toUpperCase() === "ACTIVE");
+  const seen = Object.create(null);
+  const result = matches.map(row => {
+    const categoryId = String(row[7] || "").trim();
+    const id = String(row[0] || "").trim();
+    const percentage = row[9] === "" || row[9] == null ? NaN : Number(row[9]);
+    const scale = row[10] === "" || row[10] == null ? NaN : Number(row[10]);
+    const key = buildGradebookWeightContextKey_({ institutionId: scope.institutionId,
+      anoId: context.anoId, parcial: context.parcial, grado: context.grado,
+      seccion: context.seccion, asignatura: context.asignatura }, categoryId);
+    if (!id || !categoryId || seen[categoryId] || String(row[15] || "").trim() !== key ||
+        !Number.isFinite(percentage) || percentage < 0 || percentage > 100 ||
+        !Number.isFinite(scale) || scale <= 0) {
+      throw new Error("GRADEBOOK_WEIGHT_RECORD_INVALID");
+    }
+    seen[categoryId] = true;
+    return { id, categoriaId: categoryId, nombre: String(row[8] || "").trim(),
+      porcentajePonderacion: percentage, escalaMaxima: scale, estado: "Activo" };
+  });
+  if (result.length && Math.abs(result.reduce((sum, item) => sum + item.porcentajePonderacion, 0) - 100) > 0.01) {
+    throw new Error("GRADEBOOK_WEIGHTS_INVALID");
+  }
+  return result;
+}
+
+function getGradebookWeightConfiguration(payload) {
+  return withAuthorizedGradebookSave_(payload, context => {
+    const categories = context.weightConfiguration || [];
+    return { status: categories.length ? "success" : "not_configured",
+      configured: categories.length > 0, totalWeight: categories.reduce((sum, item) => sum + item.porcentajePonderacion, 0),
+      data: categories, contexto: { anoId: context.anoId, periodoId: context.parcial,
+        grado: context.grado, seccion: context.seccion, asignatura: context.asignatura,
+        institutionId: context.scope.institutionId } };
+  }, "getGradebookWeightConfiguration");
+}
+
+function saveGradebookWeightConfiguration(payload) {
+  return withAuthorizedGradebookSave_(payload, context =>
+    saveGradebookWeightConfigurationUnlocked_(payload, context), "saveGradebookWeightConfiguration");
+}
+
+function saveGradebookWeightConfigurationUnlocked_(payload, context) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const raw = p.categorias;
+  if (!Array.isArray(raw) || !raw.length || raw.length > 20) throw new Error("GRADEBOOK_WEIGHT_BATCH_INVALID");
+  const seen = Object.create(null), categories = [];
+  raw.forEach(item => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("GRADEBOOK_WEIGHT_RECORD_INVALID");
+    const categoriaId = String(item.categoriaId || item.evaluacionId || "").trim();
+    const nombre = String(item.nombre || "").trim();
+    const percentage = item.porcentajePonderacion === "" || item.porcentajePonderacion == null
+      ? NaN : Number(item.porcentajePonderacion);
+    const scale = item.escalaMaxima == null || item.escalaMaxima === "" ? 100 : Number(item.escalaMaxima);
+    if (!categoriaId || !nombre || seen[categoriaId] || !context.categoryIds[categoriaId] ||
+        !Number.isFinite(percentage) || percentage < 0 || percentage > 100 ||
+        !Number.isFinite(scale) || scale <= 0 || scale > 10000) {
+      throw new Error("GRADEBOOK_WEIGHT_RECORD_INVALID");
+    }
+    if (!["CAT-1", "CAT-2", "CAT-3", "CAT-4"].includes(categoriaId)) {
+      const owners = context.ownedCategories[categoriaId] || [];
+      if (owners.length !== 1 || !owners[0] ||
+          !(context.scope.institutionWide === true ||
+            (context.scope.departmentIds || []).some(id => String(id).trim() === owners[0]))) {
+        throw new Error("GRADEBOOK_CATEGORY_OWNERSHIP_UNVERIFIED");
+      }
+    }
+    seen[categoriaId] = true;
+    categories.push({ categoriaId, nombre, porcentajePonderacion: percentage, escalaMaxima: scale });
+  });
+  if (Math.abs(categories.reduce((sum, item) => sum + item.porcentajePonderacion, 0) - 100) > 0.01) {
+    throw new Error("GRADEBOOK_WEIGHTS_INVALID");
+  }
+
+  const ss = context.ss;
+  const sheet = ss.getSheetByName("PonderacionesEvaluacion") || getOrCreateSheet(ss, "PonderacionesEvaluacion");
+  let rows = sheet.getDataRange().getValues();
+  if (!rows.length || sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, GRADEBOOK_WEIGHT_HEADERS_.length).setValues([GRADEBOOK_WEIGHT_HEADERS_]);
+    rows = [GRADEBOOK_WEIGHT_HEADERS_.slice()];
+  }
+  if (rows[0].length !== GRADEBOOK_WEIGHT_HEADERS_.length ||
+      GRADEBOOK_WEIGHT_HEADERS_.some((header, index) => String(rows[0][index] || "").trim() !== header)) {
+    throw new Error("GRADEBOOK_WEIGHT_SCHEMA_INVALID");
+  }
+  const data = rows.map(row => {
+    const copy = row.slice();
+    while (copy.length < GRADEBOOK_WEIGHT_HEADERS_.length) copy.push("");
+    return copy;
+  });
+  const institutionId = String(context.scope.institutionId || "").trim();
+  const isContextRow = row => String(row[1] || "").trim() === institutionId &&
+    String(row[2] || "").trim() === context.anoId &&
+    normalizeString(row[3]) === normalizeString(context.parcial) &&
+    normalizeString(row[4]) === normalizeString(context.grado) &&
+    normalizeString(row[5]) === normalizeString(context.seccion) &&
+    normalizeString(row[6]) === normalizeString(context.asignatura);
+  const currentRows = Object.create(null);
+  for (let i = 1; i < data.length; i++) {
+    if (!isContextRow(data[i])) continue;
+    const categoryId = String(data[i][7] || "").trim();
+    if (categoryId && currentRows[categoryId]) throw new Error("GRADEBOOK_WEIGHT_RECORD_AMBIGUOUS");
+    if (categoryId) currentRows[categoryId] = i;
+    data[i][11] = "INACTIVE";
+    data[i][14] = new Date().toISOString();
+  }
+  const now = new Date().toISOString();
+  categories.forEach(item => {
+    const contextKey = buildGradebookWeightContextKey_({ institutionId, anoId: context.anoId,
+      parcial: context.parcial, grado: context.grado, seccion: context.seccion, asignatura: context.asignatura },
+      item.categoriaId);
+    const existingIndex = currentRows[item.categoriaId];
+    const row = existingIndex ? data[existingIndex] :
+      ["WEIGHT-" + Utilities.getUuid(), institutionId, context.anoId, context.parcial,
+        context.grado, context.seccion, context.asignatura, item.categoriaId, item.nombre,
+        item.porcentajePonderacion, item.escalaMaxima, "ACTIVE", context.actor.userId,
+        now, now, contextKey];
+    row[8] = item.nombre; row[9] = item.porcentajePonderacion; row[10] = item.escalaMaxima;
+    row[11] = "ACTIVE"; row[14] = now; row[15] = contextKey;
+    if (!existingIndex) data.push(row);
+  });
+  sheet.getRange(1, 1, data.length, GRADEBOOK_WEIGHT_HEADERS_.length).setValues(data);
+  return { status: "success", total: categories.length,
+    totalWeight: categories.reduce((sum, item) => sum + item.porcentajePonderacion, 0),
+    message: "Ponderaciones guardadas para el contexto académico seleccionado." };
+}
+
 function getGradebookData(payload) {
   return withAuthorizedExamRead_("getGradebookData", payload,
     context => getGradebookDataUnlocked_(payload, context));
@@ -3352,24 +3509,12 @@ function getGradebookDataUnlocked_(payload, context) {
       fecha: row[8] ? new Date(row[8]).toISOString() : null
     })) : [];
 
-  const defaultCategories = [
-    ["CAT-1", "Tareas y Trabajos", "Global", 35, "100", "Activo"],
-    ["CAT-2", "Exámenes y Pruebas", "Global", 40, "100", "Activo"],
-    ["CAT-3", "Proyectos e Investigaciones", "Global", 15, "100", "Activo"],
-    ["CAT-4", "Practicas y Participacion", "Global", 10, "100", "Activo"]
-  ];
-  const categoriesSheet = ss.getSheetByName("CategoriasEvaluacion");
-  const categoriesData = categoriesSheet ? categoriesSheet.getDataRange().getValues() : [];
-  const categories = categoriesData.length <= 1 ? defaultCategories.map(row => ({
-    categoriaId: row[0], nombre: row[1], ambito: row[2],
-    porcentajePonderacion: row[3], escalaId: row[4], estado: row[5]
-  })) : categoriesData.slice(1).map(row => ({
-    categoriaId: row[0],
-    nombre: row[1],
-    ambito: row[2] || "Global",
-    porcentajePonderacion: parseFloat(row[3]) || 0,
-    escalaId: row[4] || "100",
-    estado: row[5] || "Activo"
+  const weightConfiguration = getGradebookWeightConfigurationFromSheet_(ss, {
+    scope, anoId, parcial, grado, seccion, asignatura
+  });
+  const categories = weightConfiguration.map(item => ({
+    categoriaId: item.categoriaId, nombre: item.nombre, ambito: "Contextual",
+    porcentajePonderacion: item.porcentajePonderacion, escalaId: String(item.escalaMaxima), estado: item.estado
   }));
 
   const cierresSheet = ss.getSheetByName("CierresPeriodos");
@@ -3384,7 +3529,8 @@ function getGradebookDataUnlocked_(payload, context) {
   return {
     status: "success",
     data: { alumnos, calificaciones, recuperaciones, categories, estadoPeriodo,
-      contexto: { anoId, periodoId: parcial, grado, seccion, asignatura, institutionId: scope.institutionId } }
+      contexto: { anoId, periodoId: parcial, grado, seccion, asignatura, institutionId: scope.institutionId },
+      configuracionPonderaciones: categories.length ? "Configurada" : "No configurada" } }
   };
 }
 function saveGradebookGrades(payload) {
@@ -3513,8 +3659,13 @@ function getAuthorizedGradebookSaveContext_(payload, permissionAction) {
       String(gradeData[0][9 + index] || "").trim() !== header)) {
     throw new Error("GRADEBOOK_CONTEXT_SCHEMA_INVALID");
   }
+  const weightConfiguration = getGradebookWeightConfigurationFromSheet_(ss, {
+    scope, anoId, parcial, grado, seccion, asignatura
+  });
+  const weightCategoryIds = Object.create(null);
+  weightConfiguration.forEach(item => { weightCategoryIds[item.categoriaId] = true; });
   return { ss, actor, scope, institutional, anoId, grado, seccion, asignatura, parcial, roster,
-    gradeSheet, gradeData, categoryIds, ownedCategories };
+    gradeSheet, gradeData, categoryIds, ownedCategories, weightConfiguration, weightCategoryIds };
 }
 
 function saveGradebookGradesUnlocked_(payload, context, options) {
@@ -3544,7 +3695,9 @@ function saveGradebookGradesUnlocked_(payload, context, options) {
     const raw = item.notaObtenida;
     if (!evaluacionId || !userId) throw new Error("GRADEBOOK_ENTRY_INVALID");
     if (!context.roster[userId]) throw new Error("GRADEBOOK_ENTRY_OUT_OF_SCOPE");
-    if (!context.categoryIds[evaluacionId]) throw new Error("GRADEBOOK_CATEGORY_NOT_ACTIVE");
+    if (!context.weightCategoryIds || !context.weightCategoryIds[evaluacionId]) {
+      throw new Error("GRADEBOOK_WEIGHTS_NOT_CONFIGURED_OR_CATEGORY_INACTIVE");
+    }
     if (!["CAT-1", "CAT-2", "CAT-3", "CAT-4"].includes(evaluacionId)) {
       const categoryOwners = context.ownedCategories[evaluacionId] || [];
       if (categoryOwners.length !== 1 || !categoryOwners[0] ||
