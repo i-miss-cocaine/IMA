@@ -4516,6 +4516,7 @@ function getAuthorizedPeriodGradebookClosureContext_(payload) {
   const closureSheet = ss.getSheetByName("CierresPeriodos");
   const closureHeaders = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion",
     "Asignatura", "ProfesorID", "Estado", "FechaCierre"];
+  let latestClosure = null;
   if (closureSheet) {
     const closureRows = closureSheet.getDataRange().getValues();
     if (closureRows.length && closureHeaders.some((header, index) =>
@@ -4533,7 +4534,7 @@ function getAuthorizedPeriodGradebookClosureContext_(payload) {
         sameContextRows.push({ row, rowIndex: index + 1 });
       }
     }
-    const latestClosure = sameContextRows.length ? sameContextRows[sameContextRows.length - 1] : null;
+    latestClosure = sameContextRows.length ? sameContextRows[sameContextRows.length - 1] : null;
     if (latestClosure) {
       const state = String(latestClosure.row[7] || "").trim();
       if (state === "Cerrado") throw new Error("GRADEBOOK_CLOSURE_ALREADY_EXISTS");
