@@ -3530,7 +3530,7 @@ function getGradebookDataUnlocked_(payload, context) {
     status: "success",
     data: { alumnos, calificaciones, recuperaciones, categories, estadoPeriodo,
       contexto: { anoId, periodoId: parcial, grado, seccion, asignatura, institutionId: scope.institutionId },
-      configuracionPonderaciones: categories.length ? "Configurada" : "No configurada" } }
+      configuracionPonderaciones: categories.length ? "Configurada" : "No configurada" }
   };
 }
 function saveGradebookGrades(payload) {
