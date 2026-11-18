@@ -2273,9 +2273,14 @@ function submitExamUnlocked_(payload, context) {
     requiresManualReview = requiresManualReview || result.requiresManualReview;
   });
   const nota = requiresManualReview ? "" : (totalPoints > 0 ? ((earnedPoints / totalPoints) * 100).toFixed(2) : "0");
-  const entregaExamenId = "EEX-" + Date.now() + "-" + Utilities.getUuid();
+  const safeActorId = String(actor.userId).replace(/[^A-Za-z0-9_-]/g, "_");
+  const entregaExamenId = "EEX-" + Date.now() + "-" + safeActorId + "-" + (previousAttempts + 1);
   const questionSnapshot = questionRows.map(row => row.slice(0, 17));
-  const attachmentState = persistExamQuestionAttachments_(ss, questionRows, respuestas, entregaExamenId, examenId, actor.userId);
+  const hasAttachments = respuestas.some(answer => Array.isArray(answer && answer.adjuntos) && answer.adjuntos.length > 0);
+  const attachmentState = hasAttachments ?
+    persistExamQuestionAttachments_(ss, questionRows, respuestas, entregaExamenId, examenId, actor.userId) :
+    { respuestas: respuestas.map(answer => ({ preguntaId: String(answer.preguntaId),
+      respuestaEstudiante: answer.respuestaEstudiante === undefined ? "" : answer.respuestaEstudiante })) };
   try {
     deliveriesSheet.appendRow([entregaExamenId, examenId, actor.userId, new Date(),
       JSON.stringify(attachmentState.respuestas), nota, "Pendiente", "", "", "", JSON.stringify(questionSnapshot)]);
