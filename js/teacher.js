@@ -5579,6 +5579,10 @@ function toBase64(file) {
         const { alumnos = [], calificaciones = [], categories = [], resumenes = {}, estadoPeriodo } = currentGradebookData || {};
         const configured = Array.isArray(categories) && categories.length > 0;
         const isClosed = estadoPeriodo === 'Cerrado';
+        if (saveButton) saveButton.disabled = isClosed || !configured;
+        if (configButton) configButton.disabled = isClosed;
+        if (recoveryButton) recoveryButton.disabled = isClosed || !configured;
+        if (closeButton) closeButton.disabled = isClosed || !configured;
         const escapeHtml = value => String(value == null ? '' : value).replace(/[&<>"']/g, char =>
             ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
@@ -5736,8 +5740,7 @@ function toBase64(file) {
                 ...getGradebookContextPayload(),
                 esBorrador: false,
                 esPublicada: true,
-                profesorId: currentUser.userId,
-                ...getGradebookContextPayload()
+                profesorId: currentUser.userId
             });
 
             if (res.status === 'success') {
@@ -5755,10 +5758,11 @@ function toBase64(file) {
     });
 
     document.getElementById('btn-gb-close-period')?.addEventListener('click', async () => {
-        const selGrado = document.getElementById('gb-filter-grado')?.value;
-        const selSeccion = document.getElementById('gb-filter-seccion')?.value;
-        const selAsignatura = document.getElementById('gb-filter-asignatura')?.value;
-        const selParcial = document.getElementById('gb-filter-parcial')?.value;
+        const gradebookContext = getGradebookContextPayload();
+        const selGrado = gradebookContext.grado;
+        const selSeccion = gradebookContext.seccion;
+        const selAsignatura = gradebookContext.asignatura;
+        const selParcial = gradebookContext.periodoId;
 
         const closeConfirmed = window.confirmCriticalOperation
             ? window.confirmCriticalOperation({
@@ -5771,11 +5775,11 @@ function toBase64(file) {
 
         try {
             const res = await fetchApi('EXAM', 'closePeriodGradebook', {
-                ...getGradebookContextPayload(),
-                periodoId: getGradebookContextPayload().periodoId,
-                grado: selGrado,
-                seccion: selSeccion,
-                asignatura: selAsignatura,
+                anoId: gradebookContext.anoId,
+                periodoId: gradebookContext.periodoId,
+                grado: gradebookContext.grado,
+                seccion: gradebookContext.seccion,
+                asignatura: gradebookContext.asignatura,
                 profesorId: currentUser.userId
             });
 
