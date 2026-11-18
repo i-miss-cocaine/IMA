@@ -25,7 +25,7 @@ const context = {
     base64Encode(value){return Buffer.from(value).toString("base64");},
     newBlob(bytes,mime,name){return {bytes,mime,name,getBytes(){return bytes;},getContentType(){return mime;}};},
     getUuid(){return "U"+(++sequence);}},
-  DriveApp:{createFile(blob){const id="F"+(++sequence),file={id,blob,trashed:false,getId(){return id;},getBlob(){return blob;},setTrashed(v){this.trashed=v;}};stored.set(id,file);return file;},
+  DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},createFile(blob){const id="F"+(++sequence),file={id,blob,trashed:false,getId(){return id;},getBlob(){return blob;},setTrashed(v){this.trashed=v;}};stored.set(id,file);return file;},
     getFileById(id){if(!stored.has(id))throw Error("missing");return stored.get(id);}},
   Date,JSON,Object,Array,String,Number,Math,RegExp
 };

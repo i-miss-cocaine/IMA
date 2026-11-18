@@ -841,9 +841,7 @@ function normalizeExamQuestionDefinition_(input, defaults) {
   } else if (type === "adjunto") {
     const accepted = Array.isArray(options.acceptedMimeTypes) ? options.acceptedMimeTypes.map(v => String(v).trim()).filter(Boolean) : [];
     const maxFiles = Number(options.maxFiles === undefined ? 1 : options.maxFiles);
-    if (!accepted.length || accepted.some(value => !/^[a-z0-9][a-z0-9!#    const maxFiles = Number(options.maxFiles === undefined ? 1 : options.maxFiles);
-    if (!accepted.length || !Number.isSafeInteger(maxFiles) || maxFiles < 1) throw new Error("QUESTION_ATTACHMENT_SCHEMA_INVALID");^_.+-]*\/[a-z0-9][a-z0-9!#    const maxFiles = Number(options.maxFiles === undefined ? 1 : options.maxFiles);
-    if (!accepted.length || !Number.isSafeInteger(maxFiles) || maxFiles < 1) throw new Error("QUESTION_ATTACHMENT_SCHEMA_INVALID");^_.+-]*$/i.test(value)) ||
+    if (!accepted.length || accepted.some(value => !/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i.test(value)) ||
         !Number.isSafeInteger(maxFiles) || maxFiles < 1 || maxFiles > 5) throw new Error("QUESTION_ATTACHMENT_SCHEMA_INVALID");
     options.acceptedMimeTypes = accepted;
     options.maxFiles = maxFiles;
@@ -2178,6 +2176,7 @@ function persistExamQuestionAttachments_(ss,questionRows,answers,deliveryId,exam
   (questionRows||[]).forEach(row=>{questions[String(row[0]||"").trim()]=row;});
   (answers||[]).forEach(answer=>{const id=String(answer&&answer.preguntaId||"").trim();if(!id||answerByQuestion[id])throw new Error("SUBMISSION_INVALID");answerByQuestion[id]=answer;});
   const sheet=ensureExamAttachmentsSheet_(ss),createdFiles=[],records=[];
+  let firstRow=0, appendedRows=0;
   const safeAnswers=(answers||[]).map(answer=>({preguntaId:String(answer.preguntaId),respuestaEstudiante:answer.respuestaEstudiante===undefined?"":answer.respuestaEstudiante}));
   try {
     Object.keys(answerByQuestion).forEach(questionId=>{
@@ -2196,14 +2195,22 @@ function persistExamQuestionAttachments_(ss,questionRows,answers,deliveryId,exam
         if(match[2].length>Math.ceil(EXAM_ATTACHMENT_MAX_BYTES_/3)*4+4)throw new Error("EXAM_ATTACHMENT_TOO_LARGE");
         const bytes=Utilities.base64Decode(match[2]);if(!bytes||!bytes.length||bytes.length>EXAM_ATTACHMENT_MAX_BYTES_)throw new Error("EXAM_ATTACHMENT_TOO_LARGE");
         const name=sanitizeExamAttachmentName_(item.name),file=DriveApp.createFile(Utilities.newBlob(bytes,mime,name));createdFiles.push(file);
+        file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
         const id="EAT-"+Utilities.getUuid();records.push([id,deliveryId,examId,questionId,userId,file.getId(),name,mime,bytes.length,new Date()]);
         const target=safeAnswers.find(value=>value.preguntaId===questionId);
         if(target){if(!Array.isArray(target.adjuntos))target.adjuntos=[];target.adjuntos.push({adjuntoId:id,nombre:name,mimeType:mime,tamanoBytes:bytes.length});}
       });
     });
-    const firstRow=sheet.getLastRow()+1;records.forEach(record=>sheet.appendRow(record));
+    firstRow=sheet.getLastRow()+1;
+    records.forEach(record=>{sheet.appendRow(record);appendedRows++;});
     return {respuestas:safeAnswers,sheet,firstRow,rowCount:records.length,createdFiles};
-  }catch(error){createdFiles.forEach(file=>{try{file.setTrashed(true);}catch(_){}});throw error;}
+  }catch(error){
+    let rollbackFailed=false;
+    if(appendedRows){try{sheet.deleteRows(firstRow,appendedRows);}catch(_){rollbackFailed=true;}}
+    createdFiles.forEach(file=>{try{file.setTrashed(true);}catch(_){rollbackFailed=true;}});
+    if(rollbackFailed)throw new Error("EXAM_ATTACHMENT_ROLLBACK_FAILED");
+    throw error;
+  }
 }
 function rollbackExamQuestionAttachments_(state) {
   if(!state)return;let failed=false;
