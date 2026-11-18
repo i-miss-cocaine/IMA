@@ -947,3 +947,27 @@ Pendiente y límites:
 - **Estado:** AUD-NG-166 Completada en código; AUD-NG-167 / TAREA-12 es la siguiente tarea elegible.
 - **Siguiente acción:** iniciar revisión e implementación de AUD-NG-167 sobre libro consolidado, ponderaciones, cálculo, rúbricas, estados, recuperación y boletines, coordinando identidad/ABAC con AUD-NG-002/AUD-NG-158.
 ===============================================================================
+
+===============================================================================
+### C1.822 — AUD-NG-167: identidad contextual del libro y motor de cálculo
+- **Fecha:** 2026-11-18.
+- **Sesión:** IMA-EXEC-20261118-AUD-NG-167-CONTEXT-GRADE-CALC-01.
+- **Rama:** NG_beta_0.0.0.1_work.
+- **HEAD de código:** 6816f296a09bfb450a27b77edf0271be06f09d8c.
+- **Checkpoint anterior:** C1.821.
+- **Cambios implementados:**
+  1. CalificacionesEstudiantes extiende el esquema base de nueve columnas con AnoID, PeriodoID, Grado, Seccion, Asignatura, InstitutionID y ContextKey.
+  2. La clave se normaliza y serializa de forma estable con institución, año, período, grado, sección, asignatura, categoría y estudiante.
+  3. Guardado individual y masivo actualizan solo la fila de la clave exacta; registros antiguos sin contexto no se reutilizan ni sobrescriben.
+  4. Lectura exige contexto completo y devuelve solo notas que coinciden exactamente con institución/año/período/grupo/asignatura y ContextKey.
+  5. js/teacher.js envía AnoID de GLOBAL_SCOPE (con fallback al año actual).
+  6. calculateUnifiedAcademicGrade valida métodos, pesos, rangos, puntos y duplicados; nota cero es una nota válida; pendiente, exento, ausencia justificada y sin actividades no se convierten en cero; no se infiere equivalencia SACE ni cuadro de honor.
+  7. auditAcademicGradesIntegrity no compara nota oficial con un cálculo provisional/no final.
+- **Pruebas:**
+  - Exam-Service security local contracts: 35/35 PASS en Actions 44300650553; sintaxis Code.gs y todos los JS de js/ y backend/ PASS.
+  - Academic-Service unified grade calculation: 13/13 PASS en Actions 44300773124.
+  - Suite general del repositorio: 161/164; tres fallos preexistentes ajenos a AUD-NG-167 (Phase22 ACCOUNTING, binary integrity ACCOUNTING y session-token-expiry USER/valid).
+- **Limitaciones conocidas:** la interfaz todavía conserva pesos hardcodeados 35/40/15/10 y un cálculo cliente; no se declara integrada la configuración institucional. Las recuperaciones siguen usando CAT-GLOBAL y aún requieren asociarse a una calificación contextual real. El boletín oficial aún lee fuentes antiguas y no se declara SACE compatible.
+- **Estado:** AUD-NG-167 permanece En progreso. No cerrar la tarea hasta completar configuración de pesos contextual, cálculo servidor consumido por UI, ciclo de publicación/cierre/rectificación, recuperación y boletín desde la fuente consolidada.
+- **Siguiente acción:** implementar PonderacionesEvaluacion por institución/año/período/grado/sección/asignatura, integrarla con getGradebookData/saveGradebookGrades y retirar la tabla hardcodeada del docente.
+===============================================================================

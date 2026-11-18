@@ -1020,14 +1020,15 @@ Hallazgo nuevo: AUD-NG-166. Progreso de auditoría: 18/183; 165 pendientes. AUD-
 ---
 
 <!-- ID: AUD-NG-167 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-167] Unificar la integridad del libro de calificaciones y el ciclo institucional de evaluación
+### [~] [AUD-NG-167] Unificar la integridad del libro de calificaciones y el ciclo institucional de evaluación
 - **Origen:** Auditoría de completadas.md / TAREA-12.
 - **Severidad:** Alto (P1).
 - **Archivos:** backend/academic-service/Code.gs; backend/exam-service/Code.gs; js/teacher.js; js/student.js; teacher-dashboard.html.
 - **Problema:** calificaciones identificadas solo por evaluacionId+userId; consultas sin filtro completo por periodo/asignatura; ponderaciones duplicadas/hardcodeadas; cálculo unificado con validaciones insuficientes; rúbricas/competencias sin esquema ni integración UI; cierre/publicación y rectificación sin transición/autoridad contextual verificable; recuperación CAT-GLOBAL; boletines desconectados de la fuente consolidada y equivalencia SACE no acreditada.
 - **Criterios:** clave contextual estable; validar configuración de ponderaciones y notas; cálculo server-side único con pendientes distintos de cero; rúbricas analíticas y competencias vinculadas a catálogos; revisión/publicación/cierre/rectificación con permisos y transiciones verificadas; recuperación asociada a calificación real; boletines oficiales desde notas consolidadas y compatibilidad SACE demostrable.
 - **Tareas relacionadas (no duplicadas):** AUD-NG-002 (propiedad y consulta), AUD-NG-158 (ABAC docente), AUD-NG-124 (historial de calificaciones de entregas, no del libro consolidado).
-- **Estado:** [ ] Pendiente
+- **Avance C1.822 (2026-11-18):** CalificacionesEstudiantes incorpora AnoID, PeriodoID, Grado, Seccion, Asignatura, InstitutionID y ContextKey. Guardado individual/masivo y lectura filtran por la clave contextual; las filas históricas sin contexto no se reutilizan ni sobrescriben. La UI transmite AnoID desde GLOBAL_SCOPE o año actual. El cálculo académico ahora diferencia sin nota, pendiente, exento y cero explícito; valida método, pesos, notas y puntos, y no afirma equivalencia SACE sin fuente. 35/35 contratos Exam-Service PASS y 13/13 casos de cálculo unificado PASS. Pendiente integrar la configuración de pesos contextuales y eliminar el cálculo hardcodeado del cliente.
+- **Estado:** [~] En progreso (C1.822: clave contextual y motor de cálculo reforzados; quedan ponderaciones contextuales, integración UI, recuperación, rúbricas/competencias y boletín oficial).
 
 Hallazgo nuevo: AUD-NG-167. Progreso de auditoría: 18/183; 165 pendientes. Siguiente tarea: TAREA-13.
 

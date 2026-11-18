@@ -3073,3 +3073,5 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Estado global de Actions:** Exam-Service contracts pasa; la ejecución global de pruebas falla por los tres contratos externos listados. Department Scope también reportó el fallo Phase22 de ACCOUNTING en un commit previo. No se declara verde toda la CI.
 - **Siguiente acción:** navegador y BETA-FUNC-123 con Apps Script/Sheets/Drive reales, incluyendo permisos efectivos, carga/descarga, rollback, concurrencia y las nueve modalidades. No iniciar AUD-NG-167 hasta completar AUD-NG-166.
 ===============================================================================
+
+[2026-11-18][C1.822] AUD-NG-167: se añadió clave contextual a calificaciones y se endureció calculateUnifiedAcademicGrade. 35/35 contratos Exam-Service y 13/13 casos del motor de cálculo PASS. La tarea continúa abierta por ponderaciones contextuales, UI, recuperación, ciclo de publicación y boletín consolidado.
