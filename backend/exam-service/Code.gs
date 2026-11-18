@@ -4386,57 +4386,161 @@ function withAuthorizedPeriodGradebookClosure_(payload, mutation) {
 }
 function getAuthorizedPeriodGradebookClosureContext_(payload) {
   const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
-  const anoId=String(p.anoId||"").trim(), periodoId=String(p.periodoId||"").trim();
-  const grado=String(p.grado||"").trim(), seccion=String(p.seccion||"").trim(), asignatura=String(p.asignatura||"").trim();
-  if (!anoId||!periodoId||!grado||!seccion||!asignatura) throw new Error("GRADEBOOK_CLOSURE_REQUIRED_CONTEXT");
-  const permission=validateRolePermission("closePeriodGradebook",p);
-  if (!permission||permission.authorized!==true) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const actor=getVerifiedExamIdentity_(p);
-  if (!actor||actor.authorized!==true||!String(actor.userId||"").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const roles=["Profesor","Administrador","Desarrollador","Dirección","Director","Secretaría"];
-  if (roles.indexOf(String(actor.role||"").trim())===-1) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedExamDepartmentScope_(p,ss,actor);
-  if (!scope||scope.authorized!==true||!String(scope.institutionId||"").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
-  if (actor.role!=="Profesor" && scope.institutionWide!==true) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const cfg=getSheetOrThrow(ss,"ConfiguracionAcademica").getDataRange().getValues();
-  const headers=["ID","Fecha","Parcial","Grado","Sección","Asignatura","Unidad","Tema","profesorId"];
-  if (!cfg.length||headers.some((h,i)=>String(cfg[0][i]||"").trim()!==h)) throw new Error("ACADEMIC_ASSIGNMENT_SCHEMA_INVALID");
-  const rows=cfg.slice(1).filter(r=>normalizeString(r[3])===normalizeString(grado)&&normalizeString(r[4])===normalizeString(seccion));
-  const exact=rows.filter(r=>normalizeString(r[2])===normalizeString(periodoId)&&normalizeString(r[5])===normalizeString(asignatura));
-  if(!exact.length) throw new Error("RESOURCE_NOT_AVAILABLE");
-  if(actor.role==="Profesor" && (String(p.profesorId||"").trim()!==String(actor.userId).trim() ||
-      exact.some(r=>String(r[8]||"").trim()!==String(actor.userId).trim()))) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const subjects=Array.from(new Set(rows.map(r=>normalizeString(r[5])).filter(Boolean)));
-  const periods=Array.from(new Set(rows.map(r=>normalizeString(r[2])).filter(Boolean)));
-  if(subjects.length!==1||periods.length!==1||subjects[0]!==normalizeString(asignatura)||periods[0]!==normalizeString(periodoId)) throw new Error("GRADEBOOK_PERIOD_SUBJECT_CONTEXT_AMBIGUOUS");
-  const users=getSheetOrThrow(ss,"Usuarios").getDataRange().getValues(),counts=Object.create(null);
-  users.slice(1).forEach(r=>{const id=String(r[0]||"").trim();if(id)counts[id]=(counts[id]||0)+1;});
-  const ids=users.slice(1).filter(r=>{const id=String(r[0]||"").trim(),role=normalizeString(r[6]||r[5]);return id&&counts[id]===1&&(role==="estudiante"||role==="alumno")&&normalizeString(r[2])===normalizeString(grado)&&normalizeString(r[3])===normalizeString(seccion);}).map(r=>String(r[0]).trim());
-  if(!ids.length) throw new Error("GRADEBOOK_CLOSURE_ROSTER_EMPTY");
-  const grades=getSheetOrThrow(ss,"CalificacionesEstudiantes").getDataRange().getValues();
-  const gh=["ID","EvaluacionID","UserID","NotaObtenida","PuntajePonderado","EsBorrador","EsPublicada","Observaciones","FechaRegistro"];
-  if(!grades.length||gh.some((h,i)=>String(grades[0][i]||"").trim()!==h)) throw new Error("GRADEBOOK_CLOSURE_GRADE_SCHEMA_INVALID");
-  const required=["CAT-1","CAT-2","CAT-3","CAT-4"],roster=new Set(ids),byStudent=Object.create(null);
-  grades.slice(1).filter(r=>roster.has(String(r[2]||"").trim())).forEach(r=>{
-    const id=String(r[2]).trim(),cat=String(r[1]||"").trim();if(!byStudent[id])byStudent[id]=Object.create(null);
-    if(required.indexOf(cat)===-1||byStudent[id][cat]) throw new Error("GRADEBOOK_CLOSURE_CATEGORY_AMBIGUOUS");
-    const score=Number(r[3]),draft=r[5]===true||String(r[5]).toLowerCase()==="true",published=r[6]===true||String(r[6]).toLowerCase()==="true";
-    if(!Number.isFinite(score)||score<0||score>100||draft||!published) throw new Error("GRADEBOOK_CLOSURE_UNPUBLISHED_GRADES");
-    byStudent[id][cat]=true;
+  const anoId = String(p.anoId || "").trim();
+  const periodoId = String(p.periodoId || "").trim();
+  const grado = String(p.grado || "").trim();
+  const seccion = String(p.seccion || "").trim();
+  const asignatura = String(p.asignatura || "").trim();
+  if (!anoId || !periodoId || !grado || !seccion || !asignatura) {
+    throw new Error("GRADEBOOK_CLOSURE_REQUIRED_CONTEXT");
+  }
+
+  const permission = validateRolePermission("closePeriodGradebook", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  const role = String(actor && actor.role || "").trim();
+  const roles = ["Profesor", "Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      roles.indexOf(role) === -1) throw new Error("RESOURCE_NOT_AVAILABLE");
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  if (role !== "Profesor" && scope.institutionWide !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+
+  const config = getSheetOrThrow(ss, "ConfiguracionAcademica").getDataRange().getValues();
+  const configHeaders = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
+  if (!config.length || configHeaders.some((header, index) =>
+      String(config[0][index] || "").trim() !== header)) {
+    throw new Error("ACADEMIC_ASSIGNMENT_SCHEMA_INVALID");
+  }
+  const assignments = config.slice(1).filter(row =>
+    normalizeString(row[2]) === normalizeString(periodoId) &&
+    normalizeString(row[3]) === normalizeString(grado) &&
+    normalizeString(row[4]) === normalizeString(seccion) &&
+    normalizeString(row[5]) === normalizeString(asignatura));
+  if (!assignments.length) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (role === "Profesor" && (String(p.profesorId || "").trim() !== String(actor.userId).trim() ||
+      assignments.some(row => String(row[8] || "").trim() !== String(actor.userId).trim()))) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const groupAssignments = config.slice(1).filter(row =>
+    normalizeString(row[3]) === normalizeString(grado) &&
+    normalizeString(row[4]) === normalizeString(seccion));
+  const subjects = Array.from(new Set(groupAssignments.map(row => normalizeString(row[5])).filter(Boolean)));
+  const periods = Array.from(new Set(groupAssignments.map(row => normalizeString(row[2])).filter(Boolean)));
+  if (subjects.length !== 1 || periods.length !== 1 ||
+      subjects[0] !== normalizeString(asignatura) || periods[0] !== normalizeString(periodoId)) {
+    throw new Error("GRADEBOOK_PERIOD_SUBJECT_CONTEXT_AMBIGUOUS");
+  }
+
+  const users = getSheetOrThrow(ss, "Usuarios").getDataRange().getValues();
+  const counts = Object.create(null);
+  users.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) counts[id] = (counts[id] || 0) + 1;
   });
-  ids.forEach(id=>{const r=byStudent[id]||{};if(required.some(cat=>r[cat]!==true))throw new Error("GRADEBOOK_CLOSURE_INCOMPLETE_GRADES");});
-  const closureSheet=ss.getSheetByName("CierresPeriodos"),closureHeaders=["CierreID","AnoID","PeriodoID","Grado","Seccion","Asignatura","ProfesorID","Estado","FechaCierre"];
-  if(closureSheet){const rows=closureSheet.getDataRange().getValues();if(rows.length&&closureHeaders.some((h,i)=>String(rows[0][i]||"").trim()!==h))throw new Error("GRADEBOOK_CLOSURE_SCHEMA_INVALID");
-    if(rows.slice(1).some(r=>normalizeString(r[1])===normalizeString(anoId)&&normalizeString(r[2])===normalizeString(periodoId)&&normalizeString(r[3])===normalizeString(grado)&&normalizeString(r[4])===normalizeString(seccion)&&normalizeString(r[5])===normalizeString(asignatura)))throw new Error("GRADEBOOK_CLOSURE_ALREADY_EXISTS");}
-  return {ss,closureSheet,closureHeaders,actor,anoId,periodoId,grado,seccion,asignatura};
+  const studentIds = users.slice(1).filter(row => {
+    const id = String(row[0] || "").trim();
+    const studentRole = normalizeString(row[6] || row[5]);
+    return id && counts[id] === 1 && (studentRole === "estudiante" || studentRole === "alumno") &&
+      normalizeString(row[2]) === normalizeString(grado) &&
+      normalizeString(row[3]) === normalizeString(seccion);
+  }).map(row => String(row[0]).trim());
+  if (!studentIds.length) throw new Error("GRADEBOOK_CLOSURE_ROSTER_EMPTY");
+
+  const weightConfiguration = getGradebookWeightConfigurationFromSheet_(ss, {
+    scope, anoId, parcial: periodoId, grado, seccion, asignatura
+  });
+  if (!weightConfiguration.length) throw new Error("GRADEBOOK_CLOSURE_WEIGHTS_NOT_CONFIGURED");
+  const configuredCategories = Object.create(null);
+  weightConfiguration.forEach(item => { configuredCategories[item.categoriaId] = true; });
+
+  const grades = getSheetOrThrow(ss, "CalificacionesEstudiantes").getDataRange().getValues();
+  const gradeBaseHeaders = ["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado",
+    "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro"];
+  const gradeContextHeaders = ["AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"];
+  if (!grades.length || grades[0].length !== 16 ||
+      gradeBaseHeaders.some((header, index) => String(grades[0][index] || "").trim() !== header) ||
+      gradeContextHeaders.some((header, index) => String(grades[0][9 + index] || "").trim() !== header)) {
+    throw new Error("GRADEBOOK_CLOSURE_GRADE_SCHEMA_INVALID");
+  }
+
+  const roster = new Set(studentIds);
+  const byStudent = Object.create(null);
+  const contextFields = { institutionId: scope.institutionId, anoId, periodoId,
+    grado, seccion, asignatura };
+  grades.slice(1).forEach(row => {
+    const userId = String(row[2] || "").trim();
+    if (!roster.has(userId)) return;
+    if (String(row[9] || "").trim() !== anoId ||
+        normalizeString(row[10]) !== normalizeString(periodoId) ||
+        normalizeString(row[11]) !== normalizeString(grado) ||
+        normalizeString(row[12]) !== normalizeString(seccion) ||
+        normalizeString(row[13]) !== normalizeString(asignatura) ||
+        String(row[14] || "").trim() !== String(scope.institutionId).trim()) return;
+
+    const categoryId = String(row[1] || "").trim();
+    if (!configuredCategories[categoryId]) {
+      throw new Error("GRADEBOOK_CLOSURE_CATEGORY_NOT_CONFIGURED");
+    }
+    const expectedKey = buildGradebookContextKey_({
+      ...contextFields, evaluacionId: categoryId, userId
+    });
+    if (!String(row[0] || "").trim() || String(row[15] || "").trim() !== expectedKey) {
+      throw new Error("GRADEBOOK_CLOSURE_CONTEXT_KEY_INVALID");
+    }
+    if (!byStudent[userId]) byStudent[userId] = Object.create(null);
+    if (byStudent[userId][categoryId]) throw new Error("GRADEBOOK_CLOSURE_CATEGORY_AMBIGUOUS");
+
+    const rawScore = row[3];
+    const score = rawScore === "" || rawScore == null ? NaN : Number(rawScore);
+    const draft = row[5] === true || String(row[5]).toLowerCase() === "true";
+    const published = row[6] === true || String(row[6]).toLowerCase() === "true";
+    if (!Number.isFinite(score) || score < 0 || score > 100 || draft || !published) {
+      throw new Error("GRADEBOOK_CLOSURE_UNPUBLISHED_GRADES");
+    }
+    byStudent[userId][categoryId] = true;
+  });
+
+  studentIds.forEach(userId => {
+    const studentGrades = byStudent[userId] || {};
+    if (weightConfiguration.some(category => studentGrades[category.categoriaId] !== true)) {
+      throw new Error("GRADEBOOK_CLOSURE_INCOMPLETE_GRADES");
+    }
+  });
+
+  const closureSheet = ss.getSheetByName("CierresPeriodos");
+  const closureHeaders = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion",
+    "Asignatura", "ProfesorID", "Estado", "FechaCierre"];
+  if (closureSheet) {
+    const closureRows = closureSheet.getDataRange().getValues();
+    if (closureRows.length && closureHeaders.some((header, index) =>
+        String(closureRows[0][index] || "").trim() !== header)) {
+      throw new Error("GRADEBOOK_CLOSURE_SCHEMA_INVALID");
+    }
+    if (closureRows.slice(1).some(row =>
+        normalizeString(row[1]) === normalizeString(anoId) &&
+        normalizeString(row[2]) === normalizeString(periodoId) &&
+        normalizeString(row[3]) === normalizeString(grado) &&
+        normalizeString(row[4]) === normalizeString(seccion) &&
+        normalizeString(row[5]) === normalizeString(asignatura))) {
+      throw new Error("GRADEBOOK_CLOSURE_ALREADY_EXISTS");
+    }
+  }
+  return { ss, closureSheet, closureHeaders, actor, anoId, periodoId, grado, seccion, asignatura };
 }
+
 function closePeriodGradebookUnlocked_(c) {
   const sheet=c.closureSheet||getOrCreateSheet(c.ss,"CierresPeriodos");
   if(!c.closureSheet||sheet.getLastRow()===0)sheet.appendRow(c.closureHeaders);
   const id="CIERRE-"+Utilities.getUuid();
   if(sheet.getDataRange().getValues().slice(1).some(r=>String(r[0]||"").trim()===id))throw new Error("GRADEBOOK_CLOSURE_ID_COLLISION");
   sheet.appendRow([id,c.anoId,c.periodoId,c.grado,c.seccion,c.asignatura,String(c.actor.userId).trim(),"Cerrado",new Date()]);
-  return {status:"success",cierreId:id,message:"Período cerrado. Las cuatro categorías ya estaban publicadas; no se ejecutó una publicación masiva adicional."};
+  return {status:"success",cierreId:id,message:"Período cerrado. Todas las categorías configuradas para el contexto ya estaban publicadas."};
 }
 
 function submitGradebookForReview(payload) {
