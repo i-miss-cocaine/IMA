@@ -45,12 +45,16 @@ function fixture(options = {}) {
   if (options.badAssignmentSchema) assignmentRows[0] = ["wrong"];
   const closureRows = [closureHeaders];
   if (options.existing) closureRows.push([
-    "REV-OLD", options.existingYear || "ANO-CURRENT", "P1", "10", "A", "Math", "T1",
+    "REV-OLD", options.existingYear || "2026", "P1", "10", "A", "Math", "T1",
     options.existingState || "PendienteRevision", new Date()
   ]);
   if (options.duplicateId) closureRows.push(["REV-U1", "ANO-CURRENT", "P2", "9", "B", "Science", "T1", "Observado", new Date()]);
   if (options.badSchema) closureRows[0] = ["wrong"];
-  const sheets = { ConfiguracionAcademica: makeSheet(assignmentRows) };
+  const weightHeaders = ["ID","InstitutionID","AnoID","PeriodoID","Grado","Seccion","Asignatura","CategoriaID","Nombre","PorcentajePonderacion","EscalaMaxima","Estado","RegisteredBy","CreatedAt","UpdatedAt","ContextKey"];
+  const weightYear = options.weightYear || "2026";
+  const weightRows = [weightHeaders, ["W1","I1",weightYear,"P1","10","A","Math","CAT-1","Evaluación",100,100,"ACTIVE","T1","","",JSON.stringify(["i1",weightYear.toLowerCase(),"p1","10","a","math","cat-1"])]];
+  const sheets = { ConfiguracionAcademica: makeSheet(assignmentRows), PonderacionesEvaluacion: makeSheet(weightRows) };
+  if (options.noWeights) delete sheets.PonderacionesEvaluacion;
   if (!options.missingClosure) sheets.CierresPeriodos = makeSheet(options.emptyClosure ? [] : closureRows);
   if (options.onClosureAppend && sheets.CierresPeriodos) sheets.CierresPeriodos.onAppend = options.onClosureAppend;
   const stats = { acquired: 0, released: 0, held: false, opens: 0, insertions: 0, events: [] };
@@ -99,19 +103,21 @@ function fixture(options = {}) {
     Utilities: { getUuid() { return options.uuid || "U1"; } }
   };
   const names = [
+    "buildGradebookWeightContextKey_",
+    "getGradebookWeightConfigurationFromSheet_",
     "submitGradebookForReview",
     "withAuthorizedPeriodGradebookSubmission_",
     "getAuthorizedPeriodGradebookSubmissionContext_",
     "submitGradebookForReviewUnlocked_"
   ];
-  vm.runInNewContext(names.map(extractFunction).join("\n") +
-    "\nthis.submitGradebookForReview = submitGradebookForReview;", runtime);
+  const vmSource = ['const GRADEBOOK_WEIGHT_HEADERS_ = ["ID","InstitutionID","AnoID","PeriodoID","Grado","Seccion","Asignatura","CategoriaID","Nombre","PorcentajePonderacion","EscalaMaxima","Estado","RegisteredBy","CreatedAt","UpdatedAt"];', ...names.map(extractFunction), "this.submitGradebookForReview = submitGradebookForReview;"].join(String.fromCharCode(10));
+  vm.runInNewContext(vmSource, runtime);
   return {
     runtime, sheets, stats,
     identityCalls: () => identityCalls,
     call(payload = {}) {
       return runtime.submitGradebookForReview(Object.assign({
-        sessionToken: "signed", anoId: "SPOOF-YEAR", periodoId: "P1",
+        sessionToken: "signed", anoId: "2026", periodoId: "P1",
         grado: "10", seccion: "A", asignatura: "Math",
         profesorId: "SPOOF-TEACHER", notasPendientesCount: 999
       }, payload));
@@ -127,7 +133,7 @@ test(() => {
   assert.equal(result.status, "success");
   assert.equal(x.sheets.CierresPeriodos.rows.length, 2);
   assert.equal(x.sheets.CierresPeriodos.rows[1][0], "REV-U1");
-  assert.equal(x.sheets.CierresPeriodos.rows[1][1], "ANO-CURRENT");
+  assert.equal(x.sheets.CierresPeriodos.rows[1][1], "2026");
   assert.equal(x.sheets.CierresPeriodos.rows[1][6], "T1");
   assert.equal(result.estado, "PendienteRevision");
   assert.equal("notasPendientesCount" in result, false);
@@ -167,7 +173,7 @@ test(() => {
 });
 test(() => {
   for (const payload of [
-    { periodoId: "" }, { grado: "" }, { seccion: "" }, { asignatura: "" }, { seccion: null }
+    { anoId: "" }, { periodoId: "" }, { grado: "" }, { seccion: "" }, { asignatura: "" }, { seccion: null }
   ]) assert.throws(() => fixture().call(payload), /REQUIRED_CONTEXT_INVALID/);
 });
 test(() => {
@@ -247,10 +253,12 @@ test(() => {
 });
 test(() => {
   const x = fixture();
-  const result = x.call({ anoId: "2027", notasPendientesCount: -1000 });
+  assert.throws(() => x.call({ anoId: "2027", notasPendientesCount: -1000 }), /WEIGHTS_NOT_CONFIGURED/);
+  assert.equal(x.sheets.CierresPeriodos.rows.length, 1);
+  const configured = fixture({ weightYear: "2027" });
+  const result = configured.call({ anoId: "2027" });
   assert.equal(result.status, "success");
-  assert.equal("notasPendientesCount" in result, false);
-  assert.equal(x.sheets.CierresPeriodos.rows[1][1], "ANO-CURRENT");
+  assert.equal(configured.sheets.CierresPeriodos.rows[1][1], "2027");
 });
 
 
