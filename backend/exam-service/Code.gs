@@ -3655,6 +3655,7 @@ function getAuthorizedGradebookSaveContext_(payload, permissionAction) {
     }
   });
   const gradeContextHeaders = ["AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"];
+  if (gradeData[0].length > 16) throw new Error("GRADEBOOK_SCHEMA_INVALID");
   if (gradeData[0].length > 9 && gradeContextHeaders.some((header, index) =>
       String(gradeData[0][9 + index] || "").trim() !== header)) {
     throw new Error("GRADEBOOK_CONTEXT_SCHEMA_INVALID");

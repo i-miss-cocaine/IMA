@@ -63,6 +63,13 @@ function runtime(options = {}) {
       ["REC-2", "EV-2", "STU-2", 40, 60, 60, "Mayor", "PROF-2", new Date("2026-02-02")]
     ]),
     CategoriasEvaluacion: makeSheet([["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"]]),
+    PonderacionesEvaluacion: makeSheet([
+      ["ID","InstitutionID","AnoID","PeriodoID","Grado","Seccion","Asignatura","CategoriaID","Nombre","PorcentajePonderacion","EscalaMaxima","Estado","RegisteredBy","CreatedAt","UpdatedAt","ContextKey"],
+      ["W1","INST-1","2026","I parcial","10","A","Matemáticas","CAT-1","Tareas",35,100,"ACTIVE","PROF-1","2026-01-01","2026-01-01",JSON.stringify(["inst-1","2026","i parcial","10","a","matematicas","cat-1"])],
+      ["W2","INST-1","2026","I parcial","10","A","Matemáticas","CAT-2","Exámenes",40,100,"ACTIVE","PROF-1","2026-01-01","2026-01-01",JSON.stringify(["inst-1","2026","i parcial","10","a","matematicas","cat-2"])],
+      ["W3","INST-1","2026","I parcial","10","A","Matemáticas","CAT-3","Proyectos",15,100,"ACTIVE","PROF-1","2026-01-01","2026-01-01",JSON.stringify(["inst-1","2026","i parcial","10","a","matematicas","cat-3"])],
+      ["W4","INST-1","2026","I parcial","10","A","Matemáticas","CAT-4","Participación",10,100,"ACTIVE","PROF-1","2026-01-01","2026-01-01",JSON.stringify(["inst-1","2026","i parcial","10","a","matematicas","cat-4"])]
+    ]),
     CierresPeriodos: makeSheet([
       ["ID", "Fecha", "Parcial", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado"],
       ["CLOSE-1", new Date("2026-02-03"), "I parcial", "10", "A", "Matemáticas", "PROF-1", "Cerrado"]
@@ -123,7 +130,8 @@ assert.equal(teacherResult.data.contexto.anoId, "2026");
 assert.deepEqual(Array.from(teacherResult.data.recuperaciones, row => row.recuperacionId), ["REC-1"],
   "recovery rows are restricted to the authorized student roster");
 assert.equal(teacherResult.data.estadoPeriodo, "Cerrado");
-assert.equal(teacherResult.data.categories.length, 4, "default categories remain available without writing them");
+assert.equal(teacherResult.data.categories.length, 4, "only context-scoped configured categories are returned");
+assert.equal(teacherResult.data.configuracionPonderaciones, "Configurada");
 assert.deepEqual(teacher.stats(), { acquires: 1, releases: 1, held: false });
 
 assert.throws(() => runtime().context.getGradebookData({
