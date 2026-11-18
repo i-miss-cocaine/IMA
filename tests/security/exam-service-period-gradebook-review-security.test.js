@@ -47,6 +47,7 @@ function fixture(options = {}) {
   if (options.badSchema) rows[0][0] = "Wrong";
   if (options.badRecord) rows[1][5] = "";
   if (options.badState) rows[1][7] = "Cerrado";
+  if (options.approved) rows[1][7] = "Aprobado";
   const closure = options.noSheet ? null : sheet(rows);
   const configRows = [["ID","Fecha","Parcial","Grado","Sección","Asignatura","Unidad","Tema","profesorId"],
     ["A1","","P1","10","A","Matemáticas","","","T1"]];
@@ -114,10 +115,16 @@ test(() => {
   assert.equal(x.closure.rows[1][7], "Observado");
 });
 test(() => {
-  const x = fixture();
-  assert.throws(() => x.call({ decision: "Publicado" }), /PUBLICATION_UNSUPPORTED/);
-  assert.equal(x.closure.rows[1][7], "PendienteRevision");
-  assert.equal(x.stats.opens, 0);
+  const pending = fixture();
+  assert.throws(() => pending.call({ decision: "Publicado" }), /STATE_INVALID/);
+  assert.equal(pending.closure.rows[1][7], "PendienteRevision");
+  assert.equal(pending.stats.opens, 1);
+  const approved = fixture({ approved: true });
+  const result = approved.call({ decision: "Publicado" });
+  assert.equal(result.status, "success");
+  assert.equal(result.estadoActual, "Publicado");
+  assert.equal(approved.closure.rows[1][7], "Publicado");
+  assert.throws(() => fixture({ approved: true }).call({ decision: "Aprobado" }), /STATE_INVALID/);
 });
 test(() => {
   const x = fixture({ actor: { authorized: true, userId: "T1", role: "Profesor" } });
