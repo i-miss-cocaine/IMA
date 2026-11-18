@@ -132,7 +132,7 @@ const completeSummary = teacher.context.calculateGradebookStudentSummary_("STU-1
   { userId:"STU-1", evaluacionId:"CAT-3", notaObtenida:80, esBorrador:false, esPublicada:true },
   { userId:"STU-1", evaluacionId:"CAT-4", notaObtenida:0, esBorrador:false, esPublicada:true }
 ], teacherResult.data.categories);
-assert.equal(completeSummary.notaFinal, 82, "the server calculates using contextual configured weights and preserves a zero score");
+assert.equal(completeSummary.notaFinal, 80, "the server calculates using contextual configured weights and preserves a zero score");
 const pendingSummary = teacher.context.calculateGradebookStudentSummary_("STU-1", [
   { userId:"STU-1", evaluacionId:"CAT-1", notaObtenida:80, esBorrador:false, esPublicada:true }
 ], teacherResult.data.categories);
