@@ -4028,45 +4028,184 @@ function withAuthorizedStudentRecoveryMutation_(payload, mutation) {
   }
 }
 function getAuthorizedStudentRecoveryMutationContext_(payload) {
- const p=payload&&typeof payload==="object"&&!Array.isArray(payload)?payload:{},evaluationId=String(p.evaluacionId||"").trim(),userId=String(p.userId||"").trim();
- const grade=String(p.grado||"").trim(),section=String(p.seccion||"").trim(),subject=String(p.asignatura||"").trim(),periodId=String(p.periodoId||"").trim();
- const recoveredNumber=p.notaRecuperada===""||p.notaRecuperada==null?NaN:Number(p.notaRecuperada),method=String(p.metodoAplicado||"Sustitucion").trim();
- if(evaluationId!=="CAT-GLOBAL"||!userId||!grade||!section||!subject||!periodId||!Number.isFinite(recoveredNumber)||recoveredNumber<0||recoveredNumber>100||["Sustitucion","Promedio","Mayor"].indexOf(method)===-1)throw new Error("STUDENT_RECOVERY_REQUIRED_FIELDS_INVALID");
- const permission=validateRolePermission("saveStudentRecovery",p);if(!permission||permission.authorized!==true)throw new Error("RESOURCE_NOT_AVAILABLE");
- const actor=getVerifiedExamIdentity_(p);if(!actor||actor.authorized!==true||!String(actor.userId||"").trim())throw new Error("RESOURCE_NOT_AVAILABLE");
- const role=String(actor.role||"").trim(),institutionRoles=["Administrador","Desarrollador","Dirección","Director","Secretaría"];if(role!=="Profesor"&&institutionRoles.indexOf(role)===-1)throw new Error("RESOURCE_NOT_AVAILABLE");
- const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedExamDepartmentScope_(p,ss,actor);if(!scope||scope.authorized!==true||!String(scope.institutionId||"").trim())throw new Error("RESOURCE_NOT_AVAILABLE");
- const profile=getExamStudentProfile_(ss,userId);if(!profile||["Estudiante","Alumno"].indexOf(String(profile.role||"").trim())===-1||normalizeString(profile.grado)!==normalizeString(grade)||normalizeString(profile.seccion)!==normalizeString(section))throw new Error("RESOURCE_NOT_AVAILABLE");
- if(role==="Profesor"){
-  const config=getSheetOrThrow(ss,"ConfiguracionAcademica").getDataRange().getValues(),headers=["ID","Fecha","Parcial","Grado","Sección","Asignatura","Unidad","Tema","profesorId"];
-  if(!config.length||headers.some((h,i)=>String(config[0][i]||"").trim()!==h))throw new Error("ACADEMIC_ASSIGNMENT_SCHEMA_INVALID");
-  const matches=config.slice(1).filter(r=>normalizeString(r[2])===normalizeString(periodId)&&normalizeString(r[3])===normalizeString(grade)&&normalizeString(r[4])===normalizeString(section)&&normalizeString(r[5])===normalizeString(subject));
-  if(!matches.length||matches.some(r=>String(r[8]||"").trim()!==String(actor.userId).trim()))throw new Error("RESOURCE_NOT_AVAILABLE");
- }else if(scope.institutionWide!==true)throw new Error("RESOURCE_NOT_AVAILABLE");
- const closure=ss.getSheetByName("CierresPeriodos");if(closure){const rows=closure.getDataRange().getValues();if(rows.length){
-  const headers=["CierreID","AnoID","PeriodoID","Grado","Seccion","Asignatura","ProfesorID","Estado","FechaCierre"];if(headers.some((h,i)=>String(rows[0][i]||"").trim()!==h))throw new Error("PERIOD_CLOSURE_SCHEMA_INVALID");
-  const matches=rows.slice(1).filter(r=>normalizeString(r[2])===normalizeString(periodId)&&normalizeString(r[3])===normalizeString(grade)&&normalizeString(r[4])===normalizeString(section)&&normalizeString(r[5])===normalizeString(subject));
-  if(matches.length>1||matches.some(r=>String(r[7]||"").trim()==="Cerrado"))throw new Error("STUDENT_RECOVERY_PERIOD_CLOSED_OR_AMBIGUOUS");
- }}
- const grades=getSheetOrThrow(ss,"CalificacionesEstudiantes").getDataRange().getValues(),gh=["ID","EvaluacionID","UserID","NotaObtenida","PuntajePonderado","EsBorrador","EsPublicada","Observaciones","FechaRegistro"];
- if(!grades.length||gh.some((h,i)=>String(grades[0][i]||"").trim()!==h))throw new Error("STUDENT_RECOVERY_GRADEBOOK_SCHEMA_INVALID");
- const weights={"CAT-1":.35,"CAT-2":.40,"CAT-3":.15,"CAT-4":.10},scores={};
- grades.slice(1).filter(r=>String(r[2]||"").trim()===userId&&Object.prototype.hasOwnProperty.call(weights,String(r[1]||"").trim())).forEach(r=>{
-  const id=String(r[1]).trim();if(Object.prototype.hasOwnProperty.call(scores,id))throw new Error("STUDENT_RECOVERY_GRADEBOOK_AMBIGUOUS");
-  const score=Number(r[3]);if(!Number.isFinite(score)||score<0||score>100)throw new Error("STUDENT_RECOVERY_GRADEBOOK_INVALID");scores[id]=score;
- });
- let originalGrade=Object.keys(weights).reduce((sum,id)=>sum+(scores[id]||0)*weights[id],0);
- const sheet=ss.getSheetByName("RecuperacionesEstudiante"),recoveryHeaders=["ID","EvaluacionID","UserID","NotaOriginal","NotaRecuperada","NotaFinalCalculada","MetodoAplicado","AutorizadoPor","Fecha"];
- if(sheet){
-  const rows=sheet.getDataRange().getValues();
-  if(rows.length&&recoveryHeaders.some((h,i)=>String(rows[0][i]||"").trim()!==h))throw new Error("STUDENT_RECOVERY_SCHEMA_INVALID");
-  const idCounts=Object.create(null);rows.slice(1).forEach(row=>{const id=String(row[0]||"").trim();if(id)idCounts[id]=(idCounts[id]||0)+1;});
-  const previous=rows.slice(1).filter(row=>String(row[1]||"").trim()===evaluationId&&String(row[2]||"").trim()===userId);
-  if(previous.some(row=>!String(row[0]||"").trim()||idCounts[String(row[0]).trim()]!==1))throw new Error("STUDENT_RECOVERY_HISTORY_AMBIGUOUS");
-  if(previous.length){const prior=Number(previous[previous.length-1][5]);if(!Number.isFinite(prior)||prior<0||prior>100)throw new Error("STUDENT_RECOVERY_HISTORY_INVALID");originalGrade=Math.max(originalGrade,prior);}
- }
- return {actor,ss,sheet,recoveryHeaders,userId,evaluationId,originalGrade,recoveredNumber,method};
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const evaluationId = String(p.evaluacionId || "").trim();
+  const userId = String(p.userId || "").trim();
+  const grade = String(p.grado || "").trim();
+  const section = String(p.seccion || "").trim();
+  const subject = String(p.asignatura || "").trim();
+  const periodId = String(p.periodoId || p.parcial || "").trim();
+  const anoId = String(p.anoId || p.anoLectivo || "").trim();
+  const recoveredNumber = p.notaRecuperada === "" || p.notaRecuperada == null ? NaN : Number(p.notaRecuperada);
+  const method = String(p.metodoAplicado || "Sustitucion").trim();
+  if (!evaluationId || evaluationId === "CAT-GLOBAL" || !userId || !grade || !section ||
+      !subject || !periodId || !anoId || !Number.isFinite(recoveredNumber) ||
+      recoveredNumber < 0 || recoveredNumber > 100 ||
+      ["Sustitucion", "Promedio", "Mayor"].indexOf(method) === -1) {
+    throw new Error("STUDENT_RECOVERY_REQUIRED_FIELDS_INVALID");
+  }
+  const permission = validateRolePermission("saveStudentRecovery", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const actor = getVerifiedExamIdentity_(p);
+  const institutionRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
+  if (!actor || actor.authorized !== true || !String(actor.userId || "").trim() ||
+      (String(actor.role || "").trim() !== "Profesor" &&
+       institutionRoles.indexOf(String(actor.role || "").trim()) === -1)) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim()) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  const role = String(actor.role || "").trim();
+  const profile = getExamStudentProfile_(ss, userId);
+  if (!profile || ["Estudiante", "Alumno"].indexOf(String(profile.role || "").trim()) === -1 ||
+      normalizeString(profile.grado) !== normalizeString(grade) ||
+      normalizeString(profile.seccion) !== normalizeString(section)) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  if (role === "Profesor") {
+    const config = getSheetOrThrow(ss, "ConfiguracionAcademica").getDataRange().getValues();
+    const headers = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
+    if (!config.length || headers.some((header, index) => String(config[0][index] || "").trim() !== header)) {
+      throw new Error("ACADEMIC_ASSIGNMENT_SCHEMA_INVALID");
+    }
+    const matches = config.slice(1).filter(row =>
+      normalizeString(row[2]) === normalizeString(periodId) &&
+      normalizeString(row[3]) === normalizeString(grade) &&
+      normalizeString(row[4]) === normalizeString(section) &&
+      normalizeString(row[5]) === normalizeString(subject));
+    if (!matches.length || matches.some(row => String(row[8] || "").trim() !== String(actor.userId).trim())) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+  } else if (scope.institutionWide !== true) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const closureSheet = ss.getSheetByName("CierresPeriodos");
+  if (closureSheet) {
+    const closureRows = closureSheet.getDataRange().getValues();
+    if (closureRows.length) {
+      const headers = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"];
+      if (headers.some((header, index) => String(closureRows[0][index] || "").trim() !== header)) {
+        throw new Error("PERIOD_CLOSURE_SCHEMA_INVALID");
+      }
+      const matches = closureRows.slice(1).filter(row =>
+        normalizeString(row[2]) === normalizeString(periodId) &&
+        normalizeString(row[3]) === normalizeString(grade) &&
+        normalizeString(row[4]) === normalizeString(section) &&
+        normalizeString(row[5]) === normalizeString(subject) &&
+        (!String(row[1] || "").trim() || String(row[1]).trim() === anoId));
+      if (matches.length > 1 || matches.some(row => String(row[7] || "").trim() === "Cerrado")) {
+        throw new Error("STUDENT_RECOVERY_PERIOD_CLOSED_OR_AMBIGUOUS");
+      }
+    }
+  }
+
+  const weightConfiguration = getGradebookWeightConfigurationFromSheet_(ss, {
+    scope, anoId, parcial: periodId, grado: grade, seccion: section, asignatura: subject
+  });
+  if (!weightConfiguration.some(item => item.categoriaId === evaluationId)) {
+    throw new Error("STUDENT_RECOVERY_CATEGORY_NOT_CONFIGURED");
+  }
+  const grades = getSheetOrThrow(ss, "CalificacionesEstudiantes").getDataRange().getValues();
+  const gradeBaseHeaders = ["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado",
+    "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro"];
+  const gradeContextHeaders = ["AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"];
+  if (!grades.length || gradeBaseHeaders.some((header, index) => String(grades[0][index] || "").trim() !== header) ||
+      gradeContextHeaders.some((header, index) => String(grades[0][9 + index] || "").trim() !== header)) {
+    throw new Error("STUDENT_RECOVERY_GRADEBOOK_SCHEMA_INVALID");
+  }
+  const contextFields = { institutionId: scope.institutionId, anoId, periodoId: periodId,
+    grado: grade, seccion: section, asignatura: subject };
+  const contextKey = buildGradebookContextKey_({ ...contextFields, evaluacionId: evaluationId, userId });
+  const gradeMatches = grades.slice(1).filter(row =>
+    String(row[1] || "").trim() === evaluationId &&
+    String(row[2] || "").trim() === userId &&
+    String(row[9] || "").trim() === anoId &&
+    normalizeString(row[10]) === normalizeString(periodId) &&
+    normalizeString(row[11]) === normalizeString(grade) &&
+    normalizeString(row[12]) === normalizeString(section) &&
+    normalizeString(row[13]) === normalizeString(subject) &&
+    String(row[14] || "").trim() === String(scope.institutionId).trim() &&
+    String(row[15] || "").trim() === contextKey);
+  if (gradeMatches.length !== 1) throw new Error("STUDENT_RECOVERY_GRADEBOOK_NOT_FOUND_OR_AMBIGUOUS");
+  const gradeRow = gradeMatches[0];
+  const originalGrade = gradeRow[3] === "" || gradeRow[3] == null ? NaN : Number(gradeRow[3]);
+  const isDraft = gradeRow[5] === true || String(gradeRow[5]).toLowerCase() === "true";
+  const isPublished = gradeRow[6] === true || String(gradeRow[6]).toLowerCase() === "true";
+  if (!Number.isFinite(originalGrade) || originalGrade < 0 || originalGrade > 100 || isDraft || !isPublished) {
+    throw new Error("STUDENT_RECOVERY_GRADEBOOK_NOT_FINAL");
+  }
+
+  const recoveryHeaders = ["ID", "EvaluacionID", "UserID", "NotaOriginal", "NotaRecuperada",
+    "NotaFinalCalculada", "MetodoAplicado", "AutorizadoPor", "Fecha", "AnoID",
+    "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"];
+  const recoverySheet = ss.getSheetByName("RecuperacionesEstudiante");
+  const recoveryData = recoverySheet ? recoverySheet.getDataRange().getValues() : [];
+  if (recoveryData.length && recoveryHeaders.slice(0, 9).some((header, index) =>
+      String(recoveryData[0][index] || "").trim() !== header)) {
+    throw new Error("STUDENT_RECOVERY_SCHEMA_INVALID");
+  }
+  if (recoveryData.length && recoveryData[0].length > 9 &&
+      recoveryHeaders.slice(9).some((header, index) => String(recoveryData[0][9 + index] || "").trim() !== header)) {
+    throw new Error("STUDENT_RECOVERY_CONTEXT_SCHEMA_INVALID");
+  }
+  const normalizedRecoveryData = recoveryData.map(row => {
+    const copy = row.slice();
+    while (copy.length < recoveryHeaders.length) copy.push("");
+    return copy;
+  });
+  if (normalizedRecoveryData.length) normalizedRecoveryData[0] = recoveryHeaders.slice();
+  const idCounts = Object.create(null);
+  normalizedRecoveryData.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+  });
+  if (Object.keys(idCounts).some(id => idCounts[id] !== 1)) throw new Error("STUDENT_RECOVERY_HISTORY_AMBIGUOUS");
+  const previous = normalizedRecoveryData.slice(1).filter(row => String(row[15] || "").trim() === contextKey);
+  let effectiveOriginal = originalGrade;
+  if (previous.length) {
+    previous.sort((a, b) => {
+      const at = a[8] ? new Date(a[8]).getTime() : 0;
+      const bt = b[8] ? new Date(b[8]).getTime() : 0;
+      return at - bt;
+    });
+    const prior = Number(previous[previous.length - 1][5]);
+    if (!Number.isFinite(prior) || prior < 0 || prior > 100) throw new Error("STUDENT_RECOVERY_HISTORY_INVALID");
+    effectiveOriginal = prior;
+  }
+  return { ss, sheet: recoverySheet || getOrCreateSheet(ss, "RecuperacionesEstudiante"),
+    recoveryData: normalizedRecoveryData, recoveryHeaders, actor, scope, evaluationId, userId,
+    grade, section, subject, periodId, anoId, contextFields, contextKey,
+    recoveredNumber, method, originalGrade: effectiveOriginal };
 }
+
+function saveStudentRecoveryUnlocked_(payload, context) {
+  const sheet = context.sheet || getOrCreateSheet(context.ss, "RecuperacionesEstudiante");
+  const now = new Date();
+  const id = "REC-" + Utilities.getUuid();
+  const data = context.recoveryData && context.recoveryData.length
+    ? context.recoveryData.map(row => row.slice())
+    : [context.recoveryHeaders.slice()];
+  data[0] = context.recoveryHeaders.slice();
+  const original = context.originalGrade, recovered = context.recoveredNumber;
+  let finalGrade = recovered;
+  if (context.method === "Promedio") finalGrade = (original + recovered) / 2;
+  else if (context.method === "Mayor") finalGrade = Math.max(original, recovered);
+  data.push([id, context.evaluationId, context.userId, original, recovered, finalGrade,
+    context.method, String(context.actor.userId).trim(), now, context.anoId,
+    context.periodId, context.grade, context.section, context.subject,
+    context.scope.institutionId, context.contextKey]);
+  sheet.getRange(1, 1, data.length, context.recoveryHeaders.length).setValues(data);
+  return { status: "success", message: "Recuperación vinculada a la calificación contextual registrada.",
+    data: { recuperacionId: id, notaOriginal: original, notaRecuperada: recovered,
+      notaFinalCalculada: finalGrade, metodoAplicado: context.method,
+      evaluacionId: context.evaluationId, anoId: context.anoId, periodoId: context.periodId } };
+}
+
 function saveStudentRecoveryUnlocked_(payload,context) {
  const sheet=context.sheet||getOrCreateSheet(context.ss,"RecuperacionesEstudiante");if(!context.sheet||sheet.getLastRow()===0)sheet.appendRow(context.recoveryHeaders);
  const rows=sheet.getDataRange().getValues(),id="REC-"+Utilities.getUuid();if(rows.slice(1).some(r=>String(r[0]||"").trim()===id))throw new Error("STUDENT_RECOVERY_ID_COLLISION");
