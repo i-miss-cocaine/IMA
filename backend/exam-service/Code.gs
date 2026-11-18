@@ -4206,13 +4206,6 @@ function saveStudentRecoveryUnlocked_(payload, context) {
       evaluacionId: context.evaluationId, anoId: context.anoId, periodoId: context.periodId } };
 }
 
-function saveStudentRecoveryUnlocked_(payload,context) {
- const sheet=context.sheet||getOrCreateSheet(context.ss,"RecuperacionesEstudiante");if(!context.sheet||sheet.getLastRow()===0)sheet.appendRow(context.recoveryHeaders);
- const rows=sheet.getDataRange().getValues(),id="REC-"+Utilities.getUuid();if(rows.slice(1).some(r=>String(r[0]||"").trim()===id))throw new Error("STUDENT_RECOVERY_ID_COLLISION");
- const original=context.originalGrade,recovered=context.recoveredNumber;let finalGrade=recovered;if(context.method==="Promedio")finalGrade=(original+recovered)/2;else if(context.method==="Mayor")finalGrade=Math.max(original,recovered);
- sheet.appendRow([id,context.evaluationId,context.userId,original,recovered,finalGrade,context.method,String(context.actor.userId).trim(),new Date()]);
- return {status:"success",message:"Recuperación de nota registrada e integrada exitosamente.",data:{recuperacionId:id,notaOriginal:original,notaRecuperada:recovered,notaFinalCalculada:finalGrade,metodoAplicado:context.method}};
-}
 
 function getStudentRecoveries(payload) {
   return withAuthorizedExamRead_("getStudentRecoveries", payload,
