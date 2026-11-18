@@ -489,7 +489,7 @@ assert.equal(deniedCreation.getLockAcquireCount(), 0, "RBAC denial occurs before
 const creation = makeCreationRuntime();
 const created = creation.context.createExam({ sessionToken: "teacher-session", titulo: "Prueba", asignatura: "Matemáticas",
   gradoAsignado: "10", seccionAsignada: "A", profesorId: "ATTACKER",
-  preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "¿2+2?", opciones: { A: "4" }, respuestaCorrecta: "A" }] });
+  preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "¿2+2?", opciones: { A: "4", B: "5" }, respuestaCorrecta: "A" }] });
 assert.equal(created.status, "success");
 assert.equal(creation.sheets.Examenes.rows.length, 2);
 assert.equal(creation.sheets.Examenes.rows[1][8], "TEACHER-1", "exam creator comes from signed identity, not payload profesorId");
