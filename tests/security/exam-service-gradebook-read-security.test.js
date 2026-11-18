@@ -58,9 +58,9 @@ function runtime(options = {}) {
       ["CAL-5", "EV-5", "STU-1", 65, 65, false, true, "OTRA ASIGNATURA", new Date("2026-02-01"), "2026", "I parcial", "10", "A", "Ciencias", "INST-1", JSON.stringify(["inst-1","2026","i parcial","10","a","ciencias","ev-5","stu-1"])]
     ]),
     RecuperacionesEstudiante: makeSheet([
-      ["ID", "EvaluacionID", "UserID", "NotaOriginal", "NotaRecuperada", "NotaFinal", "Metodo", "AutorizadoPor", "Fecha"],
-      ["REC-1", "EV-1", "STU-1", 50, 80, 80, "Mayor", "PROF-1", new Date("2026-02-02")],
-      ["REC-2", "EV-2", "STU-2", 40, 60, 60, "Mayor", "PROF-2", new Date("2026-02-02")]
+      ["ID", "EvaluacionID", "UserID", "NotaOriginal", "NotaRecuperada", "NotaFinalCalculada", "MetodoAplicado", "AutorizadoPor", "Fecha", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"],
+      ["REC-1", "EV-1", "STU-1", 50, 80, 80, "Mayor", "PROF-1", new Date("2026-02-02"), "2026", "I parcial", "10", "A", "Matemáticas", "INST-1", JSON.stringify(["inst-1","2026","i parcial","10","a","matematicas","ev-1","stu-1"])],
+      ["REC-2", "EV-2", "STU-2", 40, 60, 60, "Mayor", "PROF-2", new Date("2026-02-02"), "2026", "I parcial", "10", "B", "Matemáticas", "INST-1", JSON.stringify(["inst-1","2026","i parcial","10","b","matematicas","ev-2","stu-2"])]
     ]),
     CategoriasEvaluacion: makeSheet([["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"]]),
     PonderacionesEvaluacion: makeSheet([
