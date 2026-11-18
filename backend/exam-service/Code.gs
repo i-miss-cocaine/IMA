@@ -3212,9 +3212,21 @@ function getGradebookData(payload) {
     context => getGradebookDataUnlocked_(payload, context));
 }
 
+function buildGradebookContextKey_(context) {
+  const value = context && typeof context === "object" ? context : {};
+  const fields = [value.institutionId, value.anoId, value.periodoId, value.grado,
+    value.seccion, value.asignatura, value.evaluacionId, value.userId];
+  if (fields.some(field => !String(field == null ? "" : field).trim())) {
+    throw new Error("GRADEBOOK_CONTEXT_REQUIRED");
+  }
+  return JSON.stringify(fields.map(field => normalizeString(field)));
+}
+
 function getGradebookDataUnlocked_(payload, context) {
   const p = payload || {};
   const { actor, ss, scope } = context || {};
+  const anoId = String(p.anoId || p.anoLectivo || "").trim();
+  if (!anoId) throw new Error("GRADEBOOK_CONTEXT_REQUIRED");
   if (!actor || !actor.userId || !scope || scope.authorized !== true) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
@@ -3282,18 +3294,42 @@ function getGradebookDataUnlocked_(payload, context) {
   const studentIds = new Set(alumnos.map(student => String(student.userId).trim()));
   const califSheet = getSheetOrThrow(ss, "CalificacionesEstudiantes");
   const califData = califSheet.getDataRange().getValues();
-  const calificaciones = califData.length > 1 ? califData.slice(1)
-    .filter(row => studentIds.has(String(row[2] || "").trim()))
+  const gradeBaseHeaders = ["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado",
+    "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro"];
+  const gradeContextHeaders = ["AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"];
+  const gradeHasContext = califData.length > 0 &&
+    gradeContextHeaders.every((header, index) => String(califData[0][9 + index] || "").trim() === header);
+  if (califData.length && gradeBaseHeaders.some((header, index) =>
+      String(califData[0][index] || "").trim() !== header)) {
+    throw new Error("GRADEBOOK_SCHEMA_INVALID");
+  }
+  if (califData.length && califData[0].length > 9 && !gradeHasContext) {
+    throw new Error("GRADEBOOK_CONTEXT_SCHEMA_INVALID");
+  }
+  const readContext = { institutionId: scope.institutionId, anoId, periodoId: parcial,
+    grado, seccion, asignatura };
+  const calificaciones = gradeHasContext && califData.length > 1 ? califData.slice(1)
+    .filter(row => {
+      if (!studentIds.has(String(row[2] || "").trim())) return false;
+      const key = buildGradebookContextKey_({ ...readContext, evaluacionId: row[1], userId: row[2] });
+      return String(row[9] || "").trim() === anoId &&
+        normalizeString(row[10]) === normalizeString(parcial) &&
+        normalizeString(row[11]) === normalizeString(grado) &&
+        normalizeString(row[12]) === normalizeString(seccion) &&
+        normalizeString(row[13]) === normalizeString(asignatura) &&
+        String(row[14] || "").trim() === String(scope.institutionId || "").trim() &&
+        String(row[15] || "").trim() === key;
+    })
     .map(row => ({
-      calificacionId: row[0],
-      evaluacionId: row[1],
-      userId: row[2],
-      notaObtenida: parseFloat(row[3]) || 0,
-      puntajePonderado: parseFloat(row[4]) || 0,
+      calificacionId: row[0], evaluacionId: row[1], userId: row[2],
+      notaObtenida: row[3] === "" || row[3] == null ? null : Number(row[3]),
+      puntajePonderado: row[4] === "" || row[4] == null ? null : Number(row[4]),
       esBorrador: row[5] === true || String(row[5]).toLowerCase() === "true",
       esPublicada: row[6] === true || String(row[6]).toLowerCase() === "true",
       observaciones: row[7] || "",
-      fechaRegistro: row[8] ? new Date(row[8]).toISOString() : null
+      fechaRegistro: row[8] ? new Date(row[8]).toISOString() : null,
+      anoId: row[9], periodoId: row[10], grado: row[11], seccion: row[12],
+      asignatura: row[13], institutionId: row[14], contextKey: row[15]
     })) : [];
 
   const recSheet = getSheetOrThrow(ss, "RecuperacionesEstudiante");
@@ -3391,7 +3427,8 @@ function getAuthorizedGradebookSaveContext_(payload, permissionAction) {
   }
   const grado = String(p.grado || "").trim(), seccion = String(p.seccion || "").trim();
   const asignatura = String(p.asignatura || "").trim(), parcial = String(p.parcial || p.periodoId || "").trim();
-  if (!grado || !seccion || !asignatura || !parcial) throw new Error("GRADEBOOK_CONTEXT_REQUIRED");
+  const anoId = String(p.anoId || p.anoLectivo || "").trim();
+  if (!grado || !seccion || !asignatura || !parcial || !anoId) throw new Error("GRADEBOOK_CONTEXT_REQUIRED");
   const institutional = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"].indexOf(actor.role) !== -1;
   if (institutional) {
     if (scope.institutionWide !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -3466,7 +3503,12 @@ function getAuthorizedGradebookSaveContext_(payload, permissionAction) {
       ownedCategories[id].push(String(r[4] || "").trim());
     }
   });
-  return { ss, actor, scope, institutional, grado, seccion, asignatura, parcial, roster,
+  const gradeContextHeaders = ["AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"];
+  if (gradeData[0].length > 9 && gradeContextHeaders.some((header, index) =>
+      String(gradeData[0][9 + index] || "").trim() !== header)) {
+    throw new Error("GRADEBOOK_CONTEXT_SCHEMA_INVALID");
+  }
+  return { ss, actor, scope, institutional, anoId, grado, seccion, asignatura, parcial, roster,
     gradeSheet, gradeData, categoryIds, ownedCategories };
 }
 
@@ -3482,9 +3524,12 @@ function saveGradebookGradesUnlocked_(payload, context, options) {
     throw new Error("GRADEBOOK_BATCH_INVALID");
   }
   const seen = Object.create(null), pairRows = Object.create(null);
+  const contextFields = { institutionId: context.scope.institutionId, anoId: context.anoId,
+    periodoId: context.parcial, grado: context.grado, seccion: context.seccion, asignatura: context.asignatura };
   for (let i = 1; i < context.gradeData.length; i++) {
     const row = context.gradeData[i] || [];
-    const key = String(row[1] || "").trim() + "\u0000" + String(row[2] || "").trim();
+    const key = String(row[15] || "").trim();
+    if (!key) continue; // Las filas históricas sin contexto no se reutilizan en otro período.
     if (!pairRows[key]) pairRows[key] = [];
     pairRows[key].push(i);
   }
@@ -3509,7 +3554,7 @@ function saveGradebookGradesUnlocked_(payload, context, options) {
       throw new Error("GRADEBOOK_GRADE_INVALID");
     }
     const grade = Number(text);
-    const key = evaluacionId + "\u0000" + userId;
+    const key = buildGradebookContextKey_({ ...contextFields, evaluacionId, userId });
     if (seen[key]) throw new Error("GRADEBOOK_ENTRY_DUPLICATE");
     seen[key] = true;
     const existing = pairRows[key] || [];
@@ -3520,7 +3565,14 @@ function saveGradebookGradesUnlocked_(payload, context, options) {
     return { evaluacionId, userId, grade, existing: existing.length ? existing[0] : -1,
       observaciones: String(item.observaciones || "").slice(0, 1000) };
   });
-  const data = context.gradeData.map(r => r.slice()), now = new Date();
+  const gradeContextHeaders = ["AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"];
+  const data = context.gradeData.map(r => {
+    const copy = r.slice();
+    while (copy.length < 16) copy.push("");
+    return copy;
+  });
+  data[0] = data[0].slice(0, 9).concat(gradeContextHeaders);
+  const now = new Date();
   let appliedCount = 0, omittedCount = 0;
   normalized.forEach(entry => {
     if (opts.preserveExistingPositive === true && entry.existing >= 1) {
@@ -3528,14 +3580,19 @@ function saveGradebookGradesUnlocked_(payload, context, options) {
       if (!isNaN(previous) && previous > 0) { omittedCount++; return; }
     }
     const row = entry.existing >= 1 ? data[entry.existing] :
-      ["CALIF-" + Utilities.getUuid(), entry.evaluacionId, entry.userId, 0, 0, true, false, "", now];
+      ["CALIF-" + Utilities.getUuid(), entry.evaluacionId, entry.userId, 0, 0, true, false, "", now,
+        "", "", "", "", "", "", ""];
     row[3] = entry.grade; row[4] = entry.grade;
     row[5] = p.esBorrador !== false; row[6] = p.esPublicada === true;
     row[7] = entry.observaciones; row[8] = now;
+    row[9] = context.anoId; row[10] = context.parcial; row[11] = context.grado;
+    row[12] = context.seccion; row[13] = context.asignatura;
+    row[14] = context.scope.institutionId;
+    row[15] = buildGradebookContextKey_({ ...contextFields, evaluacionId: entry.evaluacionId, userId: entry.userId });
     if (entry.existing < 1) data.push(row); else data[entry.existing] = row;
     appliedCount++;
   });
-  if (appliedCount > 0) context.gradeSheet.getRange(1, 1, data.length, 9).setValues(data);
+  if (appliedCount > 0) context.gradeSheet.getRange(1, 1, data.length, 16).setValues(data);
   const result = { status: "success", message: "Se guardaron " + appliedCount + " calificaciones exitosamente.", savedCount: normalized.length };
   if (opts.returnCounts === true) { result.appliedCount = appliedCount; result.omittedCount = omittedCount; }
   return result;
@@ -3553,7 +3610,10 @@ function bulkApplyGradebookGrades(payload) {
       if (!userId) throw new Error("GRADEBOOK_ENTRY_INVALID");
       if (seen[userId]) throw new Error("GRADEBOOK_ENTRY_DUPLICATE");
       seen[userId] = true;
-      const existing = context.gradeData.slice(1).filter(row => String(row[1] || "").trim() === evaluacionId && String(row[2] || "").trim() === userId);
+      const expectedKey = buildGradebookContextKey_({ institutionId: context.scope.institutionId,
+        anoId: context.anoId, periodoId: context.parcial, grado: context.grado, seccion: context.seccion,
+        asignatura: context.asignatura, evaluacionId, userId });
+      const existing = context.gradeData.slice(1).filter(row => String(row[15] || "").trim() === expectedKey);
       if (existing.length > 1) throw new Error("GRADEBOOK_RECORD_AMBIGUOUS");
       return { evaluacionId, userId, notaObtenida: p.nota,
         observaciones: observations || (existing.length ? String(existing[0][7] || "") : "") || "Aplicado masivamente" };
