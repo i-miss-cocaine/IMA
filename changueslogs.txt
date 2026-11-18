@@ -4223,3 +4223,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 - Escrituras: comentarios serializados; devolución bajo lock con nota privada y rollback; deleteSubmission pasa a baja lógica idempotente conservando fila/Drive/versiones/comentarios; reentrega reactiva el mismo ID y crea versión nueva limpiando calificación y metadata de eliminación.
 - Task-Service security local contracts 44171548172 SUCCESS (Node 22.23.4; 13 mutación, 30 acceso, resubmit, ownership, grade history 14/14, deadline, upload, single-auth, node --check js/teacher.js). Backup/restore 44171274487 SUCCESS.
 - BETA-FUNC-122 Pendiente beta. Department Scope 44171274513 FAIL independiente en Phase22 por función configureSchoolDocumentTemplate ausente en ACCOUNTING.
+
+
+[2026-11-18] NDASC 1.5: se formaliza el alcance de seguridad proporcional y optimización del flujo académico; se aclara la revocación de sesión/caché y la estrategia para diagnosticar fallos de pruebas sin reducir cobertura. AUD-NG-166 permanece pendiente y recibe nota de alineación normativa.

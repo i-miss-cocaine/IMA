@@ -785,3 +785,56 @@ Estado:
 - C1.815: implementación y verificación local aprobadas; beta pendiente sin bloquear el cierre.
 - Siguiente tarea elegible: revisar TAREA-11 / AUD-NG-166 y sus dependencias técnicas antes de iniciar su alcance.
 ===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.816 — actualización normativa de seguridad proporcional y rendimiento
+===============================================================================
+Fecha: 2026-11-18
+Sesión: IMA-EXEC-20261118-NDASC-ACADEMIC-FLOW-OPTIMIZATION-01
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.815
+HEAD inicial: b61627f1d4c89ee178b341f95d3a6caa53c5abf6
+HEAD del cambio normativo: a54614f7db7ff109eb51c46fe83ed1ae98f3c83e
+HEAD final: pendiente de confirmar tras publicar este checkpoint.
+
+Objetivo y explicación:
+Registrar con redacción clara el alcance de seguridad y rendimiento solicitado para la plataforma académica y dejarlo como norma vigente, sin convertir la optimización en eliminación de autorización por rol, corrección de datos o pruebas pertinentes.
+
+Normativa:
+- Normas_Desarollo.md se actualiza de NDASC 1.4 a NDASC 1.5, vigente 2026-11-18.
+- Se añade la sección 17: seguridad proporcional al uso académico, captura de formulario/fecha/actor, cargas sin controles redundantes, autenticación y revocación de sesiones, bloqueo temporal por intentos fallidos, optimización de validaciones y estrategia de recuperación ante fallos de Node/CLI/Actions.
+- Se aclara que el servidor puede revocar sesiones inmediatamente, pero la limpieza de caché local requiere que el cliente reciba la señal o vuelva a conectarse.
+- Se mantiene una comprobación de permiso por acción, identidad derivada de sesión, integridad de los registros y validaciones funcionales indispensables.
+- Se prohíbe debilitar pruebas, omitir aserciones o modificar código ajeno para forzar un PASS.
+
+Alineación del siguiente alcance:
+- TAREA-11 / AUD-NG-166 permanece Pendiente; no se declara implementación ni cierre.
+- Se añade al backlog la aplicación explícita de NDASC 1.5 a la creación/lectura de exámenes y adjuntos: autorización una vez por acción, sin autorizaciones interservicio ni controles repetidos por archivo, conservando los requisitos funcionales de reactivos, adjuntos y snapshots.
+- La tarea elegible siguiente sigue siendo AUD-NG-166, comenzando por su inspección focalizada del estado actual del motor.
+
+Archivos documentales de esta consolidación:
+- Normas_Desarollo.md
+- pendientes/Docente/Pendientes.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0018.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- changueslogs.txt
+
+Verificación:
+- Relectura de Normas_Desarollo.md NDASC 1.5: realizada.
+- Comparación del alcance de AUD-NG-166 con el backlog: realizada.
+- Revisión documental y de límites del cambio: realizada.
+- Pruebas Node/CLI: NOT RUN (cambio exclusivamente normativo/documental).
+- GitHub Actions: NOT RUN; no se ha ejecutado workflow para este cambio documental.
+- Apps Script/servicios desplegados: NOT RUN.
+- No se afirma que AUD-NG-166 esté completada ni que el motor de exámenes esté validado.
+
+Estado y continuidad:
+- NDASC 1.5 registrada.
+- AUD-NG-166 continúa Pendiente y es la siguiente tarea elegible.
+- No se modificó código de runtime en este checkpoint.
+- No se modificó la rama base.
+===============================================================================
