@@ -409,6 +409,7 @@ const creationClaims = { "teacher-session": { userId: "TEACHER-1", role: "Profes
   "admin-session": { userId: "ADMIN-1", role: "Administrador" },
   "tutor-session": { userId: "TUTOR-1", role: "Tutor" } };
 function makeSheet(rows, failSetValues) {
+  let writeCount = 0;
   return {
     rows: rows.map(row => row.slice()),
     getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
@@ -417,8 +418,13 @@ function makeSheet(rows, failSetValues) {
     deleteRow(rowNumber) { this.rows.splice(rowNumber - 1, 1); },
     getRange(row, col, numRows, numCols) {
       return { setValues: values => {
-        if (failSetValues) throw new Error("synthetic question write failure");
-        values.forEach((value, index) => { this.rows[row - 1 + index] = value.slice(); });
+        writeCount++;
+        if (failSetValues && writeCount > 1) throw new Error("synthetic question write failure");
+        values.forEach((value, index) => {
+          const target = this.rows[row - 1 + index] || [];
+          value.forEach((cell, columnIndex) => { target[col - 1 + columnIndex] = cell; });
+          this.rows[row - 1 + index] = target;
+        });
       } };
     }
   };
@@ -426,7 +432,7 @@ function makeSheet(rows, failSetValues) {
 function makeCreationRuntime(options) {
   const creationSheets = {
     Examenes: makeSheet([["ExamenID","Titulo","Asignatura","Grado","Seccion","FechaLimite","TiempoLimite","Estado","ProfesorID","Parcial"]]),
-    PreguntasExamen: makeSheet([["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta"]], options && options.failQuestions),
+    PreguntasExamen: makeSheet([["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta","Puntos","AreaCurricular","Dificultad","BancoPreguntaID"]], options && options.failQuestions),
     ResourceOwnership: makeSheet([["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"]]),
     AsignacionesAmbitosRoles: makeSheet([
       ["AssignmentID","UserID","RoleID","ScopeType","ScopeValues","Status","","","StartAt","EndAt"],
@@ -463,7 +469,7 @@ function makeCreationRuntime(options) {
     LockService: { getScriptLock() { lockAcquireCount++; return { tryLock() { return true; }, releaseLock() {} }; } },
     Utilities: { getUuid() { uuid++; return "UUID-" + uuid; } }
   };
-  const functions = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","validateContextualAccess", "validateRolePermission", "getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "withAuthorizedExamCreation_", "createExamUnlocked_", "createExam"]
+  const functions = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","validateContextualAccess", "validateRolePermission", "getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "normalizeString", "parseExamQuestionJsonField_", "normalizeExamQuestionDefinition_", "ensureExamQuestionBankSchema_", "ensureExamQuestionsSchema_", "withAuthorizedExamCreation_", "createExamUnlocked_", "createExam"]
     .map(name => extractFunction(source, name)).join("\n");
   vm.runInNewContext(functions + "\nthis.createExam = createExam;", context);
   return { context, sheets: creationSheets, getSpreadsheetOpenCount: () => spreadsheetOpenCount,
@@ -499,7 +505,7 @@ assert.throws(() => creation.context.createExam({ sessionToken: "teacher-session
 assert.equal(creation.sheets.Examenes.rows.length, 2, "rejected department does not persist an exam");
 const rollback = makeCreationRuntime({ failQuestions: true });
 assert.throws(() => rollback.context.createExam({ sessionToken: "teacher-session", titulo: "Rollback",
-  preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "Q", opciones: {}, respuestaCorrecta: "A" }] }),
+  preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "Q", opciones: { A: "4", B: "5" }, respuestaCorrecta: "A" }] }),
   /synthetic question write failure/);
 assert.equal(rollback.sheets.Examenes.rows.length, 1, "failed creation compensates the exam row");
 assert.equal(rollback.sheets.ResourceOwnership.rows.length, 1, "failed creation compensates its ownership row");
