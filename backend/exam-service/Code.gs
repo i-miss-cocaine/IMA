@@ -1975,6 +1975,58 @@ function submitExam(payload) {
   }
 }
 
+function scoreExamQuestionAnswer_(question, studentAnswer) {
+  const type = String(question && question[2] || "").trim();
+  const rawPoints = Number(question && question[6]);
+  const maxPoints = Number.isFinite(rawPoints) && rawPoints > 0 ? rawPoints : 1;
+  const parse = (value, fallback) => {
+    if (value === null || value === undefined || value === "") return fallback;
+    if (typeof value !== "string") return value;
+    try { return JSON.parse(value); } catch (_) { return fallback; }
+  };
+  const options = parse(question && question[4], {}) || {};
+  const correct = parse(question && question[5], question && question[5]);
+  const manual = type === "respuesta_extensa" || type === "adjunto";
+  if (manual) return { requiresManualReview: true, awardedPoints: 0, maxPoints };
+  let ratio = 0;
+  if (type === "opcion_multiple" || type === "verdadero_falso" || type === "completacion") {
+    ratio = normalizeString(studentAnswer) === normalizeString(correct) ? 1 : 0;
+  } else if (type === "numerica") {
+    const studentNumber = Number(studentAnswer), correctNumber = Number(correct);
+    const tolerance = Number(options.tolerance === undefined ? 0 : options.tolerance);
+    ratio = Number.isFinite(studentNumber) && Number.isFinite(correctNumber) &&
+      Number.isFinite(tolerance) && tolerance >= 0 && Math.abs(studentNumber - correctNumber) <= tolerance ? 1 : 0;
+  } else if (type === "termino_pareado") {
+    const studentMap = parse(studentAnswer, {}), correctMap = correct;
+    if (!studentMap || typeof studentMap !== "object" || Array.isArray(studentMap) ||
+        !correctMap || typeof correctMap !== "object" || Array.isArray(correctMap)) {
+      ratio = 0;
+    } else {
+      const keys = Object.keys(correctMap);
+      const hits = keys.filter(key => String(studentMap[key]) === String(correctMap[key])).length;
+      ratio = keys.length ? hits / keys.length : 0;
+    }
+  } else if (type === "seleccion_multiple") {
+    const studentValues = parse(studentAnswer, Array.isArray(studentAnswer) ? studentAnswer : [studentAnswer]);
+    const correctValues = Array.isArray(correct) ? correct : [];
+    const selected = new Set((Array.isArray(studentValues) ? studentValues : []).map(String));
+    const expected = new Set(correctValues.map(String));
+    const hits = Array.from(expected).filter(value => selected.has(value)).length;
+    const incorrect = Array.from(selected).filter(value => !expected.has(value)).length;
+    ratio = expected.size ? Math.max(0, hits - incorrect) / expected.size : 0;
+  } else if (type === "ordenamiento") {
+    const studentValues = parse(studentAnswer, Array.isArray(studentAnswer) ? studentAnswer : []);
+    const expected = Array.isArray(correct) ? correct.map(String) : [];
+    const actual = Array.isArray(studentValues) ? studentValues.map(String) : [];
+    const hits = expected.filter((value, index) => actual[index] === value).length;
+    ratio = expected.length ? hits / expected.length : 0;
+  } else {
+    throw new Error("QUESTION_TYPE_UNSUPPORTED");
+  }
+  ratio = Math.max(0, Math.min(1, ratio));
+  return { requiresManualReview: false, awardedPoints: Number((maxPoints * ratio).toFixed(4)), maxPoints };
+}
+
 function submitExamUnlocked_(payload, context) {
   const examenId = String((payload && payload.examenId) || "").trim();
   const respuestas = payload && payload.respuestas;
@@ -2007,29 +2059,15 @@ function submitExamUnlocked_(payload, context) {
   const configuredAttempts = parseInt(exam[12], 10);
   const allowedAttempts = Number.isSafeInteger(configuredAttempts) && configuredAttempts > 0 ? configuredAttempts : 1;
   if (previousAttempts >= allowedAttempts) throw new Error("EXAM_ATTEMPTS_EXHAUSTED");
-  let correctas = 0;
-  respuestas.forEach(answer => {
-    const question = questionRows.find(row => String(row[0]) === String(answer.preguntaId));
-    let points = 0;
-    if (question[2] === "termino_pareado") {
-      try {
-        const studentMap = JSON.parse(answer.respuestaEstudiante || "{}");
-        const correctMap = JSON.parse(question[5] || "{}");
-        const total = Object.keys(correctMap).length;
-        let hits = 0;
-        for (const key in correctMap) if (studentMap[key] === correctMap[key]) hits++;
-        points = total > 0 ? hits / total : 0;
-      } catch (_) { points = 0; }
-    } else {
-      const isText = question[2] === "completacion" || question[2] === "verdadero_falso";
-      const matches = isText
-        ? normalizeString(answer.respuestaEstudiante) === normalizeString(question[5])
-        : answer.respuestaEstudiante === question[5];
-      points = matches ? 1 : 0;
-    }
-    correctas += points;
+  let earnedPoints = 0, totalPoints = 0, requiresManualReview = false;
+  questionRows.forEach(question => {
+    const answer = respuestas.find(item => String(item && item.preguntaId || "") === String(question[0] || ""));
+    const result = scoreExamQuestionAnswer_(question, answer ? answer.respuestaEstudiante : "");
+    earnedPoints += result.awardedPoints;
+    totalPoints += result.maxPoints;
+    requiresManualReview = requiresManualReview || result.requiresManualReview;
   });
-  const nota = questionRows.length ? ((correctas / questionRows.length) * 100).toFixed(2) : "0";
+  const nota = requiresManualReview ? "" : (totalPoints > 0 ? ((earnedPoints / totalPoints) * 100).toFixed(2) : "0");
   const entregaExamenId = "EEX-" + Date.now();
   const questionSnapshot = questionRows.map(row => row.slice(0, 14));
   deliveriesSheet.appendRow([entregaExamenId, examenId, actor.userId, new Date(),
@@ -2161,18 +2199,13 @@ function getExamResultUnlocked_(payload, context) {
   }
   const detailed = questions.map(question => {
     const answer = answers.find(item => item.preguntaId === question[0]), studentAnswer = answer ? answer.respuestaEstudiante : "";
-    let correct = false, score = 0;
-    if (question[2] === "termino_pareado") {
-      try { const studentMap = JSON.parse(studentAnswer || "{}"), correctMap = JSON.parse(question[5] || "{}");
-        const total = Object.keys(correctMap).length; let hits = 0;
-        for (const key in correctMap) if (studentMap[key] === correctMap[key]) hits++;
-        correct = hits === total; score = total > 0 ? hits / total : 0;
-      } catch (_) {}
-    } else if (question[2] === "completacion" || question[2] === "verdadero_falso") {
-      correct = normalizeString(studentAnswer) === normalizeString(question[5]); score = correct ? 1 : 0;
-    } else { correct = studentAnswer === question[5]; score = correct ? 1 : 0; }
+    const scoreResult = scoreExamQuestionAnswer_(question, studentAnswer);
+    const correct = scoreResult.requiresManualReview ? null :
+      scoreResult.awardedPoints >= scoreResult.maxPoints;
     return { texto: question[3], tipo: question[2], respuestaEstudiante: studentAnswer, respuestaCorrecta: question[5],
-      esCorrecta: correct, score: (score * 100).toFixed(0) + "%" };
+      esCorrecta: correct, puntosObtenidos: scoreResult.awardedPoints, puntosMaximos: scoreResult.maxPoints,
+      score: scoreResult.requiresManualReview ? "Pendiente de revisión" :
+        ((scoreResult.awardedPoints / scoreResult.maxPoints) * 100).toFixed(0) + "%" };
   });
   return { status: "success", data: { examenTitulo: exam[1], calificacionTotal: delivery[5], resultadosDetallados: detailed } };
 }

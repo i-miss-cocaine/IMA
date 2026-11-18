@@ -40,6 +40,28 @@ function submitRuntime(options = {}) {
   try { result = handler({}); } catch (e) { error = e.message; }
   return { events, state, result, error };
 }
+const scoreQuestion = new Function("normalizeString", "JSON", "Number", "String",
+  extractFunction("scoreExamQuestionAnswer_") + "; return scoreExamQuestionAnswer_;")(
+  value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").trim().toLowerCase(),
+  JSON, Number, String);
+const scoringCases = [
+  ["opcion_multiple", {A:"Uno",B:"Dos"}, "A", "A", 2, 2],
+  ["verdadero_falso", {}, "Verdadero", "verdadero", 1, 1],
+  ["completacion", {}, "Lima", " lima ", 1, 1],
+  ["termino_pareado", {}, '{"1":"A","2":"B"}', {1:"A",2:"B"}, 2, 2],
+  ["seleccion_multiple", {}, '["A","B"]', ["A","B"], 3, 3],
+  ["seleccion_multiple", {}, '["A","X"]', ["A","B"], 3, 0],
+  ["numerica", {tolerance:0.5}, "10.2", 10, 2, 2],
+  ["ordenamiento", {}, '["B","A","C"]', ["A","B","C"], 3, 1],
+  ["respuesta_extensa", {}, "", "texto libre", 4, 0],
+  ["adjunto", {acceptedMimeTypes:["image/png"],maxFiles:2}, "", "file-ref", 2, 0]
+];
+for (const [type, options, answer, expected, maxPoints, awarded] of scoringCases) {
+  const result=scoreQuestion(["Q","EXAM",type,"Pregunta",JSON.stringify(options),answer,maxPoints],expected);
+  assert.equal(result.maxPoints,maxPoints);
+  assert.equal(result.awardedPoints,awarded,type+" scoring");
+  assert.equal(result.requiresManualReview,type==="respuesta_extensa"||type==="adjunto");
+}
 const cases = [];
 function test(name, fn) { try { fn(); cases.push({ name, result: "PASS" }); } catch (e) { cases.push({ name, result: "FAIL", error: e.message }); } }
 test("RBAC denial precedes identity and lock", () => { const x=submitRuntime({permission:false}); assert.equal(x.error,"RESOURCE_NOT_AVAILABLE"); assert.deepEqual(x.events,["permission"]); assert.equal(x.state.lockAttempts,0); });
