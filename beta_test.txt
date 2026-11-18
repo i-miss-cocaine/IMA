@@ -1860,3 +1860,12 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Resultado esperado:** carga rápida con límites funcionales, archivos privados, relación inequívoca, consulta solo mediante resultados autorizados, rollback de fallos y revisión manual conservada.
 - **Evidencia requerida:** IDs sintéticos; conteos de filas antes/después; Drive fileId y permisos efectivos; resultados allow/deny; pruebas de límite MIME/tamaño/cantidad; rollback; estado de calificación; descarga docente/estudiante; concurrencia; capturas de navegador sin PII ni tokens.
 =============================================================================
+
+=============================================================================
+### BETA-FUNC-123 — actualización de estado de automatización
+- **Estado:** Pendiente beta; no sustituir por resultados de CI.
+- **Automatización:** 35/35 contratos Exam-Service PASS (44294486069); sintaxis de backend Code.gs y todos los JS de js/ y backend/ PASS.
+- **Suite general:** 164 pruebas Node, 161 PASS, 3 fallos fuera del alcance: Phase22 document management (función ausente en ACCOUNTING), accounting school document binary integrity (esquema de documento emitido ausente en ACCOUNTING) y session-token-expiry (caso USER/valid).
+- **CLI:** sin suite declarada en el repositorio.
+- **Pendiente:** ejecutar la lista funcional de BETA-FUNC-123 en Apps Script/Sheets/Drive desplegados y capturar evidencia de permisos reales, rollback, ownership, concurrencia y descarga.
+=============================================================================

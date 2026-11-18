@@ -912,3 +912,23 @@ Pendiente y límites:
 - **Estado:** AUD-NG-166 permanece En progreso. La prueba CI no sustituye la prueba manual de navegador ni la comprobación real de Drive/Sheets.
 - **Siguiente acción:** ejecutar BETA-FUNC-123 y el recorrido integral de nueve modalidades; solo entonces cerrar AUD-NG-166.
 ===============================================================================
+
+===============================================================================
+### C1.820 — AUD-NG-166: auditoría completa de Node.js, sintaxis y Actions
+- **Fecha:** 2026-11-18.
+- **Sesión:** IMA-EXEC-20261118-AUD-NG-166-FULL-NODE-AUDIT-01.
+- **Rama:** NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 sin modificaciones.
+- **HEAD de código:** 06edce49d355511b2089a3045c8453474e2d1002.
+- **Relación con base:** ahead 4111, behind 0; estado ahead.
+- **Checkpoint anterior:** C1.819.
+- **AUD-NG-166:** continúa En progreso; la modalidad de adjuntos está implementada y verificada en contratos, pero falta navegador y beta real.
+- **Cobertura CI:** el workflow Exam-Service incluye 35 contratos Node de forma completa; todos pasan en el run 44294486069. Pasa node --check del backend/exam-service/Code.gs y node --check de todos los archivos .js bajo js/ y backend/. Las regresiones de envío, lectura, ownership, RBAC, serialización y resultados pasan.
+- **Suite general:** 164 archivos tests/**/*.test.js ejecutados en GitHub Actions run 44294587611; 161 pasan y 3 fallan fuera del alcance actual:
+  1. tests/regression/phase22-document-management-suite-contract.test.js: busca configureSchoolDocumentTemplate, función ausente en ACCOUNTING.
+  2. tests/security/accounting-school-document-binary-integrity.test.js: busca ensureSchoolDocumentIssuedSchema_, función ausente en ACCOUNTING.
+  3. tests/security/session-token-expiry.test.js: falla el caso USER/valid en la línea 69.
+  No se tocaron servicios ACCOUNTING ni autenticación para evitar cambios no relacionados con AUD-NG-166.
+- **CLI:** no se encontró package.json, directorio cli ni script de CLI; no existe una suite CLI declarada en el repositorio.
+- **Estado global de Actions:** Exam-Service contracts pasa; la ejecución global de pruebas falla por los tres contratos externos listados. Department Scope también reportó el fallo Phase22 de ACCOUNTING en un commit previo. No se declara verde toda la CI.
+- **Siguiente acción:** navegador y BETA-FUNC-123 con Apps Script/Sheets/Drive reales, incluyendo permisos efectivos, carga/descarga, rollback, concurrencia y las nueve modalidades. No iniciar AUD-NG-167 hasta completar AUD-NG-166.
+===============================================================================

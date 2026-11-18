@@ -5950,3 +5950,10 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Hallazgo de API:** Permission.NONE no puede combinarse con Access.PRIVATE según la documentación de DriveApp; se reserva la combinación NONE con Access.ANYONE. Se cambió a Access.PRIVATE y Permission.VIEW para mantener el archivo no público y no conceder acceso por enlace. Referencias oficiales: https://developers.google.com/apps-script/reference/drive/permission y https://developers.google.com/apps-script/reference/drive/access.
 - **Prueba:** el contrato de adjuntos verifica la combinación soportada; Exam-Service Actions 44293858585 SUCCESS en cb71ca436b5135576b991a9544b94c2eae35635f.
 - **Límite:** la política efectiva en la cuenta Drive desplegada debe verificarse en BETA-FUNC-123; el contrato simulado no sustituye la prueba real.
+
+
+### C1.820 — auditoría de Node.js y Actions para AUD-NG-166
+- **Cobertura del servicio:** 35/35 contratos Exam-Service PASS en Actions 44294486069. Se comprueba sintaxis de backend/exam-service/Code.gs con node --check desde stdin y de todos los .js bajo js/ y backend/.
+- **Cobertura general:** 164 pruebas Node ejecutadas; 161 PASS, 3 FAIL ajenas al alcance: Phase22 busca configureSchoolDocumentTemplate (ACCOUNTING), accounting-school-document-binary-integrity busca ensureSchoolDocumentIssuedSchema_ (ACCOUNTING), y session-token-expiry falla USER/valid. No se cambiaron esas áreas.
+- **CLI:** no existe paquete, directorio ni script CLI declarado.
+- **Decisión:** AUD-NG-166 sigue abierta por pruebas de navegador y beta real de Drive/Sheets; no avanzar a TAREA-12 todavía.
