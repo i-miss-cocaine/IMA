@@ -5,6 +5,8 @@ on:
     paths:
       - 'backend/exam-service/Code.gs'
       - 'js/exam.js'
+      - 'js/teacher.js'
+      - 'teacher-dashboard.html'
       - 'tests/security/exam-service-question-modalities-contract.test.js'
       - 'tests/security/exam-service-security-contract.test.js'
       - 'tests/security/exam-service-departmental-access.test.js'
@@ -69,6 +71,8 @@ jobs:
           node-version: '22'
       - name: Check student exam interface syntax
         run: node --check js/exam.js
+      - name: Check teacher exam authoring syntax
+        run: node --check js/teacher.js
       - name: Verify all nine question modality schemas
         run: node tests/security/exam-service-question-modalities-contract.test.js
       - name: Run rubric mutation security regression

@@ -4956,11 +4956,55 @@ window.loadExamGradeDistributionData = async function (examenId) {
     let qCounter = 0;
     if (addQuestionBtn) addQuestionBtn.onclick = () => {
         qCounter++; const node = document.createElement('div');
-        node.innerHTML = `<div class="question-block border p-4 rounded-lg" data-question-id="${qCounter}"><div class="flex justify-between items-center mb-4"><h4 class="font-medium">Pregunta ${qCounter}</h4><button type="button" class="text-red-500 remove-question-btn">Eliminar</button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block font-medium mb-1">Tipo</label><select class="w-full p-2 border rounded question-type-select"><option value="opcion_multiple">Opción Múltiple</option><option value="verdadero_falso">Verdadero/Falso</option><option value="completacion">Completación</option></select></div><div class="md:col-span-2"><label class="block font-medium mb-1">Texto</label><input type="text" class="w-full p-2 border rounded question-text"></div><div class="md:col-span-2 options-container"></div><div><label class="block font-medium mb-1">Respuesta</label><input type="text" class="w-full p-2 border rounded correct-answer"></div></div></div>`;
+        node.innerHTML = `<div class="question-block border p-4 rounded-lg" data-question-id="${qCounter}">
+          <div class="flex justify-between items-center mb-4"><h4 class="font-medium">Pregunta ${qCounter}</h4><button type="button" class="text-red-500 remove-question-btn">Eliminar</button></div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><label class="block font-medium mb-1">Tipo de reactivo</label><select class="w-full p-2 border rounded question-type-select">
+              <option value="opcion_multiple">Opción múltiple</option><option value="verdadero_falso">Verdadero/Falso</option>
+              <option value="completacion">Completación</option><option value="termino_pareado">Término pareado</option>
+              <option value="seleccion_multiple">Selección múltiple</option><option value="respuesta_extensa">Respuesta extensa</option>
+              <option value="numerica">Numérica</option><option value="ordenamiento">Ordenamiento</option><option value="adjunto">Adjunto</option>
+            </select></div>
+            <div><label class="block font-medium mb-1">Tema</label><input type="text" class="w-full p-2 border rounded question-topic" required></div>
+            <div class="md:col-span-2"><label class="block font-medium mb-1">Enunciado</label><textarea class="w-full p-2 border rounded question-text" rows="2" required></textarea></div>
+            <div><label class="block font-medium mb-1">Puntos</label><input type="number" min="0.01" step="0.01" value="1" class="w-full p-2 border rounded question-points"></div>
+            <div><label class="block font-medium mb-1">Dificultad</label><select class="w-full p-2 border rounded question-difficulty"><option>Baja</option><option selected>Media</option><option>Alta</option></select></div>
+            <div class="md:col-span-2 options-container"></div>
+            <div class="md:col-span-2"><label class="block text-sm font-medium mb-1">Etiquetas (separadas por coma)</label><input class="w-full p-2 border rounded question-tags"></div>
+            <div><label class="block text-sm font-medium mb-1">Objetivos (separados por coma)</label><input class="w-full p-2 border rounded question-objectives"></div>
+            <div><label class="block text-sm font-medium mb-1">Criterios (separados por coma)</label><input class="w-full p-2 border rounded question-criteria"></div>
+          </div></div>`;
         questionsContainer.appendChild(node);
-        const ts = node.querySelector('.question-type-select'); const oc = node.querySelector('.options-container');
-        const setOpts = (val) => oc.innerHTML = val === 'opcion_multiple' ? '<label class="block text-xs">Opciones (A,B,C)</label><input type="text" class="w-full p-2 border rounded question-options">' : (val === 'verdadero_falso' ? '<input type="text" value="Verdadero,Falso" readonly class="w-full p-2 border rounded bg-gray-100 question-options">' : '');
-        setOpts(ts.value); ts.onchange = (e) => setOpts(e.target.value);
+        const ts = node.querySelector('.question-type-select'), oc = node.querySelector('.options-container');
+        const field = (label, cls, placeholder, type='text') => `<label class="block text-sm font-medium mb-1">${label}</label><input type="${type}" class="w-full p-2 border rounded ${cls}" placeholder="${placeholder}">`;
+        const area = (label, cls, placeholder) => `<label class="block text-sm font-medium mb-1">${label}</label><textarea rows="3" class="w-full p-2 border rounded ${cls}" placeholder="${placeholder}"></textarea>`;
+        const setOpts = type => {
+          const commonAnswer = field('Respuesta correcta', 'question-answer', 'Valor o clave correcta');
+          if (type === 'opcion_multiple' || type === 'seleccion_multiple') {
+            oc.innerHTML = field('Opciones (separadas por coma)', 'question-options', 'Opción A, Opción B, Opción C') +
+              (type === 'seleccion_multiple' ? field('Claves correctas en JSON', 'question-answer', '["A","C"]') : commonAnswer);
+          } else if (type === 'verdadero_falso') {
+            oc.innerHTML = field('Respuesta correcta (Verdadero o Falso)', 'question-answer', 'Verdadero o Falso');
+          } else if (type === 'completacion') {
+            oc.innerHTML = commonAnswer;
+          } else if (type === 'termino_pareado') {
+            oc.innerHTML = area('Conceptos (uno por línea)', 'question-concepts', 'Concepto 1&#10;Concepto 2') +
+              area('Definiciones (uno por línea)', 'question-definitions', 'Definición 1&#10;Definición 2') +
+              field('Correspondencias correctas en JSON', 'question-answer', '{"0":1,"1":0}');
+          } else if (type === 'respuesta_extensa') {
+            oc.innerHTML = '<p class="text-sm text-gray-600">La respuesta será revisada manualmente por el docente.</p>';
+          } else if (type === 'numerica') {
+            oc.innerHTML = field('Tolerancia numérica', 'question-tolerance', '0', 'number') + commonAnswer;
+          } else if (type === 'ordenamiento') {
+            oc.innerHTML = area('Elementos (uno por línea)', 'question-items', 'Elemento A&#10;Elemento B&#10;Elemento C') +
+              field('Orden correcto en JSON', 'question-answer', '["Elemento B","Elemento A","Elemento C"]');
+          } else if (type === 'adjunto') {
+            oc.innerHTML = field('Tipos MIME permitidos (separados por coma)', 'question-mime-types', 'application/pdf,image/png') +
+              field('Cantidad máxima de archivos', 'question-max-files', '1', 'number') +
+              '<p class="text-sm text-gray-600">La entrega de archivos requiere que el almacenamiento de adjuntos del examen esté configurado.</p>';
+          }
+        };
+        setOpts(ts.value); ts.onchange = () => setOpts(ts.value);
     };
     if (questionsContainer) questionsContainer.onclick = (e) => { if (e.target.classList.contains('remove-question-btn')) e.target.closest('.question-block').remove(); };
 
@@ -4977,11 +5021,44 @@ window.loadExamGradeDistributionData = async function (examenId) {
 
         if (quillExam) payload.descripcion = quillExam.root.innerHTML;
 
+        const parseJsonInput = (value, label) => {
+            try { return JSON.parse(value); } catch (_) { throw new Error(label + ': JSON no válido.'); }
+        };
+        const lines = value => String(value || '').split(/\\r?\\n/).map(item => item.trim()).filter(Boolean);
         questionsContainer.querySelectorAll('.question-block').forEach(block => {
             const type = block.querySelector('.question-type-select').value;
-            const q = { preguntaTipo: type, textoPregunta: block.querySelector('.question-text').value, respuestaCorrecta: block.querySelector('.correct-answer').value, opciones: {} };
-            const opts = block.querySelector('.question-options')?.value || '';
-            if (type === 'opcion_multiple' || type === 'verdadero_falso') opts.split(',').forEach((p, i) => { const L = ['A', 'B', 'C', 'D'][i]; if (L) q.opciones[L] = p.trim(); });
+            const value = selector => block.querySelector(selector)?.value || '';
+            const q = {
+                preguntaTipo: type, textoPregunta: value('.question-text'), respuestaCorrecta: value('.question-answer'),
+                areaCurricular: formData.areaCurricular || formData.asignatura, asignatura: formData.asignatura,
+                grado: formData.gradoAsignado, tema: value('.question-topic'),
+                puntosPredeterminados: Number(value('.question-points')), dificultad: value('.question-difficulty'),
+                etiquetas: value('.question-tags').split(',').map(x => x.trim()).filter(Boolean),
+                objetivos: value('.question-objectives').split(',').map(x => x.trim()).filter(Boolean),
+                criterios: value('.question-criteria').split(',').map(x => x.trim()).filter(Boolean), opciones: {}
+            };
+            const opts = value('.question-options');
+            if (type === 'opcion_multiple' || type === 'seleccion_multiple') {
+                opts.split(',').map(x => x.trim()).filter(Boolean).forEach((item, i) => { q.opciones[String.fromCharCode(65 + i)] = item; });
+                if (type === 'seleccion_multiple') q.respuestaCorrecta = parseJsonInput(value('.question-answer'), 'Selección múltiple');
+            } else if (type === 'verdadero_falso') {
+                q.opciones = { A: 'Verdadero', B: 'Falso' };
+            } else if (type === 'termino_pareado') {
+                q.opciones = { concepts: lines(value('.question-concepts')), definitions: lines(value('.question-definitions')) };
+                q.respuestaCorrecta = parseJsonInput(value('.question-answer'), 'Correspondencias');
+            } else if (type === 'numerica') {
+                q.opciones = { tolerance: Number(value('.question-tolerance') || 0) };
+            } else if (type === 'ordenamiento') {
+                q.opciones = { items: lines(value('.question-items')) };
+                q.respuestaCorrecta = parseJsonInput(value('.question-answer'), 'Orden correcto');
+            } else if (type === 'adjunto') {
+                q.opciones = { acceptedMimeTypes: value('.question-mime-types').split(',').map(x => x.trim()).filter(Boolean),
+                    maxFiles: Number(value('.question-max-files') || 1) };
+                q.respuestaCorrecta = '';
+            } else if (type === 'respuesta_extensa') {
+                q.respuestaCorrecta = '';
+            }
+            if (!q.textoPregunta.trim() || !q.tema.trim()) throw new Error('Cada reactivo requiere enunciado y tema.');
             payload.preguntas.push(q);
         });
 
