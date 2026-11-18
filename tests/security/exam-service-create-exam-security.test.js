@@ -123,7 +123,7 @@ test(() => { const x=fixture({lockTimeout:true}); assert.throws(()=>x.call(),/EX
 test(() => { const x=fixture({failOwnershipAppendAfterWrite:true}); assert.throws(()=>x.call(),/append persisted then failed/); assert.equal(x.sheets.ResourceOwnership.rows.length,1); assert.equal(x.sheets.Examenes.rows.length,1); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });
 test(() => { const x=fixture({failExamAppend:true}); assert.throws(()=>x.call(),/append failed/); assert.equal(x.sheets.Examenes.rows.length,1); assert.equal(x.sheets.ResourceOwnership.rows.length,1); assert.equal(x.sheets.PreguntasExamen.rows.length,1); });
 test(() => { const x=fixture({failQuestionWrite:true}); assert.throws(()=>x.call(),/write failed/); assert.equal(x.sheets.Examenes.rows.length,1); assert.equal(x.sheets.ResourceOwnership.rows.length,1); assert.equal(x.sheets.PreguntasExamen.rows.length,1); });
-test(() => { const x=fixture(); assert.throws(()=>x.call({departmentId:"D2"}),/RESOURCE_SCOPE_DENIED/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });
+test(() => { const x=fixture(); assert.throws(()=>x.call({departmentId:"D2"}),/RESOURCE_SCOPE_DENIED/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[0,0,false]); });
 test(() => { const x=fixture(); x.sheets.ResourceOwnership.rows[0]=["wrong"]; assert.throws(()=>x.call(),/RESOURCE_OWNERSHIP_SCHEMA_INVALID/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });
 test(() => {
  const x=fixture({actors:[{authorized:true,userId:"P1",role:"Profesor"},{authorized:false,userId:"",role:""}],permissions:[true,false]});
