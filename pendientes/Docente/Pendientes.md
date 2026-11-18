@@ -1006,7 +1006,9 @@ Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas exist
 - **Problema:** el banco carece de validación de esquema/referencias; createExam no persiste todos los campos declarados de Examenes/PreguntasExamen; no conserva vínculo/versionado de reactivos reutilizados; faltan modalidades exigidas; no existe snapshot inmutable para exámenes ya realizados; la analítica psicométrica requerida no está implementada de forma verificable.
 - **Criterios:** validar tipos, opciones, respuestas, puntos y referencias curriculares en servidor; persistir área/tema/dificultad/etiquetas/objetivos/criterios; relación estable/versionada con BancoPreguntas; soportar las nueve modalidades (incluidos adjuntos); conservar snapshot de reactivos aplicados; ofrecer analítica psicométrica reproducible por pregunta/tema/asignatura/grupo.
 - **Tareas relacionadas (no duplicadas):** AUD-NG-121 (fechas/duración/intentos), AUD-NG-124 (rúbricas/revisión parcial), AUD-NG-006 (idempotencia), AUD-NG-011 (área/routing), AUD-NG-002 (propiedad/consultas), AUD-NG-158 (ámbito docente).
-- **Estado:** [ ] Pendiente
+- **Estado:** [~] En progreso
+- **Avance (2026-11-18):** normalización y persistencia de metadatos de reactivos; snapshot de preguntas por entrega; analítica psicométrica por pregunta/tema/asignatura/grupo; autoría docente ampliada a nueve modalidades y metadatos curriculares; interfaz estudiantil ampliada para selección múltiple, pareado, respuesta extensa, numérica y ordenamiento; resultados con presentación estructurada. Contratos Node de nueve esquemas y verificaciones de sintaxis pasan en GitHub Actions 44221208623.
+- **Pendiente para cierre:** carga real de archivos para reactivos adjunto (almacenamiento, asociación con entrega y consulta autorizada), verificación funcional integral de los nueve flujos y revisión de resultados en navegador. No se declara completa la modalidad de adjuntos.
 
 Hallazgo nuevo: AUD-NG-166. Progreso de auditoría: 17/183; 166 pendientes. Siguiente tarea: TAREA-12.
 

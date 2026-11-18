@@ -838,3 +838,42 @@ Estado y continuidad:
 - No se modificó código de runtime en este checkpoint.
 - No se modificó la rama base.
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.817 — avance de AUD-NG-166: modelo de reactivos y motor de exámenes
+===============================================================================
+Fecha: 2026-11-18
+Sesión: IMA-EXEC-20261118-AUD-NG-166-QUESTION-MODEL-01
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.816
+HEAD de código verificado: 754edeafa5846f529c92a39f6190aca032daeb81
+
+Objetivo:
+Continuar TAREA-11 / AUD-NG-166 aplicando NDASC 1.5: completar el modelo de reactivos y el flujo de exámenes sin autorizaciones interservicio ni controles repetidos por archivo, conservando autorización por acción, datos académicos y pruebas.
+
+Cambios implementados en esta continuación:
+- Corrección del fixture de rollback de creación de exámenes: se incorporaron los campos curriculares que el contrato de creación exige; no se retiraron aserciones.
+- Interfaz estudiantil js/exam.js: controles de selección múltiple, respuesta extensa, respuesta numérica, pareado y ordenamiento; persistencia/restauración local de progreso para esos tipos; serialización del orden en la forma que espera el calificador.
+- Interfaz docente js/teacher.js y teacher-dashboard.html: autoría de los nueve tipos de reactivo; área curricular, tema, dificultad, puntos, etiquetas, objetivos y criterios; configuración de opciones por modalidad.
+- js/results.js: presentación de respuestas estructuradas y escape de contenido dinámico para reducir interpretación de HTML no confiable.
+- Contrato nuevo tests/security/exam-service-question-modalities-contract.test.js: prueba los nueve esquemas y rechazos de configuración inválida.
+- Workflow Exam-Service: node --check para js/exam.js, js/teacher.js y js/results.js, además del contrato de nueve modalidades.
+
+Verificaciones:
+- GitHub Actions Exam-Service security local contracts, run 44221208623, SHA 754edeafa5846f529c92a39f6190aca032daeb81: SUCCESS.
+- En el mismo workflow: sintaxis de interfaz estudiantil, autoría docente, resultados, nueve esquemas, contratos de creación, mutación, lectura, acceso departamental, snapshot/entrega y analítica psicométrica: SUCCESS.
+- GitHub Actions Task-Service security local contracts 44221030915: SUCCESS.
+- UI Accessibility and Metadata Contract 44221030788: SUCCESS.
+- Academic-Service single authorization context 44221030708: SUCCESS.
+- Accounting Import Preflight Contract 44221030483: SUCCESS.
+- Regional Formatting Contract 44221030748: SUCCESS.
+- Department Scope Contract 44221030673: FAILURE ajeno al alcance de AUD-NG-166; el log falla en Phase22 por ausencia de configureSchoolDocumentTemplate en ACCOUNTING. No se modificó esa función ni se alteró su prueba.
+
+Pendiente y límites:
+- La modalidad adjunto tiene esquema y calificación manual en backend, y el formulario docente permite configurarla, pero todavía no existe el flujo completo de carga real, asociación del archivo a la entrega y consulta autorizada desde resultados. No se declara implementada.
+- Las pruebas de Node y sintaxis se ejecutaron en GitHub Actions; no se realizó prueba manual en navegador ni prueba contra Apps Script desplegado.
+- AUD-NG-166 permanece En progreso; no se declara completada. No iniciar AUD-NG-167 como sustitución de este alcance pendiente.
+- No se modificó la rama base.
+===============================================================================

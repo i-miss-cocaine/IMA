@@ -4226,3 +4226,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-18] NDASC 1.5: se formaliza el alcance de seguridad proporcional y optimización del flujo académico; se aclara la revocación de sesión/caché y la estrategia para diagnosticar fallos de pruebas sin reducir cobertura. AUD-NG-166 permanece pendiente y recibe nota de alineación normativa.
+
+[2026-11-18] AUD-NG-166 en progreso: autoría de nueve modalidades y controles de respuesta, normalización curricular, resultados estructurados y contrato Node para nueve esquemas; Exam-Service Actions 44221208623 SUCCESS. Pendiente la carga real de adjuntos y validación funcional en navegador/despliegue.
