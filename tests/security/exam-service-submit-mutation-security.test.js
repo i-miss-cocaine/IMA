@@ -42,7 +42,7 @@ function submitRuntime(options = {}) {
 }
 const scoreQuestion = new Function("normalizeString", "JSON", "Number", "String",
   extractFunction("scoreExamQuestionAnswer_") + "; return scoreExamQuestionAnswer_;")(
-  value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").trim().toLowerCase(),
+  value => String(value || "").trim().toLowerCase(),
   JSON, Number, String);
 const scoringCases = [
   ["opcion_multiple", {A:"Uno",B:"Dos"}, "A", "A", 2, 2],
@@ -118,7 +118,7 @@ test("reentrant submission during appendRow is rejected while the outer ScriptLo
     normalizeString(value) { return String(value || "").trim().toLowerCase(); },
     Date, JSON, String, Set, Array, parseInt, Error
   };
-  handler = new Function("runtime", "with (runtime) { " + extractFunction("ensureExamSubmissionSnapshotSchema_") + "\n" + submit + "\n" + worker + "; return submitExam; }")(runtime);
+  handler = new Function("runtime", "with (runtime) { " + extractFunction("ensureExamSubmissionSnapshotSchema_") + "\n" + extractFunction("scoreExamQuestionAnswer_") + "\n" + submit + "\n" + worker + "; return submitExam; }")(runtime);
   const result = handler({ examenId: "EXAM-1", respuestas: [{ preguntaId: "Q1", respuestaEstudiante: "4" }] });
   assert.equal(result.status, "success");
   assert.deepEqual(state.nestedErrors, ["EXAM_SUBMISSION_LOCK_TIMEOUT"]);
