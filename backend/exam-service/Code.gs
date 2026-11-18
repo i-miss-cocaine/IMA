@@ -3379,6 +3379,55 @@ function buildGradebookContextKey_(context) {
   return JSON.stringify(fields.map(field => normalizeString(field)));
 }
 
+function calculateGradebookStudentSummary_(userId, grades, categories) {
+  const studentId = String(userId || "").trim();
+  const gradeRows = Array.isArray(grades) ? grades : [];
+  const configured = Array.isArray(categories) ? categories : [];
+  if (!studentId) throw new Error("GRADEBOOK_STUDENT_REQUIRED");
+  if (!configured.length) return { userId: studentId, status: "not_configured",
+    notaFinal: null, avancePonderado: null, ponderacionPendiente: 0 };
+  const totalWeight = configured.reduce((sum, category) => sum + Number(category.porcentajePonderacion), 0);
+  if (configured.some(category => !Number.isFinite(Number(category.porcentajePonderacion)) ||
+      Number(category.porcentajePonderacion) < 0 || Number(category.porcentajePonderacion) > 100) ||
+      Math.abs(totalWeight - 100) > 0.01) {
+    throw new Error("GRADEBOOK_WEIGHTS_INVALID");
+  }
+  let weightedContribution = 0, pendingWeight = 0, evaluatedWeight = 0;
+  const byCategory = Object.create(null);
+  configured.forEach(category => {
+    const categoryId = String(category.categoriaId || "").trim();
+    if (!categoryId || byCategory[categoryId]) throw new Error("GRADEBOOK_WEIGHT_RECORD_AMBIGUOUS");
+    byCategory[categoryId] = true;
+    const matches = gradeRows.filter(row => String(row.userId || "").trim() === studentId &&
+      String(row.evaluacionId || "").trim() === categoryId);
+    if (matches.length > 1) throw new Error("GRADEBOOK_RECORD_AMBIGUOUS");
+    const weight = Number(category.porcentajePonderacion);
+    const grade = matches[0];
+    if (!grade || grade.notaObtenida === null || grade.notaObtenida === undefined ||
+        grade.notaObtenida === "" || grade.esBorrador === true || grade.esPublicada !== true) {
+      pendingWeight += weight;
+      return;
+    }
+    const value = Number(grade.notaObtenida);
+    if (!Number.isFinite(value) || value < 0 || value > 100) throw new Error("GRADEBOOK_GRADE_INVALID");
+    weightedContribution += value * weight / 100;
+    evaluatedWeight += weight;
+  });
+  if (pendingWeight > 0) return {
+    userId: studentId, status: evaluatedWeight ? "provisional" : "pending",
+    notaFinal: null, avancePonderado: Math.round(weightedContribution * 100) / 100,
+    ponderacionPendiente: pendingWeight
+  };
+  if (evaluatedWeight <= 0) return {
+    userId: studentId, status: "no_grade", notaFinal: null,
+    avancePonderado: null, ponderacionPendiente: 0
+  };
+  return { userId: studentId, status: "calculated",
+    notaFinal: Math.round(weightedContribution * 100) / 100,
+    avancePonderado: Math.round(weightedContribution * 100) / 100,
+    ponderacionPendiente: 0 };
+}
+
 function getGradebookDataUnlocked_(payload, context) {
   const p = payload || {};
   const { actor, ss, scope } = context || {};
@@ -3526,9 +3575,13 @@ function getGradebookDataUnlocked_(payload, context) {
     normalizeString(row[2]) === normalizeString(parcial));
   const estadoPeriodo = cierreRow ? cierreRow[7] : "Abierto";
 
+  const resumenes = Object.create(null);
+  alumnos.forEach(student => {
+    resumenes[String(student.userId)] = calculateGradebookStudentSummary_(student.userId, calificaciones, categories);
+  });
   return {
     status: "success",
-    data: { alumnos, calificaciones, recuperaciones, categories, estadoPeriodo,
+    data: { alumnos, calificaciones, recuperaciones, categories, resumenes, estadoPeriodo,
       contexto: { anoId, periodoId: parcial, grado, seccion, asignatura, institutionId: scope.institutionId },
       configuracionPonderaciones: categories.length ? "Configurada" : "No configurada" }
   };
