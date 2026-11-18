@@ -1841,3 +1841,22 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** IDs sintéticos, roles, tarea/entrega, filas antes/después, conteos de versiones/comentarios, actor/fecha/motivo de baja, fileId y estado de Drive, resultados allow/deny, lock/rollback y logs saneados. No guardar tokens, PII ni contenido privado.
 - **Estado:** Pendiente beta. Los contratos Node.js/GitHub Actions PASS no sustituyen la comprobación de permisos reales en Apps Script/Sheets/Drive.
 =============================================================================
+
+=============================================================================
+### BETA-FUNC-123 — carga y consulta de adjuntos de exámenes
+- **Estado:** Pendiente beta. Contrato automatizado PASS; no se ha probado contra Drive/Sheets desplegados.
+- **Módulos:** autoría docente, examen estudiantil, Exam-Service y resultados.
+- **Datos:** usar institución, docente, estudiante, examen, preguntas y archivos sintéticos; no utilizar datos personales reales.
+- **Preparación:** desplegar la versión correspondiente de Exam-Service en un entorno beta; verificar que el usuario de ejecución tenga acceso al Drive de pruebas y que los archivos nuevos se creen privados; disponer de un examen activo con una pregunta adjunto, MIME application/pdf (y otra image/png si se requiere), máximo 2 archivos.
+- **Pasos:**
+  1. Crear el examen como docente autorizado y comprobar que la configuración MIME y maxFiles se conserva en PreguntasExamen.
+  2. Iniciar sesión como estudiante asignado; adjuntar un PDF permitido y entregar. Comprobar que la entrega se registra, que la fila AdjuntosExamen referencia la entrega/examen/pregunta/estudiante y que RespuestasJSON solo conserva metadatos, no base64.
+  3. Comprobar en Drive que el archivo se creó y que el permiso de enlace no lo hace público. Intentar acceso con una cuenta no autorizada y verificar denegación.
+  4. Probar MIME no permitido, MIME declarado distinto, más archivos que maxFiles, archivo vacío y archivo superior a 5 MiB. Verificar rechazo y ausencia de archivos/fila huérfanos.
+  5. Simular fallo de escritura de metadatos después de crear un archivo; verificar que el archivo creado queda en papelera y no permanece una relación parcial.
+  6. Antes de calificar, verificar que el estudiante no puede consultar el resultado ni el adjunto mientras la entrega siga Pendiente. Como docente asignado, consultar el resultado y descargar el archivo. Tras publicar la nota, consultar con el estudiante propietario y verificar que puede descargarlo.
+  7. Intentar consultar entrega ajena, pregunta ajena o archivo asociado a otra entrega; verificar que el endpoint no devuelve contenido. Ejecutar dos entregas concurrentes y comprobar serialización sin asociaciones cruzadas.
+  8. Recorrer también las otras ocho modalidades para confirmar que no cambió su captura, persistencia, calificación ni presentación de resultados.
+- **Resultado esperado:** carga rápida con límites funcionales, archivos privados, relación inequívoca, consulta solo mediante resultados autorizados, rollback de fallos y revisión manual conservada.
+- **Evidencia requerida:** IDs sintéticos; conteos de filas antes/después; Drive fileId y permisos efectivos; resultados allow/deny; pruebas de límite MIME/tamaño/cantidad; rollback; estado de calificación; descarga docente/estudiante; concurrencia; capturas de navegador sin PII ni tokens.
+=============================================================================

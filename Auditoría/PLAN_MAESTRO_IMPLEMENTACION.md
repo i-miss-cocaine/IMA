@@ -5934,3 +5934,13 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Beta:** BETA-FUNC-122 queda Pendiente beta; validar Drive/Sheets y permisos efectivos en despliegue. No se declara prueba beta ejecutada.
 - **Estado:** AUD-NG-165 completada en código/contratos locales; C1.815 registra la resolución.
 - **Siguiente tarea elegible:** revisar el siguiente pendiente del Plan Maestro, manteniendo AUD-NG-149/121/152 abiertos para sus requisitos propios y sin reabrir AUD-NG-165 por pruebas beta.
+
+
+### C1.818 — AUD-NG-166: circuito de adjuntos de examen
+- **Alcance:** completar la carga y recuperación de adjuntos sin añadir validaciones por archivo ajenas al flujo de autorización existente.
+- **Cambios:** carga desde js/exam.js; configuración MIME y máximo de archivos en autoría docente; límite de 5 MiB por archivo; almacenamiento privado Drive; hoja AdjuntosExamen con referencias de entrega, examen, pregunta y estudiante; lectura de bytes dentro de getExamResultUnlocked_ tras autorización contextual; sanitización de nombre; rollback de archivos y filas si falla la persistencia; envíos ordinarios sin dependencia del servicio Drive.
+- **Integridad:** el envío sigue usando ScriptLock existente; la lectura sigue usando el contexto de getExamResult y su comprobación de propiedad/ámbito; no se crea endpoint público ni URL Drive compartida. La nota continúa Pendiente de revisión para adjuntos.
+- **Pruebas:** nuevo contrato Node de adjuntos con MIME inválido, discrepancia MIME, asociación, lectura, privacidad y rollback; workflow Exam-Service incluye el contrato. Run 44293396510 SUCCESS, incluyendo node --check de js/exam.js, js/teacher.js, js/results.js y regresiones de envío, permisos, ownership y resultados.
+- **Correcciones realizadas por CI:** regex MIME, mock de Drive, expectativa del nombre saneado y eliminación de dependencia de Drive para envíos sin adjuntos; todos corregidos antes de la ejecución verde.
+- **Pendiente:** verificación manual de UI/navegador, runtime desplegado Apps Script/Sheets/Drive y privacidad efectiva. AUD-NG-166 permanece abierta; no iniciar TAREA-12 hasta completar estos puntos.
+- **HEAD de código:** a96385531fa128583e5c2d19d842d7957de0ef09. **Checkpoint anterior:** C1.817.

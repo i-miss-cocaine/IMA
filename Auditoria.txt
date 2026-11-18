@@ -3018,3 +3018,22 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Evidencia:** Task-Service security local contracts 44171548172 SUCCESS (13 contratos de mutación, 30 de acceso contextual, reentrega, ownership, calificaciones/fechas, upload, single-auth y node --check js/teacher.js); backup/restore 44171274487 SUCCESS.
 - **Pendiente:** BETA-FUNC-122 requiere Apps Script/Sheets/Drive desplegados. Department Scope 44171274513 falla independientemente en Phase22 por ausencia de configureSchoolDocumentTemplate en ACCOUNTING.
 ===============================================================================
+
+===============================================================================
+### C1.818 — AUD-NG-166: circuito funcional de adjuntos de examen
+- **Fecha:** 2026-11-18.
+- **Sesión:** IMA-EXEC-20261118-AUD-NG-166-ATTACHMENT-FLOW-01.
+- **Rama exclusiva:** NG_beta_0.0.0.1_work. Rama base NG_beta_0.0.0.1 sin modificaciones.
+- **HEAD verificado:** a96385531fa128583e5c2d19d842d7957de0ef09. El checkpoint registra el HEAD de código previo al commit documental.
+- **Relación con base:** ahead 4103, behind 0; estado ahead.
+- **Checkpoint anterior:** C1.817.
+- **Tarea:** AUD-NG-166, derivada de TAREA-11. Continúa En progreso; no se inicia AUD-NG-167.
+- **Implementación:** backend/exam-service/Code.gs valida los adjuntos contra el MIME configurado y 5 MiB por archivo, sanitiza nombres, crea archivos Drive con acceso privado, registra la asociación con entrega/examen/pregunta/estudiante, conserva metadatos sin base64 en RespuestasJSON, recupera bytes solo a través del resultado ya autorizado y compensa archivos/filas ante fallos de escritura. Los envíos sin adjuntos no dependen de Drive. La entrega conserva snapshot y revisión manual.
+- **Interfaz:** js/exam.js permite seleccionar y serializar archivos; js/teacher.js informa los límites; js/results.js muestra enlaces de descarga desde los datos que entrega el endpoint autorizado.
+- **Pruebas nuevas:** tests/security/exam-service-attachment-submission-contract.test.js cubre MIME no permitido, MIME declarado distinto, vínculo a entrega, lectura, archivo privado y rollback explícito/ante escritura parcial. Se integra al workflow Exam-Service.
+- **Verificaciones:** Exam-Service security local contracts run 44293396510, SHA a96385531fa128583e5c2d19d842d7957de0ef09: SUCCESS. node --check para js/exam.js, js/teacher.js y js/results.js: SUCCESS en el workflow. Contrato de nueve modalidades: SUCCESS. Contrato nuevo de adjuntos: SUCCESS. Regresiones de mutación, envío, ownership, acceso departamental, single-auth, resultados y calificaciones: SUCCESS.
+- **Historial de correcciones:** el primer CI detectó regex MIME mal formada por sustitución de texto; corregida y verificada. El contrato nuevo detectó primero el mock Drive incompleto y luego una expectativa de sanitización incorrecta; ambos corregidos. El contrato de envío detectó dependencia de Drive/Utilities incluso para envíos sin archivos; se corrigió para que solo las respuestas con adjuntos activen persistencia Drive. La ejecución final quedó verde.
+- **Hallazgo externo:** Department Scope run 44293259425 falló en Phase22 porque tests/regression/phase22-document-management-suite-contract.test.js busca configureSchoolDocumentTemplate, ausente en ACCOUNTING. No es una regresión de Exam-Service; no se cambió código fuera de la tarea.
+- **Limitaciones:** Node CLI local no ejecutado en un checkout local; las pruebas Node se ejecutaron en GitHub Actions (Node 22.23.4). No se ejecutó navegador ni Apps Script/Sheets/Drive desplegados; privacidad y funcionamiento real permanecen pendientes de beta.
+- **Siguiente acción elegible:** prueba manual en navegador y BETA-FUNC-123; recorrido de las nueve modalidades. Solo después cerrar AUD-NG-166 y avanzar a TAREA-12/AUD-NG-167.
+===============================================================================
