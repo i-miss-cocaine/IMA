@@ -5707,6 +5707,7 @@ function toBase64(file) {
     document.getElementById('btn-gb-save-all')?.addEventListener('click', async () => {
         const inputs = document.querySelectorAll('.gb-score-input');
         const califsToSave = [];
+        let invalidScore = false;
 
         inputs.forEach(inp => {
             const userId = inp.dataset.userid;
@@ -5715,7 +5716,8 @@ function toBase64(file) {
             if (!rawScore) return; // Una celda vacía permanece pendiente; nunca se convierte en cero.
             const score = Number(rawScore);
             if (!Number.isFinite(score) || score < 0 || score > 100) {
-                throw new Error("La nota debe ser un número entre 0 y 100.");
+                invalidScore = true;
+                return;
             }
             califsToSave.push({
                 evaluacionId: catId,
@@ -5725,6 +5727,10 @@ function toBase64(file) {
                 observaciones: "Actualizado desde Libro de Calificaciones"
             });
         });
+        if (invalidScore) {
+            alert("La nota debe ser un número entre 0 y 100. No se guardó ningún cambio.");
+            return;
+        }
         if (!califsToSave.length) {
             alert("No hay notas capturadas para guardar. Las celdas vacías se mantienen pendientes.");
             return;
