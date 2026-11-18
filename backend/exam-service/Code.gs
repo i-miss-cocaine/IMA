@@ -3621,7 +3621,7 @@ function getGradebookDataUnlocked_(payload, context) {
   });
   return {
     status: "success",
-    data: { alumnos, calificaciones, recuperaciones, categories, resumenes, estadoPeriodo,
+    data: { alumnos, calificaciones, recuperaciones: recoveries, categories, resumenes, estadoPeriodo,
       contexto: { anoId, periodoId: parcial, grado, seccion, asignatura, institutionId: scope.institutionId },
       configuracionPonderaciones: categories.length ? "Configurada" : "No configurada" }
   };
