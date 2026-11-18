@@ -321,9 +321,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 case 'ordenamiento': {
                     const inputs = block.querySelectorAll(`select[name^="question_${preguntaId}_order_"]`);
-                    const order = {};
-                    inputs.forEach(input => { if (input.value !== '') order[input.name.split('_order_')[1]] = Number(input.value); });
-                    respuestaEstudiante = JSON.stringify(order);
+                    const question = originalQuestions.find(item => String(item.preguntaId) === String(preguntaId));
+                    const items = question && question.opciones && Array.isArray(question.opciones.items) ? question.opciones.items : [];
+                    const ordered = [];
+                    inputs.forEach(input => {
+                        if (input.value !== '' && items[Number(input.name.split('_order_')[1])] !== undefined) {
+                            ordered[Number(input.value)] = String(items[Number(input.name.split('_order_')[1])]);
+                        }
+                    });
+                    respuestaEstudiante = JSON.stringify(ordered);
                     break;
                 }
             }
