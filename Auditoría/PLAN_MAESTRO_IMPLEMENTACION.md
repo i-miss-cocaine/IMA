@@ -5944,3 +5944,9 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Correcciones realizadas por CI:** regex MIME, mock de Drive, expectativa del nombre saneado y eliminación de dependencia de Drive para envíos sin adjuntos; todos corregidos antes de la ejecución verde.
 - **Pendiente:** verificación manual de UI/navegador, runtime desplegado Apps Script/Sheets/Drive y privacidad efectiva. AUD-NG-166 permanece abierta; no iniciar TAREA-12 hasta completar estos puntos.
 - **HEAD de código:** a96385531fa128583e5c2d19d842d7957de0ef09. **Checkpoint anterior:** C1.817.
+
+
+### C1.819 — revisión de permisos de Drive para adjuntos
+- **Hallazgo de API:** Permission.NONE no puede combinarse con Access.PRIVATE según la documentación de DriveApp; se reserva la combinación NONE con Access.ANYONE. Se cambió a Access.PRIVATE y Permission.VIEW para mantener el archivo no público y no conceder acceso por enlace. Referencias oficiales: https://developers.google.com/apps-script/reference/drive/permission y https://developers.google.com/apps-script/reference/drive/access.
+- **Prueba:** el contrato de adjuntos verifica la combinación soportada; Exam-Service Actions 44293858585 SUCCESS en cb71ca436b5135576b991a9544b94c2eae35635f.
+- **Límite:** la política efectiva en la cuenta Drive desplegada debe verificarse en BETA-FUNC-123; el contrato simulado no sustituye la prueba real.

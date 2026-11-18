@@ -3037,3 +3037,19 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Limitaciones:** Node CLI local no ejecutado en un checkout local; las pruebas Node se ejecutaron en GitHub Actions (Node 22.23.4). No se ejecutó navegador ni Apps Script/Sheets/Drive desplegados; privacidad y funcionamiento real permanecen pendientes de beta.
 - **Siguiente acción elegible:** prueba manual en navegador y BETA-FUNC-123; recorrido de las nueve modalidades. Solo después cerrar AUD-NG-166 y avanzar a TAREA-12/AUD-NG-167.
 ===============================================================================
+
+===============================================================================
+### C1.819 — AUD-NG-166: corrección de permiso Drive y verificación CI final
+- **Fecha:** 2026-11-18.
+- **Sesión:** IMA-EXEC-20261118-AUD-NG-166-DRIVE-PERMISSION-FIX-01.
+- **Rama:** NG_beta_0.0.0.1_work. No se modificó la rama base NG_beta_0.0.0.1.
+- **HEAD de código verificado:** cb71ca436b5135576b991a9544b94c2eae35635f.
+- **Relación con base:** ahead 4105, behind 0; estado ahead.
+- **Checkpoint anterior:** C1.818.
+- **Hallazgo:** la revisión de la documentación oficial de Google Apps Script indicó que DriveApp.Permission.NONE no se admite con DriveApp.Access.PRIVATE; la excepción indicada por la API es Access.ANYONE. Se corrigió el establecimiento explícito de privacidad a Access.PRIVATE + Permission.VIEW. Referencia: https://developers.google.com/apps-script/reference/drive/permission y https://developers.google.com/apps-script/reference/drive/access.
+- **Cambio:** backend/exam-service/Code.gs establece permisos privados compatibles al crear cada archivo. El contrato de adjuntos ahora afirma que la combinación PRIVATE+VIEW está presente y PRIVATE+NONE no vuelve a introducirse.
+- **Verificación:** Exam-Service security local contracts run 44293858585, SHA cb71ca436b5135576b991a9544b94c2eae35635f: SUCCESS. Pasaron node --check js/exam.js, js/teacher.js, js/results.js, contrato de nueve modalidades, contrato de adjuntos, regresiones de envío, mutación, ownership, acceso departamental, single-auth, resultados y libro de calificaciones.
+- **Hallazgo externo persistente:** Department Scope run 44293858508 debe revisarse por su contrato Phase22 que busca configureSchoolDocumentTemplate en ACCOUNTING; no corresponde a AUD-NG-166 y no se alteró ese servicio.
+- **Estado:** AUD-NG-166 permanece En progreso. La prueba CI no sustituye la prueba manual de navegador ni la comprobación real de Drive/Sheets.
+- **Siguiente acción:** ejecutar BETA-FUNC-123 y el recorrido integral de nueve modalidades; solo entonces cerrar AUD-NG-166.
+===============================================================================

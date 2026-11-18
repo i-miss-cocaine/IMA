@@ -1851,7 +1851,7 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Pasos:**
   1. Crear el examen como docente autorizado y comprobar que la configuración MIME y maxFiles se conserva en PreguntasExamen.
   2. Iniciar sesión como estudiante asignado; adjuntar un PDF permitido y entregar. Comprobar que la entrega se registra, que la fila AdjuntosExamen referencia la entrega/examen/pregunta/estudiante y que RespuestasJSON solo conserva metadatos, no base64.
-  3. Comprobar en Drive que el archivo se creó y que el permiso de enlace no lo hace público. Intentar acceso con una cuenta no autorizada y verificar denegación.
+  3. Comprobar en Drive que el archivo se creó con Access.PRIVATE y Permission.VIEW (no usar Permission.NONE con Access.PRIVATE), y que el permiso de enlace no lo hace público. Intentar acceso con una cuenta no autorizada y verificar denegación.
   4. Probar MIME no permitido, MIME declarado distinto, más archivos que maxFiles, archivo vacío y archivo superior a 5 MiB. Verificar rechazo y ausencia de archivos/fila huérfanos.
   5. Simular fallo de escritura de metadatos después de crear un archivo; verificar que el archivo creado queda en papelera y no permanece una relación parcial.
   6. Antes de calificar, verificar que el estudiante no puede consultar el resultado ni el adjunto mientras la entrega siga Pendiente. Como docente asignado, consultar el resultado y descargar el archivo. Tras publicar la nota, consultar con el estudiante propietario y verificar que puede descargarlo.
