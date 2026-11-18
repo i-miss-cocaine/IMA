@@ -109,7 +109,7 @@ function runtime(options = {}) {
     }
   };
   const names = ["buildGradebookContextKey_", "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getGradebookData", "getGradebookDataUnlocked_"];
-  vm.runInNewContext(names.map(extractFunction).join("\n") +
+  vm.runInNewContext("const GRADEBOOK_WEIGHT_HEADERS_ = [\"ID\",\"InstitutionID\",\"AnoID\",\"PeriodoID\",\"Grado\",\"Seccion\",\"Asignatura\",\"CategoriaID\",\"Nombre\",\"PorcentajePonderacion\",\"EscalaMaxima\",\"Estado\",\"RegisteredBy\",\"CreatedAt\",\"UpdatedAt\",\"ContextKey\"];\\n" + ["buildGradebookContextKey_", "buildGradebookWeightContextKey_", "getGradebookWeightConfigurationFromSheet_", "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getGradebookData", "getGradebookDataUnlocked_"].map(name => extractFunction(name)).join("\n") +
     "\nthis.getGradebookData = getGradebookData;", context);
   return { context, sheets, stats: () => ({ acquires, releases, held }) };
 }
