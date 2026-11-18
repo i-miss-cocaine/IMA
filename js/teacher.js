@@ -5469,9 +5469,19 @@ function toBase64(file) {
         // Cargar opciones de filtros desde GLOBAL_SCOPE
         const scope = window.GLOBAL_SCOPE || {};
         const granular = scope.GranularConfig || [];
+        const norm = value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().trim();
+        const escapeHtml = value => String(value == null ? "" : value).replace(/[&<>"']/g, char =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
-        const grados = Array.isArray(scope.GradoActual) ? scope.GradoActual : (scope.GradoActual ? [scope.GradoActual] : ["10mo Grado"]);
+        const grados = Array.isArray(scope.GradoActual) ? scope.GradoActual : (scope.GradoActual ? [scope.GradoActual] : []);
         selGrado.innerHTML = grados.map(g => `<option value="${g}">${g}</option>`).join('');
+        const activeGrade = selGrado.value;
+        const secciones = [...new Set(granular.filter(r => norm(r.grado) === norm(activeGrade)).map(r => String(r.seccion || "").trim()).filter(Boolean))];
+        if (selSeccion) selSeccion.innerHTML = secciones.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
+        const activePartial = String(scope.ParcialActual || window.PARCIAL_ACTUAL || "I parcial").trim();
+        const parciales = [...new Set(granular.map(r => String(r.parcial || "").trim()).filter(Boolean))];
+        if (!parciales.some(value => norm(value) === norm(activePartial))) parciales.unshift(activePartial);
+        if (selParcial) selParcial.innerHTML = parciales.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
 
         const updateAsignaturasFilter = () => {
             const gVal = selGrado.value;

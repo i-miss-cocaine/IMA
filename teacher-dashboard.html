@@ -118,6 +118,7 @@
                 <button id="nav-dashboard" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-blue-600 text-white">Entregas</button>
                 <button id="nav-reportes" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Reportes</button>
                 <button id="nav-justificaciones" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Justificaciones</button>
+                <button id="nav-gradebook" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Calificaciones</button>
                 <button id="nav-tareas" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Actividades</button>
                 <button id="nav-proyectos" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Proyectos</button>
                 <button id="nav-logros" class="flex-none px-4 py-2 rounded-xl font-semibold transition-all text-[10px] uppercase tracking-widest bg-gray-100 text-gray-500">Logros</button>
@@ -209,6 +210,40 @@
                     </table>
                 </div>
                 <p class="text-xs text-gray-400 mt-3">Las notas administrativas internas y los motivos médicos no se muestran en esta bandeja. La evidencia clínica solo se habilita mediante la política institucional correspondiente.</p>
+            </section>
+
+            <!-- Libro de calificaciones consolidado y contextual -->
+            <section id="section-gradebook" class="hidden animate-fade-in-up">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5">
+                    <div>
+                        <h2 class="text-2xl font-semibold text-gray-800">Libro de calificaciones</h2>
+                        <p class="text-sm text-gray-500 mt-1">Notas, ponderaciones y recuperaciones del contexto académico seleccionado.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button id="btn-gb-config-weights" type="button" class="px-3 py-2 rounded-xl bg-violet-600 text-white text-xs font-semibold hover:bg-violet-700">Configurar ponderaciones</button>
+                        <button id="btn-gb-register-recovery" type="button" class="px-3 py-2 rounded-xl bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600">Registrar recuperación</button>
+                        <button id="btn-gb-close-period" type="button" class="px-3 py-2 rounded-xl bg-slate-700 text-white text-xs font-semibold hover:bg-slate-800">Cerrar período</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4 rounded-2xl border border-gray-100 bg-white p-4">
+                    <div><label for="gb-filter-grado" class="block text-xs font-semibold text-gray-500 mb-1">Grado</label><select id="gb-filter-grado" class="w-full p-2 border rounded-lg text-sm"></select></div>
+                    <div><label for="gb-filter-seccion" class="block text-xs font-semibold text-gray-500 mb-1">Sección</label><select id="gb-filter-seccion" class="w-full p-2 border rounded-lg text-sm"></select></div>
+                    <div><label for="gb-filter-asignatura" class="block text-xs font-semibold text-gray-500 mb-1">Asignatura</label><select id="gb-filter-asignatura" class="w-full p-2 border rounded-lg text-sm"></select></div>
+                    <div><label for="gb-filter-parcial" class="block text-xs font-semibold text-gray-500 mb-1">Período</label><select id="gb-filter-parcial" class="w-full p-2 border rounded-lg text-sm"></select></div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <p id="gb-status-text" class="text-sm font-semibold text-gray-600" role="status" aria-live="polite">Estado del período: Abierto</p>
+                    <span id="gb-status-badge" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">Abierto</span>
+                </div>
+                <div class="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
+                    <table class="w-full min-w-[760px]">
+                        <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500"><tr><th class="p-3 text-left">Estudiante</th><th class="p-3 text-center">Calificaciones</th><th class="p-3 text-center">Nota calculada</th><th class="p-3 text-center">Estado</th></tr></thead>
+                        <tbody id="gb-table-body" class="divide-y divide-gray-100 text-sm"><tr><td colspan="4" class="p-5 text-center text-gray-400">Seleccione un contexto académico para consultar el libro.</td></tr></tbody>
+                    </table>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button id="btn-gb-save-all" type="button" class="px-5 py-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">Guardar Cambios del Libro</button>
+                </div>
             </section>
 
             <!-- Sección de Tareas (Unificada) -->
