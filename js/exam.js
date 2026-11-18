@@ -160,6 +160,13 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'numerica':
                 optionsHtml = `<input type="number" step="any" name="question_${questionId}" class="w-full p-2 border rounded" placeholder="Ingresa un valor numérico">`;
                 break;
+            case 'adjunto': {
+                const accepted = Array.isArray(options.acceptedMimeTypes) ? options.acceptedMimeTypes : [];
+                const maxFiles = Number(options.maxFiles || 1);
+                optionsHtml = `<input type="file" name="question_${questionId}" class="w-full p-2 border rounded" accept="${escapeQuestionHtml(accepted.join(','))}" ${maxFiles > 1 ? 'multiple' : ''} data-max-files="${maxFiles}">` +
+                    `<p class="text-sm text-gray-500">Máximo ${maxFiles} archivo(s), 5 MiB por archivo.</p>`;
+                break;
+            }
             case 'ordenamiento':
                 if (Array.isArray(options.items)) {
                     optionsHtml = options.items.map((item, itemIndex) => `
@@ -266,6 +273,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function readExamAttachmentAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ''));
+            reader.onerror = () => reject(new Error('No se pudo leer el archivo seleccionado.'));
+            reader.readAsDataURL(file);
+        });
+    }
+
     async function submitExam(isBlocked) {
         const submitBtn = document.querySelector('button[type="submit"]');
         const respuestas = [];
@@ -279,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        questionBlocks.forEach(block => {
+        for (const block of questionBlocks) {
             const preguntaId = block.dataset.questionId;
             const preguntaTipo = block.dataset.questionType;
             let respuestaEstudiante = '';
@@ -319,6 +335,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     respuestaEstudiante = input ? input.value : '';
                     break;
                 }
+                case 'adjunto': {
+                    const input = block.querySelector(`input[type="file"][name="question_${preguntaId}"]`);
+                    const files = input ? Array.from(input.files || []) : [];
+                    const maxFiles = input ? Number(input.dataset.maxFiles || 1) : 1;
+                    if (files.length > maxFiles) throw new Error(`La pregunta ${preguntaId} permite como máximo ${maxFiles} archivo(s).`);
+                    respuestaEstudiante = '';
+                    const adjuntos = [];
+                    for (const file of files) {
+                        if (!file.size || file.size > 5 * 1024 * 1024) throw new Error(`El archivo ${file.name} está vacío o supera 5 MiB.`);
+                        if (input.accept && input.accept.split(',').map(value => value.trim().toLowerCase()).indexOf(String(file.type || '').toLowerCase()) === -1) throw new Error(`Tipo de archivo no permitido: ${file.type || file.name}`);
+                        adjuntos.push({name:file.name,mimeType:file.type,size:file.size,dataUrl:await readExamAttachmentAsDataUrl(file)});
+                    }
+                    respuestas.push({preguntaId,respuestaEstudiante,adjuntos});
+                    continue;
+                }
                 case 'ordenamiento': {
                     const inputs = block.querySelectorAll(`select[name^="question_${preguntaId}_order_"]`);
                     const question = originalQuestions.find(item => String(item.preguntaId) === String(preguntaId));
@@ -334,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             respuestas.push({ preguntaId, respuestaEstudiante });
-        });
+        }
 
         // Detener si es un bloqueo y no hay respuestas (p.ej. el estudiante no empezó)
         if (isBlocked && respuestas.length === 0) {

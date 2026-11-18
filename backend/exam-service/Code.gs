@@ -31,6 +31,7 @@ function getOrCreateSheet(ss, name) {
     if (name === "PreguntasExamen") sheet.appendRow(["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta", "Puntos", "AreaCurricular", "Dificultad", "BancoPreguntaID", "Etiquetas", "ObjetivosJSON", "CriteriosJSON", "BancoPreguntaVersion", "Asignatura", "Grado", "Tema"]);
     if (name === "BancoPreguntasExamen") sheet.appendRow(["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado", "ObjetivosJSON", "CriteriosJSON", "Version"]);
     if (name === "EntregasExamen") sheet.appendRow(["EntregaExamenID", "ExamenID", "UserID", "FechaEntrega", "RespuestasJSON", "NotaTotal", "Estado", "ComentarioDocente", "TemaAsociado", "AsignaturaAsociada"]);
+    if (name === "AdjuntosExamen") sheet.appendRow(["AdjuntoID", "EntregaExamenID", "ExamenID", "PreguntaID", "UserID", "FileID", "Nombre", "MimeType", "TamanoBytes", "FechaRegistro"]);
     if (name === "CategoriasEvaluacion") sheet.appendRow(["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"]);
     if (name === "RubricasEvaluacion") sheet.appendRow(["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"]);
     if (name === "CalificacionesEstudiantes") sheet.appendRow(["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado", "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro"]);
@@ -840,7 +841,10 @@ function normalizeExamQuestionDefinition_(input, defaults) {
   } else if (type === "adjunto") {
     const accepted = Array.isArray(options.acceptedMimeTypes) ? options.acceptedMimeTypes.map(v => String(v).trim()).filter(Boolean) : [];
     const maxFiles = Number(options.maxFiles === undefined ? 1 : options.maxFiles);
-    if (!accepted.length || !Number.isSafeInteger(maxFiles) || maxFiles < 1) throw new Error("QUESTION_ATTACHMENT_SCHEMA_INVALID");
+    if (!accepted.length || accepted.some(value => !/^[a-z0-9][a-z0-9!#    const maxFiles = Number(options.maxFiles === undefined ? 1 : options.maxFiles);
+    if (!accepted.length || !Number.isSafeInteger(maxFiles) || maxFiles < 1) throw new Error("QUESTION_ATTACHMENT_SCHEMA_INVALID");^_.+-]*\/[a-z0-9][a-z0-9!#    const maxFiles = Number(options.maxFiles === undefined ? 1 : options.maxFiles);
+    if (!accepted.length || !Number.isSafeInteger(maxFiles) || maxFiles < 1) throw new Error("QUESTION_ATTACHMENT_SCHEMA_INVALID");^_.+-]*$/i.test(value)) ||
+        !Number.isSafeInteger(maxFiles) || maxFiles < 1 || maxFiles > 5) throw new Error("QUESTION_ATTACHMENT_SCHEMA_INVALID");
     options.acceptedMimeTypes = accepted;
     options.maxFiles = maxFiles;
     answer = "";
@@ -2155,6 +2159,72 @@ function scoreExamQuestionAnswer_(question, studentAnswer) {
   return { requiresManualReview: false, awardedPoints: Number((maxPoints * ratio).toFixed(4)), maxPoints };
 }
 
+
+const EXAM_ATTACHMENT_MAX_BYTES_ = 5 * 1024 * 1024;
+const EXAM_ATTACHMENT_HEADERS_ = ["AdjuntoID","EntregaExamenID","ExamenID","PreguntaID","UserID","FileID","Nombre","MimeType","TamanoBytes","FechaRegistro"];
+function ensureExamAttachmentsSheet_(ss) {
+  let sheet=ss.getSheetByName("AdjuntosExamen");
+  if(!sheet){sheet=ss.insertSheet("AdjuntosExamen");sheet.appendRow(EXAM_ATTACHMENT_HEADERS_.slice());return sheet;}
+  const rows=sheet.getDataRange().getValues(),headers=rows.length?rows[0].map(v=>String(v||"").trim()):[];
+  if(JSON.stringify(headers)!==JSON.stringify(EXAM_ATTACHMENT_HEADERS_))throw new Error("EXAM_ATTACHMENT_SCHEMA_INVALID");
+  return sheet;
+}
+function sanitizeExamAttachmentName_(value) {
+  let name=String(value||"adjunto").replace(/[\\/\u0000-\u001f\u007f]/g,"_").replace(/\.\./g,"_").replace(/^\.+/,"").trim();
+  return (name||"adjunto").slice(0,120);
+}
+function persistExamQuestionAttachments_(ss,questionRows,answers,deliveryId,examId,userId) {
+  const questions=Object.create(null),answerByQuestion=Object.create(null);
+  (questionRows||[]).forEach(row=>{questions[String(row[0]||"").trim()]=row;});
+  (answers||[]).forEach(answer=>{const id=String(answer&&answer.preguntaId||"").trim();if(!id||answerByQuestion[id])throw new Error("SUBMISSION_INVALID");answerByQuestion[id]=answer;});
+  const sheet=ensureExamAttachmentsSheet_(ss),createdFiles=[],records=[];
+  const safeAnswers=(answers||[]).map(answer=>({preguntaId:String(answer.preguntaId),respuestaEstudiante:answer.respuestaEstudiante===undefined?"":answer.respuestaEstudiante}));
+  try {
+    Object.keys(answerByQuestion).forEach(questionId=>{
+      const question=questions[questionId],answer=answerByQuestion[questionId],supplied=Array.isArray(answer.adjuntos)?answer.adjuntos:[];
+      if(!question)throw new Error("SUBMISSION_INVALID");
+      if(String(question[2]||"").trim()!=="adjunto"){if(supplied.length)throw new Error("EXAM_ATTACHMENT_NOT_ALLOWED");return;}
+      let options={};try{options=JSON.parse(question[4]||"{}");}catch(_){throw new Error("EXAM_ATTACHMENT_QUESTION_INVALID");}
+      const allowed=Array.isArray(options.acceptedMimeTypes)?options.acceptedMimeTypes.map(v=>String(v).trim().toLowerCase()):[];
+      const maxFiles=Number(options.maxFiles||1);
+      if(!allowed.length||supplied.length>maxFiles||supplied.length>5)throw new Error("EXAM_ATTACHMENT_COUNT_INVALID");
+      supplied.forEach(item=>{
+        const dataUrl=String(item&&item.dataUrl||""),match=/^data:([a-z0-9.+-]+\/[a-z0-9.+-]+);base64,([a-z0-9+/]+={0,2})$/i.exec(dataUrl);
+        const mime=String(item&&item.mimeType||"").trim().toLowerCase();
+        if(!match||match[1].toLowerCase()!==mime||allowed.indexOf(mime)===-1)throw new Error("EXAM_ATTACHMENT_MIME_NOT_ALLOWED");
+        if(/^(application\/(x-msdownload|x-executable|x-sh|javascript)|text\/html)$/i.test(mime))throw new Error("EXAM_ATTACHMENT_MIME_NOT_ALLOWED");
+        if(match[2].length>Math.ceil(EXAM_ATTACHMENT_MAX_BYTES_/3)*4+4)throw new Error("EXAM_ATTACHMENT_TOO_LARGE");
+        const bytes=Utilities.base64Decode(match[2]);if(!bytes||!bytes.length||bytes.length>EXAM_ATTACHMENT_MAX_BYTES_)throw new Error("EXAM_ATTACHMENT_TOO_LARGE");
+        const name=sanitizeExamAttachmentName_(item.name),file=DriveApp.createFile(Utilities.newBlob(bytes,mime,name));createdFiles.push(file);
+        const id="EAT-"+Utilities.getUuid();records.push([id,deliveryId,examId,questionId,userId,file.getId(),name,mime,bytes.length,new Date()]);
+        const target=safeAnswers.find(value=>value.preguntaId===questionId);
+        if(target){if(!Array.isArray(target.adjuntos))target.adjuntos=[];target.adjuntos.push({adjuntoId:id,nombre:name,mimeType:mime,tamanoBytes:bytes.length});}
+      });
+    });
+    const firstRow=sheet.getLastRow()+1;records.forEach(record=>sheet.appendRow(record));
+    return {respuestas:safeAnswers,sheet,firstRow,rowCount:records.length,createdFiles};
+  }catch(error){createdFiles.forEach(file=>{try{file.setTrashed(true);}catch(_){}});throw error;}
+}
+function rollbackExamQuestionAttachments_(state) {
+  if(!state)return;let failed=false;
+  if(state.rowCount&&state.sheet){try{state.sheet.deleteRows(state.firstRow,state.rowCount);}catch(_){failed=true;}}
+  (state.createdFiles||[]).forEach(file=>{try{file.setTrashed(true);}catch(_){failed=true;}});
+  if(failed)throw new Error("EXAM_ATTACHMENT_ROLLBACK_FAILED");
+}
+function getExamQuestionAttachmentsForResult_(ss,delivery,examId,questionId) {
+  const sheet=ss.getSheetByName("AdjuntosExamen");if(!sheet)return [];
+  const rows=sheet.getDataRange().getValues().slice(1);
+  const matches=rows.filter(row=>String(row[1]||"").trim()===String(delivery[0]||"").trim()&&String(row[2]||"").trim()===examId&&String(row[3]||"").trim()===questionId&&String(row[4]||"").trim()===String(delivery[2]||"").trim());
+  const idCounts=Object.create(null),fileCounts=Object.create(null);
+  rows.forEach(row=>{const id=String(row[0]||"").trim(),fid=String(row[5]||"").trim();if(id)idCounts[id]=(idCounts[id]||0)+1;if(fid)fileCounts[fid]=(fileCounts[fid]||0)+1;});
+  return matches.map(row=>{
+    const id=String(row[0]||"").trim(),fid=String(row[5]||"").trim();if(!id||idCounts[id]!==1||!fid||fileCounts[fid]!==1)return null;
+    try{const blob=DriveApp.getFileById(fid).getBlob(),bytes=blob.getBytes(),mime=String(row[7]||"").trim().toLowerCase();
+      if(!bytes||bytes.length>EXAM_ATTACHMENT_MAX_BYTES_||String(blob.getContentType()||"").toLowerCase()!==mime)return null;
+      return {nombre:sanitizeExamAttachmentName_(row[6]),mimeType:mime,tamanoBytes:bytes.length,dataUrl:"data:"+mime+";base64,"+Utilities.base64Encode(bytes)};
+    }catch(_){return null;}
+  }).filter(Boolean);
+}
 function submitExamUnlocked_(payload, context) {
   const examenId = String((payload && payload.examenId) || "").trim();
   const respuestas = payload && payload.respuestas;
@@ -2196,10 +2266,16 @@ function submitExamUnlocked_(payload, context) {
     requiresManualReview = requiresManualReview || result.requiresManualReview;
   });
   const nota = requiresManualReview ? "" : (totalPoints > 0 ? ((earnedPoints / totalPoints) * 100).toFixed(2) : "0");
-  const entregaExamenId = "EEX-" + Date.now();
+  const entregaExamenId = "EEX-" + Date.now() + "-" + Utilities.getUuid();
   const questionSnapshot = questionRows.map(row => row.slice(0, 17));
-  deliveriesSheet.appendRow([entregaExamenId, examenId, actor.userId, new Date(),
-    JSON.stringify(respuestas), nota, "Pendiente", "", "", "", JSON.stringify(questionSnapshot)]);
+  const attachmentState = persistExamQuestionAttachments_(ss, questionRows, respuestas, entregaExamenId, examenId, actor.userId);
+  try {
+    deliveriesSheet.appendRow([entregaExamenId, examenId, actor.userId, new Date(),
+      JSON.stringify(attachmentState.respuestas), nota, "Pendiente", "", "", "", JSON.stringify(questionSnapshot)]);
+  } catch (error) {
+    rollbackExamQuestionAttachments_(attachmentState);
+    throw error;
+  }
   return { status: "success", data: { entregaExamenId, calificacion: nota } };
 }
 
@@ -2331,6 +2407,7 @@ function getExamResultUnlocked_(payload, context) {
     const correct = scoreResult.requiresManualReview ? null :
       scoreResult.awardedPoints >= scoreResult.maxPoints;
     return { texto: question[3], tipo: question[2], respuestaEstudiante: studentAnswer, respuestaCorrecta: question[5],
+      adjuntos: String(question[2] || "").trim() === "adjunto" ? getExamQuestionAttachmentsForResult_(ss, delivery, examId, String(question[0] || "").trim()) : [],
       esCorrecta: correct, puntosObtenidos: scoreResult.awardedPoints, puntosMaximos: scoreResult.maxPoints,
       score: scoreResult.requiresManualReview ? "Pendiente de revisión" :
         ((scoreResult.awardedPoints / scoreResult.maxPoints) * 100).toFixed(0) + "%" };

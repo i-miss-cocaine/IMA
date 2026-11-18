@@ -78,6 +78,8 @@ jobs:
         run: node --check js/results.js
       - name: Verify all nine question modality schemas
         run: node tests/security/exam-service-question-modalities-contract.test.js
+      - name: Verify exam attachment submission, authorized retrieval and rollback
+        run: node tests/security/exam-service-attachment-submission-contract.test.js
       - name: Run rubric mutation security regression
         run: node tests/security/exam-service-save-rubric-security.test.js
       - name: Run competency evaluation mutation security regression

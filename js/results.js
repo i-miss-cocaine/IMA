@@ -109,12 +109,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const borderColor = item.esCorrecta ? 'border-green-500' : (parseFloat(item.score) > 0 ? 'border-yellow-500' : 'border-red-500');
 
             const displayAnswer = formatExamAnswer(item);
+            const attachmentsHtml = Array.isArray(item.adjuntos) && item.adjuntos.length ?
+                `<div class="mt-3"><p class="font-medium mb-1">Archivos adjuntos</p>${item.adjuntos.map(file => `<a class="block text-blue-700 underline break-all" href="${escapeResultHtml(file.dataUrl)}" download="${escapeResultHtml(file.nombre)}">${escapeResultHtml(file.nombre)} (${escapeResultHtml(file.mimeType)})</a>`).join("")}</div>` : "";
 
             detailsHtml += `
                 <div class="p-4 rounded border ${borderColor} ${bgColor}">
                     <p class="font-semibold">Pregunta ${index + 1}: ${escapeResultHtml(item.texto)}</p>
                     <p>Respuesta: <span class="font-mono whitespace-pre-wrap">${escapeResultHtml(displayAnswer)}</span></p>
                     <p>Puntaje: <span class="font-bold">${escapeResultHtml(item.score)}</span></p>
+                    ${attachmentsHtml}
                 </div>
             `;
         });

@@ -5001,7 +5001,7 @@ window.loadExamGradeDistributionData = async function (examenId) {
           } else if (type === 'adjunto') {
             oc.innerHTML = field('Tipos MIME permitidos (separados por coma)', 'question-mime-types', 'application/pdf,image/png') +
               field('Cantidad máxima de archivos', 'question-max-files', '1', 'number') +
-              '<p class="text-sm text-gray-600">La entrega de archivos requiere que el almacenamiento de adjuntos del examen esté configurado.</p>';
+              '<p class="text-sm text-gray-600">El estudiante podrá entregar archivos de hasta 5 MiB cada uno. Los archivos se almacenan de forma privada y solo se muestran en resultados autorizados.</p>';
           }
         };
         setOpts(ts.value); ts.onchange = () => setOpts(ts.value);
