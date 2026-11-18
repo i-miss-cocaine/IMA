@@ -42,7 +42,7 @@ function fixture(o={}){
  return {call:p=>sandbox.report(p),sheets,stats:()=>({locks,releases,held})};
 }
 const cases=[];function test(n,f){f();cases.push(n);}function denied(f,re=/RESOURCE_NOT_AVAILABLE/){assert.throws(f,re);}
-test("student report binds authenticated identity",()=>{const r=fixture().call({});assert.equal(r.data.userId,"STU-1");assert.deepEqual(r.data.matriculas.map(x=>x.matriculaId),["MAT-3"]);assert.deepEqual(r.data.calificaciones.map(x=>x.calificacionId),["CAL-1"]);assert.deepEqual(r.data.recuperaciones.map(x=>x.recuperacionId),["REC-1"]);});
+test("student report binds authenticated identity",()=>{const r=fixture().call({});assert.equal(r.data.userId,"STU-1");assert.deepEqual(Array.from(r.data.matriculas,x=>x.matriculaId),["MAT-3"]);assert.deepEqual(Array.from(r.data.calificaciones,x=>x.calificacionId),["CAL-1"]);assert.deepEqual(Array.from(r.data.recuperaciones,x=>x.recuperacionId),["REC-1"]);});
 test("student cannot request another student's report",()=>denied(()=>fixture().call({userId:"STU-2"})));
 test("guardian reads only verified linked student",()=>{const r=fixture({actor:{userId:"GUARD",role:"Tutor"},guardian:true}).call({userId:"STU-1"});assert.equal(r.data.userId,"STU-1");});
 test("guardian cannot change linked student",()=>denied(()=>fixture({actor:{userId:"GUARD",role:"Tutor"},guardian:true}).call({userId:"STU-2"})));
@@ -56,7 +56,7 @@ test("permission denial fails closed",()=>denied(()=>fixture({permissionDenied:t
 test("unauthorized scope denied",()=>denied(()=>fixture({authorized:false}).call({})));
 test("lock timeout fails closed",()=>{const x=fixture({lockAvailable:false});denied(()=>x.call({}),/EXAM_READ_LOCK_TIMEOUT/);assert.deepEqual(x.stats(),{locks:1,releases:0,held:false});});
 test("lock released after successful report",()=>{const x=fixture();x.call({});assert.deepEqual(x.stats(),{locks:1,releases:1,held:false});});
-test("missing sheets return empty arrays without creating sheets",()=>{const x=fixture({missing:["Matriculas","CalificacionesEstudiantes","RecuperacionesEstudiante","CategoriasEvaluacion"]});const r=x.call({});assert.deepEqual(r.data.matriculas,[]);assert.deepEqual(r.data.calificaciones,[]);assert.deepEqual(r.data.recuperaciones,[]);assert.deepEqual(r.data.categories,[]);assert.equal(x.sheets.Matriculas,undefined);});
+test("missing sheets return empty arrays without creating sheets",()=>{const x=fixture({missing:["Matriculas","CalificacionesEstudiantes","RecuperacionesEstudiante","CategoriasEvaluacion"]});const r=x.call({});assert.equal(JSON.stringify(r.data.matriculas),"[]");assert.equal(JSON.stringify(r.data.calificaciones),"[]");assert.equal(JSON.stringify(r.data.recuperaciones),"[]");assert.equal(JSON.stringify(r.data.categories),"[]");assert.equal(x.sheets.Matriculas,undefined);});
 test("draft unpublished grades remain hidden",()=>assert.deepEqual(fixture().call({}).data.calificaciones.map(x=>x.calificacionId),["CAL-1"]));
 test("duplicate matrícula IDs excluded",()=>assert.deepEqual(fixture().call({}).data.matriculas.map(x=>x.matriculaId),["MAT-3"]));
 test("duplicate grade IDs excluded",()=>assert.ok(!fixture().call({}).data.calificaciones.some(x=>x.calificacionId==="CAL-DUP")));

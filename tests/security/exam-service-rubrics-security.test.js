@@ -37,7 +37,7 @@ function denied(fn,pattern){assert.throws(fn,pattern||/RESOURCE_NOT_AVAILABLE/);
 const cases=[];
 function test(name,fn){try{fn();cases.push({name,ok:true});}catch(e){cases.push({name,ok:false,error:e.message});}}
 test("authorized reader preserves status/data and parses criteria JSON",()=>{const x=fixture();const r=x.call();assert.equal(r.status,"success");assert.equal(r.data.length,1);assert.equal(r.data[0].rubricaId,"RUB-1");assert.equal(r.data[0].criterios[0].criterio,"Resolución");});
-test("missing sheet returns empty data without creating a sheet",()=>{const x=fixture({rows:null});assert.deepEqual(x.call().data,[]);assert.equal(x.state.opens,1);});
+test("missing sheet returns empty data without creating a sheet",()=>{const x=fixture({rows:null});assert.equal(JSON.stringify(x.call().data),"[]");assert.equal(x.state.opens,1);});
 test("header-only sheet returns empty data",()=>{const x=fixture({rows:[headers]});assert.deepEqual(x.call().data,[]);});
 test("permission denial fails closed before spreadsheet access",()=>{const x=fixture({permission:false});denied(()=>x.call());assert.equal(x.state.opens,0);});
 test("missing verified identity is denied",()=>{const x=fixture({actor:{authorized:false}});denied(()=>x.call());assert.equal(x.state.opens,0);});

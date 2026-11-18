@@ -48,7 +48,7 @@ function runtime(options = {}) {
     assertExamResourceOwnershipForScope_() { return {authorized: options.ownership !== false}; },
     normalizeString(value) { return String(value || "").trim().toLowerCase(); }
   };
-  const names=["getExamResult","withAuthorizedExamResultRead_","getAuthorizedExamResultReadContext_","getExamResultUnlocked_"];
+  const names=["getExamResult","withAuthorizedExamResultRead_","getAuthorizedExamResultReadContext_","getExamResultUnlocked_","scoreExamQuestionAnswer_"];
   vm.runInNewContext(names.map(extractFunction).join("\n")+"\nthis.getExamResult=getExamResult;",context);
   return {context,deliveries,deliverySheetRows,sheets,stats:()=>({acquires,releases,held})};
 }

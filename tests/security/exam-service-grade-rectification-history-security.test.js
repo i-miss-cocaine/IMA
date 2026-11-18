@@ -77,7 +77,7 @@ test("RBAC denial fails closed",()=>denied(()=>fixture({permissionDenied:true}).
 test("unauthorized scope denied",()=>denied(()=>fixture({authorized:false}).call({})));
 test("lock timeout fails closed",()=>{const x=fixture({lockAvailable:false});denied(()=>x.call({}),/EXAM_READ_LOCK_TIMEOUT/);assert.deepEqual(x.stats(),{acquires:1,releases:0,held:false});});
 test("lock released after successful read",()=>{const x=fixture();x.call({});assert.deepEqual(x.stats(),{acquires:1,releases:1,held:false});});
-test("missing history sheet returns empty without creating it",()=>{const x=fixture({missingSheet:true});assert.deepEqual(x.call({}),{status:"success",data:[]});assert.equal(x.sheets.HistorialRectificacionesNotas,undefined);});
+test("missing history sheet returns empty without creating it",()=>{const x=fixture({missingSheet:true});assert.equal(JSON.stringify(x.call({})),JSON.stringify({status:"success",data:[]}));assert.equal(x.sheets.HistorialRectificacionesNotas,undefined);});
 test("duplicate and empty rectification IDs excluded",()=>{const r=fixture().call({});assert.ok(!r.data.some(x=>x.rectificacionId==="RECT-DUP"||!x.rectificacionId));});
 test("empty evaluation IDs excluded",()=>assert.ok(!fixture().call({}).data.some(x=>!x.evaluacionId)));
 test("invalid dates normalized to null",()=>assert.equal(fixture().call({}).data.find(x=>x.rectificacionId==="RECT-3").fecha,null));

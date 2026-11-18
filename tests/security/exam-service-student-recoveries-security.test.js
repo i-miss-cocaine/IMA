@@ -148,7 +148,7 @@ test("lock released after read", () => {
 });
 test("missing sheet returns empty without creating it", () => {
   const x = fixture({ missingSheet: true });
-  assert.deepEqual(x.call({}), { status: "success", data: [] });
+  assert.equal(JSON.stringify(x.call({})), JSON.stringify({ status: "success", data: [] }));
   assert.equal(x.sheets.RecuperacionesEstudiante, undefined);
 });
 test("duplicate and empty recovery IDs excluded", () => {
