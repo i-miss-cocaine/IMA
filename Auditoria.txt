@@ -3075,3 +3075,9 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 ===============================================================================
 
 [2026-11-18][C1.822] AUD-NG-167: se añadió clave contextual a calificaciones y se endureció calculateUnifiedAcademicGrade. 35/35 contratos Exam-Service y 13/13 casos del motor de cálculo PASS. La tarea continúa abierta por ponderaciones contextuales, UI, recuperación, ciclo de publicación y boletín consolidado.
+
+
+### C1.823 — AUD-NG-167: hallazgos de revisión de continuidad (2026-11-18)
+- La rama autorizada contiene 51 commits posteriores a C1.822; todos se conservaron. El alcance añadido de ponderaciones contextuales, cálculo servidor, recuperación contextual y transiciones del libro tiene contratos específicos verdes en Actions 44317483258.
+- Pendiente de cierre: la UI docente no consume todavía las APIs de rúbricas/competencias; el generador heredado generateStudentReportCard sigue leyendo Calificaciones/Notas; getStudentAcademicReport no filtra filas por los campos de contexto del libro. Estos puntos afectan los criterios originales de AUD-NG-167 y deben resolverse antes de marcarla completada.
+- Fallos generales observados en Actions 44317483258: configureSchoolDocumentTemplate ausente en ACCOUNTING, ensureSchoolDocumentIssuedSchema_ ausente en ACCOUNTING y USER/valid en session-token-expiry. No son evidencia de regresión de AUD-NG-167 y no se modificaron módulos ajenos.

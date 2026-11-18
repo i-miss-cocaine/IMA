@@ -971,3 +971,48 @@ Pendiente y límites:
 - **Estado:** AUD-NG-167 permanece En progreso. No cerrar la tarea hasta completar configuración de pesos contextual, cálculo servidor consumido por UI, ciclo de publicación/cierre/rectificación, recuperación y boletín desde la fuente consolidada.
 - **Siguiente acción:** implementar PonderacionesEvaluacion por institución/año/período/grado/sección/asignatura, integrarla con getGradebookData/saveGradebookGrades y retirar la tabla hardcodeada del docente.
 ===============================================================================
+
+
+===============================================================================
+### C1.823 — AUD-NG-167: auditoría de continuidad del libro contextual
+===============================================================================
+Fecha: 2026-11-18
+Sesión: IMA-EXEC-20261118-AUD-NG-167-CONTINUITY-AUDIT-01
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.822
+HEAD inicial y HEAD final de código verificado: 2bf4bbad42d3aadef715031fad71d20824432329
+
+Recuperación y continuidad:
+- La rama estaba 51 commits por delante del HEAD de C1.822 (6816f296a09bfb450a27b77edf0271be06f09d8c), sin commits por detrás. Se conservaron todos los cambios existentes; no se reinició ni revirtió trabajo.
+- El último commit de código antes de este registro es 2bf4bbad42d3aadef715031fad71d20824432329 (test(gradebook): cover year-isolated and configured review submissions).
+- La comparación con NG_beta_0.0.0.1 confirma que la rama autorizada permanece ahead y no diverged; la rama base conserva HEAD 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Auditoría de AUD-NG-167:
+- Se verificó la configuración contextual de PonderacionesEvaluacion por institución/año/período/grado/sección/asignatura/categoría, su validación de suma 100 y la lectura de resúmenes ponderados desde el backend.
+- La UI docente consume categorías y resúmenes del servidor; las solicitudes de lectura usan un contador de versión para descartar respuestas obsoletas. Los pesos hardcodeados ya no son el origen del cálculo mostrado.
+- Las recuperaciones se enlazan a una evaluación y a su contexto académico; el writer rechaza CAT-GLOBAL y exige calificación previa válida. El resumen del libro filtra recuperaciones por la misma clave contextual.
+- Se verificaron las transiciones de envío a revisión, aprobación/publicación, cierre y reapertura, con controles contextuales y ScriptLock. Los contratos del workflow cubren reentrada/contención del lock, año distinto, categorías configuradas y transiciones.
+- El backend de rúbricas y evaluación por competencias dispone de contratos de seguridad, pero js/teacher.js no integra todavía formularios/acciones de autoría y evaluación para esas APIs.
+- El generador heredado generateStudentReportCard en Academic-Service sigue leyendo Calificaciones/Notas, no el libro contextual consolidado. getStudentAcademicReport en Exam-Service lee CalificacionesEstudiantes, pero su lectura no aplica todavía los siete campos de contexto a las filas ni construye un boletín oficial contextual. No se declara satisfecho el criterio de boletín consolidado.
+- No existe evidencia de equivalencia SACE; no se afirma compatibilidad.
+
+Verificaciones:
+- GitHub Actions Exam-Service security local contracts, run 44317483258, SHA 2bf4bbad42d3aadef715031fad71d20824432329: los pasos específicos de sintaxis de js/exam.js, js/teacher.js, js/results.js, modalidades, adjuntos, rúbricas, competencias, recuperaciones, mutaciones, libro contextual, revisión/cierre/reapertura y sintaxis global JavaScript finalizaron SUCCESS.
+- La ejecución general Node.js del mismo workflow terminó FAILURE: tres contratos ajenos al alcance de AUD-NG-167 fallaron: tests/regression/phase22-document-management-suite-contract.test.js (falta configureSchoolDocumentTemplate en ACCOUNTING), tests/security/accounting-school-document-binary-integrity.test.js (falta ensureSchoolDocumentIssuedSchema_ en ACCOUNTING) y tests/security/session-token-expiry.test.js (caso USER/valid). No se modificaron ACCOUNTING ni autenticación para forzar PASS.
+- El runner usó Node.js 22.23.4. La suite específica Exam-Service terminó satisfactoriamente; la suite general no se declara verde.
+- No se encontró package.json, directorio cli ni scripts CLI en el árbol del repositorio; no hay suite CLI declarada.
+- No se ejecutó Apps Script/Sheets desplegado ni navegador/beta. No se presentan esas pruebas como PASS.
+
+Estado:
+- AUD-NG-167 permanece En progreso. No se marca completada porque falta integración UI de rúbricas/competencias y boletín oficial desde la fuente consolidada con contexto verificable.
+- No se modificó código de runtime en este checkpoint ni se tocó la rama base.
+- No se alteró ningún archivo ajeno al alcance para eliminar fallos generales preexistentes.
+
+Siguiente acción elegible:
+1. Integrar en la UI docente la autoría de rúbricas y la evaluación por competencias vinculadas a catálogos y asignaciones.
+2. Sustituir el flujo heredado de boletín por lectura contextual del libro consolidado, conservando autorización de estudiante/tutor/institución y agregación por período/año.
+3. Añadir contratos Node para aislamiento entre años/instituciones, estados publicados/provisionales y recuperación aplicada; ejecutar el workflow específico y la suite general, registrando sin ocultar los tres fallos externos si persisten.
+4. Solo tras cubrir los criterios restantes, cerrar AUD-NG-167 y evaluar AUD-NG-168.
+===============================================================================
