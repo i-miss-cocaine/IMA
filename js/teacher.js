@@ -5506,6 +5506,7 @@ function toBase64(file) {
         tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-gray-400 italic"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando calificaciones del período...</td></tr>';
 
         const payload = {
+            anoId: String(window.GLOBAL_SCOPE?.AnoLectivo || window.GLOBAL_SCOPE?.anoLectivo || new Date().getFullYear()),
             grado: selGrado ? selGrado.value : "10mo Grado",
             seccion: selSeccion ? selSeccion.value : "A",
             asignatura: selAsignatura ? selAsignatura.value : "General",
@@ -5667,6 +5668,7 @@ function toBase64(file) {
         try {
             const res = await fetchApi('EXAM', 'saveGradebookGrades', {
                 calificaciones: califsToSave,
+                anoId: String(window.GLOBAL_SCOPE?.AnoLectivo || window.GLOBAL_SCOPE?.anoLectivo || new Date().getFullYear()),
                 esBorrador: false,
                 esPublicada: true,
                 profesorId: currentUser.userId,
@@ -5707,7 +5709,7 @@ function toBase64(file) {
 
         try {
             const res = await fetchApi('EXAM', 'closePeriodGradebook', {
-                anoId: "2026",
+                anoId: String(window.GLOBAL_SCOPE?.AnoLectivo || window.GLOBAL_SCOPE?.anoLectivo || new Date().getFullYear()),
                 periodoId: selParcial,
                 grado: selGrado,
                 seccion: selSeccion,

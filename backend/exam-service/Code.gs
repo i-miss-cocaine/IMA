@@ -3268,6 +3268,10 @@ function getGradebookDataUnlocked_(payload, context) {
   }
 
   const { grado, seccion, asignatura, parcial } = p;
+  if (!String(grado || "").trim() || !String(seccion || "").trim() ||
+      !String(asignatura || "").trim() || !String(parcial || "").trim()) {
+    throw new Error("GRADEBOOK_CONTEXT_REQUIRED");
+  }
   const usuariosSheet = getSheetOrThrow(ss, "Usuarios");
   const usuariosData = usuariosSheet.getDataRange().getValues().slice(1);
   const userIdCounts = Object.create(null);
@@ -3379,7 +3383,8 @@ function getGradebookDataUnlocked_(payload, context) {
 
   return {
     status: "success",
-    data: { alumnos, calificaciones, recuperaciones, categories, estadoPeriodo }
+    data: { alumnos, calificaciones, recuperaciones, categories, estadoPeriodo,
+      contexto: { anoId, periodoId: parcial, grado, seccion, asignatura, institutionId: scope.institutionId } }
   };
 }
 function saveGradebookGrades(payload) {
