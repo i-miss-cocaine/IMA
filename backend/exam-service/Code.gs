@@ -28,7 +28,7 @@ function getOrCreateSheet(ss, name) {
   if (!sheet) {
     sheet = ss.insertSheet(name);
     if (name === "Examenes") sheet.appendRow(["ExamenID", "Titulo", "Asignatura", "Grado", "Seccion", "FechaLimite", "TiempoLimite", "Estado", "ProfesorID", "Parcial", "AreaCurricular", "DuracionMinutos", "IntentosPermitidos", "EsAleatorio"]);
-    if (name === "PreguntasExamen") sheet.appendRow(["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta", "Puntos", "AreaCurricular", "Dificultad", "BancoPreguntaID", "Etiquetas", "ObjetivosJSON", "CriteriosJSON", "BancoPreguntaVersion"]);
+    if (name === "PreguntasExamen") sheet.appendRow(["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta", "Puntos", "AreaCurricular", "Dificultad", "BancoPreguntaID", "Etiquetas", "ObjetivosJSON", "CriteriosJSON", "BancoPreguntaVersion", "Asignatura", "Grado", "Tema"]);
     if (name === "BancoPreguntasExamen") sheet.appendRow(["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado", "ObjetivosJSON", "CriteriosJSON", "Version"]);
     if (name === "EntregasExamen") sheet.appendRow(["EntregaExamenID", "ExamenID", "UserID", "FechaEntrega", "RespuestasJSON", "NotaTotal", "Estado", "ComentarioDocente", "TemaAsociado", "AsignaturaAsociada"]);
     if (name === "CategoriasEvaluacion") sheet.appendRow(["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"]);
@@ -1084,12 +1084,17 @@ function withAuthorizedExamCreation_(p, mutation) {
 function ensureExamQuestionsSchema_(questionSheet) {
   const legacyHeaders = ["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta",
     "Puntos", "AreaCurricular", "Dificultad", "BancoPreguntaID"];
-  const currentHeaders = legacyHeaders.concat(["Etiquetas", "ObjetivosJSON", "CriteriosJSON", "BancoPreguntaVersion"]);
+  const previousHeaders = legacyHeaders.concat(["Etiquetas", "ObjetivosJSON", "CriteriosJSON", "BancoPreguntaVersion"]);
+  const currentHeaders = previousHeaders.concat(["Asignatura", "Grado", "Tema"]);
   const rows = questionSheet.getDataRange().getValues();
   const headers = rows.length ? (rows[0] || []).map(value => String(value || "").trim()) : [];
   if (JSON.stringify(headers) === JSON.stringify(currentHeaders)) return rows;
+  if (JSON.stringify(headers) === JSON.stringify(previousHeaders)) {
+    questionSheet.getRange(1, 15, 1, 3).setValues([currentHeaders.slice(14)]);
+    return questionSheet.getDataRange().getValues();
+  }
   if (JSON.stringify(headers) === JSON.stringify(legacyHeaders)) {
-    questionSheet.getRange(1, 11, 1, 4).setValues([currentHeaders.slice(10)]);
+    questionSheet.getRange(1, 11, 1, 7).setValues([currentHeaders.slice(10)]);
     return questionSheet.getDataRange().getValues();
   }
   throw new Error("EXAM_QUESTIONS_SCHEMA_INVALID");
@@ -1139,13 +1144,27 @@ function createExamUnlocked_(p, context) {
         objetivos: bank[13] || "[]", criterios: bank[14] || "[]"
       };
     }
-    const normalized = normalizeExamQuestionDefinition_(definition);
+    const normalized = normalizeExamQuestionDefinition_(definition, {
+      areaCurricular: p.areaCurricular, asignatura: p.asignatura, grado: p.gradoAsignado
+    });
+    if (!normalized.areaCurricular || !normalized.asignatura || !normalized.grado || !normalized.tema) {
+      throw new Error("EXAM_QUESTION_CURRICULUM_REQUIRED");
+    }
+    if (p.asignatura && normalizeString(normalized.asignatura) !== normalizeString(p.asignatura)) {
+      throw new Error("EXAM_QUESTION_SUBJECT_MISMATCH");
+    }
+    if (p.gradoAsignado && normalizeString(normalized.grado) !== normalizeString(p.gradoAsignado)) {
+      throw new Error("EXAM_QUESTION_GRADE_MISMATCH");
+    }
+    if (p.areaCurricular && normalizeString(normalized.areaCurricular) !== normalizeString(p.areaCurricular)) {
+      throw new Error("EXAM_QUESTION_AREA_MISMATCH");
+    }
     return [
       "PRE-" + Utilities.getUuid(), "", normalized.tipo, normalized.textoPregunta,
       normalized.opcionesJSON, normalized.respuestaCorrecta, normalized.puntosPredeterminados,
       normalized.areaCurricular, normalized.dificultad, bankId,
       JSON.stringify(normalized.etiquetas), JSON.stringify(normalized.objetivos),
-      JSON.stringify(normalized.criterios), bankVersion
+      JSON.stringify(normalized.criterios), bankVersion, normalized.asignatura, normalized.grado, normalized.tema
     ];
   });
   let examenId = "";
@@ -1173,7 +1192,7 @@ function createExamUnlocked_(p, context) {
     ]);
     if (preguntasData.length > 0) {
       const rows = preguntasData.map(row => { row[1] = examenId; return row; });
-      preguntas.getRange(preguntas.getLastRow() + 1, 1, rows.length, 14).setValues(rows);
+      preguntas.getRange(preguntas.getLastRow() + 1, 1, rows.length, 17).setValues(rows);
     }
     return { status: "success", examenId, departmentId, preguntasRegistradas: preguntasData.length };
   } catch (error) {
@@ -1602,7 +1621,8 @@ function getExamQuestionsUnlocked_(payload, context) {
         bancoPreguntaId: String(row[9] || ""),
         etiquetas: parseQuestionList(row[10]), objetivos: parseQuestionList(row[11]),
         criterios: parseQuestionList(row[12]),
-        versionBanco: Number.isSafeInteger(version) && version > 0 ? version : null
+        versionBanco: Number.isSafeInteger(version) && version > 0 ? version : null,
+        asignatura: String(row[14] || ""), grado: String(row[15] || ""), tema: String(row[16] || "")
       };
     });
   return { status: "success", data: { titulo: exam[1], tiempoLimite: exam[6], preguntas: questions } };
@@ -2069,7 +2089,7 @@ function submitExamUnlocked_(payload, context) {
   });
   const nota = requiresManualReview ? "" : (totalPoints > 0 ? ((earnedPoints / totalPoints) * 100).toFixed(2) : "0");
   const entregaExamenId = "EEX-" + Date.now();
-  const questionSnapshot = questionRows.map(row => row.slice(0, 14));
+  const questionSnapshot = questionRows.map(row => row.slice(0, 17));
   deliveriesSheet.appendRow([entregaExamenId, examenId, actor.userId, new Date(),
     JSON.stringify(respuestas), nota, "Pendiente", "", "", "", JSON.stringify(questionSnapshot)]);
   return { status: "success", data: { entregaExamenId, calificacion: nota } };

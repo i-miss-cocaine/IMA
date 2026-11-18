@@ -54,7 +54,7 @@ function fixture(options = {}) {
   const hooks = {};
   const questionHeaders = options.legacyQuestionSchema
     ? ["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta","Puntos","AreaCurricular","Dificultad","BancoPreguntaID"]
-    : ["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta","Puntos","AreaCurricular","Dificultad","BancoPreguntaID","Etiquetas","ObjetivosJSON","CriteriosJSON","BancoPreguntaVersion"];
+    : ["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta","Puntos","AreaCurricular","Dificultad","BancoPreguntaID","Etiquetas","ObjetivosJSON","CriteriosJSON","BancoPreguntaVersion","Asignatura","Grado","Tema"];
   const sheets = {
     Examenes: makeSheet([["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID","Parcial"]], {
       failAppend: options.failExamAppend, onAppend: () => hooks.examAppend && hooks.examAppend()
@@ -120,6 +120,9 @@ test(() => {
   assert.equal(x.sheets.PreguntasExamen.rows[1][10], JSON.stringify(["base"]));
   assert.equal(x.sheets.PreguntasExamen.rows[1][11], JSON.stringify(["OBJ-1"]));
   assert.equal(x.sheets.PreguntasExamen.rows[1][12], JSON.stringify(["CR-1"]));
+  assert.equal(x.sheets.PreguntasExamen.rows[1][14], "Matemáticas");
+  assert.equal(x.sheets.PreguntasExamen.rows[1][15], "10");
+  assert.equal(x.sheets.PreguntasExamen.rows[1][16], "Aritmética");
   assert.equal(x.sheets.ResourceOwnership.rows[1][3], result.examenId);
   assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
 });
@@ -127,8 +130,8 @@ test(() => {
   const x=fixture({legacyQuestionSchema:true});
   const result=x.call();
   assert.equal(result.status,"success");
-  assert.deepEqual(x.sheets.PreguntasExamen.rows[0].slice(10),["Etiquetas","ObjetivosJSON","CriteriosJSON","BancoPreguntaVersion"]);
-  assert.equal(x.sheets.PreguntasExamen.rows[1].length,14);
+  assert.deepEqual(x.sheets.PreguntasExamen.rows[0].slice(10),["Etiquetas","ObjetivosJSON","CriteriosJSON","BancoPreguntaVersion","Asignatura","Grado","Tema"]);
+  assert.equal(x.sheets.PreguntasExamen.rows[1].length,17);
 });
 test(() => { const x=fixture({permissionDenied:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); assert.equal(x.stats.acquired,0); });
 test(() => { const x=fixture({invalidIdentity:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); });

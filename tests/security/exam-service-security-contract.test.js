@@ -505,7 +505,7 @@ assert.throws(() => creation.context.createExam({ sessionToken: "teacher-session
 assert.equal(creation.sheets.Examenes.rows.length, 2, "rejected department does not persist an exam");
 const rollback = makeCreationRuntime({ failQuestions: true });
 assert.throws(() => rollback.context.createExam({ sessionToken: "teacher-session", titulo: "Rollback",
-  preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "Q", opciones: { A: "4", B: "5" }, respuestaCorrecta: "A" }] }),
+  preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "Q", opciones: { A: "4", B: "5" }, respuestaCorrecta: "A", areaCurricular: "Matemáticas", tema: "Aritmética" }] }),
   /synthetic question write failure/);
 assert.equal(rollback.sheets.Examenes.rows.length, 1, "failed creation compensates the exam row");
 assert.equal(rollback.sheets.ResourceOwnership.rows.length, 1, "failed creation compensates its ownership row");
