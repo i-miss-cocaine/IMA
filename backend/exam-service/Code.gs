@@ -3379,7 +3379,7 @@ function buildGradebookContextKey_(context) {
   return JSON.stringify(fields.map(field => normalizeString(field)));
 }
 
-function calculateGradebookStudentSummary_(userId, grades, categories) {
+function calculateGradebookStudentSummary_(userId, grades, categories, recoveries) {
   const studentId = String(userId || "").trim();
   const gradeRows = Array.isArray(grades) ? grades : [];
   const configured = Array.isArray(categories) ? categories : [];
@@ -3408,7 +3408,18 @@ function calculateGradebookStudentSummary_(userId, grades, categories) {
       pendingWeight += weight;
       return;
     }
-    const value = Number(grade.notaObtenida);
+    const recoveryHistory = (Array.isArray(recoveries) ? recoveries : []).filter(item =>
+      String(item.userId || "").trim() === studentId &&
+      String(item.evaluacionId || "").trim() === categoryId);
+    recoveryHistory.sort((a, b) => {
+      const at = a.fecha ? new Date(a.fecha).getTime() : 0;
+      const bt = b.fecha ? new Date(b.fecha).getTime() : 0;
+      return at - bt;
+    });
+    const latestRecovery = recoveryHistory.length ? recoveryHistory[recoveryHistory.length - 1] : null;
+    const effectiveGrade = latestRecovery && Number.isFinite(Number(latestRecovery.notaFinalCalculada))
+      ? Number(latestRecovery.notaFinalCalculada) : grade.notaObtenida;
+    const value = Number(effectiveGrade);
     if (!Number.isFinite(value) || value < 0 || value > 100) throw new Error("GRADEBOOK_GRADE_INVALID");
     weightedContribution += value * weight / 100;
     evaluatedWeight += weight;
@@ -3542,20 +3553,49 @@ function getGradebookDataUnlocked_(payload, context) {
       asignatura: row[13], institutionId: row[14], contextKey: row[15]
     })) : [];
 
-  const recSheet = getSheetOrThrow(ss, "RecuperacionesEstudiante");
-  const recData = recSheet.getDataRange().getValues();
-  const recuperaciones = recData.length > 1 ? recData.slice(1)
-    .filter(row => studentIds.has(String(row[2] || "").trim()))
+  const recSheet = ss.getSheetByName("RecuperacionesEstudiante");
+  const recData = recSheet ? recSheet.getDataRange().getValues() : [];
+  const recoveryBaseHeaders = ["ID", "EvaluacionID", "UserID", "NotaOriginal", "NotaRecuperada",
+    "NotaFinalCalculada", "MetodoAplicado", "AutorizadoPor", "Fecha"];
+  const recoveryContextHeaders = ["AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"];
+  if (recData.length && recoveryBaseHeaders.some((header, index) =>
+      String(recData[0][index] || "").trim() !== header)) throw new Error("STUDENT_RECOVERY_SCHEMA_INVALID");
+  const recoveryHasContext = recData.length > 0 && recoveryContextHeaders.every((header, index) =>
+    String(recData[0][9 + index] || "").trim() === header);
+  if (recData.length && recData[0].length > 9 && !recoveryHasContext) {
+    throw new Error("STUDENT_RECOVERY_CONTEXT_SCHEMA_INVALID");
+  }
+  const recoveryContext = { institutionId: scope.institutionId, anoId, periodoId: parcial,
+    grado, seccion, asignatura };
+  const recoveryIdCounts = Object.create(null);
+  recData.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) recoveryIdCounts[id] = (recoveryIdCounts[id] || 0) + 1;
+  });
+  const recoveries = recoveryHasContext ? recData.slice(1)
+    .filter(row => {
+      const userId = String(row[2] || "").trim();
+      if (!studentIds.has(userId)) return false;
+      const evaluationId = String(row[1] || "").trim();
+      const key = buildGradebookContextKey_({ ...recoveryContext, evaluacionId: evaluationId, userId });
+      return String(row[0] || "").trim() && recoveryIdCounts[String(row[0]).trim()] === 1 &&
+        String(row[9] || "").trim() === anoId &&
+        normalizeString(row[10]) === normalizeString(parcial) &&
+        normalizeString(row[11]) === normalizeString(grado) &&
+        normalizeString(row[12]) === normalizeString(seccion) &&
+        normalizeString(row[13]) === normalizeString(asignatura) &&
+        String(row[14] || "").trim() === String(scope.institutionId || "").trim() &&
+        String(row[15] || "").trim() === key;
+    })
     .map(row => ({
-      recuperacionId: row[0],
-      evaluacionId: row[1],
-      userId: row[2],
-      notaOriginal: parseFloat(row[3]),
-      notaRecuperada: parseFloat(row[4]),
-      notaFinalCalculada: parseFloat(row[5]),
-      metodoAplicado: row[6],
-      autorizadoPor: row[7],
-      fecha: row[8] ? new Date(row[8]).toISOString() : null
+      recuperacionId: row[0], evaluacionId: row[1], userId: row[2],
+      notaOriginal: row[3] === "" || row[3] == null ? null : Number(row[3]),
+      notaRecuperada: row[4] === "" || row[4] == null ? null : Number(row[4]),
+      notaFinalCalculada: row[5] === "" || row[5] == null ? null : Number(row[5]),
+      metodoAplicado: row[6], autorizadoPor: row[7],
+      fecha: row[8] ? new Date(row[8]).toISOString() : null,
+      anoId: row[9], periodoId: row[10], grado: row[11], seccion: row[12],
+      asignatura: row[13], institutionId: row[14], contextKey: row[15]
     })) : [];
 
   const weightConfiguration = getGradebookWeightConfigurationFromSheet_(ss, {
@@ -3577,7 +3617,7 @@ function getGradebookDataUnlocked_(payload, context) {
 
   const resumenes = Object.create(null);
   alumnos.forEach(student => {
-    resumenes[String(student.userId)] = calculateGradebookStudentSummary_(student.userId, calificaciones, categories);
+    resumenes[String(student.userId)] = calculateGradebookStudentSummary_(student.userId, calificaciones, categories, recuperaciones);
   });
   return {
     status: "success",
