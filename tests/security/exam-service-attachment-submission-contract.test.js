@@ -25,7 +25,7 @@ const context = {
     base64Encode(value){return Buffer.from(value).toString("base64");},
     newBlob(bytes,mime,name){return {bytes,mime,name,getBytes(){return bytes;},getContentType(){return mime;}};},
     getUuid(){return "U"+(++sequence);}},
-  DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},createFile(blob){const id="F"+(++sequence),file={id,blob,trashed:false,getId(){return id;},getBlob(){return blob;},setTrashed(v){this.trashed=v;},setSharing(){}};stored.set(id,file);return file;},
+  DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},createFile(blob){const id="F"+(++sequence),file={id,blob,trashed:false,getId(){return id;},getBlob(){return blob;},setTrashed(v){this.trashed=v;},setSharing(access,permission){this.sharing=[access,permission];}};stored.set(id,file);return file;},
     getFileById(id){if(!stored.has(id))throw Error("missing");return stored.get(id);}},
   Date,JSON,Object,Array,String,Number,Math,RegExp
 };
@@ -40,6 +40,16 @@ assert.equal(state.rowCount,1);
 assert.equal(sheet.rows.length,2);
 assert.equal(state.respuestas[0].adjuntos[0].nombre,"__evidencia.pdf");
 assert.equal(state.respuestas[0].adjuntos[0].fileId,undefined);
+assert.deepEqual(state.createdFiles[0].sharing,["PRIVATE","NONE"],"new files are private by default");
+const partialSheet={rows:[headers],calls:0,getDataRange(){return {getValues:()=>this.rows.map(row=>row.slice())};},
+  getLastRow(){return this.rows.length;},appendRow(row){this.calls++;if(this.calls===2)throw Error("synthetic metadata write failure");this.rows.push(row.slice());},
+  deleteRows(start,count){this.rows.splice(start-1,count);}};
+const partialSs={getSheetByName(name){return name==="AdjuntosExamen"?partialSheet:null;},insertSheet(){return partialSheet;}};
+const twoFiles=[{name:"a.pdf",mimeType:"application/pdf",dataUrl:"data:application/pdf;base64,"+encoded},
+  {name:"b.pdf",mimeType:"application/pdf",dataUrl:"data:application/pdf;base64,"+encoded}];
+assert.throws(()=>context.persist(partialSs,questions,[{preguntaId:"Q1",adjuntos:twoFiles}],"DEL-PARTIAL","EX1","STU1"),/synthetic metadata write failure/);
+assert.equal(partialSheet.rows.length,1,"partial metadata append is compensated");
+assert.equal(Array.from(stored.values()).filter(file=>file.trashed).length,2,"all files from a failed metadata write are trashed");
 const read=context.read(ss,["DEL1","EX1","STU1"],"EX1","Q1");
 assert.equal(read.length,1);
 assert.equal(read[0].dataUrl,"data:application/pdf;base64,"+encoded);
