@@ -5024,7 +5024,7 @@ window.loadExamGradeDistributionData = async function (examenId) {
         const parseJsonInput = (value, label) => {
             try { return JSON.parse(value); } catch (_) { throw new Error(label + ': JSON no válido.'); }
         };
-        const lines = value => String(value || '').split(/\\r?\\n/).map(item => item.trim()).filter(Boolean);
+        const lines = value => String(value || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean);
         questionsContainer.querySelectorAll('.question-block').forEach(block => {
             const type = block.querySelector('.question-type-select').value;
             const value = selector => block.querySelector(selector)?.value || '';
