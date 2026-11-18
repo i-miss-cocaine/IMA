@@ -129,3 +129,12 @@ jobs:
       - run: node tests/security/exam-service-security-contract.test.js
       - run: node tests/security/exam-service-departmental-access.test.js
       - run: node tests/security/exam-service-read-endpoints-security.test.js
+      - name: Check Apps Script exam backend syntax
+        run: node --check < backend/exam-service/Code.gs
+      - name: Run the complete Exam-Service Node.js contract suite
+        run: |
+          set -e
+          for test_file in tests/security/exam-service-*.test.js; do
+            echo "Running $test_file"
+            node "$test_file"
+          done
