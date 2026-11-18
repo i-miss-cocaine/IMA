@@ -4692,9 +4692,6 @@ function getAuthorizedPeriodGradebookReviewContext_(payload) {
   if (!cierreId || ["Aprobado", "Observado", "Publicado"].indexOf(decision) === -1) {
     throw new Error("GRADEBOOK_REVIEW_REQUIRED_FIELDS_INVALID");
   }
-  if (decision === "Publicado") {
-    throw new Error("GRADEBOOK_REVIEW_PUBLICATION_UNSUPPORTED");
-  }
 
   const permission = validateRolePermission("reviewPeriodGradebook", p);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -4735,9 +4732,9 @@ function getAuthorizedPeriodGradebookReviewContext_(payload) {
       !String(target.row[5] || "").trim() || !String(target.row[6] || "").trim()) {
     throw new Error("GRADEBOOK_REVIEW_RECORD_INVALID");
   }
-  if (String(target.row[7] || "").trim() !== "PendienteRevision") {
-    throw new Error("GRADEBOOK_REVIEW_STATE_INVALID");
-  }
+  const currentState = String(target.row[7] || "").trim();
+  const expectedSourceState = decision === "Publicado" ? "Aprobado" : "PendienteRevision";
+  if (currentState !== expectedSourceState) throw new Error("GRADEBOOK_REVIEW_STATE_INVALID");
 
   const config = getSheetOrThrow(ss, "ConfiguracionAcademica").getDataRange().getValues();
   const configHeaders = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
@@ -4761,7 +4758,7 @@ function getAuthorizedPeriodGradebookReviewContext_(payload) {
     rowIndex: target.rowIndex,
     cierreId,
     decision,
-    estadoTarget: decision === "Observado" ? "Observado" : "Aprobado",
+    estadoTarget: decision === "Observado" ? "Observado" : decision === "Publicado" ? "Publicado" : "Aprobado",
     actor
   };
 }
