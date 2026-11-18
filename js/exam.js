@@ -99,10 +99,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function escapeQuestionHtml(value) {
+        return String(value === null || value === undefined ? '' : value).replace(/[&<>"']/g, char => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[char]);
+    }
+
     function renderQuestion(question, index) {
         const questionId = question.preguntaId || `q_${index}`;
         const questionType = question.tipo;
-        const questionText = question.texto;
+        const questionText = escapeQuestionHtml(question.texto);
         let options = question.opciones || {};
 
         // Manejar el caso donde las opciones lleguen como string JSON (defensivo)
@@ -116,12 +122,11 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'opcion_multiple':
             case 'verdadero_falso':
                 optionsHtml = Object.entries(options).map(([key, value]) => {
-                    // Tarea 1: Enviar valor semántico para Verdadero/Falso
                     const inputValue = (questionType === 'verdadero_falso') ? value : key;
                     return `
                         <label class="block p-2 rounded hover:bg-gray-100">
-                            <input type="radio" name="question_${questionId}" value="${inputValue}" class="mr-2">
-                            ${value}
+                            <input type="radio" name="question_${questionId}" value="${escapeQuestionHtml(inputValue)}" class="mr-2">
+                            ${escapeQuestionHtml(value)}
                         </label>
                     `;
                 }).join('');
@@ -131,31 +136,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 optionsHtml = `<input type="text" name="question_${questionId}" class="w-full p-2 border rounded" placeholder="Escribe tu respuesta aquí">`;
                 break;
             case 'termino_pareado':
-                if (options.concepts && options.definitions) {
-                    // Tarea 2: Barajado robusto de definiciones sin duplicados
-                    const indexedDefinitions = options.definitions.map((def, idx) => ({ def, idx }));
-                    const shuffledDefinitions = shuffleArray(indexedDefinitions);
-                    optionsHtml = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h4 class="font-bold mb-2">Conceptos</h4>
-                                <ul class="list-decimal list-inside space-y-2">
-                                    ${options.concepts.map(concept => `<li class="p-2 bg-gray-100 rounded">${concept}</li>`).join('')}
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 class="font-bold mb-2">Definiciones</h4>
-                                <div class="space-y-2">
-                                    ${shuffledDefinitions.map((item, i) => `
-                                        <div class="flex items-center">
-                                            <input type="text" name="question_${questionId}_${i}" data-original-index="${item.idx}" class="w-12 p-1 border rounded mr-3 text-center" placeholder="#">
-                                            <span>${item.def}</span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                if (Array.isArray(options.concepts) && Array.isArray(options.definitions)) {
+                    optionsHtml = options.concepts.map((concept, conceptIndex) => `
+                        <label class="block p-2">
+                            <span class="block font-medium mb-1">${conceptIndex + 1}. ${escapeQuestionHtml(concept)}</span>
+                            <select name="question_${questionId}_match_${conceptIndex}" class="w-full p-2 border rounded">
+                                <option value="">Selecciona una definición</option>
+                                ${options.definitions.map((definition, definitionIndex) => `<option value="${definitionIndex}">${escapeQuestionHtml(definition)}</option>`).join('')}
+                            </select>
+                        </label>`).join('');
+                }
+                break;
+            case 'seleccion_multiple':
+                optionsHtml = Object.entries(options).filter(([, value]) => String(value || '').trim()).map(([key, value]) => `
+                    <label class="block p-2 rounded hover:bg-gray-100">
+                        <input type="checkbox" name="question_${questionId}" value="${escapeQuestionHtml(key)}" class="mr-2">
+                        ${escapeQuestionHtml(value)}
+                    </label>`).join('');
+                break;
+            case 'respuesta_extensa':
+                optionsHtml = `<textarea name="question_${questionId}" rows="6" class="w-full p-3 border rounded" placeholder="Escribe tu respuesta..."></textarea>`;
+                break;
+            case 'numerica':
+                optionsHtml = `<input type="number" step="any" name="question_${questionId}" class="w-full p-2 border rounded" placeholder="Ingresa un valor numérico">`;
+                break;
+            case 'ordenamiento':
+                if (Array.isArray(options.items)) {
+                    optionsHtml = options.items.map((item, itemIndex) => `
+                        <label class="block p-2">
+                            <span class="block mb-1">${escapeQuestionHtml(item)}</span>
+                            <select name="question_${questionId}_order_${itemIndex}" class="w-full p-2 border rounded">
+                                <option value="">Posición</option>
+                                ${options.items.map((_, position) => `<option value="${position}">${position + 1}</option>`).join('')}
+                            </select>
+                        </label>`).join('');
                 }
                 break;
         }
@@ -184,14 +198,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const input = block.querySelector(`input[name="question_${qId}"]`);
                 if (input) progress[qId] = input.value;
             } else if (qType === 'termino_pareado') {
-                const pairInputs = block.querySelectorAll(`input[name^="question_${qId}"]`);
+                const inputs = block.querySelectorAll(`select[name^="question_${qId}_match_"]`);
                 const pairs = {};
-                pairInputs.forEach(input => {
-                    if (input.value.trim()) {
-                        pairs[input.dataset.originalIndex] = input.value.trim();
-                    }
-                });
-                if (Object.keys(pairs).length > 0) progress[qId] = pairs;
+                inputs.forEach(input => { if (input.value !== '') pairs[input.name.split('_match_')[1]] = Number(input.value); });
+                if (Object.keys(pairs).length) progress[qId] = pairs;
+            } else if (qType === 'seleccion_multiple') {
+                progress[qId] = Array.from(block.querySelectorAll(`input[name="question_${qId}"]:checked`)).map(input => input.value);
+            } else if (qType === 'respuesta_extensa' || qType === 'numerica') {
+                const input = block.querySelector(`[name="question_${qId}"]`);
+                if (input) progress[qId] = input.value;
+            } else if (qType === 'ordenamiento') {
+                const inputs = block.querySelectorAll(`select[name^="question_${qId}_order_"]`);
+                const order = {};
+                inputs.forEach(input => { if (input.value !== '') order[input.name.split('_order_')[1]] = Number(input.value); });
+                if (Object.keys(order).length) progress[qId] = order;
             }
         });
 
@@ -222,10 +242,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     const input = block.querySelector(`input[name="question_${qId}"]`);
                     if (input) input.value = value;
                 } else if (qType === 'termino_pareado') {
-                     Object.entries(value).forEach(([origIdx, val]) => {
-                         const input = block.querySelector(`.question-block[data-question-id="${qId}"] input[data-original-index="${origIdx}"]`);
-                         if (input) input.value = val;
-                     });
+                    Object.entries(value).forEach(([conceptIndex, definitionIndex]) => {
+                        const input = block.querySelector(`select[name="question_${qId}_match_${conceptIndex}"]`);
+                        if (input) input.value = String(definitionIndex);
+                    });
+                } else if (qType === 'seleccion_multiple') {
+                    (Array.isArray(value) ? value : []).forEach(key => {
+                        const input = Array.from(block.querySelectorAll(`input[name="question_${qId}"]`)).find(item => item.value === key);
+                        if (input) input.checked = true;
+                    });
+                } else if (qType === 'respuesta_extensa' || qType === 'numerica') {
+                    const input = block.querySelector(`[name="question_${qId}"]`);
+                    if (input) input.value = value;
+                } else if (qType === 'ordenamiento') {
+                    Object.entries(value).forEach(([itemIndex, position]) => {
+                        const input = block.querySelector(`select[name="question_${qId}_order_${itemIndex}"]`);
+                        if (input) input.value = String(position);
+                    });
                 }
             });
         } catch (e) {
@@ -266,15 +299,33 @@ document.addEventListener('DOMContentLoaded', () => {
                         respuestaEstudiante = inputField.value.trim();
                     }
                     break;
-                case 'termino_pareado':
-                    const pairInputs = block.querySelectorAll(`input[name^="question_${preguntaId}"]`);
+                case 'termino_pareado': {
+                    const inputs = block.querySelectorAll(`select[name^="question_${preguntaId}_match_"]`);
                     const pairs = {};
-                    pairInputs.forEach(input => {
-                        const originalIdx = input.dataset.originalIndex;
-                        pairs[originalIdx] = input.value.trim();
-                    });
+                    inputs.forEach(input => { if (input.value !== '') pairs[input.name.split('_match_')[1]] = Number(input.value); });
                     respuestaEstudiante = JSON.stringify(pairs);
                     break;
+                }
+                case 'seleccion_multiple':
+                    respuestaEstudiante = JSON.stringify(Array.from(block.querySelectorAll(`input[name="question_${preguntaId}"]:checked`)).map(input => input.value));
+                    break;
+                case 'respuesta_extensa': {
+                    const input = block.querySelector(`[name="question_${preguntaId}"]`);
+                    respuestaEstudiante = input ? input.value.trim() : '';
+                    break;
+                }
+                case 'numerica': {
+                    const input = block.querySelector(`[name="question_${preguntaId}"]`);
+                    respuestaEstudiante = input ? input.value : '';
+                    break;
+                }
+                case 'ordenamiento': {
+                    const inputs = block.querySelectorAll(`select[name^="question_${preguntaId}_order_"]`);
+                    const order = {};
+                    inputs.forEach(input => { if (input.value !== '') order[input.name.split('_order_')[1]] = Number(input.value); });
+                    respuestaEstudiante = JSON.stringify(order);
+                    break;
+                }
             }
             respuestas.push({ preguntaId, respuestaEstudiante });
         });
