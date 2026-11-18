@@ -3617,7 +3617,7 @@ function getGradebookDataUnlocked_(payload, context) {
 
   const resumenes = Object.create(null);
   alumnos.forEach(student => {
-    resumenes[String(student.userId)] = calculateGradebookStudentSummary_(student.userId, calificaciones, categories, recuperaciones);
+    resumenes[String(student.userId)] = calculateGradebookStudentSummary_(student.userId, calificaciones, categories, recoveries);
   });
   return {
     status: "success",
