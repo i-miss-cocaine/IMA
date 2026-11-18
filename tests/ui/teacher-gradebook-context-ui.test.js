@@ -29,4 +29,13 @@ assert.match(js, /fetchApi\('EXAM',\s*'saveStudentRecovery'/,
   "recovery must use the contextual gradebook mutation");
 assert.match(js, /periodoId:\s*document\.getElementById\('gb-filter-parcial'\)/,
   "recovery must carry the selected academic period");
+assert.match(js, /let gradebookRequestVersion = 0/, "gradebook reads must have a monotonic request sequence");
+assert.match(js, /if \(requestVersion !== gradebookRequestVersion\) return/,
+  "late responses must not overwrite a newer academic context");
+assert.match(js, /function getGradebookContextPayload\(\)/,
+  "mutations must use the last context returned by the authorized read");
+assert.match(js, /const gradebookContext = getGradebookContextPayload\(\)/,
+  "period closure must snapshot the loaded academic context");
+assert.match(js, /if \(invalidScore\)[\s\S]*No se guardó ningún cambio/,
+  "invalid batch scores must be rejected before persistence");
 console.log("teacher-gradebook-context-ui: PASS (" + requiredIds.length + " DOM contracts)");
