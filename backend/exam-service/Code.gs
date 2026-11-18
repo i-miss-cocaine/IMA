@@ -1059,25 +1059,24 @@ function createExam(p) {
   return withAuthorizedExamCreation_(p, context => createExamUnlocked_(p, context));
 }
 function withAuthorizedExamCreation_(p, mutation) {
+  // Autorizar una sola vez en el límite de la acción y reutilizar el contexto
+  // durante la escritura; el lock protege la integridad de datos, no reautoriza.
   const permission = validateRolePermission("createExam", p);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(p);
   if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+  if (!scope || scope.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const requestedDepartmentId = String(p.departmentId || p.departamentoId || "").trim();
+  const departmentId = requestedDepartmentId || ((scope.departmentIds || []).length === 1 ? String(scope.departmentIds[0] || "").trim() : "");
+  const departmentAllowed = !!departmentId && (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId);
+  if (!departmentAllowed) throw new Error("RESOURCE_SCOPE_DENIED");
+  const context = { ss, scope, actor, departmentId };
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_CREATE_LOCK_TIMEOUT");
   try {
-    const lockedPermission = validateRolePermission("createExam", p);
-    if (!lockedPermission || lockedPermission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
-    const lockedActor = getVerifiedExamIdentity_(p);
-    if (!lockedActor || lockedActor.authorized !== true || !String(lockedActor.userId || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const scope = getVerifiedExamDepartmentScope_(p, ss, lockedActor);
-    if (!scope || scope.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
-    const requestedDepartmentId = String(p.departmentId || p.departamentoId || "").trim();
-    const departmentId = requestedDepartmentId || ((scope.departmentIds || []).length === 1 ? String(scope.departmentIds[0] || "").trim() : "");
-    const departmentAllowed = !!departmentId && (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId);
-    if (!departmentAllowed) throw new Error("RESOURCE_SCOPE_DENIED");
-    return mutation({ ss, scope, actor: lockedActor, departmentId });
+    return mutation(context);
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }

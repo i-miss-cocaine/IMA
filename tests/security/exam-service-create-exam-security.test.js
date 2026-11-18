@@ -105,8 +105,8 @@ test(() => {
   const x = fixture(), result = x.call();
   assert.equal(result.status, "success");
   assert.equal(x.stats.action, "createExam");
-  assert.equal(x.stats.permissionCalls, 2);
-  assert.deepEqual(x.stats.events, ["rbac","identity","lock","rbac","identity","sheets","scope"]);
+  assert.equal(x.stats.permissionCalls, 1);
+  assert.deepEqual(x.stats.events, ["rbac","identity","sheets","scope","lock"]);
   assert.equal(x.sheets.Examenes.rows.length, 2);
   assert.equal(x.sheets.ResourceOwnership.rows.length, 2);
   assert.equal(x.sheets.PreguntasExamen.rows.length, 2);
@@ -118,7 +118,7 @@ test(() => { const x=fixture({permissionDenied:true}); assert.throws(()=>x.call(
 test(() => { const x=fixture({invalidIdentity:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); });
 test(() => { const x=fixture({actor:{authorized:true,role:"Profesor"}}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); assert.equal(x.stats.acquired,0); });
 test(() => { const x=fixture({actor:{authorized:true,userId:" ",role:"Profesor"}}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); assert.equal(x.stats.acquired,0); });
-test(() => { const x=fixture({invalidScope:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held,x.stats.opened],[1,1,false,1]); });
+test(() => { const x=fixture({invalidScope:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held,x.stats.opened],[0,0,false,1]); });
 test(() => { const x=fixture({lockTimeout:true}); assert.throws(()=>x.call(),/EXAM_CREATE_LOCK_TIMEOUT/); assert.equal(x.sheets.Examenes.rows.length,1); assert.equal(x.sheets.ResourceOwnership.rows.length,1); });
 test(() => { const x=fixture({failOwnershipAppendAfterWrite:true}); assert.throws(()=>x.call(),/append persisted then failed/); assert.equal(x.sheets.ResourceOwnership.rows.length,1); assert.equal(x.sheets.Examenes.rows.length,1); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });
 test(() => { const x=fixture({failExamAppend:true}); assert.throws(()=>x.call(),/append failed/); assert.equal(x.sheets.Examenes.rows.length,1); assert.equal(x.sheets.ResourceOwnership.rows.length,1); assert.equal(x.sheets.PreguntasExamen.rows.length,1); });
@@ -126,17 +126,12 @@ test(() => { const x=fixture({failQuestionWrite:true}); assert.throws(()=>x.call
 test(() => { const x=fixture(); assert.throws(()=>x.call({departmentId:"D2"}),/RESOURCE_SCOPE_DENIED/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });
 test(() => { const x=fixture(); x.sheets.ResourceOwnership.rows[0]=["wrong"]; assert.throws(()=>x.call(),/RESOURCE_OWNERSHIP_SCHEMA_INVALID/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });
 test(() => {
- const x=fixture({actors:[{authorized:true,userId:"P1",role:"Profesor"},{authorized:true,userId:"   ",role:"Profesor"}]});
- assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
- assert.deepEqual(x.stats.events,["rbac","identity","lock","rbac","identity"]);
- assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held,x.stats.opened],[1,1,false,0]);
- assert.deepEqual([x.sheets.Examenes.rows.length,x.sheets.PreguntasExamen.rows.length,x.sheets.ResourceOwnership.rows.length],[1,1,1]);
-});
-test(() => {
- const x=fixture({permissions:[true,false]});
- assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
- assert.deepEqual(x.stats.events,["rbac","identity","lock","rbac"]);
- assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held,x.stats.opened],[1,1,false,0]);
+ const x=fixture({actors:[{authorized:true,userId:"P1",role:"Profesor"},{authorized:false,userId:"",role:""}],permissions:[true,false]});
+ const result=x.call();
+ assert.equal(result.status,"success");
+ assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock"]);
+ assert.equal(x.stats.permissionCalls,1);
+ assert.equal(x.sheets.Examenes.rows.length,2);
 });
 for (const point of ["ownershipAppend", "examAppend", "questionWrite"]) {
   test(() => {
@@ -154,7 +149,7 @@ for (const point of ["ownershipAppend", "examAppend", "questionWrite"]) {
     assert.equal(x.sheets.PreguntasExamen.writes, 1);
     assert.deepEqual([
       x.stats.opened, x.stats.acquired, x.stats.released, x.stats.held
-    ], [1, 2, 1, false]);
+    ], [2, 2, 1, false]);
   });
 }
 console.log("exam-service-create-exam-security: " + scenarios + "/" + scenarios + " PASS");
