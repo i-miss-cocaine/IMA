@@ -3542,9 +3542,9 @@ function saveGradebookGradesUnlocked_(payload, context, options) {
     if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("GRADEBOOK_ENTRY_INVALID");
     const evaluacionId = String(item.evaluacionId || "").trim(), userId = String(item.userId || "").trim();
     const raw = item.notaObtenida;
-    if (!evaluacionId || !userId || !context.roster[userId] || !context.categoryIds[evaluacionId]) {
-      throw new Error("GRADEBOOK_ENTRY_OUT_OF_SCOPE");
-    }
+    if (!evaluacionId || !userId) throw new Error("GRADEBOOK_ENTRY_INVALID");
+    if (!context.roster[userId]) throw new Error("GRADEBOOK_ENTRY_OUT_OF_SCOPE");
+    if (!context.categoryIds[evaluacionId]) throw new Error("GRADEBOOK_CATEGORY_NOT_ACTIVE");
     if (!["CAT-1", "CAT-2", "CAT-3", "CAT-4"].includes(evaluacionId)) {
       const categoryOwners = context.ownedCategories[evaluacionId] || [];
       if (categoryOwners.length !== 1 || !categoryOwners[0] ||
