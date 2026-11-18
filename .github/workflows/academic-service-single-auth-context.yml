@@ -5,6 +5,7 @@ on:
     paths:
       - 'backend/academic-service/Code.gs'
       - 'tests/security/academic-service-single-auth-context.test.js'
+      - 'tests/security/academic-unified-grade-calculation.test.js'
       - 'tests/security/academic-interservice-replay-guard.test.js'
       - 'tests/security/academic-migration-writer.test.js'
       - 'tests/security/academic-multilevel-file-validation.test.js'
@@ -20,6 +21,7 @@ on:
     paths:
       - 'backend/academic-service/Code.gs'
       - 'tests/security/academic-service-single-auth-context.test.js'
+      - 'tests/security/academic-unified-grade-calculation.test.js'
       - 'backend/user-service/Code.gs'
       - 'teacher-dashboard.html'
       - 'js/teacher.js'
@@ -35,6 +37,7 @@ jobs:
           node-version: '22'
       - run: node --check < backend/academic-service/Code.gs
       - run: node tests/security/academic-service-single-auth-context.test.js
+      - run: node tests/security/academic-unified-grade-calculation.test.js
       - run: node tests/security/academic-teacher-justification-abac.test.js
       - run: node tests/security/academic-absence-justification-canonical.test.js
       - run: node tests/security/academic-interservice-replay-guard.test.js
