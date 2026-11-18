@@ -5469,13 +5469,13 @@ function toBase64(file) {
         // Cargar opciones del contexto académico desde GLOBAL_SCOPE y las asignaciones del docente.
         const scope = window.GLOBAL_SCOPE || {};
         const granular = Array.isArray(scope.GranularConfig) ? scope.GranularConfig : [];
-        const norm = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        const norm = value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().trim();
         const escapeHtml = value => String(value == null ? "" : value).replace(/[&<>"']/g, char =>
             ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
         let grados = Array.isArray(scope.GradoActual) ? scope.GradoActual : (scope.GradoActual ? [scope.GradoActual] : []);
         if (!grados.length) grados = [...new Set(granular.map(row => String(row.grado || "").trim()).filter(Boolean))];
-        selGrado.innerHTML = grados.map(value => \`<option value="\${escapeHtml(value)}">\${escapeHtml(value)}</option>\`).join('');
+        selGrado.innerHTML = grados.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
 
         const updateAsignaturasFilter = () => {
             const gVal = selGrado.value;
@@ -5483,7 +5483,7 @@ function toBase64(file) {
                 .map(row => String(row.seccion || "").trim()).filter(Boolean))];
             const previousSection = selSeccion.value;
             selSeccion.innerHTML = secciones.length
-                ? secciones.map(value => \`<option value="\${escapeHtml(value)}">\${escapeHtml(value)}</option>\`).join('')
+                ? secciones.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')
                 : '<option value="">Sin secciones asignadas</option>';
             if (secciones.some(value => value === previousSection)) selSeccion.value = previousSection;
 
@@ -5491,14 +5491,14 @@ function toBase64(file) {
             const matches = granular.filter(row => norm(row.grado) === norm(gVal) && norm(row.seccion) === norm(sVal));
             const asigs = [...new Set(matches.map(row => String(row.asignatura || "").trim()).filter(Boolean))];
             selAsignatura.innerHTML = asigs.length
-                ? asigs.map(value => \`<option value="\${escapeHtml(value)}">\${escapeHtml(value)}</option>\`).join('')
+                ? asigs.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')
                 : '<option value="General">General</option>';
         };
 
         const activePartial = String(scope.ParcialActual || window.PARCIAL_ACTUAL || "I parcial").trim();
         const parciales = [...new Set(granular.map(row => String(row.parcial || "").trim()).filter(Boolean))];
         if (!parciales.some(value => norm(value) === norm(activePartial))) parciales.unshift(activePartial);
-        selParcial.innerHTML = parciales.map(value => \`<option value="\${escapeHtml(value)}">\${escapeHtml(value)}</option>\`).join('');
+        selParcial.innerHTML = parciales.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('');
 
         selGrado.onchange = () => { updateAsignaturasFilter(); fetchGradebookData(); };
         selSeccion.onchange = () => { updateAsignaturasFilter(); fetchGradebookData(); };
