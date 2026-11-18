@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="p-4 rounded border ${borderColor} ${bgColor}">
                     <p class="font-semibold">Pregunta ${index + 1}: ${escapeResultHtml(item.texto)}</p>
                     <p>Respuesta: <span class="font-mono whitespace-pre-wrap">${escapeResultHtml(displayAnswer)}</span></p>
-                    <p>Puntaje: <span class="font-bold">${escapeResultHtml(item.score)}</p>
+                    <p>Puntaje: <span class="font-bold">${escapeResultHtml(item.score)}</span></p>
                 </div>
             `;
         });
