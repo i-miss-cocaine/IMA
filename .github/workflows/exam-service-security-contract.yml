@@ -144,3 +144,22 @@ jobs:
             fi
           done
           exit "$failed"
+      - name: Check repository JavaScript syntax
+        run: |
+          set -e
+          while IFS= read -r -d '' source_file; do
+            node --check "$source_file"
+          done < <(find js backend -type f -name '*.js' -print0)
+      - name: Run all repository Node.js tests
+        run: |
+          mapfile -d '' test_files < <(find tests -type f -name '*.test.js' -print0 | sort -z)
+          failed=0
+          echo "Running ${#test_files[@]} Node.js test files"
+          for test_file in "${test_files[@]}"; do
+            echo "Running $test_file"
+            if ! node "$test_file"; then
+              echo "FAILED: $test_file"
+              failed=1
+            fi
+          done
+          exit "$failed"
