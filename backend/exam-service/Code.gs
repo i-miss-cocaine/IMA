@@ -28,7 +28,7 @@ function getOrCreateSheet(ss, name) {
   if (!sheet) {
     sheet = ss.insertSheet(name);
     if (name === "Examenes") sheet.appendRow(["ExamenID", "Titulo", "Asignatura", "Grado", "Seccion", "FechaLimite", "TiempoLimite", "Estado", "ProfesorID", "Parcial", "AreaCurricular", "DuracionMinutos", "IntentosPermitidos", "EsAleatorio"]);
-    if (name === "PreguntasExamen") sheet.appendRow(["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta", "Puntos", "AreaCurricular", "Dificultad", "BancoPreguntaID"]);
+    if (name === "PreguntasExamen") sheet.appendRow(["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta", "Puntos", "AreaCurricular", "Dificultad", "BancoPreguntaID", "Etiquetas", "ObjetivosJSON", "CriteriosJSON", "BancoPreguntaVersion"]);
     if (name === "BancoPreguntasExamen") sheet.appendRow(["BancoPreguntaID", "AreaCurricular", "Asignatura", "Grado", "Tema", "Dificultad", "Tipo", "TextoPregunta", "OpcionesJSON", "RespuestaCorrecta", "Etiquetas", "PuntosPredeterminados", "Estado", "ObjetivosJSON", "CriteriosJSON", "Version"]);
     if (name === "EntregasExamen") sheet.appendRow(["EntregaExamenID", "ExamenID", "UserID", "FechaEntrega", "RespuestasJSON", "NotaTotal", "Estado", "ComentarioDocente", "TemaAsociado", "AsignaturaAsociada"]);
     if (name === "CategoriasEvaluacion") sheet.appendRow(["ID", "Nombre", "Ambito", "PorcentajePonderacion", "EscalaID", "Estado"]);
@@ -1081,6 +1081,20 @@ function withAuthorizedExamCreation_(p, mutation) {
     try { lock.releaseLock(); } catch (_) {}
   }
 }
+function ensureExamQuestionsSchema_(questionSheet) {
+  const legacyHeaders = ["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta",
+    "Puntos", "AreaCurricular", "Dificultad", "BancoPreguntaID"];
+  const currentHeaders = legacyHeaders.concat(["Etiquetas", "ObjetivosJSON", "CriteriosJSON", "BancoPreguntaVersion"]);
+  const rows = questionSheet.getDataRange().getValues();
+  const headers = rows.length ? (rows[0] || []).map(value => String(value || "").trim()) : [];
+  if (JSON.stringify(headers) === JSON.stringify(currentHeaders)) return rows;
+  if (JSON.stringify(headers) === JSON.stringify(legacyHeaders)) {
+    questionSheet.getRange(1, 11, 1, 4).setValues([currentHeaders.slice(10)]);
+    return questionSheet.getDataRange().getValues();
+  }
+  throw new Error("EXAM_QUESTIONS_SCHEMA_INVALID");
+}
+
 function createExamUnlocked_(p, context) {
   const { ss, scope, actor, departmentId } = context;
   const examenes = getSheetOrThrow(ss, "Examenes");
@@ -1091,11 +1105,49 @@ function createExamUnlocked_(p, context) {
   if (expectedHeaders.some((header, index) => String(ownershipHeaders[index] || "").trim() !== header)) {
     throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
   }
-
-  const preguntasData = (Array.isArray(p.preguntas) ? p.preguntas : []).map((q, i) => [
-    `PRE-${Date.now()}-${i}`, "", q && q.preguntaTipo, q && q.textoPregunta,
-    JSON.stringify((q && q.opciones) || {}), q && q.respuestaCorrecta
-  ]);
+  const ownershipRows = ownership.getDataRange().getValues();
+  const questionHeaders = ensureExamQuestionsSchema_(preguntas);
+  const requestedQuestions = Array.isArray(p.preguntas) ? p.preguntas : [];
+  const bankIds = requestedQuestions.map(q => String(q && (q.bancoPreguntaId || q.BancoPreguntaID) || "").trim()).filter(Boolean);
+  let bankRows = [];
+  if (bankIds.length) {
+    const bankSheet = getSheetOrThrow(ss, "BancoPreguntasExamen");
+    bankRows = ensureExamQuestionBankSchema_(bankSheet);
+  }
+  const preguntasData = requestedQuestions.map((q, i) => {
+    const bankId = String(q && (q.bancoPreguntaId || q.BancoPreguntaID) || "").trim();
+    let definition = q || {};
+    let bankVersion = "";
+    if (bankId) {
+      const matches = bankRows.slice(1).filter(row => String(row[0] || "").trim() === bankId &&
+        String(row[12] || "").trim().toUpperCase() === "ACTIVO");
+      const owners = ownershipRows.slice(1).filter(row =>
+        String(row[1] || "").trim() === String(scope.institutionId || "").trim() &&
+        String(row[2] || "").trim().toUpperCase() === "BANCO_PREGUNTA" &&
+        String(row[3] || "").trim() === bankId &&
+        String(row[4] || "").trim() === departmentId &&
+        String(row[5] || "").trim().toUpperCase() === "ACTIVE");
+      if (matches.length !== 1 || owners.length !== 1) throw new Error("EXAM_QUESTION_BANK_REFERENCE_INVALID");
+      const bank = matches[0];
+      bankVersion = Number(bank[15] || 1);
+      if (!Number.isSafeInteger(bankVersion) || bankVersion < 1) throw new Error("EXAM_QUESTION_BANK_VERSION_INVALID");
+      definition = {
+        areaCurricular: bank[1], asignatura: bank[2], grado: bank[3], tema: bank[4],
+        dificultad: bank[5], tipo: bank[6], textoPregunta: bank[7], opcionesJSON: bank[8],
+        respuestaCorrecta: bank[9], etiquetas: bank[10], puntosPredeterminados:
+          q && q.puntosPredeterminados !== undefined ? q.puntosPredeterminados : bank[11],
+        objetivos: bank[13] || "[]", criterios: bank[14] || "[]"
+      };
+    }
+    const normalized = normalizeExamQuestionDefinition_(definition);
+    return [
+      "PRE-" + Utilities.getUuid(), "", normalized.tipo, normalized.textoPregunta,
+      normalized.opcionesJSON, normalized.respuestaCorrecta, normalized.puntosPredeterminados,
+      normalized.areaCurricular, normalized.dificultad, bankId,
+      JSON.stringify(normalized.etiquetas), JSON.stringify(normalized.objetivos),
+      JSON.stringify(normalized.criterios), bankVersion
+    ];
+  });
   let examenId = "";
   let ownershipId = "";
   try {
@@ -1103,8 +1155,6 @@ function createExamUnlocked_(p, context) {
     const uniqueSuffix = Utilities.getUuid();
     examenId = "EXM-" + Date.now() + "-" + uniqueSuffix;
     ownershipId = "OWN-" + Utilities.getUuid();
-
-    const ownershipRows = ownership.getDataRange().getValues();
     const duplicate = ownershipRows.slice(1).some(row =>
       String(row[1] || "").trim() === String(scope.institutionId || "").trim() &&
       String(row[2] || "").trim().toUpperCase() === "EXAMEN" &&
@@ -1112,25 +1162,20 @@ function createExamUnlocked_(p, context) {
     if (duplicate || examenes.getDataRange().getValues().slice(1).some(row => String(row[0] || "").trim() === examenId)) {
       throw new Error("EXAM_CREATE_ID_COLLISION");
     }
-
-    // Primero se registra la propiedad; nunca se publica un examen sin ownership.
     ownership.appendRow([ownershipId, scope.institutionId, "EXAMEN", examenId,
       departmentId, "ACTIVE", actor.userId, now, now]);
     examenes.appendRow([
       examenId, p.titulo, p.asignatura, p.gradoAsignado, p.seccionAsignada,
       p.fechaLimite, p.tiempoLimite || "", "Inactivo", actor.userId,
-      p.parcial || "Primer Parcial"
+      p.parcial || "Primer Parcial", p.areaCurricular || "",
+      p.duracionMinutos || p.tiempoLimite || "", p.intentosPermitidos || 1,
+      p.esAleatorio === true || String(p.esAleatorio || "").toLowerCase() === "true"
     ]);
-
     if (preguntasData.length > 0) {
-      const rows = preguntasData.map(row => {
-        row[0] = `PRE-${examenId}-${row[0].split("-").pop()}`;
-        row[1] = examenId;
-        return row;
-      });
-      preguntas.getRange(preguntas.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
+      const rows = preguntasData.map(row => { row[1] = examenId; return row; });
+      preguntas.getRange(preguntas.getLastRow() + 1, 1, rows.length, 14).setValues(rows);
     }
-    return { status: "success", examenId, departmentId };
+    return { status: "success", examenId, departmentId, preguntasRegistradas: preguntasData.length };
   } catch (error) {
     let rollbackFailed = false;
     const removeMatchingRows = (sheet, column, value) => {
@@ -1150,7 +1195,6 @@ function createExamUnlocked_(p, context) {
     throw error;
   }
 }
-
 function getAuthorizedExamMutationContext_(payload, action, requestedExamId) {
   const permission = validateRolePermission(action, payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");

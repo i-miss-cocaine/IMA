@@ -56,7 +56,7 @@ function fixture(options = {}) {
     Examenes: makeSheet([["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID","Parcial"]], {
       failAppend: options.failExamAppend, onAppend: () => hooks.examAppend && hooks.examAppend()
     }),
-    PreguntasExamen: makeSheet([["ID","ExamenID","Tipo","Texto","Opciones","Respuesta"]], {
+    PreguntasExamen: makeSheet([["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta","Puntos","AreaCurricular","Dificultad","BancoPreguntaID"]], {
       failWrite: options.failQuestionWrite, onWrite: () => hooks.questionWrite && hooks.questionWrite()
     }),
     ResourceOwnership: makeSheet([OH], {
@@ -79,7 +79,7 @@ function fixture(options = {}) {
     Utilities: { getUuid() { uuid++; return "UUID-" + uuid; } },
     Date
   };
-  vm.runInNewContext(extract("withAuthorizedExamCreation_") + "\n" + extract("createExamUnlocked_") + "\n" + extract("createExam"), runtime);
+  vm.runInNewContext(["normalizeString","parseExamQuestionJsonField_","normalizeExamQuestionDefinition_","ensureExamQuestionBankSchema_","ensureExamQuestionsSchema_","withAuthorizedExamCreation_","createExamUnlocked_","createExam"].map(extract).join("\\n"), runtime);
   const reentryErrors = [];
   const attemptReentry = () => {
     try {
@@ -88,7 +88,7 @@ function fixture(options = {}) {
         asignatura: "Matemáticas", gradoAsignado: "10", seccionAsignada: "A",
         fechaLimite: "2026-11-20",
         preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "2+2",
-          opciones: { a: "4" }, respuestaCorrecta: "a" }]
+          opciones: { a: "4", b: "5" }, respuestaCorrecta: "a" }]
       });
     } catch (error) { reentryErrors.push(error.message); }
   };
@@ -96,7 +96,7 @@ function fixture(options = {}) {
   return { runtime, sheets, stats, reentryErrors, call(payload = {}) { return runtime.createExam(Object.assign({
     sessionToken: "signed", departmentId: "D1", titulo: "Evaluación", asignatura: "Matemáticas",
     gradoAsignado: "10", seccionAsignada: "A", fechaLimite: "2026-11-20",
-    preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "2+2", opciones: { a: "4" }, respuestaCorrecta: "a" }]
+    preguntas: [{ preguntaTipo: "opcion_multiple", textoPregunta: "2+2", opciones: { a: "4", b: "5" }, respuestaCorrecta: "a", puntos: 3, areaCurricular: "Matemáticas", tema: "Aritmética", etiquetas: ["base"], objetivos: ["OBJ-1"], criterios: ["CR-1"] }]
   }, payload)); }};
 }
 let scenarios = 0;
@@ -111,6 +111,12 @@ test(() => {
   assert.equal(x.sheets.ResourceOwnership.rows.length, 2);
   assert.equal(x.sheets.PreguntasExamen.rows.length, 2);
   assert.equal(x.sheets.PreguntasExamen.rows[1][1], result.examenId);
+  assert.equal(x.sheets.PreguntasExamen.rows[1][6], 3);
+  assert.equal(x.sheets.PreguntasExamen.rows[1][7], "Matemáticas");
+  assert.equal(x.sheets.PreguntasExamen.rows[1][8], "Media");
+  assert.equal(x.sheets.PreguntasExamen.rows[1][10], JSON.stringify(["base"]));
+  assert.equal(x.sheets.PreguntasExamen.rows[1][11], JSON.stringify(["OBJ-1"]));
+  assert.equal(x.sheets.PreguntasExamen.rows[1][12], JSON.stringify(["CR-1"]));
   assert.equal(x.sheets.ResourceOwnership.rows[1][3], result.examenId);
   assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
 });
