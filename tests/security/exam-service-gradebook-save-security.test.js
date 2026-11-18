@@ -34,7 +34,7 @@ t(()=>{assert.throws(()=>fixture({badSchema:true}).call(),/GRADEBOOK_SCHEMA_INVA
 t(()=>{assert.throws(()=>fixture({closed:true}).call(),/GRADEBOOK_PERIOD_CLOSED/);});
 t(()=>{assert.throws(()=>fixture().call({parcial:""}),/GRADEBOOK_CONTEXT_REQUIRED/);});
 t(()=>{assert.throws(()=>fixture().call({calificaciones:[]}),/GRADEBOOK_BATCH_INVALID/);assert.throws(()=>fixture().call({calificaciones:Array(501).fill({evaluacionId:"CAT-1",userId:"S1",notaObtenida:80})}),/GRADEBOOK_BATCH_INVALID/);});
-t(()=>{assert.throws(()=>fixture().call({calificaciones:[{evaluacionId:"UNKNOWN",userId:"S1",notaObtenida:80}]}),/GRADEBOOK_ENTRY_OUT_OF_SCOPE/);});
+t(()=>{assert.throws(()=>fixture().call({calificaciones:[{evaluacionId:"UNKNOWN",userId:"S1",notaObtenida:80}]}),/GRADEBOOK_CATEGORY_NOT_ACTIVE/);});
 t(()=>{assert.throws(()=>fixture({category:true}).call({calificaciones:[{evaluacionId:"CAT-X",userId:"S1",notaObtenida:80}]}),/GRADEBOOK_CATEGORY_OWNERSHIP_UNVERIFIED/);});
 t(()=>{const x=fixture({timeout:true});assert.throws(()=>x.call(),/GRADEBOOK_SAVE_LOCK_TIMEOUT/);assert.equal(x.stats().opens,0);});
 t(()=>{const x=fixture();x.sheets.CalificacionesEstudiantes.fail=true;assert.throws(()=>x.call(),/write failed/);assert.equal(x.sheets.CalificacionesEstudiantes.rows[1][3],70);});
