@@ -1,6 +1,6 @@
 # IMA — Norma de Desarrollo Ágil, Seguro y Continuo (NDASC)
-**Versión:** 1.4  
-**Vigencia:** 2026-11-10  
+**Versión:** 1.5  
+**Vigencia:** 2026-11-18  
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama exclusiva de trabajo:** `NG_beta_0.0.0.1_work`  
 **Rama base:** `NG_beta_0.0.0.1` (solo lectura para el agente)
@@ -178,3 +178,68 @@ Ningún otro archivo debe crear, copiar, mantener ni modificar una normativa par
 Antes de modificar cualquier documento auxiliar, leer esta norma y la parte del documento auxiliar que corresponda al cambio. No es necesario volver a leer íntegramente todo el repositorio ni todos los documentos: la lectura se limita al alcance y riesgo definidos aquí. Las referencias de los documentos auxiliares no sustituyen la lectura del archivo maestro.
 
 Esta sección no elimina requisitos funcionales, técnicos, de seguridad, privacidad, accesibilidad ni aceptación del producto. Distingue esos requisitos de las normas operativas, cuya fuente única es este archivo.
+
+
+## 17. Alcance funcional de seguridad y optimización de rendimiento
+
+### 17.1 Principio de seguridad proporcional al uso académico
+
+IMA es una plataforma de gestión académica. Su seguridad debe proteger el acceso por identidad y rol, la separación de los espacios institucionales y la integridad básica de los registros, sin convertir operaciones académicas ordinarias en flujos de validación transaccional o controles redundantes. La seguridad se aplica en el punto de entrada de cada acción y conforme al permiso requerido; no se repiten controles equivalentes en cada archivo, fragmento, imagen, video o evidencia cuando la autorización de la acción y el contexto ya fueron comprobados.
+
+Este apartado actualiza el alcance de producto de las secciones 1, 5, 6, 7 y 15. No elimina los requisitos mínimos de autenticación, autorización por rol, separación institucional, protección de sesiones ni integridad de los datos. Ante una regla previa que exija validaciones redundantes o seguridad desproporcionada para un flujo académico ordinario, prevalece este apartado.
+
+### 17.2 Acciones académicas y registro de datos
+
+- Los usuarios pueden crear aportes y registros académicos, registrar calificaciones y adjuntar archivos, imágenes, videos y materiales conforme a los permisos de su rol.
+- La aplicación debe capturar los campos enviados por el formulario y asociar al registro la fecha/hora de creación y la identidad/nombre del usuario que lo realizó. La identidad debe proceder de la sesión autenticada, no de un nombre libremente declarado por el cliente.
+- No se requiere una autorización entre servicios ni una validación de legitimidad transaccional adicional para cada registro ordinario. El servicio que recibe la acción aplica la autorización correspondiente al rol y al ámbito institucional, valida los campos indispensables para procesar correctamente el formulario y persiste el registro.
+- Evitar dobles consultas, verificaciones repetidas de permisos, cadenas de aprobación técnica y llamadas entre servicios que no aporten una garantía necesaria al requisito.
+- Las operaciones de guardado deben ser directas, con respuestas ágiles y sin bloquear al usuario por controles que no cambian el resultado de la operación.
+- Los tutoriales no forman parte del flujo operativo obligatorio de registro, carga o presentación de evidencias. No deben imponerse como paso previo para completar una acción académica.
+
+### 17.3 Carga y consulta de archivos y evidencias
+
+- La carga debe integrarse de forma fluida con el formulario y con el registro académico al que pertenece.
+- No ejecutar validaciones de seguridad duplicadas por cada archivo, imagen, video, fragmento o reintento de carga si ya se validó la acción, la identidad y el contexto de destino.
+- Mantener únicamente las comprobaciones operativas indispensables para que la carga funcione y el archivo pueda asociarse y recuperarse correctamente, como los límites técnicos configurados por la plataforma y la referencia al registro destino.
+- No introducir flujos de aprobación entre servicios, análisis costosos o controles adicionales por defecto que no respondan a un requisito concreto del producto.
+- Las reglas de acceso por rol y ámbito se aplican al acceso a la acción y a la consulta del recurso. La implementación debe evitar repetirlas innecesariamente dentro de cada etapa técnica de una misma carga.
+
+### 17.4 Autenticación, sesión y controles de cuenta
+
+Los controles de seguridad de cuenta requeridos para este alcance son:
+
+1. Inicio de sesión con usuario y contraseña, almacenando contraseñas únicamente mediante un algoritmo de hash de contraseñas actual y adecuado.
+2. Autorización de las acciones según los roles y permisos ya definidos. Cada acción protegida debe comprobar el permiso correspondiente; no se deben agregar capas equivalentes redundantes.
+3. Cierre de sesión remoto y revocación de sesiones activas del usuario. La aplicación debe invalidar también el estado autenticado y los datos privados almacenados en su caché local tan pronto como el cliente reciba la señal de revocación o en su siguiente comunicación con el servidor.
+4. Al eliminar una cuenta, revocar sus sesiones y credenciales activas para impedir nuevos accesos con esa cuenta. Las sesiones ya emitidas no deben seguir siendo válidas después de que la revocación sea efectiva.
+5. Bloqueo temporal del acceso después de varios intentos fallidos consecutivos, con umbral y duración razonables y configurables, para reducir intentos repetidos y consumo innecesario de recursos.
+
+La revocación remota no debe describirse como capacidad de borrar instantáneamente la caché de un dispositivo desconectado: el servidor puede invalidar la sesión de inmediato, pero la limpieza de la caché del cliente se ejecuta cuando el cliente recibe la instrucción o vuelve a conectarse. Los datos privados locales deben quedar inaccesibles al perder vigencia la sesión.
+
+### 17.5 Rendimiento y estrategia de validación
+
+- Priorizar el menor tiempo de respuesta razonable, menos llamadas de red, menos consultas repetidas y menos pasos de interacción.
+- Validar una vez en el límite de la acción los datos y permisos necesarios. Reutilizar el contexto autenticado y autorizado durante la operación en lugar de recalcularlo en cada subpaso.
+- No validar de nuevo la legitimidad de una transacción académica ordinaria ni solicitar permisos entre servicios si el flujo no lo requiere.
+- Conservar las validaciones que evitan errores reales de formulario, asociaciones incorrectas, escrituras inválidas o acciones fuera del rol. La optimización no significa aceptar datos mal formados ni permitir operaciones no autorizadas.
+- Medir y corregir latencias, consultas duplicadas, serialización innecesaria, procesamiento bloqueante y controles repetidos. No sacrificar la corrección de los datos ni la autorización efectiva para mejorar una métrica aislada.
+- Las pruebas deben verificar tanto el comportamiento funcional como que el flujo no introduce validaciones, consultas o llamadas redundantes. No se deben reducir, falsear ni debilitar las pruebas para obtener una aprobación.
+
+### 17.6 Estrategia ante fallos de pruebas y CI
+
+Un fallo de Node.js, CLI, GitHub Actions u otra herramienta no constituye por sí solo una razón para detener el trabajo. El agente debe:
+
+1. Identificar si el fallo proviene del código, de la prueba, de la configuración, de la herramienta, de la red o del entorno.
+2. Revisar logs, comandos, versiones, dependencias, fixtures y precondiciones.
+3. Reintentar de forma razonada cuando el fallo sea transitorio; si persiste, probar una vía equivalente y reproducible que mantenga el mismo criterio de aceptación.
+4. Ejecutar las pruebas directamente con Node.js o CLI cuando el wrapper o workflow no esté disponible, y aislar las pruebas pertinentes cuando una suite amplia falle por una causa ajena al cambio.
+5. Corregir el código o la prueba cuando exista un defecto real. Ajustar una prueba solo si se demuestra que el propio test es incorrecto o está desactualizado, preservando la intención y cobertura originales.
+6. No eliminar casos, reducir aserciones, omitir escenarios, alterar resultados esperados ni modificar código ajeno para forzar un PASS.
+7. Registrar con precisión PASS, FAIL, BLOCKED o NOT RUN, incluyendo el método alternativo usado y la limitación restante.
+
+El objetivo es encontrar una manera válida de verificar el requisito, no conseguir una marca verde a cualquier costo. La búsqueda de métodos alternativos nunca autoriza a presentar como ejecutada una prueba que no se pudo correr.
+
+### 17.7 Revisión y conservación de integridad
+
+Las revisiones de código, sintaxis, lógica, regresiones y concurrencia siguen siendo aplicables en proporción al cambio. Deben concentrarse en los riesgos reales y no introducir controles de producto adicionales que contradigan este alcance. Proteger el código no relacionado, conservar las pruebas relevantes y revisar el diff completo antes de cada commit. Esta optimización no autoriza a borrar líneas, capacidades o validaciones necesarias fuera del alcance de la tarea.
