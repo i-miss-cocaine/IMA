@@ -25,7 +25,7 @@ const context = {
     base64Encode(value){return Buffer.from(value).toString("base64");},
     newBlob(bytes,mime,name){return {bytes,mime,name,getBytes(){return bytes;},getContentType(){return mime;}};},
     getUuid(){return "U"+(++sequence);}},
-  DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},createFile(blob){const id="F"+(++sequence),file={id,blob,trashed:false,getId(){return id;},getBlob(){return blob;},setTrashed(v){this.trashed=v;},setSharing(access,permission){this.sharing=[access,permission];}};stored.set(id,file);return file;},
+  DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{VIEW:"VIEW"},createFile(blob){const id="F"+(++sequence),file={id,blob,trashed:false,getId(){return id;},getBlob(){return blob;},setTrashed(v){this.trashed=v;},setSharing(access,permission){this.sharing=[access,permission];}};stored.set(id,file);return file;},
     getFileById(id){if(!stored.has(id))throw Error("missing");return stored.get(id);}},
   Date,JSON,Object,Array,String,Number,Math,RegExp
 };
@@ -40,7 +40,9 @@ assert.equal(state.rowCount,1);
 assert.equal(sheet.rows.length,2);
 assert.equal(state.respuestas[0].adjuntos[0].nombre,"__evidencia.pdf");
 assert.equal(state.respuestas[0].adjuntos[0].fileId,undefined);
-assert.deepEqual(state.createdFiles[0].sharing,["PRIVATE","NONE"],"new files are private by default");
+assert.equal(state.createdFiles[0].sharing.join(","),"PRIVATE,VIEW","new files are private and grant view-only sharing class");
+assert.ok(source.includes("DriveApp.Access.PRIVATE, DriveApp.Permission.VIEW") && !source.includes("DriveApp.Access.PRIVATE, DriveApp.Permission.NONE"),
+  "DriveApp PRIVATE sharing uses a supported permission enum");
 const partialSheet={rows:[headers],calls:0,getDataRange(){return {getValues:()=>this.rows.map(row=>row.slice())};},
   getLastRow(){return this.rows.length;},appendRow(row){this.calls++;if(this.calls===2)throw Error("synthetic metadata write failure");this.rows.push(row.slice());},
   deleteRows(start,count){this.rows.splice(start-1,count);}};

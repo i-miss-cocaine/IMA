@@ -2195,7 +2195,7 @@ function persistExamQuestionAttachments_(ss,questionRows,answers,deliveryId,exam
         if(match[2].length>Math.ceil(EXAM_ATTACHMENT_MAX_BYTES_/3)*4+4)throw new Error("EXAM_ATTACHMENT_TOO_LARGE");
         const bytes=Utilities.base64Decode(match[2]);if(!bytes||!bytes.length||bytes.length>EXAM_ATTACHMENT_MAX_BYTES_)throw new Error("EXAM_ATTACHMENT_TOO_LARGE");
         const name=sanitizeExamAttachmentName_(item.name),file=DriveApp.createFile(Utilities.newBlob(bytes,mime,name));createdFiles.push(file);
-        file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+        file.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.VIEW);
         const id="EAT-"+Utilities.getUuid();records.push([id,deliveryId,examId,questionId,userId,file.getId(),name,mime,bytes.length,new Date()]);
         const target=safeAnswers.find(value=>value.preguntaId===questionId);
         if(target){if(!Array.isArray(target.adjuntos))target.adjuntos=[];target.adjuntos.push({adjuntoId:id,nombre:name,mimeType:mime,tamanoBytes:bytes.length});}
