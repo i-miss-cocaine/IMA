@@ -109,7 +109,7 @@ function runtime(options = {}) {
     }
   };
   const names = ["buildGradebookContextKey_", "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getGradebookData", "getGradebookDataUnlocked_"];
-  vm.runInNewContext('const GRADEBOOK_WEIGHT_HEADERS_ = ["ID","InstitutionID","AnoID","PeriodoID","Grado","Seccion","Asignatura","CategoriaID","Nombre","PorcentajePonderacion","EscalaMaxima","Estado","RegisteredBy","CreatedAt","UpdatedAt","ContextKey"];\n' + ["buildGradebookContextKey_", "buildGradebookWeightContextKey_", "getGradebookWeightConfigurationFromSheet_", "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getGradebookData", "getGradebookDataUnlocked_"].map(name => extractFunction(name)).join("\n") + "\nthis.getGradebookData = getGradebookData;", context);
+  vm.runInNewContext('const GRADEBOOK_WEIGHT_HEADERS_ = ["ID","InstitutionID","AnoID","PeriodoID","Grado","Seccion","Asignatura","CategoriaID","Nombre","PorcentajePonderacion","EscalaMaxima","Estado","RegisteredBy","CreatedAt","UpdatedAt","ContextKey"];\n' + ["buildGradebookContextKey_", "buildGradebookWeightContextKey_", "getGradebookWeightConfigurationFromSheet_", "calculateGradebookStudentSummary_", "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getGradebookData", "getGradebookDataUnlocked_"].map(name => extractFunction(name)).join("\n") + "\nthis.getGradebookData = getGradebookData;", context);
   return { context, sheets, stats: () => ({ acquires, releases, held }) };
 }
 
@@ -126,6 +126,24 @@ assert.equal(teacherResult.data.calificaciones[0].contextKey,
   JSON.stringify(["inst-1","2026","i parcial","10","a","matematicas","ev-1","stu-1"]),
   "returned grade carries its stable institutional context key");
 assert.equal(teacherResult.data.contexto.anoId, "2026");
+const completeSummary = teacher.context.calculateGradebookStudentSummary_("STU-1", [
+  { userId:"STU-1", evaluacionId:"CAT-1", notaObtenida:80, esBorrador:false, esPublicada:true },
+  { userId:"STU-1", evaluacionId:"CAT-2", notaObtenida:100, esBorrador:false, esPublicada:true },
+  { userId:"STU-1", evaluacionId:"CAT-3", notaObtenida:80, esBorrador:false, esPublicada:true },
+  { userId:"STU-1", evaluacionId:"CAT-4", notaObtenida:0, esBorrador:false, esPublicada:true }
+], teacherResult.data.categories);
+assert.equal(completeSummary.notaFinal, 82, "the server calculates using contextual configured weights and preserves a zero score");
+const pendingSummary = teacher.context.calculateGradebookStudentSummary_("STU-1", [
+  { userId:"STU-1", evaluacionId:"CAT-1", notaObtenida:80, esBorrador:false, esPublicada:true }
+], teacherResult.data.categories);
+assert.equal(pendingSummary.status, "provisional");
+assert.equal(pendingSummary.notaFinal, null, "a missing category cannot be treated as zero or a final grade");
+assert.equal(pendingSummary.ponderacionPendiente, 65);
+assert.throws(() => teacher.context.calculateGradebookStudentSummary_("STU-1", [
+  { userId:"STU-1", evaluacionId:"CAT-1", notaObtenida:80, esBorrador:false, esPublicada:true },
+  { userId:"STU-1", evaluacionId:"CAT-1", notaObtenida:80, esBorrador:false, esPublicada:true }
+], teacherResult.data.categories), /GRADEBOOK_RECORD_AMBIGUOUS/);
+
 assert.deepEqual(Array.from(teacherResult.data.recuperaciones, row => row.recuperacionId), ["REC-1"],
   "recovery rows are restricted to the authorized student roster");
 assert.equal(teacherResult.data.estadoPeriodo, "Cerrado");
