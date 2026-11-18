@@ -38,7 +38,7 @@ const answer=[{preguntaId:"Q1",respuestaEstudiante:"",adjuntos:[{name:"../eviden
 const state=context.persist(ss,questions,answer,"DEL1","EX1","STU1");
 assert.equal(state.rowCount,1);
 assert.equal(sheet.rows.length,2);
-assert.equal(state.respuestas[0].adjuntos[0].nombre,"_evidencia.pdf");
+assert.equal(state.respuestas[0].adjuntos[0].nombre,"__evidencia.pdf");
 assert.equal(state.respuestas[0].adjuntos[0].fileId,undefined);
 const read=context.read(ss,["DEL1","EX1","STU1"],"EX1","Q1");
 assert.equal(read.length,1);
