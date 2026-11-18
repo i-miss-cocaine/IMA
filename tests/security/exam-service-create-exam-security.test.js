@@ -79,7 +79,7 @@ function fixture(options = {}) {
     Utilities: { getUuid() { uuid++; return "UUID-" + uuid; } },
     Date
   };
-  vm.runInNewContext(["normalizeString","parseExamQuestionJsonField_","normalizeExamQuestionDefinition_","ensureExamQuestionBankSchema_","ensureExamQuestionsSchema_","withAuthorizedExamCreation_","createExamUnlocked_","createExam"].map(extract).join("\n"), runtime);
+  vm.runInNewContext(["normalizeString","parseExamQuestionJsonField_","normalizeExamQuestionDefinition_","ensureExamQuestionBankSchema_","ensureExamQuestionsSchema_","withAuthorizedExamCreation_","createExamUnlocked_","createExam"].map(extract).join(";" + String.fromCharCode(10)), runtime);
   const reentryErrors = [];
   const attemptReentry = () => {
     try {
