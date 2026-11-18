@@ -52,11 +52,14 @@ function makeSheet(rows, options = {}) {
 function fixture(options = {}) {
   const stats = { permissionCalls: 0, action: "", acquired: 0, released: 0, opened: 0, held: false, events: [] };
   const hooks = {};
+  const questionHeaders = options.legacyQuestionSchema
+    ? ["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta","Puntos","AreaCurricular","Dificultad","BancoPreguntaID"]
+    : ["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta","Puntos","AreaCurricular","Dificultad","BancoPreguntaID","Etiquetas","ObjetivosJSON","CriteriosJSON","BancoPreguntaVersion"];
   const sheets = {
     Examenes: makeSheet([["ID","Titulo","Asignatura","Grado","Seccion","FechaLimite","Tiempo","Estado","ProfesorID","Parcial"]], {
       failAppend: options.failExamAppend, onAppend: () => hooks.examAppend && hooks.examAppend()
     }),
-    PreguntasExamen: makeSheet([["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta","Puntos","AreaCurricular","Dificultad","BancoPreguntaID"]], {
+    PreguntasExamen: makeSheet([questionHeaders], {
       failWrite: options.failQuestionWrite, onWrite: () => hooks.questionWrite && hooks.questionWrite()
     }),
     ResourceOwnership: makeSheet([OH], {
@@ -119,6 +122,13 @@ test(() => {
   assert.equal(x.sheets.PreguntasExamen.rows[1][12], JSON.stringify(["CR-1"]));
   assert.equal(x.sheets.ResourceOwnership.rows[1][3], result.examenId);
   assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
+});
+test(() => {
+  const x=fixture({legacyQuestionSchema:true});
+  const result=x.call();
+  assert.equal(result.status,"success");
+  assert.deepEqual(x.sheets.PreguntasExamen.rows[0].slice(10),["Etiquetas","ObjetivosJSON","CriteriosJSON","BancoPreguntaVersion"]);
+  assert.equal(x.sheets.PreguntasExamen.rows[1].length,14);
 });
 test(() => { const x=fixture({permissionDenied:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); assert.equal(x.stats.acquired,0); });
 test(() => { const x=fixture({invalidIdentity:true}); assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/); assert.equal(x.stats.opened,0); });
