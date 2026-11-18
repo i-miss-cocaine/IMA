@@ -1705,6 +1705,107 @@ function getExamGradeDistributionAnalytics(payload) {
   return withAuthorizedExamRead_("getExamGradeDistributionAnalytics", payload,
     context => getExamGradeDistributionAnalyticsUnlocked_(payload, context));
 }
+function calculateExamPsychometricAnalytics_(deliveryRows, questionRows, examId, examRow, userRows) {
+  const idCounts = Object.create(null);
+  (deliveryRows || []).forEach(row => { const id = String(row[0] || "").trim(); if (id) idCounts[id] = (idCounts[id] || 0) + 1; });
+  const users = Object.create(null);
+  (userRows || []).slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id && !users[id]) users[id] = { grade: String(row[2] || "").trim(), section: String(row[3] || "").trim() };
+  });
+  const itemStats = new Map(), byTopic = new Map(), bySubject = new Map(), byGroup = new Map();
+  const analyzed = [], skipped = { malformed: 0, duplicate: 0, legacySnapshot: 0 };
+  let manualCount = 0;
+  const aggregate = (map, key, ratio) => {
+    const label = String(key || "Sin clasificar");
+    const current = map.get(label) || { categoria: label, respuestas: 0, suma: 0 };
+    current.respuestas++; current.suma += ratio; map.set(label, current);
+  };
+  (deliveryRows || []).forEach(delivery => {
+    const deliveryId = String(delivery[0] || "").trim();
+    if (!deliveryId || String(delivery[1] || "").trim() !== examId) return;
+    if (idCounts[deliveryId] !== 1) { skipped.duplicate++; return; }
+    let answers;
+    try { answers = JSON.parse(delivery[4] || "[]"); } catch (_) { skipped.malformed++; return; }
+    if (!Array.isArray(answers)) { skipped.malformed++; return; }
+    let snapshotQuestions;
+    if (delivery[10] !== undefined && delivery[10] !== null && String(delivery[10]).trim() !== "") {
+      try { snapshotQuestions = JSON.parse(delivery[10]); } catch (_) { skipped.malformed++; return; }
+      if (!Array.isArray(snapshotQuestions) || snapshotQuestions.some(row => !Array.isArray(row) || String(row[1] || "").trim() !== examId)) {
+        skipped.malformed++; return;
+      }
+    } else {
+      skipped.legacySnapshot++;
+      snapshotQuestions = (questionRows || []).filter(row => String(row[1] || "").trim() === examId);
+    }
+    const studentId = String(delivery[2] || "").trim();
+    const student = users[studentId] || {};
+    const group = [student.grade || String(examRow && examRow[3] || "").trim(),
+      student.section || String(examRow && examRow[4] || "").trim()].filter(Boolean).join(" / ") || "Sin grupo";
+    const itemRatios = Object.create(null);
+    snapshotQuestions.forEach(question => {
+      const questionId = String(question[0] || "").trim();
+      if (!questionId) return;
+      const answer = answers.find(item => String(item && item.preguntaId || "").trim() === questionId);
+      const result = scoreExamQuestionAnswer_(question, answer ? answer.respuestaEstudiante : "");
+      if (result.requiresManualReview) { manualCount++; return; }
+      const ratio = result.maxPoints > 0 ? Math.max(0, Math.min(1, result.awardedPoints / result.maxPoints)) : 0;
+      itemRatios[questionId] = ratio;
+      let stat = itemStats.get(questionId);
+      if (!stat) {
+        stat = { preguntaId: questionId, tema: String(question[16] || "Sin tema"),
+          asignatura: String(question[14] || (examRow && examRow[2]) || "Sin asignatura"),
+          grado: String(question[15] || (examRow && examRow[3]) || ""),
+          dificultad: String(question[8] || ""), attempts: 0, sum: 0, ratios: [] };
+        itemStats.set(questionId, stat);
+      }
+      stat.attempts++; stat.sum += ratio; stat.ratios.push({ deliveryId, ratio });
+      aggregate(byTopic, stat.tema, ratio);
+      aggregate(bySubject, stat.asignatura, ratio);
+      aggregate(byGroup, group, ratio);
+    });
+    const ratios = Object.keys(itemRatios).map(id => itemRatios[id]);
+    if (ratios.length) analyzed.push({ deliveryId, studentId, group,
+      totalRatio: ratios.reduce((sum, value) => sum + value, 0) / ratios.length, itemRatios });
+  });
+  analyzed.sort((a, b) => a.totalRatio - b.totalRatio);
+  const groupSize = analyzed.length > 1 ? Math.max(1, Math.ceil(analyzed.length * 0.27)) : 0;
+  const low = analyzed.slice(0, groupSize), high = groupSize ? analyzed.slice(-groupSize) : [];
+  const porPregunta = Array.from(itemStats.values()).map(stat => {
+    const mean = stat.attempts ? stat.sum / stat.attempts : 0;
+    const meanFor = rows => rows.length ? rows.reduce((sum, row) => sum + (row.itemRatios[stat.preguntaId] || 0), 0) / rows.length : null;
+    const highMean = meanFor(high), lowMean = meanFor(low);
+    return { preguntaId: stat.preguntaId, tema: stat.tema, asignatura: stat.asignatura, grado: stat.grado,
+      dificultadDeclarada: stat.dificultad, intentos: stat.attempts,
+      indiceFacilidad: Number(mean.toFixed(4)), porcentajeAcierto: Number((mean * 100).toFixed(2)),
+      indiceDiscriminacion: highMean === null || lowMean === null ? null : Number((highMean - lowMean).toFixed(4)) };
+  });
+  const toGroups = map => Array.from(map.values()).map(item => ({
+    categoria: item.categoria, respuestas: item.respuestas,
+    indiceFacilidad: Number((item.suma / item.respuestas).toFixed(4)),
+    porcentajeAcierto: Number((item.suma / item.respuestas * 100).toFixed(2))
+  })).sort((a, b) => a.categoria.localeCompare(b.categoria));
+  const objectiveIds = Array.from(itemStats.keys());
+  let fiabilidad = null;
+  if (analyzed.length > 1 && objectiveIds.length > 1) {
+    const variance = values => {
+      const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+      return values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / values.length;
+    };
+    const itemVariances = objectiveIds.map(id => variance(analyzed.map(row => row.itemRatios[id] || 0)));
+    const totalScores = analyzed.map(row => objectiveIds.reduce((sum, id) => sum + (row.itemRatios[id] || 0), 0));
+    const totalVariance = variance(totalScores);
+    if (totalVariance > 0) fiabilidad = Number((objectiveIds.length / (objectiveIds.length - 1) *
+      (1 - itemVariances.reduce((sum, value) => sum + value, 0) / totalVariance)).toFixed(4));
+  }
+  return {
+    totalEntregasAnalizadas: analyzed.length, totalReactivosAnalizados: itemStats.size,
+    reactivosPendientesRevision: manualCount, entregasOmitidas: skipped.malformed + skipped.duplicate,
+    entregasSinSnapshot: skipped.legacySnapshot, alfaCronbach: fiabilidad,
+    porPregunta, porTema: toGroups(byTopic), porAsignatura: toGroups(bySubject), porGrupo: toGroups(byGroup)
+  };
+}
+
 function getExamGradeDistributionAnalyticsUnlocked_(payload, context) {
   const examenId = String(payload && payload.examenId || "").trim();
   if (!examenId) throw new Error("examenId es requerido para generar la analítica de distribución de calificaciones.");
@@ -1718,6 +1819,11 @@ function getExamGradeDistributionAnalyticsUnlocked_(payload, context) {
   const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examenId, "READ_ANALYTICS", payload);
   if (!ownership || ownership.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const deliveryRows = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues().slice(1);
+  const psychometricQuestions = getSheetOrThrow(ss, "PreguntasExamen").getDataRange().getValues().slice(1)
+    .filter(row => String(row[1] || "").trim() === examenId);
+  const usersSheet = ss.getSheetByName("Usuarios");
+  const psychometric = calculateExamPsychometricAnalytics_(deliveryRows, psychometricQuestions, examenId, examRow,
+    usersSheet ? usersSheet.getDataRange().getValues() : []);
   const deliveryIdCounts = Object.create(null);
   deliveryRows.forEach(row => { const id = String(row[0] || "").trim(); if (id) deliveryIdCounts[id] = (deliveryIdCounts[id] || 0) + 1; });
   const evaluados = [];
@@ -1737,6 +1843,7 @@ function getExamGradeDistributionAnalyticsUnlocked_(payload, context) {
     data: { examenId, titulo: examRow[1], asignatura: examRow[2], grado: examRow[3], seccion: examRow[4],
       parcial: examRow[9] || "Primer Parcial", totalEvaluados: 0, totalPendientes: pendientesCount,
       promedio: 0, mediana: 0, minimo: 0, maximo: 0, desviacionEstandar: 0, porcentajeAprobacion: 0,
+      analisisPsicometrico: psychometric,
       intervalos: [
         { rango: "0 - 59", etiqueta: "Insuficiente", cantidad: 0, porcentaje: 0 },
         { rango: "60 - 69", etiqueta: "Suficiente", cantidad: 0, porcentaje: 0 },
@@ -1775,7 +1882,8 @@ function getExamGradeDistributionAnalyticsUnlocked_(payload, context) {
   return { status: "success", sinDatos: false, data: {
     examenId, titulo: examRow[1], asignatura: examRow[2], grado: examRow[3], seccion: examRow[4],
     parcial: examRow[9] || "Primer Parcial", totalEvaluados, totalPendientes: pendientesCount,
-    promedio, mediana, minimo, maximo, desviacionEstandar, porcentajeAprobacion, intervalos, curvaNormal
+    promedio, mediana, minimo, maximo, desviacionEstandar, porcentajeAprobacion, intervalos, curvaNormal,
+    analisisPsicometrico: psychometric
   }};
 }
 // [TAREA-F7-IMP-07] [Fase 7: Planificación Académica, Horarios y Recursos] - Validación de sobrecarga de evaluaciones por sección y conflictos de agenda.

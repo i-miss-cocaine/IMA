@@ -105,14 +105,36 @@ function runtime(options = {}) {
   const names = ["withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getStudentExams", "getStudentExamsUnlocked_",
     "getExamQuestions", "getExamQuestionsUnlocked_", "getAllExams", "getAllExamsUnlocked_",
     "getTeacherExamActivity", "getTeacherExamActivityUnlocked_", "getExamGradeDistributionAnalytics",
-    "getExamGradeDistributionAnalyticsUnlocked_", "checkExamSchedulingConflict", "checkExamSchedulingConflictUnlocked_", "simulateExamReschedule", "simulateExamRescheduleUnlocked_", "getGradingPerformanceAndPersistenceMetrics", "getGradingPerformanceAndPersistenceMetricsUnlocked_"];
+    "getExamGradeDistributionAnalyticsUnlocked_", "scoreExamQuestionAnswer_", "calculateExamPsychometricAnalytics_", "checkExamSchedulingConflict", "checkExamSchedulingConflictUnlocked_", "simulateExamReschedule", "simulateExamRescheduleUnlocked_", "getGradingPerformanceAndPersistenceMetrics", "getGradingPerformanceAndPersistenceMetricsUnlocked_"];
   vm.runInNewContext(names.map(extractFunction).join("\n") +
     "\nthis.getStudentExams=getStudentExams; this.getExamQuestions=getExamQuestions; " +
     "this.getAllExams=getAllExams; this.getTeacherExamActivity=getTeacherExamActivity; " +
-    "this.getExamGradeDistributionAnalytics=getExamGradeDistributionAnalytics; this.checkExamSchedulingConflict=checkExamSchedulingConflict; this.simulateExamReschedule=simulateExamReschedule; " +
+    "this.getExamGradeDistributionAnalytics=getExamGradeDistributionAnalytics; this.calculateExamPsychometricAnalytics_=calculateExamPsychometricAnalytics_; this.checkExamSchedulingConflict=checkExamSchedulingConflict; this.simulateExamReschedule=simulateExamReschedule; " +
     "this.getGradingPerformanceAndPersistenceMetrics=getGradingPerformanceAndPersistenceMetrics;", context);
   return { context, sheets, events, stats: () => ({ acquires, releases, held }) };
 }
+const psychQuestions = [
+  ["Q1","EXM-P","opcion_multiple","Q1",'{"A":"1","B":"2"}',"A",1,"Matemáticas","Media","","[]","[]","[]",1,"Matemáticas","10","Aritmética"],
+  ["Q2","EXM-P","opcion_multiple","Q2",'{"A":"1","B":"2"}',"A",1,"Matemáticas","Media","","[]","[]","[]",1,"Matemáticas","10","Geometría"]
+];
+const psychSnapshot = JSON.stringify(psychQuestions);
+const psychDeliveries = [
+  ["D1","EXM-P","S1",new Date(),'[{"preguntaId":"Q1","respuestaEstudiante":"A"},{"preguntaId":"Q2","respuestaEstudiante":"A"}]',100,"Entregado","","","",psychSnapshot],
+  ["D2","EXM-P","S2",new Date(),'[{"preguntaId":"Q1","respuestaEstudiante":"A"},{"preguntaId":"Q2","respuestaEstudiante":"A"}]',100,"Entregado","","","",psychSnapshot],
+  ["D3","EXM-P","S3",new Date(),'[{"preguntaId":"Q1","respuestaEstudiante":"A"},{"preguntaId":"Q2","respuestaEstudiante":"B"}]',50,"Entregado","","","",psychSnapshot],
+  ["D4","EXM-P","S4",new Date(),'[{"preguntaId":"Q1","respuestaEstudiante":"B"},{"preguntaId":"Q2","respuestaEstudiante":"B"}]',0,"Entregado","","","",psychSnapshot]
+];
+const psych = runtime().context.calculateExamPsychometricAnalytics_(psychDeliveries, psychQuestions, "EXM-P",
+  ["EXM-P","Examen","Matemáticas","10","A"], [["UserID","Nombre","Grado","Seccion"],
+    ["S1","Uno","10","A"],["S2","Dos","10","A"],["S3","Tres","10","A"],["S4","Cuatro","10","A"]]);
+assert.equal(psych.totalEntregasAnalizadas, 4);
+assert.equal(psych.totalReactivosAnalizados, 2);
+assert.equal(psych.porPregunta.find(item=>item.preguntaId==="Q1").indiceFacilidad, 0.75);
+assert.equal(psych.porPregunta.find(item=>item.preguntaId==="Q2").indiceDiscriminacion, 1);
+assert.equal(psych.porTema.length, 2);
+assert.equal(psych.porAsignatura[0].categoria, "Matemáticas");
+assert.equal(psych.porGrupo[0].categoria, "10 / A");
+assert.equal(psych.alfaCronbach, 0.7273);
 const valid = runtime();
 const list = valid.context.getStudentExams({ sessionToken: "student", studentId: "ATTACKER" });
 assert.deepEqual(Array.from(list.data, row => row.examenId), ["EXM-2", "EXM-3"],
