@@ -4522,25 +4522,57 @@ function getAuthorizedPeriodGradebookClosureContext_(payload) {
         String(closureRows[0][index] || "").trim() !== header)) {
       throw new Error("GRADEBOOK_CLOSURE_SCHEMA_INVALID");
     }
-    if (closureRows.slice(1).some(row =>
-        normalizeString(row[1]) === normalizeString(anoId) &&
-        normalizeString(row[2]) === normalizeString(periodoId) &&
-        normalizeString(row[3]) === normalizeString(grado) &&
-        normalizeString(row[4]) === normalizeString(seccion) &&
-        normalizeString(row[5]) === normalizeString(asignatura))) {
-      throw new Error("GRADEBOOK_CLOSURE_ALREADY_EXISTS");
+    const sameContextRows = [];
+    for (let index = 1; index < closureRows.length; index++) {
+      const row = closureRows[index] || [];
+      if (normalizeString(row[1]) === normalizeString(anoId) &&
+          normalizeString(row[2]) === normalizeString(periodoId) &&
+          normalizeString(row[3]) === normalizeString(grado) &&
+          normalizeString(row[4]) === normalizeString(seccion) &&
+          normalizeString(row[5]) === normalizeString(asignatura)) {
+        sameContextRows.push({ row, rowIndex: index + 1 });
+      }
+    }
+    const latestClosure = sameContextRows.length ? sameContextRows[sameContextRows.length - 1] : null;
+    if (latestClosure) {
+      const state = String(latestClosure.row[7] || "").trim();
+      if (state === "Cerrado") throw new Error("GRADEBOOK_CLOSURE_ALREADY_EXISTS");
+      if (["PendienteRevision", "Observado"].indexOf(state) !== -1) {
+        throw new Error("GRADEBOOK_CLOSURE_REVIEW_NOT_APPROVED");
+      }
+      if (["Aprobado", "Publicado", "Reabierto"].indexOf(state) === -1) {
+        throw new Error("GRADEBOOK_CLOSURE_STATE_INVALID");
+      }
     }
   }
-  return { ss, closureSheet, closureHeaders, actor, anoId, periodoId, grado, seccion, asignatura };
+  return {
+    ss, closureSheet, closureHeaders, actor, anoId, periodoId, grado, seccion, asignatura,
+    existingClosureRow: latestClosure ? latestClosure.rowIndex : 0,
+    existingClosureId: latestClosure ? String(latestClosure.row[0] || "").trim() : ""
+  };
 }
 
 function closePeriodGradebookUnlocked_(c) {
-  const sheet=c.closureSheet||getOrCreateSheet(c.ss,"CierresPeriodos");
-  if(!c.closureSheet||sheet.getLastRow()===0)sheet.appendRow(c.closureHeaders);
-  const id="CIERRE-"+Utilities.getUuid();
-  if(sheet.getDataRange().getValues().slice(1).some(r=>String(r[0]||"").trim()===id))throw new Error("GRADEBOOK_CLOSURE_ID_COLLISION");
-  sheet.appendRow([id,c.anoId,c.periodoId,c.grado,c.seccion,c.asignatura,String(c.actor.userId).trim(),"Cerrado",new Date()]);
-  return {status:"success",cierreId:id,message:"Período cerrado. Todas las categorías configuradas para el contexto ya estaban publicadas."};
+  const sheet = c.closureSheet || getOrCreateSheet(c.ss, "CierresPeriodos");
+  if (!c.closureSheet || sheet.getLastRow() === 0) sheet.appendRow(c.closureHeaders);
+  const now = new Date();
+  if (c.existingClosureRow) {
+    sheet.getRange(c.existingClosureRow, 8, 1, 2).setValues([["Cerrado", now]]);
+    return {
+      status: "success", cierreId: c.existingClosureId,
+      message: "La revisión aprobada del período se cerró correctamente."
+    };
+  }
+  const id = "CIERRE-" + Utilities.getUuid();
+  if (sheet.getDataRange().getValues().slice(1).some(row => String(row[0] || "").trim() === id)) {
+    throw new Error("GRADEBOOK_CLOSURE_ID_COLLISION");
+  }
+  sheet.appendRow([id, c.anoId, c.periodoId, c.grado, c.seccion, c.asignatura,
+    String(c.actor.userId).trim(), "Cerrado", now]);
+  return {
+    status: "success", cierreId: id,
+    message: "Período cerrado. Todas las categorías configuradas para el contexto ya estaban publicadas."
+  };
 }
 
 function submitGradebookForReview(payload) {
