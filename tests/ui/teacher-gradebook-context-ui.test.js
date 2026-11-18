@@ -27,8 +27,8 @@ assert.match(js, /fetchApi\('EXAM',\s*'saveGradebookWeightConfiguration'/,
   "gradebook must save institution/context-specific weights");
 assert.match(js, /fetchApi\('EXAM',\s*'saveStudentRecovery'/,
   "recovery must use the contextual gradebook mutation");
-assert.match(js, /periodoId:\s*document\.getElementById\('gb-filter-parcial'\)/,
-  "recovery must carry the selected academic period");
+assert.match(js, /periodoId:\s*period/,
+  "recovery must carry the period from the loaded academic context");
 assert.match(js, /let gradebookRequestVersion = 0/, "gradebook reads must have a monotonic request sequence");
 assert.match(js, /if \(requestVersion !== gradebookRequestVersion\) return/,
   "late responses must not overwrite a newer academic context");
