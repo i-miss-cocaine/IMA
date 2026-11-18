@@ -5531,86 +5531,76 @@ function toBase64(file) {
         const tbody = document.getElementById('gb-table-body');
         const bannerText = document.getElementById('gb-status-text');
         const bannerBadge = document.getElementById('gb-status-badge');
+        const saveButton = document.getElementById('btn-gb-save-all');
         if (!tbody) return;
 
-        const { alumnos, calificaciones, recuperaciones, categories, estadoPeriodo } = currentGradebookData;
+        const { alumnos = [], calificaciones = [], categories = [], resumenes = {}, estadoPeriodo } = currentGradebookData || {};
+        const configured = Array.isArray(categories) && categories.length > 0;
+        const isClosed = estadoPeriodo === 'Cerrado';
+        const escapeHtml = value => String(value == null ? '' : value).replace(/[&<>"']/g, char =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 
         if (bannerText && bannerBadge) {
-            if (estadoPeriodo === 'Cerrado') {
-                bannerText.textContent = "Estado del Parcial: CERRADO Y PUBLICADO OFICIALMENTE";
-                bannerBadge.textContent = "Publicado";
-                bannerBadge.className = "px-2.5 py-0.5 rounded-full text-[10px] bg-emerald-200 text-emerald-900 uppercase font-bold";
-            } else {
-                bannerText.textContent = "Estado del Parcial: Abierto (Permite registro y edición de notas)";
-                bannerBadge.textContent = "Abierto";
-                bannerBadge.className = "px-2.5 py-0.5 rounded-full text-[10px] bg-blue-200 text-blue-800 uppercase font-bold";
-            }
+            bannerText.textContent = isClosed
+                ? "Estado del Parcial: CERRADO"
+                : "Estado del Parcial: Abierto";
+            bannerBadge.textContent = isClosed ? "Cerrado" : "Abierto";
+            bannerBadge.className = isClosed
+                ? "px-2.5 py-0.5 rounded-full text-[10px] bg-amber-200 text-amber-900 uppercase font-bold"
+                : "px-2.5 py-0.5 rounded-full text-[10px] bg-blue-200 text-blue-800 uppercase font-bold";
         }
 
-        if (!alumnos || alumnos.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-gray-400 italic">No hay estudiantes inscritos en el grupo seleccionado.</td></tr>';
+        const table = tbody.closest('table');
+        const thead = table && table.querySelector('thead');
+        if (thead) {
+            thead.innerHTML = `<tr>
+                <th class="p-3 text-left">Estudiante</th>
+                ${configured ? categories.map(category => `<th class="p-2 text-center">${escapeHtml(category.nombre)}<div class="text-[10px] font-normal">${Number(category.porcentajePonderacion)}%</div></th>`).join('') : ''}
+                <th class="p-3 text-center">Nota calculada</th>
+                <th class="p-3 text-center">Estado</th>
+            </tr>`;
+        }
+
+        if (!alumnos.length) {
+            tbody.innerHTML = `<tr><td colspan="${Math.max(3, categories.length + 3)}" class="p-6 text-center text-gray-400 italic">No hay estudiantes inscritos en el grupo seleccionado.</td></tr>`;
+            if (saveButton) saveButton.disabled = true;
+            return;
+        }
+        if (!configured) {
+            tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-amber-700 bg-amber-50">No hay ponderaciones configuradas para este año, período, grado, sección y asignatura. Configure los porcentajes antes de registrar notas.</td></tr>`;
+            if (saveButton) saveButton.disabled = true;
             return;
         }
 
-        tbody.innerHTML = alumnos.map((al, idx) => {
-            const studentCalifs = (calificaciones || []).filter(c => String(c.userId).trim() === String(al.userId).trim());
-            const studentRecs = (recuperaciones || []).filter(r => String(r.userId).trim() === String(al.userId).trim());
-
-            // Ponderaciones predeterminadas (35% tareas, 40% exámenes, 15% proyectos, 10% participación)
-            const cTareas = studentCalifs.find(c => c.evaluacionId === 'CAT-1')?.notaObtenida || 0;
-            const cExamenes = studentCalifs.find(c => c.evaluacionId === 'CAT-2')?.notaObtenida || 0;
-            const cProyectos = studentCalifs.find(c => c.evaluacionId === 'CAT-3')?.notaObtenida || 0;
-            const cPartic = studentCalifs.find(c => c.evaluacionId === 'CAT-4')?.notaObtenida || 0;
-
-            let scoreRaw = (cTareas * 0.35) + (cExamenes * 0.40) + (cProyectos * 0.15) + (cPartic * 0.10);
-
-            // Si tiene recuperación registrada, sustituir/ajustar
-            let recBadge = '-';
-            if (studentRecs.length > 0) {
-                const latestRec = studentRecs[studentRecs.length - 1];
-                scoreRaw = Math.max(scoreRaw, latestRec.notaFinalCalculada);
-                recBadge = `<span class="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded font-bold text-[10px]" title="Original: ${latestRec.notaOriginal}">+${latestRec.notaFinalCalculada} (${latestRec.metodoAplicado})</span>`;
-            }
-
-            const finalScore = parseFloat(scoreRaw.toFixed(1));
-            const isApproved = finalScore >= 70;
-
-            return `
-                <tr class="hover:bg-gray-50/80 transition-colors">
-                    <td class="p-3 font-semibold text-gray-800">
-                        <div>${al.nombreCompleto}</div>
-                        <div class="text-[9px] text-gray-400 font-mono">${al.userId}</div>
-                    </td>
-                    <td class="p-2 text-center">
-                        <input type="number" min="0" max="100" class="w-16 text-center text-xs p-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 gb-score-input" data-userid="${al.userId}" data-cat="CAT-1" value="${cTareas}">
-                    </td>
-                    <td class="p-2 text-center">
-                        <input type="number" min="0" max="100" class="w-16 text-center text-xs p-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 gb-score-input" data-userid="${al.userId}" data-cat="CAT-2" value="${cExamenes}">
-                    </td>
-                    <td class="p-2 text-center">
-                        <input type="number" min="0" max="100" class="w-16 text-center text-xs p-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 gb-score-input" data-userid="${al.userId}" data-cat="CAT-3" value="${cProyectos}">
-                    </td>
-                    <td class="p-2 text-center">
-                        <input type="number" min="0" max="100" class="w-16 text-center text-xs p-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 gb-score-input" data-userid="${al.userId}" data-cat="CAT-4" value="${cPartic}">
-                    </td>
-                    <td class="p-3 text-center font-bold text-sm bg-purple-50/50 ${isApproved ? 'text-purple-700' : 'text-red-600'}">
-                        ${finalScore}%
-                    </td>
-                    <td class="p-3 text-center bg-indigo-50/30">
-                        ${recBadge}
-                    </td>
-                    <td class="p-3 text-center">
-                        <span class="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${isApproved ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
-                            ${isApproved ? 'Aprobado' : 'Reprobado'}
-                        </span>
-                    </td>
-                    <td class="p-3 text-center">
-                        <button onclick="window.quickRecoveryPrompt('${al.userId}', '${al.nombreCompleto}', ${finalScore})" class="px-2 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded text-[9px] font-bold uppercase transition-colors">
-                            Recuperación
-                        </button>
-                    </td>
-                </tr>
-            `;
+        if (saveButton) saveButton.disabled = isClosed;
+        tbody.innerHTML = alumnos.map(al => {
+            const studentId = String(al.userId || '').trim();
+            const studentCalifs = calificaciones.filter(item => String(item.userId || '').trim() === studentId);
+            const summary = resumenes[studentId] || { status: 'pending', notaFinal: null, ponderacionPendiente: 100 };
+            const cells = categories.map(category => {
+                const grade = studentCalifs.find(item => String(item.evaluacionId || '').trim() === String(category.categoriaId));
+                const value = grade && grade.notaObtenida !== null && grade.notaObtenida !== undefined
+                    ? String(grade.notaObtenida) : '';
+                return `<td class="p-2 text-center">
+                    <input type="number" min="0" max="100" step="0.01" ${isClosed ? 'disabled' : ''}
+                        class="w-20 text-center text-xs p-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-400 gb-score-input"
+                        data-userid="${escapeHtml(studentId)}" data-cat="${escapeHtml(category.categoriaId)}"
+                        value="${escapeHtml(value)}" placeholder="Pendiente" aria-label="${escapeHtml(category.nombre)} para ${escapeHtml(al.nombreCompleto)}">
+                </td>`;
+            }).join('');
+            const hasFinal = summary.status === 'calculated' && Number.isFinite(Number(summary.notaFinal));
+            const finalLabel = hasFinal ? Number(summary.notaFinal).toFixed(2) + '%' : '—';
+            const statusLabel = hasFinal ? 'Calculada' : (summary.status === 'not_configured' ? 'Sin ponderación' : 'Provisional');
+            const statusClass = hasFinal ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800';
+            return `<tr class="hover:bg-gray-50/80 transition-colors">
+                <td class="p-3 font-semibold text-gray-800">
+                    <div>${escapeHtml(al.nombreCompleto)}</div>
+                    <div class="text-[9px] text-gray-400 font-mono">${escapeHtml(studentId)}</div>
+                </td>
+                ${cells}
+                <td class="p-3 text-center font-bold text-sm">${finalLabel}</td>
+                <td class="p-3 text-center"><span class="px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${statusClass}">${statusLabel}</span></td>
+            </tr>`;
         }).join('');
     }
 
@@ -5651,7 +5641,12 @@ function toBase64(file) {
         inputs.forEach(inp => {
             const userId = inp.dataset.userid;
             const catId = inp.dataset.cat;
-            const score = parseFloat(inp.value) || 0;
+            const rawScore = String(inp.value || "").trim();
+            if (!rawScore) return; // Una celda vacía permanece pendiente; nunca se convierte en cero.
+            const score = Number(rawScore);
+            if (!Number.isFinite(score) || score < 0 || score > 100) {
+                throw new Error("La nota debe ser un número entre 0 y 100.");
+            }
             califsToSave.push({
                 evaluacionId: catId,
                 userId: userId,
@@ -5660,6 +5655,10 @@ function toBase64(file) {
                 observaciones: "Actualizado desde Libro de Calificaciones"
             });
         });
+        if (!califsToSave.length) {
+            alert("No hay notas capturadas para guardar. Las celdas vacías se mantienen pendientes.");
+            return;
+        }
 
         const btn = document.getElementById('btn-gb-save-all');
         btn.disabled = true;
@@ -5728,8 +5727,53 @@ function toBase64(file) {
         }
     });
 
-    document.getElementById('btn-gb-config-weights')?.addEventListener('click', () => {
-        alert("Distribución porcentual institucional del New Generation:\n\n- Tareas y Trabajos (CAT-1): 35%\n- Exámenes y Pruebas (CAT-2): 40%\n- Proyectos e Investigaciones (CAT-3): 15%\n- Prácticas y Participación (CAT-4): 10%\n\nSuma total: 100%");
+    document.getElementById('btn-gb-config-weights')?.addEventListener('click', async () => {
+        const context = {
+            anoId: String(window.GLOBAL_SCOPE?.AnoLectivo || window.GLOBAL_SCOPE?.anoLectivo || new Date().getFullYear()),
+            profesorId: currentUser.userId,
+            grado: document.getElementById('gb-filter-grado')?.value || "",
+            seccion: document.getElementById('gb-filter-seccion')?.value || "",
+            asignatura: document.getElementById('gb-filter-asignatura')?.value || "",
+            parcial: document.getElementById('gb-filter-parcial')?.value || ""
+        };
+        const definitions = currentGradebookData?.categories?.length
+            ? currentGradebookData.categories.map(item => ({ categoriaId: item.categoriaId, nombre: item.nombre, escalaMaxima: item.escalaMaxima || item.escalaId || 100 }))
+            : [
+                { categoriaId: "CAT-1", nombre: "Tareas y trabajos", escalaMaxima: 100 },
+                { categoriaId: "CAT-2", nombre: "Exámenes y pruebas", escalaMaxima: 100 },
+                { categoriaId: "CAT-3", nombre: "Proyectos e investigaciones", escalaMaxima: 100 },
+                { categoriaId: "CAT-4", nombre: "Prácticas y participación", escalaMaxima: 100 }
+            ];
+        const current = currentGradebookData?.categories?.length
+            ? currentGradebookData.categories.map(item => item.porcentajePonderacion).join(",")
+            : "";
+        const raw = prompt("Indique los porcentajes en este orden:\n" +
+            definitions.map((item, index) => (index + 1) + ". " + item.nombre).join("\n") +
+            "\nLa suma debe ser exactamente 100. Use comas para separar.", current);
+        if (raw === null) return;
+        const weights = raw.split(",").map(value => Number(String(value).trim()));
+        if (weights.length !== definitions.length || weights.some(value => !Number.isFinite(value) || value < 0 || value > 100) ||
+            Math.abs(weights.reduce((sum, value) => sum + value, 0) - 100) > 0.01) {
+            alert("Configuración inválida: ingrese un porcentaje válido por categoría y asegure que sumen 100.");
+            return;
+        }
+        try {
+            const res = await fetchApi('EXAM', 'saveGradebookWeightConfiguration', {
+                ...context,
+                categorias: definitions.map((item, index) => ({
+                    categoriaId: item.categoriaId, nombre: item.nombre,
+                    porcentajePonderacion: weights[index], escalaMaxima: item.escalaMaxima
+                }))
+            });
+            if (res.status === 'success') {
+                alert("Ponderaciones guardadas para el contexto académico seleccionado.");
+                await fetchGradebookData();
+            } else {
+                alert("No se pudieron guardar las ponderaciones: " + (res.message || "Error de validación."));
+            }
+        } catch (error) {
+            alert("Error al guardar ponderaciones: " + error.message);
+        }
     });
 
     document.getElementById('btn-gb-register-recovery')?.addEventListener('click', () => {
