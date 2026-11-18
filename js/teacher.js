@@ -5457,6 +5457,21 @@ function toBase64(file) {
 
     // --- LÓGICA DEL LIBRO OFICIAL DE CALIFICACIONES (FASE 9) ---
     let currentGradebookData = { alumnos: [], calificaciones: [], recuperaciones: [], categories: [], estadoPeriodo: "Abierto" };
+    let gradebookRequestVersion = 0;
+
+    function getGradebookContextPayload() {
+        const context = currentGradebookData?.contexto || {};
+        const selected = id => document.getElementById(id)?.value || "";
+        const period = context.periodoId || selected('gb-filter-parcial');
+        return {
+            anoId: String(context.anoId || window.GLOBAL_SCOPE?.AnoLectivo || window.GLOBAL_SCOPE?.anoLectivo || new Date().getFullYear()),
+            grado: context.grado || selected('gb-filter-grado'),
+            seccion: context.seccion || selected('gb-filter-seccion'),
+            asignatura: context.asignatura || selected('gb-filter-asignatura'),
+            parcial: period,
+            periodoId: period
+        };
+    }
 
     async function initGradebookModule() {
         const selGrado = document.getElementById('gb-filter-grado');
@@ -5517,6 +5532,11 @@ function toBase64(file) {
         const selParcial = document.getElementById('gb-filter-parcial');
 
         if (!tbody) return;
+        const requestVersion = ++gradebookRequestVersion;
+        ['btn-gb-save-all', 'btn-gb-config-weights', 'btn-gb-register-recovery', 'btn-gb-close-period'].forEach(id => {
+            const button = document.getElementById(id);
+            if (button) button.disabled = true;
+        });
 
         tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-gray-400 italic"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando calificaciones del período...</td></tr>';
 
@@ -5531,13 +5551,17 @@ function toBase64(file) {
 
         try {
             const res = await fetchApi('EXAM', 'getGradebookData', payload);
+            if (requestVersion !== gradebookRequestVersion) return;
             if (res.status === 'success' && res.data) {
                 currentGradebookData = res.data;
                 renderGradebookTable();
             } else {
+                currentGradebookData = { alumnos: [], calificaciones: [], recuperaciones: [], categories: [], estadoPeriodo: 'Abierto' };
                 tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-500">${res.message || 'Error al obtener libro de calificaciones'}</td></tr>`;
             }
         } catch (e) {
+            if (requestVersion !== gradebookRequestVersion) return;
+            currentGradebookData = { alumnos: [], calificaciones: [], recuperaciones: [], categories: [], estadoPeriodo: 'Abierto' };
             tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-500">Error de conexión: ${e.message}</td></tr>`;
         }
     }
@@ -5547,6 +5571,9 @@ function toBase64(file) {
         const bannerText = document.getElementById('gb-status-text');
         const bannerBadge = document.getElementById('gb-status-badge');
         const saveButton = document.getElementById('btn-gb-save-all');
+        const configButton = document.getElementById('btn-gb-config-weights');
+        const recoveryButton = document.getElementById('btn-gb-register-recovery');
+        const closeButton = document.getElementById('btn-gb-close-period');
         if (!tbody) return;
 
         const { alumnos = [], calificaciones = [], categories = [], resumenes = {}, estadoPeriodo } = currentGradebookData || {};
@@ -5579,6 +5606,8 @@ function toBase64(file) {
         if (!alumnos.length) {
             tbody.innerHTML = `<tr><td colspan="${Math.max(3, categories.length + 3)}" class="p-6 text-center text-gray-400 italic">No hay estudiantes inscritos en el grupo seleccionado.</td></tr>`;
             if (saveButton) saveButton.disabled = true;
+            if (recoveryButton) recoveryButton.disabled = true;
+            if (closeButton) closeButton.disabled = true;
             return;
         }
         if (!configured) {
@@ -5587,7 +5616,10 @@ function toBase64(file) {
             return;
         }
 
-        if (saveButton) saveButton.disabled = isClosed;
+        if (saveButton) saveButton.disabled = isClosed || !configured || !alumnos.length;
+        if (configButton) configButton.disabled = isClosed;
+        if (recoveryButton) recoveryButton.disabled = isClosed || !configured;
+        if (closeButton) closeButton.disabled = isClosed || !configured;
         tbody.innerHTML = alumnos.map(al => {
             const studentId = String(al.userId || '').trim();
             const studentCalifs = calificaciones.filter(item => String(item.userId || '').trim() === studentId);
@@ -5654,11 +5686,7 @@ function toBase64(file) {
                 userId: userId,
                 notaRecuperada: recovered,
                 metodoAplicado: selectedMethod,
-                anoId: String(window.GLOBAL_SCOPE?.AnoLectivo || window.GLOBAL_SCOPE?.anoLectivo || new Date().getFullYear()),
-                periodoId: document.getElementById('gb-filter-parcial')?.value || "",
-                grado: document.getElementById('gb-filter-grado')?.value || "",
-                seccion: document.getElementById('gb-filter-seccion')?.value || "",
-                asignatura: document.getElementById('gb-filter-asignatura')?.value || "",
+                ...getGradebookContextPayload(),
                 profesorId: currentUser.userId
             });
             if (res.status === 'success') {
@@ -5705,14 +5733,11 @@ function toBase64(file) {
         try {
             const res = await fetchApi('EXAM', 'saveGradebookGrades', {
                 calificaciones: califsToSave,
-                anoId: String(window.GLOBAL_SCOPE?.AnoLectivo || window.GLOBAL_SCOPE?.anoLectivo || new Date().getFullYear()),
+                ...getGradebookContextPayload(),
                 esBorrador: false,
                 esPublicada: true,
                 profesorId: currentUser.userId,
-                grado: document.getElementById('gb-filter-grado')?.value,
-                seccion: document.getElementById('gb-filter-seccion')?.value,
-                asignatura: document.getElementById('gb-filter-asignatura')?.value,
-                parcial: document.getElementById('gb-filter-parcial')?.value
+                ...getGradebookContextPayload()
             });
 
             if (res.status === 'success') {
@@ -5746,8 +5771,8 @@ function toBase64(file) {
 
         try {
             const res = await fetchApi('EXAM', 'closePeriodGradebook', {
-                anoId: String(window.GLOBAL_SCOPE?.AnoLectivo || window.GLOBAL_SCOPE?.anoLectivo || new Date().getFullYear()),
-                periodoId: selParcial,
+                ...getGradebookContextPayload(),
+                periodoId: getGradebookContextPayload().periodoId,
                 grado: selGrado,
                 seccion: selSeccion,
                 asignatura: selAsignatura,
@@ -5767,12 +5792,8 @@ function toBase64(file) {
 
     document.getElementById('btn-gb-config-weights')?.addEventListener('click', async () => {
         const context = {
-            anoId: String(window.GLOBAL_SCOPE?.AnoLectivo || window.GLOBAL_SCOPE?.anoLectivo || new Date().getFullYear()),
-            profesorId: currentUser.userId,
-            grado: document.getElementById('gb-filter-grado')?.value || "",
-            seccion: document.getElementById('gb-filter-seccion')?.value || "",
-            asignatura: document.getElementById('gb-filter-asignatura')?.value || "",
-            parcial: document.getElementById('gb-filter-parcial')?.value || ""
+            ...getGradebookContextPayload(),
+            profesorId: currentUser.userId
         };
         const definitions = currentGradebookData?.categories?.length
             ? currentGradebookData.categories.map(item => ({ categoriaId: item.categoriaId, nombre: item.nombre, escalaMaxima: item.escalaMaxima || item.escalaId || 100 }))
