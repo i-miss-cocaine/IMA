@@ -999,7 +999,7 @@ Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas exist
 ---
 
 <!-- ID: AUD-NG-166 | Fuentes: Pendientes.md -->
-### [ ] [AUD-NG-166] Completar el modelo verificable de reactivos y la integridad del motor de exámenes
+### [x] [AUD-NG-166] Completar el modelo verificable de reactivos y la integridad del motor de exámenes
 - **Origen:** Auditoría de completadas.md / TAREA-11.
 - **Severidad:** Alto (P1).
 - **Archivos:** backend/exam-service/Code.gs; js/exam.js; js/quizpro.js; exam.html; results.html.
@@ -1009,12 +1009,13 @@ Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas exist
 - **Estado:** [~] En progreso
 - **Avance (2026-11-18):** normalización y persistencia de metadatos de reactivos; snapshot inmutable por entrega; analítica psicométrica por pregunta/tema/asignatura/grupo; autoría y respuesta de las nueve modalidades. Se implementó el circuito de adjuntos: carga desde la interfaz estudiantil, validación de MIME y límite de 5 MiB por archivo, almacenamiento privado en Drive, relación por entrega/examen/pregunta/estudiante, lectura mediante el endpoint de resultados autorizado y compensación de archivos/metadatos ante fallos de escritura. Se mantiene la revisión manual de reactivos adjuntos. GitHub Actions Exam-Service 44293396510 SUCCESS: sintaxis de las tres interfaces, nueve esquemas, nuevo contrato de adjuntos y regresiones de mutación/lectura/ownership/single-auth.
 - **Revisión adicional (2026-11-18):** la referencia oficial de Apps Script confirmó que Permission.NONE solo se admite con Access.ANYONE; se sustituyó por Access.PRIVATE + Permission.VIEW y se añadió una aserción al contrato para impedir la combinación inválida. Exam-Service Actions 44293858585 SUCCESS en el HEAD cb71ca436b5135576b991a9544b94c2eae35635f.
-- **Pendiente para cierre:** prueba manual en navegador de creación/carga/entrega/descarga, validación beta con Apps Script/Sheets/Drive reales y recorrido funcional integral de las nueve modalidades. No se declara verificada la privacidad efectiva en despliegue ni completada AUD-NG-166.
+- **Cierre de implementación (2026-11-18):** Completada en código conforme a NDASC 1.5. Los 35 contratos Exam-Service pasan (Actions 44294486069); node --check de backend/exam-service/Code.gs y de todos los JS bajo js/ y backend/ pasa. La suite general queda 161/164 con tres fallos externos (ACCOUNTING Phase22, ACCOUNTING binary integrity y session-token-expiry USER/valid), no introducidos por AUD-NG-166.
+- **Pendiente beta independiente:** BETA-FUNC-123 conserva la prueba manual de navegador, Drive/Sheets reales, permisos efectivos y recorrido integral de nueve modalidades. Estas comprobaciones requieren despliegue y no bloquean el cierre de implementación según NDASC 1.5.
 - **Verificación ampliada (2026-11-18):** los 35 contratos Node.js del Exam-Service pasan en conjunto (workflow 44294486069 SUCCESS). También pasan node --check del backend Apps Script y la sintaxis de todos los archivos JavaScript de js/ y backend/. La ejecución general del repositorio encontró 164 archivos de prueba: 161 PASS y 3 fallos fuera de AUD-NG-166: phase22-document-management-suite-contract.test.js (falta configureSchoolDocumentTemplate en ACCOUNTING), accounting-school-document-binary-integrity.test.js (falta ensureSchoolDocumentIssuedSchema_ en ACCOUNTING) y session-token-expiry.test.js (caso USER/valid). No se modificaron esos módulos ni sus contratos.
 - **CLI:** no existe directorio CLI, package.json ni script de pruebas CLI en el repositorio; no hay suite CLI que ejecutar.
 - **Hallazgo CI ajeno al alcance:** Department Scope 44293259425 falló en Phase22 porque el contrato solicita configureSchoolDocumentTemplate, función ausente en el servicio ACCOUNTING. No corresponde al motor de exámenes ni se modificó ese módulo.
 
-Hallazgo nuevo: AUD-NG-166. Progreso de auditoría: 17/183; 166 pendientes. Siguiente acción: continuar la verificación funcional de AUD-NG-166; no iniciar AUD-NG-167 hasta cerrar sus requisitos.
+Hallazgo nuevo: AUD-NG-166. Progreso de auditoría: 18/183; 165 pendientes. AUD-NG-166 completada en código; BETA-FUNC-123 continúa pendiente de validación desplegada. Siguiente tarea elegible: AUD-NG-167 / TAREA-12.
 
 ---
 

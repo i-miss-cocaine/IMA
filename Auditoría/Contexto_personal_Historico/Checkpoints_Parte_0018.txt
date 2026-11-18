@@ -932,3 +932,18 @@ Pendiente y límites:
 - **Estado global de Actions:** Exam-Service contracts pasa; la ejecución global de pruebas falla por los tres contratos externos listados. Department Scope también reportó el fallo Phase22 de ACCOUNTING en un commit previo. No se declara verde toda la CI.
 - **Siguiente acción:** navegador y BETA-FUNC-123 con Apps Script/Sheets/Drive reales, incluyendo permisos efectivos, carga/descarga, rollback, concurrencia y las nueve modalidades. No iniciar AUD-NG-167 hasta completar AUD-NG-166.
 ===============================================================================
+
+===============================================================================
+### C1.821 — Cierre de implementación AUD-NG-166 y apertura de AUD-NG-167
+- **Fecha:** 2026-11-18.
+- **Sesión:** IMA-EXEC-20261118-AUD-NG-166-IMPLEMENTATION-CLOSE-01.
+- **Rama:** NG_beta_0.0.0.1_work; la rama base permanece intacta.
+- **HEAD inicial:** 2edfea2c9068be7fc70045abdf3a47ab3c68e265.
+- **Checkpoint anterior:** C1.820.
+- **Decisión NDASC 1.5:** AUD-NG-166 se marca Completada en código porque las verificaciones locales pertinentes disponibles pasaron. 35/35 contratos Exam-Service SUCCESS (44294486069); sintaxis de Code.gs y de todos los JS bajo js/ y backend/ SUCCESS.
+- **Fallas generales ajenas:** 3 de 164 pruebas generales fallan en ACCOUNTING Phase22, ACCOUNTING binary integrity y session-token-expiry USER/valid; no pertenecen a AUD-NG-166.
+- **Separación beta:** BETA-FUNC-123 sigue Pendiente beta para navegador y Apps Script/Sheets/Drive reales, permisos efectivos y recorrido de nueve modalidades. Por NDASC 1.5 estas pruebas remotas no bloquean el cierre de implementación.
+- **Archivos:** pendientes/Docente/Pendientes.md, Auditoría/INDICE_CHECKPOINTS.md y este expediente.
+- **Estado:** AUD-NG-166 Completada en código; AUD-NG-167 / TAREA-12 es la siguiente tarea elegible.
+- **Siguiente acción:** iniciar revisión e implementación de AUD-NG-167 sobre libro consolidado, ponderaciones, cálculo, rúbricas, estados, recuperación y boletines, coordinando identidad/ABAC con AUD-NG-002/AUD-NG-158.
+===============================================================================
