@@ -1582,8 +1582,29 @@ function getExamQuestionsUnlocked_(payload, context) {
     .filter(row => String(row[1] || "").trim() === examenId);
   const questionIdCounts = {};
   questionRows.forEach(row => { const id = String(row[0] || "").trim(); if (id) questionIdCounts[id] = (questionIdCounts[id] || 0) + 1; });
+  const parseQuestionJson = (value, fallback) => {
+    if (value === null || value === undefined || value === "") return fallback;
+    try { return JSON.parse(value); } catch (_) { return fallback; }
+  };
+  const parseQuestionList = value => {
+    const parsed = parseQuestionJson(value, []);
+    return Array.isArray(parsed) ? parsed.map(item => String(item || "").trim()).filter(Boolean) : [];
+  };
   const questions = questionRows.filter(row => String(row[0] || "").trim() && questionIdCounts[String(row[0]).trim()] === 1)
-    .map(row => ({ preguntaId: row[0], tipo: row[2], texto: row[3], opciones: JSON.parse(row[4] || "{}") }));
+    .map(row => {
+      const points = Number(row[6]);
+      const version = Number(row[13]);
+      return {
+        preguntaId: row[0], tipo: row[2], texto: row[3],
+        opciones: parseQuestionJson(row[4], {}) || {},
+        puntos: Number.isFinite(points) && points > 0 ? points : 1,
+        areaCurricular: String(row[7] || ""), dificultad: String(row[8] || ""),
+        bancoPreguntaId: String(row[9] || ""),
+        etiquetas: parseQuestionList(row[10]), objetivos: parseQuestionList(row[11]),
+        criterios: parseQuestionList(row[12]),
+        versionBanco: Number.isSafeInteger(version) && version > 0 ? version : null
+      };
+    });
   return { status: "success", data: { titulo: exam[1], tiempoLimite: exam[6], preguntas: questions } };
 }
 

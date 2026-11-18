@@ -47,7 +47,7 @@ function runtime(options = {}) {
     ["DEL-DUP-EXM","EXM-D","STU-1",new Date("2026-11-10T18:00:00Z"),"[]",60,"Calificado",""]
   ];
   const questionRows = [
-    ["Q-1","EXM-3","opcion_multiple","Pregunta única",'{"A":"1"}',"A"],
+    ["Q-1","EXM-3","opcion_multiple","Pregunta única",'{"A":"1","B":"2"}',"A",5,"Matemáticas","Alta","BNK-1",'["base"]','["OBJ-1"]','["CR-1"]',2],
     ["Q-D","EXM-3","opcion_multiple","Duplicada",'{}',"B"],
     ["Q-D","EXM-3","opcion_multiple","Duplicada segunda",'{}',"B"],
     ["Q-2","EXM-2","opcion_multiple","Pregunta inactiva",'{}',"C"]
@@ -124,6 +124,9 @@ assert.deepEqual(Array.from(questions.data.preguntas, row => row.preguntaId), ["
   "question endpoint excludes duplicate question IDs");
 assert.equal(Object.prototype.hasOwnProperty.call(questions.data.preguntas[0], "respuestaCorrecta"), false,
   "question endpoint never exposes the answer key");
+assert.equal(questions.data.preguntas[0].puntos, 5, "question endpoint returns configured points");
+assert.equal(questions.data.preguntas[0].versionBanco, 2, "question endpoint returns the pinned bank version");
+assert.deepEqual(Array.from(questions.data.preguntas[0].objetivos), ["OBJ-1"], "question endpoint returns learning objectives");
 assert.throws(() => valid.context.getExamQuestions({ sessionToken: "student", examenId: "EXM-D" }),
   /RESOURCE_NOT_AVAILABLE/, "duplicate exam IDs are denied");
 assert.throws(() => runtime({ deniedAction: "getStudentExams" }).context.getStudentExams({ sessionToken: "student" }),
