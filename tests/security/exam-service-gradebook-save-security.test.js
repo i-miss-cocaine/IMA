@@ -33,6 +33,9 @@ t(()=>{assert.throws(()=>fixture({duplicate:true}).call(),/GRADEBOOK_RECORD_AMBI
 t(()=>{assert.throws(()=>fixture({badSchema:true}).call(),/GRADEBOOK_SCHEMA_INVALID/);});
 t(()=>{assert.throws(()=>fixture({closed:true}).call(),/GRADEBOOK_PERIOD_CLOSED/);});
 t(()=>{assert.throws(()=>fixture().call({parcial:""}),/GRADEBOOK_CONTEXT_REQUIRED/);});
+t(()=>{const x=fixture();const r=x.call({anoId:"2027",calificaciones:[{evaluacionId:"CAT-1",userId:"S1",notaObtenida:77}]});assert.equal(r.status,"success");assert.equal(x.sheets.CalificacionesEstudiantes.rows.length,3,"a different academic year creates a separate contextual record");assert.equal(x.sheets.CalificacionesEstudiantes.rows[1][3],70,"the prior year's grade is never overwritten");assert.equal(x.sheets.CalificacionesEstudiantes.rows[2][3],77);assert.equal(x.sheets.CalificacionesEstudiantes.rows[2][9],"2027");assert.notEqual(x.sheets.CalificacionesEstudiantes.rows[1][15],x.sheets.CalificacionesEstudiantes.rows[2][15]);});
+t(()=>{assert.throws(()=>fixture().call({anoId:""}),/GRADEBOOK_CONTEXT_REQUIRED/);});
+
 t(()=>{assert.throws(()=>fixture().call({calificaciones:[]}),/GRADEBOOK_BATCH_INVALID/);assert.throws(()=>fixture().call({calificaciones:Array(501).fill({evaluacionId:"CAT-1",userId:"S1",notaObtenida:80})}),/GRADEBOOK_BATCH_INVALID/);});
 t(()=>{assert.throws(()=>fixture().call({calificaciones:[{evaluacionId:"UNKNOWN",userId:"S1",notaObtenida:80}]}),/GRADEBOOK_CATEGORY_NOT_ACTIVE/);});
 t(()=>{assert.throws(()=>fixture({category:true}).call({calificaciones:[{evaluacionId:"CAT-X",userId:"S1",notaObtenida:80}]}),/GRADEBOOK_CATEGORY_OWNERSHIP_UNVERIFIED/);});

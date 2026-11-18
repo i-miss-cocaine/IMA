@@ -53,7 +53,9 @@ function runtime(options = {}) {
       ["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado", "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"],
       ["CAL-1", "EV-1", "STU-1", 90, 90, false, true, "OK", new Date("2026-02-01"), "2026", "I parcial", "10", "A", "Matemáticas", "INST-1", JSON.stringify(["inst-1","2026","i parcial","10","a","matematicas","ev-1","stu-1"])],
       ["CAL-2", "EV-2", "STU-2", 70, 70, false, true, "OTRA SECCIÓN", new Date("2026-02-01"), "2026", "I parcial", "10", "B", "Matemáticas", "INST-1", JSON.stringify(["inst-1","2026","i parcial","10","b","matematicas","ev-2","stu-2"])],
-      ["CAL-3", "EV-3", "STU-D", 60, 60, false, true, "ID ambiguo", new Date("2026-02-01"), "2026", "I parcial", "10", "A", "Matemáticas", "INST-1", JSON.stringify(["inst-1","2026","i parcial","10","a","matematicas","ev-3","stu-d"])
+      ["CAL-3", "EV-3", "STU-D", 60, 60, false, true, "ID ambiguo", new Date("2026-02-01"), "2026", "I parcial", "10", "A", "Matemáticas", "INST-1", JSON.stringify(["inst-1","2026","i parcial","10","a","matematicas","ev-3","stu-d"])] ,
+      ["CAL-4", "EV-4", "STU-1", 55, 55, false, true, "OTRO PERIODO", new Date("2026-02-01"), "2025", "I parcial", "10", "A", "Matemáticas", "INST-1", JSON.stringify(["inst-1","2025","i parcial","10","a","matematicas","ev-4","stu-1"])],
+      ["CAL-5", "EV-5", "STU-1", 65, 65, false, true, "OTRA ASIGNATURA", new Date("2026-02-01"), "2026", "I parcial", "10", "A", "Ciencias", "INST-1", JSON.stringify(["inst-1","2026","i parcial","10","a","ciencias","ev-5","stu-1"])]
     ]),
     RecuperacionesEstudiante: makeSheet([
       ["ID", "EvaluacionID", "UserID", "NotaOriginal", "NotaRecuperada", "NotaFinal", "Metodo", "AutorizadoPor", "Fecha"],
@@ -114,6 +116,10 @@ assert.deepEqual(Array.from(teacherResult.data.alumnos, row => row.userId), ["ST
   "teacher reads only the roster in their exact assigned grade/section");
 assert.deepEqual(Array.from(teacherResult.data.calificaciones, row => row.calificacionId), ["CAL-1"],
   "grade rows are restricted to the authorized student roster");
+assert.equal(teacherResult.data.calificaciones[0].contextKey,
+  JSON.stringify(["inst-1","2026","i parcial","10","a","matematicas","ev-1","stu-1"]),
+  "returned grade carries its stable institutional context key");
+assert.equal(teacherResult.data.contexto.anoId, "2026");
 assert.deepEqual(Array.from(teacherResult.data.recuperaciones, row => row.recuperacionId), ["REC-1"],
   "recovery rows are restricted to the authorized student roster");
 assert.equal(teacherResult.data.estadoPeriodo, "Cerrado");
