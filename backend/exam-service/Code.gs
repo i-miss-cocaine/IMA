@@ -3225,8 +3225,6 @@ function buildGradebookContextKey_(context) {
 function getGradebookDataUnlocked_(payload, context) {
   const p = payload || {};
   const { actor, ss, scope } = context || {};
-  const anoId = String(p.anoId || p.anoLectivo || "").trim();
-  if (!anoId) throw new Error("GRADEBOOK_CONTEXT_REQUIRED");
   if (!actor || !actor.userId || !scope || scope.authorized !== true) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
@@ -3267,6 +3265,8 @@ function getGradebookDataUnlocked_(payload, context) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
 
+  const anoId = String(p.anoId || p.anoLectivo || "").trim();
+  if (!anoId) throw new Error("GRADEBOOK_CONTEXT_REQUIRED");
   const { grado, seccion, asignatura, parcial } = p;
   if (!String(grado || "").trim() || !String(seccion || "").trim() ||
       !String(asignatura || "").trim() || !String(parcial || "").trim()) {
