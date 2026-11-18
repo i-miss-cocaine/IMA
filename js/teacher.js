@@ -5469,7 +5469,7 @@ function toBase64(file) {
         // Cargar opciones del contexto académico desde GLOBAL_SCOPE y las asignaciones del docente.
         const scope = window.GLOBAL_SCOPE || {};
         const granular = Array.isArray(scope.GranularConfig) ? scope.GranularConfig : [];
-        const norm = value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().trim();
+        const norm = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
         const escapeHtml = value => String(value == null ? "" : value).replace(/[&<>"']/g, char =>
             ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
