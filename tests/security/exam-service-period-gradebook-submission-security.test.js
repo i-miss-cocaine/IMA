@@ -199,6 +199,12 @@ test(() => {
   assert.equal(x.sheets.CierresPeriodos.rows.length, 2);
 });
 test(() => {
+  const x = fixture({ existing: true, existingYear: "2025" });
+  assert.equal(x.call().status, "success", "a prior academic year must not block a new submission");
+  assert.equal(x.sheets.CierresPeriodos.rows[2][1], "2026");
+  assert.throws(() => fixture({ noWeights: true }).call(), /WEIGHTS_NOT_CONFIGURED/);
+});
+test(() => {
   const x = fixture({ existing: true, existingYear: "2026" });
   assert.throws(() => x.call(), /ALREADY_EXISTS/);
 });
