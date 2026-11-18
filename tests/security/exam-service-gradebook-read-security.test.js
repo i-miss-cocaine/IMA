@@ -99,7 +99,7 @@ function runtime(options = {}) {
       return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     }
   };
-  const names = ["withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getGradebookData", "getGradebookDataUnlocked_"];
+  const names = ["buildGradebookContextKey_", "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getGradebookData", "getGradebookDataUnlocked_"];
   vm.runInNewContext(names.map(extractFunction).join("\n") +
     "\nthis.getGradebookData = getGradebookData;", context);
   return { context, sheets, stats: () => ({ acquires, releases, held }) };
