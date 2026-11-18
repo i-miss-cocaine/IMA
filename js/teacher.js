@@ -5604,33 +5604,56 @@ function toBase64(file) {
         }).join('');
     }
 
-    window.quickRecoveryPrompt = async function(userId, nombre, notaActual) {
-        const notaRec = prompt(`Registrar recuperación para ${nombre}.\nNota Calculada Actual: ${notaActual}%\n\nIngrese la nueva nota obtenida (0-100):`);
-        if (!notaRec || isNaN(parseFloat(notaRec))) return;
-
-        const metodo = prompt("Seleccione el método de aplicación:\n1. Sustitucion (Reemplaza nota anterior)\n2. Promedio (Promedia nota original y nueva)\n3. Mayor (Conserva la nota más alta)", "Sustitucion");
-
+    window.quickRecoveryPrompt = async function(userId, nombre, notaActual, evaluacionId) {
+        const categories = Array.isArray(currentGradebookData?.categories) ? currentGradebookData.categories : [];
+        const categoryId = String(evaluacionId || "").trim();
+        const category = categories.find(item => String(item.categoriaId) === categoryId);
+        if (!category) {
+            alert("Seleccione una categoría con ponderación configurada para el período actual.");
+            return;
+        }
+        const original = (currentGradebookData?.calificaciones || []).find(item =>
+            String(item.userId) === String(userId) && String(item.evaluacionId) === categoryId);
+        if (!original || original.notaObtenida === null || original.notaObtenida === undefined ||
+            original.esBorrador === true || original.esPublicada !== true) {
+            alert("La categoría no tiene una calificación publicada y verificable para este estudiante.");
+            return;
+        }
+        const notaRec = prompt(`Registrar recuperación para ${nombre} — ${category.nombre}.\nNota original: ${original.notaObtenida}\n\nIngrese la nueva nota (0-100):`);
+        if (notaRec === null || String(notaRec).trim() === "") return;
+        const recovered = Number(notaRec);
+        if (!Number.isFinite(recovered) || recovered < 0 || recovered > 100) {
+            alert("La nota de recuperación debe ser un número entre 0 y 100.");
+            return;
+        }
+        const metodo = prompt("Seleccione el método:\n1. Sustitución\n2. Promedio\n3. Mayor", "1");
+        if (metodo === null) return;
+        const selectedMethod = ({ "1": "Sustitucion", "2": "Promedio", "3": "Mayor" })[String(metodo).trim()];
+        if (!selectedMethod) {
+            alert("Método de recuperación no válido.");
+            return;
+        }
         try {
-            const selectedMethod = ({ "1": "Sustitucion", "2": "Promedio", "3": "Mayor" })[String(metodo || "").trim()] || String(metodo || "Sustitucion").trim();
             const res = await fetchApi('EXAM', 'saveStudentRecovery', {
-                evaluacionId: "CAT-GLOBAL",
+                evaluacionId: categoryId,
                 userId: userId,
-                notaRecuperada: Number(notaRec),
+                notaRecuperada: recovered,
                 metodoAplicado: selectedMethod,
+                anoId: String(window.GLOBAL_SCOPE?.AnoLectivo || window.GLOBAL_SCOPE?.anoLectivo || new Date().getFullYear()),
+                periodoId: document.getElementById('gb-filter-parcial')?.value || "",
                 grado: document.getElementById('gb-filter-grado')?.value || "",
                 seccion: document.getElementById('gb-filter-seccion')?.value || "",
                 asignatura: document.getElementById('gb-filter-asignatura')?.value || "",
-                periodoId: document.getElementById('gb-filter-parcial')?.value || ""
+                profesorId: currentUser.userId
             });
-
             if (res.status === 'success') {
-                alert(`Recuperación registrada con éxito para ${nombre}. Nueva nota final: ${res.data?.notaFinalCalculada}`);
-                fetchGradebookData();
+                alert(`Recuperación registrada para ${nombre}. Nueva nota de la categoría: ${res.data?.notaFinalCalculada}`);
+                await fetchGradebookData();
             } else {
                 alert("Error: " + res.message);
             }
-        } catch (e) {
-            alert("Error al guardar recuperación: " + e.message);
+        } catch (error) {
+            alert("Error al guardar recuperación: " + error.message);
         }
     };
 
@@ -5779,7 +5802,18 @@ function toBase64(file) {
     document.getElementById('btn-gb-register-recovery')?.addEventListener('click', () => {
         const userId = prompt("Ingrese el ID del estudiante para recuperación:");
         if (!userId) return;
-        window.quickRecoveryPrompt(userId, "Estudiante " + userId, 65);
+        const categories = Array.isArray(currentGradebookData?.categories) ? currentGradebookData.categories : [];
+        if (!categories.length) {
+            alert("Primero configure las ponderaciones del contexto académico.");
+            return;
+        }
+        const categoryId = prompt("Ingrese el ID de la categoría a recuperar:\n" +
+            categories.map(item => item.categoriaId + " — " + item.nombre).join("\n"),
+            categories[0].categoriaId);
+        if (!categoryId) return;
+        const summary = currentGradebookData?.resumenes?.[userId];
+        window.quickRecoveryPrompt(userId, "Estudiante " + userId,
+            summary?.notaFinal ?? null, categoryId);
     });
 
     // --- MÓDULO DE CONTROL DE ASISTENCIA Y CONVIVENCIA ESCOLAR (FASE 10) ---
