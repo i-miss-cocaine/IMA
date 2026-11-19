@@ -1834,3 +1834,49 @@ Estado:
 Siguiente acción elegible:
 - Diseñar contrato de revisión monotónica local para Academic, USER y Exam: token epoch+counter, incremento fail-closed antes de la primera mutación bajo ScriptLock, captura de revisión junto con cada snapshot y acciones ligeras de revalidación; definir pruebas de cobertura de todos los writers, errores de PropertiesService, ABA, intercalado y coste antes de implementar.
 ===============================================================================
+
+
+===============================================================================
+### C1.883 — AUD-NG-167: contrato de revisión monotónica por servicio
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-MONOTONIC-REVISION-DESIGN-54
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 17a1dd0c4f967f120092ec01c22f1eeb4aa894f2
+HEAD de diseño: c41cb4ab8c4da96b5c32fa8d35c670ccf763ddd7
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Contrato propuesto:
+- Cada servicio mantiene un token epoch:counter en ScriptProperties. El epoch se inicializa con UUID bajo ScriptLock; el contador debe ser entero seguro no negativo. Token ausente/corrupto, PropertiesService no disponible o persistencia fallida produce error cerrado.
+- Todo writer que pueda cambiar el origen SACE incrementa el token ANTES de su primera escritura y bajo el mismo ScriptLock que protege la mutación. Si el incremento no puede persistirse, no se modifica la hoja. Si el incremento se guarda y la mutación falla después, el token queda avanzado y puede invalidar snapshots innecesariamente, pero nunca valida silenciosamente datos obsoletos.
+- Academic captura su revisión mientras mantiene el lock de lectura local; USER y Exam incluyen sourceRevision en la respuesta del snapshot mientras sus locks están adquiridos.
+- Revalidación después de las tres lecturas: Academic reacquire lock y lee su token; USER y Exam reciben una solicitud revisionOnly por sus acciones SACE existentes y devuelven solo el token bajo su lock. No se mantiene ningún lock durante UrlFetchApp.
+- Secuencia de observación: Academic A1 → USER U1 → Exam E1 → Academic A2 → USER U2 → Exam E2. Si las revisiones de cada servicio no cambian entre sus dos lecturas, los intervalos de estabilidad se solapan entre E1 y A2; la composición puede declararse estable en ese intervalo. No llamarla transacción de base de datos ni atomicidad física de Google Sheets.
+- Para preservar compatibilidad, revisionOnly es opcional y la respuesta normal solo agrega sourceRevision; los clientes que no consumen el campo adicional conservan su forma principal.
+- No implementar hasta que cada writer relevante haya sido instrumentado y exista contrato que impida cualquier escritura si el incremento falla.
+
+Coste esperado:
+- Dos llamadas remotas pequeñas (USER y Exam) para revisar tokens, más una lectura local de propiedad bajo lock. No se repiten getDataRange ni se vuelven a transportar los gradebooks/identidades completos.
+- La inicialización de epoch y cada incremento hacen una operación de PropertiesService por mutación relevante. Los incrementos conservadores en operaciones que finalmente no escriban solo producen invalidaciones espurias.
+
+Prueba de modelo ejecutada:
+- Runtime V8 aislado: 8/8 PASS — inicialización epoch/counter; incremento monotónico; fallo de persistencia bloquea escritura; fallo posterior de escritura conserva invalidación; ABA detectado; mutación intercalada invalida; fuente estable conserva token; token corrupto falla cerrado.
+- No se ejecutaron servicios reales, Apps Script ni pruebas Node de integración para este diseño. La simulación demuestra el modelo, no la cobertura de escritores.
+
+Archivos modificados:
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+Commits:
+- c41cb4ab8c4da96b5c32fa8d35c670ccf763ddd7 — diseño de revisión monotónica.
+- El commit actual incorpora C1.883 y su índice.
+
+Estado:
+- C1.883 completa como diseño técnico, no como implementación.
+- AUD-NG-167 continúa En progreso; XLS permanece CANDIDATE.
+
+Siguiente acción elegible:
+- Implementar primero helpers de revisión en Academic, USER y Exam y pruebas unitarias de token/PropertiesService. Después instrumentar cada writer relevante dentro de su lock, añadir sourceRevision/revisionOnly a los dos endpoints remotos, revalidar Academic al final y probar intercalados, ABA, fallos de red, timeout, compatibilidad y coste con las suites de los tres servicios.
+===============================================================================
