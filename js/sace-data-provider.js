@@ -176,6 +176,9 @@
       });
     });
     const studentIds = Array.from(first.students.keys());
+    studentIds.forEach(id => {
+      if (!identities.has(id)) throw new Error("SACE_IDENTITY_RECORD_MISSING");
+    });
     if (identities.size !== studentIds.length ||
         Array.from(identities.keys()).some(id => !first.students.has(id))) {
       throw new Error("SACE_IDENTITY_RECORD_ROSTER_MISMATCH");
@@ -183,7 +186,6 @@
     const normalizedIdentities = new Set();
     studentIds.forEach(id => {
       const identity = identities.get(id);
-      if (!identity) throw new Error("SACE_IDENTITY_RECORD_MISSING");
       const normalizedIdentity = String(identity.identity || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
       if (!normalizedIdentity || normalizedIdentities.has(normalizedIdentity)) {
         throw new Error("SACE_IDENTITY_DOCUMENT_DUPLICATE");
