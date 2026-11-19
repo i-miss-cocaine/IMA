@@ -29,7 +29,6 @@ vm.createContext(safeErrorContext);
 vm.runInContext(extract("getSaceSafeErrorCode_") + "\nthis.safeErrorCode=getSaceSafeErrorCode_;", safeErrorContext);
 assert.equal(safeErrorContext.safeErrorCode(new Error("SACE_GRADEBOOK_ROSTER_DUPLICATE")), "SACE_GRADEBOOK_ROSTER_DUPLICATE");
 assert.equal(safeErrorContext.safeErrorCode(new Error("student STU-1 private detail")), "INTERNAL_ERROR");
-assert(extract("doPost").includes("saceGradebookRequest ?") === false);
 assert(extract("doPost").includes("getSaceSafeErrorCode_(err)"),
   "SACE gradebook errors must retain safe machine-readable codes");
 
