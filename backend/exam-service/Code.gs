@@ -3037,7 +3037,7 @@ function saveCompetencyCatalogItem(payload) {
     const indicadorId = String(p.indicadorId || "").trim();
     const indicador = String(p.indicador || "").trim();
     const programaCurricular = String(p.programaCurricular || "").trim();
-    if (!anoId || !/^20\\d{2}$/.test(anoId) || !grado || !seccion || !asignaturaId ||
+    if (!anoId || !/^20\d{2}$/.test(anoId) || !grado || !seccion || !asignaturaId ||
         !competenciaId || !competencia || !indicadorId || !indicador || !programaCurricular) {
       throw new Error("COMPETENCY_CATALOG_REQUIRED_FIELDS");
     }
@@ -3181,7 +3181,7 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
 
   const anoId = String(p.anoId || "").trim();
   const indicadorId = String(p.indicadorId || "").trim();
-  if (!anoId || !/^20\\d{2}$/.test(anoId) || !indicadorId) {
+  if (!anoId || !/^20\d{2}$/.test(anoId) || !indicadorId) {
     throw new Error("COMPETENCY_CATALOG_CONTEXT_REQUIRED");
   }
   const catalogSheet = ss.getSheetByName("CatalogoCompetencias");
