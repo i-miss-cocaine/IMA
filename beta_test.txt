@@ -2089,3 +2089,29 @@ Resultado esperado:
 Estado: Pendiente de evidencia oficial/validación institucional.
 Evidencia requerida: referencia oficial, página/sección, decisión aprobada, configuración aplicada y reporte anonimizado de pruebas positivas/negativas.
 ===============================================================================
+
+===============================================================================
+BETA-EXAM-113 — Integridad del vínculo entre asistencia y justificación canónica
+===============================================================================
+Módulo/rol: Academic-Service / Profesor y revisión institucional de justificaciones
+Tarea/requisito: AUD-NG-167 — determinar justificaciones verificadas para el snapshot SACE
+Objetivo: confirmar en despliegue que RegistrosAsistencia.Justificado solo se trata como aprobado cuando JustificacionID enlaza un registro canónico aprobado y sincronizado para el mismo estudiante, periodo, sesión y fecha.
+Precondiciones:
+- Academic-Service desplegado con resolveSaceAttendanceJustification_ y el contrato del snapshot actualizado.
+- RegistrosAsistencia con columna JustificacionID y JustificacionesAsistencia con esquema canónico vigente.
+- Un caso aprobado/sincronizado, uno pendiente, uno rechazado/cancelado y uno con sincronización pendiente, todos sintéticos o anonimizados.
+Pasos:
+1. Registrar una justificación para un estudiante/sesión/fecha y mantenerla Pendiente; comprobar que no se considera justificada.
+2. Aprobarla mediante reviewCanonicalAbsenceJustification y verificar que el vínculo JustificacionID y Justificado=true se sincronizan.
+3. Consultar getSaceAttendanceSnapshot; comprobar justificado=true y justificacionVerificada=true solo para el mismo estudiante, periodo, sesión y fecha aprobados.
+4. Probar Justificado=true sin JustificacionID, ID inexistente/duplicado, estudiante distinto, periodo distinto, sesión/fecha fuera del alcance y flag false con aprobación enlazada; todos deben rechazarse.
+5. Simular PendienteSincronizacion o RevocacionPendienteSincronizacion, incluso si el registro aún no recibió el vínculo; el snapshot debe rechazar y no contar como ausencia ordinaria.
+6. Simular aprobación canónica sincronizada sin JustificacionID en RegistrosAsistencia; debe rechazarse por vínculo inconsistente.
+7. Revocar una aprobación y comprobar que, después de sincronizar la revocación, Justificado=false y JustificacionID vacío dejan de ser tratados como justificación aprobada.
+Resultado esperado:
+- Solo las justificaciones Aprobada + SINCRONIZADO y vinculadas al registro exacto se marcan justificadas.
+- Estados pendientes, inconsistentes o ambiguos bloquean el snapshot.
+- El proveedor recibe un booleano justificado acompañado de justificacionVerificada=true; no confía en el campo bruto.
+Estado: Pendiente beta.
+Evidencia requerida: trazas anonimizadas de los estados canónicos, filas de asistencia y snapshot; evidencia de casos positivos/negativos y versión de los despliegues.
+===============================================================================

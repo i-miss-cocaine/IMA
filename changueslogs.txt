@@ -4273,3 +4273,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.841 — AUD-NG-167: orquestador conectado al array gradebookSnapshots del snapshot Academic; matching de parciales explícito, sin inferencia ni sustitución por gradebooks externos. Tres plantillas y 22 filas por plantilla verificadas; Action 44549715550 SUCCESS. Sigue interno/CANDIDATE.
 
 [2026-11-19] C1.842 — AUD-NG-167: política de ausencias justificadas ahora es parámetro explícito COUNT/EXCLUDE; sin política, modo inválido o justificado no booleano, el proveedor falla cerrado. Ambos modos cubiertos con fixtures sintéticos. Action 44550379659 SUCCESS. Confirmación SACE oficial pendiente BETA-EXAM-112.
+
+[2026-11-19] C1.843 — AUD-NG-167: validación de justificación contra registro canónico y estado de sincronización; booleano bruto no basta. Contratos de Academic, provider y orchestrator PASS (Actions 44552470318 y 44551873276). Validación real pendiente BETA-EXAM-113.

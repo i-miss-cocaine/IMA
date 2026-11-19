@@ -227,3 +227,42 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar el tratamiento de ausencias en el endpoint Academic y la forma en que justificaciones aprobadas se representan en RegistrosAsistencia; garantizar que el booleano justificado provenga de un registro de justificación vigente y aprobado, no de un dato arbitrario o inconsistente.
 ===============================================================================
+
+===============================================================================
+### C1.843 — AUD-NG-167: justificación de ausencia verificada contra fuente canónica
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-CANONICAL-JUSTIFICATION-18
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.842
+Commits:
+- b2a8f659316e3902b3920c885bd4e6a65e1e1841 — Academic snapshot consulta vínculo de justificación canónica; proveedor exige justificacionVerificada.
+- cddd6b83cd1344318f8c6964a8d2076234883f66 — contrato carga el resolver canónico en el contexto VM.
+- 93370c86ab9b2615dc9316b51e4cff12479289be — corrección de identificador en resolver.
+HEAD final de implementación: 93370c86ab9b2615dc9316b51e4cff12479289be
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Academic-Service exige la columna JustificacionID en RegistrosAsistencia y consulta JustificacionesAsistencia.
+- resolveSaceAttendanceJustification_ valida registro canónico único, estudiante, periodo, EstadoRevision=Aprobada, SyncEstado=SINCRONIZADO, sesión aprobada y fecha afectada.
+- Si no hay enlace ni flag, comprueba que no exista una aprobación sincronizada sin vínculo o una transición de sincronización pendiente que afecte a esa sesión/fecha.
+- Justificado=true sin ID, ID no encontrado/duplicado, mismatch de estudiante/periodo/sesión/fecha, aprobación/sincronización incompleta o flag contrario se rechazan.
+- Academic devuelve justificacionVerificada=true para estados comprobados; el proveedor exige ese indicador en cada registro junto al booleano justificado.
+- Se ampliaron los contratos Academic, provider y orchestrator con fixtures sintéticos para estados aprobados, pendientes, desincronizados y discordantes.
+
+Verificación:
+- GitHub Actions 44552470318 — Academic-Service single authorization context: SUCCESS; sace-attendance-snapshot-contract PASS.
+- GitHub Actions 44551873276 — SACE template structure compatibility contract: SUCCESS; sace-data-provider-contract y sace-export-orchestrator-contract PASS.
+- Intento inicial 44551873230 falló porque el test VM no cargaba el resolver nuevo; se corrigió el harness y luego el resolver tuvo una errata de identificador detectada por el contrato. Ambas correcciones están incluidas antes del PASS final.
+- HEAD de rama base sin cambios.
+
+Límites:
+- La sincronización real de JustificacionesAsistencia/RegistrosAsistencia se verifica en BETA-EXAM-113.
+- COUNT/EXCLUDE sigue pendiente de fuente oficial SACE (BETA-EXAM-112); no se establece modo oficial.
+- No se habilita UI, descarga, persistencia ni carga productiva.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar el estado de cierre y edición de SesionesAsistencia y RegistrosAsistencia para asegurar que el snapshot solo lea sesiones cerradas e inmutables, y que una corrección posterior no cambie silenciosamente el conteo ya preparado.
+===============================================================================

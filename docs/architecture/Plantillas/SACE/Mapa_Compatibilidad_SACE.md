@@ -214,3 +214,20 @@ El parámetro se propaga desde prepareCandidateExportFromAcademicSnapshot hasta 
 **Verificación:** GitHub Actions 44550379659 — SACE template structure compatibility contract: SUCCESS. Pasaron sintaxis y contratos del proveedor/orquestador, pruebas estructurales XLS y parcheo binario.
 
 **Límite:** la selección institucional del modo queda pendiente de BETA-EXAM-112 y evidencia oficial autorizada. El resultado permanece CANDIDATE; no se habilita UI, descarga ni carga SACE.
+
+
+## 17. Justificación de inasistencia: fuente canónica y sincronización — C1.843
+
+El campo RegistrosAsistencia.Justificado no se considera por sí solo evidencia de una justificación aprobada. El flujo ordinario saveClassAttendance puede escribir ese booleano; por ello, el snapshot SACE ahora exige también JustificacionID y consulta JustificacionesAsistencia.
+
+resolveSaceAttendanceJustification_ aplica estas reglas por cada registro de sesión/estudiante:
+- Sin JustificacionID y Justificado=false: no se considera justificado, siempre que no exista una justificación canónica aprobada o pendiente de sincronización para ese mismo estudiante, periodo, sesión y fecha.
+- Con JustificacionID: exige un único registro canónico, mismo estudiante y periodo, EstadoRevision=Aprobada, SyncEstado=SINCRONIZADO, sesión aprobada incluida y fecha afectada coincidente.
+- Justificado=true sin enlace, enlace ausente/duplicado, estudiante/periodo/sesión/fecha discordantes, aprobación pendiente o sincronización pendiente: rechaza el snapshot.
+- También rechaza una justificación aprobada y sincronizada que no esté enlazada al registro de asistencia, para evitar contarla accidentalmente como ausencia no justificada.
+
+Academic-Service devuelve justificacionVerificada=true solo después de comprobar el vínculo canónico o la ausencia de una justificación aplicable. El proveedor exige ese indicador junto al booleano justificado. Los datos sintéticos verifican aprobación/sincronización y las rutas negativas.
+
+**Verificación:** Actions 44552470318 — Academic-Service single authorization context: SUCCESS; 44551873276 — SACE template structure compatibility contract: SUCCESS. Pasaron los contratos del snapshot, proveedor y orquestador.
+
+**Límite:** el snapshot real y las transiciones de justificación en Apps Script desplegado se validan en BETA-EXAM-113. La política COUNT/EXCLUDE sigue sin fuente oficial confirmada (BETA-EXAM-112); la plantilla oficial y recuperación también pendientes.
