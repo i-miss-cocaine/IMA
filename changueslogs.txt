@@ -4267,3 +4267,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.838 — AUD-NG-167: orquestador snapshot→plantilla→XLS candidato en memoria, verificado sobre tres plantillas versionadas y datos sintéticos; D/E/F/G/H e integridad OLE PASS. Actions 44542962606 SUCCESS. Recuperación permanece vacía; no hay exportación productiva ni carga SACE real.
 
 [2026-11-19] C1.839 — AUD-NG-167: conexión local del directorio de identidad Academic→USER usando el envelope HMAC institucional existente, validación de sesión Profesor e institución y DTO mínimo. Action 44545611035 SUCCESS; BETA-EXAM-110 pendiente de despliegue. No se habilita producción.
+
+[2026-11-19] C1.840 — AUD-NG-167: snapshots de calificaciones integrados por contrato entre Academic-Service y Exam-Service; mapeo de parciales explícito y cierre vinculado a año/periodo; DTO minimizado. Contratos específicos PASS; suite general mantiene tres fallos ajenos registrados en checkpoint. BETA-EXAM-111 pendiente de despliegues reales.

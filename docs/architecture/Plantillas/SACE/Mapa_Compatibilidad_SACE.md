@@ -170,3 +170,18 @@ USER-Service solo acepta la acción `getSaceStudentIdentityDirectory` cuando el 
 Se corrigió además el contrato de lectura de `PeriodosAcademicos`: el esquema canónico declara `TipoPeriodo` (con lectura compatible de `Tipo` legado), no un encabezado obligatorio `Tipo`. El endpoint ya no intenta leer `Usuarios` ni `Personas` desde el spreadsheet de Academic-Service.
 
 **Límite operativo:** la integración requiere `IMA_USER_SERVICE_URL` configurada en Academic-Service y un credential ACADEMIC→USER activo/verificable en el catálogo HMAC de ambos servicios. Si falta cualquiera, la solicitud falla cerrada. BETA-EXAM-110 documenta esa prueba real.
+
+
+## 14. Snapshots contextuales de calificaciones desde Exam-Service — C1.840
+
+Se añadió getSaceGradebookSnapshot en Exam-Service como una acción de lectura autenticada para Profesor. La acción reutiliza withAuthorizedExamRead_ y getGradebookDataUnlocked_, por lo que mantiene el permiso de rol, el contexto institucional, la asignación docente y el bloqueo de lectura existente. No crea un mecanismo de autenticación ni una ruta de acceso alternativa.
+
+El endpoint recibe el PeriodoID académico y el identificador de parcial que utiliza el libro como dos valores separados. La correspondencia se exige explícitamente desde Academic-Service (examPeriodMappings); no se deduce del orden ni del nombre del periodo. El endpoint comprueba que el cierre corresponde al mismo AnoID, PeriodoID/parcial, grado, sección y asignatura, exige un único cierre Cerrado y rechaza esquemas legacy que no permitan comprobar el año.
+
+El DTO devuelve únicamente el roster solicitado (UserID, nombre, grado y sección), los resúmenes de calificación mínimos, el estado de cierre y el contexto. No devuelve correo, observaciones ni registros completos de calificaciones. Las recuperaciones del roster se mantienen visibles para que el proveedor bloquee mientras la semántica oficial siga sin resolverse.
+
+Academic-Service añade requestSaceGradebookSnapshotFromExam_ y consulta ambos parciales usando el token de sesión del Profesor; Exam-Service vuelve a validar ese token, el rol, la asignación docente y la institución. La URL se configura en IMA_EXAM_SERVICE_URL. getSaceAttendanceSnapshot exige dos pares explícitos { periodoId, parcial } y devuelve gradebookSnapshots vinculados por periodoId, junto al snapshot de asistencia e identidad USER.
+
+**Verificación local:** Actions 44548365751 (Academic-Service) SUCCESS. En Exam-Service, el nuevo contrato y la suite específica de Exam-Service pasaron en 44548848434; el workflow completo reportó FAIL solo en tres pruebas generales ajenas a este cambio (phase22-document-management-suite-contract, accounting-school-document-binary-integrity y session-token-expiry). La prueba de scope también conserva un fallo ajeno configureSchoolDocumentTemplate ausente. Estos fallos no se presentan como PASS ni alteran la evidencia de los contratos específicos.
+
+**Límite:** la llamada HTTP entre los despliegues, la URL IMA_EXAM_SERVICE_URL y la sesión válida del entorno beta se verifican en BETA-EXAM-111. No hay UI, descarga ni exportación productiva.

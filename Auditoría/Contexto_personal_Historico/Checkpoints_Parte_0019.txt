@@ -117,3 +117,45 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: incorporar los dos snapshots de calificaciones de Exam-Service mediante su acción autenticada de lectura existente, exigiendo mapeo explícito de PeriodoID al identificador de parcial del libro; conservar el DTO mínimo y el bloqueo de producción.
 ===============================================================================
+
+===============================================================================
+### C1.840 — AUD-NG-167: snapshots de calificaciones desde Exam-Service
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-EXAM-GRADEBOOK-15
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.839
+Commits de implementación:
+- 614cacd7845e1ebdec41be0ef9f51246c7e43059 — acción de lectura contextual Exam-Service y transporte desde Academic-Service.
+- f19e89c30a8f692a0e76311c2298cbfc355e331d — comprobación exacta de cierre por año/periodo y rechazo de cierres ambiguos.
+HEAD final de implementación: f19e89c30a8f692a0e76311c2298cbfc355e331d
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Exam-Service incorpora getSaceGradebookSnapshot, autorizado solo al rol Profesor en ROLE_PERMISSIONS y dispatcher.
+- Reutiliza withAuthorizedExamRead_ y getGradebookDataUnlocked_; conserva validación de sesión, institución, asignación docente y ámbito del libro.
+- Exige roster explícito y devuelve solo estudiantes solicitados, nombre, grado/sección, resumen calculado/provisional, recuperaciones, estado de cierre y contexto mínimo. No devuelve correo ni observaciones.
+- Exige periodoId académico y parcial Exam por separado. Devuelve contexto con periodoId académico y parcial de origen, después de validar el mapping.
+- Añade verificación directa de CierresPeriodos con AnoID, PeriodoID, grado, sección y asignatura; requiere un único cierre Cerrado. Rechaza cierres de otro año, duplicados o esquemas que no permitan verificar el año.
+- Academic-Service incorpora requestSaceGradebookSnapshotFromExam_ y obtiene ambos snapshots usando el token del Profesor; el servicio destino vuelve a validar sesión, rol y asignación.
+- getSaceAttendanceSnapshot exige dos examPeriodMappings explícitos y devuelve gradebookSnapshots vinculados por PeriodoID. No infiere parciales por orden ni nombre.
+- Se añadieron tests/security/exam-service-sace-gradebook-snapshot.test.js y casos del transporte/mapeo en sace-attendance-snapshot-contract.test.js; workflows actualizados.
+
+Verificación:
+- GitHub Actions 44548365751 — Academic-Service single authorization context: SUCCESS; contrato de snapshot, helper HTTP y mapeos explícitos PASS.
+- GitHub Actions 44548848434 — el nuevo contrato Exam-Service PASS y la suite completa de contratos security/exam-service-* PASS; sintaxis Code.gs y pruebas específicas PASS.
+- El workflow general del repositorio dentro de 44548848434 terminó FAIL por tres pruebas ajenas al cambio: tests/regression/phase22-document-management-suite-contract.test.js (configureSchoolDocumentTemplate ausente), tests/security/accounting-school-document-binary-integrity.test.js (ensureSchoolDocumentIssuedSchema_ ausente) y tests/security/session-token-expiry.test.js (fixture USER/valid). No se alteraron esas pruebas ni sus módulos.
+- Department Scope 44548848299 también reportó el fallo conocido configureSchoolDocumentTemplate ausente. No se atribuye a esta tarea.
+- En el intento anterior 44548365907, el nuevo contrato y la suite específica de Exam-Service pasaron; la suite general reportó los mismos tres fallos externos.
+- Rama base intacta.
+
+Límites:
+- BETA-EXAM-111 registra la llamada real entre servicios, URL IMA_EXAM_SERVICE_URL y sesión de Profesor desplegada; permanece Pendiente beta.
+- No se habilitó UI, descarga, carga a SACE ni exportación productiva.
+- El proveedor todavía requiere equivalencia documental oficial, plantilla SACE autorizada y regla de recuperación/ausencia confirmada.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: añadir un adaptador del orquestador que consuma directamente gradebookSnapshots del snapshot Academic, resuelva cada parcial por periodoId explícito y produzca el XLS candidato en memoria sin que el cliente pueda sustituir los snapshots ni el contexto.
+===============================================================================

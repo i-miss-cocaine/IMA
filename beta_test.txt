@@ -2034,3 +2034,33 @@ Resultado esperado:
 Estado: Pendiente de despliegue y credential provisioning real.
 Evidencia requerida: trazas anonimizadas de envelope/uso de credencial, respuesta del directorio sin PII adicional y casos negativos.
 ===============================================================================
+
+===============================================================================
+BETA-EXAM-111 — Snapshot contextual de calificaciones Exam-Service → Academic-Service
+===============================================================================
+Módulo/rol: Academic-Service → Exam-Service / Profesor
+Tarea/requisito: AUD-NG-167 — integrar libros contextuales al snapshot SACE
+Objetivo: comprobar en beta que Academic-Service obtiene dos snapshots de calificaciones del Exam-Service con el mismo contexto de docente, institución, año, grado, sección, asignatura y roster, sin exponer datos ajenos al exportador.
+Precondiciones:
+- Academic-Service y Exam-Service desplegados con los commits que incorporan requestSaceGradebookSnapshotFromExam_ y getSaceGradebookSnapshot.
+- Script Property IMA_EXAM_SERVICE_URL configurada con URL HTTPS /exec del Exam-Service.
+- Sesión de Profesor válida en ambos servicios.
+- Dos periodos cerrados y un mapeo institucional explícito examPeriodMappings [{periodoId, parcial}] que relacione cada PeriodoID académico con el identificador exacto de parcial utilizado por Exam-Service.
+- ConfiguracionAcademica asigna al docente la clase/asignatura/parcial solicitada.
+- CierresPeriodos contiene un único cierre con AnoID, PeriodoID, grado, sección y asignatura exactos; roster beta sintético en ambos servicios.
+Pasos:
+1. Invocar getSaceAttendanceSnapshot con los dos PeriodoID, examPeriodMappings, roster de UserID y contexto de clase.
+2. Confirmar que Academic-Service envía a Exam-Service la sesión de Profesor, profesorId derivado de sesión, institución, periodoId académico y parcial explícito.
+3. Verificar que Exam-Service valida permiso Profesor, asignación docente y contexto institucional mediante sus lectores autorizados existentes.
+4. Confirmar que se devuelven únicamente los estudiantes solicitados, sus nombres y resúmenes mínimos; no correo, observaciones ni calificaciones completas.
+5. Verificar los dos snapshots por periodoId, con estado Cerrado y periodoId académico normalizado por el endpoint.
+6. Probar parcial no mapeado, mapeo duplicado, docente no asignado, institución distinta, alumno fuera de roster, periodo abierto, cierre de otro año y cierres duplicados; todos deben rechazarse.
+7. Confirmar que una recuperación existente permanece incluida en el DTO y bloquea el proveedor SACE hasta la confirmación de la regla oficial.
+Resultado esperado:
+- Dos snapshots válidos, cerrados y vinculados por periodoId a la clase autenticada.
+- La equivalencia PeriodoID→parcial es explícita; no hay inferencia.
+- El DTO no expone PII innecesaria ni registros de estudiantes fuera del roster.
+- Sin URL/servicios configurados, el flujo falla cerrado; no recurre a datos locales ni habilita exportación parcial.
+Estado: Pendiente beta.
+Evidencia requerida: respuestas anonimizadas de ambos snapshots, trazas de autorización y de los casos negativos, comprobación de minimización del DTO y hash/versión de los despliegues.
+===============================================================================
