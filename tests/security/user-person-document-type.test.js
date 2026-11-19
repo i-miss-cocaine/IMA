@@ -92,6 +92,54 @@ assert.equal(withoutType.status, "success");
 assert.equal(sheet.rows[3][10], "", "document type may remain explicitly unclassified rather than being inferred");
 assert.deepEqual({ waits: context.lockWaits, releases: context.lockReleases, held: context.lockHeld },
   { waits: 2, releases: 2, held: false }, "each successful person write acquires and releases the shared lock");
+
+const userHeaders = ["UserId", "Nombre", "Grado", "Seccion", "Email", "PasswordHash", "Rol", "Telefono", "NumeroLista", "PersonaID", "EstadoCuenta", "FechaCreacion", "UltimoAcceso"];
+const userSheet = new Sheet([userHeaders]);
+let userLockHeld = false, userLockWaits = 0, userLockReleases = 0, cacheInvalidations = 0;
+const registrationContext = {
+  SPREADSHEET_ID: "USER-SHEET",
+  SpreadsheetApp: { openById(id) { assert.equal(id, "USER-SHEET"); return {}; } },
+  getSheetOrThrow(_ss, name) { assert.equal(name, "Usuarios"); return userSheet; },
+  LockService: { getScriptLock() { return {
+    waitLock(timeout) { assert.equal(timeout, 10000); assert.equal(userLockHeld, false); userLockHeld = true; userLockWaits++; },
+    releaseLock() { assert.equal(userLockHeld, true); userLockHeld = false; userLockReleases++; }
+  }; } },
+  generateInstitutionalId() {
+    assert.equal(userLockHeld, false, "ID generation must not nest the USER sheet lock");
+    return { generatedId: "USR-000001" };
+  },
+  Utilities: { DigestAlgorithm: { SHA_256: "SHA_256" }, computeDigest() { return [1, 2, 3]; } },
+  invalidateUserRoleCache() { cacheInvalidations++; },
+  Date, String, Number, Array, Object, Error, Math
+};
+const originalAppendUser = userSheet.appendRow.bind(userSheet);
+userSheet.appendRow = row => {
+  assert.equal(userLockHeld, true, "student account rows must be appended under the identity read lock");
+  originalAppendUser(row);
+};
+vm.createContext(registrationContext);
+vm.runInContext(extract("registerUser") + "\\nthis.registerUser=registerUser;", registrationContext);
+const registered = registrationContext.registerUser({
+  nombre: "Estudiante Nuevo", grado: "11", seccion: "A",
+  email: "nuevo@example.test", password: "secret", personaId: "PER-NEW"
+});
+assert.equal(registered.status, "success");
+assert.equal(registered.userId, "USR-000001");
+assert.equal(userSheet.rows[1][9], "PER-NEW");
+assert.deepEqual({ waits: userLockWaits, releases: userLockReleases, held: userLockHeld },
+  { waits: 2, releases: 2, held: false },
+  "registration checks and commits under the same lock used by the identity directory");
+const updated = registrationContext.registerUser({
+  nombre: "Estudiante Actualizado", grado: "11", seccion: "B",
+  email: "nuevo@example.test", password: "secret2", personaId: "PER-NEW", forceUpdate: true
+});
+assert.equal(updated.status, "success");
+assert.equal(userSheet.rows[1][3], "B");
+assert.equal(cacheInvalidations, 1);
+assert.deepEqual({ waits: userLockWaits, releases: userLockReleases, held: userLockHeld },
+  { waits: 3, releases: 3, held: false },
+  "existing account identity updates must be serialized with directory reads");
+
 assert(source.includes('"Observaciones", "TipoIdentificacion"'), "new Personas sheets expose the canonical type field");
 assert(source.includes('"Observaciones","TipoIdentificacion"'), "migration writer schema includes the canonical type field");
 process.stdout.write("user-person-document-type: PASS (additive schema, explicit value, legacy compatibility and no inference)\n");
