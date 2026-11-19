@@ -11,7 +11,9 @@ for (const template of manifest.templates) {
   const original = fs.readFileSync(file);
   const before = tools.inspect(original);
   const rows = Array.from({ length: 22 }, (_, index) => ({
+    partial1Absences: index % 3,
     partial1: 60 + index + 0.25,
+    partial2Absences: index % 4,
     partial2: 70 + index + 0.5,
     recovery: index % 5 === 0 ? 85 + index / 10 : null
   }));
@@ -32,8 +34,8 @@ for (const template of manifest.templates) {
     assert.equal(after.get("E" + row), expected.partial1);
     assert.equal(after.get("G" + row), expected.partial2);
     assert.equal(after.get("H" + row), expected.recovery);
-    assert.equal(after.get("D" + row), before.get("D" + row), "partial I absence count must remain unchanged");
-    assert.equal(after.get("F" + row), before.get("F" + row), "partial II absence count must remain unchanged");
+    assert.equal(after.get("D" + row), expected.partial1Absences, "partial I absence count must be mapped");
+    assert.equal(after.get("F" + row), expected.partial2Absences, "partial II absence count must be mapped");
     assert.equal(after.get("A" + row), before.get("A" + row), "document marker must remain unchanged");
     assert.equal(after.get("B" + row), before.get("B" + row), "identity must remain unchanged");
     assert.equal(after.get("C" + row), before.get("C" + row), "student name must remain unchanged");
@@ -42,6 +44,14 @@ for (const template of manifest.templates) {
     if (/^[EGH](?:[8-9]|1\d|2\d)$/.test(address)) continue;
     assert.deepEqual(after.cells.get(address), cell, "unmapped cell changed: " + address);
   }
+  const invalidAbsences = rows.map(row => Object.assign({}, row));
+  invalidAbsences[0].partial1Absences = -1;
+  assert.throws(() => tools.fill(original, invalidAbsences, { scale: { min: 0, max: 100, precision: 2 } }),
+    /SACE_ABSENCE_VALUE_INVALID/);
+  const fractionalAbsences = rows.map(row => Object.assign({}, row));
+  fractionalAbsences[0].partial2Absences = 1.5;
+  assert.throws(() => tools.fill(original, fractionalAbsences, { scale: { min: 0, max: 100, precision: 2 } }),
+    /SACE_ABSENCE_VALUE_INVALID/);
   const missingGrade = rows.map(row => Object.assign({}, row));
   missingGrade[0].partial1 = null;
   assert.throws(() => tools.fill(original, missingGrade, { scale: { min: 0, max: 100, precision: 2 } }),
