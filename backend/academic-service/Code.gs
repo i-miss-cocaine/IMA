@@ -10830,30 +10830,58 @@ function saveAcademicRule(payload) {
 
 // --- FUNCIONES DE ASISTENCIA, PUNTUALIDAD Y SEGUIMIENTO ESTUDIANTIL (FASE 7) ---
 
-function openAttendanceSession(payload) {
-  const { fecha, horaInicio, horaFin, grado, seccion, asignaturaId, docenteUserId, observaciones } = payload || {};
-  if (!grado || !asignaturaId) throw new Error("Grado y Asignatura son requeridos.");
+function ensureAttendanceSessionClosureHeader_(sheet) {
+  if (!sheet) throw new Error("ATTENDANCE_SESSION_SHEET_REQUIRED");
+  if (sheet.getLastRow() === 0) sheet.appendRow(["SesionID", "Fecha", "HoraInicio", "HoraFin", "Grado", "Seccion", "AsignaturaID", "DocenteUserId", "Estado", "Observaciones", "FechaCierre"]);
+  const lastCol = Math.max(1, sheet.getLastColumn());
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(value => String(value || "").trim());
+  if (headers.indexOf("FechaCierre") === -1) { sheet.getRange(1, sheet.getLastColumn() + 1).setValue("FechaCierre"); headers.push("FechaCierre"); }
+  const index = {};
+  headers.forEach((header, i) => { if (header) { if (index[header] !== undefined) throw new Error("ATTENDANCE_SESSION_DUPLICATE_HEADER:" + header); index[header] = i; } });
+  ["SesionID", "Fecha", "Grado", "Seccion", "AsignaturaID", "DocenteUserId", "Estado", "FechaCierre"].forEach(header => { if (index[header] === undefined) throw new Error("ATTENDANCE_SESSION_SCHEMA_INVALID:" + header); });
+  return index;
+}
 
+function getAttendanceSessionForTeacher_(ss, sesionId, teacherUserId) {
+  const sheet = ss && ss.getSheetByName("SesionesAsistencia");
+  if (!sheet || sheet.getLastRow() < 2) throw new Error("ATTENDANCE_SESSION_NOT_FOUND");
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0].map(value => String(value || "").trim());
+  const index = {};
+  headers.forEach((header, i) => { if (header) index[header] = i; });
+  ["SesionID", "DocenteUserId", "Estado"].forEach(header => { if (index[header] === undefined) throw new Error("ATTENDANCE_SESSION_SCHEMA_INVALID:" + header); });
+  const matches = [];
+  for (let i = 1; i < rows.length; i++) if (String(rows[i][index.SesionID] || "").trim() === String(sesionId || "").trim()) matches.push({ row: rows[i], rowNumber: i + 1 });
+  if (matches.length !== 1) throw new Error(matches.length > 1 ? "ATTENDANCE_SESSION_ID_AMBIGUOUS" : "ATTENDANCE_SESSION_NOT_FOUND");
+  const match = matches[0];
+  if (String(match.row[index.DocenteUserId] || "").trim() !== String(teacherUserId || "").trim()) throw new Error("ATTENDANCE_SESSION_TEACHER_MISMATCH");
+  return { sheet, row: match.row, rowNumber: match.rowNumber, index, state: String(match.row[index.Estado] || "").trim().toUpperCase() };
+}
+function openAttendanceSession(payload) {
+  const request = payload || {};
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true || actor.role !== "Profesor" || !actor.userId) throw new Error("ATTENDANCE_TEACHER_CONTEXT_REQUIRED");
+  if (!request.grado || !request.asignaturaId) throw new Error("Grado y Asignatura son requeridos.");
+  if (request.docenteUserId && String(request.docenteUserId).trim() !== String(actor.userId).trim()) throw new Error("ATTENDANCE_SESSION_TEACHER_MISMATCH");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "SesionesAsistencia");
-
+  const index = ensureAttendanceSessionClosureHeader_(sheet);
+  const row = new Array(sheet.getLastColumn()).fill("");
   const sesionId = "SES-AST-" + Date.now();
   const now = new Date();
-
-  sheet.appendRow([
-    sesionId,
-    fecha || now.toISOString().split('T')[0],
-    horaInicio || "07:00",
-    horaFin || "08:00",
-    grado,
-    seccion || "A",
-    asignaturaId,
-    docenteUserId || "Docente",
-    "Abierta",
-    observaciones || ""
-  ]);
-
-  return { status: "success", message: "Sesión de asistencia abierta.", data: { sesionId } };
+  row[index.SesionID] = sesionId;
+  row[index.Fecha] = request.fecha || now.toISOString().split("T")[0];
+  row[index.HoraInicio] = request.horaInicio || "07:00";
+  row[index.HoraFin] = request.horaFin || "08:00";
+  row[index.Grado] = request.grado;
+  row[index.Seccion] = request.seccion || "A";
+  row[index.AsignaturaID] = request.asignaturaId;
+  row[index.DocenteUserId] = String(actor.userId).trim();
+  row[index.Estado] = "Abierta";
+  row[index.Observaciones] = request.observaciones || "";
+  row[index.FechaCierre] = "";
+  sheet.appendRow(row);
+  return { status: "success", message: "Sesión de asistencia abierta.", data: { sesionId: sesionId } };
 }
 
 // [F10-Task14] [P1] - Optimizar las consultas batch de asistencia y resiliencia de servicios
@@ -11287,6 +11315,29 @@ function getBatchAttendanceRecords(payload) {
 }
 
 // [F10-Task04] [P1] - Optimizar el registro masivo de asistencia y la gestión de sesiones
+function closeAttendanceSession(payload) {
+  const request = payload || {};
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true || actor.role !== "Profesor" || !actor.userId) throw new Error("ATTENDANCE_TEACHER_CONTEXT_REQUIRED");
+  const sesionId = String(request.sesionId || "").trim();
+  if (!sesionId) throw new Error("ATTENDANCE_SESSION_ID_REQUIRED");
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName("SesionesAsistencia");
+    if (!sheet) throw new Error("ATTENDANCE_SESSION_NOT_FOUND");
+    const index = ensureAttendanceSessionClosureHeader_(sheet);
+    const session = getAttendanceSessionForTeacher_(ss, sesionId, actor.userId);
+    if (session.state === "CERRADA") return { status: "success", idempotent: true, data: { sesionId: sesionId, estado: "Cerrada" } };
+    if (session.state !== "ABIERTA") throw new Error("ATTENDANCE_SESSION_NOT_OPEN");
+    const closedAt = new Date();
+    sheet.getRange(session.rowNumber, index.Estado + 1).setValue("Cerrada");
+    sheet.getRange(session.rowNumber, index.FechaCierre + 1).setValue(closedAt);
+    return { status: "success", idempotent: false, data: { sesionId: sesionId, estado: "Cerrada", fechaCierre: closedAt.toISOString() } };
+  } finally { try { lock.releaseLock(); } catch (error) {} }
+}
+
 function saveClassAttendance(payload) {
   const { sesionId, registros } = payload || {};
   if (!sesionId || !Array.isArray(registros)) throw new Error("sesionId y lista de registros son requeridos.");
