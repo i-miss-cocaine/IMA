@@ -54,7 +54,7 @@
     if (!start || !end || start > end) throw new Error("SACE_PERIOD_RANGE_INVALID:" + label);
     return { periodoId: id, start, end };
   }
-  function countAbsencesForPeriod(studentIds, sessions, records, expected, period, label) {
+  function countAbsencesForPeriod(studentIds, sessions, records, expected, period, label, justifiedAbsenceMode) {
     if (!Array.isArray(sessions) || !Array.isArray(records)) throw new Error("SACE_ATTENDANCE_SNAPSHOT_REQUIRED");
     const sessionIds = new Set(), selected = [];
     sessions.forEach(session => {
@@ -88,7 +88,12 @@
     selected.forEach(session => studentIds.forEach(userId => {
       const record = byKey.get(session.id + "|" + userId);
       if (!record) throw new Error("SACE_ATTENDANCE_RECORD_MISSING:" + label);
-      if (ABSENCE_STATES.has(text(record.estadoAsistencia))) counts[userId]++;
+      if (typeof record.justificado !== "boolean") {
+        throw new Error("SACE_ATTENDANCE_JUSTIFICATION_STATE_REQUIRED:" + label);
+      }
+      if (ABSENCE_STATES.has(text(record.estadoAsistencia))) {
+        if (!(record.justificado && justifiedAbsenceMode === "EXCLUDE")) counts[userId]++;
+      }
     }));
     return { counts, sessions: selected.length };
   }
@@ -103,6 +108,12 @@
       institutionId: required(raw.institutionId, "SACE_CONTEXT_REQUIRED:institutionId"),
       teacherUserId: required(raw.teacherUserId, "SACE_TEACHER_CONTEXT_REQUIRED")
     };
+    const absencePolicy = value.absencePolicy || {};
+    const justifiedAbsenceMode = required(absencePolicy.justifiedAbsenceMode,
+      "SACE_ABSENCE_POLICY_REQUIRED").toUpperCase();
+    if (["COUNT", "EXCLUDE"].indexOf(justifiedAbsenceMode) === -1) {
+      throw new Error("SACE_ABSENCE_POLICY_INVALID");
+    }
     const period1 = validatePeriod(value.partial1Period, "partial1");
     const period2 = validatePeriod(value.partial2Period, "partial2");
     if (period1.periodoId === period2.periodoId) throw new Error("SACE_PERIODS_MUST_BE_DISTINCT");
@@ -134,9 +145,9 @@
       if (identity.name && text(identity.name) !== text(name)) throw new Error("SACE_STUDENT_NAME_MISMATCH");
     });
     const absences1 = countAbsencesForPeriod(studentIds, value.attendanceSessions,
-      value.attendanceRecords, context, period1, "partial1");
+      value.attendanceRecords, context, period1, "partial1", justifiedAbsenceMode);
     const absences2 = countAbsencesForPeriod(studentIds, value.attendanceSessions,
-      value.attendanceRecords, context, period2, "partial2");
+      value.attendanceRecords, context, period2, "partial2", justifiedAbsenceMode);
     const sourceStudents = studentIds.map(id => {
       const student = first.students.get(id), one = first.data.resumenes[id], two = second.data.resumenes[id];
       [one, two].forEach((summary, index) => {
@@ -159,14 +170,18 @@
       attendance: {
         partial1: { sessions: absences1.sessions, absencesByStudent: absences1.counts },
         partial2: { sessions: absences2.sessions, absencesByStudent: absences2.counts },
-        absencePolicy: "count explicit absence statuses; tardiness is not counted; justified absences remain counted pending official confirmation"
+        absencePolicy: {
+          justifiedAbsenceMode: justifiedAbsenceMode,
+          verification: "explicit-input-not-confirmed-against-official-SACE-rule"
+        }
       },
       limitations: [
         "period-to-SACE-partial mapping is supplied explicitly and is not inferred",
         "recovery values are not exported until the official SACE rule is verified",
         "identity document type must come from the verified institutional Personas record",
         "documentType-to-documentMarker mapping is supplied explicitly and must be confirmed against an official SACE template",
-        "attendance snapshots must be obtained server-side for the authenticated teacher context"
+        "attendance snapshots must be obtained server-side for the authenticated teacher context",
+        "justified-absence treatment is explicit input and remains unverified against the official SACE rule; output is candidate only"
       ]
     };
   }
@@ -219,7 +234,8 @@
       partial2Gradebook: value.partial2Gradebook,
       identityRecords: mappedIdentityRecords,
       attendanceSessions: data.attendanceSessions,
-      attendanceRecords: data.attendanceRecords
+      attendanceRecords: data.attendanceRecords,
+      absencePolicy: value.absencePolicy
     });
     const limitations = Array.isArray(snapshot.limitations) ? snapshot.limitations.slice() : [];
     return Object.assign({}, candidate, {

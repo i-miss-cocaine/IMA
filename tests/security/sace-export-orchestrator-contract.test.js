@@ -134,6 +134,7 @@ for (const entry of manifest.templates) {
     partial1Gradebook: spoofedGradebook,
     partial2Gradebook: spoofedGradebook,
     documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" },
     expectedTemplateContext: templateInfo.metadata,
     options: { scale: { min: 0, max: 100, precision: 2 } }
   });

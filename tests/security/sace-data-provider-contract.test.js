@@ -34,9 +34,9 @@ const sessions = [
 ];
 const attendance = [
   { sesionId: "S-1", userId: "STU-1", estadoAsistencia: "Ausente", justificado: true },
-  { sesionId: "S-1", userId: "STU-2", estadoAsistencia: "Presente" },
-  { sesionId: "S-2", userId: "STU-1", estadoAsistencia: "Tardanza" },
-  { sesionId: "S-2", userId: "STU-2", estadoAsistencia: "Falta" }
+  { sesionId: "S-1", userId: "STU-2", estadoAsistencia: "Presente", justificado: false },
+  { sesionId: "S-2", userId: "STU-1", estadoAsistencia: "Tardanza", justificado: false },
+  { sesionId: "S-2", userId: "STU-2", estadoAsistencia: "Falta", justificado: true }
 ];
 const identityRecords = [
   { userId: "STU-1", identity: "0801-2000-00001", documentType: "DNI", documentMarker: "HND", name: "Ana Perez" },
@@ -46,7 +46,8 @@ function build(overrides = {}) {
   return provider.buildCandidateStudents(Object.assign({
     expectedContext, ...periods,
     partial1Gradebook: gradebook("PER-1"), partial2Gradebook: gradebook("PER-2"),
-    attendanceSessions: sessions, attendanceRecords: attendance, identityRecords
+    attendanceSessions: sessions, attendanceRecords: attendance, identityRecords,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }
   }, overrides));
 }
 const result = build();
@@ -60,7 +61,23 @@ assert.deepEqual(result.sourceStudents.map(row => [
 ]);
 assert.equal(result.attendance.partial1.sessions, 1);
 assert.equal(result.attendance.partial2.sessions, 1);
-assert.match(result.attendance.absencePolicy, /justified absences remain counted/);
+assert.deepEqual(result.attendance.absencePolicy, {
+  justifiedAbsenceMode: "COUNT",
+  verification: "explicit-input-not-confirmed-against-official-SACE-rule"
+});
+assert(result.limitations.some(item => item.includes("justified-absence treatment is explicit input")));
+const excludedJustified = build({ absencePolicy: { justifiedAbsenceMode: "EXCLUDE" } });
+assert.deepEqual(excludedJustified.sourceStudents.map(row => [row.partial1Absences, row.partial2Absences]), [
+  [0, 0], [0, 0]
+]);
+assert.throws(() => build({ absencePolicy: undefined }), /SACE_ABSENCE_POLICY_REQUIRED/);
+assert.throws(() => build({ absencePolicy: { justifiedAbsenceMode: "IGNORE" } }), /SACE_ABSENCE_POLICY_INVALID/);
+const missingJustificationState = attendance.map((record, index) => {
+  if (index !== 0) return record;
+  const copy = Object.assign({}, record); delete copy.justificado; return copy;
+});
+assert.throws(() => build({ attendanceRecords: missingJustificationState }),
+  /SACE_ATTENDANCE_JUSTIFICATION_STATE_REQUIRED:partial1/);
 assert.throws(() => build({ attendanceRecords: attendance.slice(1) }), /SACE_ATTENDANCE_RECORD_MISSING:partial1/);
 assert.throws(() => build({ attendanceRecords: attendance.concat(attendance[0]) }), /SACE_ATTENDANCE_RECORD_DUPLICATE:partial1/);
 assert.throws(() => build({ partial2Gradebook: gradebook("PER-2", { estadoPeriodo: "Abierto" }) }), /SACE_GRADEBOOK_PERIOD_NOT_CLOSED:partial2/);
@@ -96,7 +113,8 @@ const fromSnapshot = provider.buildCandidateStudentsFromSnapshot({
   partial2PeriodId: "PER-2",
   partial1Gradebook: gradebook("PER-1"),
   partial2Gradebook: gradebook("PER-2"),
-  documentTypeMappings: [{ documentType: "DNI", documentMarker: "HND" }]
+  documentTypeMappings: [{ documentType: "DNI", documentMarker: "HND" }],
+  absencePolicy: { justifiedAbsenceMode: "COUNT" }
 });
 assert.deepEqual(fromSnapshot.sourceStudents, result.sourceStudents);
 assert(fromSnapshot.limitations.includes("snapshot fixture"));

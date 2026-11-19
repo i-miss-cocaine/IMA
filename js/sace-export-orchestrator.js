@@ -111,6 +111,7 @@ function (provider, templates) {
       partial1Gradebook,
       partial2Gradebook,
       documentTypeMappings: value.documentTypeMappings,
+      absencePolicy: value.absencePolicy,
       expectedTemplateContext: value.expectedTemplateContext,
       options: value.options
     });
