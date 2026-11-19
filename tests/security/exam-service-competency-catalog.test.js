@@ -31,17 +31,18 @@ function extract(name) {
   }
   throw new Error("unbalanced " + name);
 }
-const headers = ["ID", "InstitutionID", "AnoID", "Grado", "AsignaturaID", "CompetenciaID",
-  "Competencia", "IndicadorID", "Indicador", "ProgramaCurricular", "Estado",
-  "RegisteredBy", "CreatedAt", "UpdatedAt", "ContextKey"];
+const headers = ["ID", "InstitutionID", "DepartmentID", "AnoID", "Grado", "Seccion",
+  "AsignaturaID", "CompetenciaID", "Competencia", "IndicadorID", "Indicador", "ProgramaCurricular",
+  "Estado", "RegisteredBy", "CreatedAt", "UpdatedAt", "ContextKey"];
 function norm(value) { return String(value == null ? "" : value).normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").trim().toLowerCase(); }
 const sandbox = { normalizeString: norm };
 vm.runInNewContext(extract("competencyCatalogContextKey_") + "\\n" +
   extract("getCompetencyCatalogUnlocked_") + ";this.read=getCompetencyCatalogUnlocked_;", sandbox);
 function row(id, institution, year, grade, subject, competency, indicator, program, state = "ACTIVE") {
-  const item = { institutionId: institution, anoId: year, grado: grade, asignaturaId: subject,
-    competenciaId: competency, indicadorId: indicator, programaCurricular: program };
-  return [id, institution, year, grade, subject, competency, "Competencia " + competency,
+  const item = { institutionId: institution, departmentId: "DEPT-A", anoId: year, grado: grade,
+    seccion: "A", asignaturaId: subject, competenciaId: competency, indicadorId: indicator,
+    programaCurricular: program };
+  return [id, institution, "DEPT-A", year, grade, "A", subject, competency, "Competencia " + competency,
     indicator, "Indicador " + indicator, program, state, "ADMIN", "2026-01-01", "2026-01-01",
     sandbox.competencyCatalogContextKey_(item)];
 }
@@ -49,7 +50,7 @@ function fixture(rows) {
   const values = [headers, ...rows];
   return { ss: { getSheetByName: name => name === "CatalogoCompetencias"
     ? { getDataRange: () => ({ getValues: () => values.map(r => r.slice()) }) } : null },
-    scope: { institutionId: "INST-A", authorized: true } };
+    scope: { institutionId: "INST-A", departmentIds: ["DEPT-A"], institutionWide: false, authorized: true } };
 }
 const valid = row("C1", "INST-A", "2026", "10", "MAT", "COMP-1", "IND-1", "PLAN-A");
 let result = sandbox.read({ anoId: "2026", grado: "10", asignaturaId: "MAT" }, fixture([
