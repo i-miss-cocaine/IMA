@@ -4249,3 +4249,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.829 — AUD-NG-167: inspección de metadatos y roster de plantilla SACE; emparejamiento por identidad/documento en orden invertido y parcheo binario integrado en contrato Node. Actions 44533727250 SUCCESS. Sin integración backend ni carga SACE real.
 
 [2026-11-19] C1.830 — AUD-NG-167: ensamblador candidato prepareCandidateExport; inspección + mapeo contextual + parcheo binario en una sola ruta probada con datos sintéticos. Actions 44533933243 SUCCESS. Sin integración de producción ni carga SACE real.
+
+[2026-11-19] C1.831 — AUD-NG-167: módulo candidato js/sace-data-provider.js para transformar dos libros contextuales cerrados y asistencia de sesiones en sourceStudents; pruebas sintéticas y workflow ampliados. Bloquea datos incompletos, duplicados, periodos no cerrados, notas no calculadas y recuperaciones no mapeadas. Hallazgo: getBatchAttendanceRecords filtra FechaRegistro, no fecha de sesión; hace falta snapshot server-side unido a SesionesAsistencia. Actions pendiente; no producción ni afirmación de compatibilidad SACE.

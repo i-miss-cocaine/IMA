@@ -1342,3 +1342,34 @@ Pendientes:
 
 Siguiente acción elegible: diseñar el proveedor de datos candidato para recibir libro consolidado y asistencia agregada por contexto, con pruebas unitarias y sin conexión de producción hasta completar BETA-EXAM-105/106.
 ===============================================================================
+
+===============================================================================
+### C1.831 — AUD-NG-167: proveedor candidato de libro y asistencia para SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-DATA-PROVIDER-06
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.830
+HEAD inicial: c13b2174b8b679335e54f93be47ee28709448f1
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Trabajo:
+- Se añadió js/sace-data-provider.js con buildCandidateStudents. Consume dos snapshots del libro contextual getGradebookData, dos rangos/PeriodoID explícitos, directorio institucional de identidad/tipo documental y snapshots de SesionesAsistencia + RegistrosAsistencia.
+- Se exige mismo contexto institucional/académico, roster idéntico por UserID/nombre, periodos cerrados, resumen de nota status=calculated y nota 0–100. Si hay recuperaciones, el armado se bloquea hasta verificar la regla SACE; no se copia el resultado recuperado a la columna RECUPERACIÓN.
+- La asistencia se agrega por fecha de sesión y contexto de grado/sección/AsignaturaID/docente. Se exige un registro único por alumno/sesión; registros faltantes, duplicados y estudiantes ajenos al padrón bloquean el resultado. Tardanzas no se cuentan como inasistencias; las ausencias justificadas se cuentan provisionalmente, pendiente de regla oficial.
+- Se verificó en código que getBatchAttendanceRecords filtra por FechaRegistro y no une SesionesAsistencia; getClassAttendance no proporciona los metadatos de sesión. Por ello el módulo no llama esas APIs ni se conecta al navegador: queda pendiente un snapshot server-side autenticado que una ambas hojas.
+- Se añadió tests/security/sace-data-provider-contract.test.js con fixtures sintéticos para dos periodos, matching de padrón, identidad, notas, conteo por sesión, faltantes, duplicados, estados provisionales, recuperación no resuelta y contexto incorrecto.
+- Se amplió .github/workflows/sace-template-compatibility-contract.yml para ejecutar sintaxis y contrato del proveedor además de las pruebas SACE existentes.
+- Se actualizó docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md con las reglas, el hallazgo de fuente y límites del proveedor.
+- La ejecución de GitHub Actions queda pendiente de resultado posterior al commit; no se registra PASS antes de recibirlo.
+
+Estado AUD-NG-167: [~] En progreso. El proveedor es candidato local y aún no consume datos reales; falta el join server-side autenticado, identidad institucional verificada, regla oficial de ausencias justificadas/recuperación y mapeo PeriodoID-parcial.
+No se habilita exportación de producción ni UI. Manifiesto SACE permanece CANDIDATE/officialSourceVerified=false. BETA-EXAM-105 y BETA-EXAM-106 siguen pendientes; no iniciar AUD-NG-168/TAREA-13.
+
+Siguiente acción elegible:
+1. Diseñar un lector server-side en Academic-Service que, reutilizando el contexto de sesión/permiso existente, entregue las sesiones de clase y sus registros de asistencia con Fecha de sesión y contexto exacto; no reutilizar getBatchAttendanceRecords sin corregir su semántica.
+2. Resolver el origen de Personas.Identificacion y tipo documental desde el esquema institucional verificado.
+3. Mantener el proveedor sin conexión de producción hasta probar la integración con Sheets desplegado y plantilla SACE autorizada.
+===============================================================================

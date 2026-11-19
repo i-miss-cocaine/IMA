@@ -86,3 +86,21 @@ Por tanto, el resultado automatizado demuestra que se puede parchear sin reconst
 
 ## Verificación de fuente oficial SACE — 2026-11-19
 La página oficial de descargas de SACE (https://sace.se.gob.hn/descargas/descargar/archivos) publica el recurso Manual Usuario de Docente SACE. El PDF enlazado desde esa página es https://sace.se.gob.hn/media/documentos_sace/Manual_de___usuario_SACE_Docente_2.pdf. La página 4 del PDF registra la actualización más reciente de este manual en JUNIO 2025; las secciones 4.1.1 y 4.1.2, páginas impresas 21–23, describen descargar el archivo de notas por clase y cargar el mismo archivo completado en SACE. Esta verificación confirma el flujo oficial documentado y la versión del manual publicada en el portal a la fecha de consulta; no proporciona una plantilla XLS de prueba ni acredita los tres libros de este repositorio como archivos oficiales vigentes. El manifiesto permanece CANDIDATE y officialSourceVerified=false.
+
+
+## 7. Proveedor candidato de datos académicos y asistencia — C1.831
+
+Se añadió `js/sace-data-provider.js` como módulo puro de preparación de datos, sin conexión a servicios ni UI. Su contrato recibe dos instantáneas del endpoint contextual `getGradebookData` (una por cada periodo designado), una tabla de identidad documental, sesiones de clase y registros de asistencia. Devuelve filas candidatas compatibles con el ensamblador `prepareCandidateExport`.
+
+Condiciones que aplica:
+
+- Los dos libros deben pertenecer al mismo año, institución, grado, sección y asignatura; cada periodo se identifica explícitamente por `PeriodoID` y rango de fechas, sin deducir el parcial SACE por el orden del catálogo.
+- Los dos periodos deben estar cerrados y cada alumno debe tener resumen `calculated` con nota final numérica de 0 a 100. Los estados provisionales, pendientes, sin nota y notas fuera de rango bloquean el armado.
+- Los padrones de ambos periodos deben coincidir por `UserID` y nombre. Identidad y tipo documental se exigen desde un directorio institucional suministrado por separado; no se derivan del XLS candidato ni de datos libres del cliente.
+- La asistencia se vincula a sesiones por fecha de la sesión, grado, sección, `AsignaturaID` y docente autenticado. Cada alumno debe tener exactamente un registro por sesión de clase seleccionada. Faltantes, duplicados o registros de estudiantes ajenos al padrón bloquean el resultado.
+- Se cuentan los estados explícitos AUSENTE/AUSENCIA/FALTA/INASISTENCIA/ABSENT. Tardanza no se cuenta como inasistencia. Las ausencias justificadas se cuentan provisionalmente porque la regla oficial SACE no se ha confirmado; este comportamiento no es una declaración normativa.
+- La columna RECUPERACIÓN se mantiene vacía. Si el libro contextual contiene registros de recuperación, el proveedor bloquea el resultado hasta verificar cómo debe expresarse esa información en la plantilla oficial.
+
+**Hallazgo de fuente:** `getBatchAttendanceRecords` no basta como fuente para este propósito: filtra por la fecha de registro (`FechaRegistro`) y devuelve registros sin los metadatos de la sesión que permiten comprobar fecha de clase, asignatura, sección y docente. `getClassAttendance` devuelve registros por sesión, pero no incorpora el join con `SesionesAsistencia`. El proveedor, por tanto, requiere que el backend construya una instantánea server-side que una ambas hojas y aplique el contexto autenticado; no se debe pasar al módulo un conjunto arbitrario enviado por el navegador.
+
+**Límite:** el módulo permanece en estado CANDIDATE. No está llamado por backend, API ni UI; no lee Sheets directamente, no habilita descarga y no declara compatibilidad SACE. Los datos de identidad y el contexto docente deben proceder de fuentes institucionales verificadas. El mapeo PeriodoID→parcial, la regla de ausencias justificadas y la recuperación siguen sujetos a validación con plantilla/procedimiento SACE real.

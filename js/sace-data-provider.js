@@ -1,0 +1,172 @@
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  if (root) root.SACEDataProvider = api;
+})(typeof window !== "undefined" ? window : (typeof globalThis !== "undefined" ? globalThis : this), function () {
+  "use strict";
+  const ABSENCE_STATES = new Set(["AUSENTE", "AUSENCIA", "FALTA", "INASISTENCIA", "ABSENT"]);
+  function text(value) {
+    return String(value == null ? "" : value).normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
+  }
+  function dateKey(value) {
+    if (value instanceof Date && Number.isFinite(value.getTime())) {
+      return [value.getFullYear(), String(value.getMonth() + 1).padStart(2, "0"),
+        String(value.getDate()).padStart(2, "0")].join("-");
+    }
+    const raw = String(value == null ? "" : value).trim();
+    const match = /^(\d{4}-\d{2}-\d{2})(?:$|T)/.exec(raw);
+    if (!match) return "";
+    const parsed = new Date(match[1] + "T00:00:00.000Z");
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === match[1] ? match[1] : "";
+  }
+  function required(value, code) {
+    const result = String(value == null ? "" : value).trim();
+    if (!result) throw new Error(code);
+    return result;
+  }
+  function assertPeriodSnapshot(snapshot, expected, period, label) {
+    if (!snapshot || snapshot.status !== "success" || !snapshot.data) throw new Error("SACE_GRADEBOOK_SNAPSHOT_INVALID:" + label);
+    const data = snapshot.data, context = data.contexto || {};
+    ["anoId", "grado", "seccion", "asignatura", "institutionId"].forEach(field => {
+      if (!text(context[field]) || text(context[field]) !== text(expected[field])) {
+        throw new Error("SACE_GRADEBOOK_CONTEXT_MISMATCH:" + label + ":" + field);
+      }
+    });
+    if (text(context.periodoId) !== text(period.periodoId)) throw new Error("SACE_GRADEBOOK_PERIOD_MISMATCH:" + label);
+    if (text(data.estadoPeriodo) !== "CERRADO") throw new Error("SACE_GRADEBOOK_PERIOD_NOT_CLOSED:" + label);
+    if (!Array.isArray(data.alumnos) || !data.alumnos.length || !data.resumenes ||
+        typeof data.resumenes !== "object") throw new Error("SACE_GRADEBOOK_DATA_INCOMPLETE:" + label);
+    if (Array.isArray(data.recuperaciones) && data.recuperaciones.length) {
+      throw new Error("SACE_RECOVERY_MAPPING_UNVERIFIED:" + label);
+    }
+    const students = new Map();
+    data.alumnos.forEach(student => {
+      const userId = required(student && student.userId, "SACE_GRADEBOOK_STUDENT_ID_REQUIRED");
+      if (students.has(userId)) throw new Error("SACE_GRADEBOOK_STUDENT_DUPLICATE:" + label);
+      students.set(userId, student);
+    });
+    return { data, students };
+  }
+  function validatePeriod(period, label) {
+    const id = required(period && period.periodoId, "SACE_PERIOD_ID_REQUIRED:" + label);
+    const start = dateKey(period && period.fechaInicio), end = dateKey(period && period.fechaFin);
+    if (!start || !end || start > end) throw new Error("SACE_PERIOD_RANGE_INVALID:" + label);
+    return { periodoId: id, start, end };
+  }
+  function countAbsencesForPeriod(studentIds, sessions, records, expected, period, label) {
+    if (!Array.isArray(sessions) || !Array.isArray(records)) throw new Error("SACE_ATTENDANCE_SNAPSHOT_REQUIRED");
+    const sessionIds = new Set(), selected = [];
+    sessions.forEach(session => {
+      const id = String(session && session.sesionId || "").trim();
+      if (!id) throw new Error("SACE_ATTENDANCE_SESSION_ID_REQUIRED");
+      if (sessionIds.has(id)) throw new Error("SACE_ATTENDANCE_SESSION_DUPLICATE");
+      sessionIds.add(id);
+      const day = dateKey(session.fecha);
+      if (!day) throw new Error("SACE_ATTENDANCE_SESSION_DATE_INVALID");
+      if (day < period.start || day > period.end) return;
+      if (text(session.grado) !== text(expected.grado) ||
+          text(session.seccion) !== text(expected.seccion) ||
+          text(session.asignaturaId) !== text(expected.asignaturaId) ||
+          String(session.docenteUserId || "").trim() !== expected.teacherUserId) return;
+      selected.push({ id, date: day });
+    });
+    if (!selected.length) throw new Error("SACE_ATTENDANCE_SESSIONS_EMPTY:" + label);
+    const selectedIds = new Set(selected.map(session => session.id));
+    const studentSet = new Set(studentIds), byKey = new Map();
+    records.forEach(record => {
+      const sessionId = String(record && record.sesionId || "").trim();
+      if (!selectedIds.has(sessionId)) return;
+      const userId = String(record && record.userId || "").trim();
+      if (!studentSet.has(userId)) throw new Error("SACE_ATTENDANCE_STUDENT_OUTSIDE_ROSTER:" + label);
+      const key = sessionId + "|" + userId;
+      if (byKey.has(key)) throw new Error("SACE_ATTENDANCE_RECORD_DUPLICATE:" + label);
+      byKey.set(key, record);
+    });
+    const counts = Object.create(null);
+    studentIds.forEach(id => { counts[id] = 0; });
+    selected.forEach(session => studentIds.forEach(userId => {
+      const record = byKey.get(session.id + "|" + userId);
+      if (!record) throw new Error("SACE_ATTENDANCE_RECORD_MISSING:" + label);
+      if (ABSENCE_STATES.has(text(record.estadoAsistencia))) counts[userId]++;
+    }));
+    return { counts, sessions: selected.length };
+  }
+  function buildCandidateStudents(input) {
+    const value = input || {}, raw = value.expectedContext || {};
+    const context = {
+      anoId: required(raw.anoId, "SACE_CONTEXT_REQUIRED:anoId"),
+      grado: required(raw.grado, "SACE_CONTEXT_REQUIRED:grado"),
+      seccion: required(raw.seccion, "SACE_CONTEXT_REQUIRED:seccion"),
+      asignatura: required(raw.asignatura, "SACE_CONTEXT_REQUIRED:asignatura"),
+      asignaturaId: required(raw.asignaturaId, "SACE_CONTEXT_REQUIRED:asignaturaId"),
+      institutionId: required(raw.institutionId, "SACE_CONTEXT_REQUIRED:institutionId"),
+      teacherUserId: required(raw.teacherUserId, "SACE_TEACHER_CONTEXT_REQUIRED")
+    };
+    const period1 = validatePeriod(value.partial1Period, "partial1");
+    const period2 = validatePeriod(value.partial2Period, "partial2");
+    if (period1.periodoId === period2.periodoId) throw new Error("SACE_PERIODS_MUST_BE_DISTINCT");
+    const first = assertPeriodSnapshot(value.partial1Gradebook, context, period1, "partial1");
+    const second = assertPeriodSnapshot(value.partial2Gradebook, context, period2, "partial2");
+    if (first.students.size !== second.students.size) throw new Error("SACE_GRADEBOOK_ROSTER_MISMATCH");
+    first.students.forEach((student, id) => {
+      const other = second.students.get(id);
+      if (!other || text(student.nombreCompleto) !== text(other.nombreCompleto)) throw new Error("SACE_GRADEBOOK_ROSTER_MISMATCH");
+    });
+    if (!Array.isArray(value.identityRecords)) throw new Error("SACE_IDENTITY_DIRECTORY_REQUIRED");
+    const identities = new Map();
+    value.identityRecords.forEach(record => {
+      const id = required(record && record.userId, "SACE_IDENTITY_USER_REQUIRED");
+      if (identities.has(id)) throw new Error("SACE_IDENTITY_RECORD_DUPLICATE");
+      identities.set(id, {
+        identity: required(record.identity, "SACE_STUDENT_IDENTITY_REQUIRED"),
+        documentMarker: required(record.documentMarker, "SACE_STUDENT_DOCUMENT_TYPE_REQUIRED"),
+        name: record.name
+      });
+    });
+    const studentIds = Array.from(first.students.keys());
+    studentIds.forEach(id => {
+      const identity = identities.get(id);
+      if (!identity) throw new Error("SACE_IDENTITY_RECORD_MISSING");
+      const name = String(first.students.get(id).nombreCompleto || "").trim();
+      if (!name) throw new Error("SACE_STUDENT_NAME_REQUIRED");
+      if (identity.name && text(identity.name) !== text(name)) throw new Error("SACE_STUDENT_NAME_MISMATCH");
+    });
+    const absences1 = countAbsencesForPeriod(studentIds, value.attendanceSessions,
+      value.attendanceRecords, context, period1, "partial1");
+    const absences2 = countAbsencesForPeriod(studentIds, value.attendanceSessions,
+      value.attendanceRecords, context, period2, "partial2");
+    const sourceStudents = studentIds.map(id => {
+      const student = first.students.get(id), one = first.data.resumenes[id], two = second.data.resumenes[id];
+      [one, two].forEach((summary, index) => {
+        if (!summary || summary.status !== "calculated" || summary.notaFinal === null ||
+            summary.notaFinal === undefined || summary.notaFinal === "" ||
+            !Number.isFinite(Number(summary.notaFinal)) || Number(summary.notaFinal) < 0 || Number(summary.notaFinal) > 100) {
+          throw new Error("SACE_GRADE_NOT_FINAL:" + (index === 0 ? "partial1" : "partial2"));
+        }
+      });
+      const identity = identities.get(id);
+      return {
+        userId: id, identity: identity.identity, documentMarker: identity.documentMarker,
+        name: student.nombreCompleto, partial1Absences: absences1.counts[id],
+        partial1: Number(one.notaFinal), partial2Absences: absences2.counts[id],
+        partial2: Number(two.notaFinal), recovery: null
+      };
+    });
+    return {
+      status: "candidate", sourceStudents,
+      attendance: {
+        partial1: { sessions: absences1.sessions, absencesByStudent: absences1.counts },
+        partial2: { sessions: absences2.sessions, absencesByStudent: absences2.counts },
+        absencePolicy: "count explicit absence statuses; tardiness is not counted; justified absences remain counted pending official confirmation"
+      },
+      limitations: [
+        "period-to-SACE-partial mapping is supplied explicitly and is not inferred",
+        "recovery values are not exported until the official SACE rule is verified",
+        "identity/document markers must come from a verified institutional source",
+        "attendance snapshots must be obtained server-side for the authenticated teacher context"
+      ]
+    };
+  }
+  return { buildCandidateStudents, dateKey };
+});
