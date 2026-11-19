@@ -111,7 +111,7 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1") {
     Date, String, Number, Array, Object, Set, Error, Math, JSON
   };
   vm.createContext(context);
-  vm.runInContext(extract("getSaceAttendanceSnapshot") + "\nthis.runSnapshot=getSaceAttendanceSnapshot;", context);
+  vm.runInContext(extract("resolveSaceAttendanceJustification_") + "\n" + extract("getSaceAttendanceSnapshot") + "\nthis.runSnapshot=getSaceAttendanceSnapshot;", context);
   return context;
 }
 
@@ -123,7 +123,7 @@ const payload = {
   docenteUserId: "ATTACKER-SPOOF", sessionToken: "SESSION-TEST"
 };
 const result = createContext().runSnapshot(payload);
-assert.equal(result.status, "success");
+assert.equal(result.status, "success", result.code || "snapshot did not succeed");
 assert.equal(result.data.expectedContext.teacherUserId, "TEACHER-1", "teacher identity must come from the verified session");
 assert.equal(result.data.expectedContext.institutionId, "INST-1", "institution must come from verified claims and service configuration");
 assert.equal(result.data.expectedContext.asignatura, "Informática");
