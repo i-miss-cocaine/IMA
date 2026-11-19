@@ -186,6 +186,33 @@ for (const entry of manifest.templates) {
     academicTemplateContextMapping: contextMapping,
     options: { scale: { min: 0, max: 100, precision: 2 } }
   }), /SACE_GRADEBOOK_PARTIAL_SNAPSHOT_MISMATCH/);
+  const mismatchedGradebookYear = JSON.parse(JSON.stringify(attendanceSnapshot));
+  mismatchedGradebookYear.data.gradebookSnapshots[0].snapshot.data.contexto.anoId = "2025";
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: mismatchedGradebookYear,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_GRADEBOOK_CONTEXT_MISMATCH:partial1:anoId/);
+  const mismatchedPeriodYear = JSON.parse(JSON.stringify(attendanceSnapshot));
+  mismatchedPeriodYear.data.periods[0].anoId = "2025";
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: mismatchedPeriodYear,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_PERIOD_YEAR_MISMATCH:partial1/);
+  const overlappingPeriodRanges = JSON.parse(JSON.stringify(attendanceSnapshot));
+  overlappingPeriodRanges.data.periods[1].fechaInicio = "2026-03-15";
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: overlappingPeriodRanges,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_PERIOD_RANGE_OVERLAP_OR_ORDER_INVALID/);
   const mismatchedAcademicMapping = Object.assign({}, contextMapping, {
     academic: Object.assign({}, expectedContext, { seccion: "B" })
   });
