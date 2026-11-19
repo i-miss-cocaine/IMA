@@ -180,6 +180,31 @@ test("assigned teacher may use an institution-wide catalog entry", () => {
   assert.equal(x.sheets.EvaluacionesCompetencias.rows.length, 2);
 });
 
+test("global competency can use a rubric owned by the selected department", () => {
+  const contextKey = JSON.stringify(["inst-1", "", "2026", "10", "a", "math", "plan-a", "comp-1", "ind-1"]);
+  const globalRow = ["CAT-GLOBAL", "INST-1", "", "2026", "10", "A", "Math", "COMP-1", "Competencia",
+    "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN-1", "2026-01-01", "2026-01-01", contextKey];
+  const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID",
+    "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  const ownershipRows = [ownershipHeaders,
+    ["OWN-1", "INST-1", "RUBRICA_EVALUACION", "RUB-1", "DEPT-1", "ACTIVE", "PROF-1", "", ""]];
+  const x = fixture({ catalogRows: [catalogHeaders, globalRow], ownershipRows });
+  const result = x.call(Object.assign({}, x.payload, { departmentId: "DEPT-1" }));
+  assert.equal(result.status, "success");
+  assert.equal(result.userId, "STU-1");
+});
+
+test("rubric from another selected department is rejected even when teacher has both", () => {
+  const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID",
+    "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+  const ownershipRows = [ownershipHeaders,
+    ["OWN-1", "INST-1", "RUBRICA_EVALUACION", "RUB-1", "DEPT-2", "ACTIVE", "PROF-1", "", ""]];
+  const x = fixture({ scope: { authorized: true, institutionId: "INST-1",
+    departmentIds: ["DEPT-1", "DEPT-2"], institutionWide: false }, ownershipRows });
+  assert.throws(() => x.call(Object.assign({}, x.payload, { departmentId: "DEPT-1" })),
+    /RESOURCE_NOT_AVAILABLE/);
+});
+
 test("teacher may evaluate another student only within their verified assignment", () => {
   const x = fixture(); const result = x.call(Object.assign({}, x.payload, { userId: "STU-2" }));
   assert.equal(result.userId, "STU-2");
