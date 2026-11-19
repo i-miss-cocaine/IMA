@@ -38,4 +38,8 @@ assert.ok(js.includes("departmentId: String(document.getElementById('gb-competen
   "competency evaluation must use the department linked to the selected catalog item");
 assert.ok(js.includes("const requestedDepartmentId") || js.includes("departmentId: String(document.getElementById('gb-catalog-department')?.value"),
   "rubric reads must be scoped to the selected department");
-process.stdout.write("teacher-gradebook-rubric-competency-ui: PASS (16 contracts)\n");
+const competencyRead = js.slice(js.indexOf("async function loadGradebookCompetencyEvaluations"),
+  js.indexOf("document.getElementById('btn-gb-load-rubrics'"));
+assert.ok(competencyRead.includes("departmentId: String("),
+  "competency evaluation reads must retain selected department context");
+process.stdout.write("teacher-gradebook-rubric-competency-ui: PASS (17 contracts)\n");
