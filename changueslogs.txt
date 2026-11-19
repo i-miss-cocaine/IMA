@@ -4285,3 +4285,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.847 — AUD-NG-167: generación candidata sin mutar el XLS fuente; proveedor exige mismo AnoID y periodos parciales no solapados. SACE Actions 44564738163/44564960798 y Academic Actions 44564960766 SUCCESS.
 
 [2026-11-19] C1.848 — AUD-NG-167: snapshot bloquea todas las fuentes locales y los escritores de matrícula comparten ScriptLock; BETA-EXAM-107/113 actualizados con pruebas de concurrencia real pendientes. Academic Actions 44566020450 PASS; Department Scope falla por función preexistente ausente.
+
+[2026-11-19] C1.849 — AUD-NG-167: mapeo académico SACE exige anoId coincidente con snapshot; prueba negativa de año divergente. SACE Action 44567642763 SUCCESS.

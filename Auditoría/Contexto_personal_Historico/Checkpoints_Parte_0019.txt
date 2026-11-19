@@ -492,3 +492,42 @@ Beta actualizado:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: continuar la auditoría de mapeos y validar que el proveedor y orquestador mantengan la salida CANDIDATE sin escrituras/descargas; los beta oficiales permanecen pendientes.
 ===============================================================================
+
+
+===============================================================================
+### C1.849 — AUD-NG-167: año lectivo obligatorio en el mapeo académico SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-YEAR-MAPPING-24
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.848
+HEAD inicial: 6e8f46ed94f05f2d530332206257666489b8bdec
+HEAD de implementación: 496f27c200149b7bb22b736046877bb594539051
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- assertAcademicTemplateContextMapping ahora exige que mapping.academic.anoId exista y coincida con attendanceSnapshot.data.expectedContext.anoId, además de institución, grado, sección, asignaturaId y asignatura.
+- Se añadió una prueba negativa que intenta suministrar un mapeo del año 2025 frente a un snapshot 2026 y exige SACE_TEMPLATE_CONTEXT_MAPPING_MISMATCH:academic.anoId.
+- No se añadió año al encabezado de plantilla porque los XLS candidatos no acreditan que exista un campo oficial para ello; la verificación se limita al contexto académico de origen.
+
+Archivos de código/prueba modificados:
+- js/sace-export-orchestrator.js
+- tests/security/sace-export-orchestrator-contract.test.js
+
+Verificación:
+- GitHub Actions 44567642763 — SACE template structure compatibility contract: SUCCESS.
+- Check run 135713668765 (structural-contract): SUCCESS; Node.js 22 ejecutó sintaxis, estructura, parcheo binario, proveedor y orquestador.
+- Diff revisado: una lista de campos de contexto ampliada y un test negativo; sin cambios ajenos.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- La validación de año fortalece la coherencia del mapeo suministrado, pero no acredita que la plantilla sea oficial ni que sus etiquetas correspondan a las de IMA.
+- Código de centro, jornada, tipo documental, política de ausencias, recuperación y aceptación real SACE permanecen pendientes de sus fuentes/pruebas respectivas.
+- La salida continúa CANDIDATE; no hay carga ni descarga productiva.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar los campos restantes del contexto candidato y las garantías de no publicación/no carga; mantener las validaciones beta oficiales como pendientes independientes.
+===============================================================================

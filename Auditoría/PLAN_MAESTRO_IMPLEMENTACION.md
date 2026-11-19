@@ -5983,3 +5983,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El ScriptLock se adquiere antes de leer año, periodos, asignatura, matrículas, sesiones, registros y justificaciones; USER/Exam quedan fuera del lock. `reconcileStudentLifecycleState` ahora usa el mismo lock.
 - Contrato de snapshot y auditoría estática de escritores PASS. Academic Actions 44566020450 y cuatro workflows transversales PASS; Department Scope 44566020516 falla por `configureSchoolDocumentTemplate` ausente también en C1.843, ajeno al cambio.
 - BETA-EXAM-107/113 se amplían con concurrencia real pendiente. AUD-NG-167 continúa en progreso.
+
+### C1.849 — AUD-NG-167: año lectivo en el mapeo SACE
+- assertAcademicTemplateContextMapping exige academic.anoId coincidente con el snapshot; test negativo cubre mapeo 2025 frente a snapshot 2026. No se inventa un campo de año en el XLS.
+- SACE template compatibility Action 44567642763 y check structural-contract 135713668765 SUCCESS (Node.js 22, sintaxis y contratos).
+- AUD-NG-167 continúa En progreso; siguiente: revisar campos restantes y mantener CANDIDATE hasta contar con evidencia oficial.
