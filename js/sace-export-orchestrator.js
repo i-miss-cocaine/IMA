@@ -25,6 +25,12 @@ function (provider, templates) {
   function normalizeGradeSection(value) {
     return normalizeContextText(value).replace(/[.°º]/g, " ").trim().split(/\s+/).join(" ");
   }
+  function normalizeSacePartialLabel(value) {
+    const normalized = normalizeContextText(value);
+    if (normalized === "I PARCIAL" || normalized === "PARCIAL I") return "PARCIAL I";
+    if (normalized === "II PARCIAL" || normalized === "PARCIAL II") return "PARCIAL II";
+    return "";
+  }
   function assertAcademicTemplateContextMapping(snapshot, templateContext, mapping) {
     const context = snapshot && snapshot.data && snapshot.data.expectedContext;
     if (!context) throw new Error("SACE_ATTENDANCE_CONTEXT_REQUIRED");
@@ -123,20 +129,32 @@ function (provider, templates) {
     const partial1PeriodId = String(required(value.partial1PeriodId, "SACE_PARTIAL1_PERIOD_MAPPING_REQUIRED")).trim();
     const partial2PeriodId = String(required(value.partial2PeriodId, "SACE_PARTIAL2_PERIOD_MAPPING_REQUIRED")).trim();
     if (partial1PeriodId === partial2PeriodId) throw new Error("SACE_PERIODS_MUST_BE_DISTINCT");
-    const byPeriod = new Map();
+    const byPeriod = new Map(), partialLabelByPeriod = new Map();
     snapshots.forEach(item => {
       const periodId = String(required(item && item.periodoId, "SACE_GRADEBOOK_SNAPSHOT_PERIOD_REQUIRED")).trim();
       if (byPeriod.has(periodId)) throw new Error("SACE_GRADEBOOK_SNAPSHOT_PERIOD_DUPLICATE");
       if (!item.snapshot || item.snapshot.status !== "success" || !item.snapshot.data) {
         throw new Error("SACE_GRADEBOOK_SNAPSHOT_INVALID");
       }
-      const contextPeriodId = String(item.snapshot.data.contexto && item.snapshot.data.contexto.periodoId || "").trim();
+      const context = item.snapshot.data.contexto || {};
+      const contextPeriodId = String(context.periodoId || "").trim();
       if (contextPeriodId !== periodId) throw new Error("SACE_GRADEBOOK_SNAPSHOT_PERIOD_MISMATCH");
+      const partialLabel = normalizeSacePartialLabel(required(item.parcial, "SACE_GRADEBOOK_PARTIAL_MAPPING_REQUIRED"));
+      const snapshotPartialLabel = normalizeSacePartialLabel(required(context.parcial, "SACE_GRADEBOOK_PARTIAL_SNAPSHOT_LABEL_REQUIRED"));
+      if (!partialLabel || !snapshotPartialLabel) throw new Error("SACE_GRADEBOOK_PARTIAL_LABEL_UNSUPPORTED");
+      if (partialLabel !== snapshotPartialLabel) throw new Error("SACE_GRADEBOOK_PARTIAL_SNAPSHOT_MISMATCH");
       byPeriod.set(periodId, item.snapshot);
+      partialLabelByPeriod.set(periodId, partialLabel);
     });
     const partial1Gradebook = byPeriod.get(partial1PeriodId);
     const partial2Gradebook = byPeriod.get(partial2PeriodId);
     if (!partial1Gradebook || !partial2Gradebook) throw new Error("SACE_PARTIAL_PERIOD_NOT_IN_SNAPSHOT");
+    if (partialLabelByPeriod.get(partial1PeriodId) !== "PARCIAL I") {
+      throw new Error("SACE_GRADEBOOK_PARTIAL_MAPPING_MISMATCH:partial1");
+    }
+    if (partialLabelByPeriod.get(partial2PeriodId) !== "PARCIAL II") {
+      throw new Error("SACE_GRADEBOOK_PARTIAL_MAPPING_MISMATCH:partial2");
+    }
     return prepareCandidateExportFromSnapshot({
       templateBytes: value.templateBytes,
       attendanceSnapshot,

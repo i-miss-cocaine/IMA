@@ -60,6 +60,7 @@ for (const entry of manifest.templates) {
           grado: expectedContext.grado,
           seccion: expectedContext.seccion,
           asignatura: expectedContext.asignatura,
+          parcial: gradeIndex === 1 ? "I Parcial" : "II Parcial",
           institutionId: expectedContext.institutionId
         },
         estadoPeriodo: "Cerrado",
@@ -119,8 +120,8 @@ for (const entry of manifest.templates) {
       expectedContext,
       periods,
       gradebookSnapshots: [
-        { periodoId: "PER-1", snapshot: partial1Gradebook },
-        { periodoId: "PER-2", snapshot: partial2Gradebook }
+        { periodoId: "PER-1", parcial: "I Parcial", snapshot: partial1Gradebook },
+        { periodoId: "PER-2", parcial: "II Parcial", snapshot: partial2Gradebook }
       ],
       identityRecords,
       attendanceSessions,
@@ -166,6 +167,25 @@ for (const entry of manifest.templates) {
     academicTemplateContextMapping: contextMapping,
     options: { scale: { min: 0, max: 100, precision: 2 } }
   }), /SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial1/);
+  const mismatchedPartialMapping = JSON.parse(JSON.stringify(attendanceSnapshot));
+  mismatchedPartialMapping.data.gradebookSnapshots[0].parcial = "II Parcial";
+  mismatchedPartialMapping.data.gradebookSnapshots[0].snapshot.data.contexto.parcial = "II Parcial";
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: mismatchedPartialMapping,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_GRADEBOOK_PARTIAL_MAPPING_MISMATCH:partial1/);
+  const inconsistentPartialSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
+  inconsistentPartialSnapshot.data.gradebookSnapshots[0].snapshot.data.contexto.parcial = "II Parcial";
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: inconsistentPartialSnapshot,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_GRADEBOOK_PARTIAL_SNAPSHOT_MISMATCH/);
   const mismatchedAcademicMapping = Object.assign({}, contextMapping, {
     academic: Object.assign({}, expectedContext, { seccion: "B" })
   });
