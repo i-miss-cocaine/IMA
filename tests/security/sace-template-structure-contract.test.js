@@ -118,6 +118,10 @@ function readWorkbook(filePath) {
   }));
   assert.equal(sheets.length, 1, "expected exactly one worksheet");
   assert.equal(sheets[0].visibility, 0, "worksheet must be visible");
+  const workbookProtectionRecord = records.find(record => record.id === 0x0012 && record.offset < sheets[0].offset);
+  const workbookPasswordRecord = records.find(record => record.id === 0x0013 && record.offset < sheets[0].offset);
+  const workbookProtectionFlag = workbookProtectionRecord ? workbookView.getUint16(workbookProtectionRecord.payload, true) : null;
+  const workbookPasswordHash = workbookPasswordRecord ? workbookView.getUint16(workbookPasswordRecord.payload, true) : null;
   const sheetRecordsOnly = records.filter(record => record.offset >= sheets[0].offset);
   const cells = new Map();
   const merges = [];
@@ -187,7 +191,8 @@ function readWorkbook(filePath) {
   }
   const get = address => cells.get(address)?.value;
   return { bytes: bytes.length, workbookSize: workbook.size, allocatedWorkbookBytes: workbookChain.length * sectorSize,
-    dimension, sheets, merges, formulaCount, protectionFlag, passwordHash, validations,
+    dimension, sheets, merges, formulaCount, workbookProtectionFlag, workbookPasswordHash,
+    sheetProtectionFlag: protectionFlag, sheetPasswordHash: passwordHash, validations,
     cells, get };
 }
 
@@ -206,8 +211,10 @@ for (const template of manifest.templates) {
   assert.deepEqual([...book.merges].sort(), [...expectedMerges].sort());
   assert.equal(book.formulaCount, 0, "worksheet formula count changed: " + template.templateCode);
   assert.equal(book.validations, 0, "data validation records changed: " + template.templateCode);
-  assert.equal(book.protectionFlag, 0, "worksheet protection flag changed: " + template.templateCode);
-  assert.equal(book.passwordHash, 0, "unexpected worksheet password hash: " + template.templateCode);
+  assert.equal(book.workbookProtectionFlag, 0, "workbook structure protection changed: " + template.templateCode);
+  assert.equal(book.workbookPasswordHash, 0, "unexpected workbook password hash: " + template.templateCode);
+  assert.equal(book.sheetProtectionFlag, null, "unexpected worksheet protection record: " + template.templateCode);
+  assert.equal(book.sheetPasswordHash, null, "unexpected worksheet password record: " + template.templateCode);
   assert.ok(book.allocatedWorkbookBytes >= book.workbookSize);
   assert.match(String(book.get("A2")), /BACHILLERATO TÉCNICO PROFESIONAL/);
   assert.match(String(book.get("A3")), /ONCEAVO GRADO SECCIÓN 1/);
