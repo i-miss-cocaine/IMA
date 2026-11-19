@@ -320,29 +320,70 @@
     });
     const parsed = parseCompound(input);
     if (parsed.workbookProtectionFlag !== 0) throw new Error("SACE_WORKBOOK_PROTECTION_LAYOUT_UNSUPPORTED");
-    const rowRecords = new Map();
-    for (const record of parsed.records) {
-      if (record.id !== 0x00bd || record.offset < parsed.sheetOffset) continue;
-      const view = new DataView(parsed.workbookStream.buffer, parsed.workbookStream.byteOffset, parsed.workbookStream.byteLength);
-      const row = view.getUint16(record.payload, true);
-      if (row < STUDENT_FIRST_ROW - 1 || row > STUDENT_LAST_ROW - 1) continue;
-      const firstColumn = view.getUint16(record.payload + 2, true);
-      const lastColumn = view.getUint16(record.payload + record.length - 2, true);
-      const count = (record.length - 6) / 6;
-      if (firstColumn !== 3 || (count !== 4 && count !== 5) || lastColumn !== 3 + count - 1) {
-        throw new Error("SACE_GRADE_ROW_LAYOUT_UNSUPPORTED:" + (row + 1));
-      }
-      if (rowRecords.has(row)) throw new Error("SACE_GRADE_ROW_DUPLICATE:" + (row + 1));
-      rowRecords.set(row, { record, count });
-    }
-    if (rowRecords.size !== STUDENT_COUNT) throw new Error("SACE_GRADE_ROWS_INCOMPLETE");
-    if (!Number.isInteger(parsed.recoveryStyle)) throw new Error("SACE_RECOVERY_STYLE_UNAVAILABLE");
+    const rowRecords = new Map(), rowLastRecordIndex = new Map(), replacementsByIndex = new Map();
+    const workbookView = new DataView(parsed.workbookStream.buffer, parsed.workbookStream.byteOffset, parsed.workbookStream.byteLength);
     const stream = parsed.workbookStream;
-    const view = new DataView(stream.buffer, stream.byteOffset, stream.byteLength);
-    const replacements = [];
+    function getCellRange(record) {
+      const q = record.payload, id = record.id;
+      if (id === 0x00bd || id === 0x00be) return {
+        row: workbookView.getUint16(q, true),
+        firstColumn: workbookView.getUint16(q + 2, true),
+        lastColumn: workbookView.getUint16(q + record.length - 2, true)
+      };
+      if ([0x00fd, 0x0204, 0x0203, 0x027e, 0x0201, 0x0006].includes(id)) {
+        const row = workbookView.getUint16(q, true), column = workbookView.getUint16(q + 2, true);
+        return { row, firstColumn: column, lastColumn: column };
+      }
+      return null;
+    }
+    function makeMulBlankRecord(row, firstColumn, styles) {
+      const payload = new Uint8Array(4 + styles.length * 2 + 2), view = new DataView(payload.buffer);
+      view.setUint16(0, row, true);
+      view.setUint16(2, firstColumn, true);
+      styles.forEach((style, index) => view.setUint16(4 + index * 2, style, true));
+      view.setUint16(payload.length - 2, firstColumn + styles.length - 1, true);
+      return makeRecord(0x00be, payload);
+    }
+    for (let index = 0; index < parsed.records.length; index++) {
+      const record = parsed.records[index];
+      if (record.offset < parsed.sheetOffset) continue;
+      const range = getCellRange(record);
+      if (!range || range.row < STUDENT_FIRST_ROW - 1 || range.row > STUDENT_LAST_ROW - 1) continue;
+      rowLastRecordIndex.set(range.row, index);
+      if (record.id === 0x00bd && range.firstColumn === 3) {
+        const count = (record.length - 6) / 6;
+        if ((count !== 4 && count !== 5) || range.lastColumn !== 3 + count - 1) {
+          throw new Error("SACE_GRADE_ROW_LAYOUT_UNSUPPORTED:" + (range.row + 1));
+        }
+        if (rowRecords.has(range.row)) throw new Error("SACE_GRADE_ROW_DUPLICATE:" + (range.row + 1));
+        rowRecords.set(range.row, { record, index, count });
+      } else if (record.id === 0x00be && range.firstColumn <= 7 && range.lastColumn >= 7) {
+        const styles = [];
+        const count = (record.length - 6) / 2;
+        for (let i = 0; i < count; i++) styles.push(workbookView.getUint16(record.payload + 4 + i * 2, true));
+        const segments = [];
+        let segmentStart = null, segmentStyles = [];
+        for (let column = range.firstColumn; column <= range.lastColumn; column++) {
+          if (column === 7) {
+            if (segmentStyles.length) segments.push(makeMulBlankRecord(range.row, segmentStart, segmentStyles));
+            segmentStart = null; segmentStyles = [];
+            continue;
+          }
+          if (segmentStart === null) segmentStart = column;
+          segmentStyles.push(styles[column - range.firstColumn]);
+        }
+        if (segmentStyles.length) segments.push(makeMulBlankRecord(range.row, segmentStart, segmentStyles));
+        replacementsByIndex.set(index, segments);
+      } else if (range.firstColumn === 7 && range.lastColumn === 7) {
+        replacementsByIndex.set(index, []);
+      }
+    }
+    if (rowRecords.size !== STUDENT_COUNT || rowLastRecordIndex.size !== STUDENT_COUNT) {
+      throw new Error("SACE_GRADE_ROWS_INCOMPLETE");
+    }
+    if (!Number.isInteger(parsed.recoveryStyle)) throw new Error("SACE_RECOVERY_STYLE_UNAVAILABLE");
     for (let row = STUDENT_FIRST_ROW - 1; row <= STUDENT_LAST_ROW - 1; row++) {
       const entry = rowRecords.get(row), record = entry.record;
-      const originalEnd = record.offset + 4 + record.length;
       const newLength = record.length - (entry.count === 5 ? 6 : 0);
       const updated = stream.slice(record.offset, record.offset + 4 + newLength);
       const updatedView = new DataView(updated.buffer, updated.byteOffset, updated.byteLength);
@@ -351,21 +392,31 @@
       const firstColumn = 3;
       const partial1Offset = 4 + 4 + (4 - firstColumn) * 6 + 2;
       const partial2Offset = 4 + 4 + (6 - firstColumn) * 6 + 2;
-      updatedView.setUint32(partial1Offset, encodeRK(Number(rows[row - (STUDENT_FIRST_ROW - 1)].partial1), precision), true);
-      updatedView.setUint32(partial2Offset, encodeRK(Number(rows[row - (STUDENT_FIRST_ROW - 1)].partial2), precision), true);
-      replacements.push({ start: record.offset, end: originalEnd, bytes: concat([
-        updated, makeRecoveryRecord(row, parsed.recoveryStyle, rows[row - (STUDENT_FIRST_ROW - 1)].recovery)
-      ]) });
+      const rowValues = rows[row - (STUDENT_FIRST_ROW - 1)];
+      updatedView.setUint32(partial1Offset, encodeRK(Number(rowValues.partial1), precision), true);
+      updatedView.setUint32(partial2Offset, encodeRK(Number(rowValues.partial2), precision), true);
+      replacementsByIndex.set(entry.index, [updated]);
     }
-    replacements.sort((a, b) => a.start - b.start);
+    const recoveryRecords = new Map();
+    for (let row = STUDENT_FIRST_ROW - 1; row <= STUDENT_LAST_ROW - 1; row++) {
+      recoveryRecords.set(row, makeRecoveryRecord(row, parsed.recoveryStyle, rows[row - (STUDENT_FIRST_ROW - 1)].recovery));
+    }
     const parts = [];
-    let cursor = 0;
-    replacements.forEach(replacement => {
-      if (replacement.start < cursor) throw new Error("SACE_BIFF_RECORD_OVERLAP");
-      parts.push(stream.subarray(cursor, replacement.start), replacement.bytes);
-      cursor = replacement.end;
-    });
-    parts.push(stream.subarray(cursor));
+    for (let index = 0; index < parsed.records.length; index++) {
+      const record = parsed.records[index];
+      if (record.offset < parsed.sheetOffset) {
+        parts.push(stream.subarray(record.offset, record.offset + 4 + record.length));
+        continue;
+      }
+      if (replacementsByIndex.has(index)) {
+        parts.push(...replacementsByIndex.get(index));
+      } else {
+        parts.push(stream.subarray(record.offset, record.offset + 4 + record.length));
+      }
+      for (let row = STUDENT_FIRST_ROW - 1; row <= STUDENT_LAST_ROW - 1; row++) {
+        if (rowLastRecordIndex.get(row) === index) parts.push(recoveryRecords.get(row));
+      }
+    }
     const newWorkbookStream = concat(parts);
     if (newWorkbookStream.length > parsed.workbookCapacity) throw new Error("SACE_WORKBOOK_STREAM_CAPACITY_EXCEEDED");
     const output = toBytes(input);
