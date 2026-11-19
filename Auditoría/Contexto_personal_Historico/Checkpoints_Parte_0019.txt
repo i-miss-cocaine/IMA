@@ -572,3 +572,44 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar el contrato de identidad y tipo documental (DNI/tipo de identidad frente a marcador SACE), sin inferir HND ni equivalencias; continuar con código de centro/jornada y recuperación según evidencia.
 ===============================================================================
+
+
+===============================================================================
+### C1.851 — AUD-NG-167: faltantes verificables de centro, jornada y recuperación
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-MAPPING-GAPS-26
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.850
+HEAD inicial: 5822ad7e05e3a94c6211e798b2a05bc66919bad5
+HEAD de implementación: 7140e560901f58586d70685faccb28fcdc6cd411
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- El orquestador agrega limitaciones explícitas a cada salida candidata: no hay mapeo verificado de SedeID al código oficial del centro SACE y no hay relación inequívoca de JornadaID desde OfertaAcademica/HorariosClase.
+- Se confirmó en Code.gs que SedesAulas usa SedeID/NombreSede sin código SACE, OfertaAcademica no contiene JornadaID y HorariosClase contiene HorarioID/OfertaID/día/horas/aula/docente/estado, sin JornadaID.
+- USER-Service devuelve TipoIdentificacion como documentType; Academic-Service deja documentMarker vacío. El proveedor exige documentTypeMappings explícito y sus pruebas rechazan tipo sin mapeo, duplicado normalizado, marcador vacío/conflictivo. No se infiere HND desde el número de identidad ni desde DNI.
+- Si el libro contiene recuperaciones, el proveedor falla con SACE_RECOVERY_MAPPING_UNVERIFIED; la columna H no se rellena con una regla inventada.
+- BETA-EXAM-106/108/112 conservan las precondiciones de plantilla oficial, equivalencia documental y política de ausencias. Los faltantes de fuente no se convierten en bloqueos de implementación genérica ni se rellenan con datos inventados.
+
+Archivos modificados desde C1.850:
+- js/sace-export-orchestrator.js
+- tests/security/sace-export-orchestrator-contract.test.js
+
+Verificación:
+- GitHub Actions 44568907040 — SACE template structure compatibility contract: SUCCESS.
+- Node.js 22: sintaxis, estructura, parcheo binario, proveedor, orquestador, aislamiento candidato y nuevas aserciones de limitaciones PASS.
+- Diff revisado: dos mensajes de limitación y dos aserciones; sin modificaciones a esquemas de matrícula/horarios ni a documentos no relacionados.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- El código del centro y la jornada no tienen relación canónica disponible; crearla exige una fuente/campo institucional explícito, no una inferencia a partir de SedeID u horas.
+- La equivalencia documentType→documentMarker, política COUNT/EXCLUDE, semántica de recuperación y aceptación del archivo requieren plantilla/fuente SACE autorizada.
+- La salida permanece CANDIDATE; no hay integración UI, descarga ni carga productiva.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar la fuente de los metadatos de institución/modalidad/grado/sección/asignatura de la plantilla y el vínculo de los dos parciales con el snapshot; no ampliar esquema de horarios (AUD-NG-168) ni inventar mapeos SACE.
+===============================================================================

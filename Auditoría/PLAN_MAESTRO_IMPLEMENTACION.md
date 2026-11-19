@@ -5993,3 +5993,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Nuevo contrato comprueba que no hay activación del exportador en dashboards/scripts, que Academic-Service y Exam-Service exponen únicamente snapshots SACE de lectura y que el orquestador no ejecuta I/O externo ni upload/download.
 - Workflow SACE amplía paths de push y pull_request. Actions 44568433648 y 44568552763 SUCCESS; Node.js 22, sintaxis, estructura, parcheo, proveedor, orquestador y aislamiento PASS.
 - AUD-NG-167 sigue En progreso; siguiente: revisar identidad/tipo documental, código de centro, jornada y recuperación sin presumir equivalencias oficiales.
+
+### C1.851 — AUD-NG-167: faltantes de mapeo sin inferencias
+- El orquestador expone que SedeID no tiene equivalencia oficial de código de centro SACE y que HorariosClase/OfertaAcademica no relacionan JornadaID; el proveedor mantiene mapeo documental explícito y bloquea recuperación no verificada.
+- Contrato SACE Action 44568907040 SUCCESS (Node.js 22; sintaxis y suites SACE PASS). No se modifica el esquema de horarios de AUD-NG-168 ni se inventan códigos.
+- AUD-NG-167 continúa En progreso; siguiente: revisar procedencia de metadatos de plantilla y correspondencia de parciales con snapshot.

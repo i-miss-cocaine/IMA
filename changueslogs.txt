@@ -4289,3 +4289,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.849 — AUD-NG-167: mapeo académico SACE exige anoId coincidente con snapshot; prueba negativa de año divergente. SACE Action 44567642763 SUCCESS.
 
 [2026-11-19] C1.850 — AUD-NG-167: contrato de aislamiento confirma SACE solo lectura en backend, sin integración UI ni carga/descarga; orquestador CANDIDATE en memoria. Actions 44568433648/44568552763 SUCCESS.
+
+[2026-11-19] C1.851 — AUD-NG-167: documentados en limitaciones del candidato los faltantes de código SACE de centro y jornada; mapeo documental explícito y recuperación no verificada sigue bloqueada. Action 44568907040 SUCCESS.
