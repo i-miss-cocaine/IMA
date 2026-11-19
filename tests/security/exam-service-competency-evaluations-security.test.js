@@ -78,8 +78,7 @@ function runtime(options = {}) {
   };
   if (!options.missingEvaluationSheet) {
     sheets.EvaluacionesCompetencias = makeSheet([
-      ["ID", "CompetenciaID", "IndicadorID", "UserID", "AsignaturaID", "PeriodoID",
-        "NivelDesempeno", "Observaciones", "RubricaID", "FechaRegistro"],
+      evaluationHeaders,
       ...evaluations
     ]);
   }
