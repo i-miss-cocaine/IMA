@@ -36,6 +36,8 @@ function makeSheet(rows) {
 }
 
 function runtime(options = {}) {
+  const normalizeString = value => String(value || "").toLowerCase().normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g, "").trim();
   const evaluationHeaders = ["ID", "CompetenciaID", "IndicadorID", "UserID", "AsignaturaID", "PeriodoID",
     "NivelDesempeno", "Observaciones", "RubricaID", "FechaRegistro", "AnoID", "Grado",
     "Seccion", "InstitutionID", "DepartmentID", "CatalogItemID", "ContextKey"];
@@ -91,8 +93,6 @@ function runtime(options = {}) {
     if (!sheet) throw new Error("MISSING_SHEET");
     return sheet;
   };
-  const normalizeString = value => String(value || "").toLowerCase().normalize("NFD")
-    .replace(/[\\u0300-\\u036f]/g, "").trim();
   const validateRolePermission = (action, payload) => {
     if (action !== "getCompetencyEvaluations" || options.deniedAction === action) return { authorized: false };
     if (["Estudiante", "Alumno"].includes(actor.role) && payload && payload.userId &&
