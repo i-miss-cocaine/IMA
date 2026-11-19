@@ -531,3 +531,44 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar los campos restantes del contexto candidato y las garantías de no publicación/no carga; mantener las validaciones beta oficiales como pendientes independientes.
 ===============================================================================
+
+
+===============================================================================
+### C1.850 — AUD-NG-167: aislamiento del exportador SACE candidato
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-CANDIDATE-ISOLATION-25
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.849
+HEAD inicial: fdc6dc4b69b65d8f1ddf6be80526c6f847f0f6e7
+HEAD de implementación: a74e1f01a8ed8af55433d39e5c1260151072a37a
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Se añadió sace-candidate-production-isolation.test.js para impedir que los módulos candidatos se conecten accidentalmente a UI o a acciones de carga/descarga.
+- El contrato inspecciona index.html, ambos dashboards, js/index-ui.js, js/teacher.js, js/student.js y js/api.js; ninguno importa el orquestador/parcheador ni llama prepareCandidateExport, uploadSace o downloadSace.
+- Academic-Service expone como acción SACE solo getSaceAttendanceSnapshot. Exam-Service expone solo getSaceGradebookSnapshot. Ambos son endpoints de lectura contextual; no se detectan acciones SACE de carga, descarga o exportación.
+- El orquestador se mantiene como transformación en memoria y devuelve status candidate; el contrato prohíbe dependencias de red/Drive/Spreadsheet y operaciones de upload/download.
+- Se amplió el filtro pull_request del workflow SACE para ejecutar los contratos cuando cambie cualquiera de los módulos, pruebas, manifiesto o documentación SACE.
+
+Archivos modificados desde C1.849:
+- tests/security/sace-candidate-production-isolation.test.js (nuevo)
+- .github/workflows/sace-template-compatibility-contract.yml
+
+Verificación:
+- GitHub Actions 44568433648 — SACE template structure compatibility contract: SUCCESS.
+- GitHub Actions 44568552763 — SACE template structure compatibility contract: SUCCESS; Node.js 22: sintaxis, estructura, parcheo binario, proveedor, orquestador y aislamiento candidato PASS.
+- Las ejecuciones preliminares 44568228002 y 44568294621 fallaron por defectos en la primera versión del nuevo contrato (escape incorrecto de regex y exclusión errónea del snapshot de calificaciones de solo lectura). Se corrigieron sin debilitar la intención; las dos ejecuciones posteriores PASS demuestran el contrato final.
+- Diff revisado: solo el nuevo contrato y la configuración de CI; sin cambios en aplicación ni backend.
+- Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- La prueba demuestra que el candidato no está activado en UI ni ofrece acciones SACE de carga/descarga en el código revisado; no acredita la aceptación de una plantilla por SACE.
+- Plantillas y salida siguen CANDIDATE; mapeos oficiales y pruebas beta continúan pendientes.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar el contrato de identidad y tipo documental (DNI/tipo de identidad frente a marcador SACE), sin inferir HND ni equivalencias; continuar con código de centro/jornada y recuperación según evidencia.
+===============================================================================

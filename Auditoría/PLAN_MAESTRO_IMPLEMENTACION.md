@@ -5988,3 +5988,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - assertAcademicTemplateContextMapping exige academic.anoId coincidente con el snapshot; test negativo cubre mapeo 2025 frente a snapshot 2026. No se inventa un campo de año en el XLS.
 - SACE template compatibility Action 44567642763 y check structural-contract 135713668765 SUCCESS (Node.js 22, sintaxis y contratos).
 - AUD-NG-167 continúa En progreso; siguiente: revisar campos restantes y mantener CANDIDATE hasta contar con evidencia oficial.
+
+### C1.850 — AUD-NG-167: aislamiento de la salida candidata
+- Nuevo contrato comprueba que no hay activación del exportador en dashboards/scripts, que Academic-Service y Exam-Service exponen únicamente snapshots SACE de lectura y que el orquestador no ejecuta I/O externo ni upload/download.
+- Workflow SACE amplía paths de push y pull_request. Actions 44568433648 y 44568552763 SUCCESS; Node.js 22, sintaxis, estructura, parcheo, proveedor, orquestador y aislamiento PASS.
+- AUD-NG-167 sigue En progreso; siguiente: revisar identidad/tipo documental, código de centro, jornada y recuperación sin presumir equivalencias oficiales.
