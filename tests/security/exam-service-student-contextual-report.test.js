@@ -81,18 +81,9 @@ function fixture() {
     ? [{ categoriaId: "CAT-1", porcentajePonderacion: 100 }]
     : [{ categoriaId: "CAT-1", porcentajePonderacion: 50 },
       { categoriaId: "CAT-2", porcentajePonderacion: 50 }];
-  const summarize = (userId, rows, categories, recs) => {
-    const score = rows.reduce((sum, row) => {
-      const recovery = recs.find(item => item.evaluacionId === row.evaluacionId);
-      const value = recovery ? recovery.notaFinalCalculada : row.notaObtenida;
-      return sum + value * (categories.find(c => c.categoriaId === row.evaluacionId)?.porcentajePonderacion || 0) / 100;
-    }, 0);
-    return { status: categories.length ? "calculated" : "not_configured",
-      notaFinal: categories.length ? score : null, avancePonderado: score, ponderacionPendiente: 0 };
-  };
   const sandbox = { normalizeString: norm, buildGradebookContextKey_: key,
-    getGradebookWeightConfigurationFromSheet_: weights, calculateGradebookStudentSummary_: summarize };
-  vm.runInNewContext(extract("buildStudentAcademicReportGradebook_") +
+    getGradebookWeightConfigurationFromSheet_: weights };
+  vm.runInNewContext(extract("calculateGradebookStudentSummary_") + "\\n" + extract("buildStudentAcademicReportGradebook_") +
     ";this.run=buildStudentAcademicReportGradebook_;", sandbox);
   return { run: payload => sandbox.run(ss, { institutionId: "INST-A" }, "STU-1", payload), sheets };
 }
@@ -140,10 +131,8 @@ test("legacy unscoped recovery rows are ignored", () => {
   const oldRows = [recoveryHeaders.slice(0, 9), ["LEGACY", "CAT-1", "STU-1", 50, 90, 90, "MAX", "PROF", new Date()]];
   const oldSheet = sheet(oldRows);
   const oldSandbox = { normalizeString: norm, buildGradebookContextKey_: key,
-    getGradebookWeightConfigurationFromSheet_: () => [{ categoriaId: "CAT-1", porcentajePonderacion: 100 }],
-    calculateGradebookStudentSummary_: (userId, rows) => ({ status: "calculated",
-      notaFinal: rows[0]?.notaObtenida ?? null, avancePonderado: rows[0]?.notaObtenida ?? null, ponderacionPendiente: 0 }) };
-  vm.runInNewContext(extract("buildStudentAcademicReportGradebook_") +
+    getGradebookWeightConfigurationFromSheet_: () => [{ categoriaId: "CAT-1", porcentajePonderacion: 100 }] };
+  vm.runInNewContext(extract("calculateGradebookStudentSummary_") + "\\n" + extract("buildStudentAcademicReportGradebook_") +
     ";this.run=buildStudentAcademicReportGradebook_;", oldSandbox);
   const result = oldSandbox.run({ getSheetByName: name => name === "CalificacionesEstudiantes"
     ? sheet([gradeHeaders, ["G-1", "CAT-1", "STU-1", 80, 80, false, true, "", new Date(),
