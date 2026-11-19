@@ -1935,3 +1935,28 @@ Criterios FAIL:
 Evidencia pendiente:
 - Archivo de plantilla SACE de prueba anonimizado, matriz de celdas/campos, comparación automatizada y confirmación de carga en SACE.
 ===============================================================================
+
+===============================================================================
+BETA-EXAM-107 — Academic-Service: instantánea contextual de asistencia para SACE
+===============================================================================
+Módulo/rol: Academic-Service / Profesor
+Tarea/requisito: AUD-NG-167 — snapshot server-side de asistencia e identidad
+Objetivo: comprobar en el servicio desplegado que la acción getSaceAttendanceSnapshot devuelve exclusivamente sesiones y registros de asistencia de la clase del docente autenticado y los estudiantes matriculados en el año/grado/sección solicitados.
+Precondiciones:
+- Versión beta del Academic-Service desplegada con el commit que incorpora getSaceAttendanceSnapshot.
+- IMA_INSTITUTION_ID configurado y coincidente con institutionId de la sesión del docente.
+- Datos beta sintéticos: dos periodos cerrados no solapados, catálogo de asignatura, matrículas, Usuarios/Personas, sesiones cerradas y registros de asistencia.
+- La plantilla y carga SACE real no forman parte de este caso.
+Pasos:
+1. Invocar la acción con sesión Profesor válida, anoId, grado, sección, asignaturaId, dos PeriodoID y roster de UserID del libro.
+2. Verificar que teacherUserId e institutionId devueltos proceden de sesión/configuración, no de campos manipulados del payload.
+3. Incluir sesiones de otro docente, asignatura, sección, fecha fuera de periodos y estado cancelado; verificar que se excluyen.
+4. Verificar que se incluyen solo registros de las sesiones filtradas y alumnos del roster matriculado.
+5. Repetir con rol no Profesor, institución discordante, periodo abierto, alumno no matriculado y duplicidad de identidad; verificar rechazo controlado.
+Resultado esperado:
+- Solo se devuelve el ámbito autorizado de la clase; identidad de alumno coincide con Personas.Identificacion.
+- No se devuelven datos de otros docentes, asignaturas, periodos o estudiantes.
+- Si Personas carece de columna de tipo documental, documentMarker queda vacío y el proveedor no permite exportar.
+Estado: Pendiente beta.
+Evidencia requerida: respuesta anonimizada del endpoint, trazas de casos permitidos/denegados y comprobación de que no aparecen registros fuera del ámbito.
+===============================================================================

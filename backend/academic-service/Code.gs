@@ -376,7 +376,7 @@ const ROLE_PERMISSIONS = {
     "saveCurricularConstraint", "getAcademicCalendar", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getTeacherTeachingLoad", "recordClassSessionOutcome", "getTeachingHoursSummary", "rescheduleCancelledSession", "getPendingSessionRecoveries", "getIndividualCalendar", "getClassroomResources", "getStudentSchedule", "getReusableResourceCatalog", "manageReusableResource",
     "getStudentFile", "getStudentFileSummary", "getStudentTimeline", "getStudentEnrollments",
     "getTeacherStudentJustifications", "acknowledgeTeacherStudentJustification", "getTeacherJustificationEvidence",
-    "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getBatchAttendanceRecords", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport",
+    "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getBatchAttendanceRecords", "getClassAttendance", "getSaceAttendanceSnapshot", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "generateConsolidatedAttendanceAndCoexistenceReport",
     "getTeacherSupervisions", "getSupervisionObservation", "saveSupervisionObservation", "getTeacherImprovementPlans",
     "calculateUnifiedAcademicGrade", "previewAcademicGradeCalculation", "auditAcademicGradesIntegrity", "generateStudentReportCard", "validateAcademicResponsibilityAndScopeAccess", "exportAcademicGradesData",
     "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "getPlanningReviewHistory", "getSupervisionRubrics"
@@ -1824,6 +1824,7 @@ function doPost(e) {
       case "auditAssistantDelegatedAction": result = auditAssistantDelegatedAction(payload); break;
       case "validateEvidenceFileAndPermissions": result = validateEvidenceFileAndPermissions(payload); break;
       case "getStudentAttendanceSummary": result = getStudentAttendanceSummary(payload); break;
+      case "getSaceAttendanceSnapshot": result = getSaceAttendanceSnapshot(payload); break;
       case "getBatchAttendanceRecords": result = getBatchAttendanceRecords(payload); break;
       case "generateConsolidatedAttendanceAndCoexistenceReport": result = generateConsolidatedAttendanceAndCoexistenceReport(payload); break;
       case "validateStudentWelfareAccess": result = validateStudentWelfareAccess(payload); break;
@@ -10856,6 +10857,191 @@ function openAttendanceSession(payload) {
 }
 
 // [F10-Task14] [P1] - Optimizar las consultas batch de asistencia y resiliencia de servicios
+function getSaceAttendanceSnapshot(payload) {
+  const request = payload || {};
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true || !actor.userId || String(actor.role || "").trim() !== "Profesor") {
+    return { status: "error", code: "SACE_TEACHER_CONTEXT_REQUIRED" };
+  }
+  const claims = getVerifiedRequestSessionClaims_(request);
+  const configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+  if (!claims || !claims.institutionId || !configuredInstitution ||
+      String(claims.institutionId).trim() !== configuredInstitution) {
+    return { status: "error", code: "SACE_INSTITUTION_CONTEXT_REQUIRED" };
+  }
+  const required = function(value, code) {
+    const result = String(value == null ? "" : value).trim();
+    if (!result) throw new Error(code);
+    return result;
+  };
+  const dateKey = function(value) {
+    if (value instanceof Date && !isNaN(value.getTime())) return Utilities.formatDate(value, Session.getScriptTimeZone(), "yyyy-MM-dd");
+    const raw = String(value == null ? "" : value).trim(), match = /^(\d{4}-\d{2}-\d{2})(?:$|T)/.exec(raw);
+    if (!match) return "";
+    const parsed = new Date(match[1] + "T00:00:00Z");
+    return !isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === match[1] ? match[1] : "";
+  };
+  const active = function(value) {
+    return ["ACTIVO", "ACTIVA", "ACTIVE", "VIGENTE", "MATRICULADO"].indexOf(String(value == null ? "" : value).trim().toUpperCase()) !== -1;
+  };
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const read = function(name, headers) {
+    const sheet = ss.getSheetByName(name);
+    if (!sheet) throw new Error("SACE_SOURCE_SHEET_MISSING:" + name);
+    const rows = sheet.getDataRange().getValues();
+    if (!rows.length || !Array.isArray(rows[0])) throw new Error("SACE_SOURCE_SCHEMA_INVALID:" + name);
+    const actual = rows[0].map(function(value) { return String(value || "").trim(); });
+    if (headers.some(function(header) { return actual.indexOf(header) === -1; })) throw new Error("SACE_SOURCE_SCHEMA_INVALID:" + name);
+    const index = {};
+    actual.forEach(function(header, i) { index[header] = i; });
+    return { rows: rows.slice(1), index: index };
+  };
+  try {
+    const anoId = required(request.anoId, "SACE_YEAR_REQUIRED");
+    const grade = required(request.grado, "SACE_GRADE_REQUIRED");
+    const section = required(request.seccion, "SACE_SECTION_REQUIRED");
+    const subjectId = required(request.asignaturaId, "SACE_SUBJECT_REQUIRED");
+    if (!Array.isArray(request.periodoIds) || request.periodoIds.length !== 2) throw new Error("SACE_TWO_PERIODS_REQUIRED");
+    if (!Array.isArray(request.studentIds) || !request.studentIds.length || request.studentIds.length > 500) throw new Error("SACE_STUDENT_ROSTER_REQUIRED");
+    const studentIds = request.studentIds.map(function(value) { return required(value, "SACE_STUDENT_ID_REQUIRED"); });
+    if (new Set(studentIds).size !== studentIds.length) throw new Error("SACE_STUDENT_ROSTER_DUPLICATE");
+
+    const years = read("AnosLectivos", ["AnoID", "Nombre"]);
+    const yearRows = years.rows.filter(function(row) { return String(row[years.index.AnoID] || "").trim() === anoId; });
+    if (yearRows.length !== 1) throw new Error("SACE_YEAR_NOT_UNIQUE");
+    const yearName = String(yearRows[0][years.index.Nombre] || "").trim();
+    if (!yearName) throw new Error("SACE_YEAR_NAME_REQUIRED");
+
+    const periods = read("PeriodosAcademicos", ["PeriodoID", "AnoID", "Nombre", "Tipo", "FechaInicio", "FechaFin", "Orden", "Estado"]);
+    const periodMap = Object.create(null);
+    periods.rows.forEach(function(row) {
+      const id = String(row[periods.index.PeriodoID] || "").trim();
+      if (id && periodMap[id]) throw new Error("SACE_PERIOD_DUPLICATE");
+      if (id) periodMap[id] = row;
+    });
+    const selectedPeriods = request.periodoIds.map(function(value) {
+      const id = required(value, "SACE_PERIOD_ID_REQUIRED"), row = periodMap[id];
+      if (!row || String(row[periods.index.AnoID] || "").trim() !== anoId) throw new Error("SACE_PERIOD_CONTEXT_MISMATCH");
+      if (String(row[periods.index.Estado] || "").trim().toUpperCase() !== "CERRADO") throw new Error("SACE_PERIOD_NOT_CLOSED");
+      const start = dateKey(row[periods.index.FechaInicio]), end = dateKey(row[periods.index.FechaFin]);
+      if (!start || !end || start > end) throw new Error("SACE_PERIOD_RANGE_INVALID");
+      return { periodoId:id, anoId:anoId, fechaInicio:start, fechaFin:end,
+        nombre:String(row[periods.index.Nombre] || ""), tipo:String(row[periods.index.Tipo] || ""), orden:row[periods.index.Orden] };
+    });
+    if (selectedPeriods[0].periodoId === selectedPeriods[1].periodoId) throw new Error("SACE_PERIODS_MUST_BE_DISTINCT");
+    if (selectedPeriods[0].fechaInicio <= selectedPeriods[1].fechaFin && selectedPeriods[1].fechaInicio <= selectedPeriods[0].fechaFin) {
+      throw new Error("SACE_PERIODS_OVERLAP");
+    }
+
+    const subjects = read("CatalogoAsignaturas", ["AsignaturaID", "NombreOficial"]);
+    const subjectRows = subjects.rows.filter(function(row) { return String(row[subjects.index.AsignaturaID] || "").trim() === subjectId; });
+    if (subjectRows.length !== 1 || !String(subjectRows[0][subjects.index.NombreOficial] || "").trim()) throw new Error("SACE_SUBJECT_NOT_UNIQUE");
+    const subjectName = String(subjectRows[0][subjects.index.NombreOficial]).trim();
+
+    const users = read("Usuarios", ["UserId", "Rol", "PersonaID", "EstadoCuenta"]), userMap = Object.create(null);
+    users.rows.forEach(function(row) {
+      const id = String(row[users.index.UserId] || "").trim();
+      if (!id) return;
+      if (userMap[id]) throw new Error("SACE_USER_ID_DUPLICATE");
+      userMap[id] = row;
+    });
+    const people = read("Personas", ["PersonaID", "Nombres", "Apellidos", "Identificacion", "EstadoPersona"]), personMap = Object.create(null);
+    people.rows.forEach(function(row) {
+      const id = String(row[people.index.PersonaID] || "").trim();
+      if (!id) return;
+      if (personMap[id]) throw new Error("SACE_PERSON_ID_DUPLICATE");
+      personMap[id] = row;
+    });
+    const enrollments = read("Matriculas", ["MatriculaID", "UserId", "Grado", "Seccion", "Periodo", "Estado"]);
+    const enrollmentCounts = Object.create(null);
+    enrollments.rows.forEach(function(row) {
+      const id = String(row[enrollments.index.MatriculaID] || "").trim();
+      if (id) enrollmentCounts[id] = (enrollmentCounts[id] || 0) + 1;
+    });
+    const identityRecords = studentIds.map(function(userId) {
+      const user = userMap[userId];
+      if (!user || !["ESTUDIANTE", "ALUMNO"].includes(String(user[users.index.Rol] || "").trim().toUpperCase()) ||
+          !active(user[users.index.EstadoCuenta])) throw new Error("SACE_STUDENT_ACCOUNT_INVALID");
+      const personId = String(user[users.index.PersonaID] || "").trim(), person = personMap[personId];
+      if (!person) throw new Error("SACE_STUDENT_PERSON_NOT_FOUND");
+      if (!active(person[people.index.EstadoPersona])) throw new Error("SACE_STUDENT_PERSON_INACTIVE");
+      const identity = required(person[people.index.Identificacion], "SACE_STUDENT_IDENTITY_REQUIRED");
+      const fullName = [person[people.index.Nombres], person[people.index.Apellidos]].map(function(value) {
+        return String(value || "").trim();
+      }).filter(Boolean).join(" ");
+      if (!fullName) throw new Error("SACE_STUDENT_NAME_REQUIRED");
+      const matches = enrollments.rows.filter(function(row) {
+        const enrollmentId = String(row[enrollments.index.MatriculaID] || "").trim();
+        const enrollmentYear = String(row[enrollments.index.Periodo] || "").trim();
+        return enrollmentId && enrollmentCounts[enrollmentId] === 1 &&
+          String(row[enrollments.index.UserId] || "").trim() === userId &&
+          String(row[enrollments.index.Grado] || "").trim() === grade &&
+          String(row[enrollments.index.Seccion] || "").trim() === section &&
+          (enrollmentYear === anoId || enrollmentYear === yearName) && active(row[enrollments.index.Estado]);
+      });
+      if (matches.length !== 1) throw new Error("SACE_STUDENT_ENROLLMENT_CONTEXT_MISMATCH");
+      const markerIndex = ["TipoDocumento", "TipoIdentificacion", "DocumentoTipo"].map(function(key) {
+        return people.index[key];
+      }).find(function(index) { return index !== undefined; });
+      return { userId:userId, identity:identity,
+        documentMarker:markerIndex === undefined ? "" : String(person[markerIndex] || "").trim(), name:fullName };
+    });
+    const normalizedIdentities = identityRecords.map(function(record) { return record.identity.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(); });
+    if (new Set(normalizedIdentities).size !== normalizedIdentities.length) throw new Error("SACE_STUDENT_IDENTITY_DUPLICATE");
+
+    const sessions = read("SesionesAsistencia", ["SesionID", "Fecha", "Grado", "Seccion", "AsignaturaID", "DocenteUserId", "Estado"]);
+    const sessionMap = Object.create(null), attendanceSessions = [];
+    sessions.rows.forEach(function(row) {
+      const id = String(row[sessions.index.SesionID] || "").trim();
+      if (!id) return;
+      if (String(row[sessions.index.Grado] || "").trim() !== grade ||
+          String(row[sessions.index.Seccion] || "").trim() !== section ||
+          String(row[sessions.index.AsignaturaID] || "").trim() !== subjectId ||
+          String(row[sessions.index.DocenteUserId] || "").trim() !== String(actor.userId).trim()) return;
+      if (sessionMap[id]) throw new Error("SACE_ATTENDANCE_SESSION_DUPLICATE");
+      sessionMap[id] = true;
+      const day = dateKey(row[sessions.index.Fecha]);
+      if (!day) throw new Error("SACE_ATTENDANCE_SESSION_DATE_INVALID");
+      const inPeriod = selectedPeriods.some(function(period) { return day >= period.fechaInicio && day <= period.fechaFin; });
+      const state = String(row[sessions.index.Estado] || "").trim().toUpperCase();
+      if (!inPeriod || !["CERRADA", "CERRADO", "FINALIZADA", "FINALIZADO", "COMPLETADA", "COMPLETADO"].includes(state)) return;
+      attendanceSessions.push({ sesionId:id, fecha:day, grado:grade, seccion:section,
+        asignaturaId:subjectId, docenteUserId:String(actor.userId).trim(), estado:state });
+    });
+    if (!attendanceSessions.length) throw new Error("SACE_ATTENDANCE_SESSIONS_EMPTY");
+
+    const records = read("RegistrosAsistencia", ["RegistroID", "SesionID", "UserId", "EstadoAsistencia", "Justificado", "FechaRegistro"]);
+    const selectedSessionIds = Object.create(null), selectedStudents = Object.create(null);
+    attendanceSessions.forEach(function(session) { selectedSessionIds[session.sesionId] = true; });
+    studentIds.forEach(function(id) { selectedStudents[id] = true; });
+    const attendanceRecords = records.rows.filter(function(row) {
+      return !!selectedSessionIds[String(row[records.index.SesionID] || "").trim()] &&
+        !!selectedStudents[String(row[records.index.UserId] || "").trim()];
+    }).map(function(row) {
+      return {
+        registroId:String(row[records.index.RegistroID] || "").trim(),
+        sesionId:String(row[records.index.SesionID] || "").trim(),
+        userId:String(row[records.index.UserId] || "").trim(),
+        estadoAsistencia:String(row[records.index.EstadoAsistencia] || "").trim(),
+        justificado:row[records.index.Justificado] === true || String(row[records.index.Justificado] || "").toLowerCase() === "true",
+        fechaRegistro:row[records.index.FechaRegistro] instanceof Date ?
+          row[records.index.FechaRegistro].toISOString() : String(row[records.index.FechaRegistro] || "")
+      };
+    });
+    return { status:"success", data:{
+      expectedContext:{ anoId:anoId, grado:grade, seccion:section, asignatura:subjectName,
+        asignaturaId:subjectId, institutionId:configuredInstitution, teacherUserId:String(actor.userId).trim() },
+      periods:selectedPeriods, identityRecords:identityRecords,
+      attendanceSessions:attendanceSessions, attendanceRecords:attendanceRecords
+    }, limitations:[
+      "documentMarker remains empty when Personas has no verified document-type column",
+      "approved absence justification semantics for SACE require official confirmation"
+    ]};
+  } catch (error) {
+    return { status:"error", code:String(error && error.message || "SACE_ATTENDANCE_SNAPSHOT_FAILED") };
+  }
+}
+
 function getBatchAttendanceRecords(payload) {
   const { sesionIds, userIds, fechaInicio, fechaFin, grado, seccion } = payload || {};
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);

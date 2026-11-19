@@ -1400,3 +1400,31 @@ Resultado:
 
 Siguiente acción elegible: implementar el snapshot server-side de sesiones y asistencia usando la identidad/contexto autenticado existente, después conectar el proveedor sin crear otra capa de autorización redundante; verificar identidad desde Personas y mantener bloqueada la salida de producción hasta la prueba SACE real.
 ===============================================================================
+
+===============================================================================
+### C1.833 — AUD-NG-167: snapshot server-side autenticado de asistencia SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-ATTENDANCE-SNAPSHOT-08
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.832
+HEAD inicial: fdeb4e2f017c037c5549f1e0b61418d42fec851f
+
+Implementación:
+- Se añadió getSaceAttendanceSnapshot(payload) en backend/academic-service/Code.gs, acción autorizada para Profesor mediante ROLE_PERMISSIONS y el dispatcher existente.
+- Reutiliza getVerifiedAcademicIdentity_ y getVerifiedRequestSessionClaims_; deriva DocenteUserId del usuario autenticado y valida institutionId contra IMA_INSTITUTION_ID. No acepta identidad docente/institución del cliente.
+- Recibe anoId, grado, seccion, asignaturaId, dos PeriodoID y UserID del roster del libro; verifica año, periodos cerrados/no solapados, catálogo de asignaturas, cuenta estudiante activa, persona, identificación y matrícula activa de año/grado/sección.
+- Une SesionesAsistencia y RegistrosAsistencia por SesionID. Filtra por fecha de clase, docente, asignatura, grado y sección; devuelve solo registros del roster solicitado y sesiones cerradas/finalizadas.
+- El esquema estándar Personas no contiene tipo documental. documentMarker se deja vacío si no existe columna explícita TipoDocumento/TipoIdentificacion/DocumentoTipo; no se infiere. El proveedor SACE mantiene bloqueo ante ese dato faltante.
+- El snapshot conserva el booleano justificado; la semántica SACE de ausencias justificadas permanece sin resolver. Se anotó el conflicto/pendiente frente a la regla IMA de ausencia injustificada.
+- Se añadió tests/security/sace-attendance-snapshot-contract.test.js con fixtures sintéticos; prueba rol, institución, contexto, matrícula, identidad, sesión y registros. Se añadió al workflow Academic-Service.
+- Se registró BETA-EXAM-107 para verificar llamada real al endpoint cuando exista despliegue.
+
+Estado AUD-NG-167: [~] En progreso. Endpoint local candidato listo; no se habilita UI/producción. Pendientes tipo documental canónico, semántica SACE de justificación, libro contextual y validación con plantilla/carga oficial.
+Pruebas locales: pendientes de ejecutar por Actions tras commit; no registrar PASS anticipadamente.
+HEAD final se actualizará al publicar.
+
+Siguiente acción: resolver fuente canónica de tipo documental en el modelo de identidad (sin inferencia), y conectar el snapshot al flujo de preparación del proveedor manteniendo bloqueo si falta el marcador.
+===============================================================================

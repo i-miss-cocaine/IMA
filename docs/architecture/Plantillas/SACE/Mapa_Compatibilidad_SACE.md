@@ -104,3 +104,23 @@ Condiciones que aplica:
 **Hallazgo de fuente:** `getBatchAttendanceRecords` no basta como fuente para este propósito: filtra por la fecha de registro (`FechaRegistro`) y devuelve registros sin los metadatos de la sesión que permiten comprobar fecha de clase, asignatura, sección y docente. `getClassAttendance` devuelve registros por sesión, pero no incorpora el join con `SesionesAsistencia`. El proveedor, por tanto, requiere que el backend construya una instantánea server-side que una ambas hojas y aplique el contexto autenticado; no se debe pasar al módulo un conjunto arbitrario enviado por el navegador.
 
 **Límite:** el módulo permanece en estado CANDIDATE. No está llamado por backend, API ni UI; no lee Sheets directamente, no habilita descarga y no declara compatibilidad SACE. Los datos de identidad y el contexto docente deben proceder de fuentes institucionales verificadas. El mapeo PeriodoID→parcial, la regla de ausencias justificadas y la recuperación siguen sujetos a validación con plantilla/procedimiento SACE real.
+
+
+## 8. Instantánea server-side autenticada de asistencia — C1.833
+
+Se añadió la acción de solo lectura `getSaceAttendanceSnapshot` en Academic-Service, disponible explícitamente para el rol `Profesor` y resuelta por el contexto de autorización de entrada ya existente. La función vuelve a usar la identidad de sesión verificada del servicio, pero no crea una segunda cadena de permisos: deriva `teacherUserId` de esa identidad y exige que coincida con `SesionesAsistencia.DocenteUserId`. También exige que `claims.institutionId` coincida con `IMA_INSTITUTION_ID` configurado en el servicio.
+
+El endpoint recibe únicamente el contexto académico solicitado (año, grado, sección, asignatura, dos `PeriodoID` y la lista de `UserID` obtenida del libro de calificaciones). Antes de devolver datos:
+- verifica año y periodos únicos, pertenecientes al año solicitado, cerrados, con fechas válidas y rangos no solapados;
+- resuelve el nombre oficial de la asignatura desde `CatalogoAsignaturas`;
+- valida cada alumno contra `Usuarios` (cuenta activa y rol estudiante), `Personas` (identificación y nombre) y una matrícula activa en el mismo grado/sección/año;
+- obtiene las sesiones por fecha de clase y contexto exacto de grado, sección, asignatura y docente, excluyendo sesiones no cerradas/finalizadas y canceladas;
+- une `RegistrosAsistencia` con las sesiones seleccionadas y devuelve únicamente registros del padrón solicitado.
+
+La lista de estudiantes del cliente no se considera prueba de matrícula: cada ID debe tener cuenta activa, persona única e inscripción activa coincidente. La identidad del docente, institución y el ámbito de la clase no se aceptan desde campos de identidad libres del cliente.
+
+**Límite de esquema:** el esquema estándar actual de `Personas` define `Identificacion`, pero no define tipo documental. El endpoint devuelve `documentMarker: ""` cuando no existe una columna institucional explícita (`TipoDocumento`, `TipoIdentificacion` o `DocumentoTipo`). El proveedor SACE exige un marcador no vacío y por ello seguirá bloqueando la exportación hasta que el tipo documental se almacene y verifique como dato institucional. No se infiere del formato de la identidad.
+
+**Límite de política:** el snapshot conserva `justificado` por registro, pero el significado de una ausencia justificada para la plantilla SACE no se resuelve en este endpoint. La especificación de asistencia de IMA define la ausencia injustificada como estado Ausente sin justificación aprobada; la regla SACE debe confirmarse antes de cambiar el cómputo del proveedor.
+
+**Estado:** endpoint de lectura candidato, sin activación UI ni exportación productiva. El contrato local prueba autenticación/rol, institución, periodo, matrícula, join de identidad, filtros de sesión y filtrado de registros. La llamada real al servicio desplegado queda registrada como beta.
