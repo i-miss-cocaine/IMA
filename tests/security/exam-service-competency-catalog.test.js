@@ -147,7 +147,8 @@ assert.equal(created.status, "success");
 assert.equal(mutation.catalogSheet.rows.length, 2);
 assert.equal(mutation.catalogSheet.rows[1][2], "DEPT-A");
 assert.equal(mutation.catalogSheet.rows[1][5], "A");
-assert.equal(mutation.catalogSheet.rows[1][16], mutation.catalogSheet.rows[1][16]);
+assert.deepEqual(JSON.parse(mutation.catalogSheet.rows[1][16]),
+  ["inst-a", "dept-a", "2026", "10", "a", "mat", "plan-a", "comp-1", "ind-1"]);
 const updated = mutation.save(Object.assign({}, mutation.payload, {
   competencia: "Resolver problemas matemáticos"
 }));
