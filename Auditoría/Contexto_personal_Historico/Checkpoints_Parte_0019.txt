@@ -1615,3 +1615,57 @@ Estado:
 Siguiente acción elegible:
 - Diseñar y probar una revalidación optimista de la matrícula/contexto Academic y de las huellas de identidad/gradebooks, sin mantener locks durante UrlFetchApp; rechazar el snapshot si las fuentes cambian durante la ventana de composición. Comprobar también la compatibilidad de respuestas y el coste de lecturas repetidas antes de implementar.
 ===============================================================================
+
+
+===============================================================================
+### C1.879 — AUD-NG-167: diseño y prueba de viabilidad de revalidación optimista
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-OPTIMISTIC-REVALIDATION-DESIGN-50
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 1d8cf2c3d78281084d2d0ae6aadc2cae3d37b176
+HEAD de registro de auditoría: 9996ae17fbc35f1359769fd05deccbbbb698a507
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Objetivo:
+- Evaluar una garantía optimista de consistencia temporal entre el snapshot de matrícula/asistencia Academic, el directorio de identidad USER y los dos gradebooks Exam, sin mantener ScriptLock durante UrlFetchApp ni inventar atomicidad distribuida.
+
+Hallazgos técnicos:
+- Academic captura años, periodos, asignatura, matrícula, sesiones, registros y justificaciones bajo su ScriptLock; libera el lock antes de llamar a USER y Exam.
+- USER protege la lectura de Usuarios/Personas con su propio ScriptLock. Exam protege ambos gradebooks dentro de una sola operación de lectura con su propio ScriptLock.
+- Los tres servicios no comparten lock ni revisión monotónica común. Los DTO actuales no exponen una revisión de origen verificable.
+- Una segunda lectura de los tres orígenes y comparación canónica detectaría cambios observables entre lecturas, pero exige repetir USER y Exam (dos UrlFetchApp adicionales), volver a leer las fuentes locales y aumenta aproximadamente al doble las consultas/lecturas de la composición. También deja una ventana posterior a la última validación y no detecta necesariamente un cambio ABA si el contenido vuelve al valor inicial.
+- Extender locks a llamadas interservicio no es aceptable: aumenta contención y puede introducir bloqueos entre servicios.
+
+Evaluación de alternativas:
+1. Doble recolección con huellas de contenido: útil como verificación de estabilidad observada, pero costosa y no linealizable; no debe etiquetarse como snapshot distribuido atómico.
+2. Revisiones monotónicas por servicio: opción preferible si cada escritura relevante incrementa su revisión dentro del mismo lock local y la cobertura de todos los escritores se demuestra. Antes de implementarla hay que inventariar alta/cambio/retiro/reconciliación/migración de matrícula, sesiones/asistencia/justificaciones, usuarios/personas y todas las escrituras de calificaciones/cierres/recuperaciones. Un contador en PropertiesService sin acoplamiento fiable a cada escritura no basta.
+3. Lock distribuido o lock mantenido durante UrlFetchApp: descartado por contención y riesgo de interbloqueo; no resuelve por sí solo las escrituras fuera de ese lock.
+
+Decisión:
+- No modificar lógica productiva en esta unidad. Mantener el exportador en estado CANDIDATE y no afirmar atomicidad global.
+- Antes de implementar, auditar la cobertura completa de escritores y elegir entre revisiones monotónicas locales verificables o una revalidación best-effort explícitamente limitada. Si no se puede garantizar que todos los escritores incrementen la revisión, no usarla como garantía de integridad.
+- Si se adopta doble recolección, canonicalizar por claves estables (userId, periodoId, sesionId, registroId, recuperacionId) para que un cambio de orden no genere falsos positivos; fallar cerrado ante cambios, errores de red/HTTP/JSON o revisiones ausentes.
+
+Prueba de viabilidad ejecutada:
+- Simulación aislada en runtime V8 de comparación canónica: 6/6 PASS — datos estables, mutación Academic, mutación USER, mutación Exam, reordenamiento de USER y reordenamiento de Exam.
+- Esta simulación valida únicamente el modelo de comparación; no ejecuta los servicios ni demuestra concurrencia real, ABA, ni atomicidad entre hojas.
+- Node.js local: NOT RUN; el contenedor no resuelve github.com y no dispone de checkout actualizado. CLI: NOT RUN/no aplicable a esta unidad documental. GitHub Actions: NOT RUN; no hubo cambio de código ni workflow específico que ejecutar. No se declara PASS de pruebas de proyecto.
+
+Archivos modificados:
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+Commits:
+- 9996ae17fbc35f1359769fd05deccbbbb698a507 — registro de auditoría y decisión de diseño.
+- El commit actual agrega este checkpoint y actualiza el índice.
+
+Estado:
+- C1.879 completa como auditoría de diseño/viabilidad; no completa la implementación de consistencia optimista.
+- AUD-NG-167 continúa En progreso. BETA-EXAM-110..113 y fuentes oficiales SACE continúan Pendiente beta. XLS permanece CANDIDATE.
+
+Siguiente acción elegible:
+- Auditar y enumerar los escritores de Exam, USER y Academic que afectan los datos SACE; comprobar si existe un punto de escritura común por servicio para una revisión monotónica bajo el mismo lock. Después, diseñar contratos locales para cambios concurrentes y ausencia de incremento de revisión antes de tocar código.
+===============================================================================
