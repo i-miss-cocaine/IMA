@@ -20,6 +20,10 @@ assert.ok(js.includes("requestVersion !== gradebookRubricRequestVersion"),
   "stale rubric responses must be discarded after context changes");
 assert.ok(js.includes("requestVersion !== gradebookCompetencyRequestVersion"),
   "stale competency responses must be discarded");
+assert.ok(html.includes('"descripcion":"Reconoce pocos elementos."'),
+  "analytic rubric levels must provide descriptive performance criteria");
+assert.ok(js.includes("item.niveles.every(level => level && typeof level.nombre === \"string\""),
+  "teacher form must validate named rubric levels and descriptions");
 for (const id of ["gb-catalog-program", "gb-catalog-competency-id", "gb-catalog-competency-name",
   "gb-catalog-indicator-id", "gb-catalog-indicator-name", "btn-gb-save-catalog-item",
   "gb-competency-catalog", "gb-catalog-department", "gb-competency-department-id"]) assert.ok(html.includes('id="' + id + '"'), "missing catalog UI control " + id);
