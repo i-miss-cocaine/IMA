@@ -25,6 +25,10 @@ function extract(name) {
 }
 const rubricHeaders = ["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"];
 const ownershipHeaders = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+const validCriteria = [{ criterio: "Análisis", niveles: [
+  { nombre: "Inicial", descripcion: "Reconoce pocos elementos." },
+  { nombre: "Logrado", descripcion: "Explica y relaciona los elementos con claridad." }
+] }];
 function makeSheet(rows, kind, options, state) {
   return {
     rows,
@@ -114,7 +118,7 @@ function fixture(options = {}) {
     normalizeString(value) { return String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().trim(); }
   };
   const names = ["saveRubric", "withAuthorizedRubricMutation_", "getAuthorizedRubricMutationContext_",
-    "saveRubricUnlocked_", "getRubricsUnlocked_"];
+    "validateAnalyticalRubricCriteria_", "saveRubricUnlocked_", "getRubricsUnlocked_"];
   vm.runInNewContext(names.map(extract).join("\n"), runtime);
   const originalMutationContext = runtime.getAuthorizedRubricMutationContext_;
   runtime.getAuthorizedRubricMutationContext_ = function(payload) {
@@ -128,7 +132,7 @@ const results = [];
 function test(name, fn) { try { fn(); results.push({ name, ok: true }); } catch (error) { results.push({ name, ok: false, error: error.message }); } }
 function denied(fn, pattern = /RESOURCE_NOT_AVAILABLE/) { assert.throws(fn, pattern); }
 test("authorized create writes rubric and unique department ownership", () => {
-  const x = fixture(); const result = x.call({ titulo: "Nueva", asignatura: "Ciencias", criterios: [{ criterio: "Análisis" }], departmentId: "DEPT-A" });
+  const x = fixture(); const result = x.call({ titulo: "Nueva", asignatura: "Ciencias", criterios: validCriteria, departmentId: "DEPT-A" });
   const id = result.data.rubricaId;
   assert.ok(id.startsWith("RUB-UUID-"));
   assert.equal(x.sheets.RubricasEvaluacion.rows.filter(row => row[0] === id).length, 1);
@@ -143,7 +147,7 @@ test("authorized create writes rubric and unique department ownership", () => {
 });
 test("authorized owner can update existing rubric without changing ownership", () => {
   const x = fixture(); const before = x.sheets.ResourceOwnership.rows[1].slice();
-  const result = x.call({ rubricaId: "RUB-OWNED", titulo: "Actualizada", asignatura: "Biología", criterios: [] });
+  const result = x.call({ rubricaId: "RUB-OWNED", titulo: "Actualizada", asignatura: "Biología", criterios: validCriteria });
   assert.equal(result.data.rubricaId, "RUB-OWNED");
   assert.deepEqual(x.sheets.RubricasEvaluacion.rows[1].slice(1), ["Actualizada", "Biología", "Activa", "[]"]);
   assert.deepEqual(x.sheets.ResourceOwnership.rows[1], before);
@@ -252,7 +256,7 @@ test("nested mutation is excluded by the shared script lock", () => {
   // Re-enter through the callback while the outer lock is held.
   const originalGetContext = x.runtime.getAuthorizedRubricMutationContext_;
   x.runtime.getAuthorizedRubricMutationContext_ = function(payload) { try { inner(); } catch (e) { nestedDenied = /RUBRIC_MUTATION_LOCK_TIMEOUT/.test(e.message); } return originalGetContext(payload); };
-  x.call({ titulo: "Outer", departmentId: "DEPT-A" });
+  x.call({ titulo: "Outer", departmentId: "DEPT-A", criterios: validCriteria });
   assert.ok(nestedDenied);
 });
 test("reentrant mutation during ownership append is rejected without duplicate persistence", () => {
@@ -261,7 +265,7 @@ test("reentrant mutation during ownership append is rejected without duplicate p
     try { x.call({ titulo: "Nested ownership", departmentId: "DEPT-A" }); }
     catch (error) { nestedError = error.message; }
   }});
-  const result = x.call({ titulo: "Outer ownership", departmentId: "DEPT-A" });
+  const result = x.call({ titulo: "Outer ownership", departmentId: "DEPT-A", criterios: validCriteria });
   const id = result.data.rubricaId;
   assert.match(nestedError, /RUBRIC_MUTATION_LOCK_TIMEOUT/);
   assert.equal(x.sheets.ResourceOwnership.rows.filter(row => row[3] === id).length, 1);
@@ -280,7 +284,7 @@ test("reentrant mutation during rubric append is rejected without duplicate pers
     try { x.call({ titulo: "Nested rubric", departmentId: "DEPT-A" }); }
     catch (error) { nestedError = error.message; }
   }});
-  const result = x.call({ titulo: "Outer rubric", departmentId: "DEPT-A" });
+  const result = x.call({ titulo: "Outer rubric", departmentId: "DEPT-A", criterios: validCriteria });
   const id = result.data.rubricaId;
   assert.match(nestedError, /RUBRIC_MUTATION_LOCK_TIMEOUT/);
   assert.equal(x.sheets.ResourceOwnership.rows.filter(row => row[3] === id).length, 1);
@@ -313,9 +317,19 @@ test("reentrant mutation during rubric update setValues is rejected without dupl
 });
 
 test("append failure rolls back both rubric and ownership records", () => {
-  const x = fixture({ failRubricAppend: true }); assert.throws(() => x.call({ titulo: "Fallida", departmentId: "DEPT-A" }), /synthetic append failure/);
+  const x = fixture({ failRubricAppend: true }); assert.throws(() => x.call({ titulo: "Fallida", departmentId: "DEPT-A", criterios: validCriteria }), /synthetic append failure/);
   assert.equal(x.sheets.RubricasEvaluacion.rows.length, 3);
   assert.equal(x.sheets.ResourceOwnership.rows.length, 2);
+});
+test("analytical rubric requires criteria and descriptive performance levels", () => {
+  const x = fixture();
+  assert.throws(() => x.call({ titulo: "Vacía", departmentId: "DEPT-A", criterios: [] }), /RUBRIC_CRITERIA_INVALID/);
+  assert.throws(() => x.call({ titulo: "Sin descriptores", departmentId: "DEPT-A",
+    criterios: [{ criterio: "Análisis", niveles: ["Inicial", "Logrado"] }] }), /RUBRIC_LEVEL_DESCRIPTOR_REQUIRED/);
+  assert.throws(() => x.call({ titulo: "Un nivel", departmentId: "DEPT-A",
+    criterios: [{ criterio: "Análisis", niveles: [{ nombre: "Inicial", descripcion: "Descripción" }] }] }),
+    /RUBRIC_CRITERIA_INVALID/);
+  assert.equal(x.sheets.RubricasEvaluacion.rows.length, 3);
 });
 test("invalid title and unserializable criteria fail without writes", () => {
   const x = fixture(); assert.throws(() => x.call({ titulo: " " }), /RUBRIC_TITLE_REQUIRED/);
@@ -345,7 +359,7 @@ test("rubric read is filtered to the selected department", () => {
   assert.deepEqual(a, ["RUB-A"]);
   assert.deepEqual(b, ["RUB-B"]);
 });
-test("RBAC action is exactly saveRubric", () => { const x = fixture(); x.call({ titulo: "Action", departmentId: "DEPT-A" }); assert.equal(x.state.action, "saveRubric"); });
+test("RBAC action is exactly saveRubric", () => { const x = fixture(); x.call({ titulo: "Action", departmentId: "DEPT-A", criterios: validCriteria }); assert.equal(x.state.action, "saveRubric"); });
 const failed = results.filter(item => !item.ok);
 process.stdout.write(JSON.stringify({ total: results.length, passed: results.length - failed.length, failed, results }, null, 2));
 if (failed.length) process.exitCode = 1;
