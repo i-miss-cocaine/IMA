@@ -137,13 +137,13 @@ test("an open period cannot produce an official report", () => {
 });
 test("partial grade context schema fails closed", () => {
   const x = fixture();
-  x.sheets.CalificacionesEstudiantes.rows[0].length = 12;
+  x.sheets.CalificacionesEstudiantes.rows[0] = x.sheets.CalificacionesEstudiantes.rows[0].slice(0, 12);
   assert.throws(() => x.run({ anoId: "2026", periodoId: "P1" }),
     /STUDENT_ACADEMIC_REPORT_CONTEXT_SCHEMA_INVALID/);
 });
 test("partial recovery context schema fails closed", () => {
   const x = fixture();
-  x.sheets.RecuperacionesEstudiante.rows[0].length = 12;
+  x.sheets.RecuperacionesEstudiante.rows[0] = x.sheets.RecuperacionesEstudiante.rows[0].slice(0, 12);
   assert.throws(() => x.run({ anoId: "2026", periodoId: "P1" }),
     /STUDENT_ACADEMIC_REPORT_CONTEXT_SCHEMA_INVALID/);
 });
