@@ -1150,3 +1150,50 @@ Siguiente acción elegible:
 2. Preparar y ejecutar BETA-EXAM-105 con Apps Script/Sheets reales cuando el entorno de beta esté disponible.
 3. Repetir las pruebas focalizadas y la suite general; mantener registrados los tres fallos ajenos si persisten.
 ===============================================================================
+
+
+===============================================================================
+### C1.826 — AUD-NG-167: evidencia documental y mapeo preliminar SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-MAP-01
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.825
+HEAD inicial de este avance documental: 925237b88847af04ef469a739023ffd6c278acf2
+HEAD de la rama base verificado previamente: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Fuentes oficiales revisadas:
+- Manual de Usuario Docente SACE, actualización junio 2025: https://sace.se.gob.hn/media/documentos_sace/Manual_de___usuario_SACE_Docente_2.pdf. Describe la descarga/carga del Excel por modalidad, curso, sección, jornada y clase; notas totales e inasistencias por parcial.
+- Manual de Usuario Docente SACE, actualización junio 2019: https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Docente.pdf. En páginas impresas 19–20 documenta el ejemplo de archivo con DOCUMENTO, IDENTIDAD, NOMBRE, inasistencias y nota total por parcial y RECUPERACIÓN; indica conservar el formato generado por SACE.
+- Manual de Usuario Director SACE: https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Director.pdf. Distingue calificaciones por parcial, resumen anual por área, acta final, acta final de recuperación, boletas interna/externa y certificación.
+- Reglamento del Sistema Nacional de Información Educativa, Acuerdo 1178-SE-2015: https://www.tsc.gob.hn/web/leyes/Reglamento_sistema_nacional_info_edu_hn.pdf. Artículos 78, 84 y 86–88: evaluación/promoción en SACE; evaluación final según manual USINIEH; certificados y calificaciones oficiales emitidos por dirección, con firmas y códigos de autenticidad SACE.
+- Reglamento del Sistema Integrado de Información Educativa, Acuerdo CNE-002-2021: https://www.tsc.gob.hn/web/leyes/Acuerdo-Ejecutivo-CNE-002-2021.pdf. Regula SIIE, REU y reportes; el texto consultado no menciona SACE y no se presume que lo derogue ni sustituya.
+
+Hallazgos de mapeo:
+- El archivo SACE se genera para modalidad, curso, sección, jornada y clase. El manual 2019 muestra dos parciales en su ejemplo, pero el manual Director presenta cuatro parciales; por ello el número de parciales no se fija y debe obtenerse de la plantilla real.
+- El Excel de calificaciones muestra DOCUMENTO, IDENTIDAD, NOMBRE, inasistencias y nota total por parcial y RECUPERACIÓN; el formato/diseño no debe modificarse y puede cargarse un parcial por vez.
+- IMA dispone de OfertaAcademica (Modalidad, Grado, Seccion, AsignaturaID, SedeID, CodigoClase), CatalogoAsignaturas, PeriodosAcademicos (fechas/orden), Personas (identidad/nombres), Usuarios.PersonaID, SesionesAsistencia/RegistrosAsistencia y libro consolidado contextual.
+- Faltantes: código oficial SACE del centro no identificado; HorariosClase no contiene una relación inequívoca JornadaID; tipo de documento no confirmado; equivalencia de PeriodoID/Orden a parciales depende del archivo actual; inasistencias deben agregarse por estudiante/clase/rango del parcial; regla exacta de la columna RECUPERACIÓN debe confirmarse.
+- Las boletas, resumen anual, actas y certificaciones del Director son artefactos distintos; el informe IMA de un periodo no demuestra equivalencia con todos ellos.
+- El artículo 88 impide llamar a un documento IMA “certificación oficial SACE”: se requieren emisión de dirección, firmas y códigos de autenticidad generados por SACE.
+
+Entregables:
+- docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md: matriz de campos, fuentes, faltantes, flujo y criterio de aceptación.
+- beta_test.txt: escenario BETA-EXAM-106 para obtener una plantilla SACE real, conservar su estructura, mapear notas/asistencias/recuperación y validar carga/resultado en un entorno autorizado.
+- pendientes/Docente/Pendientes.md actualizado con C1.826.
+
+Decisión:
+- No crear un XLSX SACE desde cero ni afirmar compatibilidad por semejanza visual.
+- No guardar credenciales SACE ni datos personales reales de alumnos en el repositorio.
+- Implementar adaptador únicamente después de obtener una plantilla SACE real de prueba, mapear celdas y confirmar la carga.
+- AUD-NG-167 permanece En progreso; el mapeo es preliminar, no compatibilidad demostrada. BETA-EXAM-105 y BETA-EXAM-106 pendientes.
+- AUD-NG-168 / TAREA-13 no se inicia.
+- No hubo cambios de código en C1.826; rama base sin modificaciones.
+
+Siguiente acción elegible:
+1. Conseguir una plantilla XLS/XLSX descargada desde SACE para un centro/clase de prueba autorizada.
+2. Confirmar el código oficial del centro, jornada, tipo documental y mapeo de parciales.
+3. Implementar el adaptador que rellene exclusivamente celdas de entrada en la plantilla original y ejecutar BETA-EXAM-106.
+===============================================================================
