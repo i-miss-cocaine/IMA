@@ -10,6 +10,12 @@ for (const template of manifest.templates) {
   const file = path.join(root, "docs/architecture/Plantillas/SACE", template.fileName);
   const original = fs.readFileSync(file);
   const before = tools.inspect(original);
+  const templateInfo = tools.inspectTemplate(original);
+  assert.equal(templateInfo.students.length, 22, "template inspection must return every student row");
+  assert.ok(Object.values(templateInfo.metadata).every(value => typeof value === "string" && value.trim()),
+    "template inspection must return all five context fields");
+  assert.ok(templateInfo.students.every(student => student.documentMarker && student.identity && student.name),
+    "template roster must include document type, identity and name");
   const rows = Array.from({ length: 22 }, (_, index) => ({
     partial1Absences: index % 3,
     partial1: 60 + index + 0.25,
@@ -17,7 +23,10 @@ for (const template of manifest.templates) {
     partial2: 70 + index + 0.5,
     recovery: index % 5 === 0 ? 85 + index / 10 : null
   }));
-  const output = tools.fill(original, rows, { scale: { min: 0, max: 100, precision: 2 } });
+  const sourceStudents = templateInfo.students.map((student, index) => Object.assign({}, student, rows[index])).reverse();
+  const mappedRows = tools.mapRowsToTemplate(templateInfo, sourceStudents, templateInfo.metadata);
+  assert.deepEqual(mappedRows, rows, "template roster mapping must follow identity rather than source row order");
+  const output = tools.fill(original, mappedRows, { scale: { min: 0, max: 100, precision: 2 } });
   assert.ok(output instanceof Uint8Array);
   assert.equal(output.length, original.length, "OLE file size must remain unchanged");
   const after = tools.inspect(output);

@@ -484,6 +484,26 @@
   function normalizeIdentity(value) {
     return String(value == null ? "" : value).replace(/[\s.-]/g, "").toUpperCase();
   }
+  function inspectTemplate(input) {
+    const parsed = parseCompound(input);
+    const metadata = {
+      institution: parsed.get("A1"),
+      modality: parsed.get("A2"),
+      gradeSection: parsed.get("A3"),
+      schedule: parsed.get("A4"),
+      subject: parsed.get("A5")
+    };
+    const students = [];
+    for (let row = STUDENT_FIRST_ROW; row <= STUDENT_LAST_ROW; row++) {
+      students.push({
+        documentMarker: parsed.get("A" + row),
+        identity: parsed.get("B" + row),
+        name: parsed.get("C" + row)
+      });
+    }
+    return { metadata, students };
+  }
+
   function mapRowsToTemplate(templateInfo, sourceStudents, expectedContext) {
     if (!templateInfo || !Array.isArray(templateInfo.students) ||
         !Array.isArray(sourceStudents) || sourceStudents.length !== templateInfo.students.length) {
@@ -528,6 +548,6 @@
     });
   }
 
-  return { inspect: parseCompound, fill, mapRowsToTemplate, expectedMerges: EXPECTED_MERGES.slice(),
+  return { inspect: parseCompound, inspectTemplate, fill, mapRowsToTemplate, expectedMerges: EXPECTED_MERGES.slice(),
     studentFirstRow: STUDENT_FIRST_ROW, studentLastRow: STUDENT_LAST_ROW };
 });
