@@ -53,7 +53,7 @@ function (provider, templates) {
   function prepareCandidateExportFromSnapshot(input) {
     const value = input || {};
     if (!provider || typeof provider.buildCandidateStudentsFromSnapshot !== "function" ||
-        !templates || typeof templates.prepareCandidateExport !== "function" ||
+        !templates || typeof templates.fill !== "function" ||
         typeof templates.inspect !== "function" || typeof templates.inspectTemplate !== "function" ||
         typeof templates.mapRowsToTemplate !== "function") {
       throw new Error("SACE_EXPORT_DEPENDENCIES_UNAVAILABLE");
@@ -65,12 +65,10 @@ function (provider, templates) {
     );
     const options = required(value.options, "SACE_SCALE_CONFIGURATION_REQUIRED");
     const templateBefore = templates.inspect(templateBytes);
-    const templateInfo = templates.inspectTemplate(templateBytes);
+    const templateInfo = templates.inspectTemplate(templateBytes, templateBefore);
     const candidate = provider.buildCandidateStudentsFromSnapshot(value);
     const mappedRows = templates.mapRowsToTemplate(templateInfo, candidate.sourceStudents, expectedTemplateContext);
-    const outputBytes = templates.prepareCandidateExport(
-      templateBytes, candidate.sourceStudents, expectedTemplateContext, options
-    );
+    const outputBytes = templates.fill(templateBytes, mappedRows, options);
     if (!(outputBytes instanceof Uint8Array) || outputBytes.length !== templateBytes.length) {
       throw new Error("SACE_OUTPUT_BINARY_INVALID");
     }
