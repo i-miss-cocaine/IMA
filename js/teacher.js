@@ -6002,10 +6002,14 @@ function toBase64(file) {
         }
     }
 
-    document.getElementById('btn-gb-load-rubrics')?.addEventListener('click', loadGradebookRubrics);
-    document.getElementById('btn-gb-load-competencies')?.addEventListener('click', () => {
-        loadGradebookCompetencyCatalog();
-        loadGradebookCompetencyEvaluations();
+    document.getElementById('btn-gb-load-rubrics')?.addEventListener('click', async () => {
+        await loadGradebookCompetencyCatalog();
+        await loadGradebookRubrics();
+    });
+    document.getElementById('btn-gb-load-competencies')?.addEventListener('click', async () => {
+        await loadGradebookCompetencyCatalog();
+        await loadGradebookRubrics();
+        await loadGradebookCompetencyEvaluations();
     });
     document.getElementById('gb-competency-catalog')?.addEventListener('change', applySelectedGradebookCompetencyCatalogItem);
     document.getElementById('gb-catalog-program')?.addEventListener('change', loadGradebookCompetencyCatalog);
