@@ -149,6 +149,14 @@ const irrelevantOpenSessions = sessions.map(session => ["S-OTHER", "S-OUTSIDE"].
   ? Object.assign({}, session, { estado: "Abierta", fechaCierre: "" }) : session);
 assert.deepEqual(build({ attendanceSessions: irrelevantOpenSessions }).sourceStudents, result.sourceStudents,
   "open sessions outside the requested periods or class/teacher scope must not invalidate the candidate");
+const shuffledInputs = build({
+  identityRecords: identityRecords.slice().reverse(),
+  attendanceSessions: sessions.slice().reverse(),
+  attendanceRecords: attendance.slice().reverse()
+});
+assert.deepEqual(shuffledInputs.sourceStudents, result.sourceStudents,
+  "identity and attendance joins must be independent of source-row ordering");
+
 assert.throws(() => build({ identityRecords: identityRecords.concat(identityRecords[0]) }), /SACE_IDENTITY_RECORD_DUPLICATE/);
 assert.throws(() => build({ identityRecords: identityRecords.concat({
   userId: "STU-OUT", identity: "0801-2000-00003", documentType: "DNI", documentMarker: "HND", name: "Extra"
