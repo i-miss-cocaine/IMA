@@ -29,6 +29,9 @@ const evaluationHeaders = ["ID", "CompetenciaID", "IndicadorID", "UserID", "Asig
   "PeriodoID", "NivelDesempeno", "Observaciones", "RubricaID", "FechaRegistro"];
 const rubricHeaders = ["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"];
 const configHeaders = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
+const catalogHeaders = ["ID", "InstitutionID", "DepartmentID", "AnoID", "Grado", "Seccion",
+  "AsignaturaID", "CompetenciaID", "Competencia", "IndicadorID", "Indicador", "ProgramaCurricular",
+  "Estado", "RegisteredBy", "CreatedAt", "UpdatedAt", "ContextKey"];
 
 function makeSheet(rows, options, kind, state) {
   return {
@@ -60,7 +63,11 @@ function fixture(options = {}) {
   if (options.conflictingAssignment) configRows.push(["CFG-2", "", "P1", "10", "A", "Math", "", "", "PROF-2"]);
   if (options.noAssignment) configRows.splice(1, 1);
   if (options.otherAssignment) configRows.push(["CFG-2", "", "P1", "10", "A", "Science", "", "", "PROF-1"]);
+  const catalogRows = [catalogHeaders,
+    ["CAT-1", "INST-1", "DEPT-1", "2026", "10", "A", "Math", "COMP-1", "Competencia",
+      "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN-1", "2026-01-01", "2026-01-01", "context-key"]];
   const sheets = {
+    CatalogoCompetencias: makeSheet(options.catalogRows || catalogRows, options, "catalog", state),
     Usuarios: makeSheet(userRows, options, "users", state),
     ConfiguracionAcademica: makeSheet(configRows, options, "config", state),
     RubricasEvaluacion: makeSheet(options.rubricRows || [rubricHeaders,
@@ -86,6 +93,7 @@ function fixture(options = {}) {
   };
   const runtime = {
     SPREADSHEET_ID: "LOCAL",
+    COMPETENCY_CATALOG_HEADERS_: catalogHeaders,
     LockService: { getScriptLock() { state.events.push("lock-request"); return scriptLock; } },
     validateRolePermission(action) {
       state.events.push("permission"); state.permissionCalls++; state.action = action;
@@ -119,7 +127,7 @@ function fixture(options = {}) {
     "getAuthorizedCompetencyEvaluationMutationContext_", "saveCompetencyEvaluationUnlocked_", "getExamStudentProfile_"];
   vm.runInNewContext(names.map(extract).join("\n") + "\nthis.saveCompetencyEvaluation = saveCompetencyEvaluation;", runtime);
   const payload = Object.assign({ sessionToken: "synthetic", userId: "STU-1", competenciaId: "COMP-1",
-    indicadorId: "IND-1", asignaturaId: "Math", periodoId: "P1", nivelDesempeno: "Alto", observaciones: "Observación", rubricaId: "RUB-1" },
+    indicadorId: "IND-1", anoId: "2026", programaCurricular: "PLAN-A", asignaturaId: "Math", periodoId: "P1", nivelDesempeno: "Alto", observaciones: "Observación", rubricaId: "RUB-1" },
     options.payload || {});
   return { call: p => runtime.saveCompetencyEvaluation(p || payload), state, sheets, payload };
 }
@@ -131,6 +139,20 @@ function test(name, fn) {
 }
 function denied(fn, pattern = /RESOURCE_NOT_AVAILABLE/) { assert.throws(fn, pattern); }
 
+test("missing catalog item is rejected before any competency evaluation write", () => {
+  const x = fixture({ catalogRows: [catalogHeaders] });
+  denied(() => x.call(), /COMPETENCY_CATALOG_ITEM_NOT_FOUND/);
+  assert.equal(x.sheets.EvaluacionesCompetencias.rows.length, 1);
+});
+test("ambiguous catalog entries are rejected", () => {
+  const x = fixture({ catalogRows: [
+    catalogHeaders,
+    ["CAT-1", "INST-1", "DEPT-1", "2026", "10", "A", "Math", "COMP-1", "Competencia", "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN", "2026-01-01", "2026-01-01", "key-1"],
+    ["CAT-2", "INST-1", "DEPT-1", "2026", "10", "A", "Math", "COMP-1", "Competencia", "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN", "2026-01-01", "2026-01-01", "key-2"]
+  ] });
+  denied(() => x.call(), /COMPETENCY_CATALOG_ENTRY_AMBIGUOUS/);
+  assert.equal(x.sheets.EvaluacionesCompetencias.rows.length, 1);
+});
 test("authorized teacher creates a competency evaluation for an assigned student", () => {
   const x = fixture(); const result = x.call();
   assert.equal(result.status, "success"); assert.equal(result.userId, "STU-1");
