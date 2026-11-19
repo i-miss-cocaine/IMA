@@ -377,7 +377,11 @@
     if (originalHeader.some((value, index) => output[index] !== value)) {
       throw new Error("SACE_OLE_HEADER_CHANGED:" + Array.from(output.subarray(0, 8)).join(","));
     }
-    const verified = parseCompound(output);
+    let verified;
+    try { verified = parseCompound(output); }
+    catch (error) {
+      throw new Error("SACE_VERIFY_PARSE_FAILED:" + Array.from(output.subarray(0, 8)).join(",") + ":" + error.message);
+    }
     if (verified.workbookSize !== newWorkbookStream.length ||
         verified.merges.join("|") !== parsed.merges.join("|") ||
         verified.formulaCount !== parsed.formulaCount || verified.validationCount !== parsed.validationCount) {
