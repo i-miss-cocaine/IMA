@@ -118,7 +118,7 @@ userSheet.appendRow = row => {
   originalAppendUser(row);
 };
 vm.createContext(registrationContext);
-vm.runInContext(extract("registerUser") + "\\nthis.registerUser=registerUser;", registrationContext);
+vm.runInContext(extract("registerUser") + "\nthis.registerUser=registerUser;", registrationContext);
 const registered = registrationContext.registerUser({
   nombre: "Estudiante Nuevo", grado: "11", seccion: "A",
   email: "nuevo@example.test", password: "secret", personaId: "PER-NEW"
