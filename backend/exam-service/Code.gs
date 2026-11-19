@@ -5342,7 +5342,7 @@ function buildStudentAcademicReportGradebook_(ss, scope, targetUserId, payload) 
       totalAsignaturas: detalleAsignaturas.length, promedioGeneral: average,
       asignaturasAprobadas: calculated.filter(item => item.notaFinal >= 70).length,
       asignaturasReprobadas: calculated.filter(item => item.notaFinal < 70).length
-    }, estadoPeriodo: esDocumentoOficial ? "Cerrado" : "Abierto", esDocumentoOficial };
+    }, estadoPeriodo: esDocumentoOficial ? "Cerrado" : (legacyClosureSchema ? "No verificable (esquema histórico)" : "Abierto"), esDocumentoOficial };
 }
 
 function getStudentAcademicReport(payload) {
