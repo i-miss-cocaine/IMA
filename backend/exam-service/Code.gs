@@ -5288,16 +5288,38 @@ function buildStudentAcademicReportGradebook_(ss, scope, targetUserId, payload) 
   const average = calculated.length
     ? Math.round(calculated.reduce((sum, item) => sum + Number(item.notaFinal), 0) / calculated.length * 100) / 100
     : null;
-  const esDocumentoOficial = !!yearFilter && !!periodFilter && detalleAsignaturas.length > 0 &&
-    detalleAsignaturas.every(item => item.estado === "calculated" && item.anoId === yearFilter &&
-      normalizeString(item.periodo) === normalizeString(periodFilter));
+  const closureSheet = ss.getSheetByName("CierresPeriodos");
+  const closureRows = closureSheet ? closureSheet.getDataRange().getValues() : [];
+  const closureHeaders = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion",
+    "Asignatura", "ProfesorID", "Estado", "FechaCierre"];
+  if (closureRows.length && closureHeaders.some((header, index) =>
+      String(closureRows[0][index] || "").trim() !== header)) {
+    throw new Error("STUDENT_ACADEMIC_REPORT_CLOSURE_SCHEMA_INVALID");
+  }
+  const closedContexts = yearFilter && periodFilter ? closureRows.slice(1).filter(row =>
+    String(row[1] || "").trim() === yearFilter &&
+    normalizeString(row[2]) === normalizeString(periodFilter) &&
+    detalleAsignaturas.some(item => item.anoId === yearFilter &&
+      normalizeString(item.periodo) === normalizeString(periodFilter) &&
+      normalizeString(item.grado) === normalizeString(row[3]) &&
+      normalizeString(item.seccion) === normalizeString(row[4]) &&
+      normalizeString(item.asignatura) === normalizeString(row[5])) &&
+    String(row[7] || "").trim().toLowerCase() === "cerrado") : [];
+  const allContextsClosed = !!yearFilter && !!periodFilter && detalleAsignaturas.length > 0 &&
+    detalleAsignaturas.every(item => item.anoId === yearFilter &&
+      normalizeString(item.periodo) === normalizeString(periodFilter) &&
+      closedContexts.filter(row => normalizeString(row[3]) === normalizeString(item.grado) &&
+        normalizeString(row[4]) === normalizeString(item.seccion) &&
+        normalizeString(row[5]) === normalizeString(item.asignatura)).length === 1);
+  const esDocumentoOficial = allContextsClosed &&
+    detalleAsignaturas.every(item => item.estado === "calculated");
   return { contextos: detalleAsignaturas.map(item => ({
       anoId: item.anoId, periodo: item.periodo, grado: item.grado, seccion: item.seccion, asignatura: item.asignatura
     })), detalleAsignaturas, resumenGeneral: {
       totalAsignaturas: detalleAsignaturas.length, promedioGeneral: average,
       asignaturasAprobadas: calculated.filter(item => item.notaFinal >= 70).length,
       asignaturasReprobadas: calculated.filter(item => item.notaFinal < 70).length
-    }, esDocumentoOficial };
+    }, estadoPeriodo: esDocumentoOficial ? "Cerrado" : "Abierto", esDocumentoOficial };
 }
 
 function getStudentAcademicReport(payload) {
