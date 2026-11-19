@@ -5179,6 +5179,122 @@ function getGradeRectificationHistoryUnlocked_(payload, context) {
   return { status: "success", data: history };
 }
 
+
+function buildStudentAcademicReportGradebook_(ss, scope, targetUserId, payload) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const sheet = ss.getSheetByName("CalificacionesEstudiantes");
+  if (!sheet) return { contextos: [], detalleAsignaturas: [], resumenGeneral: {
+    totalAsignaturas: 0, promedioGeneral: null, asignaturasAprobadas: 0, asignaturasReprobadas: 0
+  }, esDocumentoOficial: false };
+  const rows = sheet.getDataRange().getValues();
+  const baseHeaders = ["ID", "EvaluacionID", "UserID", "NotaObtenida", "PuntajePonderado",
+    "EsBorrador", "EsPublicada", "Observaciones", "FechaRegistro"];
+  const contextHeaders = ["AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "InstitutionID", "ContextKey"];
+  if (!rows.length || baseHeaders.some((header, index) => String(rows[0][index] || "").trim() !== header)) {
+    throw new Error("STUDENT_ACADEMIC_REPORT_SCHEMA_INVALID");
+  }
+  if (rows[0].length < 16 || contextHeaders.some((header, index) =>
+      String(rows[0][9 + index] || "").trim() !== header)) {
+    throw new Error("STUDENT_ACADEMIC_REPORT_CONTEXT_SCHEMA_INVALID");
+  }
+  const idCounts = Object.create(null);
+  rows.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+  });
+  const yearFilter = String(p.anoId || "").trim();
+  const periodFilter = String(p.periodoId || p.parcial || "").trim();
+  const contexts = Object.create(null);
+  const grades = rows.slice(1).filter(row => {
+    const id = String(row[0] || "").trim();
+    if (!id || idCounts[id] !== 1 || String(row[2] || "").trim() !== targetUserId) return false;
+    const draft = row[5] === true || String(row[5]).toLowerCase() === "true";
+    const published = row[6] === true || String(row[6]).toLowerCase() === "true";
+    if (draft || !published) return false;
+    const year = String(row[9] || "").trim(), period = String(row[10] || "").trim();
+    const grade = String(row[11] || "").trim(), section = String(row[12] || "").trim();
+    const subject = String(row[13] || "").trim(), institutionId = String(row[14] || "").trim();
+    if (!year || !period || !grade || !section || !subject ||
+        institutionId !== String(scope.institutionId || "").trim() ||
+        (yearFilter && year !== yearFilter) ||
+        (periodFilter && normalizeString(period) !== normalizeString(periodFilter))) return false;
+    const expectedKey = buildGradebookContextKey_({ institutionId, anoId: year, periodoId: period,
+      grado: grade, seccion: section, asignatura: subject, evaluacionId: row[1], userId: row[2] });
+    if (String(row[15] || "").trim() !== expectedKey) return false;
+    return true;
+  });
+  grades.forEach(row => {
+    const key = JSON.stringify([row[9], row[10], row[11], row[12], row[13]]);
+    if (!contexts[key]) contexts[key] = { anoId: String(row[9]), periodoId: String(row[10]),
+      grado: String(row[11]), seccion: String(row[12]), asignatura: String(row[13]), grades: [] };
+    contexts[key].grades.push({ userId: String(row[2]), evaluacionId: String(row[1]),
+      notaObtenida: row[3] === "" || row[3] == null ? null : Number(row[3]),
+      esBorrador: false, esPublicada: true });
+  });
+  const recoverySheet = ss.getSheetByName("RecuperacionesEstudiante");
+  const recoveryRows = recoverySheet ? recoverySheet.getDataRange().getValues() : [];
+  const recoveryBaseHeaders = ["ID", "EvaluacionID", "UserID", "NotaOriginal", "NotaRecuperada",
+    "NotaFinalCalculada", "MetodoAplicado", "AutorizadoPor", "Fecha"];
+  if (recoveryRows.length && recoveryBaseHeaders.some((header, index) =>
+      String(recoveryRows[0][index] || "").trim() !== header)) {
+    throw new Error("STUDENT_ACADEMIC_REPORT_SCHEMA_INVALID");
+  }
+  if (recoveryRows.length && (recoveryRows[0].length < 16 ||
+      contextHeaders.some((header, index) => String(recoveryRows[0][9 + index] || "").trim() !== header))) {
+    throw new Error("STUDENT_ACADEMIC_REPORT_CONTEXT_SCHEMA_INVALID");
+  }
+  const recoveryCounts = Object.create(null);
+  recoveryRows.slice(1).forEach(row => {
+    const id = String(row[0] || "").trim();
+    if (id) recoveryCounts[id] = (recoveryCounts[id] || 0) + 1;
+  });
+  const detalleAsignaturas = Object.keys(contexts).sort().map(key => {
+    const context = contexts[key];
+    const recoveryContextKey = item => buildGradebookContextKey_({
+      institutionId: scope.institutionId, anoId: context.anoId, periodoId: context.periodoId,
+      grado: context.grado, seccion: context.seccion, asignatura: context.asignatura,
+      evaluacionId: item[1], userId: item[2]
+    });
+    const recoveries = recoveryRows.slice(1).filter(row => {
+      const id = String(row[0] || "").trim();
+      return !!id && recoveryCounts[id] === 1 && String(row[2] || "").trim() === targetUserId &&
+        String(row[9] || "").trim() === context.anoId &&
+        normalizeString(row[10]) === normalizeString(context.periodoId) &&
+        normalizeString(row[11]) === normalizeString(context.grado) &&
+        normalizeString(row[12]) === normalizeString(context.seccion) &&
+        normalizeString(row[13]) === normalizeString(context.asignatura) &&
+        String(row[14] || "").trim() === String(scope.institutionId || "").trim() &&
+        String(row[15] || "").trim() === recoveryContextKey(row);
+    }).map(row => ({ userId: String(row[2]), evaluacionId: String(row[1]),
+      notaFinalCalculada: row[5] === "" || row[5] == null ? null : Number(row[5]),
+      fecha: row[8] ? new Date(row[8]).toISOString() : null }));
+    const weights = getGradebookWeightConfigurationFromSheet_(ss, { scope,
+      anoId: context.anoId, parcial: context.periodoId, grado: context.grado,
+      seccion: context.seccion, asignatura: context.asignatura });
+    const summary = calculateGradebookStudentSummary_(targetUserId, context.grades, weights, recoveries);
+    return { anoId: context.anoId, periodo: context.periodoId, grado: context.grado,
+      seccion: context.seccion, asignatura: context.asignatura, estado: summary.status,
+      notaFinal: summary.notaFinal, avancePonderado: summary.avancePonderado,
+      ponderacionPendiente: summary.ponderacionPendiente, categorias: context.grades.map(item => ({
+        categoriaId: item.evaluacionId, notaObtenida: item.notaObtenida
+      })) };
+  });
+  const calculated = detalleAsignaturas.filter(item => item.estado === "calculated");
+  const average = calculated.length
+    ? Math.round(calculated.reduce((sum, item) => sum + Number(item.notaFinal), 0) / calculated.length * 100) / 100
+    : null;
+  const esDocumentoOficial = !!yearFilter && !!periodFilter && detalleAsignaturas.length > 0 &&
+    detalleAsignaturas.every(item => item.estado === "calculated" && item.anoId === yearFilter &&
+      normalizeString(item.periodo) === normalizeString(periodFilter));
+  return { contextos: detalleAsignaturas.map(item => ({
+      anoId: item.anoId, periodo: item.periodo, grado: item.grado, seccion: item.seccion, asignatura: item.asignatura
+    })), detalleAsignaturas, resumenGeneral: {
+      totalAsignaturas: detalleAsignaturas.length, promedioGeneral: average,
+      asignaturasAprobadas: calculated.filter(item => item.notaFinal >= 70).length,
+      asignaturasReprobadas: calculated.filter(item => item.notaFinal < 70).length
+    }, esDocumentoOficial };
+}
+
 function getStudentAcademicReport(payload) {
   return withAuthorizedExamRead_("getStudentAcademicReport", payload,
     context => getStudentAcademicReportUnlocked_(payload, context));
@@ -5298,6 +5414,7 @@ function getStudentAcademicReportUnlocked_(payload, context) {
     estado: row[5] || "Activo"
   }));
 
+  const libroConsolidado = buildStudentAcademicReportGradebook_(ss, scope, targetUserId, p);
   return { status: "success", data: {
     userId: targetUserId,
     matriculas: userMatriculas.map(row => ({
@@ -5305,6 +5422,7 @@ function getStudentAcademicReportUnlocked_(payload, context) {
     })),
     calificaciones: userCalificaciones,
     recuperaciones: userRecuperaciones,
-    categories
+    categories,
+    libroConsolidado
   }};
 }
