@@ -156,6 +156,7 @@ for (const entry of manifest.templates) {
   assert(result.limitations.some(item => item.includes("not been independently verified against an official SACE source")));
   assert(result.limitations.some(item => item.includes("no verified mapping from the local SedeID source")));
   assert(result.limitations.some(item => item.includes("no unambiguous JornadaID relationship")));
+  assert(result.limitations.some(item => item.includes("Template source, official status, effective dates and applicable academic year are not verified")));
   const openSessionSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
   openSessionSnapshot.data.attendanceSessions[0].estado = "Abierta";
   assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({

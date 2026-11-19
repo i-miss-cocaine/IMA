@@ -100,7 +100,8 @@ function (provider, templates) {
         ? "Academic-to-SACE context mapping is explicit input and has not been independently verified against an official SACE source"
         : "Academic-to-SACE context mapping was not supplied; institution, modality, grade/section, schedule and subject labels remain unverified",
       "Official SACE center code has no verified mapping from the local SedeID source",
-      "Academic schedule has no unambiguous JornadaID relationship to OfertaAcademica or HorariosClase"]),
+      "Academic schedule has no unambiguous JornadaID relationship to OfertaAcademica or HorariosClase",
+      "Template source, official status, effective dates and applicable academic year are not verified by the candidate manifest"]),
       verification: {
         workbookSize: verified.workbookSize,
         workbookCapacity: verified.workbookCapacity,
