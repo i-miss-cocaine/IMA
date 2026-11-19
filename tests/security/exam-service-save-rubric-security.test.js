@@ -303,7 +303,7 @@ test("reentrant mutation during rubric update setValues is rejected without dupl
     try { x.call({ rubricaId: "RUB-OWNED", titulo: "Nested update" }); }
     catch (error) { nestedError = error.message; }
   }});
-  const result = x.call({ rubricaId: "RUB-OWNED", titulo: "Outer update", asignatura: "Biología", criterios: [] });
+  const result = x.call({ rubricaId: "RUB-OWNED", titulo: "Outer update", asignatura: "Biología", criterios: validCriteria });
   assert.equal(result.data.rubricaId, "RUB-OWNED");
   assert.match(nestedError, /RUBRIC_MUTATION_LOCK_TIMEOUT/);
   assert.deepEqual(x.sheets.RubricasEvaluacion.rows[1].slice(1), ["Outer update", "Biología", "Activa", "[]"]);
