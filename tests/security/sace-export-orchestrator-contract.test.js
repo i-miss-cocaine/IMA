@@ -169,6 +169,55 @@ for (const entry of manifest.templates) {
   });
   assert.deepEqual(Array.from(repeatedResult.outputBytes), Array.from(result.outputBytes),
     "repeated candidate generation with identical inputs must be deterministic");
+
+  const originalInspect = templates.inspect;
+  const originalInspectTemplate = templates.inspectTemplate;
+  const originalMapRows = templates.mapRowsToTemplate;
+  const originalFill = templates.fill;
+  const originalPrepare = templates.prepareCandidateExport;
+  const operationCounts = { inspect: 0, inspectTemplate: 0, mapRows: 0, fill: 0, prepare: 0 };
+  templates.inspect = function() {
+    operationCounts.inspect++;
+    return originalInspect.apply(this, arguments);
+  };
+  templates.inspectTemplate = function() {
+    operationCounts.inspectTemplate++;
+    return originalInspectTemplate.apply(this, arguments);
+  };
+  templates.mapRowsToTemplate = function() {
+    operationCounts.mapRows++;
+    return originalMapRows.apply(this, arguments);
+  };
+  templates.fill = function() {
+    operationCounts.fill++;
+    return originalFill.apply(this, arguments);
+  };
+  templates.prepareCandidateExport = function() {
+    operationCounts.prepare++;
+    return originalPrepare.apply(this, arguments);
+  };
+  try {
+    const optimized = orchestrator.prepareCandidateExportFromAcademicSnapshot({
+      templateBytes, attendanceSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2",
+      documentTypeMappings, absencePolicy: { justifiedAbsenceMode: "COUNT" },
+      expectedTemplateContext: templateInfo.metadata, academicTemplateContextMapping: contextMapping,
+      options: { scale: { min: 0, max: 100, precision: 2 } }
+    });
+    assert.deepEqual(Array.from(optimized.outputBytes), Array.from(result.outputBytes));
+  } finally {
+    templates.inspect = originalInspect;
+    templates.inspectTemplate = originalInspectTemplate;
+    templates.mapRowsToTemplate = originalMapRows;
+    templates.fill = originalFill;
+    templates.prepareCandidateExport = originalPrepare;
+  }
+  assert.deepEqual(operationCounts, {
+    inspect: 2,
+    inspectTemplate: 1,
+    mapRows: 1,
+    fill: 1,
+    prepare: 0
+  }, "the orchestrator must reuse the parsed template and mapped rows instead of repeating inspection/mapping");
   assert(result.limitations.includes("synthetic source snapshot; no live service or official SACE mapping"));
   assert(result.limitations.some(item => item.includes("not been independently verified against an official SACE source")));
   assert(result.limitations.some(item => item.includes("no verified mapping from the local SedeID source")));
