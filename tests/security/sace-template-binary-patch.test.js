@@ -27,6 +27,12 @@ for (const template of manifest.templates) {
   const mappedRows = tools.mapRowsToTemplate(templateInfo, sourceStudents, templateInfo.metadata);
   assert.deepEqual(mappedRows, rows, "template roster mapping must follow identity rather than source row order");
   const output = tools.fill(original, mappedRows, { scale: { min: 0, max: 100, precision: 2 } });
+  const candidateOutput = tools.prepareCandidateExport(original, sourceStudents, templateInfo.metadata,
+    { scale: { min: 0, max: 100, precision: 2 } });
+  assert.deepEqual(candidateOutput, output, "candidate export pipeline must inspect, map and patch consistently");
+  assert.throws(() => tools.prepareCandidateExport(original, sourceStudents,
+    Object.assign({}, templateInfo.metadata, { subject: "Asignatura distinta" }),
+    { scale: { min: 0, max: 100, precision: 2 } }), /SACE_TEMPLATE_CONTEXT_MISMATCH:subject/);
   assert.ok(output instanceof Uint8Array);
   assert.equal(output.length, original.length, "OLE file size must remain unchanged");
   const after = tools.inspect(output);

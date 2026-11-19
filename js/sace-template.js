@@ -504,6 +504,12 @@
     return { metadata, students };
   }
 
+  function prepareCandidateExport(input, sourceStudents, expectedContext, options) {
+    const templateInfo = inspectTemplate(input);
+    const rows = mapRowsToTemplate(templateInfo, sourceStudents, expectedContext);
+    return fill(input, rows, options);
+  }
+
   function mapRowsToTemplate(templateInfo, sourceStudents, expectedContext) {
     if (!templateInfo || !Array.isArray(templateInfo.students) ||
         !Array.isArray(sourceStudents) || sourceStudents.length !== templateInfo.students.length) {
@@ -548,6 +554,6 @@
     });
   }
 
-  return { inspect: parseCompound, inspectTemplate, fill, mapRowsToTemplate, expectedMerges: EXPECTED_MERGES.slice(),
+  return { inspect: parseCompound, inspectTemplate, fill, mapRowsToTemplate, prepareCandidateExport, expectedMerges: EXPECTED_MERGES.slice(),
     studentFirstRow: STUDENT_FIRST_ROW, studentLastRow: STUDENT_LAST_ROW };
 });
