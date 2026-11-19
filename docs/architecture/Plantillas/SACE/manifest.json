@@ -32,13 +32,13 @@
       "count": 22
     },
     "outputCells": {
+      "partial1Absences": "D8:D29",
       "partial1Grade": "E8:E29",
+      "partial2Absences": "F8:F29",
       "partial2Grade": "G8:G29",
       "recovery": "H8:H29"
     },
     "preservedCells": {
-      "partial1Absences": "D8:D29",
-      "partial2Absences": "F8:F29",
       "unusedColumn": "I"
     },
     "footer": {
