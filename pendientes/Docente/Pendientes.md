@@ -1493,7 +1493,7 @@ Hallazgo nuevo: AUD-NG-166. Progreso de auditoría: 17/183; 166 pendientes. Sigu
 - **Problema:** calificaciones identificadas solo por evaluacionId+userId; consultas sin filtro completo por periodo/asignatura; ponderaciones duplicadas/hardcodeadas; cálculo unificado con validaciones insuficientes; rúbricas/competencias sin esquema ni integración UI; cierre/publicación y rectificación sin transición/autoridad contextual verificable; recuperación CAT-GLOBAL; boletines desconectados de la fuente consolidada y equivalencia SACE no acreditada.
 - **Criterios:** clave contextual estable; validar configuración de ponderaciones y notas; cálculo server-side único con pendientes distintos de cero; rúbricas analíticas y competencias vinculadas a catálogos; revisión/publicación/cierre/rectificación con permisos y transiciones verificadas; recuperación asociada a calificación real; boletines oficiales desde notas consolidadas y compatibilidad SACE demostrable.
 - **Tareas relacionadas (no duplicadas):** AUD-NG-002 (propiedad y consulta), AUD-NG-158 (ABAC docente), AUD-NG-124 (historial de calificaciones de entregas, no del libro consolidado).
-- **Estado:** [ ] Pendiente
+- **Estado:** [~] En progreso (registro histórico duplicado; el estado canónico y los avances C1.824–C1.826 se mantienen en el bloque principal de AUD-NG-167).
 
 Hallazgo nuevo: AUD-NG-167. Progreso de auditoría: 18/183; 165 pendientes. Siguiente tarea: TAREA-13.
 
