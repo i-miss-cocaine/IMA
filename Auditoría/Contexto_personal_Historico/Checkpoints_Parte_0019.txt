@@ -930,3 +930,43 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar la salida de recuperaciones y la columna H; confirmar que no se exporta una nota de recuperación sin equivalencia oficial y que el candidato no cambia ante datos no soportados.
 ===============================================================================
+
+
+===============================================================================
+### C1.860 — AUD-NG-167: recuperaciones no verificadas bloquean el candidato integrado
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-RECOVERY-BLOCK-35
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.859
+HEAD de prueba: 4141dc65f8ffe879f84d4c415391f95bdec909c1
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Revisión e implementación:
+- Se añadió una prueba de extremo a extremo del orquestador: cuando el gradebookSnapshot de un parcial contiene una recuperación, prepareCandidateExportFromAcademicSnapshot rechaza el candidato con SACE_RECOVERY_MAPPING_UNVERIFIED:partial1.
+- La columna H no recibe nota de recuperación por defecto, por notaFinalCalculada ni por selección arbitraria entre varias recuperaciones. La salida integrada se bloquea hasta que exista una regla respaldada por la plantilla/fuente oficial.
+- El proveedor ya tenía la protección; esta prueba demuestra que el wrapper integrado no la omite.
+
+Archivos modificados desde C1.859:
+- tests/security/sace-export-orchestrator-contract.test.js
+
+Verificación:
+- GitHub Actions 44572519619 — SACE template structure compatibility contract: SUCCESS.
+- Node.js 22: sintaxis, estructura, parcheo binario, proveedor, orquestador, bloqueo de recuperación e aislamiento PASS.
+- Exam-Service SACE gradebook snapshot contract 44561449013: el paso específico SACE PASS; el workflow completo falló por otros contratos ajenos.
+- Identity mapping 44561449260: SUCCESS, incluido el directorio USER SACE.
+- No existe package.json, lockfile, directorio CLI ni script CLI en el árbol de la rama; las verificaciones Node se ejecutan mediante los workflows declarados.
+- Diff revisado: solo una regresión integrada; no se cambia la columna H ni la política de recuperación.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- BETA-EXAM-106/108/111 requieren plantilla oficial, mapeos institucionales y validación de intercambio; no se puede completar con fixtures.
+- BETA-EXAM-107/110/113 requieren despliegues Apps Script y credenciales reales; BETA-EXAM-112 requiere fuente oficial de política de ausencias.
+- AUD-NG-167 permanece abierto y AUD-NG-168/TAREA-13 no se inicia mientras la puerta de salida de AUD-NG-167 siga abierta.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: verificar HEAD/checkpoint final, registrar exactamente los bloqueos beta restantes y reanudar desde el primero cuando exista el entorno/archivo oficial.
+===============================================================================

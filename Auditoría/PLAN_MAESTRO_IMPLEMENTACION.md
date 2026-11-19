@@ -6038,3 +6038,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El snapshot ahora exige fuente canónica disponible incluso para registros sin JustificacionID; si no existe, falla con SACE_JUSTIFICATION_SOURCE_UNAVAILABLE. Se añadió regresión para source=null.
 - Academic-Service Action 44572085957 SUCCESS. Task-Service, Department Reference, Accounting Import Preflight e Hierarchical Configuration también SUCCESS. Department Scope 44572086033 conserva un fallo preexistente en Phase 22 por configureSchoolDocumentTemplate ausente, ajeno al diff.
 - AUD-NG-167 sigue En progreso; siguiente: revisar recuperaciones/columna H sin inventar reglas.
+
+### C1.860 — AUD-NG-167: recuperación sin regla oficial
+- El contrato integrado confirma que cualquier recuperación no mapeada en un gradebookSnapshot bloquea prepareCandidateExportFromAcademicSnapshot; no se rellena H con un valor arbitrario.
+- SACE Action 44572519619 SUCCESS (Node.js 22, sintaxis y contratos SACE completos). No existe CLI/package script declarado; la suite se ejecuta por GitHub Actions.
+- AUD-NG-167 sigue En progreso por precondiciones beta oficiales/de despliegue. No iniciar AUD-NG-168/TAREA-13 mientras permanezca abierto.
