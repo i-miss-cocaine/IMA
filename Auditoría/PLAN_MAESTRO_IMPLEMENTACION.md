@@ -5998,3 +5998,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El orquestador expone que SedeID no tiene equivalencia oficial de código de centro SACE y que HorariosClase/OfertaAcademica no relacionan JornadaID; el proveedor mantiene mapeo documental explícito y bloquea recuperación no verificada.
 - Contrato SACE Action 44568907040 SUCCESS (Node.js 22; sintaxis y suites SACE PASS). No se modifica el esquema de horarios de AUD-NG-168 ni se inventan códigos.
 - AUD-NG-167 continúa En progreso; siguiente: revisar procedencia de metadatos de plantilla y correspondencia de parciales con snapshot.
+
+### C1.852 — AUD-NG-167: semántica de encabezados SACE
+- parseCompound ya valida todos los encabezados de columnas y rechaza cambios con SACE_HEADER_LAYOUT_MISMATCH. Se añadió una prueba que altera PARCIAL II en una copia binaria y confirma el rechazo sin mutar el XLS fuente.
+- SACE Action 44569480900 SUCCESS; Node.js 22, sintaxis, estructura, parcheo, proveedor, orquestador y aislamiento PASS.
+- AUD-NG-167 continúa En progreso; siguiente: hacer explícito en las limitaciones del candidato que procedencia/vigencia/año de plantilla no están acreditados.

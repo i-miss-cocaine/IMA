@@ -613,3 +613,41 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar la fuente de los metadatos de institución/modalidad/grado/sección/asignatura de la plantilla y el vínculo de los dos parciales con el snapshot; no ampliar esquema de horarios (AUD-NG-168) ni inventar mapeos SACE.
 ===============================================================================
+
+
+===============================================================================
+### C1.852 — AUD-NG-167: rechazo de encabezados de parcial alterados
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-HEADER-SEMANTICS-27
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.851
+HEAD inicial: 5945900b7ddb45a236c542ab8e36482ffc74e623
+HEAD de prueba: 01cafd5b8a536eb433a5f992da9d78519a296f2d
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Revisión e implementación:
+- La revisión confirmó que parseCompound ya valida los encabezados semánticos del XLS (DOCUMENTO, IDENTIDAD, NOMBRE, PARCIAL I/II, INASISTENCIAS, NOTA TOTAL y RECUPERACIÓN) y falla con SACE_HEADER_LAYOUT_MISMATCH; no se duplicó esa validación en inspectTemplate.
+- Se añadió una regresión binaria que modifica el texto PARCIAL II en una copia del libro fuente y verifica que inspectTemplate rechace el archivo por SACE_HEADER_LAYOUT_MISMATCH.
+- El buffer fuente no se modifica; el cambio de texto ocurre solo en la copia de prueba. Se protege la semántica de las columnas antes del parcheo, no solo la dimensión y los rangos combinados.
+
+Archivos modificados desde C1.851:
+- tests/security/sace-template-binary-patch.test.js
+
+Verificación:
+- GitHub Actions 44569480900 — SACE template structure compatibility contract: SUCCESS.
+- Node.js 22: sintaxis, estructura, parcheo binario (incluida cabecera parcial alterada), proveedor, orquestador y aislamiento candidato PASS.
+- La ejecución previa 44569347439 falló porque la aserción esperaba un código de error nuevo; el parser ya emitía SACE_HEADER_LAYOUT_MISMATCH. Se corrigió la expectativa para validar el contrato existente sin cambiar la implementación.
+- Diff final: solo se añade la regresión sobre una copia binaria; no se altera ningún XLS del repositorio ni código de producción.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- La validación confirma el formato de los tres candidatos versionados, no la procedencia oficial ni la vigencia de los libros.
+- El mapeo de parcial IMA→etiqueta SACE sigue siendo explícito y pendiente de contrastar con una plantilla oficial vigente.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: exponer en la salida CANDIDATE que el manifiesto no acredita procedencia, vigencia ni año aplicable de la plantilla; conservar las pruebas beta como pendientes independientes.
+===============================================================================
