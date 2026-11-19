@@ -18,7 +18,7 @@ for (const entry of manifest.templates) {
     partial1: 60 + index + 0.25,
     partial2Absences: index % 4,
     partial2: 70 + index + 0.5,
-    recovery: index % 5 === 0 ? 85 + index / 10 : null
+    recovery: null
   }));
   const studentRows = templateInfo.students.map((student, index) => ({
     userId: "STU-" + String(index + 1).padStart(2, "0"),
