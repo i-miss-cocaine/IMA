@@ -34,9 +34,9 @@ function extract(name) {
 const headers = ["ID", "InstitutionID", "DepartmentID", "AnoID", "Grado", "Seccion",
   "AsignaturaID", "CompetenciaID", "Competencia", "IndicadorID", "Indicador", "ProgramaCurricular",
   "Estado", "RegisteredBy", "CreatedAt", "UpdatedAt", "ContextKey"];
-function norm(value) { return String(value == null ? "" : value).normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").trim().toLowerCase(); }
-const sandbox = { normalizeString: norm };
-vm.runInNewContext(extract("competencyCatalogContextKey_") + "\\n" +
+function norm(value) { return String(value == null ? "" : value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase(); }
+const sandbox = { normalizeString: norm, COMPETENCY_CATALOG_HEADERS_: headers };
+vm.runInNewContext(extract("competencyCatalogContextKey_") + "\n" +
   extract("getCompetencyCatalogUnlocked_") + ";this.read=getCompetencyCatalogUnlocked_;", sandbox);
 function row(id, institution, year, grade, subject, competency, indicator, program, state = "ACTIVE") {
   const item = { institutionId: institution, departmentId: "DEPT-A", anoId: year, grado: grade,
@@ -82,4 +82,4 @@ for (const contract of ["fetchApi('EXAM', 'getCompetencyCatalog'",
   "requestVersion !== gradebookCatalogRequestVersion", "programaCurricular: String(gradebookCompetencyCatalog"]) {
   assert.ok(teacher.includes(contract), "missing teacher integration " + contract);
 }
-process.stdout.write("exam-service-competency-catalog: PASS (18 contracts)\\n");
+process.stdout.write("exam-service-competency-catalog: PASS (18 contracts)\n");
