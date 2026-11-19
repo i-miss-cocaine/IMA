@@ -149,7 +149,7 @@ test("authorized owner can update existing rubric without changing ownership", (
   const x = fixture(); const before = x.sheets.ResourceOwnership.rows[1].slice();
   const result = x.call({ rubricaId: "RUB-OWNED", titulo: "Actualizada", asignatura: "Biología", criterios: validCriteria });
   assert.equal(result.data.rubricaId, "RUB-OWNED");
-  assert.deepEqual(x.sheets.RubricasEvaluacion.rows[1].slice(1), ["Actualizada", "Biología", "Activa", "[]"]);
+  assert.deepEqual(x.sheets.RubricasEvaluacion.rows[1].slice(1), ["Actualizada", "Biología", "Activa", JSON.stringify(validCriteria)]);
   assert.deepEqual(x.sheets.ResourceOwnership.rows[1], before);
 });
 test("legacy rubric without ownership cannot be modified", () => {
@@ -306,7 +306,7 @@ test("reentrant mutation during rubric update setValues is rejected without dupl
   const result = x.call({ rubricaId: "RUB-OWNED", titulo: "Outer update", asignatura: "Biología", criterios: validCriteria });
   assert.equal(result.data.rubricaId, "RUB-OWNED");
   assert.match(nestedError, /RUBRIC_MUTATION_LOCK_TIMEOUT/);
-  assert.deepEqual(x.sheets.RubricasEvaluacion.rows[1].slice(1), ["Outer update", "Biología", "Activa", "[]"]);
+  assert.deepEqual(x.sheets.RubricasEvaluacion.rows[1].slice(1), ["Outer update", "Biología", "Activa", JSON.stringify(validCriteria)]);
   assert.equal(x.state.rubricSetValues, 1);
   assert.equal(x.state.ownershipAppends, 0);
   assert.equal(x.state.rubricAppends, 0);
@@ -356,8 +356,8 @@ test("rubric read is filtered to the selected department", () => {
   const ss = { getSheetByName: name => x.sheets[name] || null };
   const a = x.runtime.getRubricsUnlocked_({ departmentId: "DEPT-A" }, { ss, scope }).data.map(row => row.rubricaId);
   const b = x.runtime.getRubricsUnlocked_({ departmentId: "DEPT-B" }, { ss, scope }).data.map(row => row.rubricaId);
-  assert.deepEqual(a, ["RUB-A"]);
-  assert.deepEqual(b, ["RUB-B"]);
+  assert.equal(a.join(","), "RUB-A");
+  assert.equal(b.join(","), "RUB-B");
 });
 test("RBAC action is exactly saveRubric", () => { const x = fixture(); x.call({ titulo: "Action", departmentId: "DEPT-A", criterios: validCriteria }); assert.equal(x.state.action, "saveRubric"); });
 const failed = results.filter(item => !item.ok);
