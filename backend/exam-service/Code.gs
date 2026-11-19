@@ -84,7 +84,7 @@ const ROLE_PERMISSIONS = {
   "Tutor": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Responsable": ["getStudentExams", "getExamQuestions", "getExamResult", "getEvaluationCategories", "getRubrics", "getStudentRecoveries", "getStudentAcademicReport", "getGradeRectificationHistory"],
   "Dirección": ["*"],
-  "Director": ["reviewPeriodGradebook", "reopenPeriodGradebook", "rectifyStudentGrade", "saveGradebookGrades", "getGradebookWeightConfiguration", "saveGradebookWeightConfiguration"],
+  "Director": ["reviewPeriodGradebook", "reopenPeriodGradebook", "rectifyStudentGrade", "saveGradebookGrades", "getGradebookWeightConfiguration", "saveGradebookWeightConfiguration", "getCompetencyCatalog", "saveCompetencyCatalogItem"],
   "Secretaría": ["*"],
   "Profesor": [
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
@@ -3170,6 +3170,32 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
     }
   } else if (scope.institutionWide !== true) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+
+  const anoId = String(p.anoId || "").trim();
+  const indicadorId = String(p.indicadorId || "").trim();
+  if (!anoId || !/^20\\d{2}$/.test(anoId) || !indicadorId) {
+    throw new Error("COMPETENCY_CATALOG_CONTEXT_REQUIRED");
+  }
+  const catalogSheet = ss.getSheetByName("CatalogoCompetencias");
+  if (!catalogSheet) throw new Error("COMPETENCY_CATALOG_ITEM_NOT_FOUND");
+  const catalogRows = catalogSheet.getDataRange().getValues();
+  if (!catalogRows.length || COMPETENCY_CATALOG_HEADERS_.length !== catalogRows[0].length ||
+      COMPETENCY_CATALOG_HEADERS_.some((header, index) => String(catalogRows[0][index] || "").trim() !== header)) {
+    throw new Error("COMPETENCY_CATALOG_SCHEMA_INVALID");
+  }
+  const program = String(p.programaCurricular || "").trim();
+  const catalogMatches = catalogRows.slice(1).filter(row =>
+    String(row[1] || "").trim() === String(scope.institutionId || "").trim() &&
+    String(row[2] || "").trim() === anoId &&
+    normalizeString(row[3]) === normalizeString(profile.grado) &&
+    normalizeString(row[4]) === normalizeString(asignaturaId) &&
+    String(row[5] || "").trim() === competenciaId &&
+    String(row[7] || "").trim() === indicadorId &&
+    String(row[10] || "").trim().toUpperCase() === "ACTIVE" &&
+    (!program || normalizeString(row[9]) === normalizeString(program)));
+  if (catalogMatches.length !== 1) {
+    throw new Error(catalogMatches.length ? "COMPETENCY_CATALOG_ENTRY_AMBIGUOUS" : "COMPETENCY_CATALOG_ITEM_NOT_FOUND");
   }
 
   const rubricId = String(p.rubricaId || "").trim();
