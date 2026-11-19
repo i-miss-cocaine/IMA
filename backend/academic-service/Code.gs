@@ -11238,6 +11238,8 @@ function getSaceAttendanceSnapshot(payload) {
   const active = function(value) {
     return ["ACTIVO", "ACTIVA", "ACTIVE", "VIGENTE", "MATRICULADO"].indexOf(String(value == null ? "" : value).trim().toUpperCase()) !== -1;
   };
+  const snapshotNow = new Date();
+  const snapshotToday = dateKey(snapshotNow);
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let attendanceSnapshotLock = null;
   let attendanceSnapshotLockHeld = false;
@@ -11356,6 +11358,11 @@ function getSaceAttendanceSnapshot(payload) {
       if (!inPeriod || !["CERRADA", "CERRADO", "FINALIZADA", "FINALIZADO", "COMPLETADA", "COMPLETADO"].includes(state)) return;
       const closedAt = row[sessions.index.FechaCierre] instanceof Date ? row[sessions.index.FechaCierre] : new Date(String(row[sessions.index.FechaCierre] || ""));
       if (!closedAt || isNaN(closedAt.getTime())) throw new Error("SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED");
+      const closedDay = dateKey(closedAt);
+      if (day > snapshotToday || closedAt.getTime() > snapshotNow.getTime() ||
+          !closedDay || closedDay < day) {
+        throw new Error("SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_INVALID");
+      }
       attendanceSessions.push({ sesionId:id, fecha:day, fechaCierre:closedAt.toISOString(), grado:grade, seccion:section,
         asignaturaId:subjectId, docenteUserId:String(actor.userId).trim(), estado:state });
     });

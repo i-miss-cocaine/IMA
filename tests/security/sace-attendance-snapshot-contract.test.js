@@ -163,6 +163,15 @@ assert.deepEqual(Array.from(result.data.identityRecords, row => [row.userId, row
 ], "identity and document type are fetched from USER service; no local Personas sheet is required");
 assert.equal(result.data.attendanceSessions.length, 2);
 assert.equal(result.data.attendanceSessions.every(session => typeof session.fechaCierre === "string" && session.fechaCierre.length > 0), true);
+const closeBeforeSession = tables.SesionesAsistencia[1][10];
+tables.SesionesAsistencia[1][10] = "2026-02-02T23:59:00Z";
+assert.equal(createContext().runSnapshot(payload).code, "SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_INVALID",
+  "a session cannot be closed before its local calendar date");
+tables.SesionesAsistencia[1][10] = "2999-01-01T00:00:00Z";
+assert.equal(createContext().runSnapshot(payload).code, "SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_INVALID",
+  "a future close timestamp must not be accepted as a completed attendance session");
+tables.SesionesAsistencia[1][10] = closeBeforeSession;
+
 assert.deepEqual(Array.from(result.data.attendanceSessions, row => row.sesionId), ["S-1", "S-2"]);
 assert.equal(result.data.attendanceRecords.length, 4);
 assert.equal(result.data.attendanceRecords.find(row => row.registroId === "R-4").justificado, true);
