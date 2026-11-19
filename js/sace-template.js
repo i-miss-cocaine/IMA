@@ -260,7 +260,7 @@
     if (students.some(student => !student.documentMarker || !student.identity || !student.name)) {
       throw new Error("SACE_STUDENT_ROSTER_INCOMPLETE");
     }
-    return { bytes: bytes.length, workbookSize: workbookEntry.size, workbookCapacity,
+    return { bytes: bytes.length, sectorSize, workbookSize: workbookEntry.size, workbookCapacity,
       workbookSlack: workbookCapacity - workbookEntry.size, workbookChain, directoryChain,
       directoryEntryOffset: workbookEntry.offset, workbookStream: workbookBytes,
       records, sheetOffset, cells, merges, dimension, formulaCount, validationCount,
@@ -369,10 +369,10 @@
     const newWorkbookStream = concat(parts);
     if (newWorkbookStream.length > parsed.workbookCapacity) throw new Error("SACE_WORKBOOK_STREAM_CAPACITY_EXCEEDED");
     const output = new Uint8Array(parseCompound(input).bytes);
-    writeLogical(output, parsed.workbookChain, 512, 0, newWorkbookStream);
+    writeLogical(output, parsed.workbookChain, parsed.sectorSize, 0, newWorkbookStream);
     const sizeBytes = new Uint8Array(8), sizeView = new DataView(sizeBytes.buffer);
     sizeView.setBigUint64(0, BigInt(newWorkbookStream.length), true);
-    writeLogical(output, parsed.directoryChain, 512, parsed.directoryEntryOffset + 120, sizeBytes);
+    writeLogical(output, parsed.directoryChain, parsed.sectorSize, parsed.directoryEntryOffset + 120, sizeBytes);
     const verified = parseCompound(output);
     if (verified.workbookSize !== newWorkbookStream.length ||
         verified.merges.join("|") !== parsed.merges.join("|") ||
