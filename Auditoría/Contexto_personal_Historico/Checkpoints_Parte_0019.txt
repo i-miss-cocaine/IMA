@@ -323,3 +323,43 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: auditar la integración snapshot Academic → proveedor/orquestador SACE y sus reglas de conteo, ejecutar los contratos de extremo a extremo y mantener los casos beta externos pendientes sin bloquear la implementación local.
 ===============================================================================
+
+
+===============================================================================
+### C1.845 — AUD-NG-167: el proveedor SACE exige sesiones cerradas con marca temporal
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-PROVIDER-CLOSED-SESSIONS-20
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.844
+HEAD inicial: f080b0a6899e78f781ac32d2581351817e7dabca
+HEAD de implementación y verificación: e779e1a9c047cd74af7e895a660a9a5712b3fa1a
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- countAbsencesForPeriod ahora acepta únicamente estados de sesión cerrados/finalizados/completados y exige fechaCierre parseable antes de contar inasistencias.
+- El proveedor falla cerrado con SACE_ATTENDANCE_SESSION_NOT_CLOSED o SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED cuando el snapshot incluye sesiones abiertas o sin timestamp de cierre.
+- Los fixtures de sace-data-provider-contract y sace-export-orchestrator-contract ahora representan cierres con timestamp; se añadieron casos negativos para sesión abierta y timestamp ausente.
+- La comprobación se aplica también a la ruta buildCandidateStudentsFromSnapshot y a la preparación orquestada, pues ambas consumen el mismo proveedor.
+
+Archivos modificados:
+- js/sace-data-provider.js
+- tests/security/sace-data-provider-contract.test.js
+- tests/security/sace-export-orchestrator-contract.test.js
+
+Verificación:
+- GitHub Actions 44562739416 — SACE template structure compatibility contract: SUCCESS, Node.js 22.
+- PASS: sintaxis de sace-template-structure-contract.test.js, js/sace-template.js, js/sace-data-provider.js, sace-data-provider-contract.test.js, js/sace-export-orchestrator.js y sace-export-orchestrator-contract.test.js.
+- PASS: sace-template-structure-contract.test.js, sace-template-binary-patch.test.js, sace-data-provider-contract.test.js y sace-export-orchestrator-contract.test.js.
+- Comparación Git C1.844→implementación: únicamente los tres archivos indicados.
+- Rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- Los contratos son sintéticos; BETA-EXAM-107/113 siguen pendientes para confirmar el comportamiento con Apps Script/Sheets desplegados.
+- No se confirma la regla oficial COUNT/EXCLUDE, el mapeo documental ni la plantilla/carga oficial SACE. La salida permanece CANDIDATE.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: ampliar la prueba extremo a extremo para rechazar sesiones abiertas y timestamps ausentes a través de prepareCandidateExportFromAcademicSnapshot; después revisar los mapeos pendientes y las precondiciones beta sin habilitar exportación productiva.
+===============================================================================

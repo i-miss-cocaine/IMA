@@ -4277,3 +4277,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.843 — AUD-NG-167: validación de justificación contra registro canónico y estado de sincronización; booleano bruto no basta. Contratos de Academic, provider y orchestrator PASS (Actions 44552470318 y 44551873276). Validación real pendiente BETA-EXAM-113.
 
 [2026-11-19] C1.844 — AUD-NG-167: getSaceAttendanceSnapshot serializa la lectura de sesiones, registros y justificaciones con el ScriptLock compartido y lo libera antes de las llamadas Exam. Contrato de timeout/cleanup y suite Academic-Service 12/12 PASS en Actions 44561762541. Verificación beta real pendiente BETA-EXAM-107/113.
+
+[2026-11-19] C1.845 — AUD-NG-167: proveedor SACE exige sesión cerrada y timestamp válido antes de contar inasistencias; casos negativos de sesión abierta/cierre ausente. SACE template structure compatibility contract 44562739416 SUCCESS.

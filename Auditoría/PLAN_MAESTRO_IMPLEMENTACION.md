@@ -5962,3 +5962,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Academic-Service captura sesiones, registros y justificaciones bajo el ScriptLock compartido por sus mutaciones; libera antes de las llamadas remotas y falla cerrado ante timeout. El contrato prueba lectura protegida, liberación, timeout y error de fuente.
 - Academic-Service Actions 44561762541 SUCCESS en Node.js 22.23.4; sintaxis y 12 pasos del workflow PASS. Diferencia neta desde C1.843: tres archivos, sin cambios fuera de alcance. Rama base intacta.
 - AUD-NG-167 permanece En progreso. Siguiente: revisar integración snapshot→proveedor/orquestador SACE y conteo; BETA-EXAM-107/113 y validaciones de plantilla/regla oficial siguen pendientes.
+
+### C1.845 — AUD-NG-167: proveedor SACE rechaza sesiones no cerradas
+- `countAbsencesForPeriod` exige un estado cerrado/finalizado/completado y un `fechaCierre` parseable para cada sesión recibida. El contrato cubre sesiones abiertas y timestamp ausente; el orquestador usa el mismo proveedor.
+- SACE template structure compatibility contract 44562739416 SUCCESS en Node.js 22; sintaxis y contratos de plantilla, parcheo binario, proveedor y orquestador PASS. Diferencia neta: tres archivos, sin cambios fuera de alcance; rama base intacta.
+- AUD-NG-167 permanece En progreso. Siguiente: probar la denegación extremo a extremo desde `prepareCandidateExportFromAcademicSnapshot` y continuar con mapeos/validaciones beta pendientes.
