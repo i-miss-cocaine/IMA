@@ -11,6 +11,11 @@ for (const id of ["student-report-year", "student-report-period",
 assert.ok(js.includes("fetchApi('EXAM', 'getStudentAcademicReport'"));
 assert.ok(js.includes("userId: requestedUserId, anoId, periodoId"));
 assert.ok(js.includes("res.data.libroConsolidado"));
+assert.ok(js.includes("Ver desglose de evaluación"));
+assert.ok(js.includes("category.notaFinalAplicada"));
+assert.ok(js.includes("category.recuperacionAplicada === true"));
+assert.ok(js.includes("item.ponderacionPendiente"));
+
 assert.ok(js.includes("report.esDocumentoOficial === true"));
 assert.ok(js.includes("studentAcademicReportRequestVersion"));
 assert.ok(js.includes('requestedUserId !== String(currentUser?.userId || "").trim()'),
