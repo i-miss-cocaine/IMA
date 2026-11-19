@@ -2489,6 +2489,13 @@ function getSaceStudentIdentityDirectory_(payload) {
     return id;
   });
   if (new Set(studentIds).size !== studentIds.length) throw new Error("SACE_IDENTITY_ROSTER_DUPLICATE");
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+  } catch (lockError) {
+    throw new Error("SACE_IDENTITY_SOURCE_LOCK_TIMEOUT");
+  }
+  try {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const read = function(name, requiredHeaders) {
     const sheet = ss.getSheetByName(name);
@@ -2548,6 +2555,9 @@ function getSaceStudentIdentityDirectory_(payload) {
   }
   if (new Set(normalized).size !== normalized.length) throw new Error("SACE_IDENTITY_DUPLICATE_DOCUMENT");
   return { status: "success", data: records };
+  } finally {
+    try { lock.releaseLock(); } catch (releaseError) {}
+  }
 }
 
 function handleTrustedMigrationEnvelope_(envelope){
@@ -3278,39 +3288,51 @@ function createPerson(payload) {
   const documentType = String(tipoIdentificacion || "").trim();
   if (documentType.length > 40) throw new Error("PERSON_DOCUMENT_TYPE_INVALID");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "Personas");
-  const lastColumn = Math.max(sheet.getLastColumn(), 1);
-  let headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(function(value) { return String(value || "").trim(); });
-  const documentTypeIndex = headers.indexOf("TipoIdentificacion");
-  if (documentTypeIndex === -1) {
-    const nextColumn = lastColumn + 1;
-    sheet.getRange(1, nextColumn).setValue("TipoIdentificacion");
-    headers.push("TipoIdentificacion");
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+  } catch (lockError) {
+    throw new Error("PERSON_CREATE_LOCK_TIMEOUT");
   }
-  const requiredHeaders = ["PersonaID", "Nombres", "Apellidos", "Identificacion", "EmailContacto", "TelefonoContacto", "EstadoPersona", "FechaCreacion", "FechaActualizacion", "Observaciones", "TipoIdentificacion"];
-  const indexes = {};
-  headers.forEach(function(header, index) {
-    if (header) {
-      if (Object.prototype.hasOwnProperty.call(indexes, header)) throw new Error("PERSON_SCHEMA_DUPLICATE_HEADER");
-      indexes[header] = index;
+  let personaId;
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "Personas");
+    const lastColumn = Math.max(sheet.getLastColumn(), 1);
+    let headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(function(value) { return String(value || "").trim(); });
+    const documentTypeIndex = headers.indexOf("TipoIdentificacion");
+    if (documentTypeIndex === -1) {
+      const nextColumn = lastColumn + 1;
+      sheet.getRange(1, nextColumn).setValue("TipoIdentificacion");
+      headers.push("TipoIdentificacion");
     }
-  });
-  if (requiredHeaders.some(function(header) { return indexes[header] === undefined; })) throw new Error("PERSON_SCHEMA_INVALID");
-  const row = Array.from({ length: headers.length }, function() { return ""; });
-  const now = new Date(), personaId = "PER-" + now.getTime();
-  row[indexes.PersonaID] = personaId;
-  row[indexes.Nombres] = String(nombres).trim();
-  row[indexes.Apellidos] = String(apellidos).trim();
-  row[indexes.Identificacion] = identificacion ? String(identificacion).trim() : "";
-  row[indexes.EmailContacto] = emailContacto ? String(emailContacto).trim().toLowerCase() : "";
-  row[indexes.TelefonoContacto] = telefonoContacto ? String(telefonoContacto).trim() : "";
-  row[indexes.EstadoPersona] = "Activa";
-  row[indexes.FechaCreacion] = now;
-  row[indexes.FechaActualizacion] = now;
-  row[indexes.Observaciones] = observaciones || "";
-  row[indexes.TipoIdentificacion] = documentType;
-  sheet.appendRow(row);
+    const requiredHeaders = ["PersonaID", "Nombres", "Apellidos", "Identificacion", "EmailContacto", "TelefonoContacto", "EstadoPersona", "FechaCreacion", "FechaActualizacion", "Observaciones", "TipoIdentificacion"];
+    const indexes = {};
+    headers.forEach(function(header, index) {
+      if (header) {
+        if (Object.prototype.hasOwnProperty.call(indexes, header)) throw new Error("PERSON_SCHEMA_DUPLICATE_HEADER");
+        indexes[header] = index;
+      }
+    });
+    if (requiredHeaders.some(function(header) { return indexes[header] === undefined; })) throw new Error("PERSON_SCHEMA_INVALID");
+    const row = Array.from({ length: headers.length }, function() { return ""; });
+    const now = new Date();
+    personaId = "PER-" + now.getTime();
+    row[indexes.PersonaID] = personaId;
+    row[indexes.Nombres] = String(nombres).trim();
+    row[indexes.Apellidos] = String(apellidos).trim();
+    row[indexes.Identificacion] = identificacion ? String(identificacion).trim() : "";
+    row[indexes.EmailContacto] = emailContacto ? String(emailContacto).trim().toLowerCase() : "";
+    row[indexes.TelefonoContacto] = telefonoContacto ? String(telefonoContacto).trim() : "";
+    row[indexes.EstadoPersona] = "Activa";
+    row[indexes.FechaCreacion] = now;
+    row[indexes.FechaActualizacion] = now;
+    row[indexes.Observaciones] = observaciones || "";
+    row[indexes.TipoIdentificacion] = documentType;
+    sheet.appendRow(row);
+  } finally {
+    lock.releaseLock();
+  }
 
   logStructuredEvent("USER", "createPerson", "INFO", "PERSON_CREATED", `Persona ${personaId} creada exitosamente`, { personaId, nombres, apellidos }, payload && payload.authRole);
   return { status: "success", personaId: personaId, message: "Registro central de Persona creado exitosamente." };

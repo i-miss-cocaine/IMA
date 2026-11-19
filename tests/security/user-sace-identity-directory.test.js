@@ -56,6 +56,11 @@ function contextFor(claims = { userId: "TEACHER-1", role: "Profesor", institutio
       assert.equal(id, "USER-SHEET");
       return { getSheetByName(name) { return sheets[name] || null; } };
     } },
+    LockService: { getScriptLock() { return {
+      waitLock(timeout) { assert.equal(timeout, 10000); context.lockWaits++; if (context.lockFails) throw new Error("lock timeout"); context.lockHeld = true; },
+      releaseLock() { assert.equal(context.lockHeld, true); context.lockHeld = false; context.lockReleases++; }
+    }; } },
+    lockWaits: 0, lockReleases: 0, lockHeld: false, lockFails: false,
     Date, String, Number, Array, Object, Set, Error, Math, JSON
   }, overrides.globals || {});
   vm.createContext(context);
@@ -68,7 +73,10 @@ const request = {
   institutionId: "INST-1",
   studentIds: ["STU-1", "STU-2"]
 };
-const result = contextFor().readDirectory(request);
+const successfulDirectoryContext = contextFor();
+const result = successfulDirectoryContext.readDirectory(request);
+assert.deepEqual({ waits: successfulDirectoryContext.lockWaits, releases: successfulDirectoryContext.lockReleases, held: successfulDirectoryContext.lockHeld },
+  { waits: 1, releases: 1, held: false }, "identity and account reads must share one released USER-Service lock");
 assert.equal(result.status, "success");
 assert.deepEqual(Array.from(result.data, row => [row.userId, row.identity, row.documentType, row.name]), [
   ["STU-1", "0801-2000-00001", "DNI", "Ana Pérez"],
@@ -81,6 +89,11 @@ const legacyResult = contextFor(undefined, { Personas: legacyPeople }).readDirec
 assert.equal(legacyResult.data[0].documentType, "", "legacy identity rows do not receive an inferred document type");
 
 assert.throws(() => contextFor().readDirectory(Object.assign({}, request, { sessionToken: "BAD" })), /SACE_IDENTITY_CALLER_INVALID/);
+const lockTimeoutContext = contextFor(undefined, { globals: { LockService: { getScriptLock() {
+  return { waitLock() { throw new Error("busy"); }, releaseLock() { throw new Error("must not release unowned lock"); } };
+} } } });
+assert.throws(() => lockTimeoutContext.readDirectory(request), /SACE_IDENTITY_SOURCE_LOCK_TIMEOUT/);
+
 assert.throws(() => contextFor({ userId: "TEACHER-1", role: "Estudiante", institutionId: "INST-1" }).readDirectory(request), /SACE_IDENTITY_CALLER_INVALID/);
 assert.throws(() => contextFor().readDirectory(Object.assign({}, request, { teacherUserId: "OTHER" })), /SACE_IDENTITY_CALLER_INVALID/);
 assert.throws(() => contextFor().readDirectory(Object.assign({}, request, { institutionId: "INST-OTHER" })), /SACE_IDENTITY_CALLER_INVALID/);
@@ -123,3 +136,9 @@ assert.throws(() => handlerContext.handleTrusted({
   action: "getSaceStudentIdentityDirectory", payload: request
 }), /MIGRATION_ACTION_NOT_ALLOWED/);
 console.log("user-sace-identity-directory: PASS (HMAC-routed academic source, verified teacher session, identity scope and minimal fields)");
+
+const createPersonSource = "function createPerson(payload) {\n  const { nombres, apellidos, identificacion, tipoIdentificacion, emailContacto, telefonoContacto, observaciones } = payload || {};\n  if (!nombres || !apellidos) throw new Error(\"Nombres y apellidos son requeridos para crear una Persona.\");\n  if (tipoIdentificacion !== undefined && tipoIdentificacion !== null && typeof tipoIdentificacion !== \"string\") throw new Error(\"PERSON_DOCUMENT_TYPE_INVALID\");\n  const documentType = String(tipoIdentificacion || \"\").trim();\n  if (documentType.length > 40) throw new Error(\"PERSON_DOCUMENT_TYPE_INVALID\");\n\n  const lock = LockService.getScriptLock();\n  try {\n    lock.waitLock(10000);\n  } catch (lockError) {\n    throw new Error(\"PERSON_CREATE_LOCK_TIMEOUT\");\n  }\n  let personaId;\n  try {\n    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);\n    const sheet = getOrCreateSheet(ss, \"Personas\");\n    const lastColumn = Math.max(sheet.getLastColumn(), 1);\n    let headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(function(value) { return String(value || \"\").trim(); });\n    const documentTypeIndex = headers.indexOf(\"TipoIdentificacion\");\n    if (documentTypeIndex === -1) {\n      const nextColumn = lastColumn + 1;\n      sheet.getRange(1, nextColumn).setValue(\"TipoIdentificacion\");\n      headers.push(\"TipoIdentificacion\");\n    }\n    const requiredHeaders = [\"PersonaID\", \"Nombres\", \"Apellidos\", \"Identificacion\", \"EmailContacto\", \"TelefonoContacto\", \"EstadoPersona\", \"FechaCreacion\", \"FechaActualizacion\", \"Observaciones\", \"TipoIdentificacion\"];\n    const indexes = {};\n    headers.forEach(function(header, index) {\n      if (header) {\n        if (Object.prototype.hasOwnProperty.call(indexes, header)) throw new Error(\"PERSON_SCHEMA_DUPLICATE_HEADER\");\n        indexes[header] = index;\n      }\n    });\n    if (requiredHeaders.some(function(header) { return indexes[header] === undefined; })) throw new Error(\"PERSON_SCHEMA_INVALID\");\n    const row = Array.from({ length: headers.length }, function() { return \"\"; });\n    const now = new Date();\n    personaId = \"PER-\" + now.getTime();\n    row[indexes.PersonaID] = personaId;\n    row[indexes.Nombres] = String(nombres).trim();\n    row[indexes.Apellidos] = String(apellidos).trim();\n    row[indexes.Identificacion] = identificacion ? String(identificacion).trim() : \"\";\n    row[indexes.EmailContacto] = emailContacto ? String(emailContacto).trim().toLowerCase() : \"\";\n    row[indexes.TelefonoContacto] = telefonoContacto ? String(telefonoContacto).trim() : \"\";\n    row[indexes.EstadoPersona] = \"Activa\";\n    row[indexes.FechaCreacion] = now;\n    row[indexes.FechaActualizacion] = now;\n    row[indexes.Observaciones] = observaciones || \"\";\n    row[indexes.TipoIdentificacion] = documentType;\n    sheet.appendRow(row);\n  } finally {\n    lock.releaseLock();\n  }\n\n  logStructuredEvent(\"USER\", \"createPerson\", \"INFO\", \"PERSON_CREATED\", `Persona ${personaId} creada exitosamente`, { personaId, nombres, apellidos }, payload && payload.authRole);\n  return { status: \"success\", personaId: personaId, message: \"Registro central de Persona creado exitosamente.\" };\n}";
+assert(createPersonSource.includes("LockService.getScriptLock()") &&
+  createPersonSource.includes("lock.waitLock(10000)") &&
+  createPersonSource.includes("lock.releaseLock()"),
+  "createPerson must coordinate with the identity directory reader lock");
