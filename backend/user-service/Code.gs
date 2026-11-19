@@ -4077,64 +4077,102 @@ function registerUser(payload) {
   const now = new Date();
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getSheetOrThrow(ss, "Usuarios");
-  const data = sheet.getDataRange().getValues();
-  const lowerEmail = email.toLowerCase().trim();
-  let existingIndex = -1;
-  for (let i = 1; i < data.length; i++) { if (data[i][4]?.toString().toLowerCase().trim() === lowerEmail) { existingIndex = i; break; } }
+  const lowerEmail = String(email).toLowerCase().trim();
+  const lock = LockService.getScriptLock();
+  let existingResult = null;
+  let updatedUserId = "";
 
-  if (existingIndex !== -1) {
-    if (forceUpdate) {
-      const userId = data[existingIndex][0];
-      const passBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password);
-      const passArr = Array.from ? Array.from(passBytes) : [].slice.call(passBytes);
-      const hashedPassword = passArr.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
-      sheet.getRange(existingIndex + 1, 1, 1, 13).setValues([[
-        userId,
-        nombre,
-        grado || "",
-        seccion || "",
-        email,
-        hashedPassword,
-        "Estudiante",
-        telefono || "",
-        numeroLista || "",
-        personaId || data[existingIndex][9] || "",
-        "Activa",
-        data[existingIndex][11] || now,
-        now
-      ]]);
-      invalidateUserRoleCache(userId);
-      return { status: "success", userId, message: "Cuenta actualizada." };
+  let lockHeld = false;
+  try {
+    lock.waitLock(10000);
+    lockHeld = true;
+    const data = sheet.getDataRange().getValues();
+    let existingIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][4] || "").toLowerCase().trim() === lowerEmail) {
+        existingIndex = i;
+        break;
+      }
     }
-    return { status: "error", exists: true, message: "Email ya registrado.", data: { nombre: data[existingIndex][1], gradoActual: data[existingIndex][2], seccionActual: data[existingIndex][3] } };
+    if (existingIndex !== -1) {
+      if (forceUpdate) {
+        const userId = data[existingIndex][0];
+        const passBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password);
+        const passArr = Array.from ? Array.from(passBytes) : [].slice.call(passBytes);
+        const hashedPassword = passArr.map(b => ("0" + (b & 0xFF).toString(16)).slice(-2)).join("");
+        sheet.getRange(existingIndex + 1, 1, 1, 13).setValues([[
+          userId,
+          nombre,
+          grado || "",
+          seccion || "",
+          email,
+          hashedPassword,
+          "Estudiante",
+          telefono || "",
+          numeroLista || "",
+          personaId || data[existingIndex][9] || "",
+          "Activa",
+          data[existingIndex][11] || now,
+          now
+        ]]);
+        updatedUserId = userId;
+        existingResult = { status: "success", userId, message: "Cuenta actualizada." };
+      } else {
+        existingResult = {
+          status: "error", exists: true,
+          message: "Email ya registrado.",
+          data: { nombre: data[existingIndex][1], gradoActual: data[existingIndex][2], seccionActual: data[existingIndex][3] }
+        };
+      }
+    }
+  } finally {
+    if (lockHeld) lock.releaseLock();
   }
+
+  if (existingResult) {
+    if (updatedUserId) invalidateUserRoleCache(updatedUserId);
+    return existingResult;
+  }
+
+  // The ID sequence has its own lock; acquire the USER sheet lock only after
+  // generation, then re-read the email to close the concurrent-registration window.
   const genIdRes = generateInstitutionalId({ entityType: "Usuario", prefix: "USR-" });
   const userId = genIdRes && genIdRes.generatedId ? genIdRes.generatedId : null;
-  if (!userId) {
-    throw new Error("No se pudo generar un identificador institucional único para el usuario.");
-  }
+  if (!userId) throw new Error("No se pudo generar un identificador institucional único para el usuario.");
   const passBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password);
   const passArr = Array.from ? Array.from(passBytes) : [].slice.call(passBytes);
-  const hashedPassword = passArr.map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
-  sheet.appendRow([
-    userId,
-    nombre,
-    grado || "",
-    seccion || "",
-    email,
-    hashedPassword,
-    "Estudiante",
-    telefono || "",
-    numeroLista || "",
-    personaId || "",
-    "Activa",
-    now,
-    now
-  ]);
+  const hashedPassword = passArr.map(b => ("0" + (b & 0xFF).toString(16)).slice(-2)).join("");
+
+  lockHeld = false;
+  try {
+    lock.waitLock(10000);
+    lockHeld = true;
+    const latestRows = sheet.getDataRange().getValues();
+    const duplicateIndex = latestRows.findIndex((row, index) =>
+      index > 0 && String(row[4] || "").toLowerCase().trim() === lowerEmail
+    );
+    if (duplicateIndex !== -1) {
+      return {
+        status: "error", exists: true,
+        message: "Email ya registrado.",
+        data: {
+          nombre: latestRows[duplicateIndex][1],
+          gradoActual: latestRows[duplicateIndex][2],
+          seccionActual: latestRows[duplicateIndex][3]
+        }
+      };
+    }
+    sheet.appendRow([
+      userId, nombre, grado || "", seccion || "", email, hashedPassword,
+      "Estudiante", telefono || "", numeroLista || "", personaId || "",
+      "Activa", now, now
+    ]);
+  } finally {
+    if (lockHeld) lock.releaseLock();
+  }
   return { status: "success", userId };
 }
 
-// [TAREA-F4-P0-04] [Fase 4: Auditoría y Protección] - Registro de intentos fallidos/exitosos, cierres de sesión y respuestas genéricas
 function logoutUser(payload) {
   var token = payload && (payload.sessionToken || payload.authToken || payload.token);
   var claims = token ? verifySessionToken(token) : null;
