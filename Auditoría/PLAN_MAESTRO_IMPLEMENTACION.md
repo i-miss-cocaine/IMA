@@ -5973,3 +5973,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El orquestador valida un `academicTemplateContextMapping` explícito contra el contexto académico del snapshot y los metadatos de plantilla. Si falta, mantiene salida CANDIDATE con limitación; si contradice el snapshot/plantilla, rechaza. No presume equivalencia entre etiquetas académicas y SACE.
 - Actions 44563404725 (Academic-Service) y 44564429486 (SACE template compatibility) SUCCESS; Node 22, sintaxis y contratos PASS. Rama base intacta.
 - AUD-NG-167 sigue En progreso; siguiente: revisar efectos de generación binaria candidata y continuar solo mapeos respaldables; BETA-EXAM-105/106/107/108/110/111/112/113 pendientes.
+
+### C1.847 — AUD-NG-167: integridad del candidato y coherencia temporal
+- El contrato comprueba que el orquestador devuelve un buffer separado y no modifica el XLS fuente. El proveedor exige `AnoID` coincidente con el contexto y rangos de parciales no solapados/invertidos.
+- SACE Actions 44564738163 y 44564960798 SUCCESS; Academic-Service Actions 44564960766 SUCCESS. Node 22.23.5, sintaxis y contratos PASS. Solo tres archivos cambiados desde C1.846; rama base intacta.
+- AUD-NG-167 sigue En progreso; siguiente: revisar mapeos pendientes y separar evidencia local de validación oficial/beta.
