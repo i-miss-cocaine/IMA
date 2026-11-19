@@ -266,3 +266,60 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar el estado de cierre y edición de SesionesAsistencia y RegistrosAsistencia para asegurar que el snapshot solo lea sesiones cerradas e inmutables, y que una corrección posterior no cambie silenciosamente el conteo ya preparado.
 ===============================================================================
+
+
+===============================================================================
+### C1.844 — AUD-NG-167: snapshot de asistencia protegido por bloqueo compartido
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-ATTENDANCE-LOCK-19
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.843
+HEAD inicial: 33994be41df407eecd88b4195eedb01d156638e5
+HEAD de implementación y verificación: f333fe5db1a46279d7eb391fc9c3c82abb6def70
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- getSaceAttendanceSnapshot adquiere LockService.getScriptLock() antes de leer SesionesAsistencia, RegistrosAsistencia y JustificacionesAsistencia; las tres fuentes se capturan bajo el mismo bloqueo usado por los escritores de asistencia y justificaciones.
+- El bloqueo se libera inmediatamente después de materializar las filas y resolver los vínculos canónicos, antes de invocar Exam-Service; la consulta remota a USER-Service también ocurre antes de adquirirlo.
+- Un timeout devuelve SACE_ATTENDANCE_SNAPSHOT_LOCK_TIMEOUT y no intenta liberar un bloqueo no adquirido. Cualquier error de lectura posterior a la adquisición libera el bloqueo antes de devolver el error.
+- sace-attendance-snapshot-contract.test.js verifica que las tres fuentes se lean bajo bloqueo, que las llamadas remotas queden fuera de la sección bloqueada, que el bloqueo se libere exactamente una vez y que timeout/error no dejen el lock retenido.
+- Revisión de escritores: saveClassAttendance, bulkApplyAttendanceStatus, closeAttendanceSession, saveDailyAttendance y los flujos de creación/revisión/reconciliación de justificaciones usan el bloqueo compartido cuando mutan las filas incluidas en el snapshot. openAttendanceSession solo agrega una sesión Abierta; el snapshot excluye sesiones no cerradas y closeAttendanceSession serializa el cierre con el mismo lock.
+
+Archivos con diferencia neta respecto de C1.843:
+- backend/academic-service/Code.gs
+- tests/security/sace-attendance-snapshot-contract.test.js
+- tests/security/academic-attendance-session-closure-contract.test.js (corrección del stub de identidad del harness: la función se invoca sin this enlazado).
+
+Verificación:
+- GitHub Actions 44561762541 — Academic-Service single authorization context: SUCCESS, Node.js 22.23.4.
+- PASS: node --check < backend/academic-service/Code.gs.
+- PASS: academic-service-single-auth-context.test.js.
+- PASS: sace-attendance-snapshot-contract.test.js.
+- PASS: academic-attendance-session-closure-contract.test.js.
+- PASS: academic-legacy-report-card-deprecation.test.js.
+- PASS: academic-unified-grade-calculation.test.js.
+- PASS: academic-teacher-justification-abac.test.js.
+- PASS: academic-absence-justification-canonical.test.js.
+- PASS: academic-interservice-replay-guard.test.js.
+- PASS: academic-migration-writer.test.js.
+- PASS: academic-multilevel-file-validation.test.js.
+- PASS: academic-student-document-private-storage.test.js.
+- Comparación Git 33994be... → f333fe5: únicamente los tres archivos indicados; no hay cambios netos en archivos ajenos.
+- Rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Recuperación del historial de esta iteración:
+- 14e4bc5f57bc2c3470fb536ce4363c4a052f4a8c fue creado inicialmente con un árbol incompleto por omitir el árbol base. Sin reescribir historia ni usar force push, 5ba25cfe4a53196d723644b7633210164d77c6ef restauró el árbol completo del commit padre e incorporó los dos blobs previstos. La comparación final contra C1.843 confirma que no quedó ninguna eliminación ni modificación neta fuera del alcance.
+- d34eb64582a7a773c94ee9bdc87646425fa334f7 corrigió la expectativa del contrato para el error de lectura simulado.
+- f333fe5db1a46279d7eb391fc9c3c82abb6def70 corrigió el stub de identidad detectado por la primera ejecución de Actions. La ejecución final 44561762541 terminó SUCCESS.
+
+Límites:
+- La prueba local/CI usa fixtures sintéticos; no demuestra concurrencia real en Apps Script/Sheets desplegados.
+- BETA-EXAM-107 y BETA-EXAM-113 siguen pendientes de despliegue y verificación con datos sintéticos/anonimizados.
+- La equivalencia documental, plantilla oficial, regla COUNT/EXCLUDE y carga SACE continúan sujetas a BETA-EXAM-106/108/112; no se habilita exportación productiva.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: auditar la integración snapshot Academic → proveedor/orquestador SACE y sus reglas de conteo, ejecutar los contratos de extremo a extremo y mantener los casos beta externos pendientes sin bloquear la implementación local.
+===============================================================================

@@ -5957,3 +5957,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Cobertura general:** 164 pruebas Node ejecutadas; 161 PASS, 3 FAIL ajenas al alcance: Phase22 busca configureSchoolDocumentTemplate (ACCOUNTING), accounting-school-document-binary-integrity busca ensureSchoolDocumentIssuedSchema_ (ACCOUNTING), y session-token-expiry falla USER/valid. No se cambiaron esas áreas.
 - **CLI:** no existe paquete, directorio ni script CLI declarado.
 - **Decisión:** AUD-NG-166 sigue abierta por pruebas de navegador y beta real de Drive/Sheets; no avanzar a TAREA-12 todavía.
+
+### C1.844 — AUD-NG-167: consistencia concurrente del snapshot de asistencia
+- Academic-Service captura sesiones, registros y justificaciones bajo el ScriptLock compartido por sus mutaciones; libera antes de las llamadas remotas y falla cerrado ante timeout. El contrato prueba lectura protegida, liberación, timeout y error de fuente.
+- Academic-Service Actions 44561762541 SUCCESS en Node.js 22.23.4; sintaxis y 12 pasos del workflow PASS. Diferencia neta desde C1.843: tres archivos, sin cambios fuera de alcance. Rama base intacta.
+- AUD-NG-167 permanece En progreso. Siguiente: revisar integración snapshot→proveedor/orquestador SACE y conteo; BETA-EXAM-107/113 y validaciones de plantilla/regla oficial siguen pendientes.
