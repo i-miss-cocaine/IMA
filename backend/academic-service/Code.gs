@@ -302,7 +302,7 @@ const ROLE_PERMISSIONS = {
     "getStudentGuardians", "saveStudentGuardian", "unlinkStudentGuardian", "uploadStudentDocument", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "updateDocumentStatus", "getPendingDocumentsReport", "grantDocumentExemption", "restoreDocumentVersion", "checkAndNotifyExpiringStudentDocuments",
     "getPendingDocumentsReport", "grantDocumentExemption", "createStudentEnrollment", "getStudentEnrollments", "renewStudentEnrollment", "checkEnrollmentCapacity",
     "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentReentry", "processStudentPromotion", "processStudentGraduation", "updateStudentLifecycleStatus", "reconcileStudentLifecycleState", "runStudentLifecycleRegressionSuite", "getAcademicAreaTemplateCatalog", "assignTeacherToAcademicArea", "getTeachersByAcademicArea", "getAcademicAreasByTeacher", "removeTeacherFromAcademicArea", "getAcademicAreaCoordinationScope", "deployAcademicMicroserviceInstance", "getAcademicMicroserviceDeployments", "previewBackupRestoreImpact", "getStorageQuotaMetricsReport", "reconcileDocumentStorageIntegrity", "reconcileInstitutionalModulesMatrix",
-    "openAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "checkAndDispatchAttendanceAlerts", "getAttendanceConfig", "saveAttendanceConfig",
+    "openAttendanceSession", "closeAttendanceSession", "saveClassAttendance", "bulkApplyAttendanceStatus", "getClassAttendance", "saveDailyAttendance", "getDailyAttendance", "submitAttendanceJustification", "reviewAttendanceJustification", "reconcilePendingAttendanceJustifications", "recordEarlyDeparture", "getAttendanceIncidents", "saveAttendanceIncident", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "addCaseFollowUpNote", "getStudentAttendanceSummary", "checkAndDispatchAttendanceAlerts", "getAttendanceConfig", "saveAttendanceConfig",
     "createTeacherSupervision", "getTeacherSupervisions", "updateSupervisionStatus", "saveSupervisionObservation", "getSupervisionObservation", "saveTeacherImprovementPlan", "getTeacherImprovementPlans", "purgeSecurityCaches", "scheduleGuidanceAppointment", "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "evaluateAndDispatchEarlyWarningAlerts", "getEarlyWarningAlerts", "savePedagogicalPlanning", "getPedagogicalPlannings", "submitPlanningForReview", "reviewPedagogicalPlanning", "getPlanningReviewHistory", "saveSupervisionRubric", "getSupervisionRubrics"
   , "saveExtracurricularActivity", "getExtracurricularActivities"],
   "Subdirector": [
@@ -1789,6 +1789,7 @@ function doPost(e) {
 
       // Endpoints Fase 7 - Asistencia y Seguimiento Estudiantil
       case "openAttendanceSession": result = openAttendanceSession(payload); break;
+      case "closeAttendanceSession": result = closeAttendanceSession(payload); break;
       case "saveClassAttendance": result = saveClassAttendance(payload); break;
       case "bulkApplyAttendanceStatus": result = bulkApplyAttendanceStatus(payload); break;
       case "getClassAttendance": result = getClassAttendance(payload); break;
@@ -11180,7 +11181,7 @@ function getSaceAttendanceSnapshot(payload) {
     const normalizedIdentities = identityRecords.map(function(record) { return record.identity.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(); });
     if (new Set(normalizedIdentities).size !== normalizedIdentities.length) throw new Error("SACE_STUDENT_IDENTITY_DUPLICATE");
 
-    const sessions = read("SesionesAsistencia", ["SesionID", "Fecha", "Grado", "Seccion", "AsignaturaID", "DocenteUserId", "Estado"]);
+    const sessions = read("SesionesAsistencia", ["SesionID", "Fecha", "Grado", "Seccion", "AsignaturaID", "DocenteUserId", "Estado", "FechaCierre"]);
     const sessionMap = Object.create(null), attendanceSessions = [];
     sessions.rows.forEach(function(row) {
       const id = String(row[sessions.index.SesionID] || "").trim();
@@ -11196,7 +11197,9 @@ function getSaceAttendanceSnapshot(payload) {
       const inPeriod = selectedPeriods.some(function(period) { return day >= period.fechaInicio && day <= period.fechaFin; });
       const state = String(row[sessions.index.Estado] || "").trim().toUpperCase();
       if (!inPeriod || !["CERRADA", "CERRADO", "FINALIZADA", "FINALIZADO", "COMPLETADA", "COMPLETADO"].includes(state)) return;
-      attendanceSessions.push({ sesionId:id, fecha:day, grado:grade, seccion:section,
+      const closedAt = row[sessions.index.FechaCierre] instanceof Date ? row[sessions.index.FechaCierre] : new Date(String(row[sessions.index.FechaCierre] || ""));
+      if (!closedAt || isNaN(closedAt.getTime())) throw new Error("SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED");
+      attendanceSessions.push({ sesionId:id, fecha:day, fechaCierre:closedAt.toISOString(), grado:grade, seccion:section,
         asignaturaId:subjectId, docenteUserId:String(actor.userId).trim(), estado:state });
     });
     if (!attendanceSessions.length) throw new Error("SACE_ATTENDANCE_SESSIONS_EMPTY");
@@ -11339,61 +11342,57 @@ function closeAttendanceSession(payload) {
 }
 
 function saveClassAttendance(payload) {
-  const { sesionId, registros } = payload || {};
+  const request = payload || {};
+  const sesionId = String(request.sesionId || "").trim();
+  const registros = request.registros;
   if (!sesionId || !Array.isArray(registros)) throw new Error("sesionId y lista de registros son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const regSheet = getOrCreateSheet(ss, "RegistrosAsistencia");
-  if (regSheet.getLastRow() === 0) {
-    regSheet.appendRow(["RegistroID", "SesionID", "UserId", "EstadoAsistencia", "HoraLlegada", "MinutosTardanza", "Justificado", "ObservacionDocente", "FechaRegistro"]);
-  }
-
-  const data = regSheet.getDataRange().getValues();
-  const now = new Date();
-
-  const indexMap = {};
-  for (let i = 1; i < data.length; i++) {
-    const key = `${String(data[i][1]).trim()}_${String(data[i][2]).trim()}`;
-    indexMap[key] = i;
-  }
-
-  let savedCount = 0;
-  registros.forEach(r => {
-    const { userId, estadoAsistencia, horaLlegada, minutosTardanza, justificado, observacionDocente } = r;
-    if (!userId) return;
-
-    const key = `${String(sesionId).trim()}_${String(userId).trim()}`;
-    if (key in indexMap) {
-      const idx = indexMap[key];
-      data[idx][3] = estadoAsistencia || "Presente";
-      if (horaLlegada !== undefined) data[idx][4] = horaLlegada;
-      if (minutosTardanza !== undefined) data[idx][5] = minutosTardanza;
-      if (justificado !== undefined) data[idx][6] = justificado;
-      if (observacionDocente !== undefined) data[idx][7] = observacionDocente;
-    } else {
-      const regId = "REG-AST-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-      const newRow = [
-        regId,
-        sesionId,
-        userId,
-        estadoAsistencia || "Presente",
-        horaLlegada || "",
-        minutosTardanza || 0,
-        justificado || false,
-        observacionDocente || "",
-        now
-      ];
-      data.push(newRow);
-      indexMap[key] = data.length - 1;
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true || actor.role !== "Profesor" || !actor.userId) throw new Error("ATTENDANCE_TEACHER_CONTEXT_REQUIRED");
+  if (registros.some(record => record && (record.justificado === true || String(record.justificado || "").toLowerCase() === "true"))) throw new Error("ATTENDANCE_JUSTIFICATION_REQUIRES_CANONICAL_REVIEW");
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const session = getAttendanceSessionForTeacher_(ss, sesionId, actor.userId);
+    if (session.state !== "ABIERTA") throw new Error("ATTENDANCE_SESSION_NOT_OPEN");
+    const regSheet = getOrCreateSheet(ss, "RegistrosAsistencia");
+    const regIndex = ensureAbsenceHeaders_(regSheet, ABSENCE_ATTENDANCE_HEADERS_);
+    const data = regSheet.getDataRange().getValues();
+    const now = new Date();
+    const indexMap = Object.create(null);
+    for (let i = 1; i < data.length; i++) {
+      const key = String(data[i][regIndex.SesionID] || "").trim() + "_" + String(data[i][regIndex.UserId] || "").trim();
+      if (indexMap[key] !== undefined) throw new Error("ATTENDANCE_RECORD_DUPLICATE");
+      indexMap[key] = i;
     }
-    savedCount++;
-  });
-
-  if (data.length > 1) {
-    regSheet.getRange(1, 1, data.length, data[0].length).setValues(data);
-  }
-
-  return { status: "success", message: `Asistencia guardada para ${savedCount} estudiantes.` };
+    let savedCount = 0;
+    registros.forEach(record => {
+      const userId = String(record && record.userId || "").trim();
+      if (!userId) return;
+      const key = sesionId + "_" + userId;
+      let row;
+      if (indexMap[key] !== undefined) row = data[indexMap[key]];
+      else {
+        row = new Array(data[0].length).fill("");
+        row[regIndex.RegistroID] = "REG-AST-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+        row[regIndex.SesionID] = sesionId;
+        row[regIndex.UserId] = userId;
+        row[regIndex.Justificado] = false;
+        row[regIndex.JustificacionID] = "";
+        row[regIndex.FechaRegistro] = now;
+        data.push(row);
+        indexMap[key] = data.length - 1;
+      }
+      row[regIndex.EstadoAsistencia] = record.estadoAsistencia || "Presente";
+      if (record.horaLlegada !== undefined) row[regIndex.HoraLlegada] = record.horaLlegada;
+      if (record.minutosTardanza !== undefined) row[regIndex.MinutosTardanza] = record.minutosTardanza;
+      if (record.observacionDocente !== undefined) row[regIndex.ObservacionDocente] = record.observacionDocente;
+      row[regIndex.FechaRegistro] = now;
+      savedCount++;
+    });
+    if (data.length > 1) regSheet.getRange(1, 1, data.length, data[0].length).setValues(data);
+    return { status: "success", message: "Asistencia guardada para " + savedCount + " estudiantes." };
+  } finally { try { lock.releaseLock(); } catch (error) {} }
 }
 
 function bulkApplyAttendanceStatus(payload) {
@@ -11410,8 +11409,15 @@ function bulkApplyAttendanceStatus(payload) {
   }
 
   try {
+    const actor = getVerifiedAcademicIdentity_(payload);
+    if (!actor || actor.authorized !== true || actor.role !== "Profesor" || !actor.userId) {
+      return { status: "error", code: "ATTENDANCE_TEACHER_CONTEXT_REQUIRED" };
+    }
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const session = getAttendanceSessionForTeacher_(ss, sesionId, actor.userId);
+    if (session.state !== "ABIERTA") return { status: "error", code: "ATTENDANCE_SESSION_NOT_OPEN" };
     const regSheet = getOrCreateSheet(ss, "RegistrosAsistencia");
+    ensureAbsenceHeaders_(regSheet, ABSENCE_ATTENDANCE_HEADERS_);
     if (regSheet.getLastRow() === 0) {
       regSheet.appendRow(["RegistroID", "SesionID", "UserId", "EstadoAsistencia", "HoraLlegada", "MinutosTardanza", "Justificado", "ObservacionDocente", "FechaRegistro"]);
     }
@@ -11445,17 +11451,16 @@ function bulkApplyAttendanceStatus(payload) {
         aplicados++;
       } else {
         const regId = "REG-AST-BULK-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
-        const newRow = [
-          regId,
-          sesionId,
-          studentIdStr,
-          estadoAsistencia,
-          "",
-          0,
-          false,
-          observacionDocente || "Registro masivo de asistencia",
-          now
-        ];
+        const newRow = new Array(data[0].length).fill("");
+        newRow[0] = regId;
+        newRow[1] = sesionId;
+        newRow[2] = studentIdStr;
+        newRow[3] = estadoAsistencia;
+        newRow[4] = "";
+        newRow[5] = 0;
+        newRow[6] = false;
+        newRow[7] = observacionDocente || "Registro masivo de asistencia";
+        newRow[8] = now;
         data.push(newRow);
         indexMap[key] = data.length - 1;
         aplicados++;
