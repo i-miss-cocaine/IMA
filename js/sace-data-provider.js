@@ -4,7 +4,8 @@
   if (root) root.SACEDataProvider = api;
 })(typeof window !== "undefined" ? window : (typeof globalThis !== "undefined" ? globalThis : this), function () {
   "use strict";
-  const ABSENCE_STATES = new Set(["AUSENTE", "AUSENCIA", "FALTA", "INASISTENCIA", "ABSENT"]);
+  const ABSENCE_STATES = new Set(["AUSENTE", "AUSENCIA", "FALTA", "INASISTENCIA", "ABSENT", "JUSTIFICADA"]);
+  const NON_ABSENCE_STATES = new Set(["PRESENTE", "TARDANZA", "SALIDAANTICIPADA", "SALIDA ANTICIPADA", "EXENTO"]);
   function text(value) {
     return String(value == null ? "" : value).normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
@@ -103,7 +104,14 @@
       if (record.justificacionVerificada !== true) {
         throw new Error("SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED:" + label);
       }
-      if (ABSENCE_STATES.has(text(record.estadoAsistencia))) {
+      const attendanceState = text(record.estadoAsistencia);
+      if (!ABSENCE_STATES.has(attendanceState) && !NON_ABSENCE_STATES.has(attendanceState)) {
+        throw new Error("SACE_ATTENDANCE_STATE_UNSUPPORTED:" + label);
+      }
+      if (attendanceState === "JUSTIFICADA" && record.justificado !== true) {
+        throw new Error("SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED:" + label);
+      }
+      if (ABSENCE_STATES.has(attendanceState)) {
         if (!(record.justificado && justifiedAbsenceMode === "EXCLUDE")) counts[userId]++;
       }
     }));

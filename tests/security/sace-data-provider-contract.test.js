@@ -65,6 +65,17 @@ assert.deepEqual(result.attendance.absencePolicy, {
   justifiedAbsenceMode: "COUNT",
   verification: "explicit-input-not-confirmed-against-official-SACE-rule"
 });
+const justifiedStateRecords = attendance.map(record => record.sesionId === "S-1" && record.userId === "STU-1"
+  ? Object.assign({}, record, { estadoAsistencia: "Justificada" }) : record);
+assert.equal(build({ attendanceRecords: justifiedStateRecords }).sourceStudents[0].partial1Absences, 1,
+  "a canonically verified Justificada state remains an absence under COUNT");
+assert.equal(build({ attendanceRecords: justifiedStateRecords,
+  absencePolicy: { justifiedAbsenceMode: "EXCLUDE" } }).sourceStudents[0].partial1Absences, 0,
+  "a canonically verified Justificada state is excluded only under EXCLUDE");
+assert.throws(() => build({ attendanceRecords: justifiedStateRecords.map(record => record.sesionId === "S-1" && record.userId === "STU-1"
+  ? Object.assign({}, record, { justificado: false }) : record) }), /SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED/);
+assert.throws(() => build({ attendanceRecords: attendance.map(record => record.sesionId === "S-1" && record.userId === "STU-1"
+  ? Object.assign({}, record, { estadoAsistencia: "EstadoDesconocido" }) : record) }), /SACE_ATTENDANCE_STATE_UNSUPPORTED/);
 assert(result.limitations.some(item => item.includes("justified-absence treatment is explicit input")));
 const excludedJustified = build({ absencePolicy: { justifiedAbsenceMode: "EXCLUDE" } });
 assert.deepEqual(excludedJustified.sourceStudents.map(row => [row.partial1Absences, row.partial2Absences]), [
