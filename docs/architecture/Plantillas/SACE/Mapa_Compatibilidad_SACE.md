@@ -13,8 +13,8 @@
 3. **Manual de Usuario Director SACE.** Describe documentos distintos: calificaciones por parcial, resumen anual de calificaciones por área, acta final, acta final de recuperación, boleta interna, boleta externa y certificación. No son formatos intercambiables.  
    https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Director.pdf
 4. **Reglamento del Sistema Nacional de Información Educativa, Acuerdo 1178-SE-2015, La Gaceta No. 33,817, 25-08-2015.** Artículos 78 y 84 establecen la evaluación/promoción mediante SACE; artículos 86–87 remiten la evaluación final al manual emitido/actualizado por USINIEH; el artículo 88 establece que las certificaciones y calificaciones oficiales las emite la dirección del centro y no son válidas sin las firmas correspondientes y los códigos de autenticidad generados por SACE.  
-   https://leyes.hn/gaceta/33817
-
+   https://www.tsc.gob.hn/web/leyes/Reglamento_sistema_nacional_info_edu_hn.pdf
+5. **Reglamento del Sistema Integrado de Información Educativa, Acuerdo CNE-002-2021.** Crea el SIIE como marco integrado y prevé el Registro Educativo Único, reportes y lineamientos/manuales propios. El texto consultado no menciona SACE; por ello no se presume que lo derogue ni que lo sustituya. La relación institucional SACE–SIIE debe confirmarse con la autoridad competente antes de diseñar una integración más amplia.\n   https://www.tsc.gob.hn/web/leyes/Acuerdo-Ejecutivo-CNE-002-2021.pdf\n
 ## 2. Flujo SACE documentado
 
 - El docente descarga un archivo Excel generado por SACE para una clase del centro educativo, modalidad, curso/grado, sección, jornada y asignatura.
