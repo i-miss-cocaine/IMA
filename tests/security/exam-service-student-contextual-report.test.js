@@ -143,7 +143,7 @@ test("legacy closure schema never promotes a contextual report to official", () 
   ];
   const result = x.run({ anoId: "2026", periodoId: "P1" });
   assert.equal(result.esDocumentoOficial, false);
-  assert.equal(result.estadoPeriodo, "Abierto");
+  assert.equal(result.estadoPeriodo, "No verificable (esquema histórico)");
   assert.equal(result.detalleAsignaturas.length, 2);
 });
 test("invalid closure schema fails closed", () => {
