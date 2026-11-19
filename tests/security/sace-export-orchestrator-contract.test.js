@@ -132,6 +132,10 @@ for (const entry of manifest.templates) {
   const contextMapping = { academic: expectedContext, template: templateInfo.metadata };
   const spoofedGradebook = gradebook("PER-1", 1);
   spoofedGradebook.data.resumenes[studentRows[0].userId].notaFinal = 0;
+  const snapshotBeforeExport = JSON.parse(JSON.stringify(attendanceSnapshot));
+  const mappingsBeforeExport = JSON.parse(JSON.stringify(documentTypeMappings));
+  const contextMappingBeforeExport = JSON.parse(JSON.stringify(contextMapping));
+  const spoofedGradebookBeforeExport = JSON.parse(JSON.stringify(spoofedGradebook));
   const result = orchestrator.prepareCandidateExportFromAcademicSnapshot({
     templateBytes,
     attendanceSnapshot,
@@ -153,6 +157,18 @@ for (const entry of manifest.templates) {
   assert.equal(result.outputBytes.length, templateBytes.length);
   assert.notEqual(result.outputBytes, templateBytes, "candidate generation must return a separate byte buffer");
   assert.deepEqual(Array.from(templateBytes), originalTemplateBytes, "candidate generation must not mutate the source template bytes");
+  assert.deepEqual(attendanceSnapshot, snapshotBeforeExport, "candidate generation must not mutate the Academic attendance/gradebook snapshot");
+  assert.deepEqual(documentTypeMappings, mappingsBeforeExport, "candidate generation must not mutate explicit document mappings");
+  assert.deepEqual(contextMapping, contextMappingBeforeExport, "candidate generation must not mutate academic/template context mapping");
+  assert.deepEqual(spoofedGradebook, spoofedGradebookBeforeExport, "candidate generation must not mutate caller-supplied gradebook objects");
+  const repeatedResult = orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2",
+    documentTypeMappings, absencePolicy: { justifiedAbsenceMode: "COUNT" },
+    expectedTemplateContext: templateInfo.metadata, academicTemplateContextMapping: contextMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  });
+  assert.deepEqual(Array.from(repeatedResult.outputBytes), Array.from(result.outputBytes),
+    "repeated candidate generation with identical inputs must be deterministic");
   assert(result.limitations.includes("synthetic source snapshot; no live service or official SACE mapping"));
   assert(result.limitations.some(item => item.includes("not been independently verified against an official SACE source")));
   assert(result.limitations.some(item => item.includes("no verified mapping from the local SedeID source")));
