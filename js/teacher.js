@@ -5892,7 +5892,10 @@ function toBase64(file) {
             if (departmentSelect) {
                 const departments = Array.isArray(response.departmentIds) ? response.departmentIds : [];
                 const preferred = String(departmentSelect.value || context.departmentId || window.GLOBAL_SCOPE?.activeDepartmentId || currentUser?.departmentId || "");
-                departmentSelect.innerHTML = '<option value="">Seleccione un departamento asignado</option>' +
+                const emptyDepartmentLabel = response.institutionWide
+                    ? "Catálogo institucional (global)"
+                    : "Seleccione un departamento asignado";
+                departmentSelect.innerHTML = '<option value="">' + emptyDepartmentLabel + '</option>' +
                     departments.map(id => '<option value="' + escapeGradebookHtml(id) + '">' +
                         escapeGradebookHtml(id) + '</option>').join('');
                 if (departments.length === 1) departmentSelect.value = departments[0];
