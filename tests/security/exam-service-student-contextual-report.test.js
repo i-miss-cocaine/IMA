@@ -84,7 +84,7 @@ function fixture() {
       { categoriaId: "CAT-2", porcentajePonderacion: 50 }];
   const sandbox = { normalizeString: norm, buildGradebookContextKey_: key,
     getGradebookWeightConfigurationFromSheet_: weights };
-  vm.runInNewContext(extract("calculateGradebookStudentSummary_") + "\\n" + extract("buildStudentAcademicReportGradebook_") +
+  vm.runInNewContext(extract("calculateGradebookStudentSummary_") + "\n" + extract("buildStudentAcademicReportGradebook_") +
     ";this.run=buildStudentAcademicReportGradebook_;", sandbox);
   return { run: payload => sandbox.run(ss, { institutionId: "INST-A" }, "STU-1", payload), sheets };
 }
