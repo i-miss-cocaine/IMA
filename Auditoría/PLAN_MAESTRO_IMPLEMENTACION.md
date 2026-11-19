@@ -6121,3 +6121,10 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El agregado global registra tres fallos ajenos preexistentes: Phase22 configureSchoolDocumentTemplate, Accounting ensureSchoolDocumentIssuedSchema_ y session-token-expiry USER/valid. No se modificaron esos módulos por no pertenecer a AUD-NG-167.
 - Commits: 7b3e222133fb66200577abaa30c0a11f6e129999, c83a87d0bf45ce1219c903585c26f18b2ac3b9bb, 33b30505db3a164e581d4a9e4b5badb05189a5c2, 004fa941fe1819169c66a749fec6e5e934b45d6f, ace5a719a3a819e3d92cc7adb2e48c24f5dbf254 y 0193b1a08682896e8f69a252a911e30f14f1f540. Evidencia en Checkpoints_Parte_0019.txt — C1.870.
 - Siguiente: auditar prepareCandidateExportFromAcademicSnapshot y la transformación de recuperaciones/notas pendientes hacia columnas SACE; XLS sigue CANDIDATE y BETA-EXAM-110..113 pendientes.
+
+### C1.871 — AUD-NG-167: bloqueo seguro de recuperaciones y notas pendientes
+- El proveedor exige un arreglo recuperaciones explícito en ambos snapshots. Cualquier recuperación no vacía se rechaza porque el mapeo al campo SACE H y la regla oficial siguen sin confirmación; no se infiere la última recuperación ni se sobrescriben notas parciales.
+- Los resúmenes solo pasan a candidato si ambos parciales están calculados y notaFinal es finita entre 0 y 100. Pending/provisional/no_grade siguen fail-closed.
+- SACE template compatibility Action 44632958950 SUCCESS; Academic-Service 44632958918 SUCCESS.
+- Commit fbbd653518c94484ccbd055666d8c179b7c07fa0. Evidencia en Checkpoints_Parte_0019.txt — C1.871.
+- Siguiente: auditar la unión por userId y el orden determinista de filas; no habilitar exportación real sin equivalencias oficiales.

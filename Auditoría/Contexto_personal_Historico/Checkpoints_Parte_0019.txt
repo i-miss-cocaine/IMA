@@ -1300,3 +1300,39 @@ Estado:
 Siguiente acción elegible:
 - Auditar el consumidor del snapshot dentro de prepareCandidateExportFromAcademicSnapshot y la transformación de recuperaciones/notas pendientes hacia las columnas SACE; verificar orden, última recuperación aplicable, ausencia de sobrescrituras y consistencia entre parciales sin inferir equivalencias oficiales.
 ===============================================================================
+
+===============================================================================
+### C1.871 — AUD-NG-167: recuperación y notas pendientes bloqueadas en candidato
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-CANDIDATE-RECOVERY-FAIL-CLOSED-42
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: bda2db0e47572da99bc2af30f4c3fbc14a7a7ea7
+HEAD final: fbbd653518c94484ccbd055666d8c179b7c07fa0
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo y corrección:
+- El proveedor SACE ya rechazaba cualquier recuperación porque no existe confirmación de la regla oficial para mapear recuperaciones al campo H; sin embargo, aceptaba snapshots sin el arreglo recuperaciones, debilitando el contrato del DTO.
+- Ahora exige que ambos snapshots tengan recuperaciones como arreglo explícito. Un arreglo no vacío sigue rechazándose con SACE_RECOVERY_MAPPING_UNVERIFIED por parcial; no se calcula, reordena ni exporta una nota de recuperación por inferencia.
+- Las notas pendientes/provisionales/no calculadas continúan bloqueadas: el proveedor solo acepta resumen con status calculated y notaFinal numérica finita entre 0 y 100 en ambos parciales.
+- Se añadieron pruebas para recuperación en ambos parciales, ausencia del arreglo y nota provisional en el segundo parcial. La salida de candidato mantiene recovery=null y columna H sin valor, sin sobrescritura de notas parciales.
+
+Archivos modificados:
+- js/sace-data-provider.js
+- tests/security/sace-data-provider-contract.test.js
+
+Commit:
+- fbbd653518c94484ccbd055666d8c179b7c07fa0 — exigir contrato explícito de recuperaciones y rechazar datos incompletos.
+
+Verificación:
+- SACE template structure compatibility Action 44632958950 SUCCESS; node --check y contratos de plantilla, binary patch, provider, orchestrator y aislamiento candidato PASS.
+- Academic-Service Action 44632958918 SUCCESS; node --check y contratos Academic, incluido transporte de los dos gradebooks, PASS.
+- La transformación sigue siendo candidate-only. No existe confirmación oficial de la regla de recuperación ni se habilita UI, carga o producción.
+
+Estado:
+- Recuperaciones y notas pendientes no pueden alterar los campos exportados del candidato.
+- AUD-NG-167 continúa En progreso; BETA-EXAM-110..113 y validaciones institucionales/oficiales siguen pendientes.
+
+Siguiente acción elegible:
+- Auditar integridad de la unión por userId entre gradebooks, identidad y asistencia, además de orden estable de filas del template; verificar que la salida sea determinista y no dependa del orden de las hojas o de respuestas interservicio.
+===============================================================================
