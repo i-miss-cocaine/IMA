@@ -10,6 +10,18 @@ for (const template of manifest.templates) {
   const file = path.join(root, "docs/architecture/Plantillas/SACE", template.fileName);
   const original = fs.readFileSync(file);
   const before = tools.inspect(original);
+  if (template.templateCode === "SACE-BTP-11-1-ANALISIS") {
+    const view = new DataView(before.workbookStream.buffer, before.workbookStream.byteOffset, before.workbookStream.byteLength);
+    const hRecords = before.records.filter(record => record.offset >= before.sheetOffset &&
+      [0x00bd, 0x00be, 0x0201, 0x0203, 0x027e].includes(record.id)).map(record => {
+        const row = view.getUint16(record.payload, true);
+        const col = view.getUint16(record.payload + 2, true);
+        return { id: record.id.toString(16), row: row + 1, col: col + 1, length: record.length,
+          firstColumn: col, lastColumn: record.id === 0x00bd || record.id === 0x00be
+            ? view.getUint16(record.payload + record.length - 2, true) : col };
+      }).filter(record => record.row === 8);
+    console.log("SACE-DEBUG-H8", JSON.stringify({ cell: before.cells.get("H8"), records: hRecords }));
+  }
   const rows = Array.from({ length: 22 }, (_, index) => ({
     partial1: 60 + index + 0.25,
     partial2: 70 + index + 0.5,
