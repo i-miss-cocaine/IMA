@@ -124,6 +124,8 @@ assert.deepEqual(JSON.parse(JSON.stringify(result.data.resumenes)), {
 assert.deepEqual(JSON.parse(JSON.stringify(result.data.recuperaciones)), [
   { recuperacionId: "REC-1", userId: "STU-1", evaluacionId: "CAT-1", notaFinalCalculada: 95 }
 ]);
+assert.equal(result.data.recuperaciones[0].recuperacionId, "REC-1",
+  "the stable recovery identifier must survive the minimal interservice DTO for duplicate detection");
 assert.equal(result.data.contexto.periodoId, "PER-2026-1", "academic PeriodoID must be returned separately from the explicit Exam-Service parcial label");
 assert.equal(result.data.contexto.parcial, "I Parcial");
 assert.equal(result.data.estadoPeriodo, "Cerrado");
