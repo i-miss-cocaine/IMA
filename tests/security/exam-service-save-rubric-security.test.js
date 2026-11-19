@@ -330,6 +330,21 @@ test("owned rubric is visible only in matching institution and department scope"
     scope: { institutionId: "INST-B", departmentIds: ["DEPT-B"], institutionWide: false } }).data.map(row => row.rubricaId);
   assert.ok(!foreign.includes("RUB-OWNED")); assert.ok(foreign.includes("RUB-LEGACY"));
 });
+test("rubric read is filtered to the selected department", () => {
+  const rubricRows = [rubricHeaders,
+    ["RUB-A", "Rúbrica A", "Math", "Activa", "[]"],
+    ["RUB-B", "Rúbrica B", "Math", "Activa", "[]"]];
+  const ownershipRows = [ownershipHeaders,
+    ["OWN-A", "INST-A", "RUBRICA_EVALUACION", "RUB-A", "DEPT-A", "ACTIVE", "TEACHER-A", "", ""],
+    ["OWN-B", "INST-A", "RUBRICA_EVALUACION", "RUB-B", "DEPT-B", "ACTIVE", "TEACHER-A", "", ""]];
+  const scope = { authorized: true, institutionId: "INST-A", departmentIds: ["DEPT-A", "DEPT-B"], institutionWide: false };
+  const x = fixture({ rubricRows, ownershipRows, scope });
+  const ss = { getSheetByName: name => x.sheets[name] || null };
+  const a = x.runtime.getRubricsUnlocked_({ departmentId: "DEPT-A" }, { ss, scope }).data.map(row => row.rubricaId);
+  const b = x.runtime.getRubricsUnlocked_({ departmentId: "DEPT-B" }, { ss, scope }).data.map(row => row.rubricaId);
+  assert.deepEqual(a, ["RUB-A"]);
+  assert.deepEqual(b, ["RUB-B"]);
+});
 test("RBAC action is exactly saveRubric", () => { const x = fixture(); x.call({ titulo: "Action", departmentId: "DEPT-A" }); assert.equal(x.state.action, "saveRubric"); });
 const failed = results.filter(item => !item.ok);
 process.stdout.write(JSON.stringify({ total: results.length, passed: results.length - failed.length, failed, results }, null, 2));
