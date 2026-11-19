@@ -189,10 +189,10 @@ assert.deepEqual(inclusiveBoundaryCandidate.sourceStudents, result.sourceStudent
   "sessions on period start/end dates are included at inclusive calendar-day boundaries");
 const outsideBoundarySessions = sessions.concat([
   { sesionId: "S-BEFORE", fecha: "2026-01-31", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1", estado: "Abierta" },
-  { sesionId: "S-GAP", fecha: "2026-05-01", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1", estado: "Abierta" }
+  { sesionId: "S-AFTER", fecha: "2026-08-02", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1", estado: "Abierta" }
 ]);
 assert.deepEqual(build({ attendanceSessions: outsideBoundarySessions }).sourceStudents, result.sourceStudents,
-  "sessions outside both selected periods do not contribute, including the gap between them");
+  "sessions outside both selected periods do not contribute, both before the first and after the second period");
 
 
 assert.throws(() => build({ identityRecords: identityRecords.concat(identityRecords[0]) }), /SACE_IDENTITY_RECORD_DUPLICATE/);
