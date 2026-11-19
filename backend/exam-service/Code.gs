@@ -3417,8 +3417,10 @@ function calculateGradebookStudentSummary_(userId, grades, categories, recoverie
       return at - bt;
     });
     const latestRecovery = recoveryHistory.length ? recoveryHistory[recoveryHistory.length - 1] : null;
-    const effectiveGrade = latestRecovery && Number.isFinite(Number(latestRecovery.notaFinalCalculada))
-      ? Number(latestRecovery.notaFinalCalculada) : grade.notaObtenida;
+    const recoveryGrade = latestRecovery ? latestRecovery.notaFinalCalculada : null;
+    const hasValidRecoveryGrade = recoveryGrade !== null && recoveryGrade !== undefined &&
+      recoveryGrade !== "" && Number.isFinite(Number(recoveryGrade));
+    const effectiveGrade = hasValidRecoveryGrade ? Number(recoveryGrade) : grade.notaObtenida;
     const value = Number(effectiveGrade);
     if (!Number.isFinite(value) || value < 0 || value > 100) throw new Error("GRADEBOOK_GRADE_INVALID");
     weightedContribution += value * weight / 100;
@@ -5277,12 +5279,28 @@ function buildStudentAcademicReportGradebook_(ss, scope, targetUserId, payload) 
       anoId: context.anoId, parcial: context.periodoId, grado: context.grado,
       seccion: context.seccion, asignatura: context.asignatura });
     const summary = calculateGradebookStudentSummary_(targetUserId, context.grades, weights, recoveries);
+    const categorias = context.grades.map(item => {
+      const history = recoveries.filter(recovery => recovery.evaluacionId === item.evaluacionId);
+      history.sort((a, b) => {
+        const at = a.fecha ? new Date(a.fecha).getTime() : 0;
+        const bt = b.fecha ? new Date(b.fecha).getTime() : 0;
+        return at - bt;
+      });
+      const latest = history.length ? history[history.length - 1] : null;
+      const recoveryGrade = latest ? latest.notaFinalCalculada : null;
+      const hasValidRecoveryGrade = recoveryGrade !== null && recoveryGrade !== undefined &&
+        recoveryGrade !== "" && Number.isFinite(Number(recoveryGrade));
+      const weight = weights.find(category => category.categoriaId === item.evaluacionId);
+      return { categoriaId: item.evaluacionId, nombre: weight ? weight.nombre : item.evaluacionId,
+        porcentajePonderacion: weight ? weight.porcentajePonderacion : null,
+        notaObtenida: item.notaObtenida,
+        notaFinalAplicada: hasValidRecoveryGrade ? Number(recoveryGrade) : item.notaObtenida,
+        recuperacionAplicada: hasValidRecoveryGrade };
+    });
     return { anoId: context.anoId, periodo: context.periodoId, grado: context.grado,
       seccion: context.seccion, asignatura: context.asignatura, estado: summary.status,
       notaFinal: summary.notaFinal, avancePonderado: summary.avancePonderado,
-      ponderacionPendiente: summary.ponderacionPendiente, categorias: context.grades.map(item => ({
-        categoriaId: item.evaluacionId, notaObtenida: item.notaObtenida
-      })) };
+      ponderacionPendiente: summary.ponderacionPendiente, categorias };
   });
   const calculated = detalleAsignaturas.filter(item => item.estado === "calculated");
   const average = calculated.length
