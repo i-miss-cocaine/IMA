@@ -32,7 +32,7 @@ function extractFunction(name) {
 }
 
 function makeSheet(rows) {
-  return { rows, getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; } };
+  return { rows: rows.map(row => row.slice()), getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; } };
 }
 
 function runtime(options = {}) {
