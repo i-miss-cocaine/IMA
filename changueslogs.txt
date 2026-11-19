@@ -4358,3 +4358,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-19] C1.882 — AUD-NG-167: revisión de escritores secundarios concluye que los append de nuevos años/asignaturas, el cambio de estado del año y la apertura de sesiones no alteran el registro ya seleccionado por el snapshot; sesiones Abierta quedan excluidas hasta cierre serializado. Duplicados de IDs fallan cerrados. publishGradebookForContext no tiene caller ni ruta en el router backend. No se amplían locks sin impacto material en el snapshot. Sin cambios de código.
+
+
+[2026-11-19] C1.883 — AUD-NG-167: diseñado contrato epoch:counter por servicio. Incrementar antes de mutar bajo ScriptLock; si falla persistencia, no escribir; una escritura fallida posterior invalida snapshots conservadoramente. Snapshot devuelve sourceRevision y revalidación usa revisionOnly en acciones existentes USER/Exam más lectura local Academic. Secuencia doble colecta con revisión, coste 2 llamadas remotas pequeñas + 1 lectura local, sin doble escaneo. Modelo V8 8/8 PASS. No se implementa todavía; faltan instrumentación exhaustiva y contratos de integración.
