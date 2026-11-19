@@ -39,7 +39,7 @@ function key(fields) {
   return JSON.stringify([fields.institutionId, fields.anoId, fields.periodoId, fields.grado,
     fields.seccion, fields.asignatura, fields.evaluacionId, fields.userId].map(norm));
 }
-function sheet(rows) { return { getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }) }; }
+function sheet(rows) { return { rows, getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }) }; }
 function fixture() {
   const grades = [gradeHeaders];
   const add = (id, user, year, period, subject, category, score, published, draft, institution = "INST-A", section = "A") => {
@@ -67,7 +67,15 @@ function fixture() {
   addRecovery("R-1", "STU-1", "2026", "P1", "Matemáticas", "CAT-1", 85);
   addRecovery("R-OLD", "STU-1", "2025", "P1", "Matemáticas", "CAT-1", 99);
   addRecovery("R-OTHER-INST", "STU-1", "2026", "P1", "Matemáticas", "CAT-1", 99, "INST-B");
-  const sheets = { CalificacionesEstudiantes: sheet(grades), RecuperacionesEstudiante: sheet(recoveries) };
+  const sheets = {
+    CalificacionesEstudiantes: sheet(grades),
+    RecuperacionesEstudiante: sheet(recoveries),
+    CierresPeriodos: sheet([
+      ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado", "FechaCierre"],
+      ["C-1", "2026", "P1", "10", "A", "Matemáticas", "PROF", "Cerrado", new Date()],
+      ["C-2", "2026", "P1", "10", "A", "Ciencias", "PROF", "Cerrado", new Date()]
+    ])
+  };
   const ss = { getSheetByName: name => sheets[name] || null };
   const weights = (spreadsheet, context) => [{ categoriaId: "CAT-1", porcentajePonderacion: 50 },
     { categoriaId: "CAT-2", porcentajePonderacion: 50 }];
@@ -84,7 +92,7 @@ function fixture() {
     getGradebookWeightConfigurationFromSheet_: weights, calculateGradebookStudentSummary_: summarize };
   vm.runInNewContext(extract("buildStudentAcademicReportGradebook_") +
     ";this.run=buildStudentAcademicReportGradebook_;", sandbox);
-  return { run: payload => sandbox.run(ss, { institutionId: "INST-A" }, "STU-1", payload) };
+  return { run: payload => sandbox.run(ss, { institutionId: "INST-A" }, "STU-1", payload), sheets };
 }
 const cases = [];
 function test(name, fn) { fn(); cases.push(name); }
