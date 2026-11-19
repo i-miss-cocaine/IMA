@@ -135,6 +135,18 @@ test("an open period cannot produce an official report", () => {
   const result = x.run({ anoId: "2026", periodoId: "P1" });
   assert.equal(result.esDocumentoOficial, false);
 });
+test("partial grade context schema fails closed", () => {
+  const x = fixture();
+  x.sheets.CalificacionesEstudiantes.rows[0].length = 12;
+  assert.throws(() => x.run({ anoId: "2026", periodoId: "P1" }),
+    /STUDENT_ACADEMIC_REPORT_CONTEXT_SCHEMA_INVALID/);
+});
+test("partial recovery context schema fails closed", () => {
+  const x = fixture();
+  x.sheets.RecuperacionesEstudiante.rows[0].length = 12;
+  assert.throws(() => x.run({ anoId: "2026", periodoId: "P1" }),
+    /STUDENT_ACADEMIC_REPORT_CONTEXT_SCHEMA_INVALID/);
+});
 test("legacy unscoped recovery rows are ignored", () => {
   const x = fixture();
   const oldRows = [recoveryHeaders.slice(0, 9), ["LEGACY", "CAT-1", "STU-1", 50, 90, 90, "MAX", "PROF", new Date()]];
