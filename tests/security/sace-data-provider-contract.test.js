@@ -75,6 +75,31 @@ assert.deepEqual(result.sourceStudents.map(row => [
 ]);
 assert.equal(result.attendance.partial1.sessions, 1);
 assert.equal(result.attendance.partial2.sessions, 1);
+assert.ok(result.attendance.partial1.absencesByStudent["STU-1"] <= result.attendance.partial1.sessions);
+assert.ok(result.attendance.partial1.absencesByStudent["STU-2"] <= result.attendance.partial1.sessions);
+assert.ok(result.attendance.partial2.absencesByStudent["STU-1"] <= result.attendance.partial2.sessions);
+assert.ok(result.attendance.partial2.absencesByStudent["STU-2"] <= result.attendance.partial2.sessions);
+const boundaryGrades = {
+  "STU-1": { status: "calculated", notaFinal: 0 },
+  "STU-2": { status: "calculated", notaFinal: 100 }
+};
+assert.deepEqual(build({
+  partial1Gradebook: gradebook("PER-1", { summaries: boundaryGrades }),
+  partial2Gradebook: gradebook("PER-2", { summaries: boundaryGrades })
+}).sourceStudents.map(row => [row.partial1, row.partial2]), [[0, 0], [100, 100]]);
+assert.throws(() => build({ partial1Gradebook: gradebook("PER-1", {
+  summaries: {
+    "STU-1": { status: "calculated", notaFinal: -0.01 },
+    "STU-2": { status: "calculated", notaFinal: 84 }
+  }
+}) }), /SACE_GRADE_NOT_FINAL:partial1/);
+assert.throws(() => build({ partial2Gradebook: gradebook("PER-2", {
+  summaries: {
+    "STU-1": { status: "calculated", notaFinal: 100.01 },
+    "STU-2": { status: "calculated", notaFinal: 84 }
+  }
+}) }), /SACE_GRADE_NOT_FINAL:partial2/);
+
 assert.deepEqual(result.attendance.absencePolicy, {
   justifiedAbsenceMode: "COUNT",
   verification: "explicit-input-not-confirmed-against-official-SACE-rule"
