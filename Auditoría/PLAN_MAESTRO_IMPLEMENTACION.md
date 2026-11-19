@@ -6003,3 +6003,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - parseCompound ya valida todos los encabezados de columnas y rechaza cambios con SACE_HEADER_LAYOUT_MISMATCH. Se añadió una prueba que altera PARCIAL II en una copia binaria y confirma el rechazo sin mutar el XLS fuente.
 - SACE Action 44569480900 SUCCESS; Node.js 22, sintaxis, estructura, parcheo, proveedor, orquestador y aislamiento PASS.
 - AUD-NG-167 continúa En progreso; siguiente: hacer explícito en las limitaciones del candidato que procedencia/vigencia/año de plantilla no están acreditados.
+
+### C1.853 — AUD-NG-167: procedencia y vigencia de plantilla
+- El orquestador advierte en cada salida que la fuente oficial, fechas de vigencia y año aplicable no están verificados; el manifiesto permanece CANDIDATE con officialSourceVerified=false y effectiveFrom/effectiveTo nulos.
+- El proveedor explicita que PeriodoID→parcial se suministra y no se infiere; Exam-Service separa el PeriodoID IMA de la etiqueta parcial SACE. Action 44569733548 SUCCESS (Node.js 22, contratos SACE completos).
+- AUD-NG-167 continúa En progreso; siguiente: revisar la relación periodo↔parcial↔encabezado sin declarar equivalencia oficial.

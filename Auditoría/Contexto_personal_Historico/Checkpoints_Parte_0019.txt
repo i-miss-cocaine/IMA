@@ -651,3 +651,45 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: exponer en la salida CANDIDATE que el manifiesto no acredita procedencia, vigencia ni año aplicable de la plantilla; conservar las pruebas beta como pendientes independientes.
 ===============================================================================
+
+
+===============================================================================
+### C1.853 — AUD-NG-167: procedencia y vigencia de plantilla en limitaciones
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-TEMPLATE-PROVENANCE-28
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.852
+HEAD inicial: 534d4eb15b93f40b026e55c2f501211e4e20ef41
+HEAD de implementación: 1bfa0c4ff2ddb7654f8b2def0927e4b84badea19
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Cada resultado del orquestador candidato incluye ahora una limitación explícita: la fuente de la plantilla, su condición oficial, fechas de vigencia y año lectivo aplicable no están verificados por el manifiesto candidato.
+- El manifiesto actual declara status=CANDIDATE, officialSourceVerified=false, effectiveFrom=null y effectiveTo=null. No contiene año de vigencia.
+- El proveedor ya declara que el mapeo PeriodoID→parcial se suministra explícitamente y no se infiere; el snapshot de Exam-Service separa el PeriodoID IMA de la etiqueta parcial SACE y los contratos prueban la correspondencia explícita.
+- No se fija un año ni se asume que las dos plantillas de parcial sean universales.
+
+Archivos modificados desde C1.852:
+- js/sace-export-orchestrator.js
+- tests/security/sace-export-orchestrator-contract.test.js
+
+Verificación:
+- GitHub Actions 44569733548 — SACE template structure compatibility contract: SUCCESS.
+- Node.js 22: sintaxis, estructura, parcheo binario, proveedor, orquestador, aislamiento y aserción de limitación de vigencia PASS.
+- Exam-Service SACE gradebook snapshot contract: PASS en ejecución 44561449013; el workflow general falló en contratos ajenos (ACCOUNTING, cierre de asistencia y session-token-expiry), pero el paso específico SACE gradebook pasó.
+- Identity mapping workflow 44561449260: SUCCESS, incluido USER SACE identity directory.
+- Diff revisado: una limitación fija y su aserción; sin cambios en el manifiesto ni datos de plantilla.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- La plantilla continúa sin procedencia oficial ni vigencia acreditadas; BETA-EXAM-106 sigue pendiente.
+- La correspondencia de parciales y el año aplicable no se certifican por la entrada explícita ni por el estado de los contratos locales.
+- La salida permanece CANDIDATE, sin UI, descarga ni carga productiva.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar la relación entre los periodos IMA, las etiquetas parciales devueltas por Exam-Service y los encabezados de los XLS candidatos; conservar la advertencia de que no hay validación SACE oficial.
+===============================================================================
