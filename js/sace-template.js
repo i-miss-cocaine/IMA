@@ -397,7 +397,7 @@
       if (expected.recovery === null || expected.recovery === undefined || expected.recovery === "") {
         if (actualRecovery !== null) throw new Error("SACE_OUTPUT_RECOVERY_NOT_CLEARED:" + row);
       } else if (Number(actualRecovery) !== Number(expected.recovery)) {
-        throw new Error("SACE_OUTPUT_RECOVERY_VERIFICATION_FAILED:" + row);
+        throw new Error("SACE_OUTPUT_RECOVERY_VERIFICATION_FAILED:" + row + ":actual=" + actualRecovery + ":expected=" + expected.recovery);
       }
     }
     return output;
