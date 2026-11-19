@@ -124,3 +124,14 @@ La lista de estudiantes del cliente no se considera prueba de matrícula: cada I
 **Límite de política:** el snapshot conserva `justificado` por registro, pero el significado de una ausencia justificada para la plantilla SACE no se resuelve en este endpoint. La especificación de asistencia de IMA define la ausencia injustificada como estado Ausente sin justificación aprobada; la regla SACE debe confirmarse antes de cambiar el cómputo del proveedor.
 
 **Estado:** endpoint de lectura candidato, sin activación UI ni exportación productiva. El contrato local prueba autenticación/rol, institución, periodo, matrícula, join de identidad, filtros de sesión y filtrado de registros. La llamada real al servicio desplegado queda registrada como beta.
+
+
+## 9. Composición del snapshot autenticado con el proveedor candidato — C1.835
+
+Se añadió `buildCandidateStudentsFromSnapshot(input)` a `js/sace-data-provider.js`. El wrapper consume la respuesta `getSaceAttendanceSnapshot` del Academic-Service junto con los dos snapshots del libro contextual provenientes de Exam-Service. Los dos IDs de periodo deben indicarse explícitamente como `partial1PeriodId` y `partial2PeriodId`; el wrapper no infiere el orden ni la equivalencia de parciales.
+
+La composición usa el contexto, los periodos, el directorio de identidad y las sesiones/registros devueltos por el endpoint. Conserva las limitaciones de la fuente en la respuesta. Si el snapshot es inválido, falta el mapeo explícito, no se encuentran los periodos o el directorio no contiene un marcador documental, el armado se rechaza. La prueba confirma que un `documentMarker` vacío produce `SACE_STUDENT_DOCUMENT_TYPE_REQUIRED`, por lo que la falta de tipo documental no se convierte en una exportación parcial.
+
+El contrato local amplía `sace-data-provider-contract.test.js` para probar la ruta snapshot→proveedor, la conservación de limitaciones, el bloqueo por marcador vacío, periodos duplicados y snapshots incompletos.
+
+**Límite:** es una composición entre contratos locales, no una llamada HTTP entre servicios ni una integración desplegada. No se añadió UI ni se habilitó descarga/producción. El marcador documental debe venir de un campo institucional verificado y su equivalencia con el campo SACE debe confirmarse con la plantilla oficial.

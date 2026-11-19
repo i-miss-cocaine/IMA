@@ -1456,3 +1456,29 @@ Limitaciones conservadas:
 Estado: endpoint local completado y contrato local PASS; AUD-NG-167 sigue [~] En progreso por la integración con el proveedor y los datos/reglas/plantilla SACE pendientes.
 Siguiente acción concreta: conectar getSaceAttendanceSnapshot al ensamblador del proveedor como wrapper de preparación (sin exposición UI), y añadir pruebas que verifiquen que el tipo documental faltante bloquea el ensamblado.
 ===============================================================================
+
+===============================================================================
+### C1.835 — AUD-NG-167: composición del snapshot con el proveedor SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-SNAPSHOT-PROVIDER-10
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.834
+HEAD inicial: 66d57b98ac54a21e2f0dade1a97f4d0620898c0a
+Commit de implementación: 4498d09157860fa01189f7a0494fc8caeaa08c10
+
+Trabajo:
+- Se añadió buildCandidateStudentsFromSnapshot(input) a js/sace-data-provider.js.
+- El wrapper consume attendanceSnapshot.status/data del contrato getSaceAttendanceSnapshot y los snapshots de calificaciones de ambos periodos.
+- Exige partial1PeriodId y partial2PeriodId explícitos, los resuelve contra los dos PeriodoID devueltos y no infiere el orden del parcial.
+- Reutiliza expectedContext, identityRecords, attendanceSessions y attendanceRecords del snapshot server-side; propaga las limitaciones del origen.
+- Se amplió tests/security/sace-data-provider-contract.test.js para probar la composición snapshot→proveedor, periodos duplicados, snapshot incompleto y rechazo cuando documentMarker está vacío.
+- GitHub Actions 44539068963 — SACE template structure compatibility contract: SUCCESS. Pasaron node --check del proveedor y del contrato, contrato estructural, parcheo binario y sace-data-provider-contract.
+- No se conectó por red el Academic-Service con Exam-Service; el wrapper es una composición local de contratos. No UI ni exportación productiva.
+
+Estado AUD-NG-167: [~] En progreso. El flujo candidato queda conectado por contrato; la fuente institucional actual no ofrece tipo documental en Personas y el wrapper bloquea la preparación hasta recibirlo. Siguen pendientes reglas oficiales de ausencias justificadas/recuperación, equivalencia de parciales, plantilla/carga SACE real y BETA-EXAM-105/106/107.
+
+Siguiente acción: definir el dato canónico de tipo documental en el modelo Personas/Usuarios sin inferirlo, revisar los puntos de creación/actualización de Personas y probar compatibilidad de consumidores; luego alimentar el proveedor con ese dato explícito.
+===============================================================================
