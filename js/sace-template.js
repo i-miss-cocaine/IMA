@@ -513,7 +513,9 @@
       if (normalizeText(student.name) !== normalizeText(source.name)) {
         throw new Error("SACE_STUDENT_NAME_MISMATCH");
       }
-      if (source.documentMarker && normalizeText(student.documentMarker) !== normalizeText(source.documentMarker)) {
+      const templateDocumentMarker = normalizeText(student.documentMarker);
+      const sourceDocumentMarker = normalizeText(source.documentMarker);
+      if (!templateDocumentMarker || !sourceDocumentMarker || templateDocumentMarker !== sourceDocumentMarker) {
         throw new Error("SACE_STUDENT_DOCUMENT_TYPE_MISMATCH");
       }
       return {

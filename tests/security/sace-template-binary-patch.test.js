@@ -146,6 +146,16 @@ const mismatchedDocument = Object.assign({}, templateInfo, {
 });
 assert.throws(() => tools.mapRowsToTemplate(mismatchedDocument, sourceStudents, expectedContext),
   /SACE_STUDENT_DOCUMENT_TYPE_MISMATCH/);
+
+const missingSourceDocumentMarker = [Object.assign({}, sourceStudents[0], { documentMarker: "" }), sourceStudents[1]];
+assert.throws(() => tools.mapRowsToTemplate(templateInfo, missingSourceDocumentMarker, expectedContext),
+  /SACE_STUDENT_DOCUMENT_TYPE_MISMATCH/);
+const missingTemplateDocumentMarker = Object.assign({}, templateInfo, {
+  students: [Object.assign({}, templateInfo.students[0], { documentMarker: "" }), templateInfo.students[1]]
+});
+assert.throws(() => tools.mapRowsToTemplate(missingTemplateDocumentMarker, sourceStudents, expectedContext),
+  /SACE_STUDENT_DOCUMENT_TYPE_MISMATCH/);
+
 assert.throws(() => tools.mapRowsToTemplate(templateInfo, sourceStudents.slice(1), expectedContext),
   /SACE_STUDENT_COUNT_MISMATCH/);
 
