@@ -3089,3 +3089,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - La UI de estudiante consume el informe contextual y la UI docente integra las APIs existentes de rúbricas y competencias. Las lecturas asíncronas descartan respuestas obsoletas.
 - Actions 44519500978: sintaxis y suite específica Exam-Service SUCCESS; suite general 3 fallos externos (dos ACCOUNTING y USER/valid en session-token-expiry). Actions 44519676142: Academic-Service y contrato de deprecación SUCCESS. Sin CLI declarada ni prueba desplegada.
 - AUD-NG-167 sigue En progreso: no se encontró un catálogo curricular formal de competencias/indicadores ni evidencia de compatibilidad SACE. No se marca completada.
+
+
+### C1.825 — AUD-NG-167: catálogo institucional de competencias e indicadores (2026-11-19)
+- Se implementó CatalogoCompetencias con 17 columnas y ContextKey contextual de institución/departamento/año/grado/sección/asignatura/programa/competencia/indicador.
+- La consulta devuelve entradas activas del ámbito institucional y departamentos autorizados, incluidas entradas globales; valida esquema, ContextKey y duplicados.
+- La escritura crea/actualiza por clave contextual y comprueba actor, asignación docente y departamento; saveCompetencyEvaluation exige una referencia activa exacta del catálogo, sin aceptar indicadores libres.
+- La UI docente permite alta/consulta/selección de competencias e indicadores y transmite el departamento seleccionado. BETA-EXAM-105 documenta la validación desplegada pendiente.
+- Actions 44523637946: sintaxis y suite específica Exam-Service SUCCESS; contratos de catálogo (24) y mutación de evaluación PASS. La suite general sigue fallando solo en tres contratos ajenos: configureSchoolDocumentTemplate y ensureSchoolDocumentIssuedSchema_ ausentes en ACCOUNTING y USER/valid en session-token-expiry. UI Accessibility 44523509686 SUCCESS. Department Scope 44523509680 falla por Phase22 ACCOUNTING, ajeno al alcance.
+- No hay CLI declarada. No se ejecutaron Apps Script/Sheets reales ni navegador. Plantillas XLS SACE presentes, pero no se ha validado su contenido ni un mapeo de intercambio aprobado; no se declara compatibilidad SACE.
+- AUD-NG-167 permanece En progreso; faltan evidencia SACE y ejecución BETA-EXAM-105. AUD-NG-168 no se inicia.
