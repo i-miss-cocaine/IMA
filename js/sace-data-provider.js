@@ -57,9 +57,12 @@
     if (!start || !end || start > end) throw new Error("SACE_PERIOD_RANGE_INVALID:" + label);
     return { periodoId: id, anoId, start, end };
   }
-  function countAbsencesForPeriod(studentIds, sessions, records, expected, period, label, justifiedAbsenceMode) {
-    if (!Array.isArray(sessions) || !Array.isArray(records)) throw new Error("SACE_ATTENDANCE_SNAPSHOT_REQUIRED");
-    const sessionIds = new Set(), selected = [];
+  function countAbsencesForPeriods(studentIds, sessions, records, expected, period1, period2, labelMode) {
+    if (!Array.isArray(sessions) || !Array.isArray(records)) {
+      throw new Error("SACE_ATTENDANCE_SNAPSHOT_REQUIRED");
+    }
+    const selected = { partial1: [], partial2: [] };
+    const sessionIds = new Set();
     sessions.forEach(session => {
       const id = String(session && session.sesionId || "").trim();
       if (!id) throw new Error("SACE_ATTENDANCE_SESSION_ID_REQUIRED");
@@ -68,54 +71,61 @@
       const day = dateKey(session.fecha);
       if (!day) throw new Error("SACE_ATTENDANCE_SESSION_DATE_INVALID");
       if (["CERRADA", "CERRADO", "FINALIZADA", "FINALIZADO", "COMPLETADA", "COMPLETADO"].indexOf(text(session.estado)) === -1) {
-        throw new Error("SACE_ATTENDANCE_SESSION_NOT_CLOSED:" + label);
+        throw new Error("SACE_ATTENDANCE_SESSION_NOT_CLOSED:" + labelMode);
       }
       const closeTimestamp = String(session.fechaCierre == null ? "" : session.fechaCierre).trim();
       if (!closeTimestamp || !Number.isFinite(Date.parse(closeTimestamp))) {
-        throw new Error("SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:" + label);
+        throw new Error("SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:" + labelMode);
       }
-      if (day < period.start || day > period.end) return;
+      let label = "";
+      if (day >= period1.start && day <= period1.end) label = "partial1";
+      else if (day >= period2.start && day <= period2.end) label = "partial2";
+      if (!label) return;
       if (text(session.grado) !== text(expected.grado) ||
           text(session.seccion) !== text(expected.seccion) ||
           text(session.asignaturaId) !== text(expected.asignaturaId) ||
           String(session.docenteUserId || "").trim() !== expected.teacherUserId) return;
-      selected.push({ id, date: day });
+      selected[label].push({ id, date: day });
     });
-    if (!selected.length) throw new Error("SACE_ATTENDANCE_SESSIONS_EMPTY:" + label);
-    const selectedIds = new Set(selected.map(session => session.id));
+    if (!selected.partial1.length) throw new Error("SACE_ATTENDANCE_SESSIONS_EMPTY:partial1");
+    if (!selected.partial2.length) throw new Error("SACE_ATTENDANCE_SESSIONS_EMPTY:partial2");
+    const selectedIds = new Set(selected.partial1.concat(selected.partial2).map(session => session.id));
     const studentSet = new Set(studentIds), byKey = new Map();
     records.forEach(record => {
       const sessionId = String(record && record.sesionId || "").trim();
       if (!selectedIds.has(sessionId)) return;
       const userId = String(record && record.userId || "").trim();
-      if (!studentSet.has(userId)) throw new Error("SACE_ATTENDANCE_STUDENT_OUTSIDE_ROSTER:" + label);
+      if (!studentSet.has(userId)) throw new Error("SACE_ATTENDANCE_STUDENT_OUTSIDE_ROSTER");
       const key = sessionId + "|" + userId;
-      if (byKey.has(key)) throw new Error("SACE_ATTENDANCE_RECORD_DUPLICATE:" + label);
+      if (byKey.has(key)) throw new Error("SACE_ATTENDANCE_RECORD_DUPLICATE");
       byKey.set(key, record);
     });
-    const counts = Object.create(null);
-    studentIds.forEach(id => { counts[id] = 0; });
-    selected.forEach(session => studentIds.forEach(userId => {
-      const record = byKey.get(session.id + "|" + userId);
-      if (!record) throw new Error("SACE_ATTENDANCE_RECORD_MISSING:" + label);
-      if (typeof record.justificado !== "boolean") {
-        throw new Error("SACE_ATTENDANCE_JUSTIFICATION_STATE_REQUIRED:" + label);
-      }
-      if (record.justificacionVerificada !== true) {
-        throw new Error("SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED:" + label);
-      }
-      const attendanceState = text(record.estadoAsistencia);
-      if (!ABSENCE_STATES.has(attendanceState) && !NON_ABSENCE_STATES.has(attendanceState)) {
-        throw new Error("SACE_ATTENDANCE_STATE_UNSUPPORTED:" + label);
-      }
-      if (attendanceState === "JUSTIFICADA" && record.justificado !== true) {
-        throw new Error("SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED:" + label);
-      }
-      if (ABSENCE_STATES.has(attendanceState)) {
-        if (!(record.justificado && justifiedAbsenceMode === "EXCLUDE")) counts[userId]++;
-      }
-    }));
-    return { counts, sessions: selected.length };
+    const buildCounts = label => {
+      const counts = Object.create(null);
+      studentIds.forEach(id => { counts[id] = 0; });
+      selected[label].forEach(session => studentIds.forEach(userId => {
+        const record = byKey.get(session.id + "|" + userId);
+        if (!record) throw new Error("SACE_ATTENDANCE_RECORD_MISSING:" + label);
+        if (typeof record.justificado !== "boolean") {
+          throw new Error("SACE_ATTENDANCE_JUSTIFICATION_STATE_REQUIRED:" + label);
+        }
+        if (record.justificacionVerificada !== true) {
+          throw new Error("SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED:" + label);
+        }
+        const attendanceState = text(record.estadoAsistencia);
+        if (!ABSENCE_STATES.has(attendanceState) && !NON_ABSENCE_STATES.has(attendanceState)) {
+          throw new Error("SACE_ATTENDANCE_STATE_UNSUPPORTED:" + label);
+        }
+        if (attendanceState === "JUSTIFICADA" && record.justificado !== true) {
+          throw new Error("SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED:" + label);
+        }
+        if (ABSENCE_STATES.has(attendanceState)) {
+          if (!(record.justificado && labelMode === "EXCLUDE")) counts[userId]++;
+        }
+      }));
+      return { counts, sessions: selected[label].length };
+    };
+    return { partial1: buildCounts("partial1"), partial2: buildCounts("partial2") };
   }
   function buildCandidateStudents(input) {
     const value = input || {}, raw = value.expectedContext || {};
@@ -165,10 +175,9 @@
       if (!name) throw new Error("SACE_STUDENT_NAME_REQUIRED");
       if (identity.name && text(identity.name) !== text(name)) throw new Error("SACE_STUDENT_NAME_MISMATCH");
     });
-    const absences1 = countAbsencesForPeriod(studentIds, value.attendanceSessions,
-      value.attendanceRecords, context, period1, "partial1", justifiedAbsenceMode);
-    const absences2 = countAbsencesForPeriod(studentIds, value.attendanceSessions,
-      value.attendanceRecords, context, period2, "partial2", justifiedAbsenceMode);
+    const absenceCounts = countAbsencesForPeriods(studentIds, value.attendanceSessions,
+      value.attendanceRecords, context, period1, period2, justifiedAbsenceMode);
+    const absences1 = absenceCounts.partial1, absences2 = absenceCounts.partial2;
     const sourceStudents = studentIds.map(id => {
       const student = first.students.get(id), one = first.data.resumenes[id], two = second.data.resumenes[id];
       [one, two].forEach((summary, index) => {
