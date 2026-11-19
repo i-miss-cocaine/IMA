@@ -307,8 +307,13 @@
     const settings = options || {}, scale = settings.scale || {};
     if (!isNumericValue(scale.min) || !isNumericValue(scale.max) ||
         Number(scale.min) >= Number(scale.max)) throw new Error("SACE_SCALE_CONFIGURATION_REQUIRED");
-    const precision = Number.isInteger(scale.precision) ? scale.precision : 2;
-    if (precision !== 0 && precision !== 2) throw new Error("SACE_SCALE_PRECISION_UNSUPPORTED");
+    if (scale.precision === null || scale.precision === undefined) {
+      throw new Error("SACE_SCALE_PRECISION_REQUIRED");
+    }
+    const precision = scale.precision;
+    if (!Number.isInteger(precision) || (precision !== 0 && precision !== 2)) {
+      throw new Error("SACE_SCALE_PRECISION_UNSUPPORTED");
+    }
     if (!Array.isArray(rows) || rows.length !== STUDENT_COUNT) throw new Error("SACE_STUDENT_COUNT_MISMATCH");
     rows.forEach((item, index) => {
       ["partial1", "partial2"].forEach(field => {
@@ -324,6 +329,7 @@
       if (!isBlankValue(item.recovery)) {
         if (!isNumericValue(item.recovery) || Number(item.recovery) < Number(scale.min) ||
             Number(item.recovery) > Number(scale.max)) throw new Error("SACE_RECOVERY_VALUE_OUT_OF_RANGE:row-" + (STUDENT_FIRST_ROW + index));
+        encodeRK(Number(item.recovery), precision);
       }
       ["partial1Absences", "partial2Absences"].forEach(field => {
         const value = item && item[field];

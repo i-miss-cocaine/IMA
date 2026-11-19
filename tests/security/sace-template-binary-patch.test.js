@@ -116,6 +116,15 @@ for (const template of manifest.templates) {
   assert.throws(() => tools.fill(original, rows, {}), /SACE_SCALE_CONFIGURATION_REQUIRED/);
   assert.throws(() => tools.fill(original, rows, { scale: { min: 0, max: 100, precision: 1 } }),
     /SACE_SCALE_PRECISION_UNSUPPORTED/);
+  assert.throws(() => tools.fill(original, rows, { scale: { min: 0, max: 100 } }),
+    /SACE_SCALE_PRECISION_REQUIRED/);
+  assert.throws(() => tools.fill(original, rows, { scale: { min: 0, max: 100, precision: 1.5 } }),
+    /SACE_SCALE_PRECISION_UNSUPPORTED/);
+  const overPrecisionRecovery = rows.map(row => Object.assign({}, row));
+  overPrecisionRecovery[0].recovery = 85.125;
+  assert.throws(() => tools.fill(original, overPrecisionRecovery,
+    { scale: { min: 0, max: 100, precision: 2 } }), /SACE_GRADE_PRECISION_UNSUPPORTED/);
+
 }
 assert.throws(() => tools.inspect(new Uint8Array([1, 2, 3, 4])), /SACE_OLE_SIGNATURE_INVALID/);
 
