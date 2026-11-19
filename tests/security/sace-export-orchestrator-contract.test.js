@@ -127,6 +127,7 @@ for (const entry of manifest.templates) {
     },
     limitations: ["synthetic source snapshot; no live service or official SACE mapping"]
   };
+  const contextMapping = { academic: expectedContext, template: templateInfo.metadata };
   const spoofedGradebook = gradebook("PER-1", 1);
   spoofedGradebook.data.resumenes[studentRows[0].userId].notaFinal = 0;
   const result = orchestrator.prepareCandidateExportFromAcademicSnapshot({
@@ -139,6 +140,7 @@ for (const entry of manifest.templates) {
     documentTypeMappings,
     absencePolicy: { justifiedAbsenceMode: "COUNT" },
     expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
     options: { scale: { min: 0, max: 100, precision: 2 } }
   });
   assert.equal(result.status, "candidate");
@@ -148,32 +150,41 @@ for (const entry of manifest.templates) {
   assert.equal(result.verifiedRowCount, 22);
   assert.equal(result.outputBytes.length, templateBytes.length);
   assert(result.limitations.includes("synthetic source snapshot; no live service or official SACE mapping"));
+  assert(result.limitations.some(item => item.includes("not been independently verified against an official SACE source")));
   const openSessionSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
   openSessionSnapshot.data.attendanceSessions[0].estado = "Abierta";
   assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
     templateBytes, attendanceSnapshot: openSessionSnapshot,
     partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
     absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
     options: { scale: { min: 0, max: 100, precision: 2 } }
   }), /SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial1/);
-  const mismatchedGradeContext = Object.assign({}, templateInfo.metadata, { gradeSection: "12 B" });
+  const mismatchedAcademicMapping = Object.assign({}, contextMapping, {
+    academic: Object.assign({}, expectedContext, { seccion: "B" })
+  });
   assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
     templateBytes, attendanceSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2",
     documentTypeMappings, absencePolicy: { justifiedAbsenceMode: "COUNT" },
-    expectedTemplateContext: mismatchedGradeContext, options: { scale: { min: 0, max: 100, precision: 2 } }
-  }), /SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:gradeSection/);
-  const mismatchedSubjectContext = Object.assign({}, templateInfo.metadata, { subject: "Matemáticas" });
+    expectedTemplateContext: templateInfo.metadata, academicTemplateContextMapping: mismatchedAcademicMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_TEMPLATE_CONTEXT_MAPPING_MISMATCH:academic.seccion/);
+  const mismatchedTemplateMapping = Object.assign({}, contextMapping, {
+    template: Object.assign({}, templateInfo.metadata, { gradeSection: "12 B" })
+  });
   assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
     templateBytes, attendanceSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2",
     documentTypeMappings, absencePolicy: { justifiedAbsenceMode: "COUNT" },
-    expectedTemplateContext: mismatchedSubjectContext, options: { scale: { min: 0, max: 100, precision: 2 } }
-  }), /SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:subject/);
+    expectedTemplateContext: templateInfo.metadata, academicTemplateContextMapping: mismatchedTemplateMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_TEMPLATE_CONTEXT_MAPPING_MISMATCH:template.gradeSection/);
   const missingCloseSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
   missingCloseSnapshot.data.attendanceSessions[0].fechaCierre = "";
   assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
     templateBytes, attendanceSnapshot: missingCloseSnapshot,
     partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
     absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
     options: { scale: { min: 0, max: 100, precision: 2 } }
   }), /SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:partial1/);
   const output = templates.inspect(result.outputBytes);

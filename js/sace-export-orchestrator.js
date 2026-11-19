@@ -25,19 +25,24 @@ function (provider, templates) {
   function normalizeGradeSection(value) {
     return normalizeContextText(value).replace(/[.°º]/g, " ").trim().split(/\s+/).join(" ");
   }
-  function assertTemplateMatchesAcademicSnapshot(snapshot, templateContext) {
+  function assertAcademicTemplateContextMapping(snapshot, templateContext, mapping) {
     const context = snapshot && snapshot.data && snapshot.data.expectedContext;
     if (!context) throw new Error("SACE_ATTENDANCE_CONTEXT_REQUIRED");
-    const gradeSection = [context.grado, context.seccion].map(value => String(value == null ? "" : value).trim()).filter(Boolean).join(" ");
-    if (!normalizeGradeSection(gradeSection) || normalizeGradeSection(gradeSection) !== normalizeGradeSection(templateContext.gradeSection)) {
-      throw new Error("SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:gradeSection");
-    }
-    if (!normalizeContextText(context.asignatura) || normalizeContextText(context.asignatura) !== normalizeContextText(templateContext.subject)) {
-      throw new Error("SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:subject");
-    }
-    if (templateContext.institutionId && normalizeContextText(templateContext.institutionId) !== normalizeContextText(context.institutionId)) {
-      throw new Error("SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:institutionId");
-    }
+    if (!mapping) return false;
+    const academic = mapping.academic || {}, template = mapping.template || {};
+    ["institutionId", "grado", "seccion", "asignaturaId", "asignatura"].forEach(field => {
+      if (!normalizeContextText(academic[field]) ||
+          normalizeContextText(academic[field]) !== normalizeContextText(context[field])) {
+        throw new Error("SACE_TEMPLATE_CONTEXT_MAPPING_MISMATCH:academic." + field);
+      }
+    });
+    ["institution", "modality", "gradeSection", "schedule", "subject"].forEach(field => {
+      const normalize = field === "gradeSection" ? normalizeGradeSection : normalizeContextText;
+      if (!normalize(template[field]) || normalize(template[field]) !== normalize(templateContext[field])) {
+        throw new Error("SACE_TEMPLATE_CONTEXT_MAPPING_MISMATCH:template." + field);
+      }
+    });
+    return true;
   }
   function prepareCandidateExportFromSnapshot(input) {
     const value = input || {};
@@ -49,7 +54,9 @@ function (provider, templates) {
     }
     const templateBytes = required(value.templateBytes, "SACE_TEMPLATE_BYTES_REQUIRED");
     const expectedTemplateContext = required(value.expectedTemplateContext, "SACE_TEMPLATE_CONTEXT_REQUIRED");
-    assertTemplateMatchesAcademicSnapshot(value.attendanceSnapshot, expectedTemplateContext);
+    const contextMappingVerified = assertAcademicTemplateContextMapping(
+      value.attendanceSnapshot, expectedTemplateContext, value.academicTemplateContextMapping
+    );
     const options = required(value.options, "SACE_SCALE_CONFIGURATION_REQUIRED");
     const templateBefore = templates.inspect(templateBytes);
     const templateInfo = templates.inspectTemplate(templateBytes);
@@ -89,7 +96,9 @@ function (provider, templates) {
       outputBytes,
       sourceStudentCount: candidate.sourceStudents.length,
       verifiedRowCount: mappedRows.length,
-      limitations: candidate.limitations.slice(),
+      limitations: candidate.limitations.concat([contextMappingVerified
+        ? "Academic-to-SACE context mapping is explicit input and has not been independently verified against an official SACE source"
+        : "Academic-to-SACE context mapping was not supplied; institution, modality, grade/section, schedule and subject labels remain unverified"]),
       verification: {
         workbookSize: verified.workbookSize,
         workbookCapacity: verified.workbookCapacity,
@@ -135,6 +144,7 @@ function (provider, templates) {
       documentTypeMappings: value.documentTypeMappings,
       absencePolicy: value.absencePolicy,
       expectedTemplateContext: value.expectedTemplateContext,
+      academicTemplateContextMapping: value.academicTemplateContextMapping,
       options: value.options
     });
   }
