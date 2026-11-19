@@ -470,6 +470,55 @@
     }
     return output;
   }
-  return { inspect: parseCompound, fill, expectedMerges: EXPECTED_MERGES.slice(),
+  function normalizeText(value) {
+    return String(value == null ? "" : value).normalize("NFD")
+      .replace(/[\\u0300-\\u036f]/g, "").replace(/\\s+/g, " ").trim().toUpperCase();
+  }
+  function normalizeIdentity(value) {
+    return String(value == null ? "" : value).replace(/[\\s.-]/g, "").toUpperCase();
+  }
+  function mapRowsToTemplate(templateInfo, sourceStudents, expectedContext) {
+    if (!templateInfo || !Array.isArray(templateInfo.students) ||
+        !Array.isArray(sourceStudents) || sourceStudents.length !== templateInfo.students.length) {
+      throw new Error("SACE_STUDENT_COUNT_MISMATCH");
+    }
+    const metadata = templateInfo.metadata || {}, context = expectedContext || {};
+    ["institution", "modality", "gradeSection", "schedule", "subject"].forEach(field => {
+      if (!normalizeText(metadata[field]) || normalizeText(metadata[field]) !== normalizeText(context[field])) {
+        throw new Error("SACE_TEMPLATE_CONTEXT_MISMATCH:" + field);
+      }
+    });
+    const sourceByIdentity = new Map();
+    sourceStudents.forEach(student => {
+      const identity = normalizeIdentity(student && student.identity);
+      if (!identity) throw new Error("SACE_STUDENT_IDENTITY_REQUIRED");
+      if (sourceByIdentity.has(identity)) throw new Error("SACE_STUDENT_IDENTITY_DUPLICATE");
+      if (!normalizeText(student && student.name)) throw new Error("SACE_STUDENT_NAME_REQUIRED");
+      sourceByIdentity.set(identity, student);
+    });
+    const seenTemplateIdentities = new Set();
+    return templateInfo.students.map(student => {
+      const identity = normalizeIdentity(student && student.identity);
+      if (!identity || seenTemplateIdentities.has(identity)) throw new Error("SACE_TEMPLATE_ROSTER_INVALID");
+      seenTemplateIdentities.add(identity);
+      const source = sourceByIdentity.get(identity);
+      if (!source) throw new Error("SACE_STUDENT_ROSTER_MISMATCH");
+      if (normalizeText(student.name) !== normalizeText(source.name)) {
+        throw new Error("SACE_STUDENT_NAME_MISMATCH");
+      }
+      if (source.documentMarker && normalizeText(student.documentMarker) !== normalizeText(source.documentMarker)) {
+        throw new Error("SACE_STUDENT_DOCUMENT_TYPE_MISMATCH");
+      }
+      return {
+        partial1Absences: source.partial1Absences,
+        partial1: source.partial1,
+        partial2Absences: source.partial2Absences,
+        partial2: source.partial2,
+        recovery: source.recovery
+      };
+    });
+  }
+
+  return { inspect: parseCompound, fill, mapRowsToTemplate, expectedMerges: EXPECTED_MERGES.slice(),
     studentFirstRow: STUDENT_FIRST_ROW, studentLastRow: STUDENT_LAST_ROW };
 });
