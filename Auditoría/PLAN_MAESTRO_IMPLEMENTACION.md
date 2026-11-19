@@ -6072,3 +6072,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Verificación V8 compatible en este entorno: orquestador PASS con tres XLS del repositorio y 22 filas por plantilla; proveedor PASS; parcheo binario PASS en las tres plantillas; aislamiento candidato PASS; parsing de cuatro archivos JS PASS. No es ejecución Node.js ni GitHub Actions; no se declara CI nuevo.
 - Archivos de implementación/prueba: js/sace-template.js, js/sace-export-orchestrator.js, tests/security/sace-export-orchestrator-contract.test.js. Commits: d84797e5e7e89a012393bc14a6715694285e03b0, 6e7e655bb251ef561d64d4b0e59a59e1eac3681c, 24a810bcf1d5d212077d9c6caff80e8d4dbf9515.
 - No se midió benchmark; la mejora demostrada es la reducción de operaciones duplicadas. AUD-NG-167 permanece En progreso por validaciones beta y fuente oficial SACE; los XLS siguen CANDIDATE y no se habilita producción.
+
+
+### C1.864 — AUD-NG-167: conteo de asistencia compartido entre parciales
+- Se sustituyeron dos llamadas a countAbsencesForPeriod por countAbsencesForPeriods: sesiones y registros se recorren una sola vez para los dos periodos; los registros de las sesiones seleccionadas se indexan por sesión/alumno y se reutilizan al calcular cada parcial.
+- Se preservan validaciones de cierre, fecha, periodo, contexto docente/académico, duplicados, pertenencia al roster, integridad de registros y política explícita de justificaciones COUNT/EXCLUDE. Se mantienen los códigos de error por parcial.
+- El contrato instrumenta forEach y demuestra una pasada sobre sesiones y otra sobre registros. V8 compatible: proveedor PASS, orquestador PASS con tres XLS y 22 filas, aislamiento PASS y parsing JS PASS. No es ejecución Node.js/Actions.
+- Commits: b7bf4459a3030538a528b1a4484b37fdd48e030f, f84b6e0a9ead7abbcd682d18d5d6a47d339dad1e, c096563037abd4b9a4f90d8b777e0324ccb1c549, 3556f5d788d8c54aa1575d9f586962f21a488456.
+- No se midió benchmark; la mejora demostrada es la reducción de dos recorridos a uno por colección. AUD-NG-167 permanece En progreso; las dependencias beta y la validación oficial SACE siguen pendientes.
