@@ -5310,11 +5310,16 @@ function buildStudentAcademicReportGradebook_(ss, scope, targetUserId, payload) 
   const closureRows = closureSheet ? closureSheet.getDataRange().getValues() : [];
   const closureHeaders = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion",
     "Asignatura", "ProfesorID", "Estado", "FechaCierre"];
-  if (closureRows.length && closureHeaders.some((header, index) =>
-      String(closureRows[0][index] || "").trim() !== header)) {
+  const legacyClosureHeaders = ["ID", "Fecha", "Parcial", "Grado", "Seccion",
+    "Asignatura", "ProfesorID", "Estado"];
+  const contextualClosureSchema = closureRows.length > 0 && closureRows[0].length === 9 &&
+    closureHeaders.every((header, index) => String(closureRows[0][index] || "").trim() === header);
+  const legacyClosureSchema = closureRows.length > 0 && closureRows[0].length === 8 &&
+    legacyClosureHeaders.every((header, index) => String(closureRows[0][index] || "").trim() === header);
+  if (closureRows.length && !contextualClosureSchema && !legacyClosureSchema) {
     throw new Error("STUDENT_ACADEMIC_REPORT_CLOSURE_SCHEMA_INVALID");
   }
-  const closedContexts = yearFilter && periodFilter ? closureRows.slice(1).filter(row =>
+  const closedContexts = contextualClosureSchema && yearFilter && periodFilter ? closureRows.slice(1).filter(row =>
     String(row[1] || "").trim() === yearFilter &&
     normalizeString(row[2]) === normalizeString(periodFilter) &&
     detalleAsignaturas.some(item => item.anoId === yearFilter &&
