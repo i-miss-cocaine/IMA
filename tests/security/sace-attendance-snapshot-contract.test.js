@@ -104,24 +104,30 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
         documentType: "DNI", documentMarker: "", name: index === 0 ? "Ana Pérez" : "Luis Gómez"
       }));
     },
-    requestSaceGradebookSnapshotFromExam_(request, studentIds, teacherUserId, expected, period, examPartial) {
-      assert.equal(snapshotLockHeld, false, "remote Exam-Service calls must run after releasing the attendance lock");
+    requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUserId, expected, periods) {
+      assert.equal(snapshotLockHeld, false, "remote Exam-Service batch call must run after releasing the attendance lock");
+      assert.equal(snapshotLockReleases, 1);
       assert.equal(request.sessionToken, "SESSION-TEST");
       assert.equal(teacherUserId, "TEACHER-1");
       assert.deepEqual(Array.from(studentIds), ["STU-1", "STU-2"]);
       assert.equal(expected.institutionId, institutionId);
-      assert.equal(examPartial, period.periodoId === "P1" ? "I Parcial" : "II Parcial");
-      return { status: "success", data: {
+      assert.deepEqual(Array.from(periods, period => [period.periodoId, period.parcial]), [
+        ["P1", "I Parcial"], ["P2", "II Parcial"]
+      ]);
+      const makeSnapshot = period => ({ status: "success", data: {
         alumnos: [{ userId: "STU-1", nombreCompleto: "Ana Pérez" }, { userId: "STU-2", nombreCompleto: "Luis Gómez" }],
         resumenes: {
           "STU-1": { userId: "STU-1", status: "calculated", notaFinal: 91.25 },
           "STU-2": { userId: "STU-2", status: "calculated", notaFinal: 84 }
         },
         recuperaciones: [], estadoPeriodo: "Cerrado",
-        contexto: { anoId: expected.anoId, periodoId: period.periodoId, parcial: examPartial,
+        contexto: { anoId: expected.anoId, periodoId: period.periodoId, parcial: period.parcial,
           grado: expected.grado, seccion: expected.seccion, asignatura: expected.asignatura,
           institutionId: expected.institutionId }
-      } };
+      } });
+      return { status: "success", data: { snapshots: periods.map(period => ({
+        periodoId: period.periodoId, parcial: period.parcial, snapshot: makeSnapshot(period)
+      })) } };
     },
     Date, String, Number, Array, Object, Set, Error, Math, JSON,
     getSnapshotLockStats() { return { held: snapshotLockHeld, waits: snapshotLockWaits, releases: snapshotLockReleases }; }

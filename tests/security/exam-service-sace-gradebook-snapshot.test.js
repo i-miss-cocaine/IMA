@@ -62,34 +62,41 @@ const fixture = {
 
 function createContext(snapshot = fixture, closureRows = [
   ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "Estado"],
-  ["CLOSE-1", "YEAR-2026", "I Parcial", "11", "A", "Informática", "Cerrado"]
-]) {
-  const calls = { authorization: 0, worker: 0 };
+  ["CLOSE-1", "YEAR-2026", "I Parcial", "11", "A", "Informática", "Cerrado"],
+  ["CLOSE-2", "YEAR-2026", "II Parcial", "11", "A", "Informática", "Cerrado"]
+], secondSnapshot = null) {
+  const calls = { authorization: 0, worker: 0, lockActive: false };
+  const second = secondSnapshot || snapshot;
   const context = {
     withAuthorizedExamRead_(action, payload, reader) {
       calls.authorization++;
-      assert.equal(action, "getSaceGradebookSnapshot");
+      assert.ok(["getSaceGradebookSnapshot", "getSaceGradebookSnapshots"].includes(action));
       assert.equal(payload.sessionToken, "SESSION-TEACHER");
-      return reader({ actor: { userId: "TEACHER-1", role: "Profesor" },
-        scope: { authorized: true, institutionId: "INST-1" },
-        ss: { getSheetByName(name) {
-          return name === "CierresPeriodos" ? {
-            getDataRange() { return { getValues() { return closureRows.map(row => row.slice()); } }; }
-          } : null;
-        } }
-      });
+      calls.lockActive = true;
+      try {
+        return reader({ actor: { userId: "TEACHER-1", role: "Profesor" },
+          scope: { authorized: true, institutionId: "INST-1" },
+          ss: { getSheetByName(name) {
+            return name === "CierresPeriodos" ? {
+              getDataRange() { return { getValues() { return closureRows.map(row => row.slice()); } }; }
+            } : null;
+          } }
+        });
+      } finally { calls.lockActive = false; }
     },
     getGradebookDataUnlocked_(payload, authorizedContext) {
       calls.worker++;
+      assert.equal(calls.lockActive, true, "all period reads must remain inside one authorized read lock");
       assert.equal(authorizedContext.actor.userId, "TEACHER-1");
       assert.equal(payload.profesorId, "TEACHER-1");
-      return snapshot;
+      return String(payload.parcial) === "II Parcial" ? second : snapshot;
     },
     String, Number, Array, Object, Map, Set, Error
   };
   vm.createContext(context);
-  vm.runInContext(extract("getSaceGradebookSnapshot") +
-    "\nthis.runSnapshot=getSaceGradebookSnapshot;", context);
+  vm.runInContext(extract("buildSaceGradebookSnapshotUnlocked_") +
+    "\n" + extract("getSaceGradebookSnapshot") + "\n" + extract("getSaceGradebookSnapshots") +
+    "\nthis.runSnapshot=getSaceGradebookSnapshot; this.runSnapshots=getSaceGradebookSnapshots;", context);
   return { context, calls };
 }
 
@@ -145,10 +152,48 @@ assert.throws(() => createContext(duplicateRoster).context.runSnapshot(basePaylo
 
 const permissions = source.slice(source.indexOf("const ROLE_PERMISSIONS"), source.indexOf("// [TAREA-F4-P0-01]"));
 const professor = /"Profesor": \[([\s\S]*?)\n  \],/.exec(permissions);
-assert(professor && professor[1].includes('"getSaceGradebookSnapshot"'),
+assert(professor && professor[1].includes('"getSaceGradebookSnapshot"') && professor[1].includes('"getSaceGradebookSnapshots"'),
   "only the existing teacher role permission list should grant the new snapshot action");
 assert(extract("doPost").includes('case "getSaceGradebookSnapshot": result = getSaceGradebookSnapshot(payload); break;'));
+assert(extract("doPost").includes('case "getSaceGradebookSnapshots": result = getSaceGradebookSnapshots(payload); break;'));
 const handler = extract("getSaceGradebookSnapshot");
+const batchHandler = extract("getSaceGradebookSnapshots");
+assert(batchHandler.includes('withAuthorizedExamRead_("getSaceGradebookSnapshots"'));
+assert(batchHandler.includes("buildSaceGradebookSnapshotUnlocked_"));
 assert(handler.includes('withAuthorizedExamRead_("getSaceGradebookSnapshot"'));
-assert(handler.includes("getGradebookDataUnlocked_(request, context)"));
+assert(extract("buildSaceGradebookSnapshotUnlocked_").includes("getGradebookDataUnlocked_(snapshotRequest, context)"));
+
+const secondFixture = JSON.parse(JSON.stringify(fixture));
+secondFixture.data.contexto.periodoId = "II Parcial";
+const batchContext = createContext(fixture, undefined, secondFixture);
+const batchResult = batchContext.context.runSnapshots(Object.assign({}, basePayload, {
+  periods: [
+    { periodoId: "PER-2026-1", parcial: "I Parcial" },
+    { periodoId: "PER-2026-2", parcial: "II Parcial" }
+  ]
+}));
+assert.equal(batchResult.status, "success");
+assert.equal(batchContext.calls.authorization, 1, "both period reads must share one authorization/lock boundary");
+assert.equal(batchContext.calls.worker, 2, "the batch reads both gradebooks inside the same lock");
+assert.deepEqual(JSON.parse(JSON.stringify(batchResult.data.snapshots.map(item => [
+  item.periodoId, item.parcial, item.snapshot.data.contexto.periodoId
+]))), [
+  ["PER-2026-1", "I Parcial", "PER-2026-1"],
+  ["PER-2026-2", "II Parcial", "PER-2026-2"]
+]);
+assert.throws(() => createContext().context.runSnapshots(Object.assign({}, basePayload, {
+  periods: [
+    { periodoId: "PER-2026-1", parcial: "I Parcial" },
+    { periodoId: "PER-2026-1", parcial: "II Parcial" }
+  ]
+})), /SACE_GRADEBOOK_PERIOD_MAPPING_DUPLICATE/);
+const secondWrongInstitution = JSON.parse(JSON.stringify(secondFixture));
+secondWrongInstitution.data.contexto.institutionId = "INST-OTHER";
+assert.throws(() => createContext(fixture, undefined, secondWrongInstitution).context.runSnapshots(Object.assign({}, basePayload, {
+  periods: [
+    { periodoId: "PER-2026-1", parcial: "I Parcial" },
+    { periodoId: "PER-2026-2", parcial: "II Parcial" }
+  ]
+})), /SACE_GRADEBOOK_CONTEXT_MISMATCH:institutionId/);
+
 console.log("exam-service-sace-gradebook-snapshot: PASS (teacher RBAC boundary, contextual gradebook, closed period, explicit period mapping, roster subset and minimal DTO)");

@@ -11008,6 +11008,100 @@ function requestSaceGradebookSnapshotFromExam_(request, studentIds, teacherUserI
   return { status: "success", data: data };
 }
 
+ 
+function requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUserId, expectedContext, periods) {
+  const input = request || {};
+  const token = String(getRequestSessionToken_(input) || "");
+  if (!token || !Array.isArray(studentIds) || !studentIds.length ||
+      !Array.isArray(periods) || periods.length !== 2) {
+    throw new Error("SACE_GRADEBOOK_TRANSPORT_CONTEXT_REQUIRED");
+  }
+  if (typeof UrlFetchApp === "undefined" || typeof PropertiesService === "undefined") {
+    throw new Error("SACE_GRADEBOOK_TRANSPORT_UNAVAILABLE");
+  }
+  const endpoint = String(PropertiesService.getScriptProperties().getProperty("IMA_EXAM_SERVICE_URL") || "").trim();
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) {
+    throw new Error("SACE_GRADEBOOK_TRANSPORT_NOT_CONFIGURED");
+  }
+  const requestPayload = {
+    sessionToken: token,
+    profesorId: String(teacherUserId).trim(),
+    anoId: String(expectedContext.anoId).trim(),
+    grado: String(expectedContext.grado).trim(),
+    seccion: String(expectedContext.seccion).trim(),
+    asignatura: String(expectedContext.asignatura).trim(),
+    studentIds: studentIds.slice(),
+    periods: periods.map(function(period) {
+      return { periodoId: String(period.periodoId).trim(), parcial: String(period.parcial).trim() };
+    })
+  };
+  if (requestPayload.periods.some(function(period) { return !period.periodoId || !period.parcial; }) ||
+      new Set(requestPayload.periods.map(function(period) { return period.periodoId; })).size !== 2 ||
+      new Set(requestPayload.periods.map(function(period) { return period.parcial; })).size !== 2) {
+    throw new Error("SACE_GRADEBOOK_PERIOD_MAPPING_INVALID");
+  }
+  let response;
+  try {
+    response = UrlFetchApp.fetch(endpoint, {
+      method: "post", contentType: "application/json",
+      payload: JSON.stringify({ action: "getSaceGradebookSnapshots", payload: requestPayload }),
+      muteHttpExceptions: true
+    });
+  } catch (error) {
+    throw new Error("SACE_GRADEBOOK_AUTHORITY_UNAVAILABLE");
+  }
+  let body;
+  try { body = JSON.parse(response.getContentText() || "{}"); }
+  catch (error) { throw new Error("SACE_GRADEBOOK_RESPONSE_INVALID"); }
+  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 ||
+      !body || body.status !== "success" || !body.data || !Array.isArray(body.data.snapshots) ||
+      body.data.snapshots.length !== requestPayload.periods.length) {
+    throw new Error(body && body.code || "SACE_GRADEBOOK_RESPONSE_INCOMPLETE");
+  }
+  const returned = new Map();
+  body.data.snapshots.forEach(function(item) {
+    const periodoId = String(item && item.periodoId || "").trim();
+    const parcial = String(item && item.parcial || "").trim();
+    if (!periodoId || returned.has(periodoId)) throw new Error("SACE_GRADEBOOK_RESPONSE_PERIOD_INVALID");
+    returned.set(periodoId, { parcial: parcial, snapshot: item.snapshot });
+  });
+  return requestPayload.periods.map(function(period) {
+    const item = returned.get(period.periodoId);
+    if (!item || item.parcial !== period.parcial || !item.snapshot ||
+        item.snapshot.status !== "success" || !item.snapshot.data) {
+      throw new Error("SACE_GRADEBOOK_RESPONSE_PERIOD_INCOMPLETE");
+    }
+    const data = item.snapshot.data, context = data.contexto || {};
+    const expected = {
+      anoId: requestPayload.anoId, periodoId: period.periodoId, parcial: period.parcial,
+      grado: requestPayload.grado, seccion: requestPayload.seccion,
+      asignatura: requestPayload.asignatura,
+      institutionId: String(expectedContext.institutionId).trim()
+    };
+    Object.keys(expected).forEach(function(key) {
+      if (String(context[key] || "").trim() !== expected[key]) {
+        throw new Error("SACE_GRADEBOOK_RESPONSE_CONTEXT_INVALID:" + key);
+      }
+    });
+    if (!Array.isArray(data.alumnos) || !data.resumenes || typeof data.resumenes !== "object" ||
+        String(data.estadoPeriodo || "").trim().toUpperCase() !== "CERRADO") {
+      throw new Error("SACE_GRADEBOOK_RESPONSE_INCOMPLETE");
+    }
+    const returnedStudents = new Set();
+    data.alumnos.forEach(function(student) {
+      const id = String(student && student.userId || "").trim();
+      if (!id || returnedStudents.has(id) || studentIds.indexOf(id) === -1) {
+        throw new Error("SACE_GRADEBOOK_RESPONSE_ROSTER_INVALID");
+      }
+      returnedStudents.add(id);
+    });
+    if (returnedStudents.size !== studentIds.length) {
+      throw new Error("SACE_GRADEBOOK_RESPONSE_ROSTER_INCOMPLETE");
+    }
+    return { periodoId: period.periodoId, parcial: period.parcial, snapshot: item.snapshot };
+  });
+}
+
 function resolveSaceAttendanceJustification_(attendanceRow, attendanceIndex, session, period, source) {
   if (!source || !Array.isArray(source.rows) || !source.index) throw new Error("SACE_JUSTIFICATION_SOURCE_UNAVAILABLE");
   const rawValue = attendanceRow[attendanceIndex.Justificado];
@@ -11257,16 +11351,12 @@ function getSaceAttendanceSnapshot(payload) {
       anoId: anoId, grado: grade, seccion: section, asignatura: subjectName,
       institutionId: institutionId, teacherUserId: String(actor.userId).trim()
     };
-    const gradebookSnapshots = selectedPeriods.map(function(period) {
-      return {
-        periodoId: period.periodoId,
-        parcial: examMappings[period.periodoId],
-        snapshot: requestSaceGradebookSnapshotFromExam_(
-          request, studentIds, String(actor.userId).trim(), expectedContext,
-          period, examMappings[period.periodoId]
-        )
-      };
-    });
+    const gradebookSnapshots = requestSaceGradebookSnapshotsFromExam_(
+      request, studentIds, String(actor.userId).trim(), expectedContext,
+      selectedPeriods.map(function(period) {
+        return { periodoId: period.periodoId, parcial: examMappings[period.periodoId] };
+      })
+    );
     return { status:"success", data:{
       expectedContext:{ anoId:anoId, grado:grade, seccion:section, asignatura:subjectName,
         asignaturaId:subjectId, institutionId:institutionId, teacherUserId:String(actor.userId).trim() },

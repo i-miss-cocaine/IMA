@@ -89,7 +89,7 @@ const ROLE_PERMISSIONS = {
   "Profesor": [
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
     "getAllExams", "getTeacherExamActivity", "getExamQuestions", "getStudentExams", "getExamResult",
-    "getGradebookData", "getSaceGradebookSnapshot", "saveGradebookGrades", "bulkApplyGradebookGrades", "getGradebookWeightConfiguration", "saveGradebookWeightConfiguration", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
+    "getGradebookData", "getSaceGradebookSnapshot", "getSaceGradebookSnapshots", "saveGradebookGrades", "bulkApplyGradebookGrades", "getGradebookWeightConfiguration", "saveGradebookWeightConfiguration", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
     "getRubrics", "saveRubric", "getCompetencyCatalog", "saveCompetencyCatalogItem", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "submitGradebookForReview",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
     "getExamGradeDistributionAnalytics"
@@ -650,6 +650,7 @@ function doPost(e) {
       case "deleteExamSubmission": result = deleteExamSubmission(payload); break;
       case "getGradebookData": result = getGradebookData(payload); break;
       case "getSaceGradebookSnapshot": result = getSaceGradebookSnapshot(payload); break;
+      case "getSaceGradebookSnapshots": result = getSaceGradebookSnapshots(payload); break;
       case "saveGradebookGrades": result = saveGradebookGrades(payload); break;
       case "bulkApplyGradebookGrades": result = bulkApplyGradebookGrades(payload); break;
       case "copyEvaluationSetupBetweenGroups": result = copyEvaluationSetupBetweenGroups(payload); break;
@@ -3670,6 +3671,110 @@ function saveGradebookWeightConfigurationUnlocked_(payload, context) {
     message: "Ponderaciones guardadas para el contexto académico seleccionado." };
 }
 
+function buildSaceGradebookSnapshotUnlocked_(request, context, periodoId, parcial, requested) {
+  const required = (value, code) => {
+    const result = String(value == null ? "" : value).trim();
+    if (!result) throw new Error(code);
+    return result;
+  };
+  const snapshotRequest = Object.assign({}, request, { parcial });
+  const snapshot = getGradebookDataUnlocked_(snapshotRequest, context);
+  if (!snapshot || snapshot.status !== "success" || !snapshot.data) {
+    throw new Error("SACE_GRADEBOOK_SOURCE_UNAVAILABLE");
+  }
+  const data = snapshot.data, sourceContext = data.contexto || {};
+  const expected = {
+    anoId: required(request.anoId || request.anoLectivo, "GRADEBOOK_CONTEXT_REQUIRED"),
+    grado: required(request.grado, "GRADEBOOK_CONTEXT_REQUIRED"),
+    seccion: required(request.seccion, "GRADEBOOK_CONTEXT_REQUIRED"),
+    asignatura: required(request.asignatura, "GRADEBOOK_CONTEXT_REQUIRED"),
+    institutionId: required(context && context.scope && context.scope.institutionId, "SACE_GRADEBOOK_INSTITUTION_REQUIRED")
+  };
+  Object.keys(expected).forEach(key => {
+    if (String(sourceContext[key] || "").trim() !== expected[key]) {
+      throw new Error("SACE_GRADEBOOK_CONTEXT_MISMATCH:" + key);
+    }
+  });
+  if (String(sourceContext.periodoId || "").trim() !== parcial) {
+    throw new Error("SACE_GRADEBOOK_PERIOD_MAPPING_MISMATCH");
+  }
+  const closureSheet = context && context.ss && context.ss.getSheetByName("CierresPeriodos");
+  if (!closureSheet) throw new Error("SACE_GRADEBOOK_CLOSURE_SOURCE_MISSING");
+  const closureRows = closureSheet.getDataRange().getValues();
+  const closureHeaders = closureRows.length ? closureRows[0].map(value => String(value || "").trim()) : [];
+  const closureFields = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "Estado"];
+  if (closureFields.some(header => closureHeaders.indexOf(header) === -1)) {
+    throw new Error("SACE_GRADEBOOK_CLOSURE_CONTEXT_UNVERIFIABLE");
+  }
+  const closureIndex = {};
+  closureHeaders.forEach((header, index) => { closureIndex[header] = index; });
+  const matchingClosures = closureRows.slice(1).filter(row =>
+    String(row[closureIndex.AnoID] || "").trim() === expected.anoId &&
+    String(row[closureIndex.PeriodoID] || "").trim() === parcial &&
+    String(row[closureIndex.Grado] || "").trim() === expected.grado &&
+    String(row[closureIndex.Seccion] || "").trim() === expected.seccion &&
+    String(row[closureIndex.Asignatura] || "").trim() === expected.asignatura);
+  if (matchingClosures.length !== 1 ||
+      String(matchingClosures[0][closureIndex.Estado] || "").trim().toUpperCase() !== "CERRADO" ||
+      !String(matchingClosures[0][closureIndex.CierreID] || "").trim()) {
+    throw new Error(matchingClosures.length > 1 ?
+      "SACE_GRADEBOOK_CLOSURE_AMBIGUOUS" : "SACE_GRADEBOOK_PERIOD_NOT_CLOSED");
+  }
+  if (String(data.estadoPeriodo || "").trim().toUpperCase() !== "CERRADO") {
+    throw new Error("SACE_GRADEBOOK_PERIOD_NOT_CLOSED");
+  }
+  if (!Array.isArray(data.alumnos) || !data.resumenes || typeof data.resumenes !== "object") {
+    throw new Error("SACE_GRADEBOOK_DATA_INCOMPLETE");
+  }
+  const roster = new Map();
+  data.alumnos.forEach(student => {
+    const userId = required(student && student.userId, "SACE_GRADEBOOK_STUDENT_ID_REQUIRED");
+    if (roster.has(userId)) throw new Error("SACE_GRADEBOOK_ROSTER_AMBIGUOUS");
+    roster.set(userId, student);
+  });
+  const alumnos = requested.map(userId => {
+    const student = roster.get(userId);
+    if (!student) throw new Error("SACE_GRADEBOOK_STUDENT_OUTSIDE_CLASS");
+    const nombreCompleto = required(student.nombreCompleto, "SACE_GRADEBOOK_STUDENT_NAME_REQUIRED");
+    return { userId, nombreCompleto, grado: expected.grado, seccion: expected.seccion };
+  });
+  const resumenes = Object.create(null);
+  requested.forEach(userId => {
+    const summary = data.resumenes[userId];
+    if (!summary || String(summary.userId || "").trim() !== userId) {
+      throw new Error("SACE_GRADEBOOK_SUMMARY_MISSING");
+    }
+    resumenes[userId] = {
+      userId,
+      status: String(summary.status || ""),
+      notaFinal: summary.notaFinal == null ? null : Number(summary.notaFinal),
+      avancePonderado: summary.avancePonderado == null ? null : Number(summary.avancePonderado),
+      ponderacionPendiente: summary.ponderacionPendiente == null ? null : Number(summary.ponderacionPendiente)
+    };
+  });
+  const recoveries = Array.isArray(data.recuperaciones) ? data.recuperaciones
+    .filter(row => requested.indexOf(String(row.userId || "").trim()) !== -1)
+    .map(row => ({
+      userId: String(row.userId || "").trim(),
+      evaluacionId: String(row.evaluacionId || "").trim(),
+      notaFinalCalculada: row.notaFinalCalculada == null ? null : Number(row.notaFinalCalculada)
+    })) : [];
+  return {
+    status: "success",
+    data: {
+      alumnos,
+      resumenes,
+      recuperaciones: recoveries,
+      estadoPeriodo: "Cerrado",
+      contexto: {
+        anoId: expected.anoId, periodoId, parcial,
+        grado: expected.grado, seccion: expected.seccion,
+        asignatura: expected.asignatura, institutionId: expected.institutionId
+      }
+    }
+  };
+}
+
 function getSaceGradebookSnapshot(payload) {
   return withAuthorizedExamRead_("getSaceGradebookSnapshot", payload, context => {
     const request = payload || {};
@@ -3680,107 +3785,50 @@ function getSaceGradebookSnapshot(payload) {
     };
     const periodoId = required(request.periodoId, "SACE_GRADEBOOK_PERIOD_ID_REQUIRED");
     const parcial = required(request.parcial, "SACE_GRADEBOOK_PARTIAL_MAPPING_REQUIRED");
-    const studentIds = request.studentIds;
-    if (!Array.isArray(studentIds) || !studentIds.length || studentIds.length > 500) {
+    if (!Array.isArray(request.studentIds) || !request.studentIds.length || request.studentIds.length > 500) {
       throw new Error("SACE_GRADEBOOK_ROSTER_REQUIRED");
     }
-    const requested = studentIds.map(id => required(id, "SACE_GRADEBOOK_STUDENT_ID_REQUIRED"));
+    const requested = request.studentIds.map(id => required(id, "SACE_GRADEBOOK_STUDENT_ID_REQUIRED"));
     if (new Set(requested).size !== requested.length) throw new Error("SACE_GRADEBOOK_ROSTER_DUPLICATE");
-    const snapshot = getGradebookDataUnlocked_(request, context);
-    if (!snapshot || snapshot.status !== "success" || !snapshot.data) {
-      throw new Error("SACE_GRADEBOOK_SOURCE_UNAVAILABLE");
-    }
-    const data = snapshot.data, sourceContext = data.contexto || {};
-    const expected = {
-      anoId: required(request.anoId || request.anoLectivo, "GRADEBOOK_CONTEXT_REQUIRED"),
-      grado: required(request.grado, "GRADEBOOK_CONTEXT_REQUIRED"),
-      seccion: required(request.seccion, "GRADEBOOK_CONTEXT_REQUIRED"),
-      asignatura: required(request.asignatura, "GRADEBOOK_CONTEXT_REQUIRED"),
-      institutionId: required(context && context.scope && context.scope.institutionId, "SACE_GRADEBOOK_INSTITUTION_REQUIRED")
+    return buildSaceGradebookSnapshotUnlocked_(request, context, periodoId, parcial, requested);
+  });
+}
+
+function getSaceGradebookSnapshots(payload) {
+  return withAuthorizedExamRead_("getSaceGradebookSnapshots", payload, context => {
+    const request = payload || {};
+    const required = (value, code) => {
+      const result = String(value == null ? "" : value).trim();
+      if (!result) throw new Error(code);
+      return result;
     };
-    Object.keys(expected).forEach(key => {
-      if (String(sourceContext[key] || "").trim() !== expected[key]) {
-        throw new Error("SACE_GRADEBOOK_CONTEXT_MISMATCH:" + key);
+    if (!Array.isArray(request.periods) || request.periods.length !== 2) {
+      throw new Error("SACE_GRADEBOOK_TWO_PERIODS_REQUIRED");
+    }
+    if (!Array.isArray(request.studentIds) || !request.studentIds.length || request.studentIds.length > 500) {
+      throw new Error("SACE_GRADEBOOK_ROSTER_REQUIRED");
+    }
+    const requested = request.studentIds.map(id => required(id, "SACE_GRADEBOOK_STUDENT_ID_REQUIRED"));
+    if (new Set(requested).size !== requested.length) throw new Error("SACE_GRADEBOOK_ROSTER_DUPLICATE");
+    const seenPeriodIds = new Set(), seenPartials = new Set();
+    const periods = request.periods.map(period => {
+      const periodoId = required(period && period.periodoId, "SACE_GRADEBOOK_PERIOD_ID_REQUIRED");
+      const parcial = required(period && period.parcial, "SACE_GRADEBOOK_PARTIAL_MAPPING_REQUIRED");
+      if (seenPeriodIds.has(periodoId) || seenPartials.has(parcial)) {
+        throw new Error("SACE_GRADEBOOK_PERIOD_MAPPING_DUPLICATE");
       }
+      seenPeriodIds.add(periodoId);
+      seenPartials.add(parcial);
+      return { periodoId, parcial };
     });
-    if (String(sourceContext.periodoId || "").trim() !== parcial) {
-      throw new Error("SACE_GRADEBOOK_PERIOD_MAPPING_MISMATCH");
-    }
-    const closureSheet = context && context.ss && context.ss.getSheetByName("CierresPeriodos");
-    if (!closureSheet) throw new Error("SACE_GRADEBOOK_CLOSURE_SOURCE_MISSING");
-    const closureRows = closureSheet.getDataRange().getValues();
-    const closureHeaders = closureRows.length ? closureRows[0].map(value => String(value || "").trim()) : [];
-    const closureFields = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "Estado"];
-    if (closureFields.some(header => closureHeaders.indexOf(header) === -1)) {
-      throw new Error("SACE_GRADEBOOK_CLOSURE_CONTEXT_UNVERIFIABLE");
-    }
-    const closureIndex = {};
-    closureHeaders.forEach((header, index) => { closureIndex[header] = index; });
-    const matchingClosures = closureRows.slice(1).filter(row =>
-      String(row[closureIndex.AnoID] || "").trim() === expected.anoId &&
-      String(row[closureIndex.PeriodoID] || "").trim() === parcial &&
-      String(row[closureIndex.Grado] || "").trim() === expected.grado &&
-      String(row[closureIndex.Seccion] || "").trim() === expected.seccion &&
-      String(row[closureIndex.Asignatura] || "").trim() === expected.asignatura);
-    if (matchingClosures.length !== 1 ||
-        String(matchingClosures[0][closureIndex.Estado] || "").trim().toUpperCase() !== "CERRADO" ||
-        !String(matchingClosures[0][closureIndex.CierreID] || "").trim()) {
-      throw new Error(matchingClosures.length > 1 ?
-        "SACE_GRADEBOOK_CLOSURE_AMBIGUOUS" : "SACE_GRADEBOOK_PERIOD_NOT_CLOSED");
-    }
-    if (String(data.estadoPeriodo || "").trim().toUpperCase() !== "CERRADO") {
-      throw new Error("SACE_GRADEBOOK_PERIOD_NOT_CLOSED");
-    }
-    if (!Array.isArray(data.alumnos) || !data.resumenes || typeof data.resumenes !== "object") {
-      throw new Error("SACE_GRADEBOOK_DATA_INCOMPLETE");
-    }
-    const roster = new Map();
-    data.alumnos.forEach(student => {
-      const userId = required(student && student.userId, "SACE_GRADEBOOK_STUDENT_ID_REQUIRED");
-      if (roster.has(userId)) throw new Error("SACE_GRADEBOOK_ROSTER_AMBIGUOUS");
-      roster.set(userId, student);
-    });
-    const alumnos = requested.map(userId => {
-      const student = roster.get(userId);
-      if (!student) throw new Error("SACE_GRADEBOOK_STUDENT_OUTSIDE_CLASS");
-      const nombreCompleto = required(student.nombreCompleto, "SACE_GRADEBOOK_STUDENT_NAME_REQUIRED");
-      return { userId, nombreCompleto, grado: expected.grado, seccion: expected.seccion };
-    });
-    const resumenes = Object.create(null);
-    requested.forEach(userId => {
-      const summary = data.resumenes[userId];
-      if (!summary || String(summary.userId || "").trim() !== userId) {
-        throw new Error("SACE_GRADEBOOK_SUMMARY_MISSING");
-      }
-      resumenes[userId] = {
-        userId,
-        status: String(summary.status || ""),
-        notaFinal: summary.notaFinal == null ? null : Number(summary.notaFinal),
-        avancePonderado: summary.avancePonderado == null ? null : Number(summary.avancePonderado),
-        ponderacionPendiente: summary.ponderacionPendiente == null ? null : Number(summary.ponderacionPendiente)
-      };
-    });
-    const recoveries = Array.isArray(data.recuperaciones) ? data.recuperaciones
-      .filter(row => requested.indexOf(String(row.userId || "").trim()) !== -1)
-      .map(row => ({
-        userId: String(row.userId || "").trim(),
-        evaluacionId: String(row.evaluacionId || "").trim(),
-        notaFinalCalculada: row.notaFinalCalculada == null ? null : Number(row.notaFinalCalculada)
-      })) : [];
-    return {
-      status: "success",
-      data: {
-        alumnos,
-        resumenes,
-        recuperaciones: recoveries,
-        estadoPeriodo: "Cerrado",
-        contexto: {
-          anoId: expected.anoId, periodoId, parcial,
-          grado: expected.grado, seccion: expected.seccion,
-          asignatura: expected.asignatura, institutionId: expected.institutionId
-        }
-      }
-    };
+    const snapshots = periods.map(period => ({
+      periodoId: period.periodoId,
+      parcial: period.parcial,
+      snapshot: buildSaceGradebookSnapshotUnlocked_(
+        request, context, period.periodoId, period.parcial, requested
+      )
+    }));
+    return { status: "success", data: { snapshots } };
   });
 }
 
