@@ -34,6 +34,16 @@ for (const template of manifest.templates) {
   const sourceStudents = templateInfo.students.map((student, index) => Object.assign({}, student, rows[index])).reverse();
   const mappedRows = tools.mapRowsToTemplate(templateInfo, sourceStudents, templateInfo.metadata);
   assert.deepEqual(mappedRows, rows, "template roster mapping must follow identity rather than source row order");
+  const alternateIdentityFormatting = sourceStudents.map(student => Object.assign({}, student));
+  alternateIdentityFormatting[0].identity = alternateIdentityFormatting[0].identity.replace(/-/g, "/");
+  assert.deepEqual(tools.mapRowsToTemplate(templateInfo, alternateIdentityFormatting, templateInfo.metadata), rows,
+    "template identity normalization must match USER/Academic/provider canonical punctuation removal");
+  const normalizedIdentityCollision = sourceStudents.map(student => Object.assign({}, student));
+  normalizedIdentityCollision[1].identity = normalizedIdentityCollision[0].identity.replace(/-/g, "/");
+  assert.throws(() => tools.mapRowsToTemplate(templateInfo, normalizedIdentityCollision, templateInfo.metadata),
+    /SACE_STUDENT_IDENTITY_DUPLICATE/,
+    "different punctuation must not conceal two source records with the same canonical identity");
+
   const output = tools.fill(original, mappedRows, { scale: { min: 0, max: 100, precision: 2 } });
   const candidateOutput = tools.prepareCandidateExport(original, sourceStudents, templateInfo.metadata,
     { scale: { min: 0, max: 100, precision: 2 } });

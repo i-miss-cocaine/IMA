@@ -482,7 +482,7 @@
       .replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
   }
   function normalizeIdentity(value) {
-    return String(value == null ? "" : value).replace(/[\s.-]/g, "").toUpperCase();
+    return String(value == null ? "" : value).replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   }
   function inspectTemplate(input, parsedInput) {
     const parsed = parsedInput && typeof parsedInput.get === "function" ? parsedInput : parseCompound(input);
