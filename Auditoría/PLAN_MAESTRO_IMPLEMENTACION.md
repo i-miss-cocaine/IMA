@@ -6107,3 +6107,9 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Commits: 2537af3b2429424691bcf706f006c8c951de7962 y 531d98b6759dc859c404b7c8886195e5d7c02d18. Detalle y limitaciones en Checkpoints_Parte_0019.txt — C1.868.
 - BETA-EXAM-110 sigue pendiente de despliegues y credenciales reales; no se declaró prueba beta. No se ejecutó Node en contenedor local por DNS, pero sí en runners CI aislados.
 - Siguiente: auditoría de propagación segura de errores interservicio, sin fallback local ni exposición de PII.
+
+### C1.869 — AUD-NG-167: propagación segura de errores interservicio
+- USER y Exam preservan códigos de error SACE con patrón estable y sustituyen texto libre por mensaje genérico solo en sus rutas SACE; se mantiene compatibilidad de otras acciones. Academic prueba propagación de error de USER y clasificación de fallo de red sin fallback local.
+- Identity mapping Action 44630231769 SUCCESS; Academic Action 44630231995 SUCCESS; Exam Action 44630231886 FAILURE únicamente en el agregado de todos los tests por Phase22 `configureSchoolDocumentTemplate` ausente, mientras sintaxis y suite completa Exam-Service pasaron. Department Scope 44630231856 tiene la misma falla ajena. Task-Service, Accounting Import Preflight, Hierarchical Configuration y UI Accessibility SUCCESS.
+- Commits: a439f9ca724545ba33efaacdd5fedd0970174a5d y 7ddb482be778da9b3864bc56c3c521c015257286. Evidencia en Checkpoints_Parte_0019.txt — C1.869.
+- Siguiente: auditoría del DTO de gradebook (alumnos, resúmenes, recuperaciones, claves y notas pendientes).

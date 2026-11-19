@@ -1195,3 +1195,53 @@ Estado:
 Siguiente acción elegible:
 - Continuar auditoría local de propagación de errores interservicio Academic↔USER↔Exam: distinguir timeout/red, HTTP no exitoso, JSON/envelope inválido y error de negocio; verificar que errores remotos no se conviertan en éxito ni filtren mensajes/PII y que no se produzca fallback a datos locales.
 ===============================================================================
+
+===============================================================================
+### C1.869 — AUD-NG-167: propagación segura de errores Academic↔USER↔Exam
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-INTERSERVICE-ERROR-CODES-40
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 87fe3f1cd0b391068c7dd41ee82c420119ab1886
+HEAD de implementación: a439f9ca724545ba33efaacdd5fedd0970174a5d
+HEAD de ajuste de pruebas: 7ddb482be778da9b3864bc56c3c521c015257286
+HEAD final de checkpoint: pendiente al crear este registro
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo:
+- USER trusted SACE identity y Exam SACE gradebook capturaban excepciones en doPost sin conservar códigos de dominio estables. USER convertía errores confiables sin code en INTERNAL_ERROR; Exam devolvía solo message y Academic terminaba clasificando la respuesta de Exam como incompleta genérica. En Exam el mensaje de excepción se exponía en el response body.
+- Academic ya clasificaba fallos de red y JSON y no usa fallback a Personas local; se agregaron pruebas que fijan esos límites.
+
+Implementación:
+- USER ahora aplica getSaceSafeErrorCode_ solo al envelope ACADEMIC→USER de getSaceStudentIdentityDirectory; conserva códigos uppercase estables y transforma texto libre en INTERNAL_ERROR. La respuesta al consumidor contiene mensaje genérico y código, y el log no conserva el texto libre de ese error SACE.
+- Exam aplica el mismo contrato únicamente a getSaceGradebookSnapshot(s), preservando el comportamiento de errores de las demás acciones; evita devolver texto de excepción al consumidor SACE.
+- Academic contract prueba que USER error HTTP 403 con código SACE_IDENTITY_CALLER_INVALID se propaga sin ocultarse y que una excepción de red se convierte en SACE_IDENTITY_AUTHORITY_UNAVAILABLE.
+- No se cambió el envelope de éxito ni la política de respuesta para acciones no SACE.
+
+Archivos modificados:
+- backend/user-service/Code.gs
+- backend/exam-service/Code.gs
+- tests/security/user-sace-identity-directory.test.js
+- tests/security/exam-service-sace-gradebook-snapshot.test.js
+- tests/security/sace-attendance-snapshot-contract.test.js
+
+Commits:
+- a439f9ca724545ba33efaacdd5fedd0970174a5d — preservación de códigos de error seguros en rutas SACE.
+- 7ddb482be778da9b3864bc56c3c521c015257286 — limpieza de una aserción redundante del contrato.
+
+Verificación:
+- Identity mapping Action 44630231769: SUCCESS; TASK-068, USER snapshot, writer, tipo documental, SACE identity directory y transport access scope PASS.
+- Academic-Service Action 44630231995: SUCCESS; node --check y todos los contratos locales Academic, incluido SACE attendance/USER transport y batch Exam.
+- Exam-Service Action 44630231886: FAILURE global por tests/regression/phase22-document-management-suite-contract.test.js (configureSchoolDocumentTemplate ausente). Dentro del mismo job, Check Apps Script exam backend syntax y Run the complete Exam-Service Node.js contract suite pasaron; el contrato exam-service-sace-gradebook-snapshot también PASS. Falla posterior en Run all repository Node.js tests por Phase22.
+- Department Scope Action 44630231856: FAILURE por el mismo Phase22; los pasos anteriores ejecutados pasaron.
+- Task-Service 44630231848, Accounting Import Preflight 44630231893, Hierarchical Configuration 44630231793 y UI Accessibility 44630231923: SUCCESS.
+- No se ejecutó checkout local por DNS; Node y sintaxis se ejecutaron en runners CI aislados. No se ejecutó infraestructura desplegada.
+
+Estado:
+- Unidad de propagación segura de errores completada en contratos locales.
+- AUD-NG-167 sigue En progreso; BETA-EXAM-110/111 y demás pruebas que requieren deployments/credenciales reales continúan Pendiente beta.
+- No se alteró Accounting ni ninguna rama distinta de la autorizada.
+
+Siguiente acción elegible:
+- Revisar integridad del DTO de gradebook devuelto por Exam-Service: correspondencia exacta entre alumnos solicitados, resumenes, recuperaciones y claves, ausencia de datos extra, orden/duplicados y manejo de notas pendientes; corregir solo defectos reproducibles y probarlos localmente.
+===============================================================================
