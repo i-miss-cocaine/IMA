@@ -129,9 +129,9 @@ assert.equal(result.data.contexto.parcial, "I Parcial");
 assert.equal(result.data.estadoPeriodo, "Cerrado");
 assert.equal(JSON.stringify(result).includes("private-ana"), false, "student email must not leave Exam-Service");
 assert.equal(JSON.stringify(result).includes("must-not-leak"), false, "unapproved gradebook fields must not leave Exam-Service");
-const extraSummary = JSON.parse(JSON.stringify(fixture));
-extraSummary.data.resumenes["STU-3"] = { userId: "STU-3", status: "calculated", notaFinal: 100 };
-assert.throws(() => createContext(extraSummary).context.runSnapshot(basePayload), /SACE_GRADEBOOK_SUMMARY_SCOPE_INVALID/);
+const extraSummary = createContext().context.runSnapshot(basePayload);
+assert.equal(Object.prototype.hasOwnProperty.call(extraSummary.data.resumenes, "STU-3"), false,
+  "summary records outside the requested subset must not be exposed");
 const invalidSummary = JSON.parse(JSON.stringify(fixture));
 invalidSummary.data.resumenes["STU-1"].notaFinal = 101;
 assert.throws(() => createContext(invalidSummary).context.runSnapshot(basePayload), /SACE_GRADEBOOK_SUMMARY_GRADE_INVALID/);

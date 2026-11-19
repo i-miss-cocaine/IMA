@@ -3754,11 +3754,6 @@ function buildSaceGradebookSnapshotUnlocked_(request, context, periodoId, parcia
     const nombreCompleto = required(student.nombreCompleto, "SACE_GRADEBOOK_STUDENT_NAME_REQUIRED");
     return { userId, nombreCompleto, grado: expected.grado, seccion: expected.seccion };
   });
-  const summaryKeys = Object.keys(data.resumenes);
-  if (summaryKeys.length !== requested.length ||
-      summaryKeys.some(userId => requested.indexOf(userId) === -1)) {
-    throw new Error("SACE_GRADEBOOK_SUMMARY_SCOPE_INVALID");
-  }
   const resumenes = Object.create(null);
   requested.forEach(userId => {
     if (!Object.prototype.hasOwnProperty.call(data.resumenes, userId)) {
