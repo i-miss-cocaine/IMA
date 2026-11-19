@@ -95,7 +95,8 @@ const fromSnapshot = provider.buildCandidateStudentsFromSnapshot({
   partial1PeriodId: "PER-1",
   partial2PeriodId: "PER-2",
   partial1Gradebook: gradebook("PER-1"),
-  partial2Gradebook: gradebook("PER-2")
+  partial2Gradebook: gradebook("PER-2"),
+  documentTypeMappings: [{ documentType: "DNI", documentMarker: "HND" }]
 });
 assert.deepEqual(fromSnapshot.sourceStudents, result.sourceStudents);
 assert(fromSnapshot.limitations.includes("snapshot fixture"));
@@ -105,7 +106,24 @@ assert.throws(() => provider.buildCandidateStudentsFromSnapshot({
     data: {
       expectedContext,
       periods: [periods.partial1Period, periods.partial2Period],
-      identityRecords: identityRecords.map((row, index) => index === 0 ? Object.assign({}, row, { documentMarker: "" }) : row),
+      identityRecords: identityRecords.map((row, index) => index === 0 ? Object.assign({}, row, { documentType: "" }) : row),
+      attendanceSessions: sessions,
+      attendanceRecords: attendance
+    }
+  },
+  partial1PeriodId: "PER-1",
+  partial2PeriodId: "PER-2",
+  partial1Gradebook: gradebook("PER-1"),
+  partial2Gradebook: gradebook("PER-2"),
+  documentTypeMappings: [{ documentType: "DNI", documentMarker: "HND" }]
+}), /SACE_STUDENT_DOCUMENT_TYPE_REQUIRED/);
+assert.throws(() => provider.buildCandidateStudentsFromSnapshot({
+  attendanceSnapshot: {
+    status: "success",
+    data: {
+      expectedContext,
+      periods: [periods.partial1Period, periods.partial2Period],
+      identityRecords,
       attendanceSessions: sessions,
       attendanceRecords: attendance
     }
@@ -114,7 +132,62 @@ assert.throws(() => provider.buildCandidateStudentsFromSnapshot({
   partial2PeriodId: "PER-2",
   partial1Gradebook: gradebook("PER-1"),
   partial2Gradebook: gradebook("PER-2")
-}), /SACE_STUDENT_DOCUMENT_TYPE_REQUIRED/);
+}), /SACE_DOCUMENT_TYPE_MAPPING_REQUIRED/);
+assert.throws(() => provider.buildCandidateStudentsFromSnapshot({
+  attendanceSnapshot: {
+    status: "success",
+    data: {
+      expectedContext,
+      periods: [periods.partial1Period, periods.partial2Period],
+      identityRecords,
+      attendanceSessions: sessions,
+      attendanceRecords: attendance
+    }
+  },
+  partial1PeriodId: "PER-1",
+  partial2PeriodId: "PER-2",
+  partial1Gradebook: gradebook("PER-1"),
+  partial2Gradebook: gradebook("PER-2"),
+  documentTypeMappings: [{ documentType: "PASAPORTE", documentMarker: "PASS" }]
+}), /SACE_DOCUMENT_TYPE_MAPPING_MISSING/);
+assert.throws(() => provider.buildCandidateStudentsFromSnapshot({
+  attendanceSnapshot: {
+    status: "success",
+    data: {
+      expectedContext,
+      periods: [periods.partial1Period, periods.partial2Period],
+      identityRecords,
+      attendanceSessions: sessions,
+      attendanceRecords: attendance
+    }
+  },
+  partial1PeriodId: "PER-1",
+  partial2PeriodId: "PER-2",
+  partial1Gradebook: gradebook("PER-1"),
+  partial2Gradebook: gradebook("PER-2"),
+  documentTypeMappings: [
+    { documentType: "DNI", documentMarker: "HND" },
+    { documentType: " dni ", documentMarker: "DNI" }
+  ]
+}), /SACE_DOCUMENT_TYPE_MAPPING_DUPLICATE/);
+assert.throws(() => provider.buildCandidateStudentsFromSnapshot({
+  attendanceSnapshot: {
+    status: "success",
+    data: {
+      expectedContext,
+      periods: [periods.partial1Period, periods.partial2Period],
+      identityRecords: identityRecords.map(row => Object.assign({}, row, { documentMarker: "OTHER" })),
+      attendanceSessions: sessions,
+      attendanceRecords: attendance
+    }
+  },
+  partial1PeriodId: "PER-1",
+  partial2PeriodId: "PER-2",
+  partial1Gradebook: gradebook("PER-1"),
+  partial2Gradebook: gradebook("PER-2"),
+  documentTypeMappings: [{ documentType: "DNI", documentMarker: "HND" }]
+}), /SACE_DOCUMENT_TYPE_MAPPING_CONFLICT/);
+
 assert.throws(() => provider.buildCandidateStudentsFromSnapshot({
   attendanceSnapshot: { status: "success", data: { expectedContext, periods: [periods.partial1Period, periods.partial2Period] } },
   partial1PeriodId: "PER-1",
@@ -142,7 +215,7 @@ const mappedRows = templateTools.mapRowsToTemplate({
     { identity: "0801-2000-00001", name: "Ana Pérez", documentMarker: "HND" },
     { identity: "0801-2000-00002", name: "Luis Gómez", documentMarker: "HND" }
   ]
-}, result.sourceStudents, {
+}, fromSnapshot.sourceStudents, {
   institution: "Centro de Prueba",
   modality: "Bachillerato Tecnico",
   gradeSection: "11 A",

@@ -1960,3 +1960,28 @@ Resultado esperado:
 Estado: Pendiente beta.
 Evidencia requerida: respuesta anonimizada del endpoint, trazas de casos permitidos/denegados y comprobación de que no aparecen registros fuera del ámbito.
 ===============================================================================
+
+===============================================================================
+BETA-EXAM-108 — Equivalencia explícita de tipo documental a marcador SACE
+===============================================================================
+Módulo/rol: flujo candidato SACE / docente autorizado
+Tarea/requisito: AUD-NG-167 — C1.837
+Objetivo: confirmar con plantilla oficial docente la equivalencia entre Personas.TipoIdentificacion y el marcador de documento que exige el padrón SACE.
+Precondiciones:
+- Plantilla SACE descargada desde sesión docente autorizada y su versión/fecha registradas.
+- Diccionario/campo de tipo documental de la plantilla inspeccionado y revisado.
+- Pares documentType/documentMarker revisados por responsable institucional.
+Pasos:
+1. Obtener los tipos documentales presentes en el roster institucional autorizado.
+2. Para cada tipo, verificar en la plantilla oficial el marcador exacto esperado; no derivarlo del formato de Identificacion.
+3. Configurar documentTypeMappings explícitos para los tipos realmente presentes.
+4. Ejecutar buildCandidateStudentsFromSnapshot con datos sintéticos y luego con datos beta autorizados.
+5. Comprobar rechazo ante tipo sin mapeo, duplicado normalizado, marcador vacío y conflicto entre marcador fuente y mapeo.
+6. Pasar sourceStudents a prepareCandidateExport y comprobar matching de identidad/nombre/marcador con el roster de la plantilla.
+Resultado esperado:
+- Cada tipo documental tiene una correspondencia respaldada por la plantilla oficial.
+- No se acepta tipo desconocido ni mapeo contradictorio.
+- La carga real a SACE sigue separada y pendiente de BETA-EXAM-106.
+Estado: Pendiente de plantilla oficial y revisión institucional.
+Evidencia requerida: plantilla oficial anonimizada, versión/fecha, tabla de equivalencias aprobada y reporte de casos positivos/negativos.
+===============================================================================

@@ -130,15 +130,22 @@ La lista de estudiantes del cliente no se considera prueba de matrícula: cada I
 
 Se añadió `buildCandidateStudentsFromSnapshot(input)` a `js/sace-data-provider.js`. El wrapper consume la respuesta `getSaceAttendanceSnapshot` del Academic-Service junto con los dos snapshots del libro contextual provenientes de Exam-Service. Los dos IDs de periodo deben indicarse explícitamente como `partial1PeriodId` y `partial2PeriodId`; el wrapper no infiere el orden ni la equivalencia de parciales.
 
-La composición usa el contexto, los periodos, el directorio de identidad y las sesiones/registros devueltos por el endpoint. Conserva las limitaciones de la fuente en la respuesta. Si el snapshot es inválido, falta el mapeo explícito, no se encuentran los periodos o el directorio no contiene un marcador documental, el armado se rechaza. La prueba confirma que un `documentMarker` vacío produce `SACE_STUDENT_DOCUMENT_TYPE_REQUIRED`, por lo que la falta de tipo documental no se convierte en una exportación parcial.
+La composición usa el contexto, los periodos, el directorio de identidad y las sesiones/registros devueltos por el endpoint. Conserva las limitaciones de la fuente en la respuesta. Si el snapshot es inválido, falta `documentTypeMappings`, no se encuentran los periodos, falta `documentType` o no hay correspondencia para el tipo registrado, el armado se rechaza. El wrapper aplica la correspondencia explícita al `documentMarker` antes de invocar el proveedor; si el snapshot ya trae un marcador distinto, también rechaza el conflicto. No hay mapeos por defecto.
 
 El contrato local amplía `sace-data-provider-contract.test.js` para probar la ruta snapshot→proveedor, la conservación de limitaciones, el bloqueo por marcador vacío, periodos duplicados y snapshots incompletos.
 
-**Límite:** es una composición entre contratos locales, no una llamada HTTP entre servicios ni una integración desplegada. No se añadió UI ni se habilitó descarga/producción. El marcador documental debe venir de un campo institucional verificado y su equivalencia con el campo SACE debe confirmarse con la plantilla oficial.
+**Límite:** es una composición entre contratos locales, no una llamada HTTP entre servicios ni una integración desplegada. No se añadió UI ni se habilitó descarga/producción. El tipo documental debe venir del campo institucional verificado y la equivalencia a marcador SACE debe suministrarse explícitamente y confirmarse con la plantilla oficial. Los valores de las pruebas son sintéticos y no representan códigos oficiales.
 
 
 ## 10. Tipo documental canónico de Persona — C1.836
 
 El servicio USER añade `Personas.TipoIdentificacion` como atributo opcional del registro canónico de identidad. El campo se puede registrar explícitamente en `createPerson`, se valida como texto de hasta 40 caracteres y se conserva vacío cuando no hay dato verificado. La migración de una hoja anterior agrega la columna al final; no asigna tipos a registros históricos ni cambia la identificación existente. El escritor de migración de Personas reconoce el esquema anterior y lo amplía de forma compatible, preservando valores existentes.
 
-Academic-Service devuelve `documentType` separado de `documentMarker`. La plantilla SACE usa un marcador/código que no debe asumirse idéntico al tipo documental general. Hasta confirmar el diccionario oficial y configurar una equivalencia explícita, `documentMarker` permanece vacío y `buildCandidateStudentsFromSnapshot` rechaza el armado. No se habilita una exportación parcial.
+Academic-Service devuelve `documentType` separado de `documentMarker`. La plantilla SACE usa un marcador/código que no debe asumirse idéntico al tipo documental general. El endpoint devuelve `documentMarker` vacío. `buildCandidateStudentsFromSnapshot` puede aplicar un mapeo explícito `documentTypeMappings`, pero no trae valores predeterminados ni declara que el mapeo sea oficial. Sin mapeo para cada tipo, el armado se rechaza. No se habilita una exportación parcial.
+
+
+## 11. Correspondencia explícita TipoIdentificacion→marcador SACE — C1.837
+
+El wrapper `buildCandidateStudentsFromSnapshot` ahora requiere `documentTypeMappings`, una lista explícita de pares `{ documentType, documentMarker }`. Normaliza el tipo para detectar duplicados de escritura/acentos, exige tipo y marcador no vacíos, rechaza tipos sin correspondencia y conflictos con cualquier marcador ya presente en el snapshot. El marcador resultante se entrega al matching de la plantilla, que aún debe confirmar igualdad por identidad y marcador.
+
+No se agregan equivalencias predeterminadas. Los pares usados en pruebas son datos sintéticos y no constituyen una afirmación sobre los códigos oficiales SACE. La configuración real requiere inspeccionar una plantilla docente autorizada y confirmar su diccionario/campo. La salida sigue siendo CANDIDATE y no se habilita la descarga.

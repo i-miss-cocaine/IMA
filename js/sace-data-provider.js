@@ -164,7 +164,8 @@
       limitations: [
         "period-to-SACE-partial mapping is supplied explicitly and is not inferred",
         "recovery values are not exported until the official SACE rule is verified",
-        "identity/document markers must come from a verified institutional source",
+        "identity document type must come from the verified institutional Personas record",
+        "documentType-to-documentMarker mapping is supplied explicitly and must be confirmed against an official SACE template",
         "attendance snapshots must be obtained server-side for the authenticated teacher context"
       ]
     };
@@ -190,19 +191,39 @@
     });
     const partial1Period = periods.get(firstId), partial2Period = periods.get(secondId);
     if (!partial1Period || !partial2Period) throw new Error("SACE_PARTIAL_PERIOD_NOT_IN_SNAPSHOT");
+    if (!Array.isArray(data.identityRecords) || !data.identityRecords.length) throw new Error("SACE_IDENTITY_DIRECTORY_REQUIRED");
+    if (!Array.isArray(value.documentTypeMappings) || !value.documentTypeMappings.length) {
+      throw new Error("SACE_DOCUMENT_TYPE_MAPPING_REQUIRED");
+    }
+    const markerByType = new Map();
+    value.documentTypeMappings.forEach(mapping => {
+      const documentType = text(required(mapping && mapping.documentType, "SACE_DOCUMENT_TYPE_MAPPING_TYPE_REQUIRED"));
+      const marker = required(mapping && mapping.documentMarker, "SACE_DOCUMENT_TYPE_MAPPING_MARKER_REQUIRED");
+      if (markerByType.has(documentType)) throw new Error("SACE_DOCUMENT_TYPE_MAPPING_DUPLICATE");
+      markerByType.set(documentType, marker);
+    });
+    const mappedIdentityRecords = data.identityRecords.map(record => {
+      const documentType = required(record && record.documentType, "SACE_STUDENT_DOCUMENT_TYPE_REQUIRED");
+      const marker = markerByType.get(text(documentType));
+      if (!marker) throw new Error("SACE_DOCUMENT_TYPE_MAPPING_MISSING");
+      if (record.documentMarker && text(record.documentMarker) !== text(marker)) {
+        throw new Error("SACE_DOCUMENT_TYPE_MAPPING_CONFLICT");
+      }
+      return Object.assign({}, record, { documentMarker: marker });
+    });
     const candidate = buildCandidateStudents({
       expectedContext: data.expectedContext,
       partial1Period,
       partial2Period,
       partial1Gradebook: value.partial1Gradebook,
       partial2Gradebook: value.partial2Gradebook,
-      identityRecords: data.identityRecords,
+      identityRecords: mappedIdentityRecords,
       attendanceSessions: data.attendanceSessions,
       attendanceRecords: data.attendanceRecords
     });
     const limitations = Array.isArray(snapshot.limitations) ? snapshot.limitations.slice() : [];
     return Object.assign({}, candidate, {
-      limitations: candidate.limitations.concat(limitations)
+      limitations: candidate.limitations.concat(limitations, ["documentType-to-SACE-marker mapping is explicit input and has not been independently verified by this local provider"])
     });
   }
 
