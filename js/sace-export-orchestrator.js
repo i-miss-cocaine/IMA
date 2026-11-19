@@ -30,7 +30,7 @@ function (provider, templates) {
     if (!context) throw new Error("SACE_ATTENDANCE_CONTEXT_REQUIRED");
     if (!mapping) return false;
     const academic = mapping.academic || {}, template = mapping.template || {};
-    ["institutionId", "grado", "seccion", "asignaturaId", "asignatura"].forEach(field => {
+    ["institutionId", "anoId", "grado", "seccion", "asignaturaId", "asignatura"].forEach(field => {
       if (!normalizeContextText(academic[field]) ||
           normalizeContextText(academic[field]) !== normalizeContextText(context[field])) {
         throw new Error("SACE_TEMPLATE_CONTEXT_MAPPING_MISMATCH:academic." + field);

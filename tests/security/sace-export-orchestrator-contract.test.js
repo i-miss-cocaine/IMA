@@ -172,6 +172,15 @@ for (const entry of manifest.templates) {
     expectedTemplateContext: templateInfo.metadata, academicTemplateContextMapping: mismatchedAcademicMapping,
     options: { scale: { min: 0, max: 100, precision: 2 } }
   }), /SACE_TEMPLATE_CONTEXT_MAPPING_MISMATCH:academic.seccion/);
+  const mismatchedAcademicYearMapping = Object.assign({}, contextMapping, {
+    academic: Object.assign({}, expectedContext, { anoId: "2025" })
+  });
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2",
+    documentTypeMappings, absencePolicy: { justifiedAbsenceMode: "COUNT" },
+    expectedTemplateContext: templateInfo.metadata, academicTemplateContextMapping: mismatchedAcademicYearMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_TEMPLATE_CONTEXT_MAPPING_MISMATCH:academic.anoId/);
   const mismatchedTemplateMapping = Object.assign({}, contextMapping, {
     template: Object.assign({}, templateInfo.metadata, { gradeSection: "12 B" })
   });
