@@ -1,6 +1,7 @@
 "use strict";
 const assert = require("node:assert/strict");
 const provider = require("../../js/sace-data-provider.js");
+const templateTools = require("../../js/sace-template.js");
 function gradebook(periodoId, options = {}) {
   const students = options.students || [
     { userId: "STU-1", nombreCompleto: "Ana Pérez" },
@@ -77,4 +78,27 @@ assert.throws(() => build({ attendanceRecords: attendance.concat({
   sesionId: "S-1", userId: "STU-OUT", estadoAsistencia: "Presente"
 }) }), /SACE_ATTENDANCE_STUDENT_OUTSIDE_ROSTER:partial1/);
 assert.throws(() => build({ attendanceSessions: sessions.filter(row => row.sesionId !== "S-1") }), /SACE_ATTENDANCE_SESSIONS_EMPTY:partial1/);
+const mappedRows = templateTools.mapRowsToTemplate({
+  metadata: {
+    institution: "Centro de Prueba",
+    modality: "Bachillerato Técnico",
+    gradeSection: "11 A",
+    schedule: "Jornada Matutina",
+    subject: "Informática"
+  },
+  students: [
+    { identity: "0801-2000-00001", name: "Ana Pérez", documentMarker: "HND" },
+    { identity: "0801-2000-00002", name: "Luis Gómez", documentMarker: "HND" }
+  ]
+}, result.sourceStudents, {
+  institution: "Centro de Prueba",
+  modality: "Bachillerato Tecnico",
+  gradeSection: "11 A",
+  schedule: "Jornada Matutina",
+  subject: "Informatica"
+});
+assert.deepEqual(mappedRows, [
+  { partial1Absences: 1, partial1: 91.25, partial2Absences: 0, partial2: 91.25, recovery: null },
+  { partial1Absences: 0, partial1: 84, partial2Absences: 1, partial2: 84, recovery: null }
+], "provider output must map directly to SACE template rows by verified identity and document type");
 process.stdout.write("sace-data-provider-contract: PASS (synthetic gradebooks, roster, attendance and identity records)\n");
