@@ -6085,7 +6085,7 @@ function toBase64(file) {
                 asignaturaId: context.asignatura, periodoId: context.periodoId,
                 profesorId: currentUser.userId,
                 programaCurricular: String(gradebookCompetencyCatalog[Number(document.getElementById('gb-competency-catalog')?.value)]?.programaCurricular || "").trim(),
-                departmentId: String(document.getElementById('gb-competency-department-id')?.value || "").trim()
+                departmentId: String(gradebookCompetencyCatalog[Number(document.getElementById('gb-competency-catalog')?.value)]?.departmentId || "").trim()
             });
             if (!response || response.status !== 'success') throw new Error(response?.message || "No fue posible registrar la evaluación.");
             document.getElementById('gb-competency-observations').value = "";
