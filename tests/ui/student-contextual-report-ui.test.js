@@ -9,11 +9,11 @@ for (const id of ["student-report-year", "student-report-period",
   assert.ok(html.includes('id="' + id + '"'), "missing report UI control " + id);
 }
 assert.ok(js.includes("fetchApi('EXAM', 'getStudentAcademicReport'"));
-assert.ok(js.includes("userId: currentUser.userId, anoId, periodoId"));
+assert.ok(js.includes("userId: requestedUserId, anoId, periodoId"));
 assert.ok(js.includes("res.data.libroConsolidado"));
 assert.ok(js.includes("report.esDocumentoOficial === true"));
 assert.ok(js.includes("studentAcademicReportRequestVersion"));
-assert.ok(js.includes("requestedUserId !== String(currentUser?.userId || \"").trim()"),
+assert.ok(js.includes('requestedUserId !== String(currentUser?.userId || "").trim()'),
   "stale report responses must not leak between switched students");
 assert.ok(!js.includes("const califs = res.data.calificaciones || []"),
   "student report must not fall back to legacy uncontextualized grades");
