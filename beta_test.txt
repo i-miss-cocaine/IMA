@@ -1890,3 +1890,48 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **Evidencia requerida:** commit/build desplegado, IDs sintéticos, filas antes/después de CatalogoCompetencias y EvaluacionesCompetencias, ContextKey, actor/rol/departamento, resultados allow/deny, trazas de lock y snapshots de concurrencia; sin tokens ni datos personales.
 - **Estado:** Pendiente beta. Los contratos Node.js y GitHub Actions locales no sustituyen la validación real de Apps Script/Sheets.
 =============================================================================
+
+
+===============================================================================
+BETA-EXAM-106 — MAPEO Y VALIDACIÓN DEL ARCHIVO DE CALIFICACIONES SACE
+===============================================================================
+Estado: PENDIENTE — requiere archivo XLS/XLSX generado por SACE y centro de prueba autorizado.
+Objetivo: demostrar compatibilidad de intercambio de notas sin declarar certificación oficial ni modificar la plantilla de SACE.
+
+Precondiciones:
+- Obtener desde una cuenta docente SACE autorizada un archivo Excel descargado para una clase/centro de prueba.
+- Usar estudiantes ficticios o datos anonimizados; no guardar credenciales ni datos personales reales en el repositorio.
+- Confirmar modalidad, curso/grado, sección, jornada, código de clase, asignatura y periodo/parciales que muestra la plantilla.
+- Confirmar la relación institucional vigente entre SACE y el marco SIIE; no asumir equivalencia o sustitución de sistemas.
+
+Pasos:
+1. Identificar hojas, encabezados, rangos de datos, filas iniciales, fórmulas, celdas combinadas, estilos y validaciones de la plantilla original.
+2. Relacionar el centro/código SACE, modalidad, grado, sección, jornada, clase y asignatura con los registros IMA. Si falta un código oficial o una relación inequívoca, detener la exportación y documentar el dato faltante.
+3. Relacionar DOCUMENTO, IDENTIDAD y NOMBRE con el expediente/persona del estudiante. No usar UserId como número de identidad ni fijar DOCUMENTO=HND sin verificar el tipo documental.
+4. Mapear cada parcial SACE al PeriodoID/Orden correspondiente de IMA usando la plantilla real; no asumir un número fijo de parciales.
+5. Calcular INASISTENCIAS por estudiante, clase y rango de fechas del parcial a partir de sesiones y registros de asistencia; comprobar que no se incluyan otras asignaturas o periodos.
+6. Obtener NOTA TOTAL solo del libro consolidado publicado y cerrado, con cálculo completo. Mapear RECUPERACIÓN según el procedimiento y la celda definidos por SACE.
+7. Rellenar únicamente las celdas de entrada en una copia de la plantilla; conservar hojas, encabezados, diseño, fórmulas, estilos y estructura original.
+8. Comparar cada fila/celda exportada con el libro IMA y los registros de asistencia de prueba. Confirmar que notas pendientes no se conviertan en cero y que recuperaciones vacías no se exporten como 0.
+9. Cargar el archivo desde el flujo oficial de SACE en el entorno de prueba autorizado y verificar aceptación, periodo y valores.
+10. Descargar de nuevo el reporte/cuadro SACE y comparar los resultados. No llamar “boleta/certificación oficial” a un documento IMA: las certificaciones oficiales requieren el proceso, firmas y códigos de autenticidad generados por SACE.
+
+Criterios PASS:
+- La plantilla original no cambia de estructura ni formato.
+- Centro, modalidad, curso, sección, jornada y clase corresponden al registro correcto.
+- Identidad/nombre coinciden con el expediente verificado.
+- Cada parcial y sus inasistencias coinciden con el rango de fechas de SACE.
+- Notas y recuperación coinciden con el libro consolidado publicado/cerrado.
+- SACE acepta el archivo y el reporte resultante coincide con los valores esperados.
+
+Criterios FAIL:
+- Plantilla creada desde cero sin archivo original SACE.
+- Código SedeID tratado como código SACE sin correspondencia aprobada.
+- Jornada inferida solo por horario sin catálogo/relación confirmada.
+- Parciales asumidos por nombre u orden sin contrastar plantilla.
+- Asistencias globales usadas como inasistencias de una asignatura/parcial.
+- Cualquier diferencia de estructura, valor o resultado en SACE.
+
+Evidencia pendiente:
+- Archivo de plantilla SACE de prueba anonimizado, matriz de celdas/campos, comparación automatizada y confirmación de carga en SACE.
+===============================================================================
