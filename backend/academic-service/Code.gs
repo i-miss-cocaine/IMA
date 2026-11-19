@@ -11332,7 +11332,11 @@ function closeAttendanceSession(payload) {
     if (!sheet) throw new Error("ATTENDANCE_SESSION_NOT_FOUND");
     const index = ensureAttendanceSessionClosureHeader_(sheet);
     const session = getAttendanceSessionForTeacher_(ss, sesionId, actor.userId);
-    if (session.state === "CERRADA") return { status: "success", idempotent: true, data: { sesionId: sesionId, estado: "Cerrada" } };
+    if (session.state === "CERRADA") {
+      const existingClose = session.row[index.FechaCierre] instanceof Date ? session.row[index.FechaCierre] : new Date(String(session.row[index.FechaCierre] || ""));
+      if (!existingClose || isNaN(existingClose.getTime())) throw new Error("ATTENDANCE_SESSION_CLOSE_TIMESTAMP_MISSING");
+      return { status: "success", idempotent: true, data: { sesionId: sesionId, estado: "Cerrada", fechaCierre: existingClose.toISOString() } };
+    }
     if (session.state !== "ABIERTA") throw new Error("ATTENDANCE_SESSION_NOT_OPEN");
     const closedAt = new Date();
     sheet.getRange(session.rowNumber, index.Estado + 1).setValue("Cerrada");
