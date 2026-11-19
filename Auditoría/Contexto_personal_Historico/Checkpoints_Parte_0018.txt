@@ -1281,3 +1281,33 @@ Tarea: AUD-NG-167, continuidad del adaptador SACE candidato.
 Estado AUD-NG-167: [~] En progreso. Criterios funcionales locales y contratos específicos SACE candidatos verificados; quedan pendientes BETA-EXAM-105 (Sheets desplegados), BETA-EXAM-106 (plantilla y carga SACE autorizada), integración real con fuente de asistencia y correspondencia oficial de recuperación.
 Siguiente acción elegible: preparar el contrato de ensamblaje del exportador sin activar descarga de producción, si puede probarse con plantilla sintética y datos ficticios; mantener el guard de estado CANDIDATE. Reanudar BETA-EXAM-105/106 cuando exista entorno autorizado y evidencia necesaria. No cerrar AUD-NG-167 ni iniciar AUD-NG-168/TAREA-13.
 ===============================================================================
+
+===============================================================================
+### C1.829 — AUD-NG-167: inspección de metadatos y padrón de plantilla SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-TEMPLATE-INSPECTION-04
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.828
+HEAD de código verificado antes del registro C1.829: 9fca09298d7369bcaeaf4bfe3bc586917971a8be
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Trabajo:
+- Se agregó inspectTemplate(input) a js/sace-template.js. La función usa el parser BIFF8 existente para extraer los cinco metadatos contextuales (centro, modalidad, grado/sección, jornada y asignatura) y las 22 filas de padrón (tipo de documento, identidad y nombre), sin reconstruir ni modificar el XLS.
+- El contrato tests/security/sace-template-binary-patch.test.js ahora comprueba la inspección de los cinco campos y 22 estudiantes; crea valores sintéticos; invierte el orden de la lista de origen; usa mapRowsToTemplate para comprobar que la salida respeta el orden del padrón por identidad y tipo documental; y después pasa esas filas al parcheador binario. No se imprimen nombres, identidades ni notas de los libros de muestra.
+- Commit de código: 9fca09298d7369bcaeaf4bfe3bc586917971a8be (js/sace-template.js y tests/security/sace-template-binary-patch.test.js).
+- GitHub Actions 44533727250: SUCCESS. node --check del contrato estructural PASS; contrato estructural PASS; node --check del adaptador PASS; contrato de parcheo binario PASS para tres XLS candidatos. El test de parcheo ahora ejercita inspección + emparejamiento fuera de orden + parcheo en una sola ruta.
+- Se actualizó Mapa_Compatibilidad_SACE.md: el adaptador extrae metadatos/padrón de la plantilla y empareja una lista fuente que le suministren; todavía no obtiene la lista desde el backend académico ni calcula asistencia ni está integrado con el libro/UI.
+- La prueba sigue siendo estructural/local sobre los tres XLS candidatos. No se acreditó plantilla oficial descargada ni carga aceptada. El manifest continúa CANDIDATE y officialSourceVerified=false.
+
+Pendientes:
+- Integrar la obtención de estudiantes y calificaciones del contexto docente consolidado, con filtros y permisos ya existentes; no usar la lista de muestra de los XLS como padrón fuente.
+- Obtener inasistencias por estudiante/clase/rango del parcial desde SesionesAsistencia y RegistrosAsistencia con regla explícita de cómputo.
+- Resolver código SACE del centro, jornada y tipo de documento con catálogos/datos verificados; confirmar el mapeo PeriodoID-parcial y regla de recuperación con plantilla real y procedimiento SACE.
+- BETA-EXAM-105 requiere Apps Script/Sheets desplegados; BETA-EXAM-106 requiere archivo descargado desde cuenta SACE autorizada y carga de prueba aceptada. No disponibles en esta sesión.
+- Mantener AUD-NG-167 [~] En progreso. No habilitar exportación de producción ni iniciar AUD-NG-168/TAREA-13.
+
+Siguiente acción elegible: diseñar y probar un ensamblador candidato que reciba el archivo original y la lista de estudiantes/notas ya autorizada por el contexto académico, utilizando inspectTemplate + mapRowsToTemplate + fill, sin exponer botón ni flujo de producción y manteniendo guard CANDIDATE. Solo activar después de BETA-EXAM-106 y evidencia oficial.
+===============================================================================

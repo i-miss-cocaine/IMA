@@ -4245,3 +4245,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.827 — AUD-NG-167: parcheador BIFF8 candidato para tres XLS SACE; mapeo por identidad verificada, normalización correcta de tildes/separadores y preservación de valores vacíos; contratos SACE PASS. Contratos Exam-Service y UI de competencias PASS; suite general Node.js conserva tres fallos externos. No se declara compatibilidad SACE oficial; BETA-EXAM-105/106 pendientes.
 
 [2026-11-19] C1.828 — AUD-NG-167: validación estricta del marcador DOCUMENTO al emparejar roster SACE; pruebas negativas para origen/plantilla sin tipo documental. Actions 44533390963 SUCCESS. Manual docente oficial SACE revisado JUNIO 2025 confirma descarga/carga por clase; plantillas XLS del repositorio siguen candidatas, sin certificación/carga real.
+
+[2026-11-19] C1.829 — AUD-NG-167: inspección de metadatos y roster de plantilla SACE; emparejamiento por identidad/documento en orden invertido y parcheo binario integrado en contrato Node. Actions 44533727250 SUCCESS. Sin integración backend ni carga SACE real.
