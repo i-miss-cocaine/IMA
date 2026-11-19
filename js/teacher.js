@@ -6032,8 +6032,13 @@ function toBase64(file) {
         let criteria;
         try { criteria = JSON.parse(document.getElementById('gb-rubric-criteria')?.value || "[]"); }
         catch (_) { alert("Los criterios deben contener JSON válido."); return; }
-        if (!title || !Array.isArray(criteria) || criteria.length > 30) {
-            alert("Ingrese un título y una lista válida de hasta 30 criterios.");
+        const validCriteria = Array.isArray(criteria) && criteria.length >= 1 && criteria.length <= 30 &&
+            criteria.every(item => item && typeof item.criterio === "string" && item.criterio.trim() &&
+                Array.isArray(item.niveles) && item.niveles.length >= 2 && item.niveles.length <= 5 &&
+                item.niveles.every(level => level && typeof level.nombre === "string" && level.nombre.trim() &&
+                    typeof level.descripcion === "string" && level.descripcion.trim()));
+        if (!title || !validCriteria) {
+            alert("Ingrese un título y entre 1 y 30 criterios; cada uno debe incluir de 2 a 5 niveles con nombre y descripción.");
             return;
         }
         const button = document.getElementById('btn-gb-save-rubric');
