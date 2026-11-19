@@ -44,7 +44,8 @@
     const scaled = Math.round(value * scale);
     if (Math.abs(scaled / scale - value) > 1e-8) throw new Error("SACE_GRADE_PRECISION_UNSUPPORTED");
     if (scaled < -536870912 || scaled > 536870911) throw new Error("SACE_GRADE_VALUE_OUT_OF_RANGE");
-    return ((scaled << 2) | 3) >>> 0;
+    const flags = precision === 2 ? 3 : 2;
+    return ((scaled << 2) | flags) >>> 0;
   }
   function parseCompound(input) {
     const bytes = toBytes(input);
@@ -300,7 +301,7 @@
     if (!Number.isFinite(Number(scale.min)) || !Number.isFinite(Number(scale.max)) ||
         Number(scale.min) >= Number(scale.max)) throw new Error("SACE_SCALE_CONFIGURATION_REQUIRED");
     const precision = Number.isInteger(scale.precision) ? scale.precision : 2;
-    if (precision < 0 || precision > 2) throw new Error("SACE_SCALE_PRECISION_UNSUPPORTED");
+    if (precision !== 0 && precision !== 2) throw new Error("SACE_SCALE_PRECISION_UNSUPPORTED");
     if (!Array.isArray(rows) || rows.length !== STUDENT_COUNT) throw new Error("SACE_STUDENT_COUNT_MISMATCH");
     rows.forEach((item, index) => {
       ["partial1", "partial2"].forEach(field => {
