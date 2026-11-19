@@ -137,10 +137,9 @@ test("an open period cannot produce an official report", () => {
 });
 test("legacy closure schema never promotes a contextual report to official", () => {
   const x = fixture();
-  x.sheets.CierresPeriodos.rows = [
+  x.sheets.CierresPeriodos.rows.splice(0, x.sheets.CierresPeriodos.rows.length,
     ["ID", "Fecha", "Parcial", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado"],
-    ["OLD-CLOSE", new Date(), "P1", "10", "A", "Matemáticas", "PROF", "Cerrado"]
-  ];
+    ["OLD-CLOSE", new Date(), "P1", "10", "A", "Matemáticas", "PROF", "Cerrado"]);
   const result = x.run({ anoId: "2026", periodoId: "P1" });
   assert.equal(result.esDocumentoOficial, false);
   assert.equal(result.estadoPeriodo, "No verificable (esquema histórico)");
