@@ -5458,6 +5458,7 @@ function toBase64(file) {
     // --- LÓGICA DEL LIBRO OFICIAL DE CALIFICACIONES (FASE 9) ---
     let currentGradebookData = { alumnos: [], calificaciones: [], recuperaciones: [], categories: [], estadoPeriodo: "Abierto" };
     let gradebookRequestVersion = 0;
+    let gradebookRubricRequestVersion = 0;
 
     function getGradebookContextPayload() {
         const context = currentGradebookData?.contexto || {};
@@ -5533,6 +5534,7 @@ function toBase64(file) {
 
         if (!tbody) return;
         const requestVersion = ++gradebookRequestVersion;
+        gradebookRubricRequestVersion++;
         ['btn-gb-save-all', 'btn-gb-config-weights', 'btn-gb-register-recovery', 'btn-gb-close-period'].forEach(id => {
             const button = document.getElementById(id);
             if (button) button.disabled = true;
@@ -5882,12 +5884,14 @@ function toBase64(file) {
         const list = document.getElementById('gb-rubric-list');
         const rubricSelect = document.getElementById('gb-competency-rubric');
         if (!list || !rubricSelect) return;
+        const requestVersion = ++gradebookRubricRequestVersion;
         list.textContent = "Consultando rúbricas...";
         try {
             const context = getGradebookContextPayload();
             const response = await fetchApi('EXAM', 'getRubrics', {
                 ...context, profesorId: currentUser.userId, asignatura: context.asignatura
             });
+            if (requestVersion !== gradebookRubricRequestVersion) return;
             if (!response || response.status !== 'success' || !Array.isArray(response.data)) {
                 throw new Error(response?.message || "No fue posible consultar las rúbricas.");
             }
@@ -5899,7 +5903,9 @@ function toBase64(file) {
                 ? rubrics.map(rubric => rubric.titulo + " (" + rubric.rubricaId + ")").join(" · ")
                 : "No hay rúbricas activas para esta asignatura.";
         } catch (error) {
-            list.textContent = "Error al consultar rúbricas: " + error.message;
+            if (requestVersion === gradebookRubricRequestVersion) {
+                list.textContent = "Error al consultar rúbricas: " + error.message;
+            }
         }
     }
 
