@@ -5866,8 +5866,53 @@ function toBase64(file) {
     });
 
     let gradebookCompetencyRequestVersion = 0;
+    let gradebookCatalogRequestVersion = 0;
+    let gradebookCompetencyCatalog = [];
     const escapeGradebookHtml = value => String(value == null ? "" : value).replace(/[&<>"']/g, char =>
         ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+
+    async function loadGradebookCompetencyCatalog() {
+        const select = document.getElementById('gb-competency-catalog');
+        if (!select) return;
+        const requestVersion = ++gradebookCatalogRequestVersion;
+        const context = getGradebookContextPayload();
+        const contextKey = JSON.stringify(context);
+        select.innerHTML = '<option value="">Consultando catálogo...</option>';
+        try {
+            const program = String(document.getElementById('gb-catalog-program')?.value || "").trim();
+            const response = await fetchApi('EXAM', 'getCompetencyCatalog', {
+                ...context, asignaturaId: context.asignatura, programaCurricular: program
+            });
+            if (requestVersion !== gradebookCatalogRequestVersion ||
+                contextKey !== JSON.stringify(getGradebookContextPayload())) return;
+            if (!response || response.status !== 'success' || !Array.isArray(response.data)) {
+                throw new Error(response?.message || "No fue posible consultar el catálogo.");
+            }
+            gradebookCompetencyCatalog = response.data;
+            select.innerHTML = '<option value="">Seleccione competencia e indicador</option>' +
+                gradebookCompetencyCatalog.map((item, index) =>
+                    '<option value="' + index + '">' +
+                    escapeGradebookHtml(item.programaCurricular + ' · ' + item.competencia + ' / ' + item.indicador) +
+                    '</option>').join('');
+            if (!gradebookCompetencyCatalog.length) {
+                select.innerHTML = '<option value="">No hay indicadores registrados para este contexto</option>';
+            }
+        } catch (error) {
+            if (requestVersion === gradebookCatalogRequestVersion) {
+                select.innerHTML = '<option value="">Error al consultar el catálogo</option>';
+                const list = document.getElementById('gb-competency-list');
+                if (list) list.textContent = "Error al consultar catálogo: " + error.message;
+            }
+        }
+    }
+
+    function applySelectedGradebookCompetencyCatalogItem() {
+        const select = document.getElementById('gb-competency-catalog');
+        const index = Number(select?.value);
+        const item = Number.isInteger(index) ? gradebookCompetencyCatalog[index] : null;
+        document.getElementById('gb-competency-id').value = item ? item.competenciaId : "";
+        document.getElementById('gb-indicator-id').value = item ? item.indicadorId : "";
+    }
 
     function renderGradebookAssessmentOptions() {
         const select = document.getElementById('gb-competency-student');
@@ -5939,6 +5984,12 @@ function toBase64(file) {
     }
 
     document.getElementById('btn-gb-load-rubrics')?.addEventListener('click', loadGradebookRubrics);
+    document.getElementById('btn-gb-load-competencies')?.addEventListener('click', () => {
+        loadGradebookCompetencyCatalog();
+        loadGradebookCompetencyEvaluations();
+    });
+    document.getElementById('gb-competency-catalog')?.addEventListener('change', applySelectedGradebookCompetencyCatalogItem);
+    document.getElementById('gb-catalog-program')?.addEventListener('change', loadGradebookCompetencyCatalog);
     document.getElementById('btn-gb-load-competencies')?.addEventListener('click', loadGradebookCompetencyEvaluations);
     document.getElementById('gb-competency-student')?.addEventListener('change', loadGradebookCompetencyEvaluations);
 
@@ -5968,6 +6019,38 @@ function toBase64(file) {
         } finally { button.disabled = false; }
     });
 
+    document.getElementById('btn-gb-save-catalog-item')?.addEventListener('click', async () => {
+        const context = getGradebookContextPayload();
+        const fields = {
+            programaCurricular: String(document.getElementById('gb-catalog-program')?.value || "").trim(),
+            competenciaId: String(document.getElementById('gb-catalog-competency-id')?.value || "").trim(),
+            competencia: String(document.getElementById('gb-catalog-competency-name')?.value || "").trim(),
+            indicadorId: String(document.getElementById('gb-catalog-indicator-id')?.value || "").trim(),
+            indicador: String(document.getElementById('gb-catalog-indicator-name')?.value || "").trim()
+        };
+        if (Object.values(fields).some(value => !value)) {
+            alert("Complete programa curricular, competencia e indicador.");
+            return;
+        }
+        const button = document.getElementById('btn-gb-save-catalog-item');
+        button.disabled = true;
+        try {
+            const response = await fetchApi('EXAM', 'saveCompetencyCatalogItem', {
+                ...context, asignaturaId: context.asignatura, seccion: context.seccion, ...fields,
+                profesorId: currentUser.userId
+            });
+            if (!response || response.status !== 'success') throw new Error(response?.message || "No fue posible guardar el elemento.");
+            await loadGradebookCompetencyCatalog();
+            document.getElementById('gb-catalog-competency-id').value = "";
+            document.getElementById('gb-catalog-competency-name').value = "";
+            document.getElementById('gb-catalog-indicator-id').value = "";
+            document.getElementById('gb-catalog-indicator-name').value = "";
+            alert("Elemento guardado en el catálogo institucional.");
+        } catch (error) {
+            alert("Error al guardar en catálogo: " + error.message);
+        } finally { button.disabled = false; }
+    });
+
     document.getElementById('btn-gb-save-competency')?.addEventListener('click', async () => {
         const context = getGradebookContextPayload();
         const userId = String(document.getElementById('gb-competency-student')?.value || "").trim();
@@ -5986,7 +6069,8 @@ function toBase64(file) {
                 observaciones: String(document.getElementById('gb-competency-observations')?.value || "").trim(),
                 rubricaId: String(document.getElementById('gb-competency-rubric')?.value || "").trim(),
                 asignaturaId: context.asignatura, periodoId: context.periodoId,
-                profesorId: currentUser.userId
+                profesorId: currentUser.userId,
+                programaCurricular: String(gradebookCompetencyCatalog[Number(document.getElementById('gb-competency-catalog')?.value)]?.programaCurricular || "").trim()
             });
             if (!response || response.status !== 'success') throw new Error(response?.message || "No fue posible registrar la evaluación.");
             document.getElementById('gb-competency-observations').value = "";
