@@ -4355,3 +4355,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-19] C1.881 — AUD-NG-167: configureSchoolYear y manageAcademicPeriod ahora adquieren el ScriptLock antes de leer/modificar AnosLectivos/PeriodosAcademicos y lo liberan en finally; timeout falla cerrado. Añadido tests/security/academic-sace-source-writer-locks.test.js (7 contratos) y conectado al workflow Academic-Service. Node local 7/7 PASS; Academic-Service Action 44640383695 SUCCESS y reference consumers 44640383676 SUCCESS. Actions ajenas Task-Service 44640383411 y Department Scope 44640383442 fallaron en contratos fuera del cambio. Se aclara que manageAcademicPeriod solo actualiza Nombre/Estado en filas existentes; las fechas se escriben al crear periodos. Sin revalidación optimista todavía.
+
+
+[2026-11-19] C1.882 — AUD-NG-167: revisión de escritores secundarios concluye que los append de nuevos años/asignaturas, el cambio de estado del año y la apertura de sesiones no alteran el registro ya seleccionado por el snapshot; sesiones Abierta quedan excluidas hasta cierre serializado. Duplicados de IDs fallan cerrados. publishGradebookForContext no tiene caller ni ruta en el router backend. No se amplían locks sin impacto material en el snapshot. Sin cambios de código.
