@@ -10890,6 +10890,14 @@ function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, insti
   const input = request || {};
   const token = String(getRequestSessionToken_(input) || "");
   if (!token || !Array.isArray(studentIds) || !studentIds.length) throw new Error("SACE_IDENTITY_TRANSPORT_CONTEXT_REQUIRED");
+  const requestedIds = studentIds.map(function(value) {
+    const id = String(value == null ? "" : value).trim();
+    if (!id) throw new Error("SACE_IDENTITY_STUDENT_ID_REQUIRED");
+    return id;
+  });
+  if (new Set(requestedIds).size !== requestedIds.length) {
+    throw new Error("SACE_IDENTITY_ROSTER_DUPLICATE");
+  }
   if (typeof UrlFetchApp === "undefined" || typeof PropertiesService === "undefined") {
     throw new Error("SACE_IDENTITY_TRANSPORT_UNAVAILABLE");
   }
@@ -10901,7 +10909,7 @@ function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, insti
     sessionToken: token,
     institutionId: institutionId,
     teacherUserId: teacherUserId,
-    studentIds: studentIds.slice()
+    studentIds: requestedIds.slice()
   }, "IMA_MIGRATION_HMAC_SECRET");
   let response;
   try {
@@ -10919,16 +10927,22 @@ function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, insti
   if (status < 200 || status >= 300 || !body || body.status !== "success" || !Array.isArray(body.data)) {
     throw new Error(body && body.code || "SACE_IDENTITY_AUTHORITY_UNAVAILABLE");
   }
-  const requested = new Set(studentIds.map(function(id) { return String(id).trim(); }));
+  const requested = new Set(requestedIds);
   const returned = new Set();
+  const normalizedIdentities = new Set();
   const identityRecords = body.data.map(function(record) {
     const userId = String(record && record.userId || "").trim();
     const identity = String(record && record.identity || "").trim();
     const name = String(record && record.name || "").trim();
-    if (!requested.has(userId) || returned.has(userId) || !identity || !name) {
+    const normalizedIdentity = identity.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    if (!requested.has(userId) || returned.has(userId) || !identity || !normalizedIdentity || !name) {
       throw new Error("SACE_IDENTITY_RESPONSE_SCOPE_INVALID");
     }
+    if (normalizedIdentities.has(normalizedIdentity)) {
+      throw new Error("SACE_IDENTITY_DUPLICATE_DOCUMENT");
+    }
     returned.add(userId);
+    normalizedIdentities.add(normalizedIdentity);
     return {
       userId: userId, identity: identity,
       documentType: String(record.documentType || "").trim(),

@@ -84,6 +84,11 @@ assert.throws(() => contextFor(undefined, { Personas: inactivePeople }).readDire
 const duplicateIdentity = tables.Personas.map(row => row.slice());
 duplicateIdentity[2][3] = duplicateIdentity[1][3];
 assert.throws(() => contextFor(undefined, { Personas: duplicateIdentity }).readDirectory(request), /SACE_IDENTITY_DUPLICATE_DOCUMENT/);
+const nonCanonicalIdentity = tables.Personas.map(row => row.slice());
+nonCanonicalIdentity[1][3] = " --- ";
+assert.throws(() => contextFor(undefined, { Personas: nonCanonicalIdentity }).readDirectory(
+  Object.assign({}, request, { studentIds: ["STU-1"] })
+), /SACE_IDENTITY_DOCUMENT_INVALID/);
 
 const handlerContext = contextFor();
 vm.runInContext(extract("handleTrustedMigrationEnvelope_") + "\nthis.handleTrusted=handleTrustedMigrationEnvelope_;", handlerContext);

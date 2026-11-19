@@ -2543,6 +2543,9 @@ function getSaceStudentIdentityDirectory_(payload) {
   const normalized = records.map(function(record) {
     return record.identity.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   });
+  if (normalized.some(function(value) { return !value; })) {
+    throw new Error("SACE_IDENTITY_DOCUMENT_INVALID");
+  }
   if (new Set(normalized).size !== normalized.length) throw new Error("SACE_IDENTITY_DUPLICATE_DOCUMENT");
   return { status: "success", data: records };
 }

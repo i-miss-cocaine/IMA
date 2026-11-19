@@ -249,6 +249,53 @@ assert.equal(directory[0].documentMarker, "");
 assert.throws(() => helperContext.requestDirectory(
   { sessionToken: "SESSION-TEST" }, ["STU-1"], "INST-1", "TEACHER-1"
 ), /SACE_IDENTITY_RESPONSE_SCOPE_INVALID/);
+assert.throws(() => helperContext.requestDirectory(
+  { sessionToken: "SESSION-TEST" }, ["STU-1", "STU-1"], "INST-1", "TEACHER-1"
+), /SACE_IDENTITY_ROSTER_DUPLICATE/);
+assert.throws(() => helperContext.requestDirectory(
+  { sessionToken: "SESSION-TEST" }, ["STU-1", "  "], "INST-1", "TEACHER-1"
+), /SACE_IDENTITY_STUDENT_ID_REQUIRED/);
+const incompleteIdentityContext = Object.assign({}, helperContext, {
+  UrlFetchApp: { fetch() { return { getResponseCode() { return 200; }, getContentText() {
+    return JSON.stringify({ status: "success", data: [
+      { userId: "STU-1", identity: "0801-2000-00001", documentType: "DNI", name: "Ana Pérez" }
+    ] });
+  } }; } }
+});
+vm.createContext(incompleteIdentityContext);
+vm.runInContext(extract("requestSaceStudentIdentityDirectoryFromUser_") +
+  "\\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", incompleteIdentityContext);
+assert.throws(() => incompleteIdentityContext.requestDirectory(
+  { sessionToken: "SESSION-TEST" }, ["STU-1", "STU-2"], "INST-1", "TEACHER-1"
+), /SACE_IDENTITY_RESPONSE_INCOMPLETE/);
+const invalidDocumentContext = Object.assign({}, helperContext, {
+  UrlFetchApp: { fetch() { return { getResponseCode() { return 200; }, getContentText() {
+    return JSON.stringify({ status: "success", data: [
+      { userId: "STU-1", identity: "---", documentType: "DNI", name: "Ana Pérez" }
+    ] });
+  } }; } }
+});
+vm.createContext(invalidDocumentContext);
+vm.runInContext(extract("requestSaceStudentIdentityDirectoryFromUser_") +
+  "\\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", invalidDocumentContext);
+assert.throws(() => invalidDocumentContext.requestDirectory(
+  { sessionToken: "SESSION-TEST" }, ["STU-1"], "INST-1", "TEACHER-1"
+), /SACE_IDENTITY_RESPONSE_SCOPE_INVALID/);
+const duplicateDocumentContext = Object.assign({}, helperContext, {
+  UrlFetchApp: { fetch() { return { getResponseCode() { return 200; }, getContentText() {
+    return JSON.stringify({ status: "success", data: [
+      { userId: "STU-1", identity: "0801-2000-00001", name: "Ana Pérez" },
+      { userId: "STU-2", identity: "0801 2000 00001", name: "Luis Gómez" }
+    ] });
+  } }; } }
+});
+vm.createContext(duplicateDocumentContext);
+vm.runInContext(extract("requestSaceStudentIdentityDirectoryFromUser_") +
+  "\\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", duplicateDocumentContext);
+assert.throws(() => duplicateDocumentContext.requestDirectory(
+  { sessionToken: "SESSION-TEST" }, ["STU-1", "STU-2"], "INST-1", "TEACHER-1"
+), /SACE_IDENTITY_DUPLICATE_DOCUMENT/);
+
 
 
 const gradebookHelperContext = {
