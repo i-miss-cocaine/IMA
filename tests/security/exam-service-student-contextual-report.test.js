@@ -135,6 +135,17 @@ test("an open period cannot produce an official report", () => {
   const result = x.run({ anoId: "2026", periodoId: "P1" });
   assert.equal(result.esDocumentoOficial, false);
 });
+test("duplicate or conflicting closure records never produce an official report", () => {
+  for (const state of ["Cerrado", "Abierto"]) {
+    const x = fixture();
+    const duplicate = x.sheets.CierresPeriodos.rows[1].slice();
+    duplicate[0] = "C-DUP";
+    duplicate[7] = state;
+    x.sheets.CierresPeriodos.rows.push(duplicate);
+    const result = x.run({ anoId: "2026", periodoId: "P1" });
+    assert.equal(result.esDocumentoOficial, false);
+  }
+});
 test("legacy closure schema never promotes a contextual report to official", () => {
   const x = fixture();
   x.sheets.CierresPeriodos.rows.splice(0, x.sheets.CierresPeriodos.rows.length,
@@ -180,4 +191,4 @@ test("legacy unscoped recovery rows are ignored", () => {
     { institutionId: "INST-A" }, "STU-1", { anoId: "2026", periodoId: "P1" });
   assert.equal(result.detalleAsignaturas[0].notaFinal, 80);
 });
-process.stdout.write("exam-service-student-contextual-report: PASS (" + cases.length + " scenarios)\\n");
+process.stdout.write("exam-service-student-contextual-report: PASS (" + cases.length + " scenarios)\n");
