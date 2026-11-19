@@ -11012,7 +11012,7 @@ function resolveSaceAttendanceJustification_(attendanceRow, attendanceIndex, ses
     }
     return { justificado: false, justificacionId: "", justificacionVerificada: true };
   }
-  if (!justificacionId) throw new Error("SACE_ATTENDANCE_JUSTIFICATION_LINK_REQUIRED");
+  if (!justificationId) throw new Error("SACE_ATTENDANCE_JUSTIFICATION_LINK_REQUIRED");
   if (!source || !Array.isArray(source.rows) || !source.index) throw new Error("SACE_JUSTIFICATION_SOURCE_UNAVAILABLE");
   const fields = ["JustificacionID", "UserId", "Periodo", "EstadoRevision", "SyncEstado", "SesionIDsJSON", "FechasAfectadasJSON"];
   if (fields.some(field => source.index[field] === undefined)) throw new Error("SACE_JUSTIFICATION_SOURCE_SCHEMA_INVALID");
