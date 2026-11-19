@@ -125,9 +125,9 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
           grado: expected.grado, seccion: expected.seccion, asignatura: expected.asignatura,
           institutionId: expected.institutionId }
       } });
-      return { status: "success", data: { snapshots: periods.map(period => ({
+      return periods.map(period => ({
         periodoId: period.periodoId, parcial: period.parcial, snapshot: makeSnapshot(period)
-      })) } };
+      }));
     },
     Date, String, Number, Array, Object, Set, Error, Math, JSON,
     getSnapshotLockStats() { return { held: snapshotLockHeld, waits: snapshotLockWaits, releases: snapshotLockReleases }; }
