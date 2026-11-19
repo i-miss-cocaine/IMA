@@ -618,10 +618,19 @@ function hasActiveDelegationForAction(userId, action) {
   return null;
 }
 
+function getSaceSafeErrorCode_(error) {
+  const candidate = String(error && error.message || "").trim();
+  return /^[A-Z][A-Z0-9_]{1,95}$/.test(candidate) ? candidate : "INTERNAL_ERROR";
+}
+
 function doPost(e) {
+  let saceGradebookRequest = false;
   try {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });
     const request = JSON.parse(e.postData.contents);
+    saceGradebookRequest = !!(request && (
+      request.action === "getSaceGradebookSnapshot" || request.action === "getSaceGradebookSnapshots"
+    ));
     const { action, payload } = request;
     clearRequestAuthorizationContext_(payload);
     const authCheck = validateRolePermission(action, payload);
@@ -684,6 +693,13 @@ function doPost(e) {
     return textResponse(result);
 
   } catch (err) {
+    if (saceGradebookRequest) {
+      return textResponse({
+        status: "error",
+        code: getSaceSafeErrorCode_(err),
+        message: "No fue posible completar la solicitud."
+      });
+    }
     logDebug("ERROR", err.message);
     return textResponse({ status: "error", message: err.message || "Error interno del servidor." });
   }

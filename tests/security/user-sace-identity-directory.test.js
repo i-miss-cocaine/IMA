@@ -22,6 +22,14 @@ function extract(name) {
   }
   throw new Error("unbalanced " + name);
 }
+const safeErrorContext = {};
+vm.createContext(safeErrorContext);
+vm.runInContext(extract("getSaceSafeErrorCode_") + "\nthis.safeErrorCode=getSaceSafeErrorCode_;", safeErrorContext);
+assert.equal(safeErrorContext.safeErrorCode(new Error("SACE_IDENTITY_CALLER_INVALID")), "SACE_IDENTITY_CALLER_INVALID");
+assert.equal(safeErrorContext.safeErrorCode(new Error("private student data: 0801-2000-00001")), "INTERNAL_ERROR");
+assert(extract("doPost").includes("trustedSaceIdentityRequest ? getSaceSafeErrorCode_(err)"),
+  "trusted USER SACE identity errors must retain safe machine-readable codes");
+
 const tables = {
   Usuarios: [
     ["UserId", "Nombre", "Grado", "Seccion", "Email", "PasswordHash", "Rol", "Telefono", "NumeroLista", "PersonaID", "EstadoCuenta"],

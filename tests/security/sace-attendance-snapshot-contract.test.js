@@ -298,6 +298,27 @@ assert.throws(() => duplicateDocumentContext.requestDirectory(
 
 
 
+const identityAuthorityErrorContext = Object.assign({}, helperContext, {
+  UrlFetchApp: { fetch() { return { getResponseCode() { return 403; }, getContentText() {
+    return JSON.stringify({ status: "error", code: "SACE_IDENTITY_CALLER_INVALID" });
+  } }; } }
+});
+vm.createContext(identityAuthorityErrorContext);
+vm.runInContext(extract("requestSaceStudentIdentityDirectoryFromUser_") +
+  "\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", identityAuthorityErrorContext);
+assert.throws(() => identityAuthorityErrorContext.requestDirectory(
+  { sessionToken: "SESSION-TEST" }, ["STU-1"], "INST-1", "TEACHER-1"
+), /SACE_IDENTITY_CALLER_INVALID/);
+const identityTransportFailureContext = Object.assign({}, helperContext, {
+  UrlFetchApp: { fetch() { throw new Error("private network endpoint details"); } }
+});
+vm.createContext(identityTransportFailureContext);
+vm.runInContext(extract("requestSaceStudentIdentityDirectoryFromUser_") +
+  "\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", identityTransportFailureContext);
+assert.throws(() => identityTransportFailureContext.requestDirectory(
+  { sessionToken: "SESSION-TEST" }, ["STU-1"], "INST-1", "TEACHER-1"
+), /SACE_IDENTITY_AUTHORITY_UNAVAILABLE/);
+
 const gradebookHelperContext = {
   getRequestSessionToken_(request) { return request.sessionToken; },
   PropertiesService: { getScriptProperties() { return { getProperty(name) {

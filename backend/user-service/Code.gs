@@ -2682,10 +2682,18 @@ function handleSignatureProviderCallback_(envelope) {
   };
 }
 
+function getSaceSafeErrorCode_(error) {
+  const candidate = String(error && error.message || "").trim();
+  return /^[A-Z][A-Z0-9_]{1,95}$/.test(candidate) ? candidate : "INTERNAL_ERROR";
+}
+
 function doPost(e) {
+  let trustedSaceIdentityRequest = false;
   try {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });
     const request = JSON.parse(e.postData.contents);
+    trustedSaceIdentityRequest = !!(request && request.sourceService &&
+      request.action === "getSaceStudentIdentityDirectory");
     if (request && typeof request.sourceService === "string" && /^SIGNATURE_PROVIDER:/i.test(request.sourceService)) return textResponse(handleSignatureProviderCallback_(request));
     if (request && request.sourceService && request.action === "authorizeDepartmentReferenceRead") return textResponse(handleTrustedDepartmentReferenceEnvelope_(request));
     if (request && request.sourceService) return textResponse(handleTrustedMigrationEnvelope_(request));
@@ -3000,7 +3008,13 @@ function doPost(e) {
 
     return textResponse(result);
   } catch (err) {
-    logStructuredEvent("USER", "doPost", "ERROR", "UNHANDLED_EXCEPTION", err.message, e ? e.postData : null, "Sistema");
+    const errorCode = trustedSaceIdentityRequest ? getSaceSafeErrorCode_(err) : "UNHANDLED_EXCEPTION";
+    logStructuredEvent("USER", "doPost", "ERROR", errorCode,
+      trustedSaceIdentityRequest ? "Trusted SACE identity request failed." : err.message,
+      e ? e.postData : null, "Sistema");
+    if (trustedSaceIdentityRequest) {
+      return textResponse({ status: "error", code: errorCode, message: "No fue posible completar la solicitud." });
+    }
     return textResponse({ status: "error", message: err.message || "Error interno usuarios." });
   }
 }
