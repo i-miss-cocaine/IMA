@@ -71,11 +71,11 @@
       const day = dateKey(session.fecha);
       if (!day) throw new Error("SACE_ATTENDANCE_SESSION_DATE_INVALID");
       if (["CERRADA", "CERRADO", "FINALIZADA", "FINALIZADO", "COMPLETADA", "COMPLETADO"].indexOf(text(session.estado)) === -1) {
-        throw new Error("SACE_ATTENDANCE_SESSION_NOT_CLOSED:" + labelMode);
+        throw new Error("SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial1");
       }
       const closeTimestamp = String(session.fechaCierre == null ? "" : session.fechaCierre).trim();
       if (!closeTimestamp || !Number.isFinite(Date.parse(closeTimestamp))) {
-        throw new Error("SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:" + labelMode);
+        throw new Error("SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:partial1");
       }
       let label = "";
       if (day >= period1.start && day <= period1.end) label = "partial1";
