@@ -127,6 +127,7 @@ function mutationFixture(options = {}) {
     releaseLock() { state.held = false; }
   };
   const runtime = {
+    SPREADSHEET_ID: "LOCAL",
     COMPETENCY_CATALOG_HEADERS_: headers,
     validateRolePermission: () => ({ authorized: true }),
     getVerifiedExamIdentity_: () => actor,
