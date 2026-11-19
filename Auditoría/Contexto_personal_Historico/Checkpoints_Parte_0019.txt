@@ -772,3 +772,41 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar el orden de operaciones y los efectos del proveedor/orquestador sobre los snapshots recibidos, incluida la no mutación de sus datos de entrada.
 ===============================================================================
+
+
+===============================================================================
+### C1.856 — AUD-NG-167: no mutación y determinismo del candidato
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-INPUT-IMMUTABILITY-31
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.855
+HEAD inicial: 561b97d303b33c80b44c624f1a0ee0f41ab96ce6
+HEAD de prueba: c07505fe00e1bf685d9b04688e36e22f6322992e
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación de pruebas:
+- El contrato integrado conserva copias profundas del attendanceSnapshot, documentTypeMappings, academicTemplateContextMapping y del gradebook spoofed antes de ejecutar el orquestador.
+- Después de la generación candidata verifica que ninguno de esos objetos de entrada cambió.
+- Repite la generación con entradas idénticas y compara byte a byte el XLS candidato, demostrando determinismo del flujo en memoria.
+- Se conserva la aserción previa de que el template fuente no se muta y que el resultado utiliza un buffer independiente.
+
+Archivos modificados desde C1.855:
+- tests/security/sace-export-orchestrator-contract.test.js
+
+Verificación:
+- GitHub Actions 44570887832 — SACE template structure compatibility contract: SUCCESS.
+- Node.js 22: sintaxis, estructura, parcheo binario, proveedor, orquestador, mapeo de parciales, coherencia contextual, inmutabilidad, determinismo y aislamiento PASS.
+- Diff revisado: solo aserciones de no mutación y repetibilidad; sin cambios de código de producción.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- La prueba de determinismo es local y síncrona; el orquestador no mantiene estado global ni realiza I/O externo. No sustituye pruebas de concurrencia de Apps Script/Sheets registradas como beta.
+- La salida sigue siendo CANDIDATE y no activa descarga/carga.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar las limitaciones del cómputo de inasistencias y la política COUNT/EXCLUDE, sin convertir una opción provisional en regla SACE oficial.
+===============================================================================

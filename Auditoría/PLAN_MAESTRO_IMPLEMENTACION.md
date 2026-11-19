@@ -6018,3 +6018,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El contrato del orquestador prueba que gradebooks y periodos comparten año, que los rangos no se solapan y que estas condiciones se cumplen desde el flujo snapshot→candidato. Se agregaron tres pruebas negativas integradas.
 - SACE Action 44570594868 SUCCESS (Node.js 22; todas las suites SACE).
 - AUD-NG-167 continúa En progreso; siguiente: revisar no mutación de snapshots y orden de operaciones.
+
+### C1.856 — AUD-NG-167: no mutación y determinismo
+- El contrato comprueba que snapshot, mapeos y gradebooks no se mutan y que llamadas repetidas con entradas idénticas generan el mismo XLS candidato byte a byte. El template fuente permanece intacto.
+- SACE Action 44570887832 SUCCESS (Node.js 22; sintaxis y todas las suites SACE).
+- AUD-NG-167 sigue En progreso; siguiente: revisar el cómputo de ausencias y la política explícita COUNT/EXCLUDE.
