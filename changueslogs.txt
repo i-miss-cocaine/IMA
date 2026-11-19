@@ -4309,3 +4309,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.859 — AUD-NG-167: fuente canónica de justificaciones obligatoria en el snapshot; prueba source=null rechazada. Academic Action 44572085957 SUCCESS.
 
 [2026-11-19] C1.860 — AUD-NG-167: recuperación no verificada bloquea candidato integrado; sin relleno arbitrario de H. SACE Action 44572519619 SUCCESS.
+
+
+[2026-11-19] C1.861 — AUD-NG-167: HEAD de trabajo 475d7b86473fb2f3cdc5318ccdca64851048899c verificado; un commit documental después de C1.860, sin divergencia. Rama base 44d9891132332e692dbe2ba8602b41f50a508a59. Action 44572519619 inspeccionada SUCCESS. Matriz BETA-EXAM-105..113 y dependencias oficiales/despliegue reconciliadas; AUD-NG-167 permanece en progreso y el candidato no se habilita en producción.
