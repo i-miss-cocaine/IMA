@@ -6080,3 +6080,10 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El contrato instrumenta forEach y demuestra una pasada sobre sesiones y otra sobre registros. V8 compatible: proveedor PASS, orquestador PASS con tres XLS y 22 filas, aislamiento PASS y parsing JS PASS. No es ejecución Node.js/Actions.
 - Commits: b7bf4459a3030538a528b1a4484b37fdd48e030f, f84b6e0a9ead7abbcd682d18d5d6a47d339dad1e, c096563037abd4b9a4f90d8b777e0324ccb1c549, 3556f5d788d8c54aa1575d9f586962f21a488456.
 - No se midió benchmark; la mejora demostrada es la reducción de dos recorridos a uno por colección. AUD-NG-167 permanece En progreso; las dependencias beta y la validación oficial SACE siguen pendientes.
+
+
+### C1.865 — AUD-NG-167: validación de cierre limitada a sesiones seleccionadas
+- countAbsencesForPeriods determina primero si cada sesión pertenece a uno de los dos rangos y al contexto de grado/sección/asignatura/docente; solo las sesiones seleccionadas deben estar cerradas y tener fecha de cierre válida. Se evita que sesiones de otras clases o fuera de ambos parciales bloqueen la exportación candidata.
+- Se conserva el escaneo único de sesiones/registros y todas las validaciones de las sesiones seleccionadas, incluyendo errores diferenciados por parcial.
+- Commit detectado en HEAD de la rama: 509a666790d588e89d04710dfe9ebdfefc7a1234. Fue inspeccionado y se reejecutaron sobre ese HEAD los contratos del proveedor y orquestador: PASS en harness V8 compatible, tres plantillas, 22 filas cada una. No es Node.js ni GitHub Actions.
+- AUD-NG-167 sigue En progreso; este cambio no certifica las plantillas candidatas ni reemplaza las pruebas beta/SACE oficiales.
