@@ -887,3 +887,46 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar las justificaciones canónicas y su enlace a cada registro de asistencia (estado, estudiante, periodo, sesión, fecha y sincronización) para confirmar que no se exportan ausencias con vínculo parcial.
 ===============================================================================
+
+
+===============================================================================
+### C1.859 — AUD-NG-167: fuente canónica de justificaciones obligatoria
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-JUSTIFICATION-SOURCE-34
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.858
+HEAD de implementación: ce41e2e0a486de5cb770034b3a53e5dc04859e45
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo e implementación:
+- resolveSaceAttendanceJustification_ devolvía justificacionVerificada=true para una fila sin JustificacionID y Justificado=false incluso si la fuente canónica no se suministraba.
+- Ahora exige source.rows y source.index antes de evaluar cualquier fila. Si la hoja/listado canónico no está disponible, falla con SACE_JUSTIFICATION_SOURCE_UNAVAILABLE; una ausencia sin vínculo solo se acepta después de consultar una fuente disponible y comprobar que no existe una justificación aprobada o pendiente aplicable.
+- El contrato usa una fuente canónica vacía para el caso legítimo sin justificación y añade una prueba negativa con source=null.
+- Las verificaciones previas de estudiante, periodo, sesión, fecha, aprobación, sincronización, ambigüedad y vínculo se mantienen.
+
+Archivos modificados desde C1.858:
+- backend/academic-service/Code.gs
+- tests/security/sace-attendance-snapshot-contract.test.js
+
+Verificación:
+- GitHub Actions 44572085957 — Academic-Service single authorization context: SUCCESS; snapshot, cierre y justificación canónica PASS.
+- GitHub Actions 44572086286 — Task-Service security local contracts: SUCCESS.
+- GitHub Actions 44572085991 — Department Reference Consumers: SUCCESS.
+- GitHub Actions 44572086165 — Accounting Import Preflight: SUCCESS.
+- GitHub Actions 44572086040 — Hierarchical Configuration: SUCCESS.
+- GitHub Actions 44572086033 — Department Scope: FAILURE únicamente en Phase 22 document management suite por función configureSchoolDocumentTemplate ausente; el mismo defecto ya estaba registrado desde C1.843 y no pertenece al diff actual.
+- Node.js 22: sintaxis de Code.gs y todos los contratos del workflow Academic PASS.
+- Diff revisado: una guardia fail-closed y una prueba negativa; sin cambios en otras áreas.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- La regla COUNT/EXCLUDE continúa pendiente de confirmación oficial SACE (BETA-EXAM-112).
+- Recuperaciones siguen bloqueadas si el snapshot contiene registros, por falta de regla de agregación aprobada; no se rellena H arbitrariamente.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar la salida de recuperaciones y la columna H; confirmar que no se exporta una nota de recuperación sin equivalencia oficial y que el candidato no cambia ante datos no soportados.
+===============================================================================
