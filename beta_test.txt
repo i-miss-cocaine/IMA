@@ -1869,3 +1869,24 @@ El archivo maestro histórico supera el umbral de rotación de 180.000 caractere
 - **CLI:** sin suite declarada en el repositorio.
 - **Pendiente:** ejecutar la lista funcional de BETA-FUNC-123 en Apps Script/Sheets/Drive desplegados y capturar evidencia de permisos reales, rollback, ownership, concurrencia y descarga.
 =============================================================================
+
+=============================================================================
+### BETA-EXAM-105 — AUD-NG-167 — catálogo institucional de competencias e indicadores
+
+- **Módulos/roles:** EXAM / Profesor, Administrador, Dirección y Director; UI del libro docente.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegados que las competencias e indicadores seleccionados en evaluaciones existen en el catálogo institucional y pertenecen al contexto académico y ámbito departamental autorizados. Este catálogo es configurable por institución; no representa por sí mismo una certificación ni equivalencia SACE.
+- **Precondiciones:** desplegar EXAM y la interfaz docente con el mismo build; usar una institución sintética INST-A, dos departamentos DEPT-A/DEPT-B, dos docentes con asignaciones distintas, un Administrador con alcance institucional y estudiantes sintéticos; disponer de ConfiguracionAcademica y de la hoja CatalogoCompetencias con encabezados exactos: ID, InstitutionID, DepartmentID, AnoID, Grado, Seccion, AsignaturaID, CompetenciaID, Competencia, IndicadorID, Indicador, ProgramaCurricular, Estado, RegisteredBy, CreatedAt, UpdatedAt, ContextKey.
+- **Pasos:**
+  1. Consultar el catálogo como docente de DEPT-A con año, grado, sección, asignatura y programa definidos; comprobar que solo aparecen entradas activas de su institución, departamento autorizado o entradas institucionales globales y contexto coincidente.
+  2. Crear una competencia/indicador desde la UI como docente asignado. Comprobar que actor, institución y departamento se derivan de la sesión/scope; verificar IDs, ContextKey, año, grado, sección, asignatura y programa guardados.
+  3. Guardar de nuevo el mismo elemento; comprobar actualización de la misma fila, sin duplicados. Crear otra sección/programa y comprobar que conserva una clave contextual distinta.
+  4. Seleccionar un elemento del catálogo y registrar evaluación; verificar que se guarda la pareja CompetenciaID/IndicadorID, departamento, programa y estudiante en el contexto autorizado.
+  5. Intentar registrar evaluación con indicador inexistente, competencia de otra asignatura/grado/sección/año/programa, ContextKey alterado, catálogo duplicado o estado INACTIVE; comprobar rechazo sin escritura en EvaluacionesCompetencias.
+  6. Como docente DEPT-A, intentar leer/guardar un elemento de DEPT-B y otra institución; comprobar denegación. Repetir con departmentId manipulado, profesor sin asignación y asignación conflictiva.
+  7. Probar lectura de entradas globales (DepartmentID vacío) y entradas departamentales; verificar que el catálogo global se puede utilizar en la misma institución y que una entrada departamental no cruza a otra unidad.
+  8. Ejecutar dos altas concurrentes del mismo elemento y provocar una llamada reentrante durante appendRow; comprobar serialización por ScriptLock, una sola fila por clave, ausencia de duplicados y liberación del lock.
+  9. Alterar manualmente ContextKey o encabezados de CatalogoCompetencias; comprobar rechazo fail-closed y ausencia de selección/actualización arbitraria.
+- **Resultado esperado:** catálogo y evaluaciones vinculados por IDs estables y clave contextual; aislamiento institucional/departamental; altas/actualizaciones serializadas; no se aceptan indicadores libres ni referencias inexistentes.
+- **Evidencia requerida:** commit/build desplegado, IDs sintéticos, filas antes/después de CatalogoCompetencias y EvaluacionesCompetencias, ContextKey, actor/rol/departamento, resultados allow/deny, trazas de lock y snapshots de concurrencia; sin tokens ni datos personales.
+- **Estado:** Pendiente beta. Los contratos Node.js y GitHub Actions locales no sustituyen la validación real de Apps Script/Sheets.
+=============================================================================
