@@ -901,7 +901,7 @@ function getOrCreateSheet(ss, name) {
     if (name === "ConfiguracionVisualGlobal") sheet.appendRow(["ConfigVisualID", "PaletaNombre", "ColoresJSON", "Version", "AprobadoPor", "FechaPublicacion"]);
     if (name === "TicketsReporteProblemas") sheet.appendRow(["TicketID", "UserId", "NombreUsuario", "RolActivo", "AreaFuncion", "SeccionPagina", "VersionGlobal", "TipoApp", "Descripcion", "ResultadoEsperado", "Estado", "CreadoEn", "ActualizadoEn"]);
     if (name === "HistorialMensajesTickets") sheet.appendRow(["MensajeID", "TicketID", "AutorUserId", "AutorNombre", "TipoAutor", "EsNotaInterna", "Mensaje", "Timestamp"]);
-    if (name === "Personas") sheet.appendRow(["PersonaID", "Nombres", "Apellidos", "Identificacion", "EmailContacto", "TelefonoContacto", "EstadoPersona", "FechaCreacion", "FechaActualizacion", "Observaciones"]);
+    if (name === "Personas") sheet.appendRow(["PersonaID", "Nombres", "Apellidos", "Identificacion", "EmailContacto", "TelefonoContacto", "EstadoPersona", "FechaCreacion", "FechaActualizacion", "Observaciones", "TipoIdentificacion"]);
     if (name === "CorrespondenciaIdentificadores") sheet.appendRow(["idMapeo", "sistemaOrigen", "tipoEntidad", "idOriginalLegado", "idNuevoPlataforma", "institucionId", "hashRegistroOrigen", "fechaMigracion", "versionMapeo", "estadoCorrespondencia", "metodoCoincidencia", "nivelConfianza", "migradoPor"]);
     if (name === "HistorialDecisionesIdentidad") sheet.appendRow(["decisionId", "idMapeo", "sistemaOrigen", "tipoEntidad", "idOriginalLegado", "idNuevoPlataformaAnterior", "idNuevoPlataformaNuevo", "decision", "motivo", "actorUserId", "actorRole", "fechaDecision", "institucionId"]);
     if (name === "MigracionEscrituras") sheet.appendRow(["IdempotencyKey","TipoEntidad","IdNuevoPlataforma","PayloadJSON","Estado","Accion","FilaAnteriorJSON","FilaNuevaJSON","Fecha","CorrelationId"]);
@@ -2986,7 +2986,7 @@ const IDENTITY_TARGET_SCHEMAS_ = {
   empleado: { sheet: "ExpedientesLaborales", headers: ["ExpedienteID", "PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"] },
   curso: { sheet: "CatalogoCursosCapacitacion", headers: ["CursoID", "NombreCurso", "Categoria", "ProveedorResponsable", "Modalidad", "DuracionHoras", "Requisitos", "DirigidoA", "Estado", "CreadoPor", "FechaCreacion", "UltimaModificacion"] }
 };
-const MIGRATION_WRITER_SCHEMAS_={persona:{sheet:"Personas",headers:["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto","TelefonoContacto","EstadoPersona","FechaCreacion","FechaActualizacion","Observaciones"]}};const MIGRATION_WRITER_JOURNAL_HEADERS_=["IdempotencyKey","TipoEntidad","IdNuevoPlataforma","PayloadJSON","Estado","Accion","FilaAnteriorJSON","FilaNuevaJSON","Fecha","CorrelationId"];
+const MIGRATION_WRITER_SCHEMAS_={persona:{sheet:"Personas",headers:["PersonaID","Nombres","Apellidos","Identificacion","EmailContacto","TelefonoContacto","EstadoPersona","FechaCreacion","FechaActualizacion","Observaciones","TipoIdentificacion"]}};const MIGRATION_WRITER_JOURNAL_HEADERS_=["IdempotencyKey","TipoEntidad","IdNuevoPlataforma","PayloadJSON","Estado","Accion","FilaAnteriorJSON","FilaNuevaJSON","Fecha","CorrelationId"];
 
 function migrationStableJson_(v){if(Array.isArray(v))return "["+v.map(migrationStableJson_).join(",")+"]";if(v&&typeof v==="object"&&!(v instanceof Date))return "{"+Object.keys(v).sort().map(k=>JSON.stringify(k)+":"+migrationStableJson_(v[k])).join(",")+"}";return JSON.stringify(v instanceof Date?v.toISOString():v);}
 
@@ -2994,8 +2994,8 @@ function migrationEncodeSnapshot_(value){if(value instanceof Date)return{__migra
 function migrationDecodeSnapshot_(value){if(Array.isArray(value))return value.map(migrationDecodeSnapshot_);if(value&&typeof value==="object"){if(value.__migrationSnapshotType==="Date")return new Date(value.value);const out={};Object.keys(value).forEach(k=>out[k]=migrationDecodeSnapshot_(value[k]));return out;}return value;}
 
 function migrationSafeCell_(v){if(v===null||v===undefined)return "";if(v instanceof Date||typeof v==="number"||typeof v==="boolean")return v;if(typeof v!=="string")throw new Error("MIGRATION_CELL_TYPE_INVALID");return /^[=+@-]/.test(v)?"'"+v:v;}
-function ensureMigrationWriterSheet_(ss,n,headers){let sh=ss.getSheetByName(n);if(!sh){sh=ss.insertSheet(n);sh.appendRow(headers);}const actual=sh.getRange(1,1,1,headers.length).getValues()[0].map(String);if(JSON.stringify(actual)!==JSON.stringify(headers))throw new Error("MIGRATION_SCHEMA_MISMATCH: "+n);return sh;}
-function applyTrustedMigrationWrite_(p){p=p||{};const type=String(p.tipoEntidad||"").trim().toLowerCase(),id=String(p.idNuevoPlataforma||"").trim(),key=String(p.idempotencyKey||"").trim(),schema=MIGRATION_WRITER_SCHEMAS_[type],data=p.datos;if(!schema)throw new Error("MIGRATION_ENTITY_NOT_OWNED: "+type);if(!id||!key||!data||typeof data!=="object"||Array.isArray(data))throw new Error("MIGRATION_WRITE_CONTRACT_INVALID");const allowed=schema.headers.slice(1);Object.keys(data).forEach(f=>{if(allowed.indexOf(f)===-1)throw new Error("MIGRATION_FIELD_NOT_ALLOWED: "+f);if(data[f]&&typeof data[f]==="object"&&!(data[f] instanceof Date))throw new Error("MIGRATION_CELL_TYPE_INVALID: "+f);});const canonical={};Object.keys(data).sort().forEach(f=>canonical[f]=data[f] instanceof Date?data[f].toISOString():data[f]);const json=migrationStableJson_({tipoEntidad:type,idNuevoPlataforma:id,datos:canonical}),lock=LockService.getScriptLock();lock.waitLock(10000);try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),target=ensureMigrationWriterSheet_(ss,schema.sheet,schema.headers),journal=ensureMigrationWriterSheet_(ss,"MigracionEscrituras",MIGRATION_WRITER_JOURNAL_HEADERS_),jr=journal.getDataRange().getValues();for(let j=1;j<jr.length;j++)if(String(jr[j][0])===key){if(String(jr[j][3])!==json)throw new Error("MIGRATION_IDEMPOTENCY_CONFLICT");if(String(jr[j][4])==="APPLIED")return{status:"success",idempotent:true,idNuevoPlataforma:id,accion:jr[j][5]};if(String(jr[j][4])==="COMPENSATED")throw new Error("MIGRATION_WRITE_ALREADY_COMPENSATED");}const rows=target.getDataRange().getValues();let n=-1;for(let r=1;r<rows.length;r++)if(String(rows[r][0]).trim()===id){n=r+1;break;}const uniqueFields=type==="persona"?["Identificacion","EmailContacto"]:[];uniqueFields.forEach(field=>{const col=schema.headers.indexOf(field),value=String(data[field]||"").normalize?String(data[field]||"").normalize("NFKC").trim().toLowerCase():String(data[field]||"").trim().toLowerCase();if(col<0||!value)return;const normalized=field==="Identificacion"?value.replace(/[^a-z0-9]/g,""):value.replace(/\\s+/g,"");for(let r=1;r<rows.length;r++){const existingId=String(rows[r][0]||"").trim(),raw=String(rows[r][col]||""),candidate=raw.normalize?raw.normalize("NFKC").trim().toLowerCase():raw.trim().toLowerCase(),key=field==="Identificacion"?candidate.replace(/[^a-z0-9]/g,""):candidate.replace(/\\s+/g,"");if(existingId&&existingId!==id&&key===normalized)throw new Error("MIGRATION_NATURAL_KEY_DUPLICATE: "+field);}});const before=n>0?rows[n-1].slice():null,after=before?before.slice():schema.headers.map(()=>"");after[0]=migrationSafeCell_(id);Object.keys(canonical).forEach(f=>after[schema.headers.indexOf(f)]=migrationSafeCell_(data[f]));if(n>0)target.getRange(n,1,1,schema.headers.length).setValues([after]);else target.appendRow(after);const action=n>0?"UPDATE":"INSERT";try{journal.appendRow([key,type,id,json,"APPLIED",action,JSON.stringify(migrationEncodeSnapshot_(before)),JSON.stringify(migrationEncodeSnapshot_(after)),new Date(),String(p.correlationId||"")]);}catch(e){try{if(action==="INSERT"){const now=target.getDataRange().getValues(),ix=now.findIndex((r,i)=>i>0&&String(r[0]).trim()===id);if(ix>0)target.deleteRow(ix+1);}else target.getRange(n,1,1,schema.headers.length).setValues([before]);}catch(rb){throw new Error("MIGRATION_COMPENSATION_REQUIRED: "+e.message+" | "+rb.message);}throw e;}return{status:"success",idempotent:false,idNuevoPlataforma:id,accion:action};}finally{lock.releaseLock();}}
+function ensureMigrationWriterSheet_(ss,n,headers){let sh=ss.getSheetByName(n);if(!sh){sh=ss.insertSheet(n);sh.appendRow(headers);}let actual=sh.getRange(1,1,1,headers.length).getValues()[0].map(String);if(n==="Personas"&&headers[headers.length-1]==="TipoIdentificacion"){const legacy=headers.slice(0,-1);const isLegacy=legacy.every((value,index)=>actual[index]===value)&&(!actual[headers.length-1]||String(actual[headers.length-1]).trim()==="");if(isLegacy){sh.getRange(1,headers.length).setValue("TipoIdentificacion");actual=sh.getRange(1,1,1,headers.length).getValues()[0].map(String);}}if(JSON.stringify(actual)!==JSON.stringify(headers))throw new Error("MIGRATION_SCHEMA_MISMATCH: "+n);return sh;}
+function applyTrustedMigrationWrite_(p){p=p||{};const type=String(p.tipoEntidad||"").trim().toLowerCase(),id=String(p.idNuevoPlataforma||"").trim(),key=String(p.idempotencyKey||"").trim(),schema=MIGRATION_WRITER_SCHEMAS_[type],data=p.datos;if(!schema)throw new Error("MIGRATION_ENTITY_NOT_OWNED: "+type);if(!id||!key||!data||typeof data!=="object"||Array.isArray(data))throw new Error("MIGRATION_WRITE_CONTRACT_INVALID");const allowed=schema.headers.slice(1);Object.keys(data).forEach(f=>{if(allowed.indexOf(f)===-1)throw new Error("MIGRATION_FIELD_NOT_ALLOWED: "+f);if(data[f]&&typeof data[f]==="object"&&!(data[f] instanceof Date))throw new Error("MIGRATION_CELL_TYPE_INVALID: "+f);});const canonical={};Object.keys(data).sort().forEach(f=>canonical[f]=data[f] instanceof Date?data[f].toISOString():data[f]);const json=migrationStableJson_({tipoEntidad:type,idNuevoPlataforma:id,datos:canonical}),lock=LockService.getScriptLock();lock.waitLock(10000);try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),target=ensureMigrationWriterSheet_(ss,schema.sheet,schema.headers),journal=ensureMigrationWriterSheet_(ss,"MigracionEscrituras",MIGRATION_WRITER_JOURNAL_HEADERS_),jr=journal.getDataRange().getValues();for(let j=1;j<jr.length;j++)if(String(jr[j][0])===key){if(String(jr[j][3])!==json)throw new Error("MIGRATION_IDEMPOTENCY_CONFLICT");if(String(jr[j][4])==="APPLIED")return{status:"success",idempotent:true,idNuevoPlataforma:id,accion:jr[j][5]};if(String(jr[j][4])==="COMPENSATED")throw new Error("MIGRATION_WRITE_ALREADY_COMPENSATED");}const rows=target.getDataRange().getValues();let n=-1;for(let r=1;r<rows.length;r++)if(String(rows[r][0]).trim()===id){n=r+1;break;}const uniqueFields=type==="persona"?["Identificacion","EmailContacto"]:[];uniqueFields.forEach(field=>{const col=schema.headers.indexOf(field),value=String(data[field]||"").normalize?String(data[field]||"").normalize("NFKC").trim().toLowerCase():String(data[field]||"").trim().toLowerCase();if(col<0||!value)return;const normalized=field==="Identificacion"?value.replace(/[^a-z0-9]/g,""):value.replace(/\\s+/g,"");for(let r=1;r<rows.length;r++){const existingId=String(rows[r][0]||"").trim(),raw=String(rows[r][col]||""),candidate=raw.normalize?raw.normalize("NFKC").trim().toLowerCase():raw.trim().toLowerCase(),key=field==="Identificacion"?candidate.replace(/[^a-z0-9]/g,""):candidate.replace(/\\s+/g,"");if(existingId&&existingId!==id&&key===normalized)throw new Error("MIGRATION_NATURAL_KEY_DUPLICATE: "+field);}});const before=n>0?schema.headers.map((_,index)=>rows[n-1][index]===undefined?"":rows[n-1][index]):null,after=before?before.slice():schema.headers.map(()=>"");after[0]=migrationSafeCell_(id);Object.keys(canonical).forEach(f=>after[schema.headers.indexOf(f)]=migrationSafeCell_(data[f]));if(n>0)target.getRange(n,1,1,schema.headers.length).setValues([after]);else target.appendRow(after);const action=n>0?"UPDATE":"INSERT";try{journal.appendRow([key,type,id,json,"APPLIED",action,JSON.stringify(migrationEncodeSnapshot_(before)),JSON.stringify(migrationEncodeSnapshot_(after)),new Date(),String(p.correlationId||"")]);}catch(e){try{if(action==="INSERT"){const now=target.getDataRange().getValues(),ix=now.findIndex((r,i)=>i>0&&String(r[0]).trim()===id);if(ix>0)target.deleteRow(ix+1);}else target.getRange(n,1,1,schema.headers.length).setValues([before]);}catch(rb){throw new Error("MIGRATION_COMPENSATION_REQUIRED: "+e.message+" | "+rb.message);}throw e;}return{status:"success",idempotent:false,idNuevoPlataforma:id,accion:action};}finally{lock.releaseLock();}}
 function compensateTrustedMigrationWrite_(p){const key=String(p&&p.idempotencyKey||"").trim();if(!key)throw new Error("MIGRATION_IDEMPOTENCY_KEY_REQUIRED");const lock=LockService.getScriptLock();lock.waitLock(10000);try{const ss=SpreadsheetApp.openById(SPREADSHEET_ID),journal=ensureMigrationWriterSheet_(ss,"MigracionEscrituras",MIGRATION_WRITER_JOURNAL_HEADERS_),entries=journal.getDataRange().getValues();let ix=-1;for(let i=1;i<entries.length;i++)if(String(entries[i][0])===key){ix=i+1;break;}if(ix<0)throw new Error("MIGRATION_JOURNAL_NOT_FOUND");const e=entries[ix-1];if(String(e[4])==="COMPENSATED")return{status:"success",compensated:true,idempotent:true};if(String(e[4])!=="APPLIED")throw new Error("MIGRATION_JOURNAL_STATE_INVALID");const schema=MIGRATION_WRITER_SCHEMAS_[String(e[1])];if(!schema)throw new Error("MIGRATION_ENTITY_NOT_OWNED");const target=ensureMigrationWriterSheet_(ss,schema.sheet,schema.headers),rows=target.getDataRange().getValues();let n=-1;for(let i=1;i<rows.length;i++)if(String(rows[i][0]).trim()===String(e[2])){n=i+1;break;}const expected=migrationDecodeSnapshot_(JSON.parse(String(e[7])));if(n<0||migrationStableJson_(rows[n-1])!==migrationStableJson_(expected))throw new Error("MIGRATION_COMPENSATION_CONFLICT");const before=e[6]?migrationDecodeSnapshot_(JSON.parse(String(e[6]))):null;if(String(e[5])==="INSERT")target.deleteRow(n);else if(before)target.getRange(n,1,1,schema.headers.length).setValues([before]);else throw new Error("MIGRATION_COMPENSATION_SNAPSHOT_MISSING");journal.getRange(ix,5).setValue("COMPENSATED");return{status:"success",compensated:true,idempotent:false};}finally{lock.releaseLock();}}
 
 function identityTargetExists_(entityType, internalId) {
@@ -3177,32 +3177,49 @@ function findPersonMatches(payload) {
   return {status:"success",matches:matches,clasificacionGeneral:matches.length?"COINCIDENCIAS_REQUIEREN_REVISION":"COINCIDENCIA_INSUFICIENTE"};
 }
 function createPerson(payload) {
-  const { nombres, apellidos, identificacion, emailContacto, telefonoContacto, observaciones } = payload || {};
+  const { nombres, apellidos, identificacion, tipoIdentificacion, emailContacto, telefonoContacto, observaciones } = payload || {};
   if (!nombres || !apellidos) throw new Error("Nombres y apellidos son requeridos para crear una Persona.");
+  if (tipoIdentificacion !== undefined && tipoIdentificacion !== null && typeof tipoIdentificacion !== "string") throw new Error("PERSON_DOCUMENT_TYPE_INVALID");
+  const documentType = String(tipoIdentificacion || "").trim();
+  if (documentType.length > 40) throw new Error("PERSON_DOCUMENT_TYPE_INVALID");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "Personas");
-  const now = new Date();
-  const personaId = "PER-" + now.getTime();
+  const lastColumn = Math.max(sheet.getLastColumn(), 1);
+  let headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(function(value) { return String(value || "").trim(); });
+  const documentTypeIndex = headers.indexOf("TipoIdentificacion");
+  if (documentTypeIndex === -1) {
+    const nextColumn = lastColumn + 1;
+    sheet.getRange(1, nextColumn).setValue("TipoIdentificacion");
+    headers.push("TipoIdentificacion");
+  }
+  const requiredHeaders = ["PersonaID", "Nombres", "Apellidos", "Identificacion", "EmailContacto", "TelefonoContacto", "EstadoPersona", "FechaCreacion", "FechaActualizacion", "Observaciones", "TipoIdentificacion"];
+  const indexes = {};
+  headers.forEach(function(header, index) {
+    if (header) {
+      if (Object.prototype.hasOwnProperty.call(indexes, header)) throw new Error("PERSON_SCHEMA_DUPLICATE_HEADER");
+      indexes[header] = index;
+    }
+  });
+  if (requiredHeaders.some(function(header) { return indexes[header] === undefined; })) throw new Error("PERSON_SCHEMA_INVALID");
+  const row = Array.from({ length: headers.length }, function() { return ""; });
+  const now = new Date(), personaId = "PER-" + now.getTime();
+  row[indexes.PersonaID] = personaId;
+  row[indexes.Nombres] = String(nombres).trim();
+  row[indexes.Apellidos] = String(apellidos).trim();
+  row[indexes.Identificacion] = identificacion ? String(identificacion).trim() : "";
+  row[indexes.EmailContacto] = emailContacto ? String(emailContacto).trim().toLowerCase() : "";
+  row[indexes.TelefonoContacto] = telefonoContacto ? String(telefonoContacto).trim() : "";
+  row[indexes.EstadoPersona] = "Activa";
+  row[indexes.FechaCreacion] = now;
+  row[indexes.FechaActualizacion] = now;
+  row[indexes.Observaciones] = observaciones || "";
+  row[indexes.TipoIdentificacion] = documentType;
+  sheet.appendRow(row);
 
-  sheet.appendRow([
-    personaId,
-    nombres.trim(),
-    apellidos.trim(),
-    identificacion ? String(identificacion).trim() : "",
-    emailContacto ? String(emailContacto).trim().toLowerCase() : "",
-    telefonoContacto ? String(telefonoContacto).trim() : "",
-    "Activa",
-    now,
-    now,
-    observaciones || ""
-  ]);
-
-  logStructuredEvent("USER", "createPerson", "INFO", "PERSON_CREATED", `Persona ${personaId} creada exitosamente`, { personaId, nombres, apellidos }, payload && payload.authRole);
-
+  logStructuredEvent("USER", "createPerson", "INFO", "PERSON_CREATED", \`Persona \${personaId} creada exitosamente\`, { personaId, nombres, apellidos }, payload && payload.authRole);
   return { status: "success", personaId: personaId, message: "Registro central de Persona creado exitosamente." };
 }
-
 function linkPersonAccount(payload) {
   const actor=requireIdentityManager_(payload), institution=getIdentityInstitutionId_();
   const {userId,personaId}=payload||{}, reason=String(payload && payload.motivo || "").trim();

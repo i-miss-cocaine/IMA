@@ -120,6 +120,7 @@
       if (identities.has(id)) throw new Error("SACE_IDENTITY_RECORD_DUPLICATE");
       identities.set(id, {
         identity: required(record.identity, "SACE_STUDENT_IDENTITY_REQUIRED"),
+        documentType: String(record.documentType || "").trim(),
         documentMarker: required(record.documentMarker, "SACE_STUDENT_DOCUMENT_TYPE_REQUIRED"),
         name: record.name
       });
@@ -147,7 +148,7 @@
       });
       const identity = identities.get(id);
       return {
-        userId: id, identity: identity.identity, documentMarker: identity.documentMarker,
+        userId: id, identity: identity.identity, documentType: identity.documentType, documentMarker: identity.documentMarker,
         name: student.nombreCompleto, partial1Absences: absences1.counts[id],
         partial1: Number(one.notaFinal), partial2Absences: absences2.counts[id],
         partial2: Number(two.notaFinal), recovery: null

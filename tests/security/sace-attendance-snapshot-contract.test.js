@@ -71,10 +71,14 @@ const tables = {
   ]
 };
 
-function createContext(actorRole = "Profesor", institutionId = "INST-1") {
+function createContext(actorRole = "Profesor", institutionId = "INST-1", includeDocumentType = false) {
   const sheets = {};
   Object.keys(tables).forEach(name => {
-    sheets[name] = { getDataRange() { return { getValues() { return tables[name].map(row => row.slice()); } }; } };
+    let rows = tables[name];
+    if (name === "Personas" && includeDocumentType) {
+      rows = [rows[0].concat("TipoIdentificacion")].concat(rows.slice(1).map(row => row.concat("DNI")));
+    }
+    sheets[name] = { getDataRange() { return { getValues() { return rows.map(row => row.slice()); } }; } };
   });
   const context = {
     SPREADSHEET_ID: "TEST",
@@ -104,9 +108,13 @@ assert.equal(result.data.expectedContext.teacherUserId, "TEACHER-1", "teacher id
 assert.equal(result.data.expectedContext.institutionId, "INST-1", "institution must come from verified claims and service configuration");
 assert.equal(result.data.expectedContext.asignatura, "Informática");
 assert.deepEqual(Array.from(result.data.periods, period => period.periodoId), ["P1", "P2"]);
-assert.deepEqual(Array.from(result.data.identityRecords, row => [row.userId, row.identity, row.documentMarker]), [
-  ["STU-1", "0801-2000-00001", ""], ["STU-2", "0801-2000-00002", ""]
+assert.deepEqual(Array.from(result.data.identityRecords, row => [row.userId, row.identity, row.documentType, row.documentMarker]), [
+  ["STU-1", "0801-2000-00001", "", ""], ["STU-2", "0801-2000-00002", "", ""]
 ]);
+const typedSnapshot = createContext("Profesor", "INST-1", true).runSnapshot(payload);
+assert.deepEqual(Array.from(typedSnapshot.data.identityRecords, row => [row.userId, row.documentType, row.documentMarker]), [
+  ["STU-1", "DNI", ""], ["STU-2", "DNI", ""]
+], "TipoIdentificacion is returned separately; it must not be mistaken for a SACE template marker");
 assert.equal(result.data.attendanceSessions.length, 2);
 assert.deepEqual(Array.from(result.data.attendanceSessions, row => row.sesionId), ["S-1", "S-2"]);
 assert.equal(result.data.attendanceRecords.length, 4);

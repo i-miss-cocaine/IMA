@@ -39,8 +39,8 @@ const attendance = [
   { sesionId: "S-2", userId: "STU-2", estadoAsistencia: "Falta" }
 ];
 const identityRecords = [
-  { userId: "STU-1", identity: "0801-2000-00001", documentMarker: "HND", name: "Ana Perez" },
-  { userId: "STU-2", identity: "0801-2000-00002", documentMarker: "HND", name: "Luis Gomez" }
+  { userId: "STU-1", identity: "0801-2000-00001", documentType: "DNI", documentMarker: "HND", name: "Ana Perez" },
+  { userId: "STU-2", identity: "0801-2000-00002", documentType: "DNI", documentMarker: "HND", name: "Luis Gomez" }
 ];
 function build(overrides = {}) {
   return provider.buildCandidateStudents(Object.assign({
@@ -51,6 +51,7 @@ function build(overrides = {}) {
 }
 const result = build();
 assert.equal(result.status, "candidate");
+assert.equal(result.sourceStudents[0].documentType, "DNI");
 assert.deepEqual(result.sourceStudents.map(row => [
   row.userId, row.partial1Absences, row.partial1, row.partial2Absences, row.partial2, row.recovery
 ]), [

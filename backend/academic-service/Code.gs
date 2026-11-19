@@ -10980,10 +10980,10 @@ function getSaceAttendanceSnapshot(payload) {
           (enrollmentYear === anoId || enrollmentYear === yearName) && active(row[enrollments.index.Estado]);
       });
       if (matches.length !== 1) throw new Error("SACE_STUDENT_ENROLLMENT_CONTEXT_MISMATCH");
-      const markerIndex = ["TipoDocumento", "TipoIdentificacion", "DocumentoTipo"].map(function(key) {
-        return people.index[key];
-      }).find(function(index) { return index !== undefined; });
+      const documentTypeIndex = people.index.TipoIdentificacion;
+      const markerIndex = people.index.SaceDocumentMarker;
       return { userId:userId, identity:identity,
+        documentType:documentTypeIndex === undefined ? "" : String(person[documentTypeIndex] || "").trim(),
         documentMarker:markerIndex === undefined ? "" : String(person[markerIndex] || "").trim(), name:fullName };
     });
     const normalizedIdentities = identityRecords.map(function(record) { return record.identity.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(); });
@@ -11034,7 +11034,7 @@ function getSaceAttendanceSnapshot(payload) {
       periods:selectedPeriods, identityRecords:identityRecords,
       attendanceSessions:attendanceSessions, attendanceRecords:attendanceRecords
     }, limitations:[
-      "documentMarker remains empty when Personas has no verified document-type column",
+      "documentMarker remains empty until an explicit SACE marker mapping is available; Personas.TipoIdentificacion is returned separately",
       "approved absence justification semantics for SACE require official confirmation"
     ]};
   } catch (error) {

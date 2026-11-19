@@ -4,7 +4,7 @@ name: Identity mapping and transport security contracts
 on:
   push:
     branches: [NG_beta_0.0.0.1_work]
-    paths: ['backend/user-service/Code.gs','backend/accounting-service/Code.gs','js/api.js','js/secretary.js','dashboard-secretaria.html','tests/security/identity-mapping-contract.test.js','tests/security/accounting-identity-map-snapshot.test.js','tests/security/user-migration-writer.test.js','tests/security/transport-access-scope.test.js','METODOLOGIA_DESARROLLO.md','.github/workflows/identity-mapping-contract.yml']
+    paths: ['backend/user-service/Code.gs','backend/accounting-service/Code.gs','js/api.js','js/secretary.js','dashboard-secretaria.html','tests/security/identity-mapping-contract.test.js','tests/security/accounting-identity-map-snapshot.test.js','tests/security/user-migration-writer.test.js','tests/security/user-person-document-type.test.js','tests/security/transport-access-scope.test.js','METODOLOGIA_DESARROLLO.md','.github/workflows/identity-mapping-contract.yml']
   pull_request:
     branches: [NG_beta_0.0.0.1]
   workflow_dispatch:
@@ -24,5 +24,7 @@ jobs:
         run: node tests/security/accounting-identity-map-snapshot.test.js
       - name: Verify USER migration natural-key writer contract
         run: node tests/security/user-migration-writer.test.js
+      - name: Verify canonical person document type contract
+        run: node tests/security/user-person-document-type.test.js
       - name: Verify TASK-030 transport access scope
         run: node tests/security/transport-access-scope.test.js

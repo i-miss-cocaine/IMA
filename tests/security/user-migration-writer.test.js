@@ -21,5 +21,10 @@ assert.equal(target.rows.length,2,"duplicate DNI/email writes are rejected witho
 const update=runtime.api.write({tipoEntidad:"persona",idNuevoPlataforma:"PER-OLD",idempotencyKey:"KEY-UPDATE",datos:{Nombres:"Ana María",Apellidos:"López",Identificacion:"0801-1999-00011",EmailContacto:"ana@example.test"}});
 assert.equal(update.accion,"UPDATE","the canonical record can be updated without self-matching");
 assert.equal(target.rows[1][1],"Ana María");
+assert.equal(target.rows[0][10], "TipoIdentificacion", "legacy Personas schema is extended additively");
+assert.equal(target.rows[1][10], "", "legacy people keep an empty type until explicitly classified");
+const typed = runtime.api.write({tipoEntidad:"persona",idNuevoPlataforma:"PER-TYPED",idempotencyKey:"KEY-TYPE",datos:{Nombres:"Mario",Apellidos:"Díaz",Identificacion:"0801-1998-00099",TipoIdentificacion:"DNI"}});
+assert.equal(typed.accion, "INSERT");
+assert.equal(target.rows[2][10], "DNI", "migration writer preserves the explicit identity document type");
 assert.equal(lockCount,releaseCount,"all USER writer paths release the script lock");
 process.stdout.write("USER migration writer: duplicate DNI/email prevention under lock and canonical self-update PASS.\n");

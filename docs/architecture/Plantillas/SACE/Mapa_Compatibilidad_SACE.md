@@ -119,7 +119,7 @@ El endpoint recibe únicamente el contexto académico solicitado (año, grado, s
 
 La lista de estudiantes del cliente no se considera prueba de matrícula: cada ID debe tener cuenta activa, persona única e inscripción activa coincidente. La identidad del docente, institución y el ámbito de la clase no se aceptan desde campos de identidad libres del cliente.
 
-**Límite de esquema:** el esquema estándar actual de `Personas` define `Identificacion`, pero no define tipo documental. El endpoint devuelve `documentMarker: ""` cuando no existe una columna institucional explícita (`TipoDocumento`, `TipoIdentificacion` o `DocumentoTipo`). El proveedor SACE exige un marcador no vacío y por ello seguirá bloqueando la exportación hasta que el tipo documental se almacene y verifique como dato institucional. No se infiere del formato de la identidad.
+**Límite de esquema:** se amplió el esquema canónico de `Personas` con `TipoIdentificacion`, opcional y de valor institucional explícito. `createPerson` lo acepta y migra de forma aditiva hojas antiguas; el escritor de migración conserva el campo y deja vacío el valor de las personas históricas que no lo tenían. El endpoint devuelve `documentType` desde ese campo, pero mantiene `documentMarker: ""` salvo que exista un campo separado `SaceDocumentMarker`. El tipo general de identificación no se equipara automáticamente al marcador/código de la plantilla SACE. El proveedor exige un marcador no vacío y por ello sigue bloqueando la exportación hasta verificar la equivalencia con la plantilla oficial. No se infiere del formato de la identidad.
 
 **Límite de política:** el snapshot conserva `justificado` por registro, pero el significado de una ausencia justificada para la plantilla SACE no se resuelve en este endpoint. La especificación de asistencia de IMA define la ausencia injustificada como estado Ausente sin justificación aprobada; la regla SACE debe confirmarse antes de cambiar el cómputo del proveedor.
 
@@ -135,3 +135,10 @@ La composición usa el contexto, los periodos, el directorio de identidad y las 
 El contrato local amplía `sace-data-provider-contract.test.js` para probar la ruta snapshot→proveedor, la conservación de limitaciones, el bloqueo por marcador vacío, periodos duplicados y snapshots incompletos.
 
 **Límite:** es una composición entre contratos locales, no una llamada HTTP entre servicios ni una integración desplegada. No se añadió UI ni se habilitó descarga/producción. El marcador documental debe venir de un campo institucional verificado y su equivalencia con el campo SACE debe confirmarse con la plantilla oficial.
+
+
+## 10. Tipo documental canónico de Persona — C1.836
+
+El servicio USER añade `Personas.TipoIdentificacion` como atributo opcional del registro canónico de identidad. El campo se puede registrar explícitamente en `createPerson`, se valida como texto de hasta 40 caracteres y se conserva vacío cuando no hay dato verificado. La migración de una hoja anterior agrega la columna al final; no asigna tipos a registros históricos ni cambia la identificación existente. El escritor de migración de Personas reconoce el esquema anterior y lo amplía de forma compatible, preservando valores existentes.
+
+Academic-Service devuelve `documentType` separado de `documentMarker`. La plantilla SACE usa un marcador/código que no debe asumirse idéntico al tipo documental general. Hasta confirmar el diccionario oficial y configurar una equivalencia explícita, `documentMarker` permanece vacío y `buildCandidateStudentsFromSnapshot` rechaza el armado. No se habilita una exportación parcial.
