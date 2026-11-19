@@ -1253,3 +1253,30 @@ Siguiente acción elegible:
 3. Repetir la suite focalizada y la suite general; mantener separados los tres fallos externos de ACCOUNTING/USER.
 4. Cerrar AUD-NG-167 únicamente cuando se acrediten los criterios pendientes; después iniciar AUD-NG-168 / TAREA-13.
 ===============================================================================
+
+===============================================================================
+### C1.828 — AUD-NG-167: validación estricta de tipo documental y fuente SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-DOCMARKER-SACE-VERIFY-03
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.827
+HEAD inicial: 9939ac460e174996acb17e8e0200ba0f7907c14e
+HEAD verificado al cierre: PENDIENTE_COMMIT_CHECKPOINT
+HEAD de la rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Tarea: AUD-NG-167, continuidad del adaptador SACE candidato.
+- Revisión de js/sace-template.js: mapRowsToTemplate antes permitía omitir la comparación del tipo documental cuando source.documentMarker estaba vacío o ausente. Se cambió para exigir ambos marcadores (plantilla y origen) y coincidencia normalizada exacta; la falta o discrepancia lanza SACE_STUDENT_DOCUMENT_TYPE_MISMATCH.
+- Se agregaron dos contratos negativos en tests/security/sace-template-binary-patch.test.js: marcador documental faltante en origen y marcador faltante en plantilla. Se conserva el contrato de tipo documental distinto.
+- Commit de código: 9939ac460e174996acb17e8e0200ba0f7907c14e (js/sace-template.js y tests/security/sace-template-binary-patch.test.js).
+- GitHub Actions 44533390963: SUCCESS. node --check del contrato estructural PASS; sace-template-structure-contract PASS (3 archivos BIFF8, sin emitir datos personales); node --check js/sace-template.js PASS; sace-template-binary-patch PASS (3 plantillas, solo celdas mapeadas, tamaño OLE preservado). Las pruebas negativas nuevas corrieron dentro de la suite binaria y el workflow terminó SUCCESS.
+- Investigación documental: el portal oficial SACE https://sace.se.gob.hn/descargas/descargar/archivos lista el Manual Usuario de Docente SACE. El PDF https://sace.se.gob.hn/media/documentos_sace/Manual_de___usuario_SACE_Docente_2.pdf registra actualización JUNIO 2025 en página 4; secciones 4.1.1 y 4.1.2, páginas 21–23, describen descargar y cargar archivos de notas por clase. Se agregó esta verificación a docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md.
+- La documentación oficial confirma el flujo de archivo, no entrega una plantilla real descargada de una cuenta docente autorizada. No hay evidencia de carga aceptada. Los tres XLS del repositorio permanecen CANDIDATE; officialSourceVerified=false. No se habilitó integración de producción ni se afirmó compatibilidad oficial.
+- No se dispone de conexión autorizada a Apps Script/Sheets desplegados ni credenciales/plantilla de una cuenta SACE en esta sesión; BETA-EXAM-105 y BETA-EXAM-106 no se ejecutaron en entornos reales. No inventar resultados.
+- La rama base continúa en 44d9891132332e692dbe2ba8602b41f50a508a59. Sin cambios fuera de la rama autorizada.
+
+Estado AUD-NG-167: [~] En progreso. Criterios funcionales locales y contratos específicos SACE candidatos verificados; quedan pendientes BETA-EXAM-105 (Sheets desplegados), BETA-EXAM-106 (plantilla y carga SACE autorizada), integración real con fuente de asistencia y correspondencia oficial de recuperación.
+Siguiente acción elegible: preparar el contrato de ensamblaje del exportador sin activar descarga de producción, si puede probarse con plantilla sintética y datos ficticios; mantener el guard de estado CANDIDATE. Reanudar BETA-EXAM-105/106 cuando exista entorno autorizado y evidencia necesaria. No cerrar AUD-NG-167 ni iniciar AUD-NG-168/TAREA-13.
+===============================================================================
