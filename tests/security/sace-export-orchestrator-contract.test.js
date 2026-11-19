@@ -202,6 +202,17 @@ for (const entry of manifest.templates) {
     academicTemplateContextMapping: contextMapping,
     options: { scale: { min: 0, max: 100, precision: 2 } }
   }), /SACE_GRADEBOOK_PARTIAL_SNAPSHOT_MISMATCH/);
+  const unverifiedRecoverySnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
+  unverifiedRecoverySnapshot.data.gradebookSnapshots[0].snapshot.data.recuperaciones = [
+    { userId: studentRows[0].userId, evaluacionId: "REC-1", notaFinalCalculada: 95 }
+  ];
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: unverifiedRecoverySnapshot,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_RECOVERY_MAPPING_UNVERIFIED:partial1/);
   const mismatchedGradebookYear = JSON.parse(JSON.stringify(attendanceSnapshot));
   mismatchedGradebookYear.data.gradebookSnapshots[0].snapshot.data.contexto.anoId = "2025";
   assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
