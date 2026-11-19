@@ -5561,21 +5561,23 @@ function buildStudentAcademicReportGradebook_(ss, scope, targetUserId, payload) 
   if (closureRows.length && !contextualClosureSchema && !legacyClosureSchema) {
     throw new Error("STUDENT_ACADEMIC_REPORT_CLOSURE_SCHEMA_INVALID");
   }
-  const closedContexts = contextualClosureSchema && yearFilter && periodFilter ? closureRows.slice(1).filter(row =>
+  const matchingClosures = contextualClosureSchema && yearFilter && periodFilter ? closureRows.slice(1).filter(row =>
     String(row[1] || "").trim() === yearFilter &&
     normalizeString(row[2]) === normalizeString(periodFilter) &&
     detalleAsignaturas.some(item => item.anoId === yearFilter &&
       normalizeString(item.periodo) === normalizeString(periodFilter) &&
       normalizeString(item.grado) === normalizeString(row[3]) &&
       normalizeString(item.seccion) === normalizeString(row[4]) &&
-      normalizeString(item.asignatura) === normalizeString(row[5])) &&
-    String(row[7] || "").trim().toLowerCase() === "cerrado") : [];
+      normalizeString(item.asignatura) === normalizeString(row[5]))) : [];
+  // Una única fila de cierre por contexto; un duplicado o estado contradictorio nunca es oficial.
   const allContextsClosed = !!yearFilter && !!periodFilter && detalleAsignaturas.length > 0 &&
-    detalleAsignaturas.every(item => item.anoId === yearFilter &&
-      normalizeString(item.periodo) === normalizeString(periodFilter) &&
-      closedContexts.filter(row => normalizeString(row[3]) === normalizeString(item.grado) &&
+    detalleAsignaturas.every(item => {
+      if (item.anoId !== yearFilter || normalizeString(item.periodo) !== normalizeString(periodFilter)) return false;
+      const matches = matchingClosures.filter(row => normalizeString(row[3]) === normalizeString(item.grado) &&
         normalizeString(row[4]) === normalizeString(item.seccion) &&
-        normalizeString(row[5]) === normalizeString(item.asignatura)).length === 1);
+        normalizeString(row[5]) === normalizeString(item.asignatura));
+      return matches.length === 1 && String(matches[0][7] || "").trim().toLowerCase() === "cerrado";
+    });
   const esDocumentoOficial = allContextsClosed &&
     detalleAsignaturas.every(item => item.estado === "calculated");
   return { contextos: detalleAsignaturas.map(item => ({
