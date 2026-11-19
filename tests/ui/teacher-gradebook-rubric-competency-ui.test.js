@@ -20,7 +20,7 @@ assert.ok(js.includes("requestVersion !== gradebookRubricRequestVersion"),
   "stale rubric responses must be discarded after context changes");
 assert.ok(js.includes("requestVersion !== gradebookCompetencyRequestVersion"),
   "stale competency responses must be discarded");
-assert.ok(html.includes('"descripcion":"Reconoce pocos elementos."'),
+assert.ok(html.includes('"descripcion":"Reconoce pocos elementos del tema."'),
   "analytic rubric levels must provide descriptive performance criteria");
 assert.ok(js.includes("item.niveles.every(level => level && typeof level.nombre === \"string\""),
   "teacher form must validate named rubric levels and descriptions");
