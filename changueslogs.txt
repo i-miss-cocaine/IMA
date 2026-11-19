@@ -4295,3 +4295,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.852 — AUD-NG-167: regresión binaria confirma rechazo de plantilla con encabezado PARCIAL II alterado; Action 44569480900 SUCCESS.
 
 [2026-11-19] C1.853 — AUD-NG-167: limitación explícita de procedencia/vigencia/año de plantilla en cada candidato; Action 44569733548 SUCCESS.
+
+[2026-11-19] C1.854 — AUD-NG-167: correspondencia de PeriodoID/parcial/columna verificada localmente; Action 44570312787 SUCCESS.

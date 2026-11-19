@@ -693,3 +693,44 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar la relación entre los periodos IMA, las etiquetas parciales devueltas por Exam-Service y los encabezados de los XLS candidatos; conservar la advertencia de que no hay validación SACE oficial.
 ===============================================================================
+
+
+===============================================================================
+### C1.854 — AUD-NG-167: correspondencia de PeriodoID con parcial y columna XLS
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-PARTIAL-LABEL-29
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.853
+HEAD inicial: 136674c23df42a277cb57a6a3e7c555574d0a121
+HEAD de implementación y prueba: c9c179a182b98090b75d3e33a07356d6dfaf26dd
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- prepareCandidateExportFromAcademicSnapshot ahora exige que cada entrada gradebookSnapshots incluya una etiqueta parcial reconocida y que coincida con snapshot.data.contexto.parcial.
+- Para las plantillas candidatas actuales, solo acepta I PARCIAL/PARCIAL I para la primera columna de parcial y II PARCIAL/PARCIAL II para la segunda. No acepta una etiqueta de parcial desconocida ni una correspondencia invertida.
+- El PeriodoID solicitado se sigue verificando contra snapshot.contexto.periodoId; el proveedor comprueba además que los rangos cronológicos de los dos periodos no se solapen ni estén invertidos.
+- Se añadieron pruebas negativas para mapeo de parcial IMA↔columna incorrecto y discrepancia entre la etiqueta exterior del snapshot y el contexto del gradebook.
+- La prueba de duplicidad de PeriodoID conserva sus datos de parcial para llegar a la condición de duplicado y no fallar antes por el nuevo requisito de etiqueta.
+
+Archivos modificados desde C1.853:
+- js/sace-export-orchestrator.js
+- tests/security/sace-export-orchestrator-contract.test.js
+
+Verificación:
+- GitHub Actions 44570312787 — SACE template structure compatibility contract: SUCCESS.
+- Node.js 22: sintaxis, estructura, parcheo, proveedor, orquestador, mapeo de parciales y aislamiento candidato PASS.
+- La ejecución 44570195204 falló inicialmente porque el fixture de duplicidad no incluía la nueva etiqueta parcial obligatoria; se corrigió el fixture sin retirar la prueba de duplicidad. La ejecución final 44570312787 PASS.
+- Diff revisado: normalizador acotado a las dos etiquetas del XLS candidato, validación de etiquetas exteriores/interiores y pruebas negativas; sin cambios en backend ni datos.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- La etiqueta del parcial se contrasta con el encabezado del XLS candidato y con el snapshot Exam-Service, pero la equivalencia oficial y la vigencia de la plantilla siguen pendientes de BETA-EXAM-106.
+- No se asume que estas dos etiquetas o dos parciales sean universales en SACE.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar que el año lectivo, PeriodoID y rangos de fechas del snapshot de asistencia coincidan con los gradebookSnapshots y la selección de parciales en el orquestador.
+===============================================================================

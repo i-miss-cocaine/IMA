@@ -6008,3 +6008,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El orquestador advierte en cada salida que la fuente oficial, fechas de vigencia y año aplicable no están verificados; el manifiesto permanece CANDIDATE con officialSourceVerified=false y effectiveFrom/effectiveTo nulos.
 - El proveedor explicita que PeriodoID→parcial se suministra y no se infiere; Exam-Service separa el PeriodoID IMA de la etiqueta parcial SACE. Action 44569733548 SUCCESS (Node.js 22, contratos SACE completos).
 - AUD-NG-167 continúa En progreso; siguiente: revisar la relación periodo↔parcial↔encabezado sin declarar equivalencia oficial.
+
+### C1.854 — AUD-NG-167: mapeo de parciales
+- El orquestador exige que cada gradebookSnapshot identifique I/II Parcial de forma coherente en el envelope y en el contexto Exam-Service; vincula esos labels con las columnas PARCIAL I/II del XLS candidato. El proveedor valida también orden y no solapamiento temporal.
+- Pruebas negativas de mapeo invertido y discrepancia envelope/contexto PASS. SACE Action 44570312787 SUCCESS (Node.js 22; todas las suites del workflow).
+- AUD-NG-167 sigue En progreso; siguiente: revisar año, PeriodoID y rangos temporales de asistencia/gradebook.
