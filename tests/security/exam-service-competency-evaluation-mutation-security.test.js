@@ -26,7 +26,8 @@ function extract(name) {
 }
 
 const evaluationHeaders = ["ID", "CompetenciaID", "IndicadorID", "UserID", "AsignaturaID",
-  "PeriodoID", "NivelDesempeno", "Observaciones", "RubricaID", "FechaRegistro"];
+  "PeriodoID", "NivelDesempeno", "Observaciones", "RubricaID", "FechaRegistro", "AnoID",
+  "Grado", "Seccion", "InstitutionID", "DepartmentID", "CatalogItemID", "ContextKey"];
 const rubricHeaders = ["ID", "Titulo", "Asignatura", "Estado", "CriteriosJSON"];
 const configHeaders = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
 const catalogHeaders = ["ID", "InstitutionID", "DepartmentID", "AnoID", "Grado", "Seccion",
@@ -34,10 +35,26 @@ const catalogHeaders = ["ID", "InstitutionID", "DepartmentID", "AnoID", "Grado",
   "Estado", "RegisteredBy", "CreatedAt", "UpdatedAt", "ContextKey"];
 
 function makeSheet(rows, options, kind, state) {
-  return {
+  const thisSheet = {
     rows: rows.map(row => row.slice()),
     getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
     getLastRow() { return this.rows.length; },
+    getRange(row, column, rowCount, columnCount) {
+      return {
+        setValues(values) {
+          for (let r = 0; r < values.length; r++) {
+            const target = thisSheet.rows[row - 1 + r];
+            if (!target) throw new Error("SYNTHETIC_RANGE_ROW_MISSING");
+            for (let c = 0; c < values[r].length; c++) target[column - 1 + c] = values[r][c];
+          }
+        },
+        setValue(value) {
+          const target = thisSheet.rows[row - 1];
+          if (!target) throw new Error("SYNTHETIC_RANGE_ROW_MISSING");
+          target[column - 1] = value;
+        }
+      };
+    },
     appendRow(row) {
       if (kind === "evaluation") {
         state.evaluationAppends++;
@@ -47,6 +64,7 @@ function makeSheet(rows, options, kind, state) {
       this.rows.push(row.slice());
     }
   };
+  return thisSheet;
 }
 
 function fixture(options = {}) {
@@ -95,6 +113,7 @@ function fixture(options = {}) {
   const runtime = {
     SPREADSHEET_ID: "LOCAL",
     COMPETENCY_CATALOG_HEADERS_: catalogHeaders,
+    COMPETENCY_EVALUATION_HEADERS_: evaluationHeaders,
     LockService: { getScriptLock() { state.events.push("lock-request"); return scriptLock; } },
     validateRolePermission(action) {
       state.events.push("permission"); state.permissionCalls++; state.action = action;
@@ -125,7 +144,7 @@ function fixture(options = {}) {
     Utilities: { getUuid() { state.uuid++; return "UUID-" + state.uuid; } }
   };
   const names = ["saveCompetencyEvaluation", "withAuthorizedCompetencyEvaluationMutation_",
-    "getAuthorizedCompetencyEvaluationMutationContext_", "competencyCatalogContextKey_", "saveCompetencyEvaluationUnlocked_", "getExamStudentProfile_"];
+    "getAuthorizedCompetencyEvaluationMutationContext_", "competencyCatalogContextKey_", "competencyEvaluationContextKey_", "saveCompetencyEvaluationUnlocked_", "getExamStudentProfile_"];
   vm.runInNewContext(names.map(extract).join("\n") + "\nthis.saveCompetencyEvaluation = saveCompetencyEvaluation;", runtime);
   const payload = Object.assign({ sessionToken: "synthetic", userId: "STU-1", departmentId: "DEPT-1", competenciaId: "COMP-1",
     indicadorId: "IND-1", anoId: "2026", programaCurricular: "PLAN-A", asignaturaId: "Math", periodoId: "P1", nivelDesempeno: "Alto", observaciones: "Observación", rubricaId: "RUB-1" },
@@ -162,6 +181,13 @@ test("authorized teacher creates a competency evaluation for an assigned student
   assert.equal(rows.length, 2); assert.equal(rows[1][3], "STU-1");
   assert.equal(rows[1][4], "Math"); assert.equal(rows[1][5], "P1");
   assert.equal(rows[1][8], "RUB-1"); assert.ok(rows[1][0].startsWith("COMP-EVAL-UUID-"));
+  assert.equal(rows[1][10], "2026");
+  assert.equal(rows[1][11], "10");
+  assert.equal(rows[1][12], "A");
+  assert.equal(rows[1][13], "INST-1");
+  assert.equal(rows[1][14], "DEPT-1");
+  assert.equal(rows[1][15], "CAT-1");
+  assert.equal(rows[1][16], JSON.stringify(["inst-1", "dept-1", "2026", "p1", "10", "a", "math", "stu-1", "comp-1", "ind-1", "cat-1"]));
   assert.equal(x.state.action, "saveCompetencyEvaluation");
   assert.deepEqual(x.state.events.slice(0, 7), [
     "permission", "identity", "lock-request", "lock-acquire:5000", "permission", "identity", "spreadsheet-open"
@@ -417,13 +443,23 @@ test("missing evaluation sheet is initialized only after authorization", () => {
   const x = fixture({ missingEvaluationSheet: true }); assert.equal(x.call().status, "success");
   assert.equal(JSON.stringify(x.sheets.EvaluacionesCompetencias.rows[0]), JSON.stringify(evaluationHeaders));
 });
+test("legacy evaluation rows are preserved but migrated without inventing academic context", () => {
+  const legacyHeaders = evaluationHeaders.slice(0, 10);
+  const legacyRow = ["OLD-EVAL", "COMP-1", "IND-1", "STU-1", "Math", "P1", "Medio", "", "", new Date()];
+  const x = fixture({ evaluationRows: [legacyHeaders, legacyRow] });
+  assert.equal(x.call().status, "success");
+  assert.deepEqual(x.sheets.EvaluacionesCompetencias.rows[0], evaluationHeaders);
+  assert.deepEqual(x.sheets.EvaluacionesCompetencias.rows[1].slice(0, 10), legacyRow);
+  assert.deepEqual(x.sheets.EvaluacionesCompetencias.rows[1].slice(10), ["", "", "", "", "", "", ""]);
+});
 test("required fields fail before contextual spreadsheet reads and persistence", () => {
   const x = fixture(); assert.throws(() => x.call(Object.assign({}, x.payload, { competenciaId: " ", nivelDesempeno: "" })), /COMPETENCY_EVALUATION_REQUIRED_FIELDS/);
   assert.equal(x.sheets.EvaluacionesCompetencias.rows.length, 1);
   assert.equal(x.state.opens, 0); assert.equal(x.state.releases, 1);
 });
 test("duplicate generated evaluation ID is rejected", () => {
-  const rows = [evaluationHeaders, ["COMP-EVAL-UUID-1", "OLD", "IND", "STU-1", "Math", "P1", "Bajo", "", "", null]];
+  const rows = [evaluationHeaders, ["COMP-EVAL-UUID-1", "OLD", "IND", "STU-1", "Math", "P1", "Bajo", "", "", null,
+    "2026", "10", "A", "INST-1", "DEPT-1", "CAT-1", "legacy-context"]];
   const x = fixture({ evaluationRows: rows });
   assert.throws(() => x.call(), /COMPETENCY_EVALUATION_ID_COLLISION/);
   assert.equal(x.sheets.EvaluacionesCompetencias.rows.length, 2);
