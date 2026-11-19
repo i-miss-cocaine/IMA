@@ -150,6 +150,14 @@ const irrelevantOpenSessions = sessions.map(session => ["S-OTHER", "S-OUTSIDE"].
 assert.deepEqual(build({ attendanceSessions: irrelevantOpenSessions }).sourceStudents, result.sourceStudents,
   "open sessions outside the requested periods or class/teacher scope must not invalidate the candidate");
 assert.throws(() => build({ identityRecords: identityRecords.concat(identityRecords[0]) }), /SACE_IDENTITY_RECORD_DUPLICATE/);
+assert.throws(() => build({ identityRecords: identityRecords.concat({
+  userId: "STU-OUT", identity: "0801-2000-00003", documentType: "DNI", documentMarker: "HND", name: "Extra"
+}) }), /SACE_IDENTITY_RECORD_ROSTER_MISMATCH/);
+assert.throws(() => build({ identityRecords: [
+  identityRecords[0],
+  Object.assign({}, identityRecords[1], { identity: "0801 2000 00001" })
+] }), /SACE_IDENTITY_DOCUMENT_DUPLICATE/);
+
 assert.throws(() => build({ partial2Period: { periodoId: "PER-1", anoId: "2026", fechaInicio: "2026-05-01", fechaFin: "2026-07-31" } }), /SACE_PERIODS_MUST_BE_DISTINCT/);
 assert.throws(() => build({ partial1Period: Object.assign({}, periods.partial1Period, { anoId: "2025" }) }), /SACE_PERIOD_YEAR_MISMATCH:partial1/);
 assert.throws(() => build({ partial1Period: Object.assign({}, periods.partial1Period, { anoId: "" }) }), /SACE_PERIOD_YEAR_REQUIRED:partial1/);

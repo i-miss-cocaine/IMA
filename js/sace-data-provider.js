@@ -176,9 +176,19 @@
       });
     });
     const studentIds = Array.from(first.students.keys());
+    if (identities.size !== studentIds.length ||
+        Array.from(identities.keys()).some(id => !first.students.has(id))) {
+      throw new Error("SACE_IDENTITY_RECORD_ROSTER_MISMATCH");
+    }
+    const normalizedIdentities = new Set();
     studentIds.forEach(id => {
       const identity = identities.get(id);
       if (!identity) throw new Error("SACE_IDENTITY_RECORD_MISSING");
+      const normalizedIdentity = String(identity.identity || "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+      if (!normalizedIdentity || normalizedIdentities.has(normalizedIdentity)) {
+        throw new Error("SACE_IDENTITY_DOCUMENT_DUPLICATE");
+      }
+      normalizedIdentities.add(normalizedIdentity);
       const name = String(first.students.get(id).nombreCompleto || "").trim();
       if (!name) throw new Error("SACE_STUDENT_NAME_REQUIRED");
       if (identity.name && text(identity.name) !== text(name)) throw new Error("SACE_STUDENT_NAME_MISMATCH");
