@@ -16750,13 +16750,11 @@ function updateStudentLifecycleStatus(payload) {
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Auditoría y conciliación de consistencia de estados entre Expedientes y Matrículas
 function reconcileStudentLifecycleState(payload) {
   const { autoFix } = payload || {};
-  const lock = autoFix ? LockService.getScriptLock() : null;
+  const lock = LockService.getScriptLock();
   let lockHeld = false;
   try {
-    if (autoFix) {
-      lock.waitLock(10000);
-      lockHeld = true;
-    }
+    lock.waitLock(10000);
+    lockHeld = true;
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
     const expRows = expSheet.getDataRange().getValues().slice(1);
