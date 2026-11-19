@@ -3181,6 +3181,21 @@ function withAuthorizedCompetencyEvaluationMutation_(payload, mutation) {
   }
 }
 
+const COMPETENCY_EVALUATION_HEADERS_ = ["ID", "CompetenciaID", "IndicadorID", "UserID", "AsignaturaID",
+  "PeriodoID", "NivelDesempeno", "Observaciones", "RubricaID", "FechaRegistro", "AnoID",
+  "Grado", "Seccion", "InstitutionID", "DepartmentID", "CatalogItemID", "ContextKey"];
+
+function competencyEvaluationContextKey_(context) {
+  const value = context && typeof context === "object" ? context : {};
+  const fields = [value.institutionId, value.departmentId || "", value.anoId, value.periodoId,
+    value.grado, value.seccion, value.asignaturaId, value.userId, value.competenciaId,
+    value.indicadorId, value.catalogItemId];
+  if (fields.some((field, index) => index !== 1 && !String(field == null ? "" : field).trim())) {
+    throw new Error("COMPETENCY_EVALUATION_CONTEXT_REQUIRED");
+  }
+  return JSON.stringify(fields.map(field => normalizeString(field)));
+}
+
 function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
   const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
   const competenciaId = String(p.competenciaId || "").trim();
@@ -3210,8 +3225,17 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
 
   const asignaturaId = String(p.asignaturaId || "").trim();
   const periodoId = String(p.periodoId || "").trim();
+  const anoId = String(p.anoId || "").trim();
+  const indicadorId = String(p.indicadorId || "").trim();
+  let departmentId = String(p.departmentId || "").trim();
+  if (!anoId || !/^20\d{2}$/.test(anoId) || !indicadorId) {
+    throw new Error("COMPETENCY_CATALOG_CONTEXT_REQUIRED");
+  }
   if (role === "Profesor") {
-    if (!asignaturaId || !periodoId || !String(profile.grado || "").trim() || !String(profile.seccion || "").trim()) {
+    const allowedDepartments = (scope.departmentIds || []).map(value => String(value || "").trim()).filter(Boolean);
+    if (!departmentId && allowedDepartments.length === 1) departmentId = allowedDepartments[0];
+    if (!departmentId || !allowedDepartments.includes(departmentId) ||
+        !asignaturaId || !periodoId || !String(profile.grado || "").trim() || !String(profile.seccion || "").trim()) {
       throw new Error("RESOURCE_NOT_AVAILABLE");
     }
     const configSheet = getSheetOrThrow(ss, "ConfiguracionAcademica");
@@ -3234,10 +3258,9 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
 
-  const anoId = String(p.anoId || "").trim();
-  const indicadorId = String(p.indicadorId || "").trim();
-  if (!anoId || !/^20\d{2}$/.test(anoId) || !indicadorId) {
-    throw new Error("COMPETENCY_CATALOG_CONTEXT_REQUIRED");
+  if (role !== "Profesor" && departmentId && scope.institutionWide !== true &&
+      !(scope.departmentIds || []).some(id => String(id || "").trim() === departmentId)) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
   }
   const catalogSheet = ss.getSheetByName("CatalogoCompetencias");
   if (!catalogSheet) throw new Error("COMPETENCY_CATALOG_ITEM_NOT_FOUND");
@@ -3247,17 +3270,9 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
     throw new Error("COMPETENCY_CATALOG_SCHEMA_INVALID");
   }
   const program = String(p.programaCurricular || "").trim();
-  const requestedDepartmentId = String(p.departmentId || "").trim();
   if (!program) throw new Error("COMPETENCY_CATALOG_CONTEXT_REQUIRED");
-  if (role === "Profesor" && !(scope.departmentIds || []).some(id => String(id || "").trim())) {
-    throw new Error("RESOURCE_NOT_AVAILABLE");
-  }
-  if (requestedDepartmentId && !(scope.departmentIds || []).some(id =>
-      String(id || "").trim() === requestedDepartmentId) && scope.institutionWide !== true) {
-    throw new Error("RESOURCE_NOT_AVAILABLE");
-  }
   const catalogMatches = catalogRows.slice(1).filter(row =>
-    (!String(row[2] || "").trim() || String(row[2] || "").trim() === requestedDepartmentId) &&
+    (!String(row[2] || "").trim() || String(row[2] || "").trim() === departmentId) &&
     String(row[1] || "").trim() === String(scope.institutionId || "").trim() &&
     (!String(row[2] || "").trim() || scope.institutionWide === true || (scope.departmentIds || []).some(id => String(id || "").trim() === String(row[2]).trim())) &&
     String(row[3] || "").trim() === anoId &&
@@ -3306,30 +3321,44 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
         String(row[2] || "").trim().toUpperCase() === "RUBRICA_EVALUACION" &&
         String(row[3] || "").trim() === rubricId);
       if (rubricOwnership.length) {
-        if (role === "Profesor" && !requestedDepartmentId) throw new Error("RESOURCE_NOT_AVAILABLE");
+        if (role === "Profesor" && !departmentId) throw new Error("RESOURCE_NOT_AVAILABLE");
         const owned = rubricOwnership.filter(row =>
           String(row[1] || "").trim() === String(scope.institutionId).trim() &&
           String(row[5] || "").trim().toUpperCase() === "ACTIVE" &&
           (scope.institutionWide === true || (scope.departmentIds || []).some(department =>
             String(department || "").trim() === String(row[4] || "").trim())) &&
-          (!requestedDepartmentId || String(row[4] || "").trim() === requestedDepartmentId));
+          (!departmentId || String(row[4] || "").trim() === departmentId));
         if (rubricOwnership.length !== 1 || owned.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
       }
     }
   }
 
   const sheet = ss.getSheetByName("EvaluacionesCompetencias") || getOrCreateSheet(ss, "EvaluacionesCompetencias");
-  const headers = ["ID", "CompetenciaID", "IndicadorID", "UserID", "AsignaturaID",
-    "PeriodoID", "NivelDesempeno", "Observaciones", "RubricaID", "FechaRegistro"];
+  const legacyHeaders = COMPETENCY_EVALUATION_HEADERS_.slice(0, 10);
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(headers);
+    sheet.appendRow(COMPETENCY_EVALUATION_HEADERS_);
   } else {
     const rows = sheet.getDataRange().getValues();
-    if (!rows.length || headers.some((header, index) => String(rows[0][index] || "").trim() !== header)) {
+    if (!rows.length) throw new Error("COMPETENCY_EVALUATION_SCHEMA_INVALID");
+    if (rows[0].length === legacyHeaders.length &&
+        legacyHeaders.every((header, index) => String(rows[0][index] || "").trim() === header)) {
+      sheet.getRange(1, 11, 1, COMPETENCY_EVALUATION_HEADERS_.length - 10)
+        .setValues([COMPETENCY_EVALUATION_HEADERS_.slice(10)]);
+      if (rows.length > 1) sheet.getRange(2, 11, rows.length - 1, COMPETENCY_EVALUATION_HEADERS_.length - 10)
+        .setValues(rows.slice(1).map(() => Array(COMPETENCY_EVALUATION_HEADERS_.length - 10).fill("")));
+    } else if (rows[0].length !== COMPETENCY_EVALUATION_HEADERS_.length ||
+        COMPETENCY_EVALUATION_HEADERS_.some((header, index) => String(rows[0][index] || "").trim() !== header)) {
       throw new Error("COMPETENCY_EVALUATION_SCHEMA_INVALID");
     }
   }
-  return { actor, scope, ss, sheet, userId, competenciaId, asignaturaId, periodoId, nivelDesempeno, rubricId };
+  const contextData = { institutionId: scope.institutionId, departmentId, anoId,
+    periodoId, grado: profile.grado, seccion: profile.seccion, asignaturaId,
+    userId, competenciaId, indicadorId, catalogItemId: String(catalogMatches[0][0] || "").trim() };
+  const contextKey = competencyEvaluationContextKey_(contextData);
+  return { actor, scope, ss, sheet, userId, competenciaId, indicadorId, asignaturaId,
+    periodoId, anoId, grado: profile.grado, seccion: profile.seccion, departmentId,
+    institutionId: scope.institutionId, catalogItemId: contextData.catalogItemId,
+    contextKey, nivelDesempeno, rubricId };
 }
 
 function saveCompetencyEvaluationUnlocked_(payload, context) {
@@ -3340,12 +3369,12 @@ function saveCompetencyEvaluationUnlocked_(payload, context) {
     throw new Error("COMPETENCY_EVALUATION_ID_COLLISION");
   }
   const now = new Date();
-  const indicadorId = String(p.indicadorId || "").trim() || "IND-GENERIC";
   const observaciones = p.observaciones == null ? "" : String(p.observaciones);
   context.sheet.appendRow([
-    id, context.competenciaId, indicadorId, context.userId,
-    context.asignaturaId || "ASIG-GENERIC", context.periodoId || "P1",
-    context.nivelDesempeno, observaciones, context.rubricId, now
+    id, context.competenciaId, context.indicadorId, context.userId,
+    context.asignaturaId, context.periodoId, context.nivelDesempeno,
+    observaciones, context.rubricId, now, context.anoId, context.grado, context.seccion,
+    context.institutionId, context.departmentId, context.catalogItemId, context.contextKey
   ]);
   return {
     status: "success",
