@@ -472,10 +472,10 @@
   }
   function normalizeText(value) {
     return String(value == null ? "" : value).normalize("NFD")
-      .replace(/[\\u0300-\\u036f]/g, "").replace(/\\s+/g, " ").trim().toUpperCase();
+      .replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
   }
   function normalizeIdentity(value) {
-    return String(value == null ? "" : value).replace(/[\\s.-]/g, "").toUpperCase();
+    return String(value == null ? "" : value).replace(/[\s.-]/g, "").toUpperCase();
   }
   function mapRowsToTemplate(templateInfo, sourceStudents, expectedContext) {
     if (!templateInfo || !Array.isArray(templateInfo.students) ||
