@@ -26,11 +26,11 @@ const periods = {
   partial2Period: { periodoId: "PER-2", fechaInicio: "2026-05-01", fechaFin: "2026-07-31" }
 };
 const sessions = [
-  { sesionId: "S-1", fecha: "2026-02-03", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1" },
-  { sesionId: "S-2", fecha: "2026-05-03", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1" },
-  { sesionId: "S-OTHER", fecha: "2026-02-03", grado: "11", seccion: "A", asignaturaId: "MAT-01", docenteUserId: "PROF-1" },
-  { sesionId: "S-OTHER-TEACHER", fecha: "2026-02-03", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-2" },
-  { sesionId: "S-OUTSIDE", fecha: "2026-08-01", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1" }
+  { sesionId: "S-1", fecha: "2026-02-03", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1", estado: "Cerrada", fechaCierre: "2026-02-03T08:00:00.000Z" },
+  { sesionId: "S-2", fecha: "2026-05-03", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1", estado: "Finalizada", fechaCierre: "2026-05-03T08:00:00.000Z" },
+  { sesionId: "S-OTHER", fecha: "2026-02-03", grado: "11", seccion: "A", asignaturaId: "MAT-01", docenteUserId: "PROF-1", estado: "Cerrada", fechaCierre: "2026-02-03T08:00:00.000Z" },
+  { sesionId: "S-OTHER-TEACHER", fecha: "2026-02-03", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-2", estado: "Cerrada", fechaCierre: "2026-02-03T08:00:00.000Z" },
+  { sesionId: "S-OUTSIDE", fecha: "2026-08-01", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1", estado: "Cerrada", fechaCierre: "2026-08-01T08:00:00.000Z" }
 ];
 const attendance = [
   { sesionId: "S-1", userId: "STU-1", estadoAsistencia: "Ausente", justificado: true, justificacionVerificada: true },
@@ -92,6 +92,8 @@ assert.throws(() => build({ partial1Gradebook: gradebook("PER-1", {
 }) }), /SACE_RECOVERY_MAPPING_UNVERIFIED:partial1/);
 assert.throws(() => build({ identityRecords: identityRecords.slice(1) }), /SACE_IDENTITY_RECORD_MISSING/);
 assert.throws(() => build({ attendanceSessions: sessions.concat(sessions[0]) }), /SACE_ATTENDANCE_SESSION_DUPLICATE/);
+assert.throws(() => build({ attendanceSessions: sessions.map(session => session.sesionId === "S-1" ? Object.assign({}, session, { estado: "Abierta" }) : session) }), /SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial1/);
+assert.throws(() => build({ attendanceSessions: sessions.map(session => session.sesionId === "S-1" ? Object.assign({}, session, { fechaCierre: "" }) : session) }), /SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:partial1/);
 assert.throws(() => build({ identityRecords: identityRecords.concat(identityRecords[0]) }), /SACE_IDENTITY_RECORD_DUPLICATE/);
 assert.throws(() => build({ partial2Period: { periodoId: "PER-1", fechaInicio: "2026-05-01", fechaFin: "2026-07-31" } }), /SACE_PERIODS_MUST_BE_DISTINCT/);
 assert.throws(() => build({ expectedContext: Object.assign({}, expectedContext, { grado: "12" }) }), /SACE_GRADEBOOK_CONTEXT_MISMATCH:partial1:grado/);

@@ -64,6 +64,13 @@
       sessionIds.add(id);
       const day = dateKey(session.fecha);
       if (!day) throw new Error("SACE_ATTENDANCE_SESSION_DATE_INVALID");
+      if (["CERRADA", "CERRADO", "FINALIZADA", "FINALIZADO", "COMPLETADA", "COMPLETADO"].indexOf(text(session.estado)) === -1) {
+        throw new Error("SACE_ATTENDANCE_SESSION_NOT_CLOSED:" + label);
+      }
+      const closeTimestamp = String(session.fechaCierre == null ? "" : session.fechaCierre).trim();
+      if (!closeTimestamp || !Number.isFinite(Date.parse(closeTimestamp))) {
+        throw new Error("SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:" + label);
+      }
       if (day < period.start || day > period.end) return;
       if (text(session.grado) !== text(expected.grado) ||
           text(session.seccion) !== text(expected.seccion) ||

@@ -70,17 +70,19 @@ for (const entry of manifest.templates) {
   }
   const attendanceSessions = [];
   for (let index = 0; index < 2; index++) {
+    const fecha = "2026-02-0" + (index + 2);
     attendanceSessions.push({
-      sesionId: "P1-S" + (index + 1), fecha: "2026-02-0" + (index + 2),
+      sesionId: "P1-S" + (index + 1), fecha,
       grado: "11", seccion: "A", asignaturaId: "SUB-TEST",
-      docenteUserId: "TEACHER-TEST", estado: "Cerrada"
+      docenteUserId: "TEACHER-TEST", estado: "Cerrada", fechaCierre: fecha + "T08:00:00.000Z"
     });
   }
   for (let index = 0; index < 4; index++) {
+    const fecha = "2026-05-0" + (index + 2);
     attendanceSessions.push({
-      sesionId: "P2-S" + (index + 1), fecha: "2026-05-0" + (index + 2),
+      sesionId: "P2-S" + (index + 1), fecha,
       grado: "11", seccion: "A", asignaturaId: "SUB-TEST",
-      docenteUserId: "TEACHER-TEST", estado: "Cerrada"
+      docenteUserId: "TEACHER-TEST", estado: "Cerrada", fechaCierre: fecha + "T08:00:00.000Z"
     });
   }
   const attendanceRecords = [];
