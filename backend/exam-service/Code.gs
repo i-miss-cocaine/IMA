@@ -90,7 +90,7 @@ const ROLE_PERMISSIONS = {
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
     "getAllExams", "getTeacherExamActivity", "getExamQuestions", "getStudentExams", "getExamResult",
     "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "getGradebookWeightConfiguration", "saveGradebookWeightConfiguration", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
-    "getRubrics", "saveRubric", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "submitGradebookForReview",
+    "getRubrics", "saveRubric", "getCompetencyCatalog", "saveCompetencyCatalogItem", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "submitGradebookForReview",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
     "getExamGradeDistributionAnalytics"
   ],
@@ -657,6 +657,8 @@ function doPost(e) {
       case "getRubrics": result = getRubrics(payload); break;
       case "saveRubric": result = saveRubric(payload); break;
       case "saveCompetencyEvaluation": result = saveCompetencyEvaluation(payload); break;
+      case "getCompetencyCatalog": result = getCompetencyCatalog(payload); break;
+      case "saveCompetencyCatalogItem": result = saveCompetencyCatalogItem(payload); break;
       case "getCompetencyEvaluations": result = getCompetencyEvaluations(payload); break;
       case "saveStudentRecovery": result = saveStudentRecovery(payload); break;
       case "getStudentRecoveries": result = getStudentRecoveries(payload); break;
@@ -2954,6 +2956,141 @@ function saveRubricUnlocked_(payload, context) {
     throw error;
   }
   return { status: "success", message: "Rúbrica guardada correctamente.", data: { rubricaId: rid } };
+}
+
+// Catálogo institucional de competencias e indicadores. No presupone equivalencia SACE.
+const COMPETENCY_CATALOG_HEADERS_ = ["ID", "InstitutionID", "AnoID", "Grado", "AsignaturaID",
+  "CompetenciaID", "Competencia", "IndicadorID", "Indicador", "ProgramaCurricular",
+  "Estado", "RegisteredBy", "CreatedAt", "UpdatedAt", "ContextKey"];
+
+function competencyCatalogContextKey_(item) {
+  return JSON.stringify([item.institutionId, item.anoId, item.grado, item.asignaturaId,
+    item.programaCurricular, item.competenciaId, item.indicadorId].map(value => normalizeString(value)));
+}
+
+function getCompetencyCatalog(payload) {
+  return withAuthorizedExamMetadataRead_("getCompetencyCatalog", payload,
+    context => getCompetencyCatalogUnlocked_(payload, context));
+}
+
+function getCompetencyCatalogUnlocked_(payload, context) {
+  const ss = context && context.ss, scope = context && context.scope;
+  if (!ss || !scope || !scope.institutionId) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const sheet = ss.getSheetByName("CatalogoCompetencias");
+  if (!sheet) return { status: "success", total: 0, data: [] };
+  const rows = sheet.getDataRange().getValues();
+  if (!rows.length) return { status: "success", total: 0, data: [] };
+  if (COMPETENCY_CATALOG_HEADERS_.length !== rows[0].length ||
+      COMPETENCY_CATALOG_HEADERS_.some((header, index) => String(rows[0][index] || "").trim() !== header)) {
+    throw new Error("COMPETENCY_CATALOG_SCHEMA_INVALID");
+  }
+  const p = payload && typeof payload === "object" ? payload : {};
+  const result = rows.slice(1).filter(row =>
+    String(row[1] || "").trim() === String(scope.institutionId).trim() &&
+    String(row[10] || "").trim().toUpperCase() === "ACTIVE" &&
+    (!p.anoId || String(row[2] || "").trim() === String(p.anoId).trim()) &&
+    (!p.grado || normalizeString(row[3]) === normalizeString(p.grado)) &&
+    (!p.asignaturaId || normalizeString(row[4]) === normalizeString(p.asignaturaId)) &&
+    (!p.programaCurricular || normalizeString(row[9]) === normalizeString(p.programaCurricular))
+  ).map(row => ({
+    catalogItemId: row[0], anoId: row[2], grado: row[3], asignaturaId: row[4],
+    competenciaId: row[5], competencia: row[6], indicadorId: row[7], indicador: row[8],
+    programaCurricular: row[9], estado: row[10]
+  }));
+  const pairs = Object.create(null);
+  result.forEach(item => {
+    const key = competencyCatalogContextKey_({ institutionId: scope.institutionId, ...item });
+    pairs[key] = (pairs[key] || 0) + 1;
+  });
+  if (Object.keys(pairs).some(key => pairs[key] !== 1)) throw new Error("COMPETENCY_CATALOG_DUPLICATE_ENTRY");
+  return { status: "success", total: result.length, data: result };
+}
+
+function saveCompetencyCatalogItem(payload) {
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const permission = validateRolePermission("saveCompetencyCatalogItem", p);
+  if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const initialActor = getVerifiedExamIdentity_(p);
+  if (!initialActor || initialActor.authorized !== true || !initialActor.userId) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("COMPETENCY_CATALOG_LOCK_TIMEOUT");
+  try {
+    const currentPermission = validateRolePermission("saveCompetencyCatalogItem", p);
+    const actor = getVerifiedExamIdentity_(p);
+    if (!currentPermission || currentPermission.authorized !== true || !actor ||
+        actor.authorized !== true || actor.userId !== initialActor.userId || actor.role !== initialActor.role) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
+    if (!scope || scope.authorized !== true || !String(scope.institutionId || "").trim()) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+    const role = String(actor.role || "").trim();
+    const anoId = String(p.anoId || "").trim(), grado = String(p.grado || "").trim();
+    const asignaturaId = String(p.asignaturaId || "").trim();
+    const competenciaId = String(p.competenciaId || "").trim();
+    const competencia = String(p.competencia || "").trim();
+    const indicadorId = String(p.indicadorId || "").trim();
+    const indicador = String(p.indicador || "").trim();
+    const programaCurricular = String(p.programaCurricular || "").trim();
+    if (!anoId || !/^20\\d{2}$/.test(anoId) || !grado || !asignaturaId ||
+        !competenciaId || !competencia || !indicadorId || !indicador) {
+      throw new Error("COMPETENCY_CATALOG_REQUIRED_FIELDS");
+    }
+    if ([anoId, grado, asignaturaId, competenciaId, competencia, indicadorId, indicador, programaCurricular]
+        .some(value => value.length > 160)) throw new Error("COMPETENCY_CATALOG_FIELD_TOO_LONG");
+    if (role === "Profesor") {
+      const periodoId = String(p.periodoId || "").trim();
+      if (!periodoId || !String(p.seccion || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
+      const configSheet = getSheetOrThrow(ss, "ConfiguracionAcademica");
+      const configData = configSheet.getDataRange().getValues();
+      const configHeaders = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
+      if (!configData.length || configHeaders.some((header, index) => String(configData[0][index] || "").trim() !== header)) {
+        throw new Error("ACADEMIC_ASSIGNMENT_SCHEMA_INVALID");
+      }
+      const assignments = configData.slice(1).filter(row =>
+        normalizeString(row[2]) === normalizeString(periodoId) &&
+        normalizeString(row[3]) === normalizeString(grado) &&
+        normalizeString(row[4]) === normalizeString(p.seccion) &&
+        normalizeString(row[5]) === normalizeString(asignaturaId));
+      if (!assignments.length || assignments.some(row => String(row[8] || "").trim() !== actor.userId)) {
+        throw new Error("RESOURCE_NOT_AVAILABLE");
+      }
+    } else if (scope.institutionWide !== true) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+    const sheet = ss.getSheetByName("CatalogoCompetencias") || getOrCreateSheet(ss, "CatalogoCompetencias");
+    let rows = sheet.getDataRange().getValues();
+    if (!rows.length) {
+      sheet.appendRow(COMPETENCY_CATALOG_HEADERS_);
+      rows = [COMPETENCY_CATALOG_HEADERS_];
+    }
+    if (COMPETENCY_CATALOG_HEADERS_.length !== rows[0].length ||
+        COMPETENCY_CATALOG_HEADERS_.some((header, index) => String(rows[0][index] || "").trim() !== header)) {
+      throw new Error("COMPETENCY_CATALOG_SCHEMA_INVALID");
+    }
+    const item = { institutionId: scope.institutionId, anoId, grado, asignaturaId,
+      competenciaId, indicadorId, programaCurricular };
+    const contextKey = competencyCatalogContextKey_(item);
+    const matches = rows.slice(1).map((row, index) => ({ row, rowIndex: index + 1 }))
+      .filter(entry => String(entry.row[14] || "") === contextKey);
+    if (matches.length > 1) throw new Error("COMPETENCY_CATALOG_DUPLICATE_ENTRY");
+    const now = new Date().toISOString();
+    if (matches.length === 1) {
+      const existing = matches[0].row;
+      if (String(existing[10] || "").trim().toUpperCase() === "INACTIVE") throw new Error("COMPETENCY_CATALOG_ENTRY_INACTIVE");
+      sheet.getRange(matches[0].rowIndex + 1, 7, 1, 3).setValues([[competencia, indicadorId, indicador]]);
+      sheet.getRange(matches[0].rowIndex + 1, 15).setValue(now);
+      return { status: "success", catalogItemId: existing[0], actualizado: true };
+    }
+    const id = "COMP-CAT-" + Utilities.getUuid();
+    sheet.appendRow([id, scope.institutionId, anoId, grado, asignaturaId, competenciaId, competencia,
+      indicadorId, indicador, programaCurricular, "ACTIVE", actor.userId, now, now, contextKey]);
+    return { status: "success", catalogItemId: id, actualizado: false };
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
 }
 
 // [F9-Task12] [P1] - Ampliar la evaluación por competencias, rúbricas e indicadores de logro
