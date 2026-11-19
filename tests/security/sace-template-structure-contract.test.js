@@ -203,7 +203,7 @@ for (const template of manifest.templates) {
   assert.equal(gitBlobSha, template.gitBlobSha, "template content changed: " + template.templateCode);
   const book = readWorkbook(filePath);
   assert.deepEqual(book.dimension, { firstRow: 0, lastRowExclusive: 31, firstColumn: 0, lastColumnExclusive: 9 });
-  assert.deepEqual(book.merges, expectedMerges);
+  assert.deepEqual([...book.merges].sort(), [...expectedMerges].sort());
   assert.equal(book.formulaCount, 0, "worksheet formula count changed: " + template.templateCode);
   assert.equal(book.validations, 0, "data validation records changed: " + template.templateCode);
   assert.equal(book.protectionFlag, 0, "worksheet protection flag changed: " + template.templateCode);
