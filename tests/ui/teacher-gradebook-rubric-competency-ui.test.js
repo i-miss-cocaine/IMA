@@ -26,4 +26,4 @@ for (const id of ["gb-catalog-program", "gb-catalog-competency-id", "gb-catalog-
 assert.ok(js.includes("fetchApi('EXAM', 'getCompetencyCatalog'"));
 assert.ok(js.includes("fetchApi('EXAM', 'saveCompetencyCatalogItem'"));
 assert.ok(js.includes("gradebookCatalogRequestVersion"));
-process.stdout.write("teacher-gradebook-rubric-competency-ui: PASS (16 contracts)\\n");
+process.stdout.write("teacher-gradebook-rubric-competency-ui: PASS (16 contracts)\n");
