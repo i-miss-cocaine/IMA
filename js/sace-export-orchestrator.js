@@ -23,7 +23,7 @@ function (provider, templates) {
       .replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
   }
   function normalizeGradeSection(value) {
-    return normalizeContextText(value).replace(/[.°º]/g, " ").replace(/\\s+/g, " ").trim();
+    return normalizeContextText(value).replace(/[.°º]/g, " ").trim().split(/\s+/).join(" ");
   }
   function assertTemplateMatchesAcademicSnapshot(snapshot, templateContext) {
     const context = snapshot && snapshot.data && snapshot.data.expectedContext;
