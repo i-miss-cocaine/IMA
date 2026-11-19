@@ -1059,3 +1059,35 @@ El registro añadido en el commit 2d74abd9eea8cd672c00f603cfd83dc31ab788ec fue e
 HEAD de implementación: 509a666790d588e89d04710dfe9ebdfefc7a1234.
 Verificación Node.js 22 / GitHub Actions: 44626673467 y 44626673436 SUCCESS.
 ===============================================================================
+
+===============================================================================
+### Reconstrucción aditiva de checkpoints C1.862–C1.866
+===============================================================================
+La secuencia canónica C1.862–C1.866 se reconstruye aquí desde los registros vigentes del Plan Maestro y changueslogs.txt para completar el archivo activo que había quedado en C1.861. Se preservan todas las entradas anteriores, incluida la anotación mal numerada C1.864 y su aclaración posterior.
+
+### C1.862 — registro de AUD-NG-254
+- Se agregó AUD-NG-254 como auditoría transversal final de conformidad de módulos con NDASC 1.5, ubicada al final del Plan Maestro/PM-09. Incluye matriz de módulos, evidencia y tareas correctivas trazables.
+- Commits documentales: 9918e7525e76482df58125976154a7db66d561fe, 7c0773c678b2a0daa82f6e0826f0618fbb37e986 y d6415e7648ed19073f2886e1bb458e54f0823a34. No se ejecutaron pruebas de código; cambio documental.
+
+### C1.863 — pipeline SACE de plantilla en una pasada
+- El orquestador reutiliza el parse de inspect, mapea el roster una vez y entrega filas mapeadas a fill; conserva inspección final y verificación celda por celda.
+- Contrato mide dos inspecciones, una inspección contextual, un mapeo, un fill y cero llamadas a prepareCandidateExport; verifica equivalencia byte a byte.
+- Harness V8 compatible PASS para proveedor, orquestador, parcheo binario e aislamiento en tres plantillas/22 filas. No es Node.js ni Actions.
+- Commits: d84797e5e7e89a012393bc14a6715694285e03b0, 6e7e655bb251ef561d64d4b0e59a59e1eac3681c, 24a810bcf1d5d212077d9c6caff80e8d4dbf9515. XLS continúa CANDIDATE.
+
+### C1.864 — conteo de asistencia compartido entre parciales
+- countAbsencesForPeriods recorre sesiones y registros una sola vez, indexa por sesión/alumno y reutiliza datos para ambos parciales.
+- Contrato instrumenta una pasada por colección; harness V8 compatible PASS en proveedor, orquestador e aislamiento.
+- Commits: b7bf4459a3030538a528b1a4484b37fdd48e030f, f84b6e0a9ead7abbcd682d18d5d6a47d339dad1e, c096563037abd4b9a4f90d8b777e0324ccb1c549, 3556f5d788d8c54aa1575d9f586962f21a488456.
+
+### C1.865 — validación de cierre limitada a sesiones seleccionadas
+- countAbsencesForPeriods determina primero rango temporal y contexto de grado/sección/asignatura/docente; solo valida cierre/timestamp de sesiones seleccionadas. Mantiene escaneo único.
+- Harness V8 compatible PASS; commit 509a666790d588e89d04710dfe9ebdfefc7a1234.
+
+### C1.866 — corrección de errores por parcial y sesiones irrelevantes
+- Se corrigió la validación del proveedor para que el error de cierre/timestamp identifique el parcial correcto y se aplique después del filtro de período/contexto.
+- Regresiones para partial2 abierto, timestamp ausente y sesiones abiertas fuera del rango o clase/docente.
+- GitHub Actions 44626673467 (SACE template structure compatibility) y 44626673436 (Academic-Service single authorization context): SUCCESS; Node.js 22, sintaxis y contratos ejecutados.
+- Commit de implementación: 509a666790d588e89d04710dfe9ebdfefc7a1234. Checkpoint/continuidad documental: 2d74abd9eea8cd672c00f603cfd83dc31ab788ec y aclaración de numeración: 6745725ba8d93036a4032977a7082e969b1fdaba.
+- AUD-NG-167 permanece En progreso por requisitos de fuente/plantilla oficial y validaciones beta explícitas. XLS continúa CANDIDATE.
+===============================================================================
