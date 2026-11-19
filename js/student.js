@@ -3177,68 +3177,85 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- CONSULTA DE RESULTADOS ACADÉMICOS OFICIALES Y BOLETÍN (FASE 9) ---
+    // --- CONSULTA DE RESULTADOS ACADÉMICOS OFICIALES Y BOLETÍN CONTEXTUAL ---
     async function loadStudentAcademicResults() {
         const container = document.getElementById('student-academic-results-container');
         if (!container) return;
-
-        container.innerHTML = '<div class="text-center py-8 text-gray-400 italic text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando resultados oficiales del instituto...</div>';
-
+        const yearInput = document.getElementById('student-report-year');
+        const periodInput = document.getElementById('student-report-period');
+        const scope = window.GLOBAL_SCOPE || {};
+        if (yearInput && !yearInput.value) {
+            yearInput.value = String(scope.AnoLectivo || scope.anoLectivo ||
+                currentUser?.AnoLectivo || currentUser?.anoLectivo || new Date().getFullYear());
+        }
+        if (periodInput && !periodInput.value) {
+            periodInput.value = String(window.PARCIAL_ACTUAL || scope.ParcialActual || "I parcial");
+        }
+        const anoId = String(yearInput?.value || "").trim();
+        const periodoId = String(periodInput?.value || "").trim();
+        if (!/^20\d{2}$/.test(anoId) || !periodoId) {
+            container.textContent = "Seleccione un año lectivo y un período válidos.";
+            return;
+        }
+        container.innerHTML = '<div class="text-center py-8 text-gray-400 italic text-xs"><i class="fas fa-spinner fa-spin mr-2"></i>Consultando el libro académico consolidado...</div>';
+        const escapeHtml = value => String(value == null ? "" : value).replace(/[&<>"']/g, char =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
         try {
-            const res = await fetchApi('EXAM', 'getStudentAcademicReport', { userId: currentUser.userId });
-            if (res.status === 'success' && res.data) {
-                const califs = res.data.calificaciones || [];
-                const recs = res.data.recuperaciones || [];
-
-                if (califs.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center py-8 text-gray-500 text-xs bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                            <i class="fas fa-info-circle text-2xl text-purple-400 mb-2 block"></i>
-                            No hay calificaciones oficiales publicadas para el período actual. Los resultados aparecerán una vez que el docente realice el cierre de parcial.
-                        </div>
-                    `;
-                    return;
-                }
-
-                container.innerHTML = `
-                    <div class="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-gray-100 text-gray-700 text-[10px] uppercase tracking-wider">
-                                    <th class="p-3">Evaluación / Categoría</th>
-                                    <th class="p-3 text-center">Nota Obtenida</th>
-                                    <th class="p-3 text-center">Puntaje Ponderado</th>
-                                    <th class="p-3 text-center">Observaciones</th>
-                                    <th class="p-3 text-center">Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 text-xs">
-                                ${califs.map(c => `
-                                    <tr class="hover:bg-purple-50/30 transition-colors">
-                                        <td class="p-3 font-semibold text-gray-800">${c.evaluacionId}</td>
-                                        <td class="p-3 text-center font-bold text-gray-900">${c.notaObtenida}%</td>
-                                        <td class="p-3 text-center font-bold text-purple-700">${c.puntajePonderado}%</td>
-                                        <td class="p-3 text-center text-gray-500">${c.observaciones || '-'}</td>
-                                        <td class="p-3 text-center">
-                                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-100 text-emerald-800">
-                                                Publicada
-                                            </span>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `<div class="text-center py-6 text-red-500 text-xs">${res.message || 'Error al obtener resultados'}</div>`;
+            const res = await fetchApi('EXAM', 'getStudentAcademicReport', {
+                userId: currentUser.userId, anoId, periodoId
+            });
+            if (!res || res.status !== 'success' || !res.data) {
+                throw new Error(res?.message || "No fue posible consultar el boletín.");
             }
-        } catch (e) {
-            container.innerHTML = `<div class="text-center py-6 text-red-500 text-xs">Error de conexión: ${e.message}</div>`;
+            const report = res.data.libroConsolidado || {};
+            const details = Array.isArray(report.detalleAsignaturas) ? report.detalleAsignaturas : [];
+            if (!details.length) {
+                container.innerHTML = '<div class="text-center py-8 text-gray-500 text-xs bg-gray-50 rounded-2xl p-6 border border-gray-100">' +
+                    '<i class="fas fa-info-circle text-2xl text-blue-400 mb-2 block"></i>' +
+                    'No hay calificaciones publicadas y vinculadas a este año y período.</div>';
+                return;
+            }
+            const official = report.esDocumentoOficial === true;
+            const summary = report.resumenGeneral || {};
+            container.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div class="text-xs text-gray-500">Año ${escapeHtml(anoId)} · ${escapeHtml(periodoId)}</div>
+                    <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase ${official ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                        ${official ? 'Boletín oficial · período cerrado' : 'Informe provisional'}
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div class="rounded-xl bg-gray-50 p-3"><div class="text-[10px] uppercase text-gray-500">Asignaturas</div><div class="text-xl font-bold">${Number(summary.totalAsignaturas || 0)}</div></div>
+                    <div class="rounded-xl bg-gray-50 p-3"><div class="text-[10px] uppercase text-gray-500">Promedio</div><div class="text-xl font-bold">${summary.promedioGeneral == null ? 'Pendiente' : escapeHtml(summary.promedioGeneral)}</div></div>
+                    <div class="rounded-xl bg-gray-50 p-3"><div class="text-[10px] uppercase text-gray-500">Aprobadas</div><div class="text-xl font-bold">${Number(summary.asignaturasAprobadas || 0)}</div></div>
+                    <div class="rounded-xl bg-gray-50 p-3"><div class="text-[10px] uppercase text-gray-500">Reprobadas</div><div class="text-xl font-bold">${Number(summary.asignaturasReprobadas || 0)}</div></div>
+                </div>
+                <div class="overflow-x-auto rounded-2xl border border-gray-100">
+                    <table class="w-full text-left border-collapse">
+                        <thead><tr class="bg-gray-100 text-gray-700 text-[10px] uppercase tracking-wider">
+                            <th class="p-3">Asignatura</th><th class="p-3">Grado / Sección</th>
+                            <th class="p-3 text-center">Nota consolidada</th><th class="p-3 text-center">Estado</th>
+                        </tr></thead>
+                        <tbody class="divide-y divide-gray-100 text-xs">
+                            ${details.map(item => `<tr>
+                                <td class="p-3 font-semibold">${escapeHtml(item.asignatura)}</td>
+                                <td class="p-3">${escapeHtml(item.grado)} / ${escapeHtml(item.seccion)}</td>
+                                <td class="p-3 text-center font-bold">${item.notaFinal == null ? 'Pendiente' : escapeHtml(item.notaFinal + '%')}</td>
+                                <td class="p-3 text-center">${escapeHtml(item.estado)}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ${official ? '' : '<p class="text-[11px] text-amber-700 mt-3">Este informe no es oficial: el período debe estar cerrado y todas las ponderaciones deben contar con calificaciones publicadas.</p>'}
+            `;
+        } catch (error) {
+            container.textContent = "Error al consultar resultados: " + error.message;
         }
     }
 
     document.getElementById('btn-refresh-academic-results')?.addEventListener('click', loadStudentAcademicResults);
+    document.getElementById('student-report-year')?.addEventListener('change', loadStudentAcademicResults);
+    document.getElementById('student-report-period')?.addEventListener('change', loadStudentAcademicResults);
 
     // --- CIRCULARES Y COMUNICADOS CON ACUSE DE RECIBO (FASE 11) ---
     async function loadStudentAnnouncements() {
