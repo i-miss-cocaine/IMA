@@ -3156,3 +3156,5 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 [2026-11-19 | AUD-NG-167 | C1.873] Normalización documental canónica alineada en USER/Academic/provider/template; separadores alternativos se equiparan y las colisiones por puntuación se rechazan. SACE 44633789679 SUCCESS; Academic 44633412787 SUCCESS. No se declara validez oficial del tipo/marker.
 
 [2026-11-19 | AUD-NG-167 | C1.874] Auditoría de tipo documental: no se halló fuente oficial para TipoIdentificacion→marcador SACE. El mapping sigue explícito, obligatorio y no predeterminado; se verifica contra la celda DOCUMENTO del template candidato. Sin cambio de código; no se certifica equivalencia.
+
+[2026-11-19 | AUD-NG-167 | C1.875] Escala explícita y precisión obligatoria; notas/recuperación fuera de rango o con decimales no representables se rechazan, no se redondean. SACE 44634449646 SUCCESS. No se declara escala oficial.

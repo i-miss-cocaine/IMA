@@ -1457,3 +1457,40 @@ Estado:
 Siguiente acción elegible:
 - Auditar la configuración de escala, precisión y rango de calificaciones: confirmar que el parcheador no redondea silenciosamente, rechaza valores fuera de escala y no supone una escala oficial no verificada.
 ===============================================================================
+
+===============================================================================
+### C1.875 — AUD-NG-167: escala explícita y precisión sin redondeo silencioso
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-GRADE-SCALE-PRECISION-46
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 0d26875466484b7aa33355b939576d2e726606d9
+HEAD final: 8a95ebc2ca31fe5d0acaedee50a017a04d12e750
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo y corrección:
+- El parcheador requería escala min/max, pero asumía precision=2 cuando el llamador no la enviaba. También permitía recuperaciones con más decimales que la precisión configurada, aunque el proveedor SACE mantiene esa columna bloqueada.
+- Ahora precision es obligatoria y debe ser explícitamente 0 o 2; valores ausentes, fraccionarios o no soportados fallan cerrado.
+- Las notas de ambos parciales y cualquier recuperación que se pase directamente al parcheador deben ser representables exactamente en la precisión configurada. encodeRK verifica el valor y no lo redondea silenciosamente.
+- Min/max siguen siendo entradas explícitas, numéricas y ordenadas; cada nota debe caer dentro del rango. No se introduce escala predeterminada ni se afirma que 0–100/2 decimales sea la regla oficial SACE.
+
+Archivos modificados:
+- js/sace-template.js
+- tests/security/sace-template-binary-patch.test.js
+
+Commit:
+- 8a95ebc2ca31fe5d0acaedee50a017a04d12e750 — exigir precisión explícita y rechazar redondeo implícito de recuperaciones.
+
+Verificación:
+- SACE template structure compatibility Action 44634449646 SUCCESS; node --check y contratos de estructura, parcheo binario, proveedor, orquestador y aislamiento candidato PASS.
+- Pruebas agregadas: precision ausente, precisión fraccionaria, precisión no soportada y recuperación con más decimales que la precisión elegida.
+- El candidato real sigue enviando recovery=null, pero el parcheador genérico también queda protegido si otro consumidor lo usa.
+
+Estado:
+- Escala y precisión ya no se infieren silenciosamente; el llamador debe proporcionar la configuración.
+- AUD-NG-167 continúa En progreso; escala oficial y reglas de redondeo por nivel/modalidad siguen sin certificación SACE.
+- XLS permanece CANDIDATE.
+
+Siguiente acción elegible:
+- Auditar la validación de rango de notas y conteo de inasistencias en la frontera Academic→proveedor→template, especialmente límites máximos, tipos numéricos y consistencia con el contexto de periodo.
+===============================================================================

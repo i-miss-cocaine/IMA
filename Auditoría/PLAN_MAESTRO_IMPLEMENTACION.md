@@ -6148,3 +6148,10 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - manifest.json y Mapa_Compatibilidad_SACE.md no aportan un catálogo oficial verificable. No se agrega mapping predeterminado ni se declara equivalencia; salida sigue CANDIDATE.
 - Auditoría sin cambios de código. SACE template compatibility Action 44633789679 SUCCESS con normalización canónica.
 - Siguiente: auditar escala, precisión y rango de notas para evitar redondeos silenciosos o supuestos normativos.
+
+### C1.875 — AUD-NG-167: escala y precisión sin inferencias
+- El parcheador ya no asume precision=2 cuando falta el parámetro; exige precisión explícita 0 o 2 y rechaza valores que no se representen exactamente. Aplica la verificación también a recuperación.
+- Min/max siguen explícitos y se validan por rango; no se agrega escala normativa predeterminada.
+- SACE template compatibility Action 44634449646 SUCCESS.
+- Commit 8a95ebc2ca31fe5d0acaedee50a017a04d12e750. Evidencia en Checkpoints_Parte_0019.txt — C1.875.
+- Siguiente: auditar límites de notas/inasistencias y su coherencia con los periodos y el snapshot Academic.
