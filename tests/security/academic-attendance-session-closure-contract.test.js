@@ -54,7 +54,7 @@ const spreadsheet = { getSheetByName(name) { return name === "SesionesAsistencia
 const context = {
   actor: { authorized: true, userId: "TEACHER-1", role: "Profesor" },
   SPREADSHEET_ID: "TEST-SPREADSHEET",
-  getVerifiedAcademicIdentity_() { return this.actor; },
+  getVerifiedAcademicIdentity_() { return context.actor; },
   getOrCreateSheet(ss, name) {
     assert.equal(name, "SesionesAsistencia");
     if (sheet.getLastRow() === 0) sheet.appendRow(headers);
