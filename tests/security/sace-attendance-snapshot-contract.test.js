@@ -321,8 +321,13 @@ assert.deepEqual(JSON.parse(JSON.stringify(justificationHelperContext.resolveJus
 ))), { justificado: true, justificacionId: "JUST-1", justificacionVerificada: true });
 assert.deepEqual(JSON.parse(JSON.stringify(justificationHelperContext.resolveJustification(
   ["R-1", "S-1", "STU-1", "Ausente", "", "", false, "", "", ""],
-  justificationIndex, { sesionId: "S-1", fecha: "2026-02-03" }, { periodoId: "P1" }, null
+  justificationIndex, { sesionId: "S-1", fecha: "2026-02-03" }, { periodoId: "P1" },
+  { rows: [], index: justificationSourceIndex }
 ))), { justificado: false, justificacionId: "", justificacionVerificada: true });
+assert.throws(() => justificationHelperContext.resolveJustification(
+  ["R-1", "S-1", "STU-1", "Ausente", "", "", false, "", "", ""],
+  justificationIndex, { sesionId: "S-1", fecha: "2026-02-03" }, { periodoId: "P1" }, null
+), /SACE_JUSTIFICATION_SOURCE_UNAVAILABLE/);
 assert.throws(() => justificationHelperContext.resolveJustification(
   ["R-X", "S-2", "STU-2", "Ausente", "", "", true, "", "", ""],
   justificationIndex, attendanceSession, attendancePeriod, justificationSource

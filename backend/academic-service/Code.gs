@@ -11009,6 +11009,7 @@ function requestSaceGradebookSnapshotFromExam_(request, studentIds, teacherUserI
 }
 
 function resolveSaceAttendanceJustification_(attendanceRow, attendanceIndex, session, period, source) {
+  if (!source || !Array.isArray(source.rows) || !source.index) throw new Error("SACE_JUSTIFICATION_SOURCE_UNAVAILABLE");
   const rawValue = attendanceRow[attendanceIndex.Justificado];
   const rawText = String(rawValue == null ? "" : rawValue).trim().toLowerCase();
   let rawJustified;
