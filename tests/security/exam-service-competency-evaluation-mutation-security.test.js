@@ -169,6 +169,17 @@ test("authorized teacher creates a competency evaluation for an assigned student
   assert.ok(x.state.events.indexOf("scope") > x.state.events.indexOf("spreadsheet-open"));
   assert.equal(x.state.events.at(-1), "lock-release");
 });
+test("assigned teacher may use an institution-wide catalog entry", () => {
+  const contextKey = JSON.stringify(["inst-1", "", "2026", "10", "a", "math", "plan-a", "comp-1", "ind-1"]);
+  const globalRow = ["CAT-GLOBAL", "INST-1", "", "2026", "10", "A", "Math", "COMP-1", "Competencia",
+    "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN-1", "2026-01-01", "2026-01-01", contextKey];
+  const x = fixture({ catalogRows: [catalogHeaders, globalRow] });
+  const result = x.call(Object.assign({}, x.payload, { departmentId: "" }));
+  assert.equal(result.status, "success");
+  assert.equal(result.userId, "STU-1");
+  assert.equal(x.sheets.EvaluacionesCompetencias.rows.length, 2);
+});
+
 test("teacher may evaluate another student only within their verified assignment", () => {
   const x = fixture(); const result = x.call(Object.assign({}, x.payload, { userId: "STU-2" }));
   assert.equal(result.userId, "STU-2");
