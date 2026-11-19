@@ -2470,8 +2470,86 @@ function getTrustedMigrationTargetExistenceSnapshot_(payload) {
     idField: "PersonaID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: [],
     duplicateMatches: duplicateMatches };
 }
+function getSaceStudentIdentityDirectory_(payload) {
+  const request = payload || {};
+  const claims = verifySessionToken(String(request.sessionToken || ""));
+  const teacherUserId = String(request.teacherUserId || "").trim();
+  const institutionId = String(request.institutionId || "").trim();
+  if (!claims || !claims.userId || String(claims.role || "").trim() !== "Profesor" ||
+      !claims.institutionId || String(claims.userId).trim() !== teacherUserId ||
+      String(claims.institutionId).trim() !== institutionId) {
+    throw new Error("SACE_IDENTITY_CALLER_INVALID");
+  }
+  if (!Array.isArray(request.studentIds) || !request.studentIds.length || request.studentIds.length > 500) {
+    throw new Error("SACE_IDENTITY_ROSTER_REQUIRED");
+  }
+  const studentIds = request.studentIds.map(function(value) {
+    const id = String(value == null ? "" : value).trim();
+    if (!id) throw new Error("SACE_IDENTITY_STUDENT_ID_REQUIRED");
+    return id;
+  });
+  if (new Set(studentIds).size !== studentIds.length) throw new Error("SACE_IDENTITY_ROSTER_DUPLICATE");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const read = function(name, requiredHeaders) {
+    const sheet = ss.getSheetByName(name);
+    if (!sheet) throw new Error("SACE_IDENTITY_SOURCE_MISSING:" + name);
+    const values = sheet.getDataRange().getValues();
+    if (!values.length) throw new Error("SACE_IDENTITY_SCHEMA_INVALID:" + name);
+    const headers = values[0].map(function(value) { return String(value || "").trim(); });
+    if (requiredHeaders.some(function(header) { return headers.indexOf(header) === -1; })) {
+      throw new Error("SACE_IDENTITY_SCHEMA_INVALID:" + name);
+    }
+    const index = {};
+    headers.forEach(function(header, position) { index[header] = position; });
+    return { rows: values.slice(1), index: index };
+  };
+  const active = function(value) {
+    return ["ACTIVA", "ACTIVO", "ACTIVE", "VIGENTE"].indexOf(String(value == null ? "" : value).trim().toUpperCase()) !== -1;
+  };
+  const users = read("Usuarios", ["UserId", "Rol", "PersonaID", "EstadoCuenta"]);
+  const userMap = Object.create(null);
+  users.rows.forEach(function(row) {
+    const id = String(row[users.index.UserId] || "").trim();
+    if (!id) return;
+    if (userMap[id]) throw new Error("SACE_IDENTITY_USER_DUPLICATE");
+    userMap[id] = row;
+  });
+  const people = read("Personas", ["PersonaID", "Nombres", "Apellidos", "Identificacion", "EstadoPersona"]);
+  const personMap = Object.create(null);
+  people.rows.forEach(function(row) {
+    const id = String(row[people.index.PersonaID] || "").trim();
+    if (!id) return;
+    if (personMap[id]) throw new Error("SACE_IDENTITY_PERSON_DUPLICATE");
+    personMap[id] = row;
+  });
+  const records = studentIds.map(function(userId) {
+    const user = userMap[userId];
+    if (!user || !["ESTUDIANTE", "ALUMNO"].includes(String(user[users.index.Rol] || "").trim().toUpperCase()) ||
+        !active(user[users.index.EstadoCuenta])) throw new Error("SACE_IDENTITY_STUDENT_ACCOUNT_INVALID");
+    const personId = String(user[users.index.PersonaID] || "").trim(), person = personMap[personId];
+    if (!person || !active(person[people.index.EstadoPersona])) throw new Error("SACE_IDENTITY_PERSON_INVALID");
+    const identity = String(person[people.index.Identificacion] || "").trim();
+    const name = [person[people.index.Nombres], person[people.index.Apellidos]]
+      .map(function(value) { return String(value || "").trim(); }).filter(Boolean).join(" ");
+    if (!identity || !name) throw new Error("SACE_IDENTITY_PERSON_DATA_INCOMPLETE");
+    const documentTypeIndex = people.index.TipoIdentificacion;
+    return {
+      userId: userId,
+      identity: identity,
+      documentType: documentTypeIndex === undefined ? "" : String(person[documentTypeIndex] || "").trim(),
+      name: name
+    };
+  });
+  const normalized = records.map(function(record) {
+    return record.identity.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  });
+  if (new Set(normalized).size !== normalized.length) throw new Error("SACE_IDENTITY_DUPLICATE_DOCUMENT");
+  return { status: "success", data: records };
+}
+
 function handleTrustedMigrationEnvelope_(envelope){
  const verified=verifyInterServiceEnvelope(envelope,"USER","IMA_MIGRATION_HMAC_SECRET");
+ if(verified.sourceService==="ACADEMIC"&&verified.action==="getSaceStudentIdentityDirectory")return getSaceStudentIdentityDirectory_(verified.payload);
  if(verified.sourceService!=="ACCOUNTING")throw new Error("MIGRATION_SOURCE_NOT_ALLOWED");
  if(verified.action==="verifyAccountingSession" || verified.action==="authorizeAccountingImport" ||
     verified.action==="authorizeAccountingAuditRead") {

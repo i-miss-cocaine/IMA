@@ -29,23 +29,12 @@ const tables = {
     ["AnoID", "Nombre"], ["YEAR-2026", "2026"]
   ],
   PeriodosAcademicos: [
-    ["PeriodoID", "AnoID", "Nombre", "Tipo", "FechaInicio", "FechaFin", "Orden", "Estado"],
+    ["PeriodoID", "AnoID", "Nombre", "TipoPeriodo", "FechaInicio", "FechaFin", "Orden", "Estado"],
     ["P1", "YEAR-2026", "I Parcial", "Parcial", "2026-01-01", "2026-03-31", 1, "Cerrado"],
     ["P2", "YEAR-2026", "II Parcial", "Parcial", "2026-04-01", "2026-06-30", 2, "Cerrado"]
   ],
   CatalogoAsignaturas: [
     ["AsignaturaID", "NombreOficial"], ["SUB-1", "Informática"]
-  ],
-  Usuarios: [
-    ["UserId", "Nombre", "Grado", "Seccion", "Email", "PasswordHash", "Rol", "Telefono", "NumeroLista", "PersonaID", "EstadoCuenta"],
-    ["STU-1", "Ana Pérez", "11", "A", "", "", "Estudiante", "", 1, "PER-1", "Activa"],
-    ["STU-2", "Luis Gómez", "11", "A", "", "", "Estudiante", "", 2, "PER-2", "Activa"],
-    ["TEACHER-1", "Docente", "", "", "", "", "Profesor", "", "", "PER-T", "Activa"]
-  ],
-  Personas: [
-    ["PersonaID", "Nombres", "Apellidos", "Identificacion", "EmailContacto", "TelefonoContacto", "EstadoPersona"],
-    ["PER-1", "Ana", "Pérez", "0801-2000-00001", "", "", "Activa"],
-    ["PER-2", "Luis", "Gómez", "0801-2000-00002", "", "", "Activa"]
   ],
   Matriculas: [
     ["MatriculaID", "Fecha", "UserId", "Alumno", "Grado", "Seccion", "Periodo", "Tipo", "Estado", "BecaDescuento", "Observaciones"],
@@ -71,13 +60,10 @@ const tables = {
   ]
 };
 
-function createContext(actorRole = "Profesor", institutionId = "INST-1", includeDocumentType = false) {
+function createContext(actorRole = "Profesor", institutionId = "INST-1") {
   const sheets = {};
   Object.keys(tables).forEach(name => {
-    let rows = tables[name];
-    if (name === "Personas" && includeDocumentType) {
-      rows = [rows[0].concat("TipoIdentificacion")].concat(rows.slice(1).map(row => row.concat("DNI")));
-    }
+    const rows = tables[name];
     sheets[name] = { getDataRange() { return { getValues() { return rows.map(row => row.slice()); } }; } };
   });
   const context = {
@@ -90,6 +76,16 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", include
       return { authorized: true, userId: "TEACHER-1", role: actorRole };
     },
     getVerifiedRequestSessionClaims_() { return { userId: "TEACHER-1", role: actorRole, institutionId }; },
+    requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, requestedInstitution, teacherUserId) {
+      assert.equal(request.sessionToken, "SESSION-TEST");
+      assert.equal(requestedInstitution, institutionId);
+      assert.equal(teacherUserId, "TEACHER-1");
+      assert.deepEqual(Array.from(studentIds), ["STU-1", "STU-2"]);
+      return studentIds.map((userId, index) => ({
+        userId, identity: index === 0 ? "0801-2000-00001" : "0801-2000-00002",
+        documentType: "DNI", documentMarker: "", name: index === 0 ? "Ana Pérez" : "Luis Gómez"
+      }));
+    },
     Date, String, Number, Array, Object, Set, Error, Math, JSON
   };
   vm.createContext(context);
@@ -100,7 +96,7 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", include
 const payload = {
   anoId: "YEAR-2026", grado: "11", seccion: "A", asignaturaId: "SUB-1",
   periodoIds: ["P1", "P2"], studentIds: ["STU-1", "STU-2"],
-  docenteUserId: "ATTACKER-SPOOF"
+  docenteUserId: "ATTACKER-SPOOF", sessionToken: "SESSION-TEST"
 };
 const result = createContext().runSnapshot(payload);
 assert.equal(result.status, "success");
@@ -109,12 +105,8 @@ assert.equal(result.data.expectedContext.institutionId, "INST-1", "institution m
 assert.equal(result.data.expectedContext.asignatura, "Informática");
 assert.deepEqual(Array.from(result.data.periods, period => period.periodoId), ["P1", "P2"]);
 assert.deepEqual(Array.from(result.data.identityRecords, row => [row.userId, row.identity, row.documentType, row.documentMarker]), [
-  ["STU-1", "0801-2000-00001", "", ""], ["STU-2", "0801-2000-00002", "", ""]
-]);
-const typedSnapshot = createContext("Profesor", "INST-1", true).runSnapshot(payload);
-assert.deepEqual(Array.from(typedSnapshot.data.identityRecords, row => [row.userId, row.documentType, row.documentMarker]), [
-  ["STU-1", "DNI", ""], ["STU-2", "DNI", ""]
-], "TipoIdentificacion is returned separately; it must not be mistaken for a SACE template marker");
+  ["STU-1", "0801-2000-00001", "DNI", ""], ["STU-2", "0801-2000-00002", "DNI", ""]
+], "identity and document type are fetched from USER service; no local Personas sheet is required");
 assert.equal(result.data.attendanceSessions.length, 2);
 assert.deepEqual(Array.from(result.data.attendanceSessions, row => row.sesionId), ["S-1", "S-2"]);
 assert.equal(result.data.attendanceRecords.length, 4);
@@ -135,4 +127,43 @@ const professorPermissions = source.slice(professorStart, assistantStart);
 assert(professorPermissions.includes('"getSaceAttendanceSnapshot"'), "only teacher role should be explicitly granted the endpoint");
 assert(!source.slice(source.indexOf('"Estudiante": [', assistantStart), source.indexOf('"Alumno": [', assistantStart)).includes('"getSaceAttendanceSnapshot"'));
 assert(extract("doPost").includes('case "getSaceAttendanceSnapshot": result = getSaceAttendanceSnapshot(payload); break;'));
+
+const helperContext = {
+  getRequestSessionToken_(request) { return request.sessionToken; },
+  PropertiesService: { getScriptProperties() { return { getProperty(name) {
+    return name === "IMA_USER_SERVICE_URL" ? "https://script.google.com/macros/s/USER_DEPLOYMENT/exec" : "";
+  } }; } },
+  createInterServiceEnvelope(source, target, action, payload, credentialType) {
+    assert.equal(source, "ACADEMIC");
+    assert.equal(target, "USER");
+    assert.equal(action, "getSaceStudentIdentityDirectory");
+    assert.equal(credentialType, "IMA_MIGRATION_HMAC_SECRET");
+    return { sourceService: source, targetService: target, action, payload };
+  },
+  UrlFetchApp: { fetch(url, options) {
+    assert.equal(url, "https://script.google.com/macros/s/USER_DEPLOYMENT/exec");
+    const sent = JSON.parse(options.payload);
+    assert.equal(sent.sourceService, "ACADEMIC");
+    assert.equal(sent.targetService, "USER");
+    assert.equal(sent.payload.teacherUserId, "TEACHER-1");
+    return { getResponseCode() { return 200; }, getContentText() {
+      return JSON.stringify({ status: "success", data: [
+        { userId: "STU-1", identity: "0801-2000-00001", documentType: "DNI", name: "Ana Pérez" },
+        { userId: "STU-2", identity: "0801-2000-00002", documentType: "DNI", name: "Luis Gómez" }
+      ] });
+    } };
+  } },
+  JSON, String, Set, Error, Array
+};
+vm.createContext(helperContext);
+vm.runInContext(extract("requestSaceStudentIdentityDirectoryFromUser_") + "\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", helperContext);
+const directory = helperContext.requestDirectory(
+  { sessionToken: "SESSION-TEST" }, ["STU-1", "STU-2"], "INST-1", "TEACHER-1"
+);
+assert.equal(directory.length, 2);
+assert.equal(directory[0].documentMarker, "");
+assert.throws(() => helperContext.requestDirectory(
+  { sessionToken: "SESSION-TEST" }, ["STU-1"], "INST-1", "TEACHER-1"
+), /SACE_IDENTITY_RESPONSE_SCOPE_INVALID/);
+
 console.log("sace-attendance-snapshot-contract: PASS (verified teacher scope, institution, periods, enrollment, identity join and session attendance)");

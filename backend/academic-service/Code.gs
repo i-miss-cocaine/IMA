@@ -10857,6 +10857,59 @@ function openAttendanceSession(payload) {
 }
 
 // [F10-Task14] [P1] - Optimizar las consultas batch de asistencia y resiliencia de servicios
+function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, institutionId, teacherUserId) {
+  const input = request || {};
+  const token = String(getRequestSessionToken_(input) || "");
+  if (!token || !Array.isArray(studentIds) || !studentIds.length) throw new Error("SACE_IDENTITY_TRANSPORT_CONTEXT_REQUIRED");
+  if (typeof UrlFetchApp === "undefined" || typeof PropertiesService === "undefined") {
+    throw new Error("SACE_IDENTITY_TRANSPORT_UNAVAILABLE");
+  }
+  const endpoint = String(PropertiesService.getScriptProperties().getProperty("IMA_USER_SERVICE_URL") || "").trim();
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) {
+    throw new Error("SACE_IDENTITY_TRANSPORT_NOT_CONFIGURED");
+  }
+  const envelope = createInterServiceEnvelope("ACADEMIC", "USER", "getSaceStudentIdentityDirectory", {
+    sessionToken: token,
+    institutionId: institutionId,
+    teacherUserId: teacherUserId,
+    studentIds: studentIds.slice()
+  }, "IMA_MIGRATION_HMAC_SECRET");
+  let response;
+  try {
+    response = UrlFetchApp.fetch(endpoint, {
+      method: "post", contentType: "application/json",
+      payload: JSON.stringify(envelope), muteHttpExceptions: true
+    });
+  } catch (error) {
+    throw new Error("SACE_IDENTITY_AUTHORITY_UNAVAILABLE");
+  }
+  const status = response.getResponseCode();
+  let body;
+  try { body = JSON.parse(response.getContentText() || "{}"); }
+  catch (error) { throw new Error("SACE_IDENTITY_RESPONSE_INVALID"); }
+  if (status < 200 || status >= 300 || !body || body.status !== "success" || !Array.isArray(body.data)) {
+    throw new Error(body && body.code || "SACE_IDENTITY_AUTHORITY_UNAVAILABLE");
+  }
+  const requested = new Set(studentIds.map(function(id) { return String(id).trim(); }));
+  const returned = new Set();
+  const identityRecords = body.data.map(function(record) {
+    const userId = String(record && record.userId || "").trim();
+    const identity = String(record && record.identity || "").trim();
+    const name = String(record && record.name || "").trim();
+    if (!requested.has(userId) || returned.has(userId) || !identity || !name) {
+      throw new Error("SACE_IDENTITY_RESPONSE_SCOPE_INVALID");
+    }
+    returned.add(userId);
+    return {
+      userId: userId, identity: identity,
+      documentType: String(record.documentType || "").trim(),
+      documentMarker: "", name: name
+    };
+  });
+  if (returned.size !== requested.size) throw new Error("SACE_IDENTITY_RESPONSE_INCOMPLETE");
+  return identityRecords;
+}
+
 function getSaceAttendanceSnapshot(payload) {
   const request = payload || {};
   const actor = getVerifiedAcademicIdentity_(request);
@@ -10865,8 +10918,8 @@ function getSaceAttendanceSnapshot(payload) {
   }
   const claims = getVerifiedRequestSessionClaims_(request);
   const configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
-  if (!claims || !claims.institutionId || !configuredInstitution ||
-      String(claims.institutionId).trim() !== configuredInstitution) {
+  const institutionId = String(claims && claims.institutionId || "").trim();
+  if (!institutionId || (configuredInstitution && institutionId !== configuredInstitution)) {
     return { status: "error", code: "SACE_INSTITUTION_CONTEXT_REQUIRED" };
   }
   const required = function(value, code) {
@@ -10912,7 +10965,7 @@ function getSaceAttendanceSnapshot(payload) {
     const yearName = String(yearRows[0][years.index.Nombre] || "").trim();
     if (!yearName) throw new Error("SACE_YEAR_NAME_REQUIRED");
 
-    const periods = read("PeriodosAcademicos", ["PeriodoID", "AnoID", "Nombre", "Tipo", "FechaInicio", "FechaFin", "Orden", "Estado"]);
+    const periods = read("PeriodosAcademicos", ["PeriodoID", "AnoID", "Nombre", "FechaInicio", "FechaFin", "Orden", "Estado"]);
     const periodMap = Object.create(null);
     periods.rows.forEach(function(row) {
       const id = String(row[periods.index.PeriodoID] || "").trim();
@@ -10926,7 +10979,7 @@ function getSaceAttendanceSnapshot(payload) {
       const start = dateKey(row[periods.index.FechaInicio]), end = dateKey(row[periods.index.FechaFin]);
       if (!start || !end || start > end) throw new Error("SACE_PERIOD_RANGE_INVALID");
       return { periodoId:id, anoId:anoId, fechaInicio:start, fechaFin:end,
-        nombre:String(row[periods.index.Nombre] || ""), tipo:String(row[periods.index.Tipo] || ""), orden:row[periods.index.Orden] };
+        nombre:String(row[periods.index.Nombre] || ""), tipo:String(row[periods.index.TipoPeriodo] || row[periods.index.Tipo] || ""), orden:row[periods.index.Orden] };
     });
     if (selectedPeriods[0].periodoId === selectedPeriods[1].periodoId) throw new Error("SACE_PERIODS_MUST_BE_DISTINCT");
     if (selectedPeriods[0].fechaInicio <= selectedPeriods[1].fechaFin && selectedPeriods[1].fechaInicio <= selectedPeriods[0].fechaFin) {
@@ -10938,54 +10991,26 @@ function getSaceAttendanceSnapshot(payload) {
     if (subjectRows.length !== 1 || !String(subjectRows[0][subjects.index.NombreOficial] || "").trim()) throw new Error("SACE_SUBJECT_NOT_UNIQUE");
     const subjectName = String(subjectRows[0][subjects.index.NombreOficial]).trim();
 
-    const users = read("Usuarios", ["UserId", "Rol", "PersonaID", "EstadoCuenta"]), userMap = Object.create(null);
-    users.rows.forEach(function(row) {
-      const id = String(row[users.index.UserId] || "").trim();
-      if (!id) return;
-      if (userMap[id]) throw new Error("SACE_USER_ID_DUPLICATE");
-      userMap[id] = row;
-    });
-    const people = read("Personas", ["PersonaID", "Nombres", "Apellidos", "Identificacion", "EstadoPersona"]), personMap = Object.create(null);
-    people.rows.forEach(function(row) {
-      const id = String(row[people.index.PersonaID] || "").trim();
-      if (!id) return;
-      if (personMap[id]) throw new Error("SACE_PERSON_ID_DUPLICATE");
-      personMap[id] = row;
-    });
-    const enrollments = read("Matriculas", ["MatriculaID", "UserId", "Grado", "Seccion", "Periodo", "Estado"]);
+    const enrollmentSource = read("Matriculas", ["MatriculaID", "UserId", "Grado", "Seccion", "Periodo", "Estado"]);
     const enrollmentCounts = Object.create(null);
-    enrollments.rows.forEach(function(row) {
-      const id = String(row[enrollments.index.MatriculaID] || "").trim();
+    enrollmentSource.rows.forEach(function(row) {
+      const id = String(row[enrollmentSource.index.MatriculaID] || "").trim();
       if (id) enrollmentCounts[id] = (enrollmentCounts[id] || 0) + 1;
     });
-    const identityRecords = studentIds.map(function(userId) {
-      const user = userMap[userId];
-      if (!user || !["ESTUDIANTE", "ALUMNO"].includes(String(user[users.index.Rol] || "").trim().toUpperCase()) ||
-          !active(user[users.index.EstadoCuenta])) throw new Error("SACE_STUDENT_ACCOUNT_INVALID");
-      const personId = String(user[users.index.PersonaID] || "").trim(), person = personMap[personId];
-      if (!person) throw new Error("SACE_STUDENT_PERSON_NOT_FOUND");
-      if (!active(person[people.index.EstadoPersona])) throw new Error("SACE_STUDENT_PERSON_INACTIVE");
-      const identity = required(person[people.index.Identificacion], "SACE_STUDENT_IDENTITY_REQUIRED");
-      const fullName = [person[people.index.Nombres], person[people.index.Apellidos]].map(function(value) {
-        return String(value || "").trim();
-      }).filter(Boolean).join(" ");
-      if (!fullName) throw new Error("SACE_STUDENT_NAME_REQUIRED");
-      const matches = enrollments.rows.filter(function(row) {
-        const enrollmentId = String(row[enrollments.index.MatriculaID] || "").trim();
-        const enrollmentYear = String(row[enrollments.index.Periodo] || "").trim();
+    studentIds.forEach(function(userId) {
+      const matches = enrollmentSource.rows.filter(function(row) {
+        const enrollmentId = String(row[enrollmentSource.index.MatriculaID] || "").trim();
+        const enrollmentYear = String(row[enrollmentSource.index.Periodo] || "").trim();
         return enrollmentId && enrollmentCounts[enrollmentId] === 1 &&
-          String(row[enrollments.index.UserId] || "").trim() === userId &&
-          String(row[enrollments.index.Grado] || "").trim() === grade &&
-          String(row[enrollments.index.Seccion] || "").trim() === section &&
-          (enrollmentYear === anoId || enrollmentYear === yearName) && active(row[enrollments.index.Estado]);
+          String(row[enrollmentSource.index.UserId] || "").trim() === userId &&
+          String(row[enrollmentSource.index.Grado] || "").trim() === grade &&
+          String(row[enrollmentSource.index.Seccion] || "").trim() === section &&
+          (enrollmentYear === anoId || enrollmentYear === yearName) &&
+          active(row[enrollmentSource.index.Estado]);
       });
       if (matches.length !== 1) throw new Error("SACE_STUDENT_ENROLLMENT_CONTEXT_MISMATCH");
-      const documentTypeIndex = people.index.TipoIdentificacion;
-      const markerIndex = people.index.SaceDocumentMarker;
-      return { userId:userId, identity:identity,
-        documentType:documentTypeIndex === undefined ? "" : String(person[documentTypeIndex] || "").trim(),
-        documentMarker:markerIndex === undefined ? "" : String(person[markerIndex] || "").trim(), name:fullName };
     });
+    const identityRecords = requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, institutionId, String(actor.userId).trim());
     const normalizedIdentities = identityRecords.map(function(record) { return record.identity.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(); });
     if (new Set(normalizedIdentities).size !== normalizedIdentities.length) throw new Error("SACE_STUDENT_IDENTITY_DUPLICATE");
 
@@ -11030,7 +11055,7 @@ function getSaceAttendanceSnapshot(payload) {
     });
     return { status:"success", data:{
       expectedContext:{ anoId:anoId, grado:grade, seccion:section, asignatura:subjectName,
-        asignaturaId:subjectId, institutionId:configuredInstitution, teacherUserId:String(actor.userId).trim() },
+        asignaturaId:subjectId, institutionId:institutionId, teacherUserId:String(actor.userId).trim() },
       periods:selectedPeriods, identityRecords:identityRecords,
       attendanceSessions:attendanceSessions, attendanceRecords:attendanceRecords
     }, limitations:[

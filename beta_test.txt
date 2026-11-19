@@ -1944,19 +1944,22 @@ Tarea/requisito: AUD-NG-167 — snapshot server-side de asistencia e identidad
 Objetivo: comprobar en el servicio desplegado que la acción getSaceAttendanceSnapshot devuelve exclusivamente sesiones y registros de asistencia de la clase del docente autenticado y los estudiantes matriculados en el año/grado/sección solicitados.
 Precondiciones:
 - Versión beta del Academic-Service desplegada con el commit que incorpora getSaceAttendanceSnapshot.
-- IMA_INSTITUTION_ID configurado y coincidente con institutionId de la sesión del docente.
-- Datos beta sintéticos: dos periodos cerrados no solapados, catálogo de asignatura, matrículas, Usuarios/Personas, sesiones cerradas y registros de asistencia.
+- institutionId de la sesión del docente verificado; si IMA_INSTITUTION_ID está configurado, debe coincidir.
+- IMA_USER_SERVICE_URL y credential ACADEMIC→USER de tipo IMA_MIGRATION_HMAC_SECRET activos/verificables.
+- Datos beta sintéticos: dos periodos cerrados no solapados, catálogo de asignatura, matrículas/sesiones/registros en Academic-Service y Usuarios/Personas en USER-Service.
 - La plantilla y carga SACE real no forman parte de este caso.
 Pasos:
 1. Invocar la acción con sesión Profesor válida, anoId, grado, sección, asignaturaId, dos PeriodoID y roster de UserID del libro.
-2. Verificar que teacherUserId e institutionId devueltos proceden de sesión/configuración, no de campos manipulados del payload.
-3. Incluir sesiones de otro docente, asignatura, sección, fecha fuera de periodos y estado cancelado; verificar que se excluyen.
-4. Verificar que se incluyen solo registros de las sesiones filtradas y alumnos del roster matriculado.
-5. Repetir con rol no Profesor, institución discordante, periodo abierto, alumno no matriculado y duplicidad de identidad; verificar rechazo controlado.
+2. Verificar que teacherUserId e institutionId proceden de sesión verificada y que el directorio se obtiene por envelope HMAC ACADEMIC→USER.
+3. Confirmar que USER-Service revalida token, rol, userId e institución y devuelve solo identidad/tipo/nombre.
+4. Incluir sesiones de otro docente, asignatura, sección, fecha fuera de periodos y estado cancelado; verificar que se excluyen.
+5. Verificar que se incluyen solo registros de las sesiones filtradas y alumnos con matrícula activa en el contexto.
+6. Repetir con rol no Profesor, institución discordante, credential ausente, periodo abierto, alumno no matriculado y duplicidad de identidad; verificar rechazo controlado.
 Resultado esperado:
-- Solo se devuelve el ámbito autorizado de la clase; identidad de alumno coincide con Personas.Identificacion.
+- Solo se devuelve el ámbito autorizado de la clase; identidad/tipo documental coinciden con USER.Personas.
+- Academic-Service no requiere hoja Personas local y USER-Service no devuelve email ni teléfono.
 - No se devuelven datos de otros docentes, asignaturas, periodos o estudiantes.
-- Si Personas carece de columna de tipo documental, documentMarker queda vacío y el proveedor no permite exportar.
+- Si USER.Personas carece de TipoIdentificacion o no hay equivalencia SACE, el proveedor no inventa marcador y bloquea exportación.
 Estado: Pendiente beta.
 Evidencia requerida: respuesta anonimizada del endpoint, trazas de casos permitidos/denegados y comprobación de que no aparecen registros fuera del ámbito.
 ===============================================================================
@@ -2004,4 +2007,30 @@ Pasos:
 5. Confirmar que el flujo solo devuelve bytes candidatos y no guarda, descarga ni carga a SACE.
 Estado: contrato local PASS (Actions 44542962606); validación beta real pendiente de BETA-EXAM-105/106/107/108.
 Evidencia requerida: reporte del contrato, hash de salida anonimizada, inspección de integridad OLE y aprobación de plantilla/mapeo.
+===============================================================================
+
+===============================================================================
+BETA-EXAM-110 — Directorio de identidad SACE entre Academic-Service y USER-Service
+===============================================================================
+Módulo/rol: Academic-Service → USER-Service / Profesor
+Tarea/requisito: AUD-NG-167 — identidad documental en snapshot SACE
+Objetivo: verificar que Academic-Service obtiene identificación y TipoIdentificacion desde el almacén canónico USER-Service mediante el envelope HMAC interservicio existente.
+Precondiciones:
+- Academic-Service tiene IMA_USER_SERVICE_URL apuntando al despliegue USER autorizado.
+- Existe credential ACADEMIC→USER de tipo IMA_MIGRATION_HMAC_SECRET provisionado y activo/verificable en CatalogoCredencialesServicios y ScriptProperties de ambos servicios.
+- Sesión de Profesor activa con institutionId/membership válidos y roster sintético matriculado en Academic-Service.
+- Personas incluye TipoIdentificacion para los estudiantes que se prueban; registros legacy sin tipo deben devolver vacío y bloquear exportación posterior.
+Pasos:
+1. Ejecutar getSaceAttendanceSnapshot con token Profesor y studentIds que coinciden con matrículas del contexto.
+2. Verificar que Academic-Service genera envelope ACADEMIC→USER con acción getSaceStudentIdentityDirectory y el USER-Service lo valida.
+3. Confirmar que USER-Service revalida token, rol Profesor, userId e institución.
+4. Verificar que solo regresan userId, identity, documentType y name; no email/teléfono.
+5. Probar token inválido, rol distinto, institución distinta, ID fuera de roster, duplicado, persona inactiva y credential/replay inválido; todos deben fallar cerrados.
+6. Desconfigurar IMA_USER_SERVICE_URL o credencial y confirmar error controlado sin recurrir a Personas local.
+Resultado esperado:
+- Directorio remoto exacto, mínimo y vinculado a la sesión de Profesor.
+- Ninguna lectura local de Personas desde Academic-Service.
+- Tipo documental legacy vacío; el proveedor no inventa marcador SACE.
+Estado: Pendiente de despliegue y credential provisioning real.
+Evidencia requerida: trazas anonimizadas de envelope/uso de credencial, respuesta del directorio sin PII adicional y casos negativos.
 ===============================================================================

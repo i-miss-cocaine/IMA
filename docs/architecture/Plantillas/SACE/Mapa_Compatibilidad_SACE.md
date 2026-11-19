@@ -108,22 +108,23 @@ Condiciones que aplica:
 
 ## 8. Instantánea server-side autenticada de asistencia — C1.833
 
-Se añadió la acción de solo lectura `getSaceAttendanceSnapshot` en Academic-Service, disponible explícitamente para el rol `Profesor` y resuelta por el contexto de autorización de entrada ya existente. La función vuelve a usar la identidad de sesión verificada del servicio, pero no crea una segunda cadena de permisos: deriva `teacherUserId` de esa identidad y exige que coincida con `SesionesAsistencia.DocenteUserId`. También exige que `claims.institutionId` coincida con `IMA_INSTITUTION_ID` configurado en el servicio.
+Se añadió la acción de solo lectura `getSaceAttendanceSnapshot` en Academic-Service, disponible explícitamente para el rol `Profesor` y resuelta por el contexto de autorización de entrada ya existente. La función reutiliza la identidad de sesión verificada del servicio, deriva `teacherUserId` de ella y exige que coincida con `SesionesAsistencia.DocenteUserId`. Usa `claims.institutionId` como contexto institucional y, si existe `IMA_INSTITUTION_ID` en propiedades del servicio, exige coincidencia.
 
 El endpoint recibe únicamente el contexto académico solicitado (año, grado, sección, asignatura, dos `PeriodoID` y la lista de `UserID` obtenida del libro de calificaciones). Antes de devolver datos:
 - verifica año y periodos únicos, pertenecientes al año solicitado, cerrados, con fechas válidas y rangos no solapados;
 - resuelve el nombre oficial de la asignatura desde `CatalogoAsignaturas`;
-- valida cada alumno contra `Usuarios` (cuenta activa y rol estudiante), `Personas` (identificación y nombre) y una matrícula activa en el mismo grado/sección/año;
+- valida cada alumno contra una matrícula activa en el mismo grado/sección/año en Academic-Service;
+- solicita identificación y `TipoIdentificacion` a USER-Service mediante el envelope HMAC interservicio existente (`ACADEMIC→USER`), con sesión de docente verificada y lista de IDs acotada; USER-Service valida cuenta/rol/persona activos y devuelve solo identidad, tipo documental y nombre;
 - obtiene las sesiones por fecha de clase y contexto exacto de grado, sección, asignatura y docente, excluyendo sesiones no cerradas/finalizadas y canceladas;
 - une `RegistrosAsistencia` con las sesiones seleccionadas y devuelve únicamente registros del padrón solicitado.
 
-La lista de estudiantes del cliente no se considera prueba de matrícula: cada ID debe tener cuenta activa, persona única e inscripción activa coincidente. La identidad del docente, institución y el ámbito de la clase no se aceptan desde campos de identidad libres del cliente.
+La lista de estudiantes del cliente no se considera prueba de matrícula: cada ID debe tener inscripción activa coincidente en el año/grado/sección. La consulta a USER-Service se autentica con el envelope ACADEMIC→USER y vuelve a validar la sesión del docente, institución y estado de las cuentas/personas. El endpoint no lee una hoja Personas local en Academic-Service ni acepta identidad del docente/institución desde campos libres del cliente.
 
-**Límite de esquema:** se amplió el esquema canónico de `Personas` con `TipoIdentificacion`, opcional y de valor institucional explícito. `createPerson` lo acepta y migra de forma aditiva hojas antiguas; el escritor de migración conserva el campo y deja vacío el valor de las personas históricas que no lo tenían. El endpoint devuelve `documentType` desde ese campo, pero mantiene `documentMarker: ""` salvo que exista un campo separado `SaceDocumentMarker`. El tipo general de identificación no se equipara automáticamente al marcador/código de la plantilla SACE. El proveedor exige un marcador no vacío y por ello sigue bloqueando la exportación hasta verificar la equivalencia con la plantilla oficial. No se infiere del formato de la identidad.
+**Límite de esquema:** se amplió el esquema canónico de `Personas` con `TipoIdentificacion`, opcional y de valor institucional explícito. `createPerson` lo acepta y migra de forma aditiva hojas antiguas; el escritor de migración conserva el campo y deja vacío el valor de las personas históricas que no lo tenían. USER-Service devuelve `documentType` desde ese campo; Academic-Service lo transporta y mantiene `documentMarker: ""`. El tipo general de identificación no se equipara automáticamente al marcador/código de la plantilla SACE. El proveedor exige un marcador no vacío y por ello sigue bloqueando la exportación hasta verificar la equivalencia con la plantilla oficial. No se infiere del formato de la identidad.
 
 **Límite de política:** el snapshot conserva `justificado` por registro, pero el significado de una ausencia justificada para la plantilla SACE no se resuelve en este endpoint. La especificación de asistencia de IMA define la ausencia injustificada como estado Ausente sin justificación aprobada; la regla SACE debe confirmarse antes de cambiar el cómputo del proveedor.
 
-**Estado:** endpoint de lectura candidato, sin activación UI ni exportación productiva. El contrato local prueba autenticación/rol, institución, periodo, matrícula, join de identidad, filtros de sesión y filtrado de registros. La llamada real al servicio desplegado queda registrada como beta.
+**Estado:** endpoint de lectura candidato, sin activación UI ni exportación productiva. Los contratos locales prueban autenticación/rol, institución, periodo, matrícula, filtro de sesiones, envelope ACADEMIC→USER y validación del directorio de identidad. La llamada real al servicio desplegado y la provisión del credential registry quedan registradas como beta.
 
 
 ## 9. Composición del snapshot autenticado con el proveedor candidato — C1.835
@@ -158,3 +159,14 @@ Se creó `js/sace-export-orchestrator.js` como módulo puro de composición en m
 Después de generar el archivo, vuelve a inspeccionar el XLS y verifica las 22 filas en las cinco celdas editables (inasistencias y notas de ambos parciales y recuperación), además de tamaño OLE, capacidad, fórmulas, validaciones y merges. Devuelve bytes en memoria con estado `candidate`, cantidad de filas y limitaciones; no escribe archivos, no descarga, no invoca SACE y no se integra a UI.
 
 El contrato usa las tres plantillas XLS versionadas en el repositorio y snapshots/identidades/calificaciones/asistencia sintéticos. GitHub Actions 44542962606 SUCCESS. Demuestra la ruta de extremo a extremo local, no la compatibilidad oficial ni la carga real. Los mapeos documentales de prueba son ficticios; la equivalencia real debe ser aprobada con plantilla docente autorizada.
+
+
+## 13. Directorio de identidad USER→Academic para el snapshot SACE — C1.839
+
+Se corrigió el límite de servicio detectado en C1.838: Academic-Service y USER-Service usan almacenes independientes. Academic-Service no tiene una hoja `Personas` canónica y no debe leerla localmente. La acción `getSaceAttendanceSnapshot` ahora valida las matrículas en el libro académico y solicita la identidad al USER-Service por el envelope HMAC interservicio ya implementado (`createInterServiceEnvelope` / `verifyInterServiceEnvelope`, credential type `IMA_MIGRATION_HMAC_SECRET`). No se crea un secreto ni protocolo paralelo.
+
+USER-Service solo acepta la acción `getSaceStudentIdentityDirectory` cuando el envelope viene de `ACADEMIC` y está dirigido a `USER`. Revalida el token de sesión, rol Profesor, UserID e institución; valida cuentas estudiantiles y Personas activas; devuelve únicamente UserID, identificación, tipo documental y nombre para la lista solicitada. No expone email ni teléfono. La protección HMAC, vigencia y replay usa el protocolo interservicio existente.
+
+Se corrigió además el contrato de lectura de `PeriodosAcademicos`: el esquema canónico declara `TipoPeriodo` (con lectura compatible de `Tipo` legado), no un encabezado obligatorio `Tipo`. El endpoint ya no intenta leer `Usuarios` ni `Personas` desde el spreadsheet de Academic-Service.
+
+**Límite operativo:** la integración requiere `IMA_USER_SERVICE_URL` configurada en Academic-Service y un credential ACADEMIC→USER activo/verificable en el catálogo HMAC de ambos servicios. Si falta cualquiera, la solicitud falla cerrada. BETA-EXAM-110 documenta esa prueba real.
