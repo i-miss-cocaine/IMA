@@ -185,3 +185,19 @@ Academic-Service añade requestSaceGradebookSnapshotFromExam_ y consulta ambos p
 **Verificación local:** Actions 44548365751 (Academic-Service) SUCCESS. En Exam-Service, el nuevo contrato y la suite específica de Exam-Service pasaron en 44548848434; el workflow completo reportó FAIL solo en tres pruebas generales ajenas a este cambio (phase22-document-management-suite-contract, accounting-school-document-binary-integrity y session-token-expiry). La prueba de scope también conserva un fallo ajeno configureSchoolDocumentTemplate ausente. Estos fallos no se presentan como PASS ni alteran la evidencia de los contratos específicos.
 
 **Límite:** la llamada HTTP entre los despliegues, la URL IMA_EXAM_SERVICE_URL y la sesión válida del entorno beta se verifican en BETA-EXAM-111. No hay UI, descarga ni exportación productiva.
+
+
+## 15. Consumo de gradebookSnapshots en el orquestador — C1.841
+
+Se añadió prepareCandidateExportFromAcademicSnapshot al módulo js/sace-export-orchestrator.js. El wrapper consume directamente attendanceSnapshot.data.gradebookSnapshots, exige exactamente dos snapshots, rechaza periodoId duplicado, snapshots inválidos y discrepancia entre el periodoId de la entrada y el contexto interno.
+
+Los parciales se seleccionan únicamente por partial1PeriodId y partial2PeriodId explícitos. El wrapper construye la entrada del orquestador interno con los snapshots recuperados del objeto Academic y no utiliza partial1Gradebook/partial2Gradebook si el llamador intenta suministrarlos por separado. Los IDs no se infieren del orden ni del nombre.
+
+El contrato sace-export-orchestrator-contract.test.js ahora construye snapshots académicos con los dos gradebookSnapshots y ejecuta la composición binaria sobre las tres plantillas XLS del repositorio. Verifica las 22 filas D/E/F/G/H, el tamaño y estructura del archivo, y comprueba que un gradebook externo manipulado no sustituye los datos contenidos en el snapshot. Incluye rechazos para snapshots faltantes, periodos duplicados y contexto-periodo discordante.
+
+**Verificación:** GitHub Actions 44549715550 — SACE template structure compatibility contract: SUCCESS. Pasaron sintaxis del orquestador y contrato, proveedor, estructura XLS y parcheo binario.
+
+**Límite:** el orquestador sigue siendo una composición local interna y devuelve bytes con estado CANDIDATE. No se expone a UI, no descarga ni guarda archivos, no llama a SACE y no convierte el objeto recibido en una prueba de autenticidad de un servicio desplegado. La llamada real entre servicios se valida separadamente en BETA-EXAM-111.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: hacer explícita la política de inasistencias justificadas. El proveedor no debe asumir si una ausencia justificada cuenta para SACE; debe exigir una regla configurada y probada, conservando el bloqueo cuando no exista decisión institucional/plantilla oficial.

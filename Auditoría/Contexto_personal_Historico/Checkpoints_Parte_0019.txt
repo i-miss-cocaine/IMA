@@ -159,3 +159,37 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: añadir un adaptador del orquestador que consuma directamente gradebookSnapshots del snapshot Academic, resuelva cada parcial por periodoId explícito y produzca el XLS candidato en memoria sin que el cliente pueda sustituir los snapshots ni el contexto.
 ===============================================================================
+
+===============================================================================
+### C1.841 — AUD-NG-167: orquestador consume los dos libros del snapshot Academic
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-ORCHESTRATOR-ACADEMIC-SNAPSHOT-16
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.840
+Commit de implementación: 8cb8ed9a0d0dd158230a3c325170ff6905c93903
+HEAD final de implementación: 8cb8ed9a0d0dd158230a3c325170ff6905c93903
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Se añadió prepareCandidateExportFromAcademicSnapshot(input) a js/sace-export-orchestrator.js.
+- Consume attendanceSnapshot.data.gradebookSnapshots, exige exactamente dos snapshots y mapea los libros mediante partial1PeriodId/partial2PeriodId explícitos.
+- Rechaza periodos duplicados, snapshots inválidos, periodoId interno discordante y periodos no presentes.
+- Construye la entrada del orquestador interno con los gradebooks del snapshot; no acepta sustitución por propiedades partial1Gradebook/partial2Gradebook que el llamador envíe aparte.
+- Se amplió sace-export-orchestrator-contract.test.js para ejecutar la ruta desde el snapshot Academic sobre las tres plantillas versionadas, 22 estudiantes cada una, verificar celdas D/E/F/G/H y comprobar rechazo de snapshots incompletos/duplicados/discordantes y de gradebook externo manipulado.
+
+Verificación:
+- GitHub Actions 44549715550 — SACE template structure compatibility contract: SUCCESS.
+- Pasaron node --check de js/sace-export-orchestrator.js y su contrato, sace-export-orchestrator-contract, proveedor, contrato estructural y parcheo binario.
+- HEAD de rama base sin cambios.
+
+Límites:
+- Es una composición local interna; no acredita autenticidad de datos enviados por cliente ni sustituye la llamada real a servicios desplegados.
+- El orquestador solo devuelve CANDIDATE en memoria. No UI, descarga, persistencia ni carga SACE.
+- Plantillas versionadas del repo y datos sintéticos; la plantilla oficial, mapeo documental, política de ausencias/recuperación y prueba beta permanecen pendientes.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: hacer explícita y obligatoria la política de cómputo de ausencias justificadas; bloquear la preparación si no se proporciona una regla institucional confirmada.
+===============================================================================
