@@ -1729,3 +1729,62 @@ Estado:
 Siguiente acción elegible:
 - Corregir de forma localizada los writers Academic configureSchoolYear y manageAcademicPeriod para que serialicen sus lecturas/validaciones/escrituras con el mismo ScriptLock usado por el snapshot; revisar las rutas públicas, autorización y tests concurrentes antes de añadir cualquier revisión monotónica. Después verificar writers secundarios y el helper legacy Exam.
 ===============================================================================
+
+
+===============================================================================
+### C1.881 — AUD-NG-167: serializar escritores Academic de contexto SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-ACADEMIC-SOURCE-WRITER-LOCKS-52
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 185016aa59a68e0b2d1c9b3e33fe3fd8ac3a8d03
+HEAD final de código y pruebas: 6b4e2dc6d9f28343a35abecaa878696d77d6e30a
+HEAD de registro de auditoría: 377b5e42c1789268a301d73f576cd61d217246ce
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Cambios:
+- configureSchoolYear ahora adquiere LockService.getScriptLock() con espera máxima de 10 segundos antes de leer/escribir AnosLectivos. Si no obtiene lock devuelve status:error/code:LOCK_TIMEOUT; toda ruta posterior libera el lock en finally.
+- manageAcademicPeriod ahora adquiere el mismo lock local antes de leer/escribir PeriodosAcademicos; timeout produce LOCK_TIMEOUT y la liberación está protegida por finally, incluso en retornos tempranos o excepciones.
+- Se conserva el resto de la lógica de negocio y las columnas existentes; no se modifican otros escritores ni se introducen revisiones/versiones.
+- Se añadió tests/security/academic-sace-source-writer-locks.test.js y se integró en .github/workflows/academic-service-single-auth-context.yml para push y ejecución local de la suite académica.
+
+Aclaración de auditoría C1.880:
+- manageAcademicPeriod, al actualizar un periodo existente, solo modifica Nombre y Estado. FechaInicio/FechaFin se escriben al insertar un periodo nuevo; no se atribuye a la actualización de una fila existente un cambio de rango de fechas.
+- configureSchoolYear actualiza el nombre del año (campo usado como alternativa al AnoID al resolver Matriculas.Periodo), por lo que su serialización sí es necesaria para el contexto del snapshot.
+
+Verificación local:
+- Node.js: node --check sobre el fragmento de funciones actualizado y el contrato local ejecutado con mocks; 7/7 escenarios PASS.
+- Escenarios: escritura de año bajo lock; timeout de año sin lecturas/escrituras; actualización de periodo bajo lock; inserción de periodo bajo lock; timeout de periodo sin mutación; liberación ante error de lectura en año; liberación ante error de lectura en periodo.
+- El harness local aisló las funciones modificadas por limitación de DNS del checkout; no equivale a ejecutar localmente el archivo Code.gs completo.
+
+GitHub Actions:
+- Academic-Service single authorization context — run 44640383695 SUCCESS. Incluyó node --check < backend/academic-service/Code.gs y todos los contratos de la suite académica, incluido el nuevo contrato 7/7.
+- Department Reference Consumers Local Contract — run 44640383676 SUCCESS.
+- Accounting Import Preflight Contract — run 44640383403 SUCCESS.
+- Hierarchical Configuration Contract — run 44640383374 SUCCESS.
+- Task-Service security local contracts — run 44640383411 FAILURE, assertion ajena al cambio: task-service-security-contract.test.js:541, “forced account role reset invalidates session claim caches immediately”.
+- Department Scope Contract — run 44640383442 FAILURE, assertion ajena al cambio: Phase 22 document management suite contract, falta configureSchoolDocumentTemplate. Los archivos de esos contratos no fueron modificados en esta tarea.
+- No se declara la suite global completa en verde; se reportan las dos fallas independientes sin ocultarlas.
+
+Archivos modificados:
+- backend/academic-service/Code.gs
+- tests/security/academic-sace-source-writer-locks.test.js
+- .github/workflows/academic-service-single-auth-context.yml
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+Commits:
+- 6b4e2dc6d9f28343a35abecaa878696d77d6e30a — código, contrato y workflow.
+- 377b5e42c1789268a301d73f576cd61d217246ce — registro de auditoría.
+- El commit actual incorpora el checkpoint y el índice.
+
+Estado:
+- C1.881 completa para los dos escritores de contexto priorizados.
+- La cobertura total de escritores secundarios Academic no está cerrada; no se agrega contador monotónico todavía.
+- AUD-NG-167 continúa En progreso. No se ejecutó beta ni se habilitó exportación; XLS permanece CANDIDATE.
+
+Siguiente acción elegible:
+- Revisar los escritores secundarios AnosLectivos/PeriodosAcademicos/CatalogoAsignaturas/SesionesAsistencia (createAcademicYear, prepareNewAcademicYear, updateAcademicYearStatus, createSubjectCatalogItem y openAttendanceSession), comprobar sus callers/IDs y decidir el lock mínimo necesario. Luego cerrar la cobertura de escritores Exam legacy y diseñar la revalidación con huellas por fuente.
+===============================================================================
