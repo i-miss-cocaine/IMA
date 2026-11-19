@@ -1423,8 +1423,36 @@ Implementación:
 - Se registró BETA-EXAM-107 para verificar llamada real al endpoint cuando exista despliegue.
 
 Estado AUD-NG-167: [~] En progreso. Endpoint local candidato listo; no se habilita UI/producción. Pendientes tipo documental canónico, semántica SACE de justificación, libro contextual y validación con plantilla/carga oficial.
-Pruebas locales: pendientes de ejecutar por Actions tras commit; no registrar PASS anticipadamente.
+Pruebas locales: GitHub Actions 44538593734 SUCCESS; node --check de Code.gs y contrato sace-attendance-snapshot-contract PASS, junto con single-auth-context y contratos de regresión académicos incluidos en el workflow.
 HEAD final se actualizará al publicar.
 
 Siguiente acción: resolver fuente canónica de tipo documental en el modelo de identidad (sin inferencia), y conectar el snapshot al flujo de preparación del proveedor manteniendo bloqueo si falta el marcador.
+===============================================================================
+
+===============================================================================
+### C1.834 — AUD-NG-167: verificación local del snapshot server-side
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-ATTENDANCE-VERIFY-09
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.833
+HEAD de implementación: 97d589688eafa7716784892b8f26e8ac58232967
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Verificación:
+- GitHub Actions 44538593734 — Academic-Service single authorization context: SUCCESS. Incluye node --check de backend/academic-service/Code.gs, academic-service-single-auth-context, sace-attendance-snapshot-contract y las pruebas de regresión de autorizaciones, notas, justificaciones, migración y documentos.
+- GitHub Actions 44538593785 — SACE template structure compatibility contract: SUCCESS. Se mantienen aprobados los contratos estructurales, binarios y de proveedor.
+- El contrato nuevo pasó con fixtures sintéticos: identidad del docente e institución derivadas de sesión/configuración; rechazo de rol no docente e institución discordante; periodos cerrados no solapados; asignatura y matrícula; unión Personas/Usuarios; filtro de sesiones por fecha/contexto/docente y selección de registros por roster.
+- Revisión del diff: 9 archivos cambiados, 187 adiciones/1 eliminación en Code.gs, 130 líneas de contrato nuevo, workflow, mapa, beta_test y registros de continuidad. Sin cambios en rama base.
+- La comparación Git confirma un commit de avance respecto al checkpoint previo, sin divergencia de la rama de trabajo.
+
+Limitaciones conservadas:
+- Personas estándar no tiene tipo documental; el endpoint deja documentMarker vacío y el proveedor debe rechazar la exportación hasta disponer de una fuente institucional.
+- La semántica SACE de ausencias justificadas no se decide en este cambio.
+- La prueba de servicio desplegado es BETA-EXAM-107 (Pendiente beta); no se invocó infraestructura real ni se activó UI/exportación.
+
+Estado: endpoint local completado y contrato local PASS; AUD-NG-167 sigue [~] En progreso por la integración con el proveedor y los datos/reglas/plantilla SACE pendientes.
+Siguiente acción concreta: conectar getSaceAttendanceSnapshot al ensamblador del proveedor como wrapper de preparación (sin exposición UI), y añadir pruebas que verifiquen que el tipo documental faltante bloquea el ensamblado.
 ===============================================================================
