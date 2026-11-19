@@ -127,7 +127,7 @@ function runtime(options = {}) {
     getSheetOrThrow, normalizeString, SpreadsheetApp: { openById() { return ss; } }
   };
   vm.runInNewContext(declarations + "\nthis.getCompetencyEvaluations = getCompetencyEvaluations;", context);
-  return { call: payload => context.getCompetencyEvaluations(payload), sheets,
+  return { call: payload => context.getCompetencyEvaluations(payload), sheets, createRow: contextRow,
     stats: () => ({ acquires, releases, held }) };
 }
 
@@ -164,7 +164,7 @@ assert.deepEqual(timeout.stats(), { acquires: 1, releases: 0, held: false });
 
 let racing;
 racing = runtime({ beforeAcquire() {
-  racing.sheets.EvaluacionesCompetencias.rows.push(contextRow("EV-AFTER", "COMP-A", "IND-A", "STU-1", "Math", "P1", "Alto", "", "", null));
+  racing.sheets.EvaluacionesCompetencias.rows.push(racing.createRow("EV-AFTER", "COMP-A", "IND-A", "STU-1", "Math", "P1", "Alto", "", "", null));
 } });
 assert.equal(racing.call({}).total, 4, "read uses the post-lock snapshot");
 
