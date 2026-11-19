@@ -317,6 +317,14 @@
         if (!Number.isFinite(Number(item.recovery)) || Number(item.recovery) < Number(scale.min) ||
             Number(item.recovery) > Number(scale.max)) throw new Error("SACE_RECOVERY_VALUE_OUT_OF_RANGE:row-" + (STUDENT_FIRST_ROW + index));
       }
+      ["partial1Absences", "partial2Absences"].forEach(field => {
+        const value = item && item[field];
+        if (value === null || value === undefined || value === "") return;
+        if (!Number.isInteger(Number(value)) || Number(value) < 0) {
+          throw new Error("SACE_ABSENCE_VALUE_INVALID:row-" + (STUDENT_FIRST_ROW + index) + ":" + field);
+        }
+        encodeRK(Number(value), 0);
+      });
     });
     const parsed = parseCompound(input);
     if (parsed.workbookProtectionFlag !== 0) throw new Error("SACE_WORKBOOK_PROTECTION_LAYOUT_UNSUPPORTED");
@@ -390,10 +398,18 @@
       updatedView.setUint16(2, newLength, true);
       if (entry.count === 5) updatedView.setUint16(4 + newLength - 2, 6, true);
       const firstColumn = 3;
+      const partial1AbsencesOffset = 4 + 4 + (3 - firstColumn) * 6 + 2;
       const partial1Offset = 4 + 4 + (4 - firstColumn) * 6 + 2;
+      const partial2AbsencesOffset = 4 + 4 + (5 - firstColumn) * 6 + 2;
       const partial2Offset = 4 + 4 + (6 - firstColumn) * 6 + 2;
       const rowValues = rows[row - (STUDENT_FIRST_ROW - 1)];
+      if (rowValues.partial1Absences !== null && rowValues.partial1Absences !== undefined && rowValues.partial1Absences !== "") {
+        updatedView.setUint32(partial1AbsencesOffset, encodeRK(Number(rowValues.partial1Absences), 0), true);
+      }
       updatedView.setUint32(partial1Offset, encodeRK(Number(rowValues.partial1), precision), true);
+      if (rowValues.partial2Absences !== null && rowValues.partial2Absences !== undefined && rowValues.partial2Absences !== "") {
+        updatedView.setUint32(partial2AbsencesOffset, encodeRK(Number(rowValues.partial2Absences), 0), true);
+      }
       updatedView.setUint32(partial2Offset, encodeRK(Number(rowValues.partial2), precision), true);
       replacementsByIndex.set(entry.index, [updated]);
     }
