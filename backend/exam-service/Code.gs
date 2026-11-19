@@ -3421,7 +3421,7 @@ function getCompetencyEvaluationsUnlocked_(payload, context) {
     const periodoId = String(p.periodoId || "").trim();
     const anoId = String(p.anoId || "").trim();
     const allowedDepartments = (scope.departmentIds || []).map(value => String(value || "").trim()).filter(Boolean);
-    if (!targetUserId || !asignaturaId || !periodoId || !/^20\\d{2}$/.test(anoId)) {
+    if (!targetUserId || !asignaturaId || !periodoId || !/^20\d{2}$/.test(anoId)) {
       throw new Error("RESOURCE_NOT_AVAILABLE");
     }
     if (!departmentId && allowedDepartments.length === 1) departmentId = allowedDepartments[0];
