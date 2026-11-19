@@ -5985,7 +5985,9 @@ function toBase64(file) {
             const context = getGradebookContextPayload();
             const response = await fetchApi('EXAM', 'getCompetencyEvaluations', {
                 ...context, userId, asignaturaId: context.asignatura,
-                periodoId: context.periodoId, profesorId: currentUser.userId
+                periodoId: context.periodoId, profesorId: currentUser.userId,
+                departmentId: String(document.getElementById('gb-competency-department-id')?.value ||
+                    document.getElementById('gb-catalog-department')?.value || "").trim()
             });
             if (requestVersion !== gradebookCompetencyRequestVersion) return;
             if (!response || response.status !== 'success' || !Array.isArray(response.data)) {
