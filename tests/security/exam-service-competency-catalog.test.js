@@ -82,4 +82,96 @@ for (const contract of ["fetchApi('EXAM', 'getCompetencyCatalog'",
   "requestVersion !== gradebookCatalogRequestVersion", "programaCurricular: String(gradebookCompetencyCatalog"]) {
   assert.ok(teacher.includes(contract), "missing teacher integration " + contract);
 }
-process.stdout.write("exam-service-competency-catalog: PASS (18 contracts)\n");
+
+function mutationFixture(options = {}) {
+  const state = { held: false, opens: 0, uuid: 0, rowsWritten: 0, nestedError: "" };
+  const actor = { authorized: true, userId: "PROF-1", role: "Profesor" };
+  const scope = { authorized: true, institutionId: "INST-A", departmentIds: ["DEPT-A"], institutionWide: false };
+  function makeSheet(rows, kind) {
+    const sheet = {
+      rows: rows.map(row => row.slice()),
+      getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
+      appendRow(row) {
+        this.rows.push(row.slice());
+        if (kind === "catalog") {
+          state.rowsWritten++;
+          if (options.onCatalogAppend) options.onCatalogAppend(row.slice());
+        }
+      },
+      getRange(row, column, rowCount, columnCount) {
+        return {
+          setValues(values) {
+            for (let r = 0; r < values.length; r++) {
+              for (let c = 0; c < values[r].length; c++) sheet.rows[row - 1 + r][column - 1 + c] = values[r][c];
+            }
+          },
+          setValue(value) { sheet.rows[row - 1][column - 1] = value; }
+        };
+      }
+    };
+    return sheet;
+  }
+  const catalogSheet = makeSheet([], "catalog");
+  const configSheet = makeSheet([["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"],
+    ["CFG-1", "", "P1", "10", "A", "MAT", "", "", "PROF-1"]], "config");
+  const ss = { getSheetByName(name) {
+    if (name === "CatalogoCompetencias") return catalogSheet;
+    if (name === "ConfiguracionAcademica") return configSheet;
+    return null;
+  }};
+  const lock = {
+    tryLock() { if (options.timeout || state.held) return false; state.held = true; return true; },
+    releaseLock() { state.held = false; }
+  };
+  const runtime = {
+    COMPETENCY_CATALOG_HEADERS_: headers,
+    validateRolePermission: () => ({ authorized: true }),
+    getVerifiedExamIdentity_: () => actor,
+    LockService: { getScriptLock: () => lock },
+    SpreadsheetApp: { openById() { state.opens++; return ss; } },
+    getVerifiedExamDepartmentScope_: () => scope,
+    getSheetOrThrow: (spreadsheet, name) => spreadsheet.getSheetByName(name),
+    getOrCreateSheet: (spreadsheet, name) => spreadsheet.getSheetByName(name),
+    normalizeString: norm,
+    Utilities: { getUuid() { state.uuid++; return "UUID-" + state.uuid; } }
+  };
+  vm.runInNewContext(extract("saveCompetencyCatalogItem") + ";this.save=saveCompetencyCatalogItem;", runtime);
+  const payload = { anoId: "2026", grado: "10", seccion: "A", asignaturaId: "MAT", periodoId: "P1",
+    competenciaId: "COMP-1", competencia: "Resolver problemas", indicadorId: "IND-1",
+    indicador: "Resuelve problemas contextualizados", programaCurricular: "PLAN-A" };
+  return { state, catalogSheet, payload, save: p => runtime.save(p || payload) };
+}
+const mutation = mutationFixture();
+const created = mutation.save();
+assert.equal(created.status, "success");
+assert.equal(mutation.catalogSheet.rows.length, 2);
+assert.equal(mutation.catalogSheet.rows[1][2], "DEPT-A");
+assert.equal(mutation.catalogSheet.rows[1][5], "A");
+assert.equal(mutation.catalogSheet.rows[1][16], mutation.catalogSheet.rows[1][16]);
+const updated = mutation.save(Object.assign({}, mutation.payload, {
+  competencia: "Resolver problemas matemáticos"
+}));
+assert.equal(updated.actualizado, true);
+assert.equal(mutation.catalogSheet.rows.length, 2);
+assert.equal(mutation.catalogSheet.rows[1][8], "Resolver problemas matemáticos");
+assert.equal(mutation.state.held, false);
+const deniedAssignment = mutationFixture();
+assert.throws(() => deniedAssignment.save(Object.assign({}, deniedAssignment.payload, { asignaturaId: "SCI" })),
+  /RESOURCE_NOT_AVAILABLE/);
+assert.equal(deniedAssignment.catalogSheet.rows.length, 0);
+const timedOut = mutationFixture({ timeout: true });
+assert.throws(() => timedOut.save(), /COMPETENCY_CATALOG_LOCK_TIMEOUT/);
+assert.equal(timedOut.state.opens, 0);
+let nestedError = "";
+const concurrent = mutationFixture({ onCatalogAppend(row) {
+  if (String(row[0]).startsWith("COMP-CAT-")) {
+    try { concurrent.save(); } catch (error) { nestedError = error.message; }
+  }
+}});
+const outer = concurrent.save();
+assert.equal(outer.status, "success");
+assert.match(nestedError, /COMPETENCY_CATALOG_LOCK_TIMEOUT/);
+assert.equal(concurrent.catalogSheet.rows.length, 2);
+assert.equal(concurrent.state.rowsWritten, 2);
+
+process.stdout.write("exam-service-competency-catalog: PASS (24 contracts)\n");
