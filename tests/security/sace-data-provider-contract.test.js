@@ -52,6 +52,20 @@ function build(overrides = {}) {
 }
 const result = build();
 assert.equal(result.status, "candidate");
+const attendancePasses = { sessions: 0, records: 0 };
+const countedSessions = sessions.slice();
+countedSessions.forEach = function(callback, thisArg) {
+  attendancePasses.sessions++;
+  return Array.prototype.forEach.call(this, callback, thisArg);
+};
+const countedRecords = attendance.slice();
+countedRecords.forEach = function(callback, thisArg) {
+  attendancePasses.records++;
+  return Array.prototype.forEach.call(this, callback, thisArg);
+};
+build({ attendanceSessions: countedSessions, attendanceRecords: countedRecords });
+assert.deepEqual(attendancePasses, { sessions: 1, records: 1 },
+  "both periods must share one attendance-session pass and one attendance-record pass");
 assert.equal(result.sourceStudents[0].documentType, "DNI");
 assert.deepEqual(result.sourceStudents.map(row => [
   row.userId, row.partial1Absences, row.partial1, row.partial2Absences, row.partial2, row.recovery
