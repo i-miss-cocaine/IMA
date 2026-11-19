@@ -5908,8 +5908,9 @@ function toBase64(file) {
 
     function applySelectedGradebookCompetencyCatalogItem() {
         const select = document.getElementById('gb-competency-catalog');
-        const index = Number(select?.value);
-        const item = Number.isInteger(index) ? gradebookCompetencyCatalog[index] : null;
+        const selectedValue = String(select?.value || "");
+        const index = selectedValue === "" ? -1 : Number(selectedValue);
+        const item = Number.isInteger(index) && index >= 0 ? gradebookCompetencyCatalog[index] : null;
         document.getElementById('gb-competency-id').value = item ? item.competenciaId : "";
         document.getElementById('gb-indicator-id').value = item ? item.indicadorId : "";
     }
@@ -5990,7 +5991,6 @@ function toBase64(file) {
     });
     document.getElementById('gb-competency-catalog')?.addEventListener('change', applySelectedGradebookCompetencyCatalogItem);
     document.getElementById('gb-catalog-program')?.addEventListener('change', loadGradebookCompetencyCatalog);
-    document.getElementById('btn-gb-load-competencies')?.addEventListener('click', loadGradebookCompetencyEvaluations);
     document.getElementById('gb-competency-student')?.addEventListener('change', loadGradebookCompetencyEvaluations);
 
     document.getElementById('btn-gb-save-rubric')?.addEventListener('click', async () => {
