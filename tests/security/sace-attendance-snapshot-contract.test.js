@@ -118,7 +118,7 @@ assert.equal(createContext("Estudiante").runSnapshot(payload).code, "SACE_TEACHE
 assert.equal(createContext("Profesor", "INST-OTHER").runSnapshot(payload).code, "SACE_INSTITUTION_CONTEXT_REQUIRED");
 assert.equal(createContext().runSnapshot(Object.assign({}, payload, { studentIds: ["STU-1", "STU-1"] })).code, "SACE_STUDENT_ROSTER_DUPLICATE");
 assert.equal(createContext().runSnapshot(Object.assign({}, payload, { periodoIds: ["P1", "P1"] })).code, "SACE_PERIODS_MUST_BE_DISTINCT");
-assert.equal(createContext().runSnapshot(Object.assign({}, payload, { studentIds: ["STU-UNKNOWN"] })).code, "SACE_STUDENT_ACCOUNT_INVALID");
+assert.equal(createContext().runSnapshot(Object.assign({}, payload, { studentIds: ["STU-UNKNOWN"] })).code, "SACE_STUDENT_ENROLLMENT_CONTEXT_MISMATCH");
 assert.equal(createContext().runSnapshot(Object.assign({}, payload, { periodoIds: ["P1", "P-UNKNOWN"] })).code, "SACE_PERIOD_CONTEXT_MISMATCH");
 
 const professorStart = source.indexOf('"Profesor": [', source.indexOf("const ROLE_PERMISSIONS"));
