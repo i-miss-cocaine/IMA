@@ -2768,6 +2768,7 @@ function getRubricsUnlocked_(payload, context) {
     throw new Error("RESOURCE_OWNERSHIP_SCHEMA_INVALID");
   }
   const scope = context.scope || {};
+  const requestedDepartmentId = String((payload && payload.departmentId) || "").trim();
   const ownedRubrics = Object.create(null);
   ownershipRows.slice(1).forEach(row => {
     if (String(row[2] || "").trim().toUpperCase() !== "RUBRICA_EVALUACION") return;
@@ -2795,7 +2796,7 @@ function getRubricsUnlocked_(payload, context) {
         String(owner[1] || "").trim() === String(scope.institutionId || "").trim() &&
         !!departmentId && (scope.institutionWide === true ||
           (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId));
-      if (!inScope) return;
+      if (!inScope || (requestedDepartmentId && departmentId !== requestedDepartmentId)) return;
     }
     if (asignatura && normalizeString(row[2]) !== normalizeString(asignatura)) return;
     let criterios = [];
@@ -3263,11 +3264,13 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
         String(row[2] || "").trim().toUpperCase() === "RUBRICA_EVALUACION" &&
         String(row[3] || "").trim() === rubricId);
       if (rubricOwnership.length) {
+        if (role === "Profesor" && !requestedDepartmentId) throw new Error("RESOURCE_NOT_AVAILABLE");
         const owned = rubricOwnership.filter(row =>
           String(row[1] || "").trim() === String(scope.institutionId).trim() &&
           String(row[5] || "").trim().toUpperCase() === "ACTIVE" &&
           (scope.institutionWide === true || (scope.departmentIds || []).some(department =>
-            String(department || "").trim() === String(row[4] || "").trim())));
+            String(department || "").trim() === String(row[4] || "").trim())) &&
+          (!requestedDepartmentId || String(row[4] || "").trim() === requestedDepartmentId));
         if (rubricOwnership.length !== 1 || owned.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
       }
     }
