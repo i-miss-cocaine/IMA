@@ -6128,3 +6128,10 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - SACE template compatibility Action 44632958950 SUCCESS; Academic-Service 44632958918 SUCCESS.
 - Commit fbbd653518c94484ccbd055666d8c179b7c07fa0. Evidencia en Checkpoints_Parte_0019.txt — C1.871.
 - Siguiente: auditar la unión por userId y el orden determinista de filas; no habilitar exportación real sin equivalencias oficiales.
+
+### C1.872 — AUD-NG-167: unión exacta de identidad y roster
+- El proveedor ahora exige que identityRecords coincida exactamente con los userId del roster; faltantes conservan su error específico y registros extra se rechazan. Documentos vacíos o duplicados tras normalización fallan cerrado.
+- Contrato reproducible demuestra que reordenar directorio, sesiones y registros de asistencia no altera el resultado. mapRowsToTemplate empareja por identidad normalizada y emite filas en el orden fijo del template, no en el orden de llegada de Exam.
+- SACE template compatibility Action 44633503483 SUCCESS; Academic-Service 44633412787 SUCCESS.
+- Commits 3c9c60a2d650db4334fffc6da6a110bedbb796b6, b5212d30cf8974d3c64f12ed4b856d3ec257750d y b13fd7e1c83ad661ed77568883bfc9d69af5d3da. Evidencia en Checkpoints_Parte_0019.txt — C1.872.
+- Siguiente: auditar normalización documental y colisiones entre USER/Academic/proveedor/template; no inferir la validez oficial de identificadores sin fuente institucional.

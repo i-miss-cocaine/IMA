@@ -1336,3 +1336,46 @@ Estado:
 Siguiente acción elegible:
 - Auditar integridad de la unión por userId entre gradebooks, identidad y asistencia, además de orden estable de filas del template; verificar que la salida sea determinista y no dependa del orden de las hojas o de respuestas interservicio.
 ===============================================================================
+
+===============================================================================
+### C1.872 — AUD-NG-167: unión exacta de identidad y roster, independencia del orden
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-IDENTITY-ROSTER-JOIN-43
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 25d78e28dc486b1fcc227e9333c2dba5fa482af2
+HEAD de implementación: 3c9c60a2d650db4334fffc6da6a110bedbb796b6
+HEAD de compatibilidad: b5212d30cf8974d3c64f12ed4b856d3ec257750d
+HEAD de prueba de orden: b13fd7e1c83ad661ed77568883bfc9d69af5d3da
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo y corrección:
+- El proveedor unía identityRecords por userId, pero no rechazaba registros adicionales fuera del roster solicitado. Aunque no se exportaban, el contrato no era exacto.
+- Ahora exige correspondencia uno-a-uno entre el conjunto de alumnos de ambos gradebooks y el directorio de identidad; conserva el error específico SACE_IDENTITY_RECORD_MISSING y rechaza extras.
+- El proveedor también rechaza documentos normalizados vacíos o duplicados, como defensa adicional en la frontera del candidato.
+- Se verificó que el resultado no dependa del orden de identityRecords, sesiones o registros de asistencia. El orquestador ya mapea por identidad documental normalizada al orden del template, aunque el roster de Exam llegue invertido.
+- Las sesiones/registros de asistencia se indexan por claves estables y se rechazan duplicados en sesiones y pares sesión/alumno; el conteo no depende del orden de filas.
+
+Archivos modificados:
+- js/sace-data-provider.js
+- tests/security/sace-data-provider-contract.test.js
+
+Commits:
+- 3c9c60a2d650db4334fffc6da6a110bedbb796b6 — unión exacta del directorio de identidad y validación de documentos duplicados.
+- b5212d30cf8974d3c64f12ed4b856d3ec257750d — preservación de error específico cuando falta identidad.
+- b13fd7e1c83ad661ed77568883bfc9d69af5d3da — prueba de independencia del orden de identidad y asistencia.
+
+Verificación:
+- SACE template structure compatibility Action 44633503483 SUCCESS: sintaxis y contratos de template, binary patch, provider, orchestrator y aislamiento candidato PASS.
+- Academic-Service Action 44633412787 SUCCESS: node --check y contratos de Academic, incluido transporte batch, PASS.
+- SACE template compatibility 44633412802 SUCCESS en el commit anterior, antes de la prueba adicional de orden.
+- No se usa infraestructura desplegada ni se habilita UI, upload o exportación productiva.
+
+Estado:
+- La unión por userId entre roster e identidad es exacta y no depende del orden de los registros.
+- AUD-NG-167 continúa En progreso; validaciones beta y equivalencias oficiales siguen pendientes.
+- XLS permanece CANDIDATE.
+
+Siguiente acción elegible:
+- Auditar el mapeo entre documento de identidad y fila del template: normalización usada por USER/Academic/proveedor/template, colisiones, caracteres admitidos y ambigüedad de identidad; mantener el bloqueo de producción si la regla documental oficial no está confirmada.
+===============================================================================
