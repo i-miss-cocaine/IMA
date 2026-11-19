@@ -6043,3 +6043,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El contrato integrado confirma que cualquier recuperación no mapeada en un gradebookSnapshot bloquea prepareCandidateExportFromAcademicSnapshot; no se rellena H con un valor arbitrario.
 - SACE Action 44572519619 SUCCESS (Node.js 22, sintaxis y contratos SACE completos). No existe CLI/package script declarado; la suite se ejecuta por GitHub Actions.
 - AUD-NG-167 sigue En progreso por precondiciones beta oficiales/de despliegue. No iniciar AUD-NG-168/TAREA-13 mientras permanezca abierto.
+
+
+### C1.861 — AUD-NG-167: reconciliación de HEAD y dependencias beta
+- Se resolvió el HEAD de la rama por referencia: 475d7b86473fb2f3cdc5318ccdca64851048899c. Compare desde el commit de implementación C1.860 (4141dc65f8ffe879f84d4c415391f95bdec909c1): 1 commit adelante, 0 atrás; el único commit adicional es documental. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Se inspeccionó el job de GitHub Actions 44572519619: SUCCESS; Node.js 22, sintaxis y contratos SACE ejecutados.
+- Se reconciliaron BETA-EXAM-105/106/108/112 (beta y fuente/regla oficial) y BETA-EXAM-107/110/111/113 (despliegues y comunicación real). Código de centro y JornadaID siguen sin equivalencia acreditada.
+- Revisión estática del proveedor/orquestador y snapshots no encontró evidencia suficiente para habilitar producción; el candidato continúa en memoria y aislado. No se modificó código.
+- No se inicia AUD-NG-168/TAREA-13 mientras siga vigente la dependencia declarada por el Plan Maestro. La ausencia de despliegue/plantilla oficial no invalida ni bloquea verificaciones locales independientes.
