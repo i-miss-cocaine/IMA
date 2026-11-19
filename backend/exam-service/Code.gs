@@ -2959,13 +2959,13 @@ function saveRubricUnlocked_(payload, context) {
 }
 
 // Catálogo institucional de competencias e indicadores. No presupone equivalencia SACE.
-const COMPETENCY_CATALOG_HEADERS_ = ["ID", "InstitutionID", "AnoID", "Grado", "AsignaturaID",
-  "CompetenciaID", "Competencia", "IndicadorID", "Indicador", "ProgramaCurricular",
+const COMPETENCY_CATALOG_HEADERS_ = ["ID", "InstitutionID", "DepartmentID", "AnoID", "Grado", "Seccion",
+  "AsignaturaID", "CompetenciaID", "Competencia", "IndicadorID", "Indicador", "ProgramaCurricular",
   "Estado", "RegisteredBy", "CreatedAt", "UpdatedAt", "ContextKey"];
 
 function competencyCatalogContextKey_(item) {
-  return JSON.stringify([item.institutionId, item.anoId, item.grado, item.asignaturaId,
-    item.programaCurricular, item.competenciaId, item.indicadorId].map(value => normalizeString(value)));
+  return JSON.stringify([item.institutionId, item.departmentId, item.anoId, item.grado, item.seccion,
+    item.asignaturaId, item.programaCurricular, item.competenciaId, item.indicadorId].map(value => normalizeString(value)));
 }
 
 function getCompetencyCatalog(payload) {
@@ -2987,15 +2987,17 @@ function getCompetencyCatalogUnlocked_(payload, context) {
   const p = payload && typeof payload === "object" ? payload : {};
   const result = rows.slice(1).filter(row =>
     String(row[1] || "").trim() === String(scope.institutionId).trim() &&
-    String(row[10] || "").trim().toUpperCase() === "ACTIVE" &&
-    (!p.anoId || String(row[2] || "").trim() === String(p.anoId).trim()) &&
-    (!p.grado || normalizeString(row[3]) === normalizeString(p.grado)) &&
-    (!p.asignaturaId || normalizeString(row[4]) === normalizeString(p.asignaturaId)) &&
-    (!p.programaCurricular || normalizeString(row[9]) === normalizeString(p.programaCurricular))
+    (!String(row[2] || "").trim() || scope.institutionWide === true || (scope.departmentIds || []).some(id => String(id || "").trim() === String(row[2]).trim())) &&
+    String(row[12] || "").trim().toUpperCase() === "ACTIVE" &&
+    (!p.anoId || String(row[3] || "").trim() === String(p.anoId).trim()) &&
+    (!p.grado || normalizeString(row[4]) === normalizeString(p.grado)) &&
+    (!p.seccion || normalizeString(row[5]) === normalizeString(p.seccion)) &&
+    (!p.asignaturaId || normalizeString(row[6]) === normalizeString(p.asignaturaId)) &&
+    (!p.programaCurricular || normalizeString(row[11]) === normalizeString(p.programaCurricular))
   ).map(row => ({
-    catalogItemId: row[0], anoId: row[2], grado: row[3], asignaturaId: row[4],
-    competenciaId: row[5], competencia: row[6], indicadorId: row[7], indicador: row[8],
-    programaCurricular: row[9], estado: row[10]
+    catalogItemId: row[0], departmentId: row[2], anoId: row[3], grado: row[4], seccion: row[5],
+    asignaturaId: row[6], competenciaId: row[7], competencia: row[8], indicadorId: row[9],
+    indicador: row[10], programaCurricular: row[11], estado: row[12]
   }));
   const pairs = Object.create(null);
   result.forEach(item => {
@@ -3028,21 +3030,26 @@ function saveCompetencyCatalogItem(payload) {
     }
     const role = String(actor.role || "").trim();
     const anoId = String(p.anoId || "").trim(), grado = String(p.grado || "").trim();
+    const seccion = String(p.seccion || "").trim();
     const asignaturaId = String(p.asignaturaId || "").trim();
     const competenciaId = String(p.competenciaId || "").trim();
     const competencia = String(p.competencia || "").trim();
     const indicadorId = String(p.indicadorId || "").trim();
     const indicador = String(p.indicador || "").trim();
     const programaCurricular = String(p.programaCurricular || "").trim();
-    if (!anoId || !/^20\\d{2}$/.test(anoId) || !grado || !asignaturaId ||
+    if (!anoId || !/^20\\d{2}$/.test(anoId) || !grado || !seccion || !asignaturaId ||
         !competenciaId || !competencia || !indicadorId || !indicador || !programaCurricular) {
       throw new Error("COMPETENCY_CATALOG_REQUIRED_FIELDS");
     }
     if ([anoId, grado, asignaturaId, competenciaId, competencia, indicadorId, indicador, programaCurricular]
         .some(value => value.length > 160)) throw new Error("COMPETENCY_CATALOG_FIELD_TOO_LONG");
+    let departmentId = String(p.departmentId || "").trim();
     if (role === "Profesor") {
+      const allowedDepartments = (scope.departmentIds || []).map(value => String(value || "").trim()).filter(Boolean);
+      if (!departmentId && allowedDepartments.length === 1) departmentId = allowedDepartments[0];
+      if (!departmentId || !allowedDepartments.includes(departmentId)) throw new Error("RESOURCE_NOT_AVAILABLE");
       const periodoId = String(p.periodoId || "").trim();
-      if (!periodoId || !String(p.seccion || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
+      if (!periodoId) throw new Error("RESOURCE_NOT_AVAILABLE");
       const configSheet = getSheetOrThrow(ss, "ConfiguracionAcademica");
       const configData = configSheet.getDataRange().getValues();
       const configHeaders = ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"];
@@ -3057,7 +3064,7 @@ function saveCompetencyCatalogItem(payload) {
       if (!assignments.length || assignments.some(row => String(row[8] || "").trim() !== actor.userId)) {
         throw new Error("RESOURCE_NOT_AVAILABLE");
       }
-    } else if (scope.institutionWide !== true) {
+    } else if (scope.institutionWide !== true || (departmentId && !(scope.departmentIds || []).some(value => String(value || "").trim() === departmentId))) {
       throw new Error("RESOURCE_NOT_AVAILABLE");
     }
     const sheet = ss.getSheetByName("CatalogoCompetencias") || getOrCreateSheet(ss, "CatalogoCompetencias");
@@ -3070,23 +3077,23 @@ function saveCompetencyCatalogItem(payload) {
         COMPETENCY_CATALOG_HEADERS_.some((header, index) => String(rows[0][index] || "").trim() !== header)) {
       throw new Error("COMPETENCY_CATALOG_SCHEMA_INVALID");
     }
-    const item = { institutionId: scope.institutionId, anoId, grado, asignaturaId,
+    const item = { institutionId: scope.institutionId, departmentId, anoId, grado, seccion, asignaturaId,
       competenciaId, indicadorId, programaCurricular };
     const contextKey = competencyCatalogContextKey_(item);
     const matches = rows.slice(1).map((row, index) => ({ row, rowIndex: index + 1 }))
-      .filter(entry => String(entry.row[14] || "") === contextKey);
+      .filter(entry => String(entry.row[16] || "") === contextKey);
     if (matches.length > 1) throw new Error("COMPETENCY_CATALOG_DUPLICATE_ENTRY");
     const now = new Date().toISOString();
     if (matches.length === 1) {
       const existing = matches[0].row;
-      if (String(existing[10] || "").trim().toUpperCase() === "INACTIVE") throw new Error("COMPETENCY_CATALOG_ENTRY_INACTIVE");
-      sheet.getRange(matches[0].rowIndex + 1, 7, 1, 3).setValues([[competencia, indicadorId, indicador]]);
-      sheet.getRange(matches[0].rowIndex + 1, 15).setValue(now);
+      if (String(existing[12] || "").trim().toUpperCase() === "INACTIVE") throw new Error("COMPETENCY_CATALOG_ENTRY_INACTIVE");
+      sheet.getRange(matches[0].rowIndex + 1, 9, 1, 3).setValues([[competencia, indicadorId, indicador]]);
+      sheet.getRange(matches[0].rowIndex + 1, 16).setValue(now);
       return { status: "success", catalogItemId: existing[0], actualizado: true };
     }
     const id = "COMP-CAT-" + Utilities.getUuid();
-    sheet.appendRow([id, scope.institutionId, anoId, grado, asignaturaId, competenciaId, competencia,
-      indicadorId, indicador, programaCurricular, "ACTIVE", actor.userId, now, now, contextKey]);
+    sheet.appendRow([id, scope.institutionId, departmentId, anoId, grado, seccion, asignaturaId, competenciaId,
+      competencia, indicadorId, indicador, programaCurricular, "ACTIVE", actor.userId, now, now, contextKey]);
     return { status: "success", catalogItemId: id, actualizado: false };
   } finally {
     try { lock.releaseLock(); } catch (_) {}
@@ -3188,13 +3195,15 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
   if (!program) throw new Error("COMPETENCY_CATALOG_CONTEXT_REQUIRED");
   const catalogMatches = catalogRows.slice(1).filter(row =>
     String(row[1] || "").trim() === String(scope.institutionId || "").trim() &&
-    String(row[2] || "").trim() === anoId &&
-    normalizeString(row[3]) === normalizeString(profile.grado) &&
-    normalizeString(row[4]) === normalizeString(asignaturaId) &&
-    String(row[5] || "").trim() === competenciaId &&
-    String(row[7] || "").trim() === indicadorId &&
-    String(row[10] || "").trim().toUpperCase() === "ACTIVE" &&
-    (!program || normalizeString(row[9]) === normalizeString(program)));
+    (!String(row[2] || "").trim() || scope.institutionWide === true || (scope.departmentIds || []).some(id => String(id || "").trim() === String(row[2]).trim())) &&
+    String(row[3] || "").trim() === anoId &&
+    normalizeString(row[4]) === normalizeString(profile.grado) &&
+    normalizeString(row[5]) === normalizeString(profile.seccion) &&
+    normalizeString(row[6]) === normalizeString(asignaturaId) &&
+    String(row[7] || "").trim() === competenciaId &&
+    String(row[9] || "").trim() === indicadorId &&
+    String(row[12] || "").trim().toUpperCase() === "ACTIVE" &&
+    (!program || normalizeString(row[11]) === normalizeString(program)));
   if (catalogMatches.length !== 1) {
     throw new Error(catalogMatches.length ? "COMPETENCY_CATALOG_ENTRY_AMBIGUOUS" : "COMPETENCY_CATALOG_ITEM_NOT_FOUND");
   }
