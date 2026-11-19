@@ -970,3 +970,44 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: verificar HEAD/checkpoint final, registrar exactamente los bloqueos beta restantes y reanudar desde el primero cuando exista el entorno/archivo oficial.
 ===============================================================================
+
+
+===============================================================================
+### C1.861 — AUD-NG-167: reconciliación de HEAD y matriz de dependencias beta
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-HEAD-AND-BETA-RECONCILIATION-36
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.860
+HEAD inicial verificado: 475d7b86473fb2f3cdc5318ccdca64851048899c
+HEAD de implementación C1.860: 4141dc65f8ffe879f84d4c415391f95bdec909c1
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Auditoría de continuidad:
+- Se resolvió la referencia de rama consultando el commit asociado directamente a NG_beta_0.0.0.1_work: 475d7b86473fb2f3cdc5318ccdca64851048899c.
+- Compare C1.860 (4141dc6) → rama autorizada: ahead_by=1, behind_by=0; el único commit posterior es el checkpoint documental C1.860. No hay implementación no registrada ni divergencia.
+- Compare rama base → rama de trabajo: ahead_by=4424, behind_by=0; merge-base/base HEAD 44d9891132332e692dbe2ba8602b41f50a508a59. No se modificó la rama base.
+- Se verificó el workflow 44572519619: job structural-contract SUCCESS; Node.js 22, node --check y contratos de estructura, parche binario, proveedor, orquestador y aislamiento completados.
+- Revisión estática adicional de js/sace-export-orchestrator.js, js/sace-data-provider.js, Academic-Service y Exam-Service: se mantiene salida en memoria CANDIDATE, no hay activación UI ni acciones SACE de carga/descarga. No se detectó un cambio local seguro que permita afirmar compatibilidad oficial.
+
+Matriz de dependencias aún abiertas:
+- BETA-EXAM-105: despliegue beta de catálogo de competencias y verificación de Sheets/concurrencia.
+- BETA-EXAM-106 y BETA-EXAM-108: plantilla XLS original descargada desde cuenta autorizada, celdas y mapeos institucionales verificables; no sustituibles por fixtures.
+- BETA-EXAM-107, BETA-EXAM-110 y BETA-EXAM-111: despliegues Apps Script y comunicación real Academic↔USER/Exam con URLs y credenciales provisionadas.
+- BETA-EXAM-112: confirmación oficial de la semántica COUNT/EXCLUDE para ausencias justificadas.
+- BETA-EXAM-113: verificación desplegada de sincronización y relación canónica de justificaciones.
+- Código oficial de centro y relación JornadaID siguen sin equivalencia institucional demostrada. La salida conserva estas limitaciones y no se infieren valores.
+
+Decisión de continuidad:
+- Se completó la reconciliación de HEAD y la revisión de CI sin repetir implementación de C1.860.
+- Las tareas locales de código/contrato de AUD-NG-167 revisadas en C1.837–C1.860 tienen evidencia vigente; no se reabren por ausencia de entorno externo.
+- No se declara cerrado AUD-NG-167 ni se inicia AUD-NG-168/TAREA-13 porque el propio Plan Maestro conserva la puerta de salida y faltan artefactos/entornos que no existen en el repositorio. Esto no impide seguir ejecutando verificaciones locales independientes que el plan autorice.
+- No existe package.json, lockfile, directorio CLI ni script CLI; CLI no aplica al árbol actual. Node.js se ejecuta por GitHub Actions.
+
+Archivos de código modificados: ninguno.
+Verificación nueva: reconciliación de referencias y revisión estática; CI existente 44572519619 inspeccionada, sin rerun.
+Estado AUD-NG-167: [~] En progreso; dependencias externas explícitas.
+Siguiente acción elegible: continuar auditoría local de los contratos de transporte y snapshots Academic/Exam para detectar defectos reproducibles sin inventar credenciales, reglas ni plantilla oficial; mantener el candidato aislado.
+===============================================================================
