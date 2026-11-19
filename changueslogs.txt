@@ -4312,3 +4312,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-19] C1.861 — AUD-NG-167: HEAD de trabajo 475d7b86473fb2f3cdc5318ccdca64851048899c verificado; un commit documental después de C1.860, sin divergencia. Rama base 44d9891132332e692dbe2ba8602b41f50a508a59. Action 44572519619 inspeccionada SUCCESS. Matriz BETA-EXAM-105..113 y dependencias oficiales/despliegue reconciliadas; AUD-NG-167 permanece en progreso y el candidato no se habilita en producción.
+
+[2026-11-19] AUD-NG-254 registrada como última tarea PM-09 del Plan Maestro. Auditoría de cierre para verificar conformidad de módulos con NDASC 1.5 (configuración institucional de roles/responsabilidades/ámbitos, autorización en punto de entrada, reutilización eficiente del contexto de sesión y seguridad proporcional), identificar módulos heredados que requieran ajustes y crear tareas correctivas trazables. Pendiente de ejecución hasta el cierre del resto del plan; no bloquea tareas anteriores.
