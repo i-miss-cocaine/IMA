@@ -3035,7 +3035,7 @@ function saveCompetencyCatalogItem(payload) {
     const indicador = String(p.indicador || "").trim();
     const programaCurricular = String(p.programaCurricular || "").trim();
     if (!anoId || !/^20\\d{2}$/.test(anoId) || !grado || !asignaturaId ||
-        !competenciaId || !competencia || !indicadorId || !indicador) {
+        !competenciaId || !competencia || !indicadorId || !indicador || !programaCurricular) {
       throw new Error("COMPETENCY_CATALOG_REQUIRED_FIELDS");
     }
     if ([anoId, grado, asignaturaId, competenciaId, competencia, indicadorId, indicador, programaCurricular]
@@ -3185,6 +3185,7 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
     throw new Error("COMPETENCY_CATALOG_SCHEMA_INVALID");
   }
   const program = String(p.programaCurricular || "").trim();
+  if (!program) throw new Error("COMPETENCY_CATALOG_CONTEXT_REQUIRED");
   const catalogMatches = catalogRows.slice(1).filter(row =>
     String(row[1] || "").trim() === String(scope.institutionId || "").trim() &&
     String(row[2] || "").trim() === anoId &&
