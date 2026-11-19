@@ -120,7 +120,7 @@ function fixture(options = {}) {
     },
     getOrCreateSheet(spreadsheet, name) { return spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name); },
     normalizeString(value) {
-      return String(value || "").toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").trim();
+      return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     },
     Utilities: { getUuid() { state.uuid++; return "UUID-" + state.uuid; } }
   };
