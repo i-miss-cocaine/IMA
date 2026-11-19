@@ -4265,3 +4265,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.837 — AUD-NG-167: documentTypeMappings explícitos en buildCandidateStudentsFromSnapshot; sin valores por defecto, con rechazo fail-closed ante mapeos faltantes, desconocidos, duplicados o contradictorios. Contrato SACE PASS en Actions 44541913464. Equivalencias de pruebas sintéticas; pendiente plantilla oficial, carga y aprobación.
 
 [2026-11-19] C1.838 — AUD-NG-167: orquestador snapshot→plantilla→XLS candidato en memoria, verificado sobre tres plantillas versionadas y datos sintéticos; D/E/F/G/H e integridad OLE PASS. Actions 44542962606 SUCCESS. Recuperación permanece vacía; no hay exportación productiva ni carga SACE real.
+
+[2026-11-19] C1.839 — AUD-NG-167: conexión local del directorio de identidad Academic→USER usando el envelope HMAC institucional existente, validación de sesión Profesor e institución y DTO mínimo. Action 44545611035 SUCCESS; BETA-EXAM-110 pendiente de despliegue. No se habilita producción.

@@ -78,3 +78,42 @@ Resultado:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar la conexión real de los snapshots de Exam-Service y Academic-Service y determinar el contrato de transporte/autorización interservicio existente; no crear credenciales ni llamadas ad hoc. Mantener el orquestador como módulo interno candidato.
 ===============================================================================
+
+===============================================================================
+### C1.839 — AUD-NG-167: directorio de identidad USER→Academic por transporte HMAC existente
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-IDENTITY-TRANSPORT-14
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.838
+Commits:
+- bec915b9302dc2e3acea9da661d60054f4a3199e — directorio remoto de identidad y validación de contexto.
+- e1815ac323843c211dd21efe86eb1cf37253932f — corrección del resultado esperado del contrato para matrícula no válida.
+HEAD final de la tarea: e1815ac323843c211dd21efe86eb1cf37253932f
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Academic-Service dejó de consultar Usuarios/Personas en su propio libro para resolver identidad; esos datos canónicos viven en USER-Service.
+- Se añadió requestSaceStudentIdentityDirectoryFromUser_ y se conectó getSaceAttendanceSnapshot con la acción getSaceStudentIdentityDirectory.
+- La llamada reutiliza createInterServiceEnvelope y credential type IMA_MIGRATION_HMAC_SECRET; no se crea secreto ni protocolo alternativo.
+- USER-Service valida el envelope HMAC, origen ACADEMIC, destino USER, acción permitida, expiración/replay y revalida la sesión de Profesor, userId e institución.
+- USER-Service devuelve únicamente userId, identity, documentType y name para el roster solicitado; no expone correo ni teléfono.
+- Se corrigió el esquema de PeriodosAcademicos para leer TipoPeriodo canónico y Tipo legado opcional, evitando exigir un encabezado inexistente.
+- Se registró BETA-EXAM-110 para validar URL, credential provisionado y comunicación real entre despliegues.
+
+Verificación:
+- GitHub Actions 44545611035 — Academic-Service single authorization context: SUCCESS.
+- Pasaron node --check de Academic-Service, contrato de snapshot SACE, autorización, matrícula, justificaciones, identidad y pruebas de regresión incluidas en el workflow.
+- El primer intento de CI 44545386665 falló en el contrato nuevo por expectativa incorrecta para matrícula desconocida; se corrigió el test en e1815 y la ejecución posterior pasó.
+- HEAD de rama base sin cambios.
+
+Límites:
+- La llamada interservicio desplegada depende de IMA_USER_SERVICE_URL y de credential ACADEMIC→USER activo en ambos servicios; no se ha probado con despliegues reales.
+- Personas.TipoIdentificacion puede estar vacío en registros históricos; no se infiere.
+- No se habilita UI ni exportación productiva.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: incorporar los dos snapshots de calificaciones de Exam-Service mediante su acción autenticada de lectura existente, exigiendo mapeo explícito de PeriodoID al identificador de parcial del libro; conservar el DTO mínimo y el bloqueo de producción.
+===============================================================================
