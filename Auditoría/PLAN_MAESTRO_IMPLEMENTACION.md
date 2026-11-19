@@ -6135,3 +6135,10 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - SACE template compatibility Action 44633503483 SUCCESS; Academic-Service 44633412787 SUCCESS.
 - Commits 3c9c60a2d650db4334fffc6da6a110bedbb796b6, b5212d30cf8974d3c64f12ed4b856d3ec257750d y b13fd7e1c83ad661ed77568883bfc9d69af5d3da. Evidencia en Checkpoints_Parte_0019.txt — C1.872.
 - Siguiente: auditar normalización documental y colisiones entre USER/Academic/proveedor/template; no inferir la validez oficial de identificadores sin fuente institucional.
+
+### C1.873 — AUD-NG-167: normalización documental canónica
+- Se alineó el normalizador del template con USER/Academic/provider: solo A–Z/0–9 ASCII y uppercase. Antes el template conservaba puntuación que otros servicios eliminaban, generando reglas de unión inconsistentes.
+- Pruebas de binary patch verifican que separadores alternativos produzcan la misma clave canónica y que colisiones por puntuación se rechacen. El orden del template se mantiene al mapear.
+- SACE template compatibility Action 44633789679 SUCCESS; Academic-Service 44633412787 SUCCESS.
+- Commit 9127122fe8191dc9cc0b7c26f86b9cc9e717e5ce. Evidencia en Checkpoints_Parte_0019.txt — C1.873.
+- Siguiente: revisar tipos de documento y marcadores SACE; la regla oficial y equivalencias institucionales continúan sin certificación.

@@ -1379,3 +1379,41 @@ Estado:
 Siguiente acción elegible:
 - Auditar el mapeo entre documento de identidad y fila del template: normalización usada por USER/Academic/proveedor/template, colisiones, caracteres admitidos y ambigüedad de identidad; mantener el bloqueo de producción si la regla documental oficial no está confirmada.
 ===============================================================================
+
+===============================================================================
+### C1.873 — AUD-NG-167: normalización documental canónica hasta el template
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-CANONICAL-DOCUMENT-NORMALIZATION-44
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: c60aa3bc28c957e16e2d6f80dcff0505f5290d51
+HEAD final: 9127122fe8191dc9cc0b7c26f86b9cc9e717e5ce
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo y corrección:
+- USER-Service, Academic-Service y SACE data provider normalizaban identidad documental quitando todo carácter no alfanumérico ASCII y convirtiendo a mayúsculas. El mapeo de filas del template solo quitaba espacios, puntos y guiones, creando semánticas distintas entre la detección de duplicados y la unión final.
+- El normalizador del template ahora usa la misma regla canónica: conservar únicamente A–Z/0–9 y convertir a mayúsculas.
+- Se añadieron pruebas para identificadores con separadores alternativos (p. ej. slash) que deben coincidir con la misma clave canónica y para colisiones que no pueden ocultarse cambiando puntuación.
+- Se mantiene el fallo cerrado ante identidad vacía/duplicada; no se cambian los valores originales escritos en el template ni se infiere la validez oficial del documento.
+
+Archivos modificados:
+- js/sace-template.js
+- tests/security/sace-template-binary-patch.test.js
+
+Commit:
+- 9127122fe8191dc9cc0b7c26f86b9cc9e717e5ce — unificar normalización canónica de identidad documental.
+
+Verificación:
+- SACE template structure compatibility Action 44633789679 SUCCESS: node --check y contratos de template structure, binary patch, provider, orchestrator y aislamiento candidato PASS.
+- El test de mapeo confirma que el orden del template se conserva al mapear por identidad normalizada y que variaciones de puntuación no generan identidades distintas.
+- Academic-Service 44633412787 SUCCESS con transporte batch y contratos relacionados.
+- No se desplegó ni activó la exportación productiva.
+
+Estado:
+- La semántica de normalización documental está alineada entre USER, Academic, proveedor y template.
+- AUD-NG-167 continúa En progreso; la aceptación oficial del formato y las reglas SACE requiere evidencia institucional/beta.
+- XLS sigue CANDIDATE.
+
+Siguiente acción elegible:
+- Revisar las equivalencias y límites de la identidad documental hondureña, incluyendo tipo de documento y marcador de template, sin asumir que una equivalencia local es oficial; inspeccionar además el tratamiento de nombres y posibles colisiones por normalización.
+===============================================================================
