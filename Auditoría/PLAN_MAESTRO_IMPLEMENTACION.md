@@ -6162,3 +6162,10 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - SACE template compatibility Action 44634708300 SUCCESS.
 - Commit 60e6f6f7dcc6de1c4296767e9ba2447a1897b739. Evidencia en Checkpoints_Parte_0019.txt — C1.876.
 - Siguiente: auditoría temporal de periodos, sesiones, cierres y límites de fecha/zona horaria.
+
+### C1.877 — AUD-NG-167: coherencia temporal de periodos y cierres
+- Academic valida que las sesiones incluidas no sean futuras, que FechaCierre sea parseable, no posterior al instante del snapshot y no anterior al día local de la sesión.
+- Periodos y sesiones usan fechas calendario derivadas en la zona horaria del servicio; el proveedor usa límites inclusivos, rechaza solapamiento/inversión y excluye sesiones fuera de ambos periodos.
+- Pruebas de cierres antes de sesión/futuros, límites inclusivos y sesiones externas PASS. Academic-Service Action 44635526817 SUCCESS; SACE template compatibility 44635261490 SUCCESS.
+- Commit 4e4cddc6ea50feaad4d8bd1d667e3bf719fd23ae. Evidencia en Checkpoints_Parte_0019.txt — C1.877.
+- Siguiente: auditar consistencia temporal/versión entre matrícula, identidad USER y snapshots gradebook de ambos parciales, sin ampliar bloqueos a llamadas interservicio.

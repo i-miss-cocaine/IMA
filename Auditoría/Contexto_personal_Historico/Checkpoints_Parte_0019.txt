@@ -1529,3 +1529,40 @@ Estado:
 Siguiente acción elegible:
 - Auditar la coherencia temporal entre periodos académicos, fechas de sesiones y cierres de calificaciones, especialmente límites inclusivos, zona horaria y cambios de fecha alrededor de medianoche.
 ===============================================================================
+
+===============================================================================
+### C1.877 — AUD-NG-167: coherencia temporal de periodos y cierres de asistencia
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-TEMPORAL-CONSISTENCY-48
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 92f60df345b77544e10878233290bf74aa5e4daf
+HEAD final: 4e4cddc6ea50feaad4d8bd1d667e3bf719fd23ae
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo y corrección:
+- Academic convertía FechaCierre a Date y comprobaba que fuera parseable, pero aceptaba un cierre anterior al día de la sesión o una marca de tiempo futura.
+- getSaceAttendanceSnapshot ahora captura el instante del snapshot, deriva el día local con Session.getScriptTimeZone y rechaza sesiones futuras, cierres con timestamp posterior al momento actual y cierres cuya fecha local preceda la fecha de la sesión.
+- Los periodos y sesiones se comparan como fechas de calendario en zona horaria del servicio; ambos extremos del rango son inclusivos. El proveedor rechaza periodos invertidos/superpuestos y cuenta únicamente sesiones dentro de cada periodo.
+- Se añadieron pruebas de cierre anterior a la fecha de sesión y timestamp futuro, además de límites inclusivos de inicio/fin y sesiones fuera de ambos periodos.
+
+Archivos modificados:
+- backend/academic-service/Code.gs
+- tests/security/sace-attendance-snapshot-contract.test.js
+
+Commit:
+- 4e4cddc6ea50feaad4d8bd1d667e3bf719fd23ae — rechazar cierres futuros o anteriores a la fecha de sesión.
+
+Verificación:
+- Academic-Service single authorization context Action 44635526817 SUCCESS; node --check y sace-attendance-snapshot-contract.test.js PASS, junto con los demás contratos de Academic.
+- SACE template compatibility Action 44635261490 SUCCESS para pruebas de límites inclusivos del proveedor.
+- No se probaron hojas desplegadas ni una sesión beta real.
+
+Estado:
+- Coherencia temporal local reforzada; el cierre de asistencia no se acepta si está fechado antes de la sesión o en el futuro.
+- AUD-NG-167 sigue En progreso; la validación real en beta y las reglas oficiales SACE siguen pendientes.
+- XLS permanece CANDIDATE.
+
+Siguiente acción elegible:
+- Auditar atomicidad/consistencia temporal entre matrícula, USER identity y los dos gradebooks: identificar ventanas de carrera entre el snapshot de matrícula/identidad y la lectura conjunta de ambos parciales; determinar si el sistema ofrece una versión o bloqueo común verificable sin extender bloqueos a llamadas interservicio.
+===============================================================================
