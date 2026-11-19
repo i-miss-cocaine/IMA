@@ -1788,3 +1788,49 @@ Estado:
 Siguiente acción elegible:
 - Revisar los escritores secundarios AnosLectivos/PeriodosAcademicos/CatalogoAsignaturas/SesionesAsistencia (createAcademicYear, prepareNewAcademicYear, updateAcademicYearStatus, createSubjectCatalogItem y openAttendanceSession), comprobar sus callers/IDs y decidir el lock mínimo necesario. Luego cerrar la cobertura de escritores Exam legacy y diseñar la revalidación con huellas por fuente.
 ===============================================================================
+
+
+===============================================================================
+### C1.882 — AUD-NG-167: cierre de revisión de escritores secundarios
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SECONDARY-WRITER-REVIEW-53
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: f614c48e19a0ccb6e7085098d75d79fa1dccc1ed
+HEAD de auditoría: f0eb9fa9dfccb616240ef1771f46b12c638fd2dd
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Revisión secundaria:
+- createAcademicYear y prepareNewAcademicYear solo insertan filas nuevas en AnosLectivos. No actualizan el nombre de la fila seleccionada; una colisión de AnoID produce yearRows.length !== 1 y el snapshot falla cerrado.
+- updateAcademicYearStatus cambia Estado en AnosLectivos; getSaceAttendanceSnapshot selecciona por AnoID y usa Nombre, no consume Estado del año.
+- createSubjectCatalogItem agrega una asignatura con ID nuevo; no modifica la fila de la asignatura solicitada. Una colisión del AsignaturaID genera múltiples coincidencias y el snapshot falla cerrado.
+- openAttendanceSession agrega una sesión en estado Abierta. El snapshot incluye solo estados cerrados/finalizados; la transición posterior se hace por closeAttendanceSession, que mantiene ScriptLock.
+- manageAcademicPeriod ya está serializado por C1.881. En una fila existente actualiza solo Nombre/Estado; al crear un periodo nuevo escribe las fechas. Los IDs duplicados de periodo son rechazados por periodMap.
+- Se revisaron los ocho archivos backend presentes en la rama. publishGradebookForContext solo aparece como declaración en Exam-Service; no tiene caller interno ni acción de router encontrada. Se clasifica como helper legacy no activo; no se modifica sin evidencia de uso.
+
+Decisión:
+- No ampliar locks a los escritores append-only/campos no consumidos, porque no modifican la fila/contexto seleccionado. Se conservan los controles de unicidad que fallan cerrados ante colisiones.
+- La cobertura material del snapshot ahora tiene locks en los escritores que sí pueden modificar el registro seleccionado: matrícula/lifecycle, año (nombre), periodos (estado), sesiones cerradas, asistencia/justificaciones, identidad canónica USER y gradebooks/cierres/recuperaciones Exam.
+- Esto permite avanzar al diseño de revisiones monotónicas por servicio; no prueba aún la implementación ni la integridad de writers no identificados por análisis estático.
+
+Verificación:
+- Inspección estática de los ocho archivos backend en NG_beta_0.0.0.1_work y rastreo de referencias de las funciones secundarias.
+- Sin cambios de código; no se ejecutan Node/CLI/Actions para esta unidad de documentación.
+
+Archivos modificados:
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+Commits:
+- f0eb9fa9dfccb616240ef1771f46b12c638fd2dd — conclusión de revisión secundaria.
+- El commit actual incorpora C1.882 y el índice.
+
+Estado:
+- C1.882 completa como revisión estática de escritores secundarios.
+- AUD-NG-167 continúa En progreso. No hay garantía distribuida implementada y XLS permanece CANDIDATE.
+
+Siguiente acción elegible:
+- Diseñar contrato de revisión monotónica local para Academic, USER y Exam: token epoch+counter, incremento fail-closed antes de la primera mutación bajo ScriptLock, captura de revisión junto con cada snapshot y acciones ligeras de revalidación; definir pruebas de cobertura de todos los writers, errores de PropertiesService, ABA, intercalado y coste antes de implementar.
+===============================================================================
