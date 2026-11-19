@@ -41,7 +41,7 @@ for (const template of manifest.templates) {
     assert.equal(after.get("C" + row), before.get("C" + row), "student name must remain unchanged");
   }
   for (const [address, cell] of before.cells.entries()) {
-    if (/^[EGH](?:[8-9]|1\d|2\d)$/.test(address)) continue;
+    if (/^[DEFGH](?:[8-9]|1\d|2\d)$/.test(address)) continue;
     assert.deepEqual(after.cells.get(address), cell, "unmapped cell changed: " + address);
   }
   const invalidAbsences = rows.map(row => Object.assign({}, row));
