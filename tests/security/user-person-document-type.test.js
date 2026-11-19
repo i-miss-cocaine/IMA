@@ -74,7 +74,7 @@ const created = context.createPerson({
 });
 assert.equal(created.status, "success");
 assert.equal(sheet.rows[0][10], "TipoIdentificacion", "legacy Personas schema is extended by appending a new column");
-assert.equal(sheet.rows[1][10], "", "existing identities are not assigned a guessed document type");
+assert.equal(sheet.getDataRange().getValues()[1][10], "", "existing identities are not assigned a guessed document type");
 assert.equal(sheet.rows[2][10], "DNI", "new document type is persisted as an explicit institutional value");
 assert.equal(sheet.rows[2][1], "Mario");
 assert.equal(sheet.rows[2][4], "mario@example.test");
