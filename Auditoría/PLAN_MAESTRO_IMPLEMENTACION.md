@@ -6155,3 +6155,10 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - SACE template compatibility Action 44634449646 SUCCESS.
 - Commit 8a95ebc2ca31fe5d0acaedee50a017a04d12e750. Evidencia en Checkpoints_Parte_0019.txt — C1.875.
 - Siguiente: auditar límites de notas/inasistencias y su coherencia con los periodos y el snapshot Academic.
+
+### C1.876 — AUD-NG-167: límites de notas e inasistencias
+- Se añadieron pruebas de frontera para 0/100, rechazo de notas negativas/superiores a 100 y conteos de inasistencia acotados por sesiones seleccionadas. La fuente rechaza duplicados por alumno/sesión.
+- El template exige min/max y precisión explícitos, sin redondeo silencioso; las notas del proveedor requieren estado calculated y 0–100.
+- SACE template compatibility Action 44634708300 SUCCESS.
+- Commit 60e6f6f7dcc6de1c4296767e9ba2447a1897b739. Evidencia en Checkpoints_Parte_0019.txt — C1.876.
+- Siguiente: auditoría temporal de periodos, sesiones, cierres y límites de fecha/zona horaria.

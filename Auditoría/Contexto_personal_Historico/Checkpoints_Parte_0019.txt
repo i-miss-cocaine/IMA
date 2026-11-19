@@ -1494,3 +1494,38 @@ Estado:
 Siguiente acción elegible:
 - Auditar la validación de rango de notas y conteo de inasistencias en la frontera Academic→proveedor→template, especialmente límites máximos, tipos numéricos y consistencia con el contexto de periodo.
 ===============================================================================
+
+===============================================================================
+### C1.876 — AUD-NG-167: límites numéricos de notas e inasistencias
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-GRADE-ABSENCE-BOUNDARIES-47
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 3db69a65681ffc4baa5cd6a0fc173e660c5268b4
+HEAD final: 60e6f6f7dcc6de1c4296767e9ba2447a1897b739
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Auditoría y cobertura:
+- Exam-Service calcula notas dentro de 0–100 y el DTO vuelve a validar rangos finitos para nota final, avance y ponderación pendiente.
+- El proveedor SACE solo permite estado calculated y nota final entre 0–100 en ambos parciales; los límites exactos 0 y 100 se aceptan y valores negativos o superiores a 100 se rechazan.
+- El conteo de inasistencias se deriva de un registro único por alumno/sesión seleccionada; los duplicados se rechazan y cada conteo queda acotado por el número de sesiones seleccionadas del parcial.
+- El template valida inasistencias como enteros no negativos y notas dentro de min/max explícitos; precision es obligatoria y la representación numérica exacta se verifica sin redondeo.
+- Se añadieron pruebas de frontera 0/100, -0.01/100.01 y cotas de conteo por sesiones. No se cambia código de producción en esta unidad.
+
+Archivos modificados:
+- tests/security/sace-data-provider-contract.test.js
+
+Commit:
+- 60e6f6f7dcc6de1c4296767e9ba2447a1897b739 — pruebas de límites de notas y conteos de asistencia.
+
+Verificación:
+- SACE template structure compatibility Action 44634708300 SUCCESS: contratos de estructura, parcheo binario, proveedor, orquestador y aislamiento candidato PASS.
+- La precisión explícita y el rechazo de valores no representables quedaron verificados en Action 44634449646 SUCCESS.
+
+Estado:
+- No se encontró defecto adicional en los límites locales de nota/inasistencia; no se infiere escala normativa oficial.
+- AUD-NG-167 sigue En progreso y el resultado sigue CANDIDATE; faltan validaciones beta y fuentes oficiales.
+
+Siguiente acción elegible:
+- Auditar la coherencia temporal entre periodos académicos, fechas de sesiones y cierres de calificaciones, especialmente límites inclusivos, zona horaria y cambios de fecha alrededor de medianoche.
+===============================================================================

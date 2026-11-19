@@ -3158,3 +3158,5 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 [2026-11-19 | AUD-NG-167 | C1.874] Auditoría de tipo documental: no se halló fuente oficial para TipoIdentificacion→marcador SACE. El mapping sigue explícito, obligatorio y no predeterminado; se verifica contra la celda DOCUMENTO del template candidato. Sin cambio de código; no se certifica equivalencia.
 
 [2026-11-19 | AUD-NG-167 | C1.875] Escala explícita y precisión obligatoria; notas/recuperación fuera de rango o con decimales no representables se rechazan, no se redondean. SACE 44634449646 SUCCESS. No se declara escala oficial.
+
+[2026-11-19 | AUD-NG-167 | C1.876] Los límites numéricos quedaron probados: notas 0 y 100 aceptadas, valores fuera del rango rechazados; conteos de ausencias acotados por sesiones únicas. SACE 44634708300 SUCCESS. Sin cambios de lógica productiva.

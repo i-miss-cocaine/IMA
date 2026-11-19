@@ -4341,3 +4341,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.874 — AUD-NG-167: auditoría de identidad documental y marcador SACE. USER/Academic conservan TipoIdentificacion separado del marcador; el proveedor exige mapping explícito y el template verifica el marcador. No existe diccionario oficial en manifest ni en evidencia local; no se inventan equivalencias y se mantiene CANDIDATE. Sin cambios de código.
 
 [2026-11-19] C1.875 — AUD-NG-167: parcheador exige escala min/max y precision explícitas; solo admite precisión 0 o 2, rechaza valores que no se representen exactamente y aplica el mismo control a recuperación. Sin redondeo silencioso ni escala oficial predeterminada. SACE template compatibility 44634449646 SUCCESS. Commit 8a95ebc2ca31fe5d0acaedee50a017a04d12e750.
+
+[2026-11-19] C1.876 — AUD-NG-167: ampliados los contratos para límites de notas 0/100, rechazo de -0.01/100.01 y conteos de inasistencia no superiores a las sesiones seleccionadas. SACE template compatibility 44634708300 SUCCESS. No se modificó lógica productiva. Commit 60e6f6f7dcc6de1c4296767e9ba2447a1897b739.
