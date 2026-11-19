@@ -5967,3 +5967,9 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - `countAbsencesForPeriod` exige un estado cerrado/finalizado/completado y un `fechaCierre` parseable para cada sesión recibida. El contrato cubre sesiones abiertas y timestamp ausente; el orquestador usa el mismo proveedor.
 - SACE template structure compatibility contract 44562739416 SUCCESS en Node.js 22; sintaxis y contratos de plantilla, parcheo binario, proveedor y orquestador PASS. Diferencia neta: tres archivos, sin cambios fuera de alcance; rama base intacta.
 - AUD-NG-167 permanece En progreso. Siguiente: probar la denegación extremo a extremo desde `prepareCandidateExportFromAcademicSnapshot` y continuar con mapeos/validaciones beta pendientes.
+
+### C1.846 — AUD-NG-167: integración Academic→proveedor y contexto SACE
+- El contrato ejecuta `getSaceAttendanceSnapshot` real en VM y pasa su salida al proveedor con los dos snapshots de calificaciones; valida conteos por parcial, identidad y mapeo documental.
+- El orquestador valida un `academicTemplateContextMapping` explícito contra el contexto académico del snapshot y los metadatos de plantilla. Si falta, mantiene salida CANDIDATE con limitación; si contradice el snapshot/plantilla, rechaza. No presume equivalencia entre etiquetas académicas y SACE.
+- Actions 44563404725 (Academic-Service) y 44564429486 (SACE template compatibility) SUCCESS; Node 22, sintaxis y contratos PASS. Rama base intacta.
+- AUD-NG-167 sigue En progreso; siguiente: revisar efectos de generación binaria candidata y continuar solo mapeos respaldables; BETA-EXAM-105/106/107/108/110/111/112/113 pendientes.

@@ -363,3 +363,46 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: ampliar la prueba extremo a extremo para rechazar sesiones abiertas y timestamps ausentes a través de prepareCandidateExportFromAcademicSnapshot; después revisar los mapeos pendientes y las precondiciones beta sin habilitar exportación productiva.
 ===============================================================================
+
+
+===============================================================================
+### C1.846 — AUD-NG-167: integración snapshot→proveedor y mapeo contextual explícito
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-CONTEXT-INTEGRATION-21
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.845
+HEAD inicial: 319a7d66d3e62222681878839df40fcf5d204df8
+HEAD de implementación y verificación: c513ecb25959f91925578bb9035f4397583d7701
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- sace-attendance-snapshot-contract.test.js ejecuta getSaceAttendanceSnapshot real del Code.gs en VM y pasa su resultado (incluidos los dos gradebookSnapshots) a buildCandidateStudentsFromSnapshot. Comprueba conteos por parcial, roster e identidad documental con mapeo explícito.
+- El workflow Academic-Service ahora se activa también cuando cambia js/sace-data-provider.js, ya que el contrato de snapshot integra directamente ese proveedor.
+- El orquestador exige que snapshot.data.expectedContext exista. Si se aporta academicTemplateContextMapping, compara los campos académicos (institutionId, grado, sección, asignaturaId y asignatura) con el snapshot y los campos de plantilla (institución, modalidad, gradeSection, jornada y asignatura) con los metadatos esperados.
+- No se infiere equivalencia entre etiquetas académicas y etiquetas SACE que usan vocabularios distintos (p. ej. grado 11/sección A frente a ONCEAVO GRADO/sección 1). Si no se aporta el mapeo explícito, el candidato conserva una limitación visible; si se aporta un mapeo contradictorio, el orquestador falla cerrado. Incluso con mapeo explícito, se advierte que no está acreditado por fuente SACE oficial.
+- El contrato del orquestador verifica también que una sesión abierta o sin fechaCierre no pueda producir el XLS candidato.
+
+Archivos modificados desde C1.845:
+- js/sace-export-orchestrator.js
+- tests/security/sace-export-orchestrator-contract.test.js
+- tests/security/sace-attendance-snapshot-contract.test.js
+- .github/workflows/academic-service-single-auth-context.yml
+
+Verificación:
+- GitHub Actions 44563404725 — Academic-Service single authorization context: SUCCESS; sintaxis y 12 comandos Node/contratos PASS.
+- GitHub Actions 44564429486 — SACE template structure compatibility contract: SUCCESS; sintaxis, estructura, parcheo binario, proveedor y orquestador PASS.
+- Las pruebas cubren snapshot Academic real → proveedor, mapeo académico/plantilla coincidente, mapeo académico o de plantilla contradictorio, sesiones abiertas y cierre ausente.
+- Se descartó una comparación directa de grado/sección y asignatura porque las etiquetas del snapshot y las de las plantillas candidatas no son necesariamente equivalentes. Se sustituyó por mapeo explícito y limitación visible; no se inventó equivalencia.
+- Rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- Los contratos usan fixtures y plantillas candidatas versionadas en el repositorio; no prueban equivalencias oficiales ni carga real SACE.
+- BETA-EXAM-105/106/107/108/110/111/112/113 continúan pendientes según sus precondiciones de despliegue, plantilla, autoridad o confirmación oficial.
+- No se habilita descarga/carga productiva; la salida sigue siendo CANDIDATE.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar la generación binaria candidata y sus efectos (sin escrituras ni carga externa), luego continuar con los mapeos que puedan acreditarse localmente y conservar los beta externos como validaciones pendientes.
+===============================================================================
