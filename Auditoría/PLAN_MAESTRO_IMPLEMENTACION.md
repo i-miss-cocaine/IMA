@@ -3,8 +3,8 @@
 > **Referencia normativa obligatoria:** antes de modificar este plan o cualquier archivo del repositorio, leer `Normas_Desarollo.md`. Este plan organiza tareas, dependencias y estados; no define una normativa operativa paralela. Las reglas de desarrollo y gobierno se consultan exclusivamente en el archivo maestro.
 
 
-**Versión:** 1.2 — secuencia flexible y dependencias proporcionales (NDASC v1.0)  
-**Fecha:** 2026-11-10  
+**Versión:** 1.3 — auditoría final de conformidad con NDASC 1.5  
+**Fecha:** 2026-11-19  
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
 **Estado:** plan rector de secuenciación; ninguna tarea se declara implementada por aparecer aquí.  
@@ -24,7 +24,7 @@ La asignación de fase es una propuesta inicial basada en el contenido de cada r
 
 ## 2. Inventario estudiado
 
-Se analizaron los siete archivos departamentales completos y sus 1.346 bloques de tarea. Los encabezados tienen 1.346 IDs únicos, sin duplicados entre los siete destinos.
+Se analizaron los siete archivos departamentales completos y sus 1.347 bloques de tarea (incluida la tarea final AUD-NG-254). Los encabezados tienen 1.346 IDs únicos, sin duplicados entre los siete destinos.
 
 | Departamento | Archivo | Tareas |
 |---|---|---:|
@@ -34,8 +34,8 @@ Se analizaron los siete archivos departamentales completos y sus 1.346 bloques d
 | Docente | `pendientes/Docente/Pendientes.md` | 129 |
 | Estudiante | `pendientes/Estudiante/Pendientes.md` | 7 |
 | Padre | `pendientes/Padre/Pendientes.md` | 13 |
-| Otros | `pendientes/Otros/Pendientes.md` | 674 |
-| **Total** | | **1.346** |
+| Otros | `pendientes/Otros/Pendientes.md` | 675 |
+| **Total** | | **1.347** |
 
 Se identificaron **39 familias/series de identificadores**, **830 registros con una sección de dependencias identificable** y **198 tareas con un campo explícito «Orden de Ejecución»**. Los órdenes explícitos se conservan como secuencias locales de su iniciativa (por ejemplo, una secuencia F29 o F31); no se interpretan como un orden global entre iniciativas distintas.
 
@@ -44,7 +44,7 @@ Se identificaron **39 familias/series de identificadores**, **830 registros con 
 | Familia/serie de ID | Cantidad |
 |---|---:|
 | TASK | 627 |
-| AUD-NG | 184 |
+| AUD-NG | 185 |
 | TAREA-F6 | 40 |
 | F8 | 27 |
 | T-UX | 27 |
@@ -1720,6 +1720,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | TASK-077 | Dirección | 09 | PM-09 | Corte, piloto y liberación | P0 | 21 | [F29-Task06], [F29-Task10], [F29-Task11], [F29-Task13], [F29-Task14], [F29-Task22]. | [P0] Protocolo Técnico de Corte Temporal y Transición Operativa (Cutover) | `pendientes/Dirección/Pendientes.md` |
 | TASK-080 | Dirección | 09 | PM-09 | Corte, piloto y liberación | P0 | 24 | [F29-Task07], [F29-Task13], [F29-Task21], [F29-Task22], [F29-Task23]. | [P0] Protocolo de Retiro Formal (Decommissioning) y Archivo Histórico de Sistemas Legados | `pendientes/Dirección/Pendientes.md` |
 | F29-TASK08 | Otros | 09 | PM-09 | Corte, piloto y liberación | P1 | — | No declaradas en el bloque extraído | Ejecutar cutover controlado con congelamiento y sincronización delta | `pendientes/Otros/Pendientes.md` |
+| AUD-NG-254 | Otros | 09 | PM-09 | Corte, piloto y liberación | P1 | — | Todas las tareas anteriores del Plan Maestro; ejecución estrictamente al cierre del plan, sin bloquearlas. | Auditoría final de conformidad de módulos con la política institucional configurable y seguridad proporcional; identificar y planificar ajustes de módulos heredados | `pendientes/Otros/Pendientes.md` |
 
 ## 10. Historial de versiones
 
