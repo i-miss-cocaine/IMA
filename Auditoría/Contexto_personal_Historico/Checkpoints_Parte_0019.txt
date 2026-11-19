@@ -1,0 +1,44 @@
+===============================================================================
+IMA — CHECKPOINTS HISTÓRICOS — PARTE 0019
+===============================================================================
+Proyecto: IMA
+Repositorio: i-miss-cocaine/IMA
+Rama de trabajo autorizada: NG_beta_0.0.0.1_work
+Rama base de solo lectura: NG_beta_0.0.0.1
+Checkpoint anterior: C1.836 en Checkpoints_Parte_0018.txt
+Continuación: C1.837
+Normativa: Normas_Desarollo.md
+Nota de rotación: la Parte 0018 se mantiene intacta al aproximarse al límite de tamaño establecido; los nuevos checkpoints continúan aquí.
+
+===============================================================================
+### C1.837 — AUD-NG-167: equivalencia documental explícita para marcador SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-DOCUMENT-MARKER-MAP-12
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.836
+HEAD inicial: 6dcf1c829be0ae900b5d9157aca49d9532e17ff4
+Commit de implementación: 6b9ee8fdcfad4fcd1fcc8c7781031c1b65a3b1b2
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Trabajo:
+- Se amplió buildCandidateStudentsFromSnapshot(input) para exigir documentTypeMappings explícitos en forma de pares {documentType, documentMarker}.
+- Normaliza tipos para detectar duplicados equivalentes por mayúsculas, espacios y diacríticos; rechaza tipos o marcadores vacíos, mapeos duplicados, tipo no mapeado y conflicto con un marcador que ya venga en el snapshot.
+- Aplica el marcador solo a la copia de identityRecords que entra en buildCandidateStudents; no modifica el snapshot original ni Personas.TipoIdentificacion.
+- Mantiene documentType y documentMarker separados; no hay valores por defecto ni equivalencias inferidas.
+- La salida sourceStudents pasa a mapRowsToTemplate, que vuelve a comprobar identidad, nombre y marcador contra el padrón de la plantilla.
+- Se amplió tests/security/sace-data-provider-contract.test.js con mapeo sintético exitoso, ausencia de mapping, tipo desconocido, duplicado normalizado y conflicto.
+- Se actualizó docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md y beta_test.txt con C1.837/BETA-EXAM-108. Los valores de prueba son sintéticos, no códigos oficiales.
+- GitHub Actions 44541913464 — SACE template structure compatibility contract: SUCCESS. Pasaron sintaxis del proveedor/contrato, contrato estructural, parcheo binario y sace-data-provider-contract.
+
+Resultado:
+- El proveedor ya puede aplicar una equivalencia explícita cuando la fuente institucional y la plantilla oficial hayan sido revisadas.
+- No existe mapeo oficial configurado en el repositorio; el endpoint de Academic-Service sigue devolviendo documentMarker vacío, y sin mapping el wrapper rechaza el armado.
+- No se ejecutó la carga a SACE ni se probó con plantilla descargada desde cuenta docente autorizada.
+- No se habilitó UI ni exportación productiva. BETA-EXAM-105/106/107/108 siguen pendientes de sus entornos/evidencias.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: crear una composición de extremo a extremo local que reciba snapshot autenticado, libros contextuales, plantilla y equivalencia documental explícita, invoque prepareCandidateExport y valide el XLS binario de salida; conservar la condición CANDIDATE y no exponerla a UI/producción.
+===============================================================================
