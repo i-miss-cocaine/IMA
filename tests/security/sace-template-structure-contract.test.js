@@ -131,7 +131,7 @@ function readWorkbook(filePath) {
     while (index >= 0) { name = String.fromCharCode(index % 26 + 65) + name; index = Math.floor(index / 26) - 1; }
     return name;
   };
-  const setCell = (row, column, value, type) => cells.set((row + 1) + ":" + colName(column), { value, type });
+  const setCell = (row, column, value, type) => cells.set(colName(column) + (row + 1), { value, type });
   const decodeRK = rk => {
     let value;
     if (rk & 2) value = rk >> 2;
