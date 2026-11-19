@@ -1,0 +1,1701 @@
+===============================================================================
+PARTE 0007 — CHECKPOINTS IMA
+Continuación append-only de Checkpoints_Parte_0006.txt; parte anterior conservada íntegra.
+
+CHECKPOINT C1.587 — contención reentrante de deleteExamSubmission
+Sesión: IMA-EXEC-20261110-1825Z-02.
+Fecha: 2026-11-11 UTC.
+Rama: NG_beta_0.0.0.1_work.
+HEAD inicial de iteración: f562f7846da71016da62c29139e4e97bb0cae838.
+
+### Hallazgo
+deleteExamSubmission protegía sus escrituras con withAuthorizedExamSubmissionMutation_ y registraba auditoría antes de borrar la entrega, pero el contrato no probaba reentrada durante las tres escrituras: appendRow de DELETE_REQUESTED, deleteRow de EntregasExamen y setValue de DELETED.
+
+### Corrección
+- Se amplía el contrato de auditoría de borrado para ejecutar el wrapper y handler reales con lock, contexto y hojas sintéticas.
+- Se inyecta una segunda solicitud en cada una de las tres ventanas de escritura. Cada solicitud secundaria debe recibir EXAM_SUBMISSION_LOCK_TIMEOUT.
+- La solicitud exterior conserva un único evento de auditoría, un solo borrado, estado final DELETED, un contexto y una liberación del lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+tests/security/exam-service-delete-submission-audit.test.js; beta_test.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt; Auditoría/INDICE_CHECKPOINTS.md.
+
+### Verificación local
+- Parseo sintáctico de backend y contrato: PASS.
+- Harness V8 aislado con handlers reales y fixtures sintéticos: 3/3 escenarios de reentrada PASS.
+- CI Node.js 22: pendiente de ejecución/observación tras commit.
+- Apps Script/Sheets real: NOT RUN; BETA-EXAM-088 Pendiente beta.
+
+### Estado y continuidad
+- C1.587 Completada en verificación local; TASK-153 / AUD-NG-386 continúa En ejecución.
+- Siguiente: inspeccionar otra ruta mutadora EXAM sin cobertura reentrante equivalente; no repetir createExam, updateExam, updateExamStatus, deleteExam, submitExam ni deleteExamSubmission.
+- HEAD final: se confirma tras publicar.
+===============================================================================
+
+#### Addendum CI — C1.587
+- GitHub Actions run 43117909903, commit 6e85cccfe0b19ea72f5ff5f2497acdc505929352, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
+- Job exam-security-contracts: SUCCESS; paso Run exam submission deletion audit regression: SUCCESS (33/33); todos los demás pasos, incluido el contrato general de lectura, terminaron SUCCESS.
+- C1.587 Completada en verificación local y CI. BETA-EXAM-088 permanece Pendiente beta para Apps Script/Sheets desplegado.
+
+===============================================================================
+## C1.588 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de closePeriodGradebook durante appendRow.
+
+### Hallazgo y cambio
+- El contrato existente cubría la reentrada al abrir Sheets, pero no durante la persistencia del cierre.
+- Se añade un caso al contrato dedicado: appendRow intenta ejecutar closePeriodGradebook de forma anidada mientras el lock exterior permanece retenido.
+- Resultado esperado: la secundaria recibe GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior registra un solo cierre, abre Sheets una vez y libera el lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-closure-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Caso añadido al contrato. Ejecución local Node NOT RUN en este entorno; no se declara PASS.
+- CI Node.js 22 pendiente tras commit. Apps Script/Sheets real NOT RUN; BETA-EXAM-089 Pendiente beta.
+- C1.588 En ejecución hasta ejecutar la verificación local pertinente.
+- HEAD inicial: ddf1ff2c1d8546ed9c4ebdc3ce50be721d360694; HEAD final: se confirma tras publicar.
+===============================================================================
+
+
+#### Addendum de cierre — C1.588
+- GitHub Actions run 43119197178, commit 03d40c226c7d2761bc9fff73beac80fa4d59ff0a: workflow Exam-Service security local contracts SUCCESS, Node.js 22.
+- Contrato de cierre reentrante: PASS (22/22); job exam-security-contracts SUCCESS.
+- El runner ejecutó el código y fixtures sin despliegue ni servicio remoto; esta evidencia satisface la verificación local aislada. No se afirma ejecución en shell local del agente, ya que el clon falló por DNS.
+- C1.588 Completada en verificación local aislada/CI. Apps Script/Sheets real NOT RUN; BETA-EXAM-089 Pendiente beta.
+- HEAD inicial de la iteración de verificación: 03d40c226c7d2761bc9fff73beac80fa4d59ff0a; HEAD final: se confirma tras commit documental.
+- Siguiente ruta candidata, sin implementar en este checkpoint: saveGradebookGrades, cuyo contrato actual no muestra prueba de reentrada durante sus escrituras (C1.579 cubrió revocación RBAC bajo lock).
+
+
+===============================================================================
+## C1.589 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de saveGradebookGrades durante setValues.
+
+### Hallazgo y cambio
+- El contrato existente cubría revocación RBAC bajo lock, pero no reentrada durante la persistencia de CalificacionesEstudiantes.
+- Se añade un hook en setValues que intenta ejecutar saveGradebookGrades de forma anidada mientras el ScriptLock exterior permanece retenido.
+- Resultado esperado: secundaria GRADEBOOK_SAVE_LOCK_TIMEOUT; exterior persiste una sola nota mediante una escritura, abre Sheets una vez y libera el lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-gradebook-save-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Caso añadido al contrato; verificación aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-090 Pendiente beta.
+- C1.589 En ejecución hasta verificar el contrato local aislado.
+- HEAD inicial: a7c24bb6c9e2fc2eed91dbc991196229d236725c; HEAD final: se confirma tras publicar.
+===============================================================================
+
+
+#### Addendum de cierre — C1.589
+- GitHub Actions run 43119877509, commit 9c4e4f39b0fe5ada096745d4505e247f594103ea: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Contrato exam-service-gradebook-save-security: PASS (30/30); paso Run gradebook save security regression y job exam-security-contracts SUCCESS.
+- El runner ejecutó código/fixtures sin despliegue ni servicio remoto; satisface la verificación local aislada. Apps Script/Sheets real NOT RUN.
+- C1.589 Completada en verificación local aislada/CI. BETA-EXAM-090 permanece Pendiente beta.
+- HEAD inicial: 9c4e4f39b0fe5ada096745d4505e247f594103ea; HEAD final: se confirma tras commit documental.
+
+
+===============================================================================
+## C1.590 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de submitGradebookForReview durante appendRow.
+
+### Hallazgo y cambio
+- El contrato existente cubría timeout, RBAC, identidad, asignación y duplicidad previa, pero no reentrada durante la creación del registro de revisión.
+- Se añade un hook en appendRow de CierresPeriodos que invoca submitGradebookForReview de forma anidada mientras ScriptLock exterior permanece retenido.
+- Resultado esperado: secundaria GRADEBOOK_SUBMISSION_LOCK_TIMEOUT; exterior crea un único registro REV-* en PendienteRevision mediante un append, abre Sheets una vez y libera el lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-submission-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Caso añadido; ejecución local aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-091 Pendiente beta.
+- C1.590 En ejecución hasta verificar el contrato local aislado.
+- HEAD inicial: 8a38c734f1bee2af398ced51b75f0b8e5b214478; HEAD final: se confirma tras publicar.
+===============================================================================
+
+
+#### Addendum de cierre — C1.590
+- GitHub Actions run 43127400390, commit f078c05220efd702f00424a7e22542d2b401c753: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Contrato exam-service-period-gradebook-submission-security: PASS (28/28); paso Run period gradebook submission security regression y job exam-security-contracts SUCCESS.
+- Runner aislado ejecutó código/fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN.
+- C1.590 Completada en verificación local aislada/CI. BETA-EXAM-091 permanece Pendiente beta.
+- HEAD inicial: f078c05220efd702f00424a7e22542d2b401c753; HEAD final: se confirma tras commit documental.
+
+
+===============================================================================
+## C1.591 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de reviewPeriodGradebook durante setValues.
+
+### Hallazgo y cambio
+- El contrato existente verificaba autorización, identidad, scope, estado previo y reentrada durante openById, pero no reentrada durante la escritura de la decisión de revisión.
+- Se amplía el fixture para interceptar setValues de CierresPeriodos e invocar reviewPeriodGradebook de forma anidada mientras ScriptLock exterior permanece retenido.
+- Resultado esperado: secundaria GRADEBOOK_REVIEW_LOCK_TIMEOUT; exterior persiste una sola decisión, realiza una escritura, abre Sheets una vez y libera el lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-review-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Contrato ampliado a 30 casos; ejecución local aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-092 Pendiente beta.
+- C1.591 En ejecución hasta verificar el contrato local aislado.
+- HEAD inicial: e1534424a0a3eedde7998d617697d995a80d6aad; HEAD final: se confirma tras publicar.
+===============================================================================
+
+
+#### Addendum de cierre — C1.591
+- GitHub Actions run 43127784802, commit 7f5fdc284644fd3fd366b7c28fc147982bd9b9e3: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Contrato exam-service-period-gradebook-review-security: PASS (30/30); paso Run period gradebook review security regression y job exam-security-contracts SUCCESS.
+- Runner aislado ejecutó código/fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN.
+- C1.591 Completada en verificación local aislada/CI. BETA-EXAM-092 permanece Pendiente beta.
+- HEAD inicial: 7f5fdc284644fd3fd366b7c28fc147982bd9b9e3; HEAD final: se confirma tras commit documental.
+
+
+===============================================================================
+## C1.592 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de rectifyStudentGrade durante appendRow y setValues.
+
+### Hallazgo y cambio
+- El contrato cubría validación, rollback de errores y reentrada durante openById, pero no reentrada en los dos puntos de persistencia.
+- Se amplía el fixture con hooks y contadores de appendRow/setValues y se añaden dos escenarios de reentrada al handler real: durante la escritura del historial y durante la actualización de la calificación.
+- Resultado esperado en ambos: secundaria GRADE_RECTIFICATION_LOCK_TIMEOUT; exterior realiza un append y una escritura, conserva nota e historial consistentes, abre Sheets una vez y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-student-grade-rectification-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Contrato ampliado a 32 casos; ejecución local aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-093 Pendiente beta.
+- C1.592 En ejecución hasta completar la verificación local aislada.
+- HEAD inicial: 9856febdaafb7c594e835fd53aa7115a96144a4d; HEAD final: se confirma tras publicar.
+===============================================================================
+
+
+#### Addendum de cierre — C1.592
+- GitHub Actions run 43128256513, commit 3d7a315a18d3a333b56f3bcc3f09be75fe7fd76f: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Contrato exam-service-student-grade-rectification-security: PASS (32/32); paso Run student grade rectification security regression y job exam-security-contracts SUCCESS.
+- Runner aislado ejecutó código/fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN.
+- C1.592 Completada en verificación local aislada/CI. BETA-EXAM-093 permanece Pendiente beta.
+- HEAD inicial: 3d7a315a18d3a333b56f3bcc3f09be75fe7fd76f; HEAD final: se confirma tras commit documental.
+
+
+===============================================================================
+## C1.593 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de saveEvaluationCategory durante appendRow de ownership y categoría.
+
+### Hallazgo y cambio
+- El contrato ya verificaba reentrada durante getVerifiedExamDepartmentScope_, pero no durante la persistencia.
+- Se amplía makeSheet con hook/contadores de appendRow y se prueba la reentrada en los dos puntos: ResourceOwnership y CategoriasEvaluacion.
+- Resultado esperado en ambos: secundaria EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; exterior realiza exactamente dos appendRow (uno por hoja), abre Sheets una vez, deja un ownership y una categoría y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-evaluation-category-mutation-security.test.js
+- .github/workflows/exam-service-security-contract.yml
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Cobertura añadida para ambos puntos de persistencia; ejecución local aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-094 Pendiente beta.
+- C1.593 En ejecución hasta verificar el contrato local aislado.
+- HEAD inicial: ce2ac72202e83d2c43bd95a93c7d6b11a48ad51a; HEAD final: se confirma tras publicar.
+===============================================================================
+
+
+#### Addendum de cierre — C1.593
+- GitHub Actions run 43129993264, commit 22c952bbfb8421ca3bb89139d6c212b8542705d6: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Contrato exam-service-evaluation-category-mutation-security: PASS (20/20); paso Run evaluation category mutation security regression y job exam-security-contracts SUCCESS.
+- Runner aislado ejecutó código/fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN.
+- C1.593 Completada en verificación local aislada/CI. BETA-EXAM-094 permanece Pendiente beta.
+- HEAD de código y workflow probado: 22c952bbfb8421ca3bb89139d6c212b8542705d6; commit posterior 4c7a56307d378e6d556e3a15421138c1f131dbf7 ajustó únicamente el filtro de rutas pull_request.
+- HEAD final se confirma tras este commit documental.
+
+
+===============================================================================
+## C1.594 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de copyEvaluationSetupBetweenGroups durante setValues de ownership y categoría.
+
+### Hallazgo y cambio
+- El contrato existente cubría timeout, RBAC, identidad, scope, rollback y reentrada durante openById, pero no una segunda copia durante las escrituras batch.
+- Se amplía el fixture para reentrar al handler real desde setValues de ResourceOwnership y desde setValues de CategoriasEvaluacion.
+- En ambos puntos la solicitud secundaria debe recibir EVALUATION_SETUP_COPY_LOCK_TIMEOUT; la exterior conserva una categoría y un ownership asociados, una escritura por hoja, una apertura de Sheets y liberación del lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-evaluation-setup-copy-security.test.js
+- .github/workflows/exam-service-security-contract.yml
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Escenarios añadidos para ambas ventanas de persistencia; ejecución local aislada/CI pendiente tras commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-095 Pendiente beta.
+- C1.594 En ejecución hasta completar la verificación local aislada.
+- HEAD inicial: dab23e9bb6fb35766fb484a01fe1660e2057f1ae; HEAD final: se confirma tras publicar.
+===============================================================================
+
+
+#### Addendum de cierre — C1.594
+- GitHub Actions run 43131212115, commit c8372157236ff110618c2a12d53808e2aa732719, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
+- Contrato exam-service-evaluation-setup-copy-security: PASS (30 scenarios); paso Run evaluation setup copy security regression y job exam-security-contracts SUCCESS.
+- El runner ejecutó código/fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN.
+- C1.594 Completada en verificación local aislada/CI. BETA-EXAM-095 permanece Pendiente beta.
+- HEAD de código y workflow probado: c8372157236ff110618c2a12d53808e2aa732719; HEAD final se confirma tras este commit documental.
+
+
+===============================================================================
+## C1.595 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de manageQuestionBank durante persistencia.
+
+### Hallazgo y cambio
+- La suite cubría RBAC, identidad, scope, ownership, serialización y rollback, pero no la reentrada durante las escrituras de creación, actualización y eliminación.
+- Se agregan cinco escenarios: reentrada durante appendRow de ResourceOwnership y BancoPreguntas al crear; setValues de BancoPreguntas al actualizar; setValue de ResourceOwnership y BancoPreguntas al eliminar.
+- Cada solicitud secundaria debe recibir QUESTION_BANK_LOCK_TIMEOUT; la exterior mantiene unicidad/coherencia de pregunta y ownership, una apertura de Sheets y liberación del lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-question-bank-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- GitHub Actions run 43132167465, commit 2cdcdd4b9bb1bc4d29ba251b9ce824373336110c: workflow Exam-Service security local contracts SUCCESS, Node.js 22.23.4.
+- Paso Run question bank mutation security regression SUCCESS; contrato con cinco escenarios de reentrada PASS; job exam-security-contracts SUCCESS.
+- Ejecución aislada sobre código/fixtures; Apps Script/Sheets real NOT RUN. BETA-EXAM-096 Pendiente beta.
+- C1.595 Completada en verificación local aislada/CI.
+- HEAD inicial: 3e225077fc40aa613ae53da85aedd884156b86b3; HEAD de código probado: 2cdcdd4b9bb1bc4d29ba251b9ce824373336110c; HEAD final se confirma tras commit documental.
+===============================================================================
+
+
+===============================================================================
+## C1.596 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de saveCompetencyEvaluation durante appendRow.
+
+### Hallazgo y cambio
+- El contrato cubría RBAC, identidad, scope, asignación, rúbricas, timeout, reentrada durante la validación y fallo de persistencia, pero no una segunda solicitud durante el append exterior de EvaluacionesCompetencias.
+- Se añade hook en appendRow del fixture para invocar saveCompetencyEvaluation real de forma anidada mientras el ScriptLock exterior permanece retenido.
+- La secundaria debe recibir COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT; la exterior debe persistir exactamente una evaluación mediante un append, abrir Sheets una vez y liberar el lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-competency-evaluation-mutation-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- GitHub Actions run 43134830869, commit de código/prueba a3b59eda30396c470ba639aba67c54f7f7a8e8ef: workflow Exam-Service security local contracts SUCCESS, Node.js 22.
+- Contrato exam-service-competency-evaluation-mutation-security: 27/27 PASS; paso específico y job exam-security-contracts SUCCESS.
+- Runner aislado ejecutó código y fixtures sin despliegue ni servicio remoto; Apps Script/Sheets real NOT RUN. BETA-EXAM-097 Pendiente beta.
+- C1.596 Completada en verificación local aislada/CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: 6d7b8124c13b7d60256d0a183069a25beb50432e; HEAD de código probado: a3b59eda30396c470ba639aba67c54f7f7a8e8ef; HEAD final se confirma tras commit documental.
+===============================================================================
+
+
+===============================================================================
+## C1.597 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de saveRubric durante persistencia.
+
+### Hallazgo y cambio
+- La suite cubría timeout y reentrada durante getAuthorizedRubricMutationContext_, pero no las ventanas de escritura exterior.
+- Se amplía makeSheet con hooks/contadores para appendRow de ResourceOwnership, appendRow de RubricasEvaluacion y setValues de actualización.
+- En los tres puntos se invoca saveRubric real de forma anidada; la secundaria debe recibir RUBRIC_MUTATION_LOCK_TIMEOUT.
+- El alta exterior conserva exactamente un ownership y una rúbrica; la actualización una sola escritura; la secundaria no abre Sheets; una apertura por operación exterior y lock liberado.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-save-rubric-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Smoke local determinista de los tres puntos de reentrada: 3/3 PASS; node --check PASS.
+- GitHub Actions run 43135541037, commit de código/prueba dba948f652afd5cd42a00ae2da139faf77125841: workflow Exam-Service security local contracts SUCCESS en Node.js 22.
+- Suite save-rubric: 24/24 PASS; paso específico y job exam-security-contracts SUCCESS.
+- El checkout y la suite original completa no estuvieron disponibles localmente por fallo de resolución de github.com; la suite original fue ejecutada en CI. Apps Script/Sheets real NOT RUN. BETA-EXAM-098 Pendiente beta.
+- C1.597 Completada con verificación local focalizada y suite CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: 2963fd78148aba8c5244157fd37540a3313287b8; HEAD de código probado: dba948f652afd5cd42a00ae2da139faf77125841; HEAD final se confirma tras commit documental.
+===============================================================================
+
+
+===============================================================================
+## C1.598 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de createExam durante persistencia.
+
+### Hallazgo y cambio
+- El contrato cubría autorización, identidad, scope, timeout y rollback, pero no reentrada durante las escrituras efectivas.
+- Se agregan hooks y tres escenarios de reentrada al handler real: appendRow de ResourceOwnership, appendRow de Examenes y setValues de PreguntasExamen.
+- Cada secundaria debe recibir EXAM_CREATE_LOCK_TIMEOUT; la operación exterior conserva un ownership, un examen y sus preguntas asociados, una apertura de Sheets y liberación del lock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-create-exam-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Smoke local determinista sobre los handlers productivos extraídos de Code.gs: 3/3 PASS; parseo del contrato actualizado PASS.
+- GitHub Actions run 43136684120, commit 0d0c7a083c13b4224642b0a2d38f8a04ae4f4590: workflow Exam-Service security local contracts SUCCESS, Node.js 22; suite createExam 17/17 PASS; job exam-security-contracts SUCCESS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-099 Pendiente beta.
+- C1.598 Completada con verificación local focalizada y suite CI.
+- HEAD inicial: 93b6e08af1409ec7add9861bcba06146ec54e23c; HEAD final se confirma tras publicar.
+===============================================================================
+
+
+#### Addendum de cierre — C1.598
+- GitHub Actions run **43136684120**, commit `0d0c7a083c13b4224642b0a2d38f8a04ae4f4590`: workflow Exam-Service security local contracts **SUCCESS**, Node.js 22.
+- Paso `Run exam creation security regression`: `exam-service-create-exam-security: 17/17 PASS`; job `exam-security-contracts` SUCCESS.
+- Harness local determinista sobre los handlers productivos extraídos de Code.gs: tres ventanas de reentrada, 3/3 PASS. El parseo del contrato actualizado también pasó.
+- Runner CI ejecutó el código y fixtures sin despliegue ni infraestructura remota. Apps Script/Sheets real NOT RUN; BETA-EXAM-099 permanece Pendiente beta.
+- C1.598 **Completada con verificación local focalizada y suite CI**. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD de código probado: `0d0c7a083c13b4224642b0a2d38f8a04ae4f4590`; HEAD final se confirma tras commit documental.
+
+
+===============================================================================
+## C1.599 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada de gradeExamSubmission durante persistencia.
+
+### Hallazgo y cambio
+- El contrato validaba rangos de calificación, metadatos, autorización, identidad y ownership, pero no reentrada durante setValues de EntregasExamen.
+- Se amplía `tests/security/exam-service-grade-submission-validation.test.js` con un escenario que ejecuta el handler, wrapper y contextos productivos extraídos de Code.gs y provoca una segunda calificación desde setValues.
+- La secundaria debe recibir EXAM_SUBMISSION_LOCK_TIMEOUT; la exterior guarda una sola actualización con nota/metadatos correctos y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-grade-submission-validation.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Smoke local focalizado sobre handlers productivos extraídos de Code.gs: 1/1 PASS; parseo de Code.gs y del contrato PASS.
+- GitHub Actions run 43137456877, commit `167cf09d1697cfec475d937b831006d6d289b861`: workflow Exam-Service security local contracts SUCCESS, Node.js 22; contrato grade-submission-validation 18/18 PASS; job exam-security-contracts SUCCESS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-100 Pendiente beta.
+- C1.599 Completada con verificación local focalizada y suite CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: `9cec1b697cd148ecdde1ee62c1de035890359732`; HEAD de código probado: `167cf09d1697cfec475d937b831006d6d289b861`; HEAD final se confirma tras commit documental.
+===============================================================================
+
+
+===============================================================================
+## C1.600 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada al crear hoja de auditoría de eliminación de entregas.
+
+### Hallazgo y cambio
+- deleteExamSubmission ya tenía reentrada cubierta durante append del evento, deleteRow de la entrega y finalización de auditoría, pero faltaban las escrituras iniciales cuando la hoja de auditoría no existía.
+- Se amplía `tests/security/exam-service-delete-submission-audit.test.js` para reentrar desde insertSheet y appendRow de encabezados, manteniendo los tres escenarios existentes.
+- Las secundarias deben recibir EXAM_SUBMISSION_LOCK_TIMEOUT; exterior crea una sola hoja/encabezado, un evento, elimina una entrega y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-delete-submission-audit.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Smoke local focalizado sobre helper, wrapper y handler productivos extraídos de Code.gs: 5/5 PASS; parseo de Code.gs y contrato PASS.
+- GitHub Actions run 43137857655, commit `49345d690ef9dd25bccae492e4498eb3bfc75282`: workflow Exam-Service security local contracts SUCCESS, Node.js 22; contrato delete-submission-audit 35/35 PASS; job exam-security-contracts SUCCESS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-101 Pendiente beta.
+- C1.600 Completada con verificación local focalizada y suite CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: `f1aa60b5c50acef3532dfde6a2a4bbffc171a281`; HEAD de código probado: `49345d690ef9dd25bccae492e4498eb3bfc75282`; HEAD final se confirma tras commit documental.
+===============================================================================
+
+
+===============================================================================
+## C1.601 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada al inicializar la hoja RecuperacionesEstudiante.
+
+### Hallazgo y cambio
+- saveStudentRecovery ya cubría una segunda llamada durante el append del registro final, pero no durante insertSheet ni appendRow de encabezados cuando RecuperacionesEstudiante no existe.
+- Se amplía el fixture para provocar reentrada al handler real en ambos puntos. Las solicitudes secundarias reciben STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT; la exterior crea una hoja, encabezados y recuperación únicos.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-student-recovery-mutation-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness local determinista sobre saveStudentRecovery, wrapper, contexto y worker productivos extraídos de Code.gs: 2/2 PASS.
+- Parseo JavaScript del contrato actualizado: PASS.
+- CI run 43138825738 SUCCESS, Node.js 22; contrato saveStudentRecovery 21/21 PASS; job exam-security-contracts SUCCESS.
+- El primer CI run 43138709373 detectó dos aserciones cross-realm; se corrigieron y el runner ahora falla explícitamente si hay casos fallidos.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-102 Pendiente beta.
+- C1.601 Completada con verificación local y CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: `a228580423f4eaf6ee1783a2e281e62e97e23102`; commit inicial de cobertura: `a44fca694e9d2713b0e580ffb5cd64229b8f0089`; commit de corrección: `cf01fbb3047bbea84b4158e78cd24e4d78de75c5`; HEAD final tras cierre documental se confirma en el siguiente commit.
+===============================================================================
+
+
+===============================================================================
+## C1.602 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada al inicializar EvaluacionesCompetencias.
+
+### Hallazgo y cambio
+- saveCompetencyEvaluation ya cubría reentrada durante el append de la evaluación y probaba la inicialización de la hoja tras autorización, pero faltaba reentrada durante insertSheet y appendRow de encabezados cuando la hoja no existe.
+- El fixture permite hooks en insertSheet y appendRow. Se agregan dos escenarios; cada solicitud secundaria recibe COMPETENCY_EVALUATION_MUTATION_LOCK_TIMEOUT y la exterior conserva hoja, encabezados y evaluación únicos.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-competency-evaluation-mutation-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness local determinista sobre saveCompetencyEvaluation, wrapper, contexto y worker productivos extraídos de Code.gs: 2/2 PASS.
+- Parseo JavaScript del contrato actualizado: PASS.
+- GitHub Actions run 43139327739: workflow Exam-Service security local contracts SUCCESS en Node.js 22; contrato exam-service-competency-evaluation-mutation-security 29/29 PASS; job exam-security-contracts SUCCESS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-103 Pendiente beta.
+- C1.602 Completada con verificación local focalizada y CI. TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: `8539058d06a48c981c3138d070271068021d8cc7`; commit de pruebas/implementación: `60351f9d39bd4e56736c3a2b6acdd8a5342f67fd`; HEAD final se confirma tras commit documental.
+===============================================================================
+
+
+===============================================================================
+## C1.603 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada al inicializar CategoriasEvaluacion.
+
+### Hallazgo y cambio
+- saveEvaluationCategory ya cubría reentrada durante los appendRow de ownership y categoría final, pero faltaban reentradas durante insertSheet y appendRow de encabezados iniciales cuando CategoriasEvaluacion no existe.
+- Se amplía el fixture para provocar una segunda llamada al handler real en ambos puntos. Las secundarias reciben EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior crea una sola hoja con encabezados exactos, una categoría y un ownership activo asociado.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-evaluation-category-mutation-security.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness local determinista sobre saveEvaluationCategory, wrapper, contexto y worker productivos extraídos de Code.gs: 2/2 PASS.
+- Contrato completo ejecutado en runner aislado: 22/22 PASS; parseo JavaScript del contrato actualizado: PASS.
+- El conector devolvió estados CI vacíos para el commit de pruebas; CI NOT VERIFIED, sin afirmar ejecución ni resultado.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-104 Pendiente beta.
+- C1.603 Completada con verificación local aislada; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: 1737dfde3222a2c3658f27387d33d1614c8dd027; commit de pruebas: 1446c530ed9f03b8209bac8de546a82a0f93f1d9; HEAD final se confirma tras publicación documental.
+===============================================================================
+
+
+===============================================================================
+## C1.604 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada en las escrituras de reapertura de período.
+
+### Hallazgo y cambio
+- reopenPeriodGradebook ya cubría reentrada durante appendRow del evento de auditoría; faltaban el cambio de estado del cierre mediante setValue y la inicialización de encabezados cuando HistorialRectificacionesNotas existe vacío.
+- Se amplía el fixture y se agregan ambos escenarios. Las secundarias reciben GRADEBOOK_REOPEN_LOCK_TIMEOUT; la exterior conserva una transición Reabierto y un solo evento, sin duplicar encabezados, y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-reopen-security.test.js
+- beta_test.txt (actualización de BETA-EXAM-055)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Contrato completo re-ejecutado en runner aislado: 31/31 PASS.
+- Parseo JavaScript de Code.gs y del contrato: PASS.
+- CI: pendiente de resultado verificable tras el commit de pruebas.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-055 Pendiente beta.
+- C1.604 en verificación CI; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: e1fb4a6e2fc1bc9ce031f3ccb61a802a93cafbce; commit de pruebas: 08c46dd5c0e3c310e3fdc39097b61f52200ba258; HEAD final se confirma tras publicación documental.
+===============================================================================
+
+
+===============================================================================
+## C1.605 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada durante la inicialización de CierresPeriodos.
+
+### Hallazgo y cambio
+- closePeriodGradebook ya cubría reentrada durante appendRow del cierre final, pero faltaba reentrada durante insertSheet y appendRow de encabezados cuando CierresPeriodos no existe.
+- Se amplía el fixture con conteo de inserciones y hook de append; se agregan dos escenarios. Ambas secundarias reciben GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior conserva una sola hoja, encabezados exactos y un único cierre, sin tocar calificaciones.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-closure-security.test.js
+- beta_test.txt (actualización de BETA-EXAM-052)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Contrato completo sobre handlers productivos extraídos de Code.gs: 24/24 PASS en runner aislado.
+- Parseo JavaScript de Code.gs y del contrato: PASS.
+- CI: pendiente de resultado verificable; no se declara PASS.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-052 Pendiente beta.
+- C1.605 Completada con verificación local; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial (C1.604): 4403807e714f86593146410a1eb3a5cdd1c816c0; commit inicial de pruebas: 1e10af3b18e75ea73884304550d18faf5d97ef16; commit del ajuste de hook: 39f73d46b83e794ad1055b1ed5c3a9b505f6d8c3; actualización beta: bba3f0d3520b343c2c8f4336c84c772974bd37ed; HEAD final se confirma tras publicación documental.
+===============================================================================
+
+
+===============================================================================
+## C1.606 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada durante la inicialización de CierresPeriodos en submitGradebookForReview.
+
+### Hallazgo y cambio
+- submitGradebookForReview cubría reentrada durante el append de la solicitud final, pero no durante insertSheet ni appendRow de encabezados cuando CierresPeriodos no existe.
+- Se amplía el fixture con conteo de inserciones y hooks para ambos puntos. Las solicitudes secundarias reciben GRADEBOOK_SUBMISSION_LOCK_TIMEOUT; la exterior conserva una sola hoja, encabezados exactos y una solicitud PendienteRevision.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-period-gradebook-submission-security.test.js
+- beta_test.txt (actualización de BETA-EXAM-054)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Suite completa V8 aislada sobre handlers/wrapper productivos extraídos de Code.gs: 30/30 PASS.
+- Parseo JavaScript de Code.gs y contrato: PASS.
+- CI: pendiente de resultado verificable tras el commit.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-054 Pendiente beta.
+- C1.606 Completada con verificación local aislada; TASK-153 / AUD-NG-386 continúa En ejecución para otras rutas mutadoras EXAM.
+- HEAD inicial: dd3763ce0a2b54ea57d3433f4ec3da34eccd39ea; HEAD final se confirma tras publicar.
+===============================================================================
+
+
+### Addendum C1.606-R1 — corrección de verificación
+- CI run 43141646897 falló en el primer escenario nuevo por deepEqual estricto entre arreglos de realms distintos; los 12 pasos anteriores habían pasado. No se observó fallo productivo.
+- Se normalizan ambas filas de encabezados con Array.from antes de deepEqual. Suite V8 aislada local re-ejecutada 30/30 PASS; parseo Code.gs/contrato PASS.
+- CI de confirmación pendiente; C1.606 mantiene cierre local y BETA-EXAM-054 Pendiente beta.
+===============================================================================
+
+
+### Addendum C1.605-R1 / C1.606-R2 — corrección cross-realm relacionada
+- CI run 43141769137: submitGradebookForReview 30/30 PASS; fallo posterior en closePeriodGradebook por deepEqual entre fila VM y arreglo host. Sin defecto productivo observado.
+- Se normalizan con Array.from las aserciones de encabezados afectadas en cierre y reapertura. CI integral pendiente.
+===============================================================================
+
+
+### Addendum C1.603-R1 — corrección de verificación cross-realm
+- CI run 43141935472 confirmó submitGradebookForReview 30/30, closePeriodGradebook 24/24, review, reopen y student grade rectification PASS; dos aserciones de encabezados de CategoriasEvaluacion fallaron por deepEqual entre realms.
+- Se normalizan las filas con Array.from. Backend sin cambios; CI integral de confirmación pendiente.
+===============================================================================
+
+
+### Addendum C1.606-R2 — cierre CI
+- GitHub Actions run 43142063867, commit dbe2b29fb5b0774f1e13ffb27bb6afd3e8726999: workflow Exam-Service security local contracts SUCCESS en Node.js 22.23.4; todos los pasos PASS.
+- submitGradebookForReview 30/30; closePeriodGradebook 24/24; reopenPeriodGradebook 31/31; saveEvaluationCategory 22/22. Se resuelven las aserciones cross-realm detectadas durante la secuencia.
+- C1.606 Completada local/CI; backend productivo sin cambios; BETA-EXAM-054 Pendiente beta y Apps Script/Sheets real NOT RUN.
+- HEAD probado: dbe2b29fb5b0774f1e13ffb27bb6afd3e8726999; HEAD final se confirma tras este registro documental.
+===============================================================================
+
+
+===============================================================================
+## C1.607 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada durante la inicialización de HistorialRectificacionesNotas en rectifyStudentGrade.
+
+### Hallazgo y cambio
+- rectifyStudentGrade cubría reentrada durante appendRow de auditoría y setValues de la calificación, pero no durante insertSheet ni appendRow de encabezados cuando HistorialRectificacionesNotas no existe.
+- El fixture incorpora contador de inserciones y hooks para ambos puntos. Las secundarias reciben GRADE_RECTIFICATION_LOCK_TIMEOUT; la exterior conserva una hoja, encabezados exactos y un registro RECT-UUID-1, actualiza una sola calificación y mantiene actor SEC-1.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-student-grade-rectification-security.test.js
+- beta_test.txt (actualización de BETA-EXAM-056)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Suite V8 aislada: 34/34 PASS.
+- Parseo JavaScript de Code.gs y contrato: PASS.
+- CI: pendiente de resultado verificable tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-056 Pendiente beta.
+- C1.607 Completada localmente; TASK-153 / AUD-NG-386 continúa En ejecución.
+- HEAD inicial: 1f1bf2d2a41ab45748f448d1f2ae9dfc0a863bf1; HEAD final se confirma tras publicar.
+===============================================================================
+
+
+### Addendum de cierre CI — C1.607
+- GitHub Actions run 43142345822, commit bc6ced1c1caf4be40bc47e22d18a69d17ea50079: workflow Exam-Service security local contracts SUCCESS en Node.js 22; todos los pasos PASS.
+- Contrato exam-service-student-grade-rectification-security: 34/34 PASS; harness local V8 aislado: 34/34 PASS; parseo Code.gs/contrato PASS.
+- C1.607 Completada con verificación local y CI. BETA-EXAM-056 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+- HEAD probado: bc6ced1c1caf4be40bc47e22d18a69d17ea50079; HEAD final se confirma tras este registro documental.
+===============================================================================
+
+
+===============================================================================
+## C1.608 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** PM-01 / TASK-153 / AUD-NG-386 — reentrada durante las escrituras de actualización de saveEvaluationCategory.
+
+### Hallazgo y cambio
+- saveEvaluationCategory cubría creación reentrante (insertSheet, appendRow de encabezados y appendRow de ownership/categoría), pero no la edición, que realiza dos setValue independientes para nombre y porcentaje.
+- Se agregan dos escenarios al contrato, uno por cada punto de escritura. La secundaria recibe EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior actualiza únicamente los campos solicitados, conserva ResourceOwnership, no agrega filas y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/exam-service-evaluation-category-mutation-security.test.js
+- beta_test.txt (actualización de BETA-EXAM-049)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Suite V8 aislada: 24/24 PASS.
+- Parseo JavaScript de Code.gs y contrato: PASS.
+- CI: pendiente de resultado verificable tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-EXAM-049 Pendiente beta.
+- C1.608 Completada localmente; TASK-153 / AUD-NG-386 continúa En ejecución.
+- HEAD inicial: 6acd9773915439e4235f06dbcc51c820e0017003; HEAD final se confirma tras publicar.
+===============================================================================
+
+
+### Addendum de cierre CI — C1.608
+- GitHub Actions run 43142702283, commit 17956338ed04cb07b6612e0308ea83620173f0a7: workflow Exam-Service security local contracts SUCCESS en Node.js 22; todos los pasos PASS.
+- Contrato exam-service-evaluation-category-mutation-security: 24/24 PASS; harness local V8 aislado: 24/24 PASS; parseo Code.gs/contrato PASS.
+- C1.608 Completada con verificación local y CI. BETA-EXAM-049 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+- HEAD probado: 17956338ed04cb07b6612e0308ea83620173f0a7; HEAD final se confirma tras este registro documental.
+===============================================================================
+
+
+===============================================================================
+## C1.609 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / USER — reentrada durante el registro de conformidad manual.
+
+### Hallazgo y cambio
+- registerDocumentSignature ya verificaba identidad, permiso y ownership bajo ScriptLock y soportaba retry idempotente, pero no tenía una prueba de reentrada durante appendRow.
+- El fixture ahora rechaza una segunda adquisición mientras el lock está retenido, cuenta intentos y permite reentrada durante appendRow. La secundaria debe fallar antes de abrir Sheets o volver a consultar ownership; la exterior conserva una única firma.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/user-service-signature-ownership.test.js
+- beta_test.txt (nuevo BETA-FUNC-030)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness V8 focalizado sobre registerDocumentSignature productivo extraído de Code.gs: 1/1 PASS; parseo del contrato: PASS.
+- CI Department Scope: pendiente tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-030 Pendiente beta.
+- C1.609 En ejecución; TASK-153 continúa En ejecución.
+- HEAD inicial: 77f1de794a703652f58e784726f915e0d612bcb1; HEAD final se confirma tras publicar.
+===============================================================================
+
+
+### Addendum de cierre CI — C1.609
+- GitHub Actions Department Scope Contract run 43143437010, commit e30c217311d81907ba82ab691a576fd3f81742bc: SUCCESS en Node.js 24; todos los pasos PASS.
+- Run user-service signature ownership contract: SUCCESS; harness V8 focalizado local 1/1 PASS; parseo del contrato PASS.
+- C1.609 Completada con verificación local focalizada y CI. BETA-FUNC-030 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+- HEAD probado: e30c217311d81907ba82ab691a576fd3f81742bc; HEAD final se confirma tras este registro documental.
+===============================================================================
+
+
+===============================================================================
+## C1.610 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / USER — reentrada durante la creación de solicitud de firma avanzada.
+
+### Hallazgo y cambio
+- createAdvancedSignatureRequest valida ownership, signer scope, proveedor y bytes reales del archivo bajo ScriptLock, pero no tenía una prueba de reentrada durante appendRow de TransaccionesFirmaAvanzada.
+- Se amplía el fixture con hook en appendRow y lock compartido. La secundaria debe fallar antes de abrir Sheets o leer Drive; la exterior conserva una única transacción y libera ScriptLock.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/user-service-signature-ownership.test.js
+- beta_test.txt (ampliación de BETA-FUNC-029)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness V8 focalizado y parseo del contrato: pendiente de ejecución.
+- CI Department Scope: pendiente tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-029 Pendiente beta.
+- C1.610 En ejecución; TASK-153 continúa En ejecución.
+- HEAD inicial: 8a79a1592793d30f814da94cacc5f71da2fc9b72; HEAD final se confirma tras publicar.
+===============================================================================
+
+
+### Addendum de cierre CI — C1.610
+- GitHub Actions Department Scope Contract run 43143663056, commit 84c72def952552b17fe510cf7722a576ec6425b9: SUCCESS en Node.js 24; todos los pasos PASS.
+- Run user-service signature ownership contract: SUCCESS; harness V8 focalizado local 1/1 PASS; parseo del contrato PASS.
+- C1.610 Completada con verificación local focalizada y CI. BETA-FUNC-029 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+- HEAD probado: 84c72def952552b17fe510cf7722a576ec6425b9; HEAD final se confirma tras este registro documental.
+===============================================================================
+
+
+===============================================================================
+## C1.611 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / USER — reentrada durante la configuración de credenciales del proveedor de firma.
+
+### Hallazgo y cambio
+- configureAdvancedSignatureProvider protege Script Properties y ConfiguracionFirmaAvanzada con ScriptLock, pero el fixture no ejercitaba una segunda configuración durante setProperty.
+- Se añade hook de reentrada y estado de lock compartido. La secundaria recibe SIGNATURE_PROVIDER_CONFIGURATION_BUSY antes de abrir Sheets o persistir secretos; la exterior conserva una sola configuración.
+- Backend productivo sin cambios.
+
+### Archivos modificados
+- tests/security/user-service-signature-ownership.test.js
+- beta_test.txt (ampliación de BETA-FUNC-028)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness V8 focalizado y parseo del contrato: pendiente de ejecución.
+- CI Department Scope: pendiente tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-028 Pendiente beta.
+- C1.611 En ejecución; TASK-153 continúa En ejecución.
+- HEAD inicial: 3911773a1d82369b8c9d8ca485f710b8b59f8baa; HEAD final se confirma tras publicar.
+===============================================================================
+
+
+### Addendum C1.611-R1 — corrección del fixture de lock
+- La primera ejecución focalizada detectó que el lock de makeProviderConfigHarness no rechazaba una segunda adquisición; el cambio inicial se había aplicado a otro fixture.
+- Se corrige el lock específico. Harness V8 focalizado posterior: 1/1 PASS; SIGNATURE_PROVIDER_CONFIGURATION_BUSY, una apertura, una fila exterior, secretos nested ausentes y lock liberado.
+- CI pendiente; backend productivo sin cambios.
+===============================================================================
+
+
+### Addendum de cierre CI — C1.611
+- GitHub Actions Department Scope Contract run 43144007883, commit 22be94e7ad058b4ab43a6c548f882a4b6746bb15: SUCCESS en Node.js 24; todos los pasos PASS.
+- Run user-service signature ownership contract SUCCESS; harness V8 focalizado local 1/1 PASS; parseo del contrato PASS.
+- C1.611 Completada con verificación local focalizada y CI. BETA-FUNC-028 permanece Pendiente beta; Apps Script/Sheets real NOT RUN.
+- HEAD probado: 22be94e7ad058b4ab43a6c548f882a4b6746bb15; HEAD final se confirma tras este registro documental.
+===============================================================================
+
+
+===============================================================================
+## C1.612 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / USER — reentrada durante la reserva anti-replay del callback de firma.
+
+### Hallazgo y cambio
+- handleSignatureProviderCallback_ autentica HMAC y reserva requestId bajo ScriptLock, pero el contrato no ejercitaba reentrada durante CacheService.put.
+- Se añade hook en cache.put y lock compartido. La secundaria recibe SIGNATURE_CALLBACK_SERVICE_BUSY antes de consultar o reservar el replayKey; la exterior reserva una vez y emite un único evento autenticado.
+- Backend productivo sin cambios; el estado de la transacción continúa sin mutarse y la validez criptográfica permanece pendiente del proveedor.
+
+### Archivos modificados
+- tests/security/user-service-signature-ownership.test.js
+- beta_test.txt (ampliación de BETA-FUNC-027)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness V8 focalizado y parseo del contrato: pendiente de ejecución.
+- CI Department Scope: pendiente tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-027 Pendiente beta.
+- C1.612 En ejecución; TASK-153 continúa En ejecución.
+- HEAD inicial: d40caa77643248a20930b8f27c52f770f59f0fe0; HEAD final se confirma tras publicar.
+===============================================================================
+
+
+### Addendum de cierre CI — C1.612
+- GitHub Actions Department Scope Contract run 43144355981, commit ec4a97029a208da0f3b2c1cc8a64937bec250acf: SUCCESS en Node.js 24; todos los pasos PASS.
+- Run user-service signature ownership contract SUCCESS; harness V8 focalizado anti-replay 1/1 PASS; parseo del contrato PASS.
+- C1.612 Completada con verificación local focalizada y CI. BETA-FUNC-027 permanece Pendiente beta; proveedor PSC y validación criptográfica real NOT RUN.
+- HEAD probado: ec4a97029a208da0f3b2c1cc8a64937bec250acf; HEAD final se confirma tras este registro documental.
+===============================================================================
+
+
+===============================================================================
+## C1.613 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / TASK — serialización y ownership de submitAssignment.
+
+### Hallazgo y cambio
+- submitAssignment verificaba acceso, pero leía entregas/versiones y persistía sin ScriptLock; llamadas concurrentes podían duplicar la entrega o el número de versión.
+- Se protege la secuencia completa con ScriptLock; la revalidación assertTaskServiceStudentCanAccessTask ocurre dentro del lock. Timeout TASK_SUBMISSION_LOCK_TIMEOUT antes de abrir Sheets; finally libera el bloqueo.
+- Se agrega cobertura de reentrada durante appendRow y retry posterior sobre el mismo entregaId con versionNum 2.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- beta_test.txt (ampliación de BETA-FUNC-021)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Harness V8 focalizado: PASS; reentrada, retry/versionado y lock ocupado sin mutación.
+- Parseo JavaScript Code.gs/test: PASS.
+- GitHub Actions Task-Service security local contracts run 43145265418 SUCCESS.
+- GitHub Actions backup/restore contract run 43145265344 SUCCESS.
+- Primer run 43145146918 FAIL porque el commit inicial publicó el contrato sin el cambio productivo; commit 6b23d83 corrigió el alcance y ambos workflows posteriores pasaron.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-021 Pendiente beta.
+- C1.613 Completada local/CI; TASK-153 continúa En ejecución.
+- HEAD de código verificado: 6b23d83cbf1d454d53ce7e6678205f5264d07435; HEAD final se confirma tras este registro documental.
+===============================================================================
+
+
+===============================================================================
+## C1.614 — IMA-EXEC-20261110-1825Z-02
+**Tarea:** TASK-153 / T153-S02 — vigencia efectiva en consultas de asignaciones de roles y ámbitos.
+
+### Hallazgo y cambio
+- getInternalRoleAssignments solo comparaba fecha de fin y podía devolver como vigente una asignación con fecha de inicio futura o fecha inválida.
+- El modo soloVigentes (predeterminado) ahora valida ambas fechas y excluye inicio futuro, fin vencido y fechas inválidas. Los límites abiertos siguen permitidos; soloVigentes=false conserva la consulta ampliada de registros activos.
+- Se agregan escenarios al contrato Department Scope. No se cambian esquemas, asignaciones ni datos institucionales.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/department-scope-contract.test.js
+- beta_test.txt (nuevo BETA-FUNC-031)
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0007.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+### Verificación y estado
+- Contrato Department Scope ejecutado localmente: PASS.
+- Parseo JavaScript del contrato: PASS.
+- CI Department Scope: pendiente tras publicar.
+- Apps Script/Sheets real NOT RUN; BETA-FUNC-031 Pendiente beta.
+- Incremento parcial T153-S02; no completa el soporte de múltiples roles simultáneos ni el motor genérico.
+- HEAD inicial: 603d8df710aef572dde6e62db6b9e4e877ea8af3; HEAD final se confirma tras publicar.
+===============================================================================
+
+
+### Addendum C1.614-R1 — corrección de publicación
+- La comparación Git del commit 52498c8f27f30e24ca6a12721f6ae79cb895bc8e mostró que Code.gs y department-scope-contract.test.js conservaban los mismos blobs del padre; el commit había actualizado únicamente registros documentales.
+- Se detectó antes de cerrar la tarea. Este commit añade realmente el filtro temporal de inicio/fin y las pruebas future/expired/invalid/open/revoked y modo no vigente.
+- No se considera el commit documental evidencia de implementación. CI permanece pendiente; el HEAD correctivo se verificará después de publicar.
+===============================================================================
+
+
+### Addendum de cierre CI — C1.614 / C1.614-R1
+- Commit funcional verificado: e36337bcf3d57ce0210d7d372e70486c5d0a6159; compare Git confirma cambios en backend/user-service/Code.gs y tests/security/department-scope-contract.test.js.
+- Contrato Department Scope local PASS; parseo JavaScript de Code.gs y contrato PASS.
+- GitHub Actions Department Scope run 43210592288 SUCCESS; Identity Mapping run 43210592306 SUCCESS; Task-Service security run 43210592253 SUCCESS. Todos los pasos PASS.
+- C1.614 completada local/CI. BETA-FUNC-031 sigue Pendiente beta; Apps Script/Sheets real NOT RUN.
+- El commit documental previo 52498c8 no se considera evidencia funcional; la implementación efectiva está en e36337b.
+- HEAD de código verificado: e36337bcf3d57ce0210d7d372e70486c5d0a6159; HEAD final se confirma tras este registro documental.
+===============================================================================
+
+
+===============================================================================
+### C1.615 — TASK-153 / T153-S02: contexto activo explícito por departamento
+- **Sesión:** IMA-EXEC-20261110-1825Z-02.
+- **Rama:** NG_beta_0.0.0.1_work (única rama modificada).
+- **Checkpoint anterior:** C1.614 / C1.614-R1.
+- **HEAD inicial verificado:** e42b7df470ebf7019b0bea884eb0074e3ac453a7.
+- **Objetivo:** permitir que una solicitud seleccione explícitamente uno de los departamentos ya asignados al usuario/rol verificado, sin ampliar el conjunto autorizado.
+- **Implementación:** USER getUserContextScope valida activeDepartmentId contra los departamentos extraídos de asignaciones vigentes del rol firmado. Cuando coincide, reduce departmentIds y scopes al departamento elegido, desactiva institutionWide para esa solicitud y descarta dimensiones de ámbito sin relación departamental demostrada. Un selector no asignado o derivado únicamente de alcance institucional general falla con ACTIVE_SCOPE_NOT_ASSIGNED. Si el selector se omite, se conserva la unión previamente autorizada.
+- **Integración:** validateRoleScopeAccess devuelve activeDepartmentId; assertRecordOwnership consume el contexto reducido mediante getUserContextScope sin cambio adicional.
+- **Archivos funcionales/documentales:** backend/user-service/Code.gs; tests/security/department-scope-contract.test.js; beta_test.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; changueslogs.txt; este checkpoint; Auditoría/INDICE_CHECKPOINTS.md.
+- **Commits:** implementación USER 4149f540b18baa636bf8fc18f638ffad76c4a205; contrato de contexto 9b3a5432e0b40fc412613438347413ba3ef92ccd; contrato de ownership a6266297ca6573373950af5e1a58e9b8b8a7e69f; escenario beta 0f1bffcf7afaf5768a582c3f7c9a7cd17d307dad; registros C1.615 en Plan/Changelog/Checkpoint/Índice.
+- **Verificación local:** contrato Department Scope aislado PASS con selección activa y ownership positivo/negativo; contrato focalizado de contexto activo 8/8 PASS; parseo JavaScript de las funciones modificadas y del contrato PASS. El harness usa fixtures sintéticos y funciones productivas extraídas; no representa ejecución de Apps Script/Sheets desplegado.
+- **CI:** pendiente de ejecución/observación para los commits de C1.615; no se declara PASS.
+- **Beta:** BETA-FUNC-032 Pendiente beta. Apps Script/Sheets real NOT RUN.
+- **Decisiones de seguridad:** activeDepartmentId es entrada no confiable y solo puede restringir asignaciones vigentes verificadas; no se utiliza AsignacionesAmbitosRoles para conceder roles RBAC; no se infiere departamento desde grant institucional. La exclusión de otras dimensiones dentro del contexto departamental evita ampliar acceso sin relación canónica.
+- **Límites:** no se implementa todavía soporte de múltiples roles RBAC simultáneos. verifySessionToken continúa vinculando el rol firmado al rol único vigente de Usuarios. Se requiere definir la fuente canónica de membresías multirol y su integración firmada antes de habilitar selección de rol; no se deduce desde asignaciones de ámbito/responsabilidad.
+- **Estado:** C1.615 Completada en verificación local; T153-S02 continúa En ejecución. T153-S01 sigue bloqueada solo para la decisión/fuente institucional real, sin impedir este incremento genérico.
+- **Siguiente tarea elegible:** continuar T153-S02 con el modelo canónico de membresías multirol y contexto de rol firmado, tras inspeccionar la fuente de verdad disponible y las dependencias ya registradas; mantener fail-closed y no elevar privilegios mediante el selector de ámbito.
+- **HEAD final de implementación verificado:** 4149f540b18baa636bf8fc18f638ffad76c4a205. Los commits posteriores solo incorporan pruebas y registros de esta misma iteración.
+===============================================================================
+
+===============================================================================
+### C1.616 — TASK-153 / T153-S02: membresías RBAC multirol y selección explícita de rol
+- **Sesión:** IMA-EXEC-20261110-1825Z-02 (se conserva el mismo ID).
+- **Rama:** NG_beta_0.0.0.1_work exclusivamente.
+- **Checkpoint anterior:** C1.615.
+- **HEAD inicial de esta iteración:** bad8ccc2d97d041096a65ef6b01bd5d659abd0df.
+- **Rama base:** NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; comparación final previa al checkpoint: ahead 1600, behind 0. No se escribió en la rama base.
+- **Objetivo:** implementar el núcleo de T153-S02 pendiente en C1.615: fuente canónica de membresías RBAC, múltiples roles simultáneos, contexto de rol firmado y selección explícita en login; no derivar roles desde AsignacionesAmbitosRoles.
+- **Cambios USER:** claims de sesión membershipId/institutionId; verificación por usuario, institución, ID único, rol configurado, estado y vigencia; fallback legacy limitado a ausencia de membresías de la institución actual; selección obligatoria cuando hay más de un rol vigente; rechazo cuando no hay roles vigentes; cambio de rol con revocación de sesión anterior en caché USER; router para consulta/cambio/administración; asignación bajo ScriptLock, cuenta activa, institución configurada y rol existente; revocación permitida en cuentas inactivas y denegación de IDs duplicados globalmente.
+- **Cambios consumidores:** ACADEMIC, ACCOUNTING, TASK y EXAM validan los claims contra MembresiasRolesRBAC, tenant, vigencia, unicidad y rol configurado; DEVELOPER rechaza tokens de membresía de aplicación porque usa un plano de control separado.
+- **Interfaz:** login.html incorpora selector accesible; js/auth.js solicita selección cuando el backend devuelve ACTIVE_ROLE_SELECTION_REQUIRED y reintenta login con activeRoleId; guarda rolesDisponibles en currentUser.
+- **Archivos modificados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs; backend/developer-service/Code.gs; login.html; js/auth.js; tests/security/user-role-membership-contract.test.js; .github/workflows/department-scope-contract.yml; beta_test.txt; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoria.txt; changueslogs.txt; Auditoría/INDICE_CHECKPOINTS.md; este archivo.
+- **Commits principales:** servicios consumidores y USER: 619eddde, 42bc9b58, d560a0a8, a283667d, 9cb0c03a, 56341425, 9e3d14f6, db7c6299, ed497a62, 97c1ceb3, a287d497, c01a6811, 6998fd24, a885b0d8, 3753d154, c4af54a2; pruebas/harness: f4eaeab, 8b248bfb, c8b14410, 9b4d3967, 792a9450, 2b66384d, 87efd29a; interfaz: de6fcb09, da8f71ed; workflow: 58833827; beta: fee86fec; plan: 6cfced27; changelog: f22318b0; auditoría: 7208aee1; índice: 8761be82. HEAD de implementación con código, interfaz, contrato y workflow: 58833827cb62199240efa8c856c54db8fdcfab03.
+- **Hallazgos corregidos:** membresías de otro tenant no migran el rol legacy local; rol eliminado de configuración invalida la membresía; IDs duplicados no se revocan ambiguamente; no se selecciona silenciosamente un rol cuando hay varias membresías.
+- **Pruebas incorporadas:** contrato Node con identidad/tenant, fechas, estados, rol configurado, duplicidad, revocación, selección explícita, cambio de rol, compatibilidad legacy, cuatro consumidores y plano DEVELOPER; workflow ahora incluye sintaxis de js/auth.js.
+- **Verificación local:** **NOT RUN**. El entorno de herramientas no proporciona checkout local ni ejecución Node; no se declara PASS. Los contratos y parseos deben ejecutarse en el siguiente paso sobre el HEAD publicado.
+- **CI:** **NOT VERIFIED**. get_commit_combined_status no devolvió estados y la consulta disponible de workflow runs no expone ejecuciones push; no se declara PASS ni FAIL.
+- **Beta:** BETA-FUNC-033 Pendiente beta; Apps Script/Sheets real NOT RUN.
+- **Decisiones/límites:** los cinco servicios que validan membresías deben tener IMA_INSTITUTION_ID coherente y acceso al mismo almacén institucional. La revocación de membresía se verifica directamente en la hoja por cada consumidor. No se afirma que el caché de revocación de sesión USER se comparta entre proyectos Apps Script independientes. El motor completo de responsabilidades/capacidades/ámbitos de T153-S02 sigue pendiente.
+- **Estado:** implementación y registros publicados, pero C1.616 no se cierra como completada localmente porque faltan pruebas locales obligatorias. TASK-153/T153-S02 continúa En ejecución.
+- **Siguiente acción concreta:** ejecutar `node tests/security/user-role-membership-contract.test.js`; ejecutar `node --check` en los seis servicios backend modificados y `js/auth.js`; corregir cualquier fallo y verificar CI. Después continuar el resto de T153-S02; no iniciar T153-S03 antes de cumplir sus dependencias.
+- **HEAD antes de registrar este checkpoint:** 8761be825782aef12f5fdbddfb6f3d351546bc2b.
+===============================================================================
+
+
+### Addendum C1.616-R1 — validación estricta del esquema
+- Se corrigió ensureUserRoleMembershipSheet_ para rechazar columnas adicionales, no solo cabeceras incorrectas en las primeras 12 columnas.
+- Se amplió tests/security/user-role-membership-contract.test.js con una fixture de 13 columnas que debe producir ROLE_MEMBERSHIP_SCHEMA_MISMATCH.
+- Commit de corrección backend: 0b35e0175bdb2a6a496859c06c49c91b0df0c131. Commit de prueba: 1cba3b9b5adfda6a7f22e266347ca83a5509fd7d.
+- Estado de verificación sin cambios: pruebas locales NOT RUN; CI NOT VERIFIED; C1.616 permanece En ejecución.
+
+
+**Addendum C1.616-R2 — compatibilidad legacy por tenant**
+- Se amplía el contrato para verificar que una membresía RBAC de INST-2 no invalida la sesión legacy de un usuario sin membresías en INST-1.
+- Commit de prueba: 90762894af246fa8b8f9503e44252e0315334c56. Ejecución local sigue NOT RUN.
+
+
+===============================================================================
+### C1.617 — IMA-EXEC-20261110-1825Z-02 — verificación de membresías RBAC multirol
+- Sesión: IMA-EXEC-20261110-1825Z-02 (se conserva el mismo ID).
+- Continuidad: checkpoint anterior C1.616; HEAD de código verificado antes del registro: c1d2b350eb94400cdb41e89c462ffc4a81d8e0c8.
+- Tarea: PM-01 / TASK-153 / T153-S02 — cerrar la verificación del incremento de membresías multirol, selección explícita y validación transversal. La tarea global continúa En ejecución.
+- Correcciones de harness: el contrato Department Scope concatenaba funciones con el texto literal barra-n en vez de un salto de línea; el contrato Task-Service no incluía verifyUserRoleMembershipClaim_ en el contexto aislado; el fixture RBAC reutilizaba un UUID fijo para tokens distintos. Se corrigieron los tres defectos de prueba; no se modificó código productivo en esta iteración.
+- Archivos funcionales modificados: ninguno.
+- Archivos de prueba modificados: tests/security/department-scope-contract.test.js; tests/security/task-service-security-contract.test.js; tests/security/user-role-membership-contract.test.js.
+- Verificación CI: Department Scope Contract run 43217920934 SUCCESS, en Node 24.22.2; todos los pasos PASS: Department Scope, User Role Membership, Academic departmental resource access, Academic student expediente ownership, Academic admission ownership, User-service signature ownership, Accounting departmental resource access, Resource Ownership ABAC, sintaxis de los seis servicios Apps Script, Student private voucher contract y sintaxis de js/student.js y js/auth.js.
+- Verificación CI adicional: Task-Service security run 43217821416 SUCCESS, en Node 22.23.4; task-service-security-contract y task-service-resource-ownership PASS.
+- Ejecución en terminal local de esta sesión: NOT RUN. Se intentó checkout, pero el entorno no pudo resolver/conectar con github.com; no se presenta CI como ejecución local.
+- Apps Script/Sheets/Drive real: NOT RUN. BETA-FUNC-033 permanece Pendiente beta.
+- Hallazgos: los fallos iniciales correspondían a fixtures/harnesses; quedaron corregidos y las ejecuciones finales pasaron. No se declara prueba real de despliegue ni migración de datos.
+- Commits de corrección: 03ad294560850ee15741272630f86ecac2ffc40e; c1d2b350eb94400cdb41e89c462ffc4a81d8e0c8.
+- Siguiente tarea elegible: continuar T153-S02 con la integración verificable de responsabilidades/capacidades y su vínculo con membresía, tenant y ámbitos; no iniciar T153-S03 antes de satisfacer las dependencias de T153-S02.
+===============================================================================
+
+
+===============================================================================
+### C1.618 — IMA-EXEC-20261110-1825Z-02 — vinculación de ámbitos con membresía e institución
+- **Sesión:** IMA-EXEC-20261110-1825Z-02 (se conserva el ID).
+- **Continuidad:** C1.617; HEAD inicial de esta iteración: 3bf4d99292728974b8201cf6a2fd07116808e40c.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Incremento enfocado: vincular las asignaciones de ámbito al tenant y a la membresía RBAC activa.
+- **Implementación:** `AsignacionesAmbitosRoles` incorpora `InstitutionID` y `MembershipID`; el escritor valida una membresía objetivo activa y única para usuario/rol/institución, separa las claves de actualización por tenant+membresía y conserva compatibilidad legacy solo en filas sin vínculo. `getUserContextScope` exige coincidencia exacta de institución y membresía firmadas; los tokens legacy solo pueden leer filas legacy no vinculadas. Se conserva `getUserScopeConfig`.
+- **Pruebas:** el contrato Department Scope cubre aislamiento entre dos IDs de membresía, tenant distinto, escritura de vínculo, asignaciones separadas por membresía, rechazo de membresía inactiva y compatibilidad legacy.
+- **CI:** Department Scope Contract run 43219335951 SUCCESS (contratos de ámbitos, membresías, ownership académico/contable, seis parseos de servicios y clientes JS); Task-Service security run 43219335906 SUCCESS.
+- **Commits funcionales/pruebas:** 4110841981351b62340fd94efe593c656c2c22f1; 32c63b05db0917ea7489b2cf347acd86df8c6153; fa71c8de6f65c1818ed258950291e01fe06fa3ed.
+- **Terminal local:** NOT RUN; no fue posible resolver github.com desde el entorno local de esta sesión. CI sí ejecutó los contratos en runners aislados. Apps Script/Sheets real NOT RUN.
+- **Compatibilidad/impacto:** las filas antiguas sin InstitutionID/MembershipID siguen disponibles solo a sesiones legacy. Las sesiones con membresía RBAC requieren reasignación explícita del ámbito para generar vínculo; no se infiere ni migra la membresía a partir de userId+role.
+- **Estado:** incremento C1.618 implementado y CI PASS; TASK-153/T153-S02 continúa En ejecución. No se cierra la tarea global.
+- **Siguiente acción:** revisar la integración de responsabilidades internas/capacidades con el catálogo de roles y permisos dinámicos, manteniendo vínculo verificable con tenant, membresía y ámbito.
+===============================================================================
+
+
+===============================================================================
+### C1.619 — IMA-EXEC-20261110-1825Z-02 — responsabilidades institucionales vinculadas a roles internos
+- **Sesión:** IMA-EXEC-20261110-1825Z-02 (se conserva el ID).
+- **Continuidad:** C1.618; HEAD inicial de esta iteración `3451b22e64ddb2f5487d14792e5c8d6ee8edb9bb`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Incremento enfocado: vincular catálogo de roles internos con responsabilidades institucionales y mantener capacidades fuera de la autoridad RBAC.
+- **Implementación:** esquema aditivo `ResponsibilityID` en `CatalogoRolesInternos`; vínculo validado contra registro institucional activo y único; contexto de ámbito expone metadatos de módulos/capacidades; listados distinguen `RoleID` de `ResponsibilityID` y filtran tenant/membresía/vigencia. Escrituras de catálogos requieren sesión verificada; catálogos vacíos ya no devuelven responsabilidades sintéticas como registros activos.
+- **Seguridad:** se probaron suplantación de rol/actor del cliente, referencia ausente/inactiva, aislamiento de membresía y separación estricta entre capacidades organizativas y permisos RBAC explícitos.
+- **Pruebas/CI:** Department Scope Contract run 43225238922 SUCCESS, Node 24.22.2; contrato de responsabilidad/RBAC, contrato de ámbitos, membresías, ownership académico/contable, sintaxis de seis servicios Apps Script y JS de cliente PASS.
+- **Terminal local:** NOT RUN por imposibilidad de resolver github.com en el entorno local; CI ejecutó los contratos en runner aislado. Apps Script/Sheets real NOT RUN.
+- **Commits:** `ce385606a6113de3877d160c5a0a97efefb4ba4e`; `79187bddab6d6bacbc2a5b9c8dd2b0a2d6eab332`; `3608847e3e181da39ebb0336a462d585f2b0562a`; `c0dacf9a5e885ef2fc34bd179ebc8c5d1b50cffe`; `c669717705d381ceff9ae9e74a10fd5058b04e5b`; `671daded866a44d807523f2ce6036a8b353a69cc`; `aa08228543f44ec1bdf5aae7dd8af9beb5e39722`.
+- **Beta:** BETA-FUNC-033 ampliado; Pendiente beta. No se ejecutó migración en hojas reales ni despliegue.
+- **Estado:** incremento C1.619 implementado y CI PASS; TASK-153/T153-S02 continúa En ejecución.
+- **Siguiente acción:** probar ciclo de vida y concurrencia de escrituras, actualizaciones, duplicados, revocación y desactivación con fixtures/mocks deterministas; mantener aislamiento y no otorgar RBAC por capacidades.
+===============================================================================
+
+
+===============================================================================
+### C1.620 — IMA-EXEC-20261110-1825Z-02 — escrituras serializadas de roles, responsabilidades y ámbitos
+- **Sesión:** IMA-EXEC-20261110-1825Z-02 (mismo ID de sesión).
+- **Continuidad:** C1.619; HEAD inicial `12a02bc2f88b0640f4a08bf8c54da0f526c7e7ab`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Incremento: protección contra carreras en escrituras de catálogos y asignaciones.
+- **Implementación:** `assignRoleScope`, `manageInternalRoleCatalog` y `saveInstitutionalResponsibility` usan ScriptLock con liberación garantizada en `finally`. Si el lock no se obtiene, el handler falla cerrado antes de leer/mutar el registro.
+- **Pruebas:** mocks reproducibles para lock ocupado sin escritura parcial; altas repetidas de rol por nombre normalizado verifican reutilización de la fila bajo lock; se mantiene cobertura de autorización por identidad firmada y vínculo institucional.
+- **CI:** Department Scope Contract run 43226324130 SUCCESS, Node 24.22.2; todos los contratos y checks de sintaxis configurados PASS.
+- **Terminal local:** NOT RUN por fallo DNS al resolver github.com; CI ejecutó los contratos en runner aislado. Apps Script/Sheets real NOT RUN. Las intercalaciones reales de múltiples solicitudes quedan Pendiente beta.
+- **Commits:** `d0552a69d0afe6f78bbe0443db47328c263d43e8`; `911e8900c90079ac71e52ce0f1a3b47334ba7e32`.
+- **Estado:** incremento C1.620 implementado y CI PASS; TASK-153/T153-S02 continúa En ejecución.
+- **Siguiente acción:** probar desactivación/revocación de responsabilidad, expiración/revocación de membresía y cambio de rol frente a sesiones previas, verificando revocación efectiva de ámbitos y ausencia de registros huérfanos.
+===============================================================================
+
+
+===============================================================================
+### C1.621 — IMA-EXEC-20261110-1825Z-02 — revocación efectiva de responsabilidad y membresía en ámbitos
+- **Sesión:** IMA-EXEC-20261110-1825Z-02 (continuidad de C1.620).
+- **HEAD inicial:** `900f7a3bf10ac044b2225de894fff8693b90c1c6`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Ciclo de vida: desactivación de responsabilidades, revocación/expiración de membresía y cambio del rol ligado a sesiones anteriores.
+- **Hallazgo:** `getInternalRoleAssignments` filtraba por institución y MembershipID almacenados, pero no revalidaba que la membresía siguiera activa, vigente y asociada al mismo rol. Un vínculo revocado podía seguir apareciendo en el listado de asignaciones.
+- **Corrección:** el lector revalida membresía mediante `getUserRoleMembershipState_`, con caché por usuario/institución dentro de la consulta; solo expone asignaciones de membresías activas, únicas, vigentes y con rol configurado. Para el esquema actual exige ResponsibilityID resoluble y responsabilidad institucional activa. Se mantiene el lector legacy sin vínculo solo en su esquema legacy.
+- **Contrato:** `tests/security/internal-responsibility-rbac-contract.test.js` incorpora fixtures sintéticos para responsabilidad inactiva, rol interno inactivo, membresía revocada, cambio de rol y membresía vencida. Comprueba que desaparezcan tanto el ámbito efectivo como la visibilidad de la asignación.
+- **CI:** Department Scope Contract run **43227647058 SUCCESS** (Node 24.22.2); los 16 pasos del job, incluidos los contratos de ámbito/RBAC/membresías, ownership y sintaxis de seis servicios y clientes, finalizaron SUCCESS. Task-Service security run **43227456678 SUCCESS** para el commit de backend.
+- **Commits:** `bd863492c3d1cff8fccaad2178456e78e93f6276` (backend); `ab16295f94e5cb8d5ffdba40f4c8cd6c624a1e99` (contrato).
+- **Terminal local independiente:** NOT RUN. Las verificaciones de código se ejecutaron en runners aislados de GitHub Actions. Apps Script/Sheets real NOT RUN; concurrencia multi-solicitud real y flujos desplegados continúan Pendiente beta en BETA-FUNC-033.
+- **Estado:** C1.621 implementada y verificada por CI. TASK-153/T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** verificar actualizaciones/reasignaciones de ámbitos con cambios de ResponsibilityID y MembershipID, unicidad/idempotencia y ausencia de vínculos residuales entre tenants; ampliar los contratos aislados según los casos detectados.
+===============================================================================
+
+
+===============================================================================
+### C1.622 — IMA-EXEC-20261110-1825Z-02 — reasignación idempotente y unicidad de ámbitos RBAC
+- **Sesión:** IMA-EXEC-20261110-1825Z-02; continuidad directa de C1.621.
+- **HEAD inicial:** `9a5308af54df1e455235d714e0fb68b1492f36e1`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Reasignación/actualización de ResponsibilityID y MembershipID, idempotencia, detección de duplicados y aislamiento institucional.
+- **Hallazgo:** el escritor `assignRoleScope` identificaba una fila por user/role/scope/institution/membership/responsibility. Cambiar ResponsibilityID convertía una actualización en un alta paralela; no había ruta por AssignmentID para una reasignación controlada de membresía y el primer duplicado podía ser actualizado silenciosamente.
+- **Implementación:** `assignRoleScope` acepta `assignmentId`/`asignacionId` para actualizaciones explícitas. El ID debe identificar una única fila y esta debe pertenecer al usuario, rol, tipo de ámbito e institución activos. La transferencia de membresía solo ocurre mediante ese selector explícito, tras volver a resolver una membresía activa del usuario/rol/tenant. Sin ID explícito, la clave idempotente es user+role+scopeType+institution+membership (no incluye ResponsibilityID), por lo que cambiar la responsabilidad actualiza la fila y conserva su ID. Claves duplicadas o IDs ambiguos fallan cerrados sin escritura. Se actualiza la fila completa en una operación setValues, se preservan creador/fecha de creación, y el registro de auditoría captura before/after de membresía y responsabilidad.
+- **Compatibilidad/aislamiento:** se mantienen migraciones aditivas de encabezados legacy/membership al esquema actual; asignaciones de membresías diferentes siguen siendo distintas salvo reasignación explícita por ID. Un AssignmentID perteneciente a otro tenant no puede transferirse ni modificarse.
+- **Contrato local aislado:** ampliado `tests/security/internal-responsibility-rbac-contract.test.js` con cambio de responsabilidad sin duplicar fila, reasignación explícita de MembershipID, reintento idempotente, duplicados fail-closed, ID de otro tenant sin cambios y liberación de ScriptLock.
+- **CI:** Department Scope Contract run **43228852462 SUCCESS**, Node 24. Todos los 16 pasos de contrato, regresión, ownership, RBAC/membresías, sintaxis de seis servicios y sintaxis cliente finalizaron SUCCESS.
+- **Terminal local independiente:** NOT RUN. La suite de contrato se ejecutó en runner aislado de GitHub Actions (no requiere despliegue); Apps Script/Sheets real y concurrencia entre solicitudes desplegadas permanecen NOT RUN/Pendiente beta.
+- **Commit funcional y pruebas:** `6d91b0919ea02aa829d149c0e6cb8b1d18785f83`.
+- **Estado:** C1.622 implementada y verificada por contrato aislado/CI; T153-S02 continúa En ejecución hasta revisar los requisitos restantes del subflujo; no se inicia T153-S03 en este checkpoint.
+- **Siguiente acción:** revisar las invariantes finales de escritura/lectura de ámbitos y cierre de T153-S02; beta BETA-FUNC-033 mantiene validación real de Sheets y concurrencia multi-solicitud.
+===============================================================================
+
+ 
+===============================================================================
+### C1.623 — coherencia de lectores RBAC y AssignmentID ambiguos
+- Hallazgo: el esquema transicional con InstitutionID/MembershipID pero sin ResponsibilityID podía aparecer en el listado de asignaciones aunque no generara ámbito efectivo; además, los lectores no filtraban IDs vacíos o duplicados.
+- Corrección: el listado devuelve vacío para el esquema transicional no efectivo; ambos lectores excluyen asignaciones con AssignmentID vacío o no único. Se conserva lectura legacy autorizada y no se borran filas históricas.
+- Pruebas añadidas para esquema intermedio y duplicidad de ID en listado y contexto efectivo, con membresía/responsabilidad activas.
+- Verificación CI pendiente al publicar; Apps Script/Sheets real y concurrencia desplegada permanecen Pendiente beta.
+- T153-S02 sigue En ejecución; C1.623 no cierra TASK-153 ni inicia T153-S03.
+===============================================================================
+
+ 
+### C1.623 — cierre de verificación
+- Department Scope Contract run 43257600097 SUCCESS (16 pasos PASS, Node 24); Task-Service security local contracts run 43257599864 SUCCESS; Identity mapping and transport security contracts run 43257599910 SUCCESS. Los tres runs apuntan al commit funcional C1.623.
+- Contrato RBAC y regresiones de esquema intermedio/AssignmentID duplicado ejecutados en runner aislado CI sin despliegue; sintaxis de servicios y clientes configurados PASS.
+- Terminal independiente NOT RUN; Apps Script/Sheets real y concurrencia multi-solicitud desplegada Pendiente beta (BETA-FUNC-033).
+- C1.623 completada y verificada por CI. T153-S02 continúa En ejecución; revisar criterios funcionales restantes antes de cerrarlo.
+
+ 
+===============================================================================
+### C1.624 — integridad de catálogos de responsabilidades y capacidades
+- Hallazgo: el catálogo de responsabilidades aplicaba first-row-wins a ResponsibilityID duplicados; lectores aceptaban listas con elementos no string/duplicados; el catálogo de roles podía exponer RolInternoID duplicados aunque el resolvedor los rechazaba.
+- Corrección: ambos catálogos excluyen identificadores vacíos/ambiguos; lecturas validan arrays de IDs string no vacíos y únicos tras trim; escritura de responsabilidades normaliza y rechaza listas inválidas sin mutación parcial.
+- Separación RBAC: CAP_ADMINISTRAR sigue siendo metadato y no concede acciones ausentes de la matriz explícita. No se inventa mapeo universal capability→acción.
+- Pruebas añadidas para duplicados, tipos inválidos, normalización, no mutación y no elevación. Resultado de ejecución local/CI pendiente.
+- T153-S02 permanece En ejecución; C1.624 no cierra la subtarea ni inicia T153-S03.
+===============================================================================
+
+ 
+### C1.624 — cierre de verificación
+- Contrato completo `internal-responsibility-rbac-contract.test.js` ejecutado en harness V8 aislado PASS; parseo sintáctico del backend y del test PASS.
+- Department Scope Contract run **43268942510 SUCCESS** (Node.js 24; todos los pasos PASS, incluidos contratos RBAC/responsabilidades, membresías, ownership académico/contable y syntax-checks).
+- Node CLI en checkout independiente NOT RUN por fallo DNS al resolver github.com. Apps Script/Sheets real NOT RUN; prueba beta Pendiente.
+- Diff revisado: ocho archivos previstos; no se modificaron ramas/servicios ajenos ni datos reales.
+- C1.624 completada. T153-S02 permanece En ejecución; C1.624 no declara finalizado el ciclo completo ni inicia T153-S03.
+
+
+===============================================================================
+### C1.625 — IMA-EXEC-20261110-1825Z-02 — aislamiento exacto de rol en contexto RBAC multirol
+- **Sesión:** IMA-EXEC-20261110-1825Z-02; continuidad directa de C1.624.
+- **HEAD inicial:** `76ea29158a45bfa28662a6415c18cf76e61dc72a`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificación del ciclo usuario↔membresías/roles↔responsabilidades↔ámbitos y aislamiento del contexto activo multirol.
+- **Hallazgo:** `getUserContextScope` comparaba RoleID mediante normalización que elimina puntuación. Una fila vinculada a la misma MembershipID pero con RoleID distinto (p. ej. `Direct-or` frente a `Director`) podía incorporarse al contexto firmado, a diferencia del lector administrativo que exige coincidencia exacta. Esto permitía contaminación de ámbitos entre roles bajo una misma membresía si existía una fila malformada o residual.
+- **Corrección:** para asignaciones vinculadas a MembershipID, el RoleID de la fila debe coincidir exactamente con el rol de la sesión firmada. La normalización histórica se conserva únicamente para el esquema legacy sin MembershipID. Se mantiene la comprobación existente de institución, membresía, responsabilidad activa, vigencia e identidad firmada.
+- **Contrato:** ampliado `tests/security/internal-responsibility-rbac-contract.test.js` con un usuario que tiene dos membresías activas en la misma institución (Director/DEP-A y Auditor/DEP-B), sesiones independientes y una fila con RoleID alias `Direct-or` bajo la membresía Director. Comprueba que Director solo recibe DEP-A, Auditor solo recibe DEP-B y el alias no introduce DEP-X.
+- **Verificación aislada:** ejecución completa del contrato en harness V8 aislado: **PASS**, incluidos los escenarios históricos C1.621–C1.624 y el nuevo C1.625. Parseo sintáctico de backend USER y contrato: **PASS**.
+- **Node CLI independiente:** NOT RUN; no hubo checkout local disponible por la limitación DNS de github.com. **CI:** la consulta de estados del commit no devolvió checks; no se declara CI PASS.
+- **Beta:** Apps Script/Sheets real y concurrencia multi-solicitud desplegada NOT RUN; ampliar BETA-FUNC-033. Pendiente beta no bloqueante conforme a NDASC.
+- **Archivos funcionales:** `backend/user-service/Code.gs`; `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** backend `c4b7847a674bd5459849ad9e91657e92b5f96e4a`; contrato `ee9d4f19afb1955f9232e1da30983c895a4e3124`; corrección del fixture de regresión `e761c02af422745633750765f26c99c3aaff0c1f`.
+- **HEAD final funcional antes de registros:** `e761c02af422745633750765f26c99c3aaff0c1f`.
+- **Estado:** C1.625 implementada y verificada en harness aislado. T153-S02 continúa En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** completar la matriz multirol del contexto activo: selección/cambio de departamento por membresía, revocación/expiración de una membresía sin afectar la otra, y consistencia de ámbitos/responsabilidades entre lectores y permisos RBAC explícitos.
+===============================================================================
+
+
+===============================================================================
+### C1.626 — IMA-EXEC-20261112-1754Z-03 — selección de departamento y revocación/expiración independiente multirol
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.625.
+- **HEAD inicial:** `273cbf93655df2450c9a300be04ad1707a1d72de`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Completar pruebas de selección/cambio de departamento por membresía y aislamiento ante revocación/expiración de una membresía sin afectar las demás.
+- **Implementación:** se amplía `tests/security/internal-responsibility-rbac-contract.test.js`; no fue necesario modificar lógica productiva. Se agrega un segundo departamento a la membresía Director y se ejercita `activeDepartmentId`: el contexto se reduce al departamento solicitado y rechaza un departamento perteneciente a la membresía Auditor.
+- **Revocación independiente:** al marcar REVOKED la membresía Director, la sesión Director se invalida y sus asignaciones dejan de aparecer; la sesión Auditor continúa activa, conserva DEP-B y su asignación permanece visible.
+- **Expiración independiente:** al establecer una fecha de fin vencida en la membresía Director, su sesión queda invalidada; la sesión Auditor y su ámbito DEP-B siguen vigentes.
+- **Consistencia:** se contrasta el contexto efectivo con `getInternalRoleAssignments` para ambas membresías antes y después de revocación/expiración.
+- **Verificación local:** contrato completo ejecutado en harness V8 aislado: **PASS**; bloques iniciales y C1.621–C1.626 PASS. Parseo sintáctico de backend USER y contrato: **PASS**.
+- **Node CLI independiente:** NOT RUN (no hubo checkout local conectado en esta sesión). **CI:** no se ejecutó workflow ni se declara CI PASS. **Beta:** Apps Script/Sheets real NOT RUN; escenario registrado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commit funcional:** `e86a9215897c42b441f5b100ff2b25f789b1f41c`.
+- **Estado:** C1.626 completada conforme a las verificaciones locales ejecutadas. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** comprobar que la resolución de responsabilidad/ámbitos y la autorización de acciones RBAC explícitas permanecen alineadas por cada membresía, incluidos permisos permitidos y denegados sin herencia entre roles.
+===============================================================================
+
+
+===============================================================================
+### C1.627 — IMA-EXEC-20261112-1754Z-03 — permisos RBAC explícitos aislados por membresía activa
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.626.
+- **HEAD inicial:** `5e0a2b516f872d1aee66e485651015e4c6a98ff0`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar alineación de la autorización RBAC explícita con el rol autenticado en cada membresía y ausencia de herencia entre roles del mismo usuario.
+- **Contrato:** se ejecuta el `validateRolePermission` y `getDynamicPermissionsForRole` reales con una matriz institucional sintética: Director puede `approveFinancialRecords` y no `viewAuditLogs`; Auditor no puede aprobar y sí consultar auditoría. Se autentican sesiones ligadas a MEM-LIFE y MEM-AUD.
+- **Controles negativos:** Auditor no hereda la concesión de aprobación de Director aunque el payload incluya metadatos de responsabilidad con `CAP_ADMINISTRAR`; revocar MEM-LIFE invalida la concesión de Director sin retirar la concesión independiente de Auditor.
+- **Verificación local:** contrato completo en harness V8 aislado **PASS**, incluidos bloques iniciales y C1.621–C1.627. Parseo sintáctico de backend USER y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow ni se declara CI PASS. **Beta:** matriz y sesiones en Apps Script/Sheets real NOT RUN; caso registrado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva.
+- **Commit funcional:** `a59e370f6dec698a455190005a02103e12fe251c`.
+- **Estado:** C1.627 completada conforme a verificaciones locales ejecutadas. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** contrastar los vínculos de responsabilidad y ámbito que entrega el contexto efectivo con las asignaciones administrativas y probar conflictos/duplicados de vínculos sin producir permisos o ámbitos ambiguos.
+===============================================================================
+
+
+===============================================================================
+### C1.628 — IMA-EXEC-20261112-1754Z-03 — coherencia de la cadena responsabilidad↔ámbito entre lectores
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.627.
+- **HEAD inicial:** `ba8c7cf7e73e630336814dc171385575f557de67`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Contrastar vínculos de responsabilidad y ámbito del contexto efectivo con el listado administrativo; rechazar relaciones ambiguas o rotas.
+- **Contrato:** se comparan los ResponsibilityID expuestos por `getUserContextScope` y `getInternalRoleAssignments` para la misma membresía Director; ambos lectores resuelven la misma responsabilidad institucional activa.
+- **Casos fail-closed:** duplicar ResponsibilityID en `ResponsabilidadesInstitucionales`, duplicar RolInternoID en `CatalogoRolesInternos` o dejar un ResponsibilityID enlazado inexistente. En cada caso, el contexto efectivo devuelve `DEPARTMENT_SCOPE_NOT_ASSIGNED` y el listado administrativo no expone la asignación.
+- **Verificación local:** contrato completo en harness V8 aislado **PASS**, incluidos C1.621–C1.628. Parseo sintáctico de backend USER y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Apps Script/Sheets real NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; sin cambios de lógica productiva.
+- **Commit funcional:** `4dc4d9532235260ea72e5e6c50e535b5475df757`.
+- **Estado:** C1.628 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** diseñar una prueba local determinista de concurrencia para asignaciones de ámbito bajo ScriptLock; comprobar que solicitudes simultáneas no creen duplicados ni dejen escrituras parciales.
+===============================================================================
+
+
+===============================================================================
+### C1.629 — IMA-EXEC-20261112-1754Z-03 — concurrencia determinista de asignaciones de ámbito
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.628.
+- **HEAD inicial:** `509a02f20dddbf6fddfa27338ffc5e8bfd07df89`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar que escrituras simultáneas de `assignRoleScope` respetan ScriptLock, no crean asignaciones duplicadas y permiten reintento idempotente.
+- **Escenario determinista:** el mock de ScriptLock intercaló una segunda llamada dentro de la adquisición de la primera. La llamada concurrente observó el lock ocupado y devolvió `WRITE_LOCK_BUSY`; la propietaria del lock completó una única fila.
+- **Reintento:** después de liberar el lock, la misma solicitud se repitió y reutilizó el AssignmentID existente, sin agregar otra fila.
+- **Invariantes:** una sola asignación para la clave usuario/rol/ámbito/institución/membresía; la llamada que no adquiere el lock no escribe ni libera el lock ajeno; cada adquisición exitosa libera el lock.
+- **Verificación local:** contrato completo en harness V8 aislado **PASS**, incluidos C1.621–C1.629. Parseo sintáctico de backend USER y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** ScriptLock y Sheets reales en Apps Script NOT RUN; caso registrado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva.
+- **Commit funcional:** `718e0bf923419b458a3a202c605c049ffedf1159`.
+- **Estado:** C1.629 completada con prueba local determinista de concurrencia. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar la semántica de vigencia de asignaciones de ámbito (inicio/fin, fechas inválidas y límites exactos) y confirmar que contexto efectivo y listado administrativo aplican el mismo criterio temporal.
+===============================================================================
+
+
+===============================================================================
+### C1.630 — IMA-EXEC-20261112-1754Z-03 — paridad temporal de contexto y listado administrativo
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.629.
+- **HEAD inicial:** `993c83bde8fd333a9563a4503fdfb7d16205626f`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar que contexto efectivo y listado administrativo aplican el mismo criterio de vigencia de asignaciones de ámbito.
+- **Hallazgo:** el lector administrativo trataba FechaFin numérica `0` como vacía por truthiness, mientras el contexto efectivo la interpretaba como fecha válida del epoch y vencida. Se reprodujo una divergencia: contexto denegado y listado con una fila.
+- **Corrección:** `getInternalRoleAssignments` ahora considera vacíos únicamente `""`, `null` y `undefined`; otros valores, incluido 0, se convierten en fecha y se validan. Se preservan límites inclusivos.
+- **Contrato:** fecha fija y casos de inicio/fin exactamente en el límite, inicio futuro, fin pasado, fechas inválidas, límites vacíos y FechaFin numérica 0. El caso 0 falló antes del cambio y pasa después.
+- **Verificación local:** contrato completo V8 aislado **PASS**, bloques iniciales y C1.621–C1.630; parseo sintáctico backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Apps Script/Sheets real NOT RUN; el escenario temporal se registra en `beta_test.txt`, Pendiente beta.
+- **Archivos funcionales:** `backend/user-service/Code.gs`; `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits funcionales:** contrato base `cea62448c0f7187a7b9094695038e4cbec87371a`; corrección de prueba epoch `f419101b2ad3a4a74ff6336f273ce23acc78f68e`; backend `2f84c6759c2a251670743ead482454a131069596`.
+- **Estado:** C1.630 completada conforme a verificaciones locales; hallazgo corregido. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar coherencia de límites temporales y vigencia de membresías/roles en las rutas de autorización restantes, sin ampliar a servicios no afectados.
+===============================================================================
+
+
+===============================================================================
+### C1.631 — IMA-EXEC-20261112-1754Z-03 — vigencia temporal de membresías RBAC
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.630.
+- **HEAD inicial:** `2bff834983d54203e2983846be6412da0f9f5935`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar los límites temporales de membresías RBAC que gobiernan resolución de sesión y enumeración de roles.
+- **Contrato:** se ejecuta `getUserRoleMembershipState_` y `resolveUserRoleMembership_` reales con reloj fijo y dos membresías sintéticas.
+- **Casos:** inicio y fin exactamente en el instante actual (inclusivos); inicio futuro; fin vencido numérico 0; inicio/fin inválidos. Se comprueba que una membresía inválida o vencida no se resuelve y que la otra permanece activa.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.631. Parseo sintáctico de backend USER y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** lectura de membresías y sesiones en Apps Script/Sheets real NOT RUN; escenario registrado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva.
+- **Commit funcional:** `1f31b4ac7e67dcc7c9801da5026feb5c7cf5bd95`.
+- **Estado:** C1.631 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** verificar las transiciones de membresía y rol en los lectores públicos/administrativos (incluido cambio de rol y roles duplicados) y su correspondencia con la sesión firmada.
+===============================================================================
+
+
+===============================================================================
+### C1.632 — IMA-EXEC-20261112-1754Z-03 — unicidad y transiciones de membresías/roles
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.631.
+- **HEAD inicial:** `0cc06db1886b3469d41cb388a7993e449afb90b6`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar la ambigüedad de membresías con roles duplicados, el cambio de rol y la unicidad global de MembershipID.
+- **Contrato:** ejecuta `getUserRoleMembershipState_`, `resolveUserRoleMembership_` y `getUserRoleMemberships` reales con usuarios e instituciones sintéticos distintos.
+- **Roles duplicados:** dos membresías activas del mismo usuario/tenant para el mismo RoleID se excluyen ambas; no se resuelve ninguna sesión ligada a una de ellas.
+- **Cambio de rol:** al cambiar la segunda membresía de Director a Auditor, el token con claim Director se invalida; un token ligado al nuevo rol Auditor se resuelve. El listado devuelve solo membresías del usuario e institución activos.
+- **ID duplicado global:** reutilizar un MembershipID para otro usuario invalida ese ID en ambas filas; la otra membresía única del usuario original permanece activa.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.632. Parseo sintáctico backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** sesiones y datos reales en Apps Script/Sheets NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva.
+- **Commit funcional:** `b4d00488e94cd1db7a707297e7f59a90afbc4efd`.
+- **Estado:** C1.632 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** contrastar las funciones de lectura de membresías/roles con el contexto activo y permisos de sesión ante estados inactivos, duplicados y tenant mismatch.
+===============================================================================
+
+
+===============================================================================
+### C1.633 — IMA-EXEC-20261112-1754Z-03 — vinculación de sesión firmada con institución y membresía
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.632.
+- **HEAD inicial:** `b78f7c9aa899cd444cf40fef3a91c20e7bff2f4b`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Comprobar que la sesión firmada queda ligada a una MembershipID exacta y a la institución activa, y que los estados de cuenta/membresía invalidan el acceso.
+- **Contrato:** ejecuta el `verifySessionToken` y `getUserContextScope` reales con firma/HMAC y decodificación de payload controladas por fixtures; la resolución de membresía, estado de cuenta y contexto usa funciones productivas.
+- **Casos:** sesión local válida; membresía válida de otra institución; claim que intercambia InstitutionID conservando una MembershipID ajena; revocación de la membresía local; cuenta inactiva. Se verifica también que el contexto local solo expone DEP-A.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.633. Parseo sintáctico backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** HMAC/CacheService/Sheets reales y sesiones desplegadas NOT RUN; escenario registrado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; sin cambios de lógica productiva.
+- **Commits de contrato:** `4021a57c4e092fb176f329639ee0318a3703e17d`; corrección de fixture de payload `889de9aa944d9b420d1c02ebc19b7504d6ec5f64`; padding del payload `481647a1ec59530a1af452879cbec1772e15a8b1`.
+- **Estado:** C1.633 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar revocación y caché de sesión (usuario/membresía/sesión), expiración de tokens y consistencia de invalidación inmediata ante cambios de estado.
+===============================================================================
+
+
+===============================================================================
+### C1.634 — IMA-EXEC-20261112-1754Z-03 — revocación persistente de sesiones y logout seguro
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.633.
+- **HEAD inicial:** `bc1da9d9e518d4bff6fe9f5c9e6561b44a1c3f3c`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar que la revocación de sesión se mantiene durante toda la vigencia del token y que el cierre de sesión no confía en identificadores aportados por el cliente.
+- **Hallazgo:** tokens de 24 h dependían de marcas CacheService de 6 h; el cambio de rol solicitaba 24 h, por encima del máximo permitido. La caché puede eliminar entradas antes del vencimiento. Además, `logoutUser` confiaba en userId/sessionId suministrados por cliente y podía revocar un usuario ajeno.
+- **Corrección:** se añade ledger persistente `SesionesRevocadas` con SessionID/UserID/RevokedAt/ExpiresAt; `verifySessionToken` consulta el ledger y falla cerrada si el esquema está corrupto. Los registros se conservan 24 h + 60 s, cubriendo el máximo de token y tolerancia de iat. CacheService se mantiene solo como optimización de 6 h.
+- **Semántica:** revocación de sesión bloquea el SessionID exacto; revocación por usuario bloquea tokens con iat anterior o igual a RevokedAt, sin impedir nuevos tokens posteriores. `switchActiveRole` persiste la revocación del token anterior. `logoutUser` obtiene exclusivamente el SessionID de claims firmados e ignora IDs del payload.
+- **Contrato:** caché siempre vacía; persistencia; revocación por usuario y nueva sesión posterior; logout con IDs falsificados; cambio de rol; token expirado; esquema persistente corrupto fail-closed.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.634; sintaxis backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Apps Script/Sheets/CacheService/HMAC real NOT RUN.
+- **Migración:** revocaciones anteriores guardadas solo en caché y ya desaparecidas no pueden recuperarse; la nueva persistencia cubre las revocaciones posteriores al despliegue. Validar la política de tokens históricos durante rollout controlado.
+- **Archivos funcionales:** `backend/user-service/Code.gs`; `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** backend `444e04140f9a10deab70cc8c7ae8fa51701e6b3f`; contrato `a3a1bb73104b779191572e5b50cc1395811ecd73`.
+- **Estado:** C1.634 implementada y verificada en harness aislado. T153-S02 sigue En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** auditar permisos de la acción administrativa `revokeUserSession`, límites de acceso al ledger persistente y compatibilidad/migración de sesiones históricas.
+===============================================================================
+
+
+===============================================================================
+### C1.635 — IMA-EXEC-20261112-1754Z-03 — límites de autorización y compatibilidad de revocación
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.634.
+- **HEAD inicial:** `e02a3abaf1516892bc2c67ed9f358b54b1508d18`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar límites de acceso a la revocación administrativa y compatibilidad del ledger con tokens legacy.
+- **Autorización:** `revokeUserSession` no pertenece a PUBLIC_ACTIONS ni a los bypasses de identidad/autoservicio. El contrato de `validateRolePermission` deniega a Director sin grant dinámico y permite Administrador por wildcard explícito. `logoutUser` continúa público, pero el handler solo revoca un SessionID obtenido de claims firmados.
+- **Compatibilidad:** tokens role-only legacy sin MembershipID siguen siendo válidos cuando el rol actual coincide; sus SessionID también quedan cubiertos por el ledger persistente al revocarlos.
+- **Retención:** los registros expirados se eliminan en la siguiente escritura del ledger; los registros con expiración inválida se conservan para que la verificación falle cerrada.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.635. Parseo sintáctico backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** autorización en dispatcher, Sheets y migración de sesiones legacy reales NOT RUN; casos registrados en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva en C1.635.
+- **Commit funcional:** `31452dfbe9d6c7f8537955eb029e5b5b091c0a5b`.
+- **Estado:** C1.635 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar todas las rutas de escritura/lectura de marcadores de revocación para asegurar que ninguna ruta de cambio de rol/logout dependa solo de caché; definir tratamiento de tokens/revocaciones pre-C1.634.
+===============================================================================
+
+
+===============================================================================
+### C1.636 — IMA-EXEC-20261112-1754Z-03 — ledger de revocación falla cerrado ante pérdida de almacenamiento
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.635.
+- **HEAD inicial:** `49739a89010b0a6116fe66e08c6c43eb58dbe507`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar integridad del almacenamiento persistente de revocaciones y ausencia de rutas cache-only.
+- **Hallazgo:** una hoja de ledger eliminada después de registrar revocaciones podía interpretarse como ausencia de registros.
+- **Corrección:** ScriptProperties conserva `SESSION_REVOCATION_LEDGER_INITIALIZED=1`; se persiste antes de crear/escribir la hoja. Si el ledger ya fue inicializado y la hoja falta, la verificación de token falla cerrada. La caché sigue siendo solo acelerador.
+- **Contrato:** simula ledger ausente antes y después de inicialización, restauración del ledger y búsqueda estática de escritores de cache de sesión. Solo `revokeUserSession` escribe marcas de caché, después de persistir; `switchActiveRole` y `logoutUser` llaman al mecanismo común.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.636; sintaxis backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Apps Script/Sheets/PropertiesService reales NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivos funcionales:** `backend/user-service/Code.gs`; `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** backend `718387bcc35d0e5f5341fa5290f1556d2937b166`; contrato final `4b317323b94fa86f82d9a3a9813cb874c9a0d9e8`.
+- **Estado:** C1.636 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar tratamiento de tokens y revocaciones pre-C1.634; cualquier invalidez global de sesiones existentes debe planificarse como cambio de rollout explícito.
+===============================================================================
+
+
+===============================================================================
+### C1.637 — IMA-EXEC-20261112-1754Z-03 — control explícito de migración de sesiones históricas
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.636.
+- **HEAD inicial:** `a6fada1b58ee1c6c59bed0e59e49ec65008ce3ad`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Definir un mecanismo controlado para tratar tokens emitidos antes del ledger persistente sin forzar un logout masivo por defecto.
+- **Implementación:** `verifySessionToken` consulta la fila compartida `LEGACY_SESSION_CUTOFF` de `EstadoRevocacionSesiones`. Si no existe, mantiene compatibilidad normal. Si contiene un epoch válido, rechaza tokens con `iat <= cutoff`; tokens posteriores siguen siendo elegibles. Un valor malformado falla cerrado.
+- **Operación:** el cutoff no se activa automáticamente. Durante rollout, el responsable puede establecerlo como fila `LEGACY_SESSION_CUTOFF` en `EstadoRevocacionSesiones` para invalidar de forma explícita todas las sesiones emitidas hasta ese instante (reautenticación general). Sin el cutoff, tokens históricos no expirados continúan sujetos a los marcadores cache legacy que aún existan y al exp normal; revocaciones cache-only ya perdidas no pueden reconstruirse.
+- **Contrato:** cutoff ausente preserva sesión válida; cutoff configurado invalida token anterior; token emitido después del cutoff se acepta; cutoff malformado rechaza.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.637; sintaxis backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** ScriptProperties y rollout real NOT RUN; escenario documentado en `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `backend/user-service/Code.gs`; contrato `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commit backend:** `e7453e036e6c2cc114f509c1e366ca9a8c98e2f6`; **commit contrato:** `5562ce59e6794d3ee73c987967e67bfb90975df6`.
+- **Estado:** C1.637 completada. T153-S02 permanece En ejecución; no iniciar T153-S03.
+- **Siguiente acción:** revisar el criterio original de cierre de T153-S02 y contrastar la matriz de pruebas ejecutadas con cada requisito y dependencia, sin repetir evidencia vigente.
+===============================================================================
+
+
+===============================================================================
+### C1.638 — IMA-EXEC-20261112-1754Z-03 — autorización de ámbitos efectiva en servidor
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.637.
+- **HEAD inicial:** `19a2cbfe012593148bb8f8cb007d6f6108988bf2`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar que `validateRoleScopeAccess` aplica el contexto activo real de la membresía, no solo los permisos declarativos.
+- **Contrato:** se ejecuta la función productiva `validateRoleScopeAccess` junto con `getUserContextScope` para el mismo usuario con membresías Director/DEP-A, DEP-A2 y Auditor/DEP-B.
+- **Casos:** cada rol puede consultar solo su departamento; selección de `activeDepartmentId` reduce el acceso al departamento elegido; asignación explícita `INSTITUCION` permite acceso departamental institucional, pero el contexto activo seleccionado vuelve a restringirlo; revocar Director deniega su validación sin afectar Auditor.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.638; sintaxis backend USER/test **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** validación en Apps Script/Sheets real NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se modificó lógica productiva.
+- **Commits de contrato:** `f5949a518a80fe67dd5473cbcfbc6bc4fcbdb437`; ajuste de fixtures de alcance institucional `1f33dfe3e3c094d1503c2a3a35652c020c23327b`.
+- **Estado:** C1.638 completada. T153-S02 permanece En ejecución hasta cerrar la matriz completa de requisitos originales.
+- **Siguiente acción:** completar matriz de trazabilidad de T153-S02 y revisar criterios restantes, evidencias vigentes y dependencias; no repetir pruebas ya ejecutadas.
+===============================================================================
+
+
+===============================================================================
+### C1.639 — IMA-EXEC-20261112-1754Z-03 — revocación persistente transversal entre servicios
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.638.
+- **HEAD inicial de consolidación:** `8459656668860027c94c16964ee0f53e585ac32c`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Verificar que los consumidores Apps Script que aceptan sesiones aplican el ledger compartido de USER y el control explícito de migración.
+- **Servicios cubiertos:** ACADEMIC, ACCOUNTING, TASK y EXAM; cada consumidor ejecuta su `verifySessionToken` productivo y consulta el ledger institucional compartido.
+- **Casos:** revocación de SessionID desde USER se refleja en los cuatro servicios con cachés locales vacías; revocación por usuario aplica corte temporal; sesiones emitidas después del corte siguen válidas; `SESSION_REVOCATION_LEGACY_CUTOFF` se aplica transversalmente; ledger inicializado ausente falla cerrado en todos los consumidores.
+- **Aislamiento de fixtures:** usuarios/membresías dedicados a la prueba y revocación user-wide dirigida a `U-CROSS-USER`, evitando contaminación de escenarios previos.
+- **Verificación local:** contrato completo V8 aislado **PASS**, incluidos C1.621–C1.639; parseo sintáctico de USER, ACADEMIC, ACCOUNTING, TASK, EXAM y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** ledger, ScriptProperties y sesiones reales compartidas entre despliegues NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivo funcional modificado:** `tests/security/internal-responsibility-rbac-contract.test.js`; no se cambia lógica productiva en esta unidad.
+- **Commits de contrato y fixture:** `a07b525f60e4b6d2e324b1ed7e5adba9d9c0be53`, `96530e93c1039c75291b02d73e5642e057b7b7d5`, `8459656668860027c94c16964ee0f53e585ac32c`.
+- **Estado:** C1.639 completada con verificación local. T153-S02 sigue En ejecución hasta completar la matriz de trazabilidad de sus requisitos originales; no iniciar T153-S03.
+- **Siguiente acción:** construir matriz requisito→implementación→prueba/evidencia para T153-S02, identificar solo huecos reales y decidir cierre de la subtarea.
+===============================================================================
+
+
+===============================================================================
+### C1.639 — IMA-EXEC-20261112-1754Z-03 — revocación persistente compartida entre servicios
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.638.
+- **HEAD inicial:** `7598f197f7129ea44f7999e9e69cd06ed387bb76`.
+- **Tarea:** PM-01 / TASK-153 / T153-S02. Cerrar la brecha entre revocación en USER y verificación de tokens en proyectos Apps Script consumidores.
+- **Hallazgo:** ACADEMIC, ACCOUNTING, TASK y EXAM mantenían cachés de revocación independientes. La revocación registrada en USER no se propagaba entre proyectos y el token podía seguir siendo aceptado por otros servicios hasta expirar.
+- **Corrección:** USER crea/actualiza `EstadoRevocacionSesiones` con `LEDGER_INITIALIZED=1` y persiste `SesionesRevocadas`. ACADEMIC, ACCOUNTING, TASK y EXAM consultan ambos registros compartidos en el SpreadsheetID institucional antes de aceptar el token. Aplican SessionID exacto, corte user-wide por iat, expiración y `LEGACY_SESSION_CUTOFF` compartido. Si el marcador confirma inicialización y falta la hoja, los consumidores fallan cerrados.
+- **Migración C1.637 ajustada:** el cutoff global se define como fila `LEGACY_SESSION_CUTOFF` en `EstadoRevocacionSesiones`; se elimina la dependencia de ScriptProperties por proyecto para esa frontera.
+- **Alcance:** DEVELOPER sigue separado y rechaza claims de membresía/institución; no consume el ledger RBAC institucional.
+- **Contrato:** se ejecutan los verificadores productivos de los cuatro consumidores con caché local siempre vacía. Se comprueba revocación de sesión, revocación user-wide, login posterior, cutoff compartido y ledger ausente tras inicialización.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.639; sintaxis de USER/ACADEMIC/ACCOUNTING/TASK/EXAM y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Apps Script/Sheets real y despliegue sincronizado de los cinco proyectos NOT RUN.
+- **Archivos funcionales:** `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Estado:** C1.639 implementada y verificada en harness aislado. T153-S02 permanece En ejecución hasta revisar la matriz completa de requisitos y la prueba beta multi-proyecto.
+- **Siguiente acción:** consolidar trazabilidad de T153-S02 y confirmar las dependencias de rollout/secretos/IDs institucionales antes de cerrar la subfase.
+===============================================================================
+
+
+===============================================================================
+### C1.640 — IMA-EXEC-20261112-1754Z-03 — cierre de T153-S02 por trazabilidad de requisitos
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.639.
+- **HEAD de revisión:** `e136ccb4862c54cfef0344744bec6946b2991af5`.
+- **Revisión:** se contrastó la descripción original de T153-S02 y la descomposición PM-01 con las evidencias C1.614–C1.639, sin repetir los contratos ya vigentes.
+- **Matriz de aceptación:**
+  1. Relación usuario↔roles↔responsabilidades↔ámbitos, vigencia y revocación: C1.614, C1.616–C1.617, C1.624, C1.631–C1.637.
+  2. Multirol/multidepartamento sin privilegio implícito por unión: C1.625, C1.628, C1.638.
+  3. Contexto activo explícito y validación de ámbito en servidor: C1.615, C1.638.
+  4. Capacidades no elevan permisos; acción protegida y grant explícito: C1.624, C1.635.
+  5. Revocación coherente entre USER y consumidores Apps Script: C1.634–C1.639.
+  6. Selector multirol y login explícito: C1.616–C1.617; CI histórico Department Scope run 43217920934 SUCCESS.
+- **Resultado:** criterios de implementación y contratos aislados cubiertos. **T153-S02: COMPLETADA (implementación/contrato).** No se afirma prueba real de Apps Script/Sheets.
+- **Pendiente beta:** BETA-FUNC-033 y C1.639: despliegue sincronizado USER/ACADEMIC/ACCOUNTING/TASK/EXAM, misma SpreadsheetID/IMA_INSTITUTION_ID, ScriptProperties/CacheService/HMAC y propagación real de revocación. Node CLI independiente NOT RUN; CI sobre HEAD final no ejecutado.
+- **TASK-153:** permanece En ejecución; solo se cierra T153-S02, no el conjunto de aislamiento departamental.
+- **Siguiente unidad:** T153-S01 — inventario/reconciliación técnica de `CatalogoDepartamentos` y `DepartamentosAcademicos`. T153-S03/S04 dependen de S01; T153-S05/S06 dependen de S02 y S03/S04 según el plan.
+- **Estado:** checkpoint de cierre de subfase; no se inicia S03 sin satisfacer su dependencia S01.
+===============================================================================
+
+
+===============================================================================
+### C1.641 — IMA-EXEC-20261112-1754Z-03 — inventario técnico T153-S01
+- **HEAD inicial:** `ba2f44579ca094b69fa4a9aa4d7bfd23e048df65`.
+- **Tarea:** PM-01 / TASK-153 / T153-S01 — fuente canónica de departamentos.
+- **Trabajo:** revisión de `manageDepartmentPositions`, `assignDepartmentHead`, `getDepartmentAcademicPlanning`, `resolveEmployeeDepartmentId_`, esquemas de ownership y mapa de dependencias.
+- **Hallazgos:** USER crea `CatalogoDepartamentos` con `deptId/nombre/jefaturaUserId/estado/fechaCreacion`, permite ID recibido o generado y no incluye InstitutionID/jerarquía. No se encontró consumidor productivo del catálogo. ACADEMIC crea `DepartamentosAcademicos` con `DepartamentoID/Nombre/JefeUserId/Estado/FechaActualizacion/AutorizadoPor`, no valida contra USER y no incluye InstitutionID/jerarquía. ACCOUNTING resuelve expediente laboral por ID/nombre y mantiene fallback textual; ACADEMIC usa la hoja en planificación.
+- **Conclusión:** no hay FK, crosswalk, clave estable compartida ni autoridad institucional demostrada. Los catálogos no deben fusionarse ni migrarse con evidencia actual. Los valores de AsignacionesAmbitosRoles y ResourceOwnership no prueban propiedad canónica.
+- **Cambios de código:** ninguno; no se alteran datos ni esquemas.
+- **Estado:** inventario técnico completado; T153-S01 continúa bloqueada para asignar autoridad/correspondencia real. No se bloquea trabajo genérico por trámites ajenos; esta dependencia sí es funcional porque S03/S04 requieren validar el propietario del recurso contra un departamento canónico.
+- **Dependencias:** T153-S03 y T153-S04 esperan S01; T153-S05 espera S03/S04; T153-S06 espera S05. T153-S02 quedó completada en C1.640.
+- **Siguiente acción elegible:** obtener/definir una fuente institucional aprobada o un crosswalk verificable por institución. Hasta entonces, no crear propietario canónico ni migrar registros estudiantiles.
+===============================================================================
+
+
+===============================================================================
+### C1.642 — IMA-EXEC-20261112-1754Z-03 — vinculación exacta de ámbitos en consumidores Apps Script
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.640.
+- **HEAD inicial:** `ba2f44579ca094b69fa4a9aa4d7bfd23e048df65`.
+- **Tarea:** corrección de brecha detectada durante la trazabilidad de T153-S02; se reabre la subtarea tras comprobar que los lectores de ámbito en servicios consumidores no aplicaban el contrato de USER.
+- **Hallazgo:** ACADEMIC, ACCOUNTING, TASK y EXAM resolvían departamentos por UserID/RoleID y estado/fecha, sin ligar cada fila al MembershipID e InstitutionID firmados, validar ResponsibilityID activo ni aplicar activeDepartmentId. La validación de sesión multirol no bastaba para garantizar el aislamiento de la asignación de ámbito.
+- **Corrección:** los cuatro servicios comparten una implementación local equivalente al contrato efectivo de USER: validación de claims contra identidad; tenant/MembershipID exactos; esquema actual obligatorio para sesiones con membresía; responsabilidad interna e institucional activa y única; AssignmentID único; fechas explícitas y fail-closed; selección de departamento activo que reduce el ámbito y desactiva el grant institucional amplio.
+- **Compatibilidad:** sesiones legacy sin claims de membresía solo consumen filas sin InstitutionID/MembershipID; no heredan filas vinculadas a otra membresía.
+- **Verificación local:** contrato completo V8 aislado **PASS**, C1.621–C1.639 y C1.642; parseo sintáctico de USER, ACADEMIC, ACCOUNTING, TASK, EXAM y contrato **PASS**.
+- **Casos C1.642:** ámbito válido de la membresía firmada; fila de otra membresía; tenant diferente; rol de actor distinto al claim; responsabilidad interna inactiva; fecha futura; FechaFin epoch 0; fecha inválida; AssignmentID duplicado; grant institucional explícito; activeDepartmentId autorizado y no autorizado. Todos los lectores aplican el mismo resultado.
+- **Node CLI independiente:** NOT RUN. **CI:** no se ejecutó workflow. **Beta:** Sheets/Properties/Cache reales y despliegues independientes NOT RUN; escenario agregado a `beta_test.txt`, Pendiente beta.
+- **Archivos funcionales:** `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, `backend/task-service/Code.gs`, `backend/exam-service/Code.gs`, `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** ACADEMIC `4182b748a519a704d6a0185e2523c66796480c1c`; ACCOUNTING `6fefa91db8eb13e91bc52af4b059de98c61d5d45`; TASK `33e2034be857d6598a2a1fd0393787d341842551`; EXAM `7ff7ae0834a34fa0091ef1f13b7adeb5edcabe74`; contrato `b9bcd603b6bd5fe62eefb962d420c7397f3a6052`.
+- **Estado:** C1.642 completada en verificación local. T153-S02 vuelve a **En ejecución** hasta revisar los demás consumidores y confirmar que no quedan lectores de ámbito paralelos fuera de los cuatro servicios.
+- **Siguiente acción:** búsqueda estática acotada de todos los lectores de `AsignacionesAmbitosRoles` en servicios/handlers; confirmar que cada ruta usa contexto ligado a membresía o documentar excepción legacy segura.
+===============================================================================
+
+
+===============================================================================
+### C1.643 — IMA-EXEC-20261112-1754Z-03 — cierre de lectores contextuales USER/ACADEMIC
+- **Sesión:** IMA-EXEC-20261112-1754Z-03; continuidad de C1.642.
+- **Hallazgos:** `validateContextualAccess` de ACADEMIC leía asignaciones por usuario/tipo/estado sin verificar rol, membresía, tenant, responsabilidad ni fechas. `getUserScopeConfig` de USER devolvía ámbitos por userId sin usar el contexto firmado ni seleccionar membresía.
+- **Corrección:** ACADEMIC usa el lector de ámbito ligado a la sesión y falla cerrado; USER limita autconsulta al contexto efectivo y exige permiso + selección exacta de membresía para consulta administrativa de otro usuario.
+- **Pruebas:** contrato C1.643 PASS; casos de otro membership, departamento activo, autocontexto y selección obligatoria en consulta administrativa.
+- **Archivos:** `backend/academic-service/Code.gs`, `backend/user-service/Code.gs`, `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** ACADEMIC `f58f8fa743469869072e3577f6f18c1ba840c889`; USER `4cb02c95f7de1b1bce96c15bbe7e315eb9d8d422`; contrato `1e871367211f24a1e5b4c30b7125439753f2d37f`.
+- **Estado:** C1.643 completada localmente; T153-S02 continúa En ejecución hasta cerrar la ruta de firma avanzada.
+===============================================================================
+
+===============================================================================
+### C1.644 — IMA-EXEC-20261112-1754Z-03 — autorización de firmante ligada a membresía
+- **Hallazgo:** la verificación de firmante de firma avanzada no distinguía membresías/roles activos y podía combinar ámbitos de roles distintos.
+- **Corrección:** la firma avanzada valida MembershipID/RoleID/InstitutionID exactos, responsabilidad activa, unicidad de asignación y vigencia; exige selección explícita si el firmante tiene más de una membresía. Solo conserva fallback legacy sin vínculo cuando no existen registros de membresía del usuario en ningún tenant.
+- **Llamada:** `assertAdvancedSignatureSignerScope_` recibe el contexto de solicitud para resolver `firmanteMembershipId` y `firmanteRoleId`.
+- **Pruebas:** contrato completo V8 aislado PASS, incluidos C1.621–C1.644; sintaxis de USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS.
+- **Archivos:** `backend/user-service/Code.gs`, `tests/security/internal-responsibility-rbac-contract.test.js`.
+- **Commits:** USER `e15eed1b8ee8620bc4b76980335243995c8f4fd3`; corrección de normalización `49635d1f5be67b2ea54524977e95432565dd4d35`; contrato `d76514b599b883bbf62eb8b027f08ded249f61b7`.
+- **Inventario estático:** seis entrypoints backend revisados (USER, ACADEMIC, ACCOUNTING, TASK, EXAM, DEVELOPER). USER/ACADEMIC/ACCOUNTING/TASK/EXAM no conservan lectores de autorización sin contexto: las lecturas restantes usan el helper ligado a membresía o contexto efectivo; ACCOUNTING conserva escritura de revocación local en offboarding; DEVELOPER no consume AsignacionesAmbitosRoles y permanece separado.
+- **Verificación local:** contrato completo V8 aislado **PASS**; parseo sintáctico de cinco servicios RBAC y contrato **PASS**.
+- **Node CLI independiente:** NOT RUN. **CI:** no ejecutado. **Beta:** Apps Script/Sheets real NOT RUN.
+- **Estado:** C1.644 completada. **T153-S02: COMPLETADA** en implementación/contratos aislados. La verificación real multi-proyecto y BETA-FUNC-033 siguen Pendiente beta; TASK-153 global continúa En ejecución.
+- **Siguiente acción elegible:** revisar el Plan Maestro y dependencias tras el inventario T153-S01; no inferir ni fusionar los catálogos departamentales sin crosswalk institucional verificable.
+===============================================================================
+
+
+===============================================================================
+### C1.645 — IMA-EXEC-20261112-1754Z-03 — inventario técnico ampliado de catálogos departamentales
+- **HEAD auditado:** `37a2c95769689470e45b6f4416d69b0519c4b96a`.
+- **Unidad:** PM-01 / TASK-153 / T153-S01-1 (inventario técnico de solo lectura). Reutiliza C1.403; no repite su dictamen de autoridad.
+- **Matriz de evidencia por archivo (SHA de blob):**
+  - `backend/user-service/Code.gs` — `0f1673f01688259f01ffba0f2a51b3a11946c154`: escritor `manageDepartmentPositions(CREATE_DEPT)` de CatalogoDepartamentos; escritor de CatalogoCargos/HistorialAdscripciones; lector `getUserInstitutionalAffiliations` de HistorialAdscripciones, sin join/validación contra el catálogo.
+  - `backend/academic-service/Code.gs` — `09017bf97bdd024ddf9305321dd79f2b35ecc2a0`: escritor/upsert `assignDepartmentHead` y lector `getDepartmentAcademicPlanning` de DepartamentosAcademicos; escritores/lector de AreasCurricularesExtensiones y resolver de referencias desde CatalogoAsignaturas.
+  - `backend/accounting-service/Code.gs` — `b235913a42057c96a26b667e6a070ad50a0d6611`: `resolveEmployeeDepartmentId_` relaciona ExpedientesLaborales.Departamento con DepartamentosAcademicos por ID o nombre y conserva fallback textual si no hay match.
+  - `backend/task-service/Code.gs` — `a3a83ba0492f42b22d060611c91793bfe22bf5b2`: consume DepartmentID desde ámbito firmado y ResourceOwnership; no consulta catálogos.
+  - `backend/exam-service/Code.gs` — `8e0db5ee172eec092811b564511608a0dd05d941`: consume DepartmentID desde ámbito firmado y ResourceOwnership; no consulta catálogos.
+  - `backend/developer-service/Code.gs` — `e685850ee270bdc1fbe4e127998d64303288e898`: sin referencias a ambos catálogos.
+  - `admision.html` — `5c8d1960a2cdf15147ebd1975f610c7f0f8f4788`: sin referencias directas a los nombres de catálogo.
+- **Hallazgos adicionales:** CatalogoDepartamentos usa `deptId` y puede aceptar ID externo sin unicidad; DepartamentosAcademicos usa `DepartamentoID` suministrado y no valida unicidad/crosswalk; las áreas curriculares siembran IDs DEPT-* que no se validan contra ambos catálogos; ACCOUNTING puede convertir un nombre no resuelto en departmentId; TASK/EXAM no validan que el ID de ResourceOwnership exista en un catálogo.
+- **Cachés/sync:** no se encontró sincronización ni caché específica de catálogo; se identificó caché de ownership en TASK/EXAM y caché de rol invalidada por USER, no equivalentes a caché de catálogo.
+- **Estado:** inventario estático ampliado, pero T153-S01-1 no se cierra como exhaustivo: la inspección frontend no cubre el árbol completo y no se han leído datos reales. S01-2…S01-7 continúan pendientes/por ejecutar según sus puertas originales.
+- **Restricciones:** no se selecciona fuente canónica; no se crean equivalencias por nombre; no se leen ni mutan filas productivas; no se migran IDs.
+- **Siguiente acción elegible:** diseñar contrato neutral/configurable de resolución de referencias departamentales y crosswalk, con datos sintéticos, sin seleccionar A/B ni asignar autoridad institucional.
+===============================================================================
+
+
+
+===============================================================================
+### C1.646 — IMA-EXEC-20261112-1754Z-03 — contrato neutral de catálogo departamental
+- **HEAD auditado:** d6b9382d362adb84de4c5e06cc158637e5778de1 (rama NG_beta_0.0.0.1_work; la rama base no se modifica).
+- **Unidad:** PM-01 / TASK-153 / T153-S01 — contrato técnico neutral y configurable de catálogo/referencias, sin selección de autoridad institucional ni migración de datos.
+- **Implementación:** se añadió backend/shared/DepartmentCatalogContract.gs con validateDepartmentCatalogConfiguration_, validateDepartmentCatalogSnapshot_ y resolveDepartmentCatalogReference_. La configuración exige institución, dominio, catálogo fuente, clave estable, estado, modo de autoridad, versión y referencia de aprobación. Los modos son SOURCE o CROSSWALK; el modo CROSSWALK requiere catálogo/clave/estado canónico y aprobación explícita.
+- **Crosswalk:** cada mapping se liga a InstitutionID, dominio, catálogo/ID fuente, canonicalId, estado activo, aprobación y ventana de vigencia. Se verifica unicidad/ambigüedad y existencia/estado/vigencia del destino canónico. La selección de un destino entre mappings múltiples requiere requestedCanonicalId explícito.
+- **Integridad del snapshot:** ID estable obligatorio y único; nombre no se acepta como clave; código requiere namespace y no puede ser ambiguo dentro de él; estado/fechas se validan; ParentDepartmentID debe existir y la jerarquía no puede contener ciclos.
+- **Correcciones C1.646:** los mapas internos usan Object.create(null) y comprobación de propiedad propia para aceptar IDs válidos como __proto__, constructor, toString y hasOwnProperty sin colisiones con el prototipo. effectiveAt=0 se conserva como timestamp válido y no se sustituye por Date.now().
+- **Pruebas locales:** contrato aislado con 21 aserciones funcionales PASS; regresión de 4 identificadores reservados PASS; timestamp epoch cero PASS; node --check del módulo PASS (Node v22.16.0). No se ejecutaron filas reales ni Apps Script/Sheets.
+- **CI:** run 43285818735 en HEAD d6b9382: Department Scope Contract PASS e Internal Responsibility RBAC Contract PASS (incluye C1.646); el workflow completo FALLÓ en el paso previo User Role Membership Contract. El mismo fallo en ese mismo paso aparece en run 43283289566, HEAD 49635d1 anterior a C1.646; se registra como fallo preexistente no atribuible a este contrato. Las etapas posteriores fueron omitidas por fail-fast.
+- **Límites:** módulo puro sin callsites productivos; no se añadió ConfiguracionInstitucional ni se leyó/mutó Sheets; no se eligió USER o ACADEMIC como autoridad. Este contrato no implementa aún POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL ni las concesiones compartidas interdepartamentales de TASK-153.
+- **Estado:** contrato neutral de catálogo/crosswalk implementado y verificado localmente; T153-S01 y TASK-153 continúan En ejecución. No se habilitan S03/S04 ni se migran propietarios históricos.
+- **Siguiente acción elegible:** completar el inventario estático del árbol frontend para cerrar el límite de cobertura de S01-1; después revisar las puertas de S01-2…S01-7. La selección institucional real sigue separada de las actividades técnicas.
+===============================================================================
+
+
+
+===============================================================================
+### C1.647 — IMA-EXEC-20261112-1754Z-03 — inventario estático del frontend departamental
+- **HEAD auditado:** ea8cd498bc49b839a94584c1148c79544c411620 (checkpoint C1.646).
+- **Cobertura:** inspección de 46 archivos de aplicación HTML/JS del árbol frontend (excluidos tests, materiales didácticos y juegos de contenido). Se buscaron nombres de catálogos, IDs/keys, nombres de campos, filtros, llamadas API y etiquetas departamentales.
+- **Sin acceso directo a hojas:** no se encontraron referencias front-end directas a CatalogoDepartamentos ni DepartamentosAcademicos; el acceso a ACADEMIC se realiza por endpoints. No se consultaron datos productivos.
+- **Config estática:** js/config.js declara ACADEMIC_DEPARTMENTS_CATALOG con IDs DEPT-MAT/DEPT-CNT/DEPT-INF/DEPT-ESP/DEPT-ING/DEPT-SOC/DEPT-ART/DEPT-EFI y AREA-*; no se encontraron usos de esa constante en los otros archivos frontend inspeccionados.
+- **Jefaturas:** dashboard-direccion.html y dashboard-secretaria.html contienen la misma lista hardcodeada DEP-COM/DEP-MAT/DEP-SOC/DEP-NAT/DEP-TEC/DEP-ADM. Estos IDs no coinciden con la lista DEPT-* de js/config.js. dashboard-direccion carga js/teacher.js, cuyo handler envía departamentoId a ACADEMIC.assignDepartmentHead. dashboard-secretaria solo carga js/secretary.js; no se encontró handler del formulario en ese archivo. La UI de Secretaría presenta el formulario pero no se halló wiring del submit.
+- **Backend relacionado:** assignDepartmentHead crea la hoja DepartamentosAcademicos si falta y, cuando el ID no existe, agrega una fila con Nombre=DepartamentoID sin validar FK/autoridad. getDepartmentAcademicPlanning devuelve los departamentos almacenados y vacantes; los consumidores frontend inspeccionados usan el texto departamento para mostrar vacantes.
+- **Otros consumidores de texto:** dashboard-coordinacion define un filtro con nombres hardcodeados y no se encontró listener/consumidor de coord-filter-dept en los scripts frontend revisados. dashboard-recursos-humanos utiliza campos libres Departamento/Área para proyecciones y turnos. js/teacher.js almacena departamento como texto en flujos y documentos; js/secretary.js y js/accounting.js muestran departamento como etiqueta, sin mapping ID. No se infiere que estos campos sean equivalentes al catálogo canónico.
+- **Dictamen:** el frontend contiene al menos tres representaciones no reconciliadas (DEPT-*, DEP-* y etiquetas/nombres libres). No se modifican opciones, IDs ni registros sin una autoridad/crosswalk aprobados. El formulario sin handler de Secretaría queda como hallazgo de integración, no se corrige dentro del inventario.
+- **Estado:** cobertura estática frontend completada para los 46 archivos de aplicación enumerados; S01-1 y T153-S01 permanecen En ejecución porque no se demuestra autoridad institucional ni correspondencia de datos reales. No se cierra TASK-153.
+- **Siguiente trabajo elegible:** contrato puro de POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL y concesiones interdepartamentales de solo lectura, con fixtures sintéticos; no requiere seleccionar ni migrar catálogos reales.
+===============================================================================
+
+
+
+===============================================================================
+### C1.648 — IMA-EXEC-20261112-1754Z-03 — política de referencias interdepartamentales
+- **HEAD auditado:** c9102fbd6fc21c97e9d2362498249b9a215b5fd1 (rama NG_beta_0.0.0.1_work; rama base sin cambios).
+- **Unidad:** PM-01 / TASK-153; contrato puro de política de aislamiento y referencias compartidas, sin integración productiva.
+- **Implementación:** se añadió evaluateDepartmentReferenceAccess_ a backend/shared/DepartmentCatalogContract.gs. La clave POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL acepta BLOQUEO_TOTAL_CROSS_DEPARTAMENTO (default si falta) y PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL. Política desconocida o configuración sin InstitutionID/mismatch falla cerrada.
+- **Contexto:** exige actorContext verificado (UserID, MembershipID, RoleID, InstitutionID y activeDepartmentId), resourceOwnership verificado por servidor (InstitutionID, departamento propietario, ResourceType/ResourceID) y snapshots actuales de configuración/grants. No acepta propietario ni política del payload. Acceso institucional amplio solo si institutionWideAuthorized=true está verificado.
+- **Decisión:** mismo departamento conserva autorización RBAC normal; alcance institucional requiere autorización explícita; política estricta bloquea todo cruce; política permisiva admite exclusivamente READ_REFERENCE con grant exacto de tenant/recurso/propietario/departamento destino, estado ACTIVE, no revocado, AuthorizedBy/AuthorizedAt, ValidFrom <= now < ExpiresAt, allowlists explícitas de campos/documentos y sin wildcard. Operaciones de lectura general, descarga, edición, eliminación, aprobación, firma, compartir, revocar, exportar e historial se deniegan.
+- **Auditoría:** auditEvent incluye actor/membresía/rol, tenant, departamentos, recurso, operación, campos/documentos solicitados, decisión, motivo, GrantID, AuthorizedBy y timestamp. El consumidor debe persistirlo antes de divulgar contenido. La función no escribe bitácoras. Respuestas denegadas no exponen las allowlists.
+- **Pruebas locales:** 56 aserciones de política PASS; 25 aserciones locales de catálogo PASS; 4 IDs reservados PASS; sintaxis del módulo PASS (Node v22.16.0).
+- **CI:** run 43287675970 en HEAD c9102fb: Department Scope PASS e Internal Responsibility RBAC PASS; el log confirma C1.646 y C1.648 PASS. User Role Membership falla en tests/security/user-role-membership-contract.test.js:119 con TypeError al leer role de null. El mismo fallo y línea se reproducen en run 43283289566 anterior a C1.646; se clasifica preexistente y ajeno al contrato. Las etapas posteriores quedan omitidas por fail-fast.
+- **Límites:** no se creó hoja ConfiguracionInstitucional ni DepartmentReferenceGrants; no hay callsites productivos ni persistencia real de auditoría; no se activa acceso interdepartamental y no se consultan/modifican datos reales. TASK-153/T153-S01 sigue En ejecución; no se elige autoridad.
+- **Siguiente acción elegible:** avanzar el contrato genérico de identidad/ciclo de vida (S01-3) con estados/transiciones parametrizables, historial, renombre y fusión/división sintéticos, sin fijar semántica institucional ni cerrar S01-2.
+===============================================================================
+
+
+
+===============================================================================
+### C1.649 — IMA-EXEC-20261112-1754Z-03 — contrato configurable de identidad y ciclo de vida
+- **HEAD auditado:** 0b8dc9a56d656180c541bdfe776d7a83fb826f0c (rama NG_beta_0.0.0.1_work).
+- **Rama base verificada:** 44d9891132332e692dbe2ba8602b41f50a508a59; no se actualizó ni modificó.
+- **Unidad:** PM-01 / TASK-153 / T153-S01-3 — contrato técnico genérico, parametrizable por reglas institucionales aprobadas.
+- **Implementación:** se añadió validateDepartmentLifecycleEvent_ a backend/shared/DepartmentCatalogContract.gs. Requiere configuración aprobada y versionada (InstitutionID, Domain, authorityApproved, approvalReference, version, states, activeStates, events), además de snapshot institucional/dominio verificado por servidor.
+- **Identidad:** DepartmentID permanece inmutable; un proposedRecord con ID distinto se rechaza. RENAME conserva ID y deja before/after. CHANGE_CODE exige código+namespace y previene colisión entre unidades activas. CHANGE_PARENT admite raíz sin padre, exige padre existente/activo y evita ciclos.
+- **Estados:** transiciones no se inventan; se leen de config.events. Se validan estado origen/destino y aprobación del evento. Se probaron desactivar/reactivar, cerrar/reabrir, merge y split. El motor no fija vocabulario institucional.
+- **Merge/split:** MERGE exige destino activo y mantiene el ID de origen con referencia al destino. SPLIT exige al menos dos IDs nuevos y únicos y devuelve propuestas; no crea unidades. Ambos indican ownershipMigrationRequired=true; no transfieren recursos ni expedientes automáticamente. Unidades inactivas/cerradas/mergeadas/divididas no permiten nuevas asignaciones según activeStates.
+- **Historial:** genera fila before/after con EventID, InstitutionID, Domain, DepartmentID, tipo, fecha efectiva, ChangedBy, ApprovedBy, ApprovalReference, motivo, versión y referencia de aprobación de configuración, IDs relacionados y firma. EventID/firma idénticos son idempotentes; colisión, duplicidad ambigua, desorden temporal, fecha inválida/futura o evento fuera de vigencia se rechazan. El snapshot y cada fila histórica deben coincidir en tenant/dominio.
+- **Pruebas locales:** 68 aserciones del ciclo de vida PASS; 56 de política PASS; 25 de catálogo PASS; 4 IDs reservados PASS; sintaxis del módulo PASS (Node v22.16.0). CI Node 24 reporta 69 aserciones de ciclo de vida PASS.
+- **CI:** run 43289049534 en HEAD 0b8dc9a: Department Scope PASS; Internal Responsibility RBAC PASS con C1.646, C1.648 y C1.649 PASS. User Role Membership falla en tests/security/user-role-membership-contract.test.js:119 con TypeError al leer role de null. El mismo fallo/línea existe en run 43283289566 anterior a C1.646; no es atribuible a estos contratos. Las etapas posteriores quedan omitidas por fail-fast.
+- **Límites:** función pura; no escribe catálogo/historial, no crea hojas, no ejecuta transiciones, no crea IDs, no migra recursos ni modifica expedientes. No se definieron estados institucionales reales ni se seleccionó autoridad. TASK-153/T153-S01 continúa En ejecución.
+- **Siguiente acción:** revisar la puerta T153-S01-4 del Plan Maestro y determinar si un preflight/dry-run genérico de reconciliación puede construirse con fixtures sintéticos sin aplicar ni inferir crosswalks reales.
+===============================================================================
+
+
+===============================================================================
+### C1.650 — IMA-EXEC-20261112-1754Z-03 — preflight de reconciliación de catálogos
+- **HEAD inicial:** 1320d47a4f719ccce2756829925afc62ed56bb60.
+- **HEAD final de la unidad:** 2f0f5b3f758fe239f90a3423d4de7e937941763c.
+- **Unidad:** PM-01 / TASK-153 / T153-S01-4 — reporte de solo lectura con fixtures sintéticos.
+- **Implementación:** nuevo backend/shared/DepartmentCatalogReconciliation.gs. Exige scope verificado de snapshot y crosswalk, decisión de autoridad canónica aprobada y verificada por servidor, institución/dominio/catálogo exactos y mappings aprobados, vigentes, no revocados, con aprobador y timestamp. Clasifica exact match, equivalencia aprobada, relaciones 1:N/N:1, ausencia y conflictos; detecta mappings huérfanos y cobertura canónica sin emparejar. No usa nombres como clave, no elige autoridad y no escribe ni migra.
+- **Endurecimiento:** resolveDepartmentCatalogReference_ también exige CanonicalCatalog exacto, ApprovedBy, ApprovedAt válido/no futuro y ausencia de revocación.
+- **Pruebas CI:** run 43290539079 ejecutó C1.649 (69) y C1.650 (40) PASS en Node 24. Workflow general FAIL posterior en User Role Membership, línea 119; el mismo TypeError ya aparecía antes de esta unidad en run 43283289566. Las etapas posteriores se omitieron.
+- **Pruebas locales:** C1.650 NOT RUN en entorno local. No se marca la subunidad completada bajo NDASC; CI no sustituye la ejecución local obligatoria.
+- **Archivos:** backend/shared/DepartmentCatalogContract.gs; backend/shared/DepartmentCatalogReconciliation.gs; tests/security/internal-responsibility-rbac-contract.test.js; Auditoría/Contratos/CONTRATO_CROSSWALK_RECONCILIACION.md.
+- **Límites:** no se consultaron datos reales ni se generó crosswalk institucional. TASK-153 permanece En ejecución.
+===============================================================================
+
+===============================================================================
+### C1.651 — IMA-EXEC-20261112-1754Z-03 — filtros de consulta y prevalidación de importación
+- **HEAD inicial:** 2f0f5b3f758fe239f90a3423d4de7e937941763c.
+- **HEAD final:** 2d523cd6f4c0303baf520a002dcfe07883312edd.
+- **Unidad:** PM-01 / TASK-153 — contratos puros para listados/búsquedas e importaciones departamentales.
+- **Implementación:** filterDepartmentScopedRecords_ exige actor verificado, snapshots de institución/dominio y ownership verificados; cada fila necesita un ResourceOwnership único. Omite registros de otros departamentos sin devolver existencia/conteos y entrega eventos de auditoría internos; conserva la obligación de RBAC y minimización de campos en el consumidor.
+- **Importación:** validateDepartmentalImportScope_ valida el lote completo antes de escribir, exige membership/target verificados, impide destinos no autorizados y lotes mixtos para actores departamentales. Un actor con alcance institucional explícito solo puede presentar destinos múltiples si cada RowID coincide con una asignación de departamento/institución/dominio verificada por snapshot de servidor. No ejecuta escritura ni transformación.
+- **Pruebas locales:** Node v22.16.0, node --check del harness aislado y 8 aserciones focalizadas PASS. El harness completo del repositorio no se ejecutó localmente; la clonación local no pudo resolverse por DNS. No se declara cierre de tarea.
+- **CI:** run 43293372396: C1.650 (40) y C1.651 (28) PASS en Node 24. Workflow general FAIL posterior en tests/security/user-role-membership-contract.test.js:119 (verifySessionToken(foreignLegacy) devuelve null); coincide con fallo observado en runs anteriores a C1.646. Los pasos posteriores se omitieron por fail-fast.
+- **Archivos:** backend/shared/DepartmentCatalogContract.gs; tests/security/internal-responsibility-rbac-contract.test.js; Auditoría/Contratos/CONTRATO_CROSSWALK_RECONCILIACION.md.
+- **Límites:** los helpers aún no tienen callsites productivos; no se afirma que endpoints existentes ya estén filtrados ni que importaciones reales estén protegidas. No hay datos reales, escrituras ni despliegue.
+- **Estado:** TASK-153 En ejecución. **Siguiente acción elegible:** integrar el filtro en un endpoint de consulta/listado con ownership server-side y el guard de importación en validateImportPreview, preservando atomicidad y pruebas negativas; ejecutar primero el harness local completo cuando el checkout esté disponible.
+===============================================================================
+
+===============================================================================
+### C1.652 — IMA-2026-11-12-01 — integración del filtro departamental en consulta de admisiones
+- **HEAD inicial:** 613dc16d374bf80a9c461004bb48205de76e38da.
+- **HEAD final de la unidad:** 7bcb9774395ebb878b04dcde48fea1e08a7ea965 (rama NG_beta_0.0.0.1_work).
+- **Rama base verificada:** 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Unidad:** PM-01 / TASK-153 — primer callsite productivo del contrato de consultas/listados.
+- **Implementación:** getAdmissionRequests delega a filterDepartmentScopedRecords_ cuando la sesión contiene MembershipID firmado. El adaptador deriva ownership de ResourceOwnership, verifica esquema/tenant/tipo/ID, mantiene la unión de departamentos autorizados y aplica activeDepartmentId como restricción más estrecha. Las sesiones heredadas sin MembershipID conservan el guard previo.
+- **Auditoría:** se persisten en AuditoriaAccesoDepartamental, en bloque y bajo ScriptLock, los eventos ALLOW/DENY generados por el filtro. La respuesta no divulga filas cuando falta ownership, hay titularidad activa ambigua, el esquema no coincide o falla la escritura de auditoría. El filtro compartido ahora admite authorizedDepartmentIds server-side sin perder la semántica de activeDepartmentId ni el bypass institucional verificado.
+- **Archivos:** backend/shared/DepartmentCatalogContract.gs; backend/academic-service/Code.gs; tests/security/department-scope-contract.test.js; changueslogs.txt.
+- **Pruebas locales aisladas:** sintaxis de los tres archivos de código/prueba PASS; ejecución V8 con fixtures PASS para unión multi-departamento, reducción por departamento activo, auditoría de registros excluidos, ownership faltante/ambiguo, membresía ausente y fallo de persistencia de auditoría. Node CLI/full repository suite NOT RUN.
+- **CI:** run 43312801914: department-scope-contract PASS (incluye el nuevo adaptador), internal-responsibility-rbac-contract PASS; user-role-membership-contract FAIL en línea 119 por verifySessionToken(foreignLegacy) nulo; los pasos siguientes fueron omitidos. Run 43312802506: workflow separado local-security-contracts FAIL en task-service-security-contract.test.js:452, assertion sobre USER verifySessionToken; no se modificó USER ni TASK en C1.652. No se atribuye ese fallo al cambio sin evidencia causal.
+- **Límites:** no se conectó validateDepartmentalImportScope_ a la importación; ACCOUNTING sigue pendiente. No se consultaron ni modificaron datos reales ni se desplegó Apps Script. Auditoría y comportamiento real de Sheets quedan pendientes beta.
+- **Estado:** C1.652 publicada y verificada en la rama autorizada; TASK-153 continúa En ejecución.
+- **Siguiente acción:** integrar la prevalidación departamental en validateImportPreview y en importDataWithColumnMapping antes de cualquier writer, resolviendo destino/RowID con snapshots server-side y manteniendo compensación atómica; no inferir departamentos desde texto libre.
+===============================================================================
+
+
+===============================================================================
+### C1.653 — IMA-2026-11-12-01 — selección de importación departamental y bloqueo de ejecución local
+- **HEAD auditado:** 766ec52e14c9caa0c4140cfeb76ee477e30b8fdb (rama NG_beta_0.0.0.1_work; commit de checkpoint C1.652).
+- **Rama base verificada:** 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Unidad seleccionada:** PM-01 / TASK-153 — conectar la prevalidación departamental en `validateImportPreview` y `importDataWithColumnMapping`, antes de cualquier writer.
+- **Revisión estática:** `backend/accounting-service/Code.gs` contiene ambos endpoints. `validateImportPreview` solo valida identificador obligatorio y no aplica ámbito departamental. `importDataWithColumnMapping` resuelve mappings y ejecuta writers propietarios por fila, con compensación posterior ante errores, pero no ejecuta preflight departamental del lote antes del primer writer. `validateDepartmentalImportScope_` está en `backend/shared/DepartmentCatalogContract.gs` y no tiene integración en ACCOUNTING.
+- **Diseño requerido para reanudar:** derivar actor/membresía/tenant y departamentos desde sesión firmada y snapshots server-side; resolver el destino canónico sin confiar en campos de departamento libres; para alcance institucional validar cada RowID contra asignaciones verificadas; validar lote completo antes de cualquier writer y conservar la compensación/idempotencia existente. Rechazar destinos no autorizados, mezcla no demostrada, snapshots ausentes/inconsistentes y ownership ambiguo. Mantener pruebas negativas y de atomicidad.
+- **Verificación local:** BLOCKED / NOT RUN. Se intentó clonar el repositorio para ejecutar Node y el entorno no pudo resolver `github.com` (DNS); por tanto no existe checkout local verificable ni se ejecutaron pruebas sobre el código real. No se modificó código ni se afirma PASS.
+- **CI:** sin nueva ejecución; el estado histórico de C1.652 permanece: run 43312801914 pasó Department Scope e Internal Responsibility RBAC y falló User Role Membership en línea 119; run 43312802506 falló en contrato USER/TASK fuera del alcance de C1.652.
+- **Archivos de código modificados:** ninguno.
+- **Estado:** TASK-153 continúa En ejecución. La integración de importación no se marca completada. Este checkpoint registra la selección y el impedimento técnico de verificación local.
+- **Siguiente acción exacta:** restablecer checkout local de la rama autorizada, ejecutar el harness vigente y añadir pruebas locales para preview, preflight de lote, RowID institucional, departamento mixto, snapshots inválidos, destino no autorizado, cero escrituras ante fallo de preflight y compensación ante fallo posterior; después implementar y verificar la integración.
+===============================================================================
+
+
+===============================================================================
+### C1.654 — IMA-2026-11-12-02 — ejecución alternativa V8 de contrato puro de importación
+- **HEAD inicial:** 2599318fc97306dc33dcf89a9be596f8c249e189; rama exclusiva `NG_beta_0.0.0.1_work`.
+- **Método alternativo:** se descargó el contenido exacto de `backend/shared/DepartmentCatalogContract.gs` mediante el conector GitHub y se ejecutó la función pura `validateDepartmentalImportScope_` aislada en un runtime V8, sin requerir checkout local ni DNS del contenedor.
+- **Pruebas ejecutadas:** 7 assertions PASS: lote válido de un departamento; destino no autorizado; mezcla de departamentos; tenant mismatch; snapshot no verificado; membresía no verificada; lote vacío. Cada caso verificó el código de resultado esperado y `writesPerformed === false`.
+- **Alcance de evidencia:** esto verifica el helper puro exacto recuperado de la rama; NO equivale a ejecutar el harness Node del repositorio, ni verifica integración de `validateImportPreview` o `importDataWithColumnMapping`, llamadas a Sheets, escritores, compensación, ni atomicidad end-to-end.
+- **Red local:** intento alternativo de `git clone` también falla por resolución DNS de `github.com`. El conector GitHub sí permite leer y escribir contenido Git, pero no proporciona checkout/ejecución Node local.
+- **Archivos de código modificados:** ninguno. No se ejecutaron writers ni se accedió a datos reales.
+- **Estado:** evidencia adicional focalizada PASS; TASK-153 sigue En ejecución y la integración productiva permanece pendiente.
+- **Siguiente acción exacta:** disponer de checkout/runner Node del repositorio para el harness completo; después diseñar y conectar snapshot departamental canónico de ACCOUNTING, proteger preview y preflight completo del lote antes de writers, y ejecutar regresiones de rollback/idempotencia.
+===============================================================================
+
+
+===============================================================================
+### C1.655 — IMA-2026-11-12-03 — preflight departamental de importaciones ACCOUNTING
+- **HEAD inicial:** b11e2cd2c2ab7dd63d747764e5aba140ea3558ea; rama exclusiva `NG_beta_0.0.0.1_work`.
+- **HEAD final de la unidad:** b00cb0d6bbf7be4754d288c07f12692736d40e99.
+- **Rama base verificada:** `NG_beta_0.0.0.1` = 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Unidad:** PM-01 / TASK-153 — integrar prevalidación departamental en `validateImportPreview` y `importDataWithColumnMapping` para `empleado`.
+- **Implementación:** `buildAccountingDepartmentalImportPreflight_` deriva actor desde token firmado y scope desde `AsignacionesAmbitosRoles` vigente, ligado a MembershipID/InstitutionID/RoleID. Exige `activeDepartmentId` explícito y autorizado. Mapea el lote completo; un Departamento vacío recibe el ID activo verificado; IDs distintos y nombres libres se rechazan. Se invoca el contrato puro compartido con snapshots tenant/dominio `ACCOUNTING`.
+- **Atomicidad:** el preflight de importación se ejecuta antes de crear `AuditoriaMigraciones` y antes de cualquier writer. Se conserva el mapeo de datos, fingerprint/idempotencia, writers propietarios y compensación existente. Cursos no reciben un guard departamental artificial.
+- **Límite deliberado:** las importaciones con alcance institucional amplio quedan denegadas: las filas nuevas aún no tienen RowID/ownership server-side por fila. No se eligió `DepartamentosAcademicos` ni otra hoja como autoridad canónica; el destino permitido en este incremento es el DepartmentID del contexto activo, validado por la membresía. No se migraron ni consultaron datos reales.
+- **Archivos:** `backend/accounting-service/Code.gs`; `tests/security/accounting-departmental-import-scope.test.js` (nuevo); `tests/security/identity-mapping-contract.test.js` (fixture actualizado para extraer el helper); `.github/workflows/department-scope-contract.yml`; `changueslogs.txt`; `beta_test.txt`.
+- **Verificación aislada V8:** 13 escenarios PASS: identidad/membresía firmadas, preview válido/denegado, destino no autorizado, mezcla y texto libre, rol institucional amplio, membresía ausente, curso no departamental, cero auditoría/writers ante preflight fallido, escritura con DepartmentID activo, clave idempotente estable, lote mixto rechazado antes del primer writer y compensación cuando falla el segundo writer. Parseo del Code.gs completo PASS.
+- **CI Node 24:** run 43321919328 ejecutó y aprobó `accounting-departmental-import-scope.test.js`; también pasaron los contratos Department Scope e Internal Responsibility RBAC. El workflow completo terminó FAIL en `user-role-membership-contract.test.js:119` (TypeError al leer `role` de `verifySessionToken(foreignLegacy)` nulo), mismo fallo observado en runs previos y ajeno a los archivos de esta unidad. Run 43321684606 — Identity mapping and transport security contracts — PASS, incluido el harness TASK-068 actualizado y el parseo de ACCOUNTING. Los pasos posteriores al fallo del workflow Department Scope quedaron omitidos.
+- **Beta:** BETA-FUNC-034 registrada como Pendiente beta para probar Apps Script/Sheets real, membresía activa, auditoría, journal, reintentos y compensación. No hubo despliegue ni acceso a datos productivos.
+- **Estado:** incremento de importación departamental para empleados implementado y probado localmente/CI focalizado. TASK-153 permanece En ejecución; no se declara cerrada.
+- **Siguiente acción:** integrar ownership departamental por RowID/snapshot server-side para importaciones institucionales multi-departamento, sin confiar en IDs/nombres del archivo; después continuar con las demás superficies pendientes de TASK-153.
+===============================================================================
+
+
+===============================================================================
+[2026-11-12] C1.656 — IMA-EXEC-20261112-1754Z-03 — ownership de expedientes laborales en saga ACCOUNTING→USER
+- **HEAD inicial:** f3237b4696e7956a8c19be1c5f019897cc973870; rama NG_beta_0.0.0.1_work. Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **USER:** nuevo contrato HMAC-only desde ACCOUNTING para registrar/compensar ownership de EXPEDIENTE_LABORAL. USER vuelve a validar token firmado, identidad, membresía/ámbito activo, institución y permiso dinámico registerResourceOwnership; no confía en InstitutionID/DepartmentID del request para autorizar. Solo admite el departamento activo verificado; alcance institucional amplio multi-departamento sigue fail-closed.
+- **Persistencia:** ResourceOwnership se crea sin reasignar filas existentes; clave idempotente ligada a institución/recurso/departamento; journal MigracionOwnershipAccounting detecta colisiones/reintentos. La compensación revoca la fila creada y marca el journal COMPENSATED; no elimina historial ni modifica titularidades anteriores.
+- **ACCOUNTING:** tras el writer propietario, solicita a USER el registro de ownership por HMAC usando IMA_USER_SERVICE_URL. La intención de compensación se registra antes de la llamada para cubrir respuestas de red ambiguas. Rollback inverso revoca ownership antes de compensar el expediente. Respuestas idempotentes preexistentes no se agregan como escrituras nuevas a compensar; si falla el ownership de un expediente cuyo writer ya era idempotente, se informa RESOURCE_OWNERSHIP_REPAIR_REQUIRED y no se borra el expediente previo.
+- **Pruebas locales aisladas V8:** USER 18 escenarios PASS (identidad, permiso dinámico, scope/tenant, duplicados, idempotencia, fallo de journal, compensación, lock/reentrada y dispatch HMAC); ACCOUNTING 26 escenarios PASS (preflight, escritura, registro USER, ruta HTTPS/HMAC, fallo parcial, rollback inverso e idempotencia segura). Parseo de ambos servicios PASS.
+- **Límites:** Node CLI del repositorio y GitHub Actions aún no ejecutados en esta iteración; harnesses ejecutados en runtime V8 con fixtures sintéticos y código exacto de los blobs. Apps Script/Sheets real, HMAC entre despliegues y recuperación de red quedan Pendiente beta. Sin datos reales ni despliegue.
+- **Archivos:** backend/user-service/Code.gs; backend/accounting-service/Code.gs; tests/security/accounting-departmental-import-scope.test.js; tests/security/user-migrated-resource-ownership-contract.test.js (nuevo); .github/workflows/department-scope-contract.yml; changueslogs.txt; beta_test.txt; pendientes/Dirección/Pendientes.md; checkpoint e índice.
+- **Estado:** subalcance de nuevas altas con departamento activo integrado; TASK-153 sigue En ejecución. No se habilita importación institucional multi-departamento ni se declara cerrada la tarea.
+===============================================================================
+
+
+===============================================================================
+### C1.657 — IMA-EXEC-20261112-1754Z-03 — verificación CI posterior a C1.656
+- **HEAD verificado:** c6608ffc2bc154c26043cd2334b65cc92f67bf85. Rama base NG_beta_0.0.0.1 verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **GitHub Actions 43325626370 — Department Scope Contract:** PASS en Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import scope y nuevo USER migrated resource ownership contract. Falla después en user-role-membership-contract.test.js:119: verifySessionToken(foreignLegacy) devuelve null y el test intenta leer .role; las etapas posteriores se omiten. Es el mismo fallo/línea ya registrado antes de C1.656 (run 43321919328 / C1.655); no hay evidencia de causalidad con los archivos de esta unidad.
+- **GitHub Actions 43325626382 — Identity mapping and transport security contracts:** SUCCESS.
+- **Resultado:** las dos suites nuevas/modificadas de esta unidad aprobaron también en Node 24 CI. El fallo global preexistente queda separado y no se corrige aquí sin trazabilidad causal. No se modifica código en este addendum.
+- **Estado:** C1.656 mantiene su alcance. TASK-153 sigue En ejecución; próximo subalcance: resolver snapshot server-side por RowID para la variante institucional multi-departamento o continuar con otra superficie de consulta/descarga aún no integrada.
+===============================================================================

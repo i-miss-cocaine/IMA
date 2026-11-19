@@ -1,0 +1,70 @@
+name: UI Accessibility and Metadata Contract
+
+on:
+  push:
+    branches:
+      - NG_beta_0.0.0.1_work
+    paths:
+      - "js/ui-common.js"
+      - "js/api.js"
+      - "backend/user-service/Code.gs"
+      - "tests/ui/**"
+      - "tests/security/user-service-ui-metadata.test.js"
+      - "tests/security/user-service-workflow-notifications.test.js"
+      - "tests/security/user-service-departmental-outbox.test.js"
+      - "tests/security/ui-common-permanent-help.test.js"
+      - "tests/ui/permanent-form-help.test.js"
+      - "teacher-dashboard.html"
+      - "student-dashboard.html"
+      - "dashboard-secretaria.html"
+      - "js/teacher.js"
+      - "js/secretary.js"
+      - "js/accounting.js"
+      - ".github/workflows/ui-accessibility-contract.yml"
+  pull_request:
+    branches:
+      - NG_beta_0.0.0.1_work
+    paths:
+      - "js/ui-common.js"
+      - "js/api.js"
+      - "backend/user-service/Code.gs"
+      - "tests/ui/**"
+      - "tests/security/user-service-ui-metadata.test.js"
+      - "tests/security/user-service-workflow-notifications.test.js"
+      - "tests/security/user-service-departmental-outbox.test.js"
+      - ".github/workflows/ui-accessibility-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ui-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout authorized branch
+        uses: actions/checkout@v4
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Syntax checks
+        run: |
+          node --check js/ui-common.js
+          node --check js/api.js
+          node -e "const fs=require('node:fs'); new Function(fs.readFileSync('backend/user-service/Code.gs','utf8'));"
+      - name: Accessible tooltip contract
+        run: node tests/ui/accessible-tooltips.test.js
+      - name: UI metadata catalog contract
+        run: node tests/security/user-service-ui-metadata.test.js
+      - name: Permanent form help and inline validation contract
+        run: |
+          node tests/ui/permanent-form-help.test.js
+          node tests/security/ui-common-permanent-help.test.js
+      - name: Notification and delivery regression contracts
+        run: |
+          node tests/security/user-service-workflow-notifications.test.js
+          node tests/security/user-service-departmental-outbox.test.js
+      - name: Whitespace and patch integrity
+        run: git diff --check

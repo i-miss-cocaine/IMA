@@ -1,0 +1,91 @@
+{
+  "manifestVersion": 1,
+  "sourceDirectory": "docs/architecture/Plantillas/SACE",
+  "baselineVersion": "repo-baseline-2026-11-19",
+  "status": "CANDIDATE",
+  "officialSourceVerified": false,
+  "effectiveFrom": null,
+  "effectiveTo": null,
+  "provenanceNote": "Inventario estructural de los archivos existentes en el repositorio. La procedencia oficial y la vigencia normativa de cada archivo no están acreditadas por el propio libro.",
+  "layoutSignature": "BIFF8|SHEETS=1|DIMENSION=A1:I31|MERGES=13|STUDENT_ROWS=8:29|PARTIALS=2|RECOVERY=H|FORMULAS=0|DATA_VALIDATIONS=0|PROTECTED=0",
+  "mapping": {
+    "institution": "A1",
+    "modality": "A2",
+    "gradeAndSection": "A3",
+    "schedule": "A4",
+    "subject": "A5",
+    "headers": {
+      "document": "A6",
+      "identity": "B6",
+      "studentName": "C6",
+      "partial1": "D6:E6",
+      "partial2": "F6:G6",
+      "recovery": "H6:H7",
+      "partial1Absences": "D7",
+      "partial1Grade": "E7",
+      "partial2Absences": "F7",
+      "partial2Grade": "G7"
+    },
+    "studentRows": {
+      "first": 8,
+      "last": 29,
+      "count": 22
+    },
+    "outputCells": {
+      "partial1Absences": "D8:D29",
+      "partial1Grade": "E8:E29",
+      "partial2Absences": "F8:F29",
+      "partial2Grade": "G8:G29",
+      "recovery": "H8:H29"
+    },
+    "preservedCells": {
+      "unusedColumn": "I"
+    },
+    "footer": {
+      "institutionalNote": "A30:I30",
+      "formatInstruction": "A31:I31"
+    }
+  },
+  "templates": [
+    {
+      "templateCode": "SACE-BTP-11-1-ANALISIS",
+      "version": "repo-baseline-2026-11-19",
+      "fileName": "ANALISIS_Y_DISEÑO_DE_SISTEMAS__SECCION_1 (1).xls",
+      "gitBlobSha": "ddc806e919ad1fac64d81a0969edf7c302603dcc",
+      "subject": "ANALISIS Y DISEÑO DE SISTEMAS",
+      "grade": "ONCEAVO GRADO",
+      "section": "1",
+      "modality": "BACHILLERATO TÉCNICO PROFESIONAL EN INFORMÁTICA",
+      "status": "CANDIDATE"
+    },
+    {
+      "templateCode": "SACE-BTP-11-1-INFORMATICA-APLICADA",
+      "version": "repo-baseline-2026-11-19",
+      "fileName": "INFORMÁTICA_APLICADA_SECCION_1 (1).xls",
+      "gitBlobSha": "c1a2c05b214f0545eb2a58684a6304e9c6d66a5d",
+      "subject": "INFORMÁTICA APLICADA",
+      "grade": "ONCEAVO GRADO",
+      "section": "1",
+      "modality": "BACHILLERATO TÉCNICO PROFESIONAL EN INFORMÁTICA",
+      "status": "CANDIDATE"
+    },
+    {
+      "templateCode": "SACE-BTP-11-1-OFIMATICA",
+      "version": "repo-baseline-2026-11-19",
+      "fileName": "OFIMÁTICA_SECCION_1 (1).xls",
+      "gitBlobSha": "9e0a494e14b8e0b6e943ed53297053707adf7356",
+      "subject": "OFIMÁTICA",
+      "grade": "ONCEAVO GRADO",
+      "section": "1",
+      "modality": "BACHILLERATO TÉCNICO PROFESIONAL EN INFORMÁTICA",
+      "status": "CANDIDATE"
+    }
+  ],
+  "constraints": [
+    "El año lectivo no aparece en los metadatos visibles del libro; debe provenir del contexto académico y de una versión registrada.",
+    "Las columnas D y F son inasistencias; no deben sobrescribirse con notas.",
+    "La columna H tiene una sola recuperación por estudiante, mientras que EXAM conserva recuperaciones por evaluación/categoría. No hay una equivalencia única demostrada.",
+    "No usar la lista de estudiantes de los archivos del repositorio como padrón productivo; es información de muestra.",
+    "No habilitar exportación hasta verificar procedencia/vigencia y aprobar la semántica de recuperación para el formato correspondiente."
+  ]
+}

@@ -1,0 +1,1526 @@
+===============================================================================
+CHECKPOINT C1.792 — IMA-EXEC-20261116-2330Z-TASK187-PREVENTIVE-MAINTENANCE-01
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Tarea: TASK-187 — Programación automática y administración del mantenimiento preventivo recurrente
+Checkpoint anterior: C1.791
+
+Implementación verificada:
+- Planes preventivos por activo, categoría, ubicación e identificador de grupo.
+- Frecuencias calendario y horas de uso, con validación de fechas, lecturas y estimaciones.
+- Generación idempotente de órdenes, alertas de 30/15/7/1 días y vencidas.
+- Completar ciclo, proteger contra ciclos obsoletos y reintentos duplicados; postergación justificada e historial.
+- Validación de estado activo y ámbito departamental de activos tanto al guardar el plan como al generar órdenes.
+- Repuestos, indicadores y plantillas; UI con lecturas y estimaciones.
+- Contrato de seguridad Node.js: tests/security/accounting-preventive-maintenance.test.js PASS en GitHub Actions run 43986419534 (Node.js 24.22.2).
+- Se agregaron pruebas para límites de lectura, fechas, repuestos inválidos, reasignación departamental, activos inactivos y cambios de ámbito/estado entre planificación y generación.
+- BETA-FUNC-111 agregado a beta_test.txt; requiere validación funcional desplegada en Apps Script/Sheets. No se declara validación de producción.
+
+Correcciones de CI durante esta continuación:
+- Alineado el fixture de comprobantes privados con el esquema vigente y el contrato de descarga; file-attachment-persistence-contract.test.js pasó en run 43986419534.
+- El workflow global aún falla en tests/regression/phase22-document-management-suite-contract.test.js: el contrato espera configureSchoolDocumentTemplate en ACCOUNTING y la función no existe en la rama de trabajo. Se conserva como hallazgo abierto; no se altera ni oculta el test.
+
+Archivos de TASK-187:
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-preventive-maintenance.test.js
+- beta_test.txt
+- pendientes/Contabilidad/Pendientes.md
+
+Verificación de estado:
+- Rama: NG_beta_0.0.0.1_work
+- HEAD inicial de la iteración: bb8f4f7233898c823e0c19919ecdf7fdce41b553.
+- Commits posteriores de corrección del contrato de comprobantes privados: 848f5f5204e2f86296a6b8523f91d695bb60c52b; 1b093ad0928800170aba670186f84550f0fc6735; 656e068ba0570a779d466a6068f1b54e05c49082; 5e92af12a8d86931d2327e6c033f13b0e3b17cbd; a749c5ba15180cc50541a9715c20c59de0c9ae74; bea7770e455d0509f91d61781525392eaa066c09; 5fe01d19b88e07baa870616f660e80d161ed104f.
+- Último commit citado corresponde al contrato de pruebas; no se certifica CI global verde.
+- Sin despliegue ni acceso a hoja real; no se ejecutó prueba beta real.
+
+Siguiente tarea elegible:
+- Revisar topología de PM-04. TASK-072 (P0, orden 6) es la siguiente candidata de migración/corte financiero, pero debe resolverse su dependencia F29-Task01/02/03 y reconciliar el solapamiento circular entre TASK-072 y F29-Task02 antes de modificar saldos. TASK-270 permanece bloqueada por F29-Task01/02/03/06/13.
+===============================================================================
+
+===============================================================================
+CHECKPOINT C1.793 — IMA-EXEC-20261117-0028Z-F25-TASK02-IMPORT-MAPPING-PROFILES
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Tarea/subcapacidad: F25-Task02 — Persistir perfiles reutilizables de mapeo de columnas para importaciones
+Checkpoint anterior: C1.792
+
+Implementación:
+- Hoja PerfilesMapeoColumnas con perfil, institución, propietario, origen, entidad, destino, encabezados, mapping JSON, huella de esquema, versión y fechas.
+- Endpoints getImportMappingProfiles y saveImportMappingProfile, protegidos por sesión verificada y permiso institucional de importación.
+- Aislamiento por propietario e institución; IDs no permiten actualizar perfiles ajenos.
+- Versionado append-only; editar agrega una nueva versión y conserva las anteriores.
+- Validación de entidad/destino, nombre, encabezados únicos, identificador, campos destino permitidos y campos obligatorios por entidad.
+- La UI del importador permite listar, guardar, cargar y editar perfiles; solo aplica un perfil cuando los encabezados coinciden exactamente en contenido y orden. La previsualización sigue siendo obligatoria.
+- Rutas API incorporadas y cubiertas por prueba de router.
+
+Pruebas/evidencia:
+- tests/security/accounting-import-mapping-profiles.test.js PASS en Node 24 en Department Scope run 43987696374 (step ejecutado antes del fallo independiente de Phase22).
+- tests/security/accounting-import-auth-router.test.js PASS en Accounting Import Preflight run 43987696349.
+- Accounting Import Preflight run 43987696349: PASS; incluye sintaxis de ACCOUNTING, USER, ACADEMIC, js/api.js, js/accounting.js, js/secretary.js y js/teacher.js.
+- Department Scope run 43987696374: fallo global en tests/regression/phase22-document-management-suite-contract.test.js porque configureSchoolDocumentTemplate no existe en ACCOUNTING de la rama de trabajo; no es fallo del contrato F25-Task02.
+- BETA-FUNC-112 añadido a beta_test.txt; validación desplegada en Apps Script/Sheets sigue pendiente.
+
+Archivos modificados:
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-import-mapping-profiles.test.js
+- tests/security/accounting-import-auth-router.test.js
+- .github/workflows/department-scope-contract.yml
+- beta_test.txt
+- Auditoría/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md
+
+Commits de implementación/verificación:
+- f45718fed4c7300d18620f3e8b797feb7c836a25
+- 8ae7130d17bc58b5fd1f7e88979a4d2543f950e5
+- b476adf6b771c2c02905efc5ded8f77b3157c027
+- 2c6f73c7f4aef76cb89b1a6668bc5af8d58494b2
+- f2ad5fd29f856153bab454b7cedb9726c35ac668
+- 5ecb7b1fa99f51b07f5885b10d2e182793a11205
+- 696e9501b2cd1ac209fce9650c69bf40bfb4310d
+- 3b198aef8983d288970b8530a1ddeec3e6e887e2
+- 14e6047c487b902183ab57c8a382bff909a4923c
+- 598e4e0ddaf434ac9213b1b9d08457d7895e2c4f
+- 1c2f57a80d51427fd1b3f70fce5d12e21698de13
+- 0903eed7b9b4baf4168ea5213d1ebcad6fdabe99
+
+HEAD verificado: 0903eed7b9b4baf4168ea5213d1ebcad6fdabe99 en NG_beta_0.0.0.1_work.
+Siguiente tarea elegible: F25-Task03 — detección avanzada de duplicados e integridad referencial. Su dependencia F25-Task02 queda satisfecha; deben verificarse antes de implementar las políticas de identidad canónica y de merge para no fusionar personas por nombre ni escribir referencias huérfanas.
+===============================================================================
+
+=============================================================================
+### C1.794 — IMA-EXEC-20261117-F25-TASK03-01
+- **Checkpoint anterior:** C1.793 — F25-TASK02, perfiles de mapeo de importación.
+- **HEAD inicial verificado:** a8652a1e62a6dfa6484c479d65968b9916758d67 (C1.793).
+- **HEAD de cierre de tarea:** 2813582fca3eafcda7352ecc668061e30ce8f61d.
+- **Tarea:** F25-TASK03 — detección avanzada de duplicados e integridad referencial antes de importar.
+- **Resultado:** completada en código y verificaciones locales. La beta desplegada queda pendiente en BETA-FUNC-114, sin bloquear el cierre de implementación.
+- **Implementación:**
+  - ACCOUNTING normaliza y compara DNI/correo, códigos institucionales, PersonaId/UserId y claves naturales de cursos; clasifica coincidencias exactas y posibles. Las coincidencias por nombre requieren revisión manual y excluyen la fila.
+  - UI permite RECHAZAR, ACTUALIZAR y VINCULAR; ACTUALIZAR exige match exacto con el mismo ID canónico y snapshot/hash vigente; VINCULAR solo reconoce un ID canónico ya confirmado e idéntico y omite una escritura redundante. La política elegida y el conteo de vinculados se registran en la auditoría.
+  - USER/ACADEMIC entregan snapshots de duplicados sin revelar DNI/correo; ACADEMIC valida referencias opcionales de grado/sección, departamento activo y expediente activo.
+  - USER, ACADEMIC y ACCOUNTING revalidan claves naturales dentro de LockService antes de escribir, reduciendo carreras entre preflight y commit. Se preservan idempotencia, hash de destino y compensación.
+- **Archivos modificados:** backend/accounting-service/Code.gs; backend/user-service/Code.gs; backend/academic-service/Code.gs; js/accounting.js; tests/security/accounting-import-semantic-preflight.test.js; tests/security/accounting-remote-target-snapshot.test.js; tests/security/accounting-migration-writer.test.js; tests/security/academic-migration-writer.test.js; tests/security/user-migration-writer.test.js (nuevo); tests/security/accounting-migration-import-ui.test.js; .github/workflows/identity-mapping-contract.yml; beta_test.txt; Auditoría/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md; pendientes/Dirección/Pendientes.md.
+- **Verificaciones locales/CI:** Accounting Import Preflight Contract PASS, run 44010695701 (Node.js 24; semantic preflight, snapshots y referencias, importación parcial, idempotencia y UI); USER identity/migration writer PASS, run 44010128015; Academic migration writer PASS, run 44009939154; Accounting migration writer PASS, run 44009952334; remote USER/ACADEMIC snapshots y referencias PASS, run 44010452335; UI Accessibility PASS, run 44010601192. La sintaxis de los servicios modificados fue comprobada por los workflows respectivos.
+- **CI global:** Department Scope Contract mantiene un fallo ajeno a F25-TASK03 en el paso “Run Phase 22 document management suite contract”; los pasos previos de ámbito y los contratos específicos de importación pasan. No se modificó ese módulo fuera del alcance.
+- **Beta pendiente:** BETA-FUNC-114 valida integración desplegada entre ACCOUNTING, USER y ACADEMIC, datos sintéticos, catálogos activos, HMAC y escenarios concurrentes.
+- **Revisión de seguridad:** sin fusión automática por nombre; sin exposición de DNI/correo en snapshots; escrituras duplicadas bloqueadas bajo lock; vínculo solo con identidad canónica coincidente; filas rechazadas excluidas antes de escritura; sin despliegue ni datos reales.
+- **Siguiente tarea elegible:** F26-TASK01 — motor central de precedencia y configuración jerárquica. Revisar dependencias, estado real de USER/Developer y contratos de configuración antes de editar.
+=============================================================================
+
+
+=============================================================================
+### C1.795 — IMA-EXEC-20261117-F26-TASK01-01
+- **Checkpoint anterior:** C1.794 — F25-TASK03, detección de duplicados e integridad referencial.
+- **HEAD de cierre registrado en C1.794:** 2813582fca3eafcda7352ecc668061e30ce8f61d.
+- **HEAD observado al recuperar la sesión:** c04dc0c266c56b2c3ce9dedc75436477ebe6af6c; ya contenía una implementación parcial de F26-TASK01 en tres commits de código. Se preservó ese trabajo y se continuó sobre la rama autorizada.
+- **HEAD de implementación y pruebas:** 5d53e4d69212898fc7b201cafc92e5889aab188f.
+- **Tarea:** F26-TASK01 — motor central de precedencia y configuración jerárquica.
+- **Resultado:** completada en código y verificaciones locales. La beta desplegada se mantiene separada y pendiente en BETA-FUNC-115.
+- **Implementación y decisiones:**
+  - Contrato por clave y ámbitos GLOBAL, INSTITUCIONAL, DEPARTAMENTAL y PERSONAL, con políticas GLOBAL_OBLIGATORIO, INSTITUCIONAL, HEREDABLE, PERSONALIZABLE y RESTRINGIDO.
+  - Resolución dinámica de herencia; excepciones departamentales solo para la institución/departamento validado; preferencias personales vinculadas al usuario verificado. Cambios institucionales llegan a departamentos que heredan; las excepciones explícitas se conservan.
+  - El servidor obtiene rol e institución desde identidad verificada; valida departamento con contexto institucional; el cliente no puede otorgarse rol, institución ni asignación departamental.
+  - Lectura de valores sensibles validada en el ámbito efectivo; las capas no autorizadas no se incluyen en la respuesta. Políticas inválidas, tipos incompatibles, conflictos y ámbitos prohibidos fallan de forma cerrada.
+  - Versionado por ámbito, actor/fecha, reset que incrementa versión y reactiva la herencia; guardar tras reset reactiva la fila existente sin duplicarla. LockService evita escrituras concurrentes/TOCTOU en save y reset.
+  - Migración de ConfiguracionSistema inicializa instalaciones vacías, amplía el esquema legacy solo cuando coincide exactamente y conserva datos; idempotencia y rechazo seguro de esquemas inesperados. ConfiguracionDepartamental se crea con encabezado canónico.
+  - DEVELOPER comprueba acceso real a SpreadsheetApp y DriveApp; `isReadyForActivation` es falso si un recurso requerido no es accesible.
+- **Archivos de implementación/prueba:** `backend/user-service/Code.gs`, `backend/developer-service/Code.gs`, `tests/security/user-service-hierarchical-configuration.test.js`, `.github/workflows/hierarchical-configuration-contract.yml`.
+- **Verificaciones locales/CI:** 8/8 comprobaciones aisladas sobre funciones recuperadas del código PASS. Hierarchical Configuration Contract run 44019419989 PASS con Node.js 24.22.2; syntax USER, DEVELOPER y contrato PASS; ejecución Node CLI del contrato PASS. Incluye precedencia, herencia, aislamiento entre departamentos/instituciones, usuario no autorizado, lectura sensible, conflictos, política inválida, tipo, save/reset/reactivación, versiones, bloqueo concurrente, migración legacy/idempotencia y permisos Spreadsheet/Drive.
+- **CI transversal:** Department Scope run 44019171555 falla en el paso Phase22 document management; los pasos previos de ámbito, RBAC, ACCOUNTING, ACADEMIC, documentos, UI y otros contratos ejecutados pasan. El mismo paso Phase22 ya fallaba antes del cambio en run 44012050276. Los pasos posteriores quedan skipped por el fallo; no se alteró código ajeno para ocultarlo.
+- **Commits de referencia:** d1d76aadae6702d254ca8acb1b04c3069651f70e (motor inicial), 01e4e4746707f98f75430542fa941b2c015aff37 (rutas/RBAC), c04dc0c266c56b2c3ce9dedc75436477ebe6af6c (contrato DEVELOPER), 28b286fa2f9614d8897bbc5a3377d845352b69c7 (seguridad inicial), 795103d50798cea18b1d6b99f20ff89e6750458b (schema vacío), bc606fb32ab50e560be2b7fca68283038a258929 (versionado), f60877236db870632a19ab6eaa2a09983a6da83d (contexto institucional), 4a6b571a12535a989e85eb9014b6cefbf87d3907 (política/conflictos) y 5d53e4d69212898fc7b201cafc92e5889aab188f (pruebas de herencia dinámica).
+- **Beta pendiente:** BETA-FUNC-115 valida Apps Script/Sheets/Drive desplegados, aislamiento real multiinstitución, RBAC, auditoría y concurrencia; no bloquea el cierre de implementación.
+- **Siguiente tarea elegible:** TASK-060 — integración del motor con ACADEMIC, ACCOUNTING y la UI administrativa; verificar consumidores y contratos antes de adaptar cada módulo.
+=============================================================================
+
+
+=============================================================================
+### C1.796 — IMA-EXEC-20261117-TASK060-02
+- **Checkpoint anterior:** C1.795 — F26-TASK01, motor central de precedencia y configuración jerárquica.
+- **HEAD al inicio de la integración UI/consumidores:** 62352f7e792c8a13cefdeb6bb0ac3147f890742c.
+- **HEAD de integración UI:** 91e5ba07166c95cfc8bf8e401433896ce374ce60.
+- **HEAD de cierre técnico:** 08de23d093549b8c2d51d34b2d421c8828aa0ed0.
+- **Tarea:** TASK-060 — gobernanza jerárquica e integración ACADEMIC/ACCOUNTING/UI.
+- **Resultado:** completada en código, revisión y CI; beta desplegada pendiente.
+- **Implementación:** ACADEMIC/ACCOUNTING delegan catálogo y resolución a USER mediante wrappers de lectura; token firmado validado en el servicio consumidor; payload interservicio minimizado; acciones de escritura bloqueadas en los wrappers. Endpoint USER restringido a Apps Script /macros/s/<deployment>/exec en ambos servicios. ACADEMIC fue endurecido durante esta iteración para rechazar cualquier host HTTPS arbitrario.
+- **UI:** pestaña jerárquica visible; selector de departamento manual (validado por USER), valores efectivos/origen/estado, ámbito editable desde la lista declarada, restablecimiento de herencia, parser tipado y mensajes de estado; valores renderizados como texto, sin interpolación HTML.
+- **Fuentes de verdad:** no se trasladaron registros de ConfiguracionAcademica, ConfiguracionCargosMatricula, nómina ni otras estructuras especializadas; los servicios conservan su persistencia de dominio.
+- **Archivos principales:** backend/academic-service/Code.gs, backend/accounting-service/Code.gs, js/ui-common.js, tests/security/hierarchical-configuration-consumer-integration.test.js, tests/security/hierarchical-configuration-ui.test.js, .github/workflows/hierarchical-configuration-contract.yml.
+- **Verificaciones:** Hierarchical Configuration Contract run 44078085385 SUCCESS; Department Reference Consumers 44078085217 SUCCESS; UI Accessibility and Metadata 44077873551 SUCCESS. Node.js 24 verificó sintaxis de USER, DEVELOPER, ACADEMIC, ACCOUNTING, UI y contratos; ejecución de contratos USER, UI y consumidores PASS. UI incluye 10 aserciones de parser; consumidores 18 verificaciones.
+- **CI transversal:** Department Scope run 44078085205 FAILURE en Phase22 document management; mismo fallo de paso en 44077873593. No se modificó ese contrato fuera del alcance.
+- **Commits de cierre:** 62352f7e792c8a13cefdeb6bb0ac3147f890742c, 91e5ba07166c95cfc8bf8e401433896ce374ce60, 08de23d093549b8c2d51d34b2d421c8828aa0ed0.
+- **Beta pendiente:** BETA-FUNC-116; validar endpoints Apps Script desplegados, permisos, ámbitos reales, auditoría y concurrencia.
+- **Siguiente revisión:** determinar próxima tarea elegible de PM-02 según dependencias vigentes; F29-TASK17 no es elegible mientras F29-Task13 permanezca pendiente.
+=============================================================================
+
+
+=============================================================================
+### C1.797 — IMA-EXEC-20261117-TASK027-LIBRARY-CIRCULATION-01
+- **Checkpoint anterior:** C1.796 — TASK-060, integración jerárquica ACADEMIC/ACCOUNTING/UI.
+- **HEAD inicial observado:** a5774ef2f16008579a48055a943d734d4c32ef37 ya contenía la implementación transaccional; se verificó su continuidad y se amplió el contrato local.
+- **HEAD de cierre de código/pruebas:** ee53929533621905f1889ccd63dad2a3bf896230.
+- **Tarea:** TASK-027 — Control de concurrencia e idempotencia en circulación bibliotecaria.
+- **Resultado:** completada en código, revisión y CI; validación de LockService/Sheets reales pendiente en beta.
+- **Archivos principales:** backend/accounting-service/Code.gs; tests/security/accounting-library-circulation-concurrency.test.js; .github/workflows/library-circulation-contract.yml.
+- **Implementación:** préstamos/devoluciones y reservas se serializan con ScriptLock; el ejemplar se vuelve a leer bajo lock; se comprueba identidad y permiso del operador; el ledger usa clave idempotente con institución, tipo de operación, ejemplar, usuario y fecha o clave explícita validada; conflictos se rechazan; los cambios coordinados cuentan con rollback compensatorio y liberación de lock en finally.
+- **Pruebas:** contrato Node.js 24 run 44080687260 SUCCESS. Pasos: sintaxis ACCOUNTING, sintaxis del contrato y ejecución del contrato PASS. Casos cubiertos: préstamo, devolución, reserva, reintentos, duplicados, colisión de claves, esquema de ejemplar inválido, sesión/rol denegados, lock timeout, contención reentrante y solicitudes programadas concurrentes; sin duplicación de filas.
+- **Alcance de evidencia:** la concurrencia local se simula mediante un contendor reentrante y solicitudes programadas; no se declara probada la semántica real de LockService ni la consistencia de Sheets desplegados.
+- **Beta:** BETA-FUNC-117 pendiente; prueba con dos operadores y el mismo EjemplarID en entorno desplegado.
+- **Commits:** a5774ef2f16008579a48055a943d734d4c32ef37; bfa405b863386ca114c2e24a043919662aab9c8e; 034567c4f698d622de7d74f0fac27b3c00cc227b; ee53929533621905f1889ccd63dad2a3bf896230.
+- **Siguiente tarea:** continuar triage topológico PM-02. TASK-696 está bloqueada por TASK-153/T153-S01, F29-TASK17 y F37-TASK10; no iniciar su implementación ni migración tenant hasta resolver esas puertas.
+=============================================================================
+
+
+=============================================================================
+### C1.798 — IMA-EXEC-20261117-AUD-NG-078-SERVICE-REGISTRY-01
+- **Checkpoint anterior:** C1.797 — TASK-027, circulación bibliotecaria.
+- **HEAD inicial de esta iteración:** c10dda3d59bb2da9d3af5110d7a07ce046533d10 (rama NG_beta_0.0.0.1_work).
+- **HEAD de cierre de código y pruebas:** ec7403976fdbc8d04ca00f2913dc47e037a7cb15.
+- **Tarea:** AUD-NG-078 — metadatos verificados y permisos de mínimo privilegio en el registro de servicios DEVELOPER.
+- **Resultado:** alcance de código completado y contrato específico Node.js 24 PASS; prueba beta de Apps Script/Sheets pendiente.
+- **Implementación revisada:** catálogo sin servicios ficticios por defecto; lectura fail-closed ante errores, esquemas incompatibles, IDs duplicados, permisos malformados o metadatos placeholder; alta exige cuenta propietaria y hoja asociada explícitas, rechaza valores de ejemplo y la hoja del plano de control; permisos se normalizan, no admiten duplicados ni comodines; migración legacy solo cuando todas las filas son válidas y no se modifica una cabecera malformada.
+- **Correcciones de revisión:** detección de cabeceras legacy malformadas antes de insertar encabezado; rechazo de permisos duplicados tras trim; rechazo de permisos wildcard tanto al registrar como al leer registros existentes.
+- **Archivos de código/prueba:** backend/developer-service/Code.gs; tests/security/developer-service-registry.test.js; .github/workflows/developer-service-registry-contract.yml.
+- **Commits de implementación y corrección:** ce07cb099a85677fd29894ad52aca1d1b9223eb8; 1fd76e2fa33c542469ffdae98a81f92658b50fe1; 50be765e6331a5a06f7c0f8093bbe9343194b30c; 66bf7c4996d429551c02fb54e41d6091092991ac; b39dea083a88dc01e4c3f66d7d3565072d7cb1a4; e8c33e0895c14691c398c0c5ffdf78f2293ecdae; 217a172fd183d5253dfe887d421533e9d129e95e; 2865d3367bea5304fa4d4e568103b1ef9c35a0a9; 5df6314944c6d75fd01762b81d21b60c06b76f2d; defc6d7f083c92224e4a9e73ee9d244671ffcd71; 93a699e5ae33b52a2a19693882dcb04307a2a968; 3fa5a39100c0066feeac33430a27acd4a9a17f31; 286755376b7d369bd44b2743d29b4b69f010edd8; bb17a3e1f73e8ba4e92dfb4ca5309b55f394c3f4; 18d825299ae5b4c812ef0db9e0374c69d968958a; ec7403976fdbc8d04ca00f2913dc47e037a7cb15.
+- **Verificación CI:** Developer Service Registry Contract run 44083437083 SUCCESS (checkout de rama autorizada, Node.js 24, sintaxis DEVELOPER/test y ejecución del contrato). Hierarchical Configuration Contract run 44083424582 SUCCESS. Department Scope Contract run 44083424646 FAILURE exclusivamente en Phase22 document management; pasos 1–79 anteriores PASS, pasos posteriores SKIPPED. No se modificó Phase22.
+- **CLI local:** NOT RUN; el checkout local no pudo descargarse porque el entorno no resolvió github.com. La ejecución Node CLI sí está acreditada por GitHub Actions.
+- **Beta:** BETA-FUNC-118 añadido a beta_test_Parte_0002.txt; validación real de Apps Script/Sheets/Drive pendiente, sin datos reales ni despliegue ejecutado.
+- **Rama base:** NG_beta_0.0.0.1 permanece sin escrituras; compare previo 3820 ahead / 0 behind, base SHA 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Estado:** implementación/CI completados; beta pendiente separada. No se declara validada la infraestructura real.
+- **Siguiente tarea elegible:** AUD-NG-080 — historial de cambios del registro con actor verificado, LockService y persistencia consistente; revisar el dispatcher y contratos antes de editar.
+=============================================================================
+
+ 
+=============================================================================
+### C1.799 — IMA-EXEC-20261117-AUD-NG-080-SERVICE-HISTORY-01
+- **Checkpoint anterior:** C1.798 — AUD-NG-078, endurecimiento del registro central DEVELOPER.
+- **HEAD inicial:** 410b39f3557668ea84f3f7f79df24dc8469aa405.
+- **HEAD de cierre de código/pruebas:** bc10c9ae00a5265d1f22cbf258f41c539d621b85.
+- **HEAD de documentación beta:** 7b8a1f75176c01f34ebc5185633a02e565b86366.
+- **Tarea:** AUD-NG-080 — historial de cambios de servicios con actor verificado y persistencia consistente.
+- **Resultado:** completada en código, revisión y CI; validación real de LockService/Sheets pendiente en beta.
+- **Implementación:** doPost descarta _verifiedUserId aportado por el cliente y lo repone únicamente desde claims de una sesión firmada; el dispatcher deriva las altas/cambios a escritores privados registerServiceInstance_ y updateServiceStatus_; wrappers públicos rechazan llamadas sin actor verificado. Alta y cambio de estado adquieren ScriptLock antes de leer/modificar el catálogo, registran actor estable en HistorialServiciosDistribuidos, generan HistoryID único, y liberan el lock en finally. Escrituras coordinadas incluyen rollback compensatorio y errores explícitos cuando la compensación no puede garantizarse. Los cambios de estado sin transición son no-op sin fila duplicada.
+- **Pruebas:** Developer Service Registry Contract run 44084385150 SUCCESS (Node.js 24.22.2; sintaxis DEVELOPER y contrato; ejecución completa). Cobertura: actor de sesión firmada, actor falsificado/ausente, alta y transición, lock timeout, contención reentrante, fallo de bitácora, rollback de alta/estado, esquema de historial inválido y payload no-objeto. Hierarchical Configuration Contract run 44084206282 SUCCESS.
+- **CI transversal:** Department Scope run 44084206213 FAILURE en Run Phase 22 document management suite contract; 82 pasos anteriores PASS y 17 posteriores SKIPPED. No se modificó Phase22.
+- **CLI local:** NOT RUN; el entorno no pudo resolver github.com para obtener checkout local. GitHub Actions sí ejecutó Node.js 24 y el contrato completo.
+- **Archivos de código/prueba:** backend/developer-service/Code.gs; tests/security/developer-service-registry.test.js. **Registro beta:** beta_test_Parte_0002.txt — BETA-FUNC-119.
+- **Commits de código/pruebas:** 5e2929c4f2c0b34b4a646b906a65ab31c6305fae; e65a01e711a3450d027a0a5f7bd11ecfa91957c6; 3d86a9526930f023c141c5f1aba25e120d375e65; 496ccbd77119413a3013d9d045a2e78b75e4efd4; d284acc4cf9ba60f4e2bba8092a309f9a6698529; cbf8a56a41ee0f5ed2cde53104f8a0cd5905d8f5; 61e56ad62b1e06d85d8df4045a702c603a2f73e8; 2585cc9fd25cb55b26772c3c9e1ac03ee6e503fc; b1f631f614b25ecda4c432ec10ccf9da1889fe66; 8f0c63916d09f87862856ca2e25606c0c9f54bd7; 685955c62590527e35c89f5ee7b3b7f27daf920c; bc10c9ae00a5265d1f22cbf258f41c539d621b85.
+- **Beta:** BETA-FUNC-119 añadido; ejecución con dos sesiones y LockService/Sheets reales pendiente. No se desplegó ni modificó infraestructura productiva.
+- **Rama base:** NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación work/base 3840 ahead, 0 behind, merge-base idéntico. Sin escrituras en rama base.
+- **Estado:** implementación y CI completados; beta real pendiente. No se afirma concurrencia real de Apps Script.
+- **Siguiente tarea elegible:** AUD-NG-082 — exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente (authRole); el fallback actual de doPost sigue siendo una superficie de confianza independiente.
+=============================================================================
+
+ 
+=============================================================================
+### C1.800 — IMA-EXEC-20261117-AUD-NG-082-CONTROL-PLANE-AUTH-01
+- **Checkpoint anterior:** C1.799 — AUD-NG-080, historial de servicios con actor verificado.
+- **HEAD inicial:** a0f25b0167a2a0e14259e414853eb5a1925332de.
+- **HEAD de cierre de código/pruebas:** cb081cea7a6342fdb380dd05ce52b349e1d35b00.
+- **HEAD de documentación beta:** 183806acbf77cd9332a6b9953fcd3c9011f8f697.
+- **Tarea:** AUD-NG-082 — exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente.
+- **Resultado:** implementada en código, revisión y CI; validación del deployment/Script Properties pendiente en beta.
+- **Implementación:** para toda acción distinta de ping, doPost exige token; la ausencia devuelve AUTHENTICATION_REQUIRED, token inválido/expirado devuelve INVALID_SESSION_TOKEN y claims incompletos devuelven INVALID_SESSION_CLAIMS. El rol se obtiene únicamente de claims.role validado por verifySessionToken y se contrasta con ROLE_PERMISSIONS. Se descartan authRole y _verifiedUserId enviados por el cliente; _verifiedUserId se reconstruye desde claims.userId. Se eliminó el fallback que aceptaba payload.authRole. Ping permanece público.
+- **Pruebas:** Developer Service Registry Contract run 44084689689 SUCCESS (Node.js 24.22.2; sintaxis de Code.gs y test; contrato completo). Cobertura: sin token + authRole Administrador; token inválido + authRole; token Director intentando elevarse a Administrador; claims incompletos; sesión válida; actor verificado; ping público.
+- **CI transversal:** Hierarchical Configuration Contract run 44084661329 SUCCESS. Department Scope run 44084661252 FAILURE en Phase22 document management; 82 pasos PASS y 17 SKIPPED. No se modificó Phase22.
+- **CLI local:** NOT RUN; el entorno no pudo resolver github.com al intentar obtener checkout local. GitHub Actions sí ejecutó Node.js 24.
+- **Archivos de código/prueba:** backend/developer-service/Code.gs; tests/security/developer-service-registry.test.js. **Registro beta:** beta_test_Parte_0002.txt — BETA-FUNC-120.
+- **Commits:** d73b72f83704b3e7a1495480698d9b9d4cfb5fd6 (código); cb081cea7a6342fdb380dd05ce52b349e1d35b00 (pruebas); 183806acbf77cd9332a6b9953fcd3c9011f8f697 (beta).
+- **Beta:** BETA-FUNC-120 añadido; validación real de secretos de sesión y endpoint web pendiente. No se desplegó Apps Script ni se modificó infraestructura productiva.
+- **Rama base:** NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación work/base 3844 ahead, 0 behind, merge-base idéntico. Sin escrituras en rama base.
+- **Estado:** implementación y CI completados; beta real pendiente.
+- **Siguiente tarea elegible:** AUD-NG-084 — gestión segura de secretos por servicio con rotación y revocación; revisar getAuthTokenSecret, AUTH_TOKEN_SECRET, customSecret y catálogo de credenciales antes de integrar tráfico HMAC.
+=============================================================================
+
+
+=============================================================================
+### C1.801 — IMA-EXEC-20261117-SESSION-CONTEXT-AUTH-PERFORMANCE-01
+- **Checkpoint anterior:** C1.800 — AUD-NG-082.
+- **HEAD inicial:** 20607c03280874c46f91e42cb318a4e9e82888f9.
+- **HEAD de cierre de esta iteración:** 392738ad6e39398685cb8113652ada3e6658bb83.
+- **Tarea en curso:** AUD-NG-084 — credenciales HMAC interservicio, rotación/revocación y protección contra repetición.
+- **Cambio de requisito del usuario:** autenticación de contraseña al iniciar sesión; reutilizar durante la sesión el contexto confiable ya establecido; evitar verificación completa de sesión/claims y reconstrucción de identidad/roles/permisos/responsabilidades en cada operación ordinaria. Mantener expiración, logout, revocación, integridad y controles proporcionales sin consultas repetidas ni latencia.
+- **Registro funcional:** Auditoría/PLAN-IMA-001_UNIDADES_FUNCIONALES.md, sección “Requisito transversal obligatorio — Autenticación de inicio de sesión y continuidad de sesión”; PM-01 en Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md enlaza y obliga a aplicarlo en futuras tareas de seguridad. No se modificó Normas_Desarollo.md porque este punto es requisito de producto/UX, no una nueva norma operativa.
+- **Implementación AUD-NG-084:** en backend/user-service/Code.gs se elimina fallback de AUTH_TOKEN_SECRET cuando falta el tipo explícito de credencial interservicio; el tipo debe ser IMA_MIGRATION_HMAC_SECRET. En verifyInterServiceEnvelope, HMAC se verifica antes de reservar requestId en CacheService; la reserva queda protegida por ScriptLock y timeout fail-closed.
+- **Pruebas añadidas:** tests/security/migration-hmac-credential-registry.test.js cubre catálogo, huellas, versión activa, rotación, revocación, clave dedicada, HMAC inválido sin consumir requestId, replay y lock contention.
+- **Adaptación de fixtures:** identity-mapping-contract.test.js, accounting-import-auth-router.test.js, accounting-remote-target-snapshot.test.js y user-migrated-resource-ownership-contract.test.js actualizados al contrato de credencial tipada.
+- **CI:** Node 24.22.2 y parseo de servicios pasó en runs asociados a commits anteriores. Identity Mapping, Accounting Import Preflight y Department Scope fallaron por fixtures desactualizados/constantes; se corrigieron en commit 392738ad, pero todavía no hay ejecución Actions observada para ese HEAD. No declarar PASS del cambio ni del contrato nuevo.
+- **CLI local:** NOT RUN; el entorno no pudo resolver github.com para checkout local. No se afirma ejecución local de los tests Node.
+- **Archivos de implementación/prueba:** backend/user-service/Code.gs; tests/security/migration-hmac-credential-registry.test.js; tests/security/identity-mapping-contract.test.js; tests/security/accounting-import-auth-router.test.js; tests/security/accounting-remote-target-snapshot.test.js; tests/security/user-migrated-resource-ownership-contract.test.js.
+- **Commits de esta iteración:** d1212922ed3c530a457f910780faddfa715f4d83 (código + contrato nuevo); dbdb8bbc5ef0c70a069364eeef988537e02f6f58 (primer ajuste de fixture); 1956d7bc9f74ef181c2831cf7e1ad05b24390d77 (registro del requisito); a5898d0200e0e1eaeb33a0fca62687208560e77d y 392738ad6e39398685cb8113652ada3e6658bb83 (fixtures); a9a7f068e04ed2e8afd3ebe1b45eca96f5aedfc1 (precisión del requisito).
+- **Estado:** requisito de experiencia de sesión registrado; AUD-NG-084 en progreso, no cerrada. Faltan ejecutar en el HEAD actual los contratos Node afectados, corregir los fallos restantes y revisar compatibilidad de consumidores HMAC antes de completar.
+- **Rama base:** HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación work/base 3852 ahead, 0 behind. Sin escrituras en rama base.
+- **Siguiente acción:** comprobar CI para HEAD 392738ad; corregir cualquier fallo de fixtures/consumidores y ejecutar localmente cuando haya checkout disponible; después continuar revisión de rotación/revocación y cerrar AUD-NG-084 con evidencia.
+=============================================================================
+
+
+
+=============================================================================
+### C1.802 — IMA-EXEC-20261117-AUD-NG-084-CI-WIRING-01
+- **Checkpoint anterior:** C1.801 — requisito transversal de continuidad de sesión y AUD-NG-084 en curso.
+- **HEAD inicial de esta iteración:** 568843731986fef11ad3f8aa5ef26be589abf076.
+- **HEAD de cierre del cambio técnico:** 70fc694a24ed4c858211a992e43fd76a60c42f64.
+- **Tarea:** AUD-NG-084 — gestión segura de secretos por servicio, rotación y revocación.
+- **Cambio ejecutado:** se agregó al workflow `.github/workflows/accounting-import-preflight-contract.yml` el paso Node.js 24 para ejecutar `tests/security/migration-hmac-credential-registry.test.js`. El cambio es acotado al workflow; no modifica código de aplicación ni fixtures adicionales.
+- **Revisión del código existente:** USER mantiene clave HMAC dedicada `IMA_MIGRATION_HMAC_SECRET`, tipo explícito `IMA_MIGRATION_HMAC_SECRET`, catálogo con esquema estricto, una única credencial ACTIVE por servicio, versión y huella SHA-256 concordantes; la firma HMAC se valida antes de reservar el requestId anti-replay bajo ScriptLock. El test cubre esquema, IDs duplicados, configuración ausente, fingerprint, rotación, revocación, firma inválida sin consumir requestId, replay y lock contention.
+- **Verificación del cambio:** diff del workflow revisado; inserción del paso confirmada al volver a leer el archivo desde la rama. El nuevo commit no reporta status checks y no se obtuvo evidencia de ejecución del workflow al momento del checkpoint. No se declara PASS.
+- **Pruebas:** Node CLI local NOT RUN; el entorno de esta sesión no proporciona checkout/terminal del repositorio. GitHub Actions para el nuevo commit: PENDIENTE DE OBSERVACIÓN. En el commit previo 392738ad el status combinado mostraba `ima/department-scope-contract = failure`; no se atribuye ese resultado al cambio del workflow.
+- **Archivos modificados en esta iteración:** `.github/workflows/accounting-import-preflight-contract.yml`; `changueslogs.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; este checkpoint.
+- **Commits:** 70fc694a24ed4c858211a992e43fd76a60c42f64 (incorporación de prueba al workflow); 40c6bc86aef9995dbd4ba0612e5db2b2ec35639e (registro de seguimiento); 3c539cadf399de2594573822716c004096976ad8 (índice C1.802).
+- **Estado:** AUD-NG-084 permanece **En ejecución**. La cobertura CI quedó configurada, pero aún falta observar el resultado; revisar consumidores HMAC y compatibilidad de despliegue/rotación entre servicios antes de cerrar. No se modificó el comportamiento de sesión de usuario; el requisito transversal de C1.801 permanece obligatorio para futuras tareas de seguridad.
+- **Rama base:** `NG_beta_0.0.0.1` con HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación verificada tras el cambio técnico: 3854 ahead, 0 behind. Sin escrituras en la rama base.
+- **Siguiente acción:** comprobar el workflow disparado por el commit 70fc694; si el contrato HMAC o los contratos consumidores fallan, corregir de forma focalizada y repetir las pruebas; después completar la auditoría de compatibilidad de rotación/revocación y documentar evidencia real.
+=============================================================================
+
+
+
+=============================================================================
+### C1.803 — IMA-EXEC-20261117-AUD-NG-084-ITERATIVE-TESTING-01
+- **Checkpoint anterior:** C1.802 — cobertura CI del contrato de credenciales HMAC en curso.
+- **HEAD inicial de esta iteración:** af54003e65b9bd4b805fdf77cfcdb84431891fea.
+- **HEAD probado por GitHub Actions:** 5bd31249bc13294659f2b2474415ed7827419fd9.
+- **HEAD de cierre documental antes de registrar este checkpoint:** 52ff472b1254a7bb9efcfdbd713a74483b072d69.
+- **Tarea:** AUD-NG-084 — gestión segura de secretos por servicio con rotación y revocación.
+- **Estrategia aplicada:** ante cada fallo se inspeccionaron los logs reales del runner, se identificó la condición exacta y se corrigió el fixture o filtro de workflow cuando correspondía. No se redujeron aserciones ni se alteró el código funcional para forzar aprobaciones.
+- **Correcciones de pruebas:** (1) el escenario de revocación USER ahora suministra la propiedad de verificación específica y una fila REVOKED; (2) el harness extrae el helper real `computeHmacSignature`; (3) el fixture remoto distingue el contrato USER (tipo de credencial) del contrato ACADEMIC (secreto explícito); (4) el harness de tokens de sesión modela los checks de revocación, membresía y hoja Usuarios; (5) se amplió la matriz de sesión para incluir DEVELOPER, cuyo verificador calcula la firma HMAC en bytes.
+- **Cobertura CI añadida:** `tests/security/migration-hmac-credential-registry.test.js` y `tests/security/hmac-secret-config.test.js` ejecutados en `.github/workflows/accounting-import-preflight-contract.yml`; ambos están incluidos en el filtro `push.paths`.
+- **GitHub Actions:** run **44090439362** — SUCCESS, Node.js **24.22.2**, 42 pasos completados, 0 fallidos, 0 omitidos. Se ejecutaron controles de sintaxis de ACCOUNTING/USER/ACADEMIC; rotación de secretos de sesión en USER/DEVELOPER/ACADEMIC/TASK/EXAM; catálogo HMAC, versión, fingerprint, revocación, anti-replay y lock contention; y todos los contratos de Accounting Import Preflight.
+- **Commit probado:** `5bd31249bc13294659f2b2474415ed7827419fd9`. El commit `52ff472b1254a7bb9efcfdbd713a74483b072d69` posterior modifica únicamente un comentario del workflow; diff inspeccionado y sin cambios ejecutables.
+- **CLI local:** NOT RUN. Node 22.16.0 está instalado, pero `git clone` no pudo resolver github.com por DNS. Se usó una alternativa verificable: ejecución real de comandos `node` en GitHub Actions con Node 24.22.2. No se atribuye PASS a una ejecución local inexistente.
+- **Compatibilidad revisada:** `AUTH_TOKEN_SECRET` continúa separado para tokens de sesión y no se eliminó `getAuthTokenSecret` de USER, DEVELOPER, ACADEMIC, TASK ni EXAM. ACCOUNTING no implementa `getAuthTokenSecret`/`verifySessionToken`; su firma de migración usa secreto explícito. La revisión de código detecta que ACCOUNTING y ACADEMIC aún usan `IMA_MIGRATION_HMAC_SECRET`/`customSecret` explícito para tráfico de migración, mientras USER valida catálogo y versión por servicio. Este alcance no está aún armonizado ni validado en despliegues.
+- **Archivos modificados en esta iteración:** `tests/security/migration-hmac-credential-registry.test.js`; `tests/security/accounting-remote-target-snapshot.test.js`; `tests/security/hmac-secret-config.test.js`; `.github/workflows/accounting-import-preflight-contract.yml`; `changueslogs.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; este checkpoint.
+- **Commits relevantes:** `2596f4d448cc770fc3846e5c30b6ba4e0c8401dd` (fixture de revocación); `0c6b64f0decba1c3a58ce83f72048705c7ae60d4` (filtro paths); `e233e816cac59330d684194af5dea061be3d3656` (helper HMAC en harness); `516d4fab54ca3a34cce3cd7638962ad7c83e58b0` (clave VERIFY); `5cca328d73411df853241aaf03e9deeeacdc3ab2` (fixture USER/ACADEMIC); `801b6b3aacf45d6fea19f1d5e5aa923535ae128a` (test sesión en CI); `7ede182c9b45aca2d0c4e068e4eb3f948bee5a5f`, `46751194e37c27f9171d603be55144e2e4a7ddf5`, `74be7de32d6f704dafb613ae9cc1c3b944220b7b`, `1642824e15771f4b9ccb3e95809712dde4897cc7` y `5bd31249bc13294659f2b2474415ed7827419fd9` (ajustes del harness de sesión y cobertura DEVELOPER).
+- **Estado:** pruebas específicas HMAC y regresión de secreto de sesión PASS en Actions. AUD-NG-084 permanece **En ejecución**, no cerrada: falta completar el diseño/compatibilidad de secretos de migración ACCOUNTING↔ACADEMIC y verificar Script Properties/deployments con evidencia autorizada. No se tocó el comportamiento funcional de sesión.
+- **Rama base:** `NG_beta_0.0.0.1` HEAD `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación antes del registro documental: 3874 ahead, 0 behind. Sin escrituras en la rama base.
+- **Siguiente acción:** continuar AUD-NG-084 con revisión del contrato de secretos de migración en ACCOUNTING y ACADEMIC, cobertura de rotación/revocación para emisores/receptores y pruebas de compatibilidad; no integrar tráfico ni cerrar hasta verificar todos los servicios involucrados.
+=============================================================================
+
+
+
+=============================================================================
+### C1.804 — IMA-EXEC-20261117-AUD-NG-084-ACADEMIC-REPLAY-GUARD-01
+- **Checkpoint anterior:** C1.803 — contratos USER HMAC y secreto de sesión en CI; AUD-NG-084 seguía en ejecución.
+- **HEAD inicial de esta iteración:** `234b6890ec27f4a532c9a9260b02fe9e27627872`.
+- **Tarea:** AUD-NG-084 — gestión segura de secretos por servicio, rotación, revocación y anti-replay.
+- **Hallazgo de código:** ACADEMIC validaba el replay cache antes de verificar HMAC y no protegía check-and-reserve con LockService. Una firma inválida podía consumir requestId; solicitudes concurrentes podían pasar la consulta de replay antes de que cualquiera escribiera el cache.
+- **Corrección de aplicación:** en `backend/academic-service/Code.gs`, la validación de firma ahora ocurre antes de tocar el cache; el check-and-reserve se serializa mediante ScriptLock, falla cerrado con `INTERSERVICE_REPLAY_CHECK_BUSY` si el lock no se obtiene y libera en finally.
+- **Prueba nueva:** `tests/security/academic-interservice-replay-guard.test.js` cubre: firma inválida sin consumir requestId; solicitud legítima posterior con el mismo ID; rechazo de replay; lock contention fail-closed sin consumir ID; y reintento correcto después de liberar el bloqueo.
+- **Workflow:** `.github/workflows/accounting-import-preflight-contract.yml` incorpora el test tanto en `push.paths` como en los pasos Node.
+- **GitHub Actions:** Accounting Import Preflight run **44094505790**, URL `https://github.com/i-miss-cocaine/IMA/actions/runs/44094505790`, commit probado `0cefb7d23b10dfc01f9df40283f4d926bcdfee85`, Node.js 24.22.2: **43/43 pasos completados con SUCCESS; 0 fallidos**. El paso nuevo `Run ACADEMIC interservice HMAC verification and replay guard contract` terminó SUCCESS. Este es Node CLI real en runner, no una ejecución local.
+- **Otra acción CI observada:** Department Scope run **44094414143** falló en `tests/regression/phase22-document-management-suite-contract.test.js` por `missing function configureSchoolDocumentTemplate` ausente en ACCOUNTING. El mismo fallo exacto se reproduce en run previo **44087396968** sobre commit `392738ad`; se clasifica como incidencia preexistente independiente. No se alteró ese módulo ni se debilitó esa prueba.
+- **Pruebas locales:** Node CLI local NOT RUN. El checkout local no está disponible por la limitación DNS ya registrada en C1.803; se usó ejecución alternativa real en Actions, conservando la totalidad de los contratos.
+- **Compatibilidad pendiente:** ACCOUNTING firma y ACADEMIC verifica flujos de migración con `IMA_MIGRATION_HMAC_SECRET` explícito. No se acreditó catálogo/versionado/fingerprint ni revocación coordinada en ambos extremos; USER sí consulta su catálogo y versiones por servicio. La configuración real de Script Properties, Spreadsheet IDs y deployments no es observable mediante el repositorio. No afirmar que la rotación/revocación productiva está completada.
+- **Separación de secretos:** `AUTH_TOKEN_SECRET` para tokens de sesión permanece separado del secreto HMAC de transporte. No se modificó el flujo de login, roles ni continuidad de sesión C1.801.
+- **Archivos modificados en esta iteración:** `backend/academic-service/Code.gs`; `tests/security/academic-interservice-replay-guard.test.js`; `.github/workflows/accounting-import-preflight-contract.yml`; `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`; `changueslogs.txt`; `Auditoría/INDICE_CHECKPOINTS.md`; este checkpoint.
+- **Commits relevantes:** `e68f23a1cb762e810db79b27aef4c77078ad7e65` (fix ACADEMIC); `5ad21f010145cca27fd9e67ab744cba97a53f437` (test); `0cefb7d23b10dfc01f9df40283f4d926bcdfee85` (workflow); `fa4e9610d2c966433406a260820833af1e93c700` (Plan Maestro); `a1128d61ab1eaaec2a89ff8712334a2e9c0cbbaf` (changelog); `66d43692f926fe971c93b1280517b789fddd1447` (índice).
+- **Estado:** AUD-NG-084 permanece **En ejecución**. El replay guard ACADEMIC quedó corregido y probado; aún falta diseñar/probar la gestión versionada y revocación coordinada ACCOUNTING↔ACADEMIC, revisar consumidores completos y obtener evidencia autorizada de Script Properties/deployments. No se declara cerrada la tarea.
+- **HEAD de código/CI:** `0cefb7d23b10dfc01f9df40283f4d926bcdfee85`. El HEAD documental final se verificará después de este commit.
+- **Rama base:** `NG_beta_0.0.0.1` HEAD `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación verificada antes del registro: 3881 ahead, 0 behind. Sin escrituras en rama base.
+- **Siguiente acción:** completar inventario de consumidores de `IMA_MIGRATION_HMAC_SECRET`, definir rotación coordinada y revocación efectiva en ambos extremos sin introducir llamadas redundantes por operación; implementar contratos de emisor/receptor, ejecutar Actions y documentar qué configuraciones requieren despliegue autorizado.
+=============================================================================
+
+
+=============================================================================
+### C1.805 — IMA-EXEC-20261117-AUD-NG-084-OVERLAP-ROTATION-01
+- **Checkpoint anterior:** C1.804 — ACADEMIC replay guard corregido; AUD-NG-084 seguía En ejecución.
+- **HEAD inicial de esta continuación:** `69ba24f6b476318fceafbac2edf8a80e81fd97f6`.
+- **HEAD de código/CI al cerrar la iteración:** `3a3a07146cf92ee738814f1a872de0e54ca58a0c`.
+- **Tarea:** AUD-NG-084 — gestión segura de secretos por servicio, rotación y revocación.
+- **Cambios de aplicación:**
+  - USER y ACADEMIC incorporan resolución de múltiples claves de verificación por emisor: una versión ACTIVE y versiones anteriores VERIFY_ONLY. Las claves antiguas se leen desde `IMA_MIGRATION_HMAC_SECRET_<SERVICE>_V_<VERSION>`; la clave activa conserva la propiedad por servicio y su versión. Las filas del catálogo se validan por servicio, tipo, versión, estado, huella y metadatos. REVOKED queda excluida.
+  - USER y ACADEMIC verifican HMAC contra las claves permitidas antes de reservar requestId; se conserva la reserva serializada con ScriptLock. Una firma inválida no consume el identificador; la revocación de la clave anterior no invalida la activa.
+  - Se corrige `IMA_LOCAL_ACADEMIC_` de `SERVICE_ID` a `ACADEMIC`, evitando que el emisor local sea rechazado por identidad de servicio incorrecta.
+  - ACCOUNTING valida el secreto de firma con su catálogo y versión local; se amplía el allowlist de emisores para DEVELOPER.
+  - DEVELOPER deja de usar `customSecret || getAuthTokenSecret()` para sobres interservicio. Adopta credencial tipada, catálogo, huella, versiones ACTIVE/VERIFY_ONLY, revocación selectiva y verificación HMAC antes de reserva anti-replay. `AUTH_TOKEN_SECRET` permanece separado y reservado para tokens de sesión.
+- **Pruebas agregadas/ajustadas:** contratos de USER, ACADEMIC y DEVELOPER prueban rotación solapada, aceptación de clave nueva y anterior durante la ventana, revocación individual, rechazo de firma inválida sin consumir requestId y replay. Se adaptaron fixtures de Accounting para el nuevo resolvedor; se corrigieron expectativas estáticas que aún describían el contrato previo.
+- **GitHub Actions:** Accounting Import Preflight run **44099188130** — SUCCESS, Node.js **24.22.2**, **44/44 pasos** SUCCESS, 0 fallidos/omitidos; incluye USER HMAC registry, ACADEMIC replay/overlap y DEVELOPER credential lifecycle. Identity Mapping run **44098993823** SUCCESS. Developer Service Registry run **44099042479** SUCCESS. Hierarchical Configuration run **44099042322** SUCCESS. Task-Service security run **44098983220** SUCCESS.
+- **Fallo independiente conservado:** Department Scope run **44099125486** falla en `tests/regression/phase22-document-management-suite-contract.test.js` porque `configureSchoolDocumentTemplate` no existe en ACCOUNTING de la rama. Es el mismo bloqueo histórico registrado en C1.792 y no corresponde a AUD-NG-084; no se modificó el módulo ni se debilitó la prueba.
+- **CLI local:** NOT RUN; no se dispuso de checkout local en esta sesión. Como alternativa verificable, los comandos Node se ejecutaron en GitHub Actions con Node 24.22.2. No se declara ejecución local inexistente.
+- **Archivos de aplicación/prueba/workflow:** `backend/user-service/Code.gs`; `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `backend/developer-service/Code.gs`; `tests/security/migration-hmac-credential-registry.test.js`; `tests/security/academic-interservice-replay-guard.test.js`; `tests/security/developer-interservice-credential-registry.test.js` (nuevo); `tests/security/identity-mapping-contract.test.js`; `tests/security/accounting-migration-writer.test.js`; `tests/security/accounting-identity-map-snapshot.test.js`; `tests/security/accounting-remote-target-snapshot.test.js`; `tests/security/accounting-departmental-import-scope.test.js`; `tests/security/task-service-security-contract.test.js`; `tests/security/academic-absence-justification-canonical.test.js`; `.github/workflows/accounting-import-preflight-contract.yml`; `pendientes/Dirección/Pendientes.md`; `changueslogs.txt`; este checkpoint; `Auditoría/INDICE_CHECKPOINTS.md`.
+- **Commits clave de implementación/pruebas:** `221b84ff6816d5044e7f94c0d1f78403953a78fe`, `1ddf1316d507f935363622c2e7da415171239583`, `54b2d2f8f74cc8dce13ee982103dd5003bfe367e`, `84a6d55e0d400f594bd01f8c11398b7a0ccacdc1`, `4dd68e518ed17dc0a0d8ffbc4e0c73708450cf3c`, `8ac9e1f3a600e3864ab5f3ab2104728f24f1d8e5`, `85d5090237bec82b8af36d8b284c824abcd01521`, `cf0bf700b724f43f8d47315d443b5642b597abaf`, `1fa94913ab123ad6eda3def523ee529a87c0f20a`, `568b7beb02f406f22d408d2f200ad777e5e26fec`, `1722f370225d0836420ce544a5aae74e3e776347`, `2bae90d749ba89c5a80556ee42c5de2aecbf73d5`, `3a3a07146cf92ee738814f1a872de0e54ca58a0c`.
+- **Pendientes reales para cierre:** no se ha añadido aún un flujo administrativo/operativo de provisioning y rotación coordinada entre proyectos desplegados; tampoco existe evidencia de auditoría de uso de credenciales en un ledger separado. Las pruebas usan secretos sintéticos y fixtures; no demuestran que las Script Properties reales estén provisionadas ni que los deployments estén sincronizados. No se afirma cierre productivo.
+- **Estado:** AUD-NG-084 permanece **En ejecución**. El código local cubre fail-closed, catálogo/huella, versiones de verificación solapadas y revocación selectiva; faltan automatización/procedimiento de provisioning, auditoría de uso y evidencia autorizada de configuración desplegada.
+- **Rama base:** `NG_beta_0.0.0.1` HEAD `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación verificada en HEAD de código: **3926 ahead, 0 behind**. Sin escrituras en rama base.
+- **Siguiente acción:** diseñar e implementar el flujo de provisioning/rotación coordinada y auditoría de uso sin exponer secretos al frontend ni registrar valores; añadir pruebas locales de concurrencia y revocación; después verificar Script Properties/deployments mediante acceso autorizado.
+=============================================================================
+
+
+
+=============================================================================
+### C1.806 — IMA-EXEC-20261117-AUD-NG-084-USAGE-AUDIT-READ-01
+- **Checkpoint anterior:** C1.805 — rotación solapada USER/ACADEMIC/DEVELOPER y credencial tipada ACCOUNTING.
+- **HEAD inicial de esta continuación:** 081a28793279e72a9893865e75247746ebfa68bf.
+- **HEAD de código/CI:** 67b6962fc5261ce35855f4cbfda51cb2c527a4a4.
+- **Tarea:** AUD-NG-084 — gestión segura de secretos por servicio, rotación y revocación.
+- **Alcance implementado en esta iteración:**
+  - Se incorporó el registro de utilización de credenciales HMAC en USER, ACADEMIC, ACCOUNTING y DEVELOPER: eventos INBOUND/OUTBOUND con ID de evento idempotente, dirección, emisor/receptor, acción, requestId, correlationId, tipo, CredentialID y versión; no se almacena el secreto ni su huella en la bitácora.
+  - DEVELOPER dejó de devolver una lista vacía en `auditInterServiceCalls`: ahora consulta `AuditoriaUsoCredenciales`, valida el esquema, admite filtros por correlación/solicitud/servicios/acción/dirección, limita resultados a 200 y devuelve metadatos de credencial sin material secreto.
+  - Se corrigieron fixtures que no incorporaban el nuevo colaborador de auditoría en USER, ACADEMIC, ACCOUNTING y DEVELOPER. Se añadieron aserciones de auditoría saliente/entrante y consulta autenticada en DEVELOPER.
+- **Code review:** cambio de lectura de bitácora es de solo lectura; no crea hojas, no modifica registros, no devuelve secretos/huellas y falla con error explícito ante esquema inválido o consulta fuera de límites. Se conserva el filtro de autorización del dispatcher DEVELOPER para Administrador/Desarrollador.
+- **GitHub Actions / Node.js 24.22.2:**
+  - Accounting Import Preflight run **44106514914**, commit probado `77efd22bd3e5798cc0d00f3f3a0029bf28d60b07`: **46/46 pasos SUCCESS**, incluye sintaxis de ACCOUNTING/USER/ACADEMIC/DEVELOPER, registro/auditoría de uso, HMAC registry, replay guard, rotación/revocación y contratos de importación.
+  - Developer Service Registry run **44106961914**, commit probado `67b6962fc5261ce35855f4cbfda51cb2c527a4a4`: **9/9 pasos SUCCESS**, incluye `node --check` del servicio DEVELOPER y del contrato y ejecución de pruebas de auditoría/consulta.
+  - Identity Mapping run **44105821133**, commit probado `079991c818096f2082af1b213767b316a7da1383`: SUCCESS.
+  - Hierarchical Configuration run **44106846434**, commit probado `ac7a6087977d900813c32db317759e704fbbdef9`: SUCCESS.
+  - Department Scope run **44106846490** conserva un fallo independiente en Phase 22 por ausencia de `configureSchoolDocumentTemplate` en ACCOUNTING; no fue introducido ni modificado por esta tarea y no se alteró código ajeno para silenciarlo.
+- **CLI local:** NOT RUN; no hubo checkout local disponible en esta sesión. No se declara una ejecución local inexistente. Los comandos Node se ejecutaron en runners GitHub Actions con Node 24.22.2.
+- **Archivos de código/prueba:** `backend/developer-service/Code.gs`; contratos de `tests/security/` para USER, ACADEMIC, ACCOUNTING, DEVELOPER y `interservice-credential-usage-audit.test.js`. Se conservaron los workflows existentes; no se tocaron archivos de aplicación ajenos.
+- **Commits de la continuación:** `50a5800dd26ee053457c69f928c0b41afae69178` (registro de uso); `081a28793279e72a9893865e75247746ebfa68bf` (alineación de harnesses); correcciones incrementales de fixtures y lectura de auditoría hasta `67b6962fc5261ce35855f4cbfda51cb2c527a4a4`.
+- **Estado:** AUD-NG-084 permanece **En ejecución**. La auditoría de uso ya se registra y consulta en DEVELOPER. Falta implementar el flujo de provisioning coordinado para alta/rotación/revocación de propiedades y catálogo en los proyectos de servicio. No se afirma que las Script Properties reales estén provisionadas ni que los deployments estén sincronizados.
+- **Pruebas beta:** BETA-FUNC-121 agregado a `beta_test_Parte_0002.txt`; pendiente de entorno beta desplegado y acceso administrativo seguro. Esta validación remota no bloquea el trabajo local.
+- **Rama base:** `NG_beta_0.0.0.1` HEAD `44d9891132332e692dbe2ba8602b41f50a508a59`; comparación en HEAD de código: **3941 ahead, 0 behind**. Sin escrituras en rama base.
+- **Siguiente acción:** diseñar e implementar provisioning coordinado fail-closed entre los cuatro servicios, con almacenamiento versionado, rollback/idempotencia y pruebas locales de concurrencia; después verificar Script Properties/deployments mediante acceso autorizado.
+=============================================================================
+
+=============================================================================
+### C1.807 — IMA-EXEC-20261117-AUD-NG-084-PROVISIONING-MATRIX-01
+- **Checkpoint anterior:** C1.806 — auditoría de uso HMAC consultable.
+- **HEAD inicial de esta tarea:** c680b4aa31f2c05d0ac0c6b0491f0e417632ab08 (checkpoint C1.806).
+- **HEAD de código y pruebas:** 927384b088af1a60fb1e155000a1a1ed2ef614fc.
+- **Tarea:** AUD-NG-084 — gestión segura de secretos por servicio, rotación y revocación.
+- **Implementación:** provisioning privado/editor-only en USER, ACADEMIC, ACCOUNTING y DEVELOPER; registro por servicio/versión; estados PENDING, ACTIVE, VERIFY_ONLY y REVOKED; alta idempotente; rotación solapada; rollback de Script Properties y catálogo ante fallo de activación; revocación fail-closed; actor y lock; secretos nunca devueltos ni registrados.
+- **Revisión de código:** entrypoints con sufijo privado y no expuestos como acciones del dispatcher; validación de servicio/versión/secreto/esquema/IDs/estados; solo una versión ACTIVE; verificación de huella; restauración de estado anterior en fallo; revocación retira la aceptación del catálogo antes de completar limpieza. Se conserva AUTH_TOKEN_SECRET separado del secreto HMAC interservicio.
+- **Cobertura añadida:** tests/security/migration-hmac-credential-provisioning.test.js prueba los cuatro servicios, matriz receptor/emisor 4×4, ACTIVE/VERIFY_ONLY, idempotencia, conflictos de versión, rollback, revocación, inicialización de catálogo, validación de entradas y lock/reentrada. El workflow accounting-import-preflight-contract.yml ya incluye el contrato.
+- **GitHub Actions:** Accounting Import Preflight run 44116081329, HEAD 927384b088af1a60fb1e155000a1a1ed2ef614fc, Node.js 24, job SUCCESS; los cuatro node --check de servicios y el contrato de provisioning PASS. El log confirma ejecución real del comando Node y salida PASS del contrato.
+- **Verificación previa de la corrección de entrypoints:** run 44113963585 sobre 072a848ab340579221c8103ce8f0a649b1dc1a4d, SUCCESS. Department Scope run 44113963592 conserva el fallo histórico Phase22 por configureSchoolDocumentTemplate ausente en ACCOUNTING; no es introducido por AUD-NG-084 y no se alteró ese módulo.
+- **CLI local:** NOT RUN; el entorno de trabajo no pudo resolver github.com para obtener checkout. No se afirma ejecución local inexistente. Node CLI y sintaxis sí se ejecutaron en runner GitHub Actions.
+- **Archivos de implementación/prueba:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs; tests/security/migration-hmac-credential-provisioning.test.js; .github/workflows/accounting-import-preflight-contract.yml. El registro BETA-FUNC-121 ya existe en beta_test_Parte_0002.txt.
+- **Commits de implementación/pruebas:** 718650c97d562ce7d90b803d21097c6f6237418c; 03f27f0309917063d24f87df18867545acd647b3; 77ca5de90e5d65d375b79e001ab32482f0631d47; 072a848ab340579221c8103ce8f0a649b1dc1a4d; 927384b088af1a60fb1e155000a1a1ed2ef614fc.
+- **Estado:** AUD-NG-084 completada en código y verificaciones locales ejecutables en CI. BETA-FUNC-121 permanece Pendiente beta para comprobar Script Properties y despliegues reales mediante acceso administrativo autorizado; no bloquea el cierre de implementación.
+- **Rama base:** NG_beta_0.0.0.1 HEAD 44d9891132332e692dbe2ba8602b41f50a508a59; comparación al HEAD de código: 3949 ahead / 0 behind. Sin escrituras en rama base.
+- **Siguiente tarea elegible:** AUD-NG-086 — autorización interservicio por emisor, receptor, acción y versión del protocolo; revisar el contrato vigente y sus consumidores antes de modificar.
+=============================================================================
+
+=============================================================================
+### C1.808 — IMA-EXEC-20261117-ACADEMIC-FLOW-SIMPLIFICATION-01
+- **Checkpoint anterior:** C1.807 — AUD-NG-084 completada en código/CI.
+- **HEAD inicial:** 9b7f7747319599b8bb2f502530919506f5b70588.
+- **Cambio de producto:** se incorpora mandato obligatorio para simplificar flujos académicos y minimizar llamadas Apps Script/API.
+- **Requisito de arquitectura:** una sola comprobación de sesión y rol en el punto de entrada de la acción; reutilizar contexto verificado durante la ejecución. No llamadas de adquisición/liberación de autorización, no segunda llamada para revalidar sesión/rol, ni llamadas encadenadas entre servicios cuyo único fin sea autorizar de nuevo la misma operación.
+- **Adjuntos:** asociar archivos, imágenes y videos al registro con datos del formulario, fecha y usuario responsable. No multiplicar validaciones/autorizaciones por adjunto. Mantener únicamente operaciones de transferencia/almacenamiento y validaciones mínimas necesarias.
+- **Controles conservados:** contraseña con hash vigente; RBAC por acción una vez; cierre remoto y limpieza de caché; invalidación de sesión al eliminar cuenta; bloqueo temporal tras varios intentos fallidos. Se eliminan tutoriales del flujo.
+- **AUD-NG-086:** descartada para flujos académicos ordinarios. No implementar autorización interservicio por operación.
+- **AUD-NG-084:** trabajo histórico ya integrado; no extender HMAC/provisioning a CRUD académico ni adjuntos. Cualquier retirada de código existente requiere identificar consumidores y pruebas focalizadas.
+- **Normativa:** Normas_Desarollo.md v1.4 sigue siendo la única norma operativa. Este mandato actualiza el alcance funcional y los criterios de aceptación del Plan Maestro, no la normativa.
+- **Archivos modificados:** Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0018.txt; changueslogs.txt.
+- **Verificaciones:** comprobación de HEAD y rama antes de editar; comprobación de coincidencia exacta de la fila AUD-NG-086; revisión de coherencia del mandato con Normas_Desarollo.md. No se modificó código de ejecución en esta actualización documental.
+- **Siguiente tarea elegible:** inventario y medición focalizada de los flujos académicos de registro, notas y adjuntos; localizar sobrecarga de autorización/validación y reducirla con pruebas locales.
+- **Rama base:** sin modificaciones.
+=============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.809 — IMA-EXEC-20261117-ACADEMIC-REOPEN-IMPACTED-TASKS-01
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.808
+HEAD inicial verificado: a7ba8d85be118c9ccb29839aadcf6eebee716aad
+Tarea: reevaluación de tareas previamente completadas que resultan afectadas por el mandato académico C1.808.
+
+Motivo y explicación del checkpoint:
+- El plan actualizado exige una sola comprobación de sesión/rol en el punto de entrada de cada acción académica y reutilización del contexto verificado. Prohíbe revalidar la misma acción mediante llamadas Apps Script/servicio adicionales y evita validaciones/autorizaciones criptográficas por cada archivo o adjunto.
+- Por ello se suspenden los cierres históricos de las subcapacidades que añadieron RBAC/identidad/scope repetidos dentro de la misma operación, pruebas de revocación de rol durante una operación ya autorizada, ABAC extra para materiales/justificaciones y controles HMAC/hash por adjunto. No significa que todo el código previo esté defectuoso: cada subalcance se revisará y solo se retirará la parte redundante.
+- Se conservan como históricamente válidas las pruebas de lock que protegen concurrencia, escritura única, versionado y rollback, salvo que se demuestre que una prueba exige también una segunda autorización.
+
+Subcapacidades marcadas Revisión requerida en el Plan Maestro:
+- TASK-153/AUD-NG-386: C1.458–C1.461, C1.471; C1.481, C1.482, C1.484, C1.488, C1.490–C1.492; C1.498–C1.505, C1.509–C1.510; C1.514, C1.520, C1.522–C1.528, C1.533–C1.547, C1.551, C1.555, C1.557, C1.560, C1.562, C1.564, C1.566, C1.568, C1.570, C1.571 y C1.579.
+- F34-TASK03/C1.752; F34-TASK04/C1.753; subflujo de evidencia TASK-105/C1.754; TASK-106/C1.755.
+- TASK-134/C1.779; TASK-142/C1.780 y C1.782; AUD-NG-158/C1.781.
+
+Backlog actualizado:
+- pendientes/Docente/Pendientes.md: F34-TASK03 y AUD-NG-158 pasan de [x] a [ ] y Estado «Revisión requerida por C1.809». Se conserva la evidencia y explicación histórica C1.781/C1.752, con nota de que el cierre queda suspendido por el nuevo mandato.
+- TASK-134 y TASK-142 permanecen abiertos en sus backlogs; solo se suspende la aceptación de sus subcapacidades históricas afectadas.
+
+No se reabren automáticamente AUD-NG-084/C1.804 (credenciales y anti-replay de sobres de migración), TASK-060/C1.796 (lectura de configuración funcional) ni pruebas de concurrencia que no reautoricen la operación. AUD-NG-086 sigue descartada para CRUD académico ordinario.
+
+Archivos modificados:
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0018.txt
+- pendientes/Docente/Pendientes.md
+- changueslogs.txt
+
+Verificaciones documentales: IDs y cierres históricos contrastados con Plan Maestro, checkpoints C1.752–C1.808 y backlogs vigentes. Normas_Desarollo.md NDASC 1.4 consultada; no modificada. No hubo cambio de código en C1.809.
+
+Siguiente tarea: inventario técnico focalizado de callsites de validación en ACADEMIC/EXAM/TASK, llamadas de red y controles por adjunto; medir el baseline y luego refactorizar sin tocar los locks de integridad.
+Estado: revisión documental publicada; implementación runtime pendiente de la siguiente iteración.
+===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.810 — IMA-EXEC-20261117-ACADEMIC-SINGLE-AUTH-IMPLEMENTATION-01
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.809
+HEAD inicial verificado: 7dc642061d411de21686f2528766b5f46ddad596
+Tarea: primera implementación runtime del mandato de autorización única C1.808 sobre flujos TASK y ACADEMIC.
+
+Explicación del checkpoint:
+- C1.809 reabrió capacidades históricas que añadían revalidación de sesión/rol/ámbito dentro de una misma operación. C1.810 comienza a corregirlas sin borrar la lógica funcional ni los locks que protegen escrituras.
+- En TASK, doPost es el único punto de validación RBAC de la acción. La mutación de calificación ya no vuelve a llamar validateRolePermission bajo el lock; reutiliza el actor validado y conserva los controles de pertenencia de entrega/tarea. updateTask reutiliza initialIdentity después de adquirir el lock.
+- En ACADEMIC, uploadStudentDocument valida actor y ámbito una sola vez antes del lock; el bloque protegido reutiliza el mismo Spreadsheet y el contexto previamente verificado. Se retiran las comprobaciones duplicadas de identidad/ámbito bajo lock.
+- Los contratos fueron adaptados para demostrar autorización central una vez, reutilización del actor y ausencia de una segunda comprobación durante la misma ejecución. No se eliminaron los locks de concurrencia, el historial de rectificación ni el rollback.
+
+Archivos runtime/pruebas modificados en los commits de esta iteración:
+- backend/task-service/Code.gs
+- tests/security/task-service-resource-ownership.test.js
+- tests/security/task-service-grade-submission-history.test.js
+- backend/academic-service/Code.gs
+- tests/security/academic-student-document-private-storage.test.js
+
+Commits de implementación y contratos:
+- 68eebd8bfe42390e95398fccc2e4437dca5e54b0 — TASK: no reautorizar calificación bajo lock.
+- f59a625c345c06c71375db5368a566ce253c41d7 — TASK: reutilizar actor en mutaciones protegidas.
+- 32ca74bea7038b14c3d99b48871cf92f5dd9de32 — ACADEMIC: reutilizar autorización de carga documental.
+- 7dc642061d411de21686f2528766b5f46ddad596 — contrato TASK: simular validación central única y reutilización de actor.
+- Los commits intermedios e66386d0 y ecc821a6 corrigieron fixtures/assertions detectados por Actions; no se ocultaron fallos.
+
+Verificación CI:
+- Task-Service security local contracts, GitHub Actions run 44144320345, Node.js runner: SUCCESS.
+- Academic-Service single authorization context, GitHub Actions run 44144146101, Node.js runner: SUCCESS.
+- Department Scope run 44144146334: FAILURE ajeno, Phase22 solicita configureSchoolDocumentTemplate ausente en ACCOUNTING.
+- Accounting Import Preflight run 44144146146: FAILURE ajeno, expectativa regex con espacios en auditor-readonly-role.test.js no coincide con declaración compacta existente.
+- Node CLI local: NOT RUN. No se afirma ejecución local.
+- Apps Script/Sheets/Drive reales y despliegue beta: NOT RUN.
+
+Estado:
+- C1.810 es un incremento parcial aprobado por sus dos contratos focalizados; no cierra TASK-153, TASK-134, TASK-142 ni AUD-NG-158.
+- Se mantienen Revisión requerida las capacidades reabiertas por C1.809. AUD-NG-084 sigue limitado a migraciones interservicio; AUD-NG-086 no se aplica al CRUD académico.
+- La rama base no se modificó.
+
+Siguiente tarea:
+- Auditar y simplificar PREVIEW/DOWNLOAD académico: localizar todos los consumidores, retirar el doble viaje de token/stream y las comprobaciones por adjunto que no sean necesarias para guardar/recuperar, conservando RBAC de la acción y acceso funcional al expediente cuando corresponda.
+===============================================================================
+
+
+
+CHECKPOINT C1.811 — IMA-EXEC-20261117-ACADEMIC-DOCUMENT-READ-SINGLE-CHECK-01
+
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.810
+HEAD inicial: c6076cb5774951bd485ea8874356fa8343413583
+HEAD final de código/contratos: db2dcbbcfaab05770b587853fdec0e0f727c30db.
+
+**Motivo y explicación:** C1.808 exige que una acción académica se autorice en su punto de entrada y no encadene servicios para volver a pedir permisos. También prohíbe multiplicar comprobaciones por cada archivo de una misma consulta. La antigua integración de referencias interdepartamentales T153-S05/C1.688–C1.692 dependía de una llamada ACADEMIC→USER con HMAC para solicitar un permiso adicional. Esa ruta contradice el mandato actualizado y sus cierres históricos se suspenden.
+
+- **T153-S05 / C1.688–C1.692 reabierta:** sus hitos de consumidor ACADEMIC, consumidor ACCOUNTING y consola administrativa pasan de cierre histórico a **Revisión requerida**. Se mantiene la evidencia histórica, pero no se acepta la completitud anterior. El HEAD actual no contiene un consumidor de autorización de referencias en ACCOUNTING; la consola y los endpoints USER de concesiones permanecen en inventario para decidir su retirada o alcance separado. No se añadirán a CRUD académico.
+- **ACADEMIC / getStudentDocuments:** se sustituyó el bucle de assertStudentDocumentScopeAccess_ por una sola llamada a assertStudentRequestScopeAccess_ para el expediente/solicitud de la consulta. Los documentos se filtran localmente por ese destino; la cantidad de adjuntos no multiplica comprobaciones de ámbito. Se preserva la comprobación funcional del vínculo expediente/solicitud cuando se consulta por ambos identificadores.
+- **Autorización entre servicios:** se eliminó authorizeDepartmentReferenceReadViaUser_ y su fallback HMAC/UrlFetchApp.fetch de ACADEMIC. Si la comprobación local de ámbito deniega la consulta, se devuelve denegación sin solicitar concesión a USER. La ruta ordinaria ya no consume IMA_DEPARTMENT_REFERENCE_HMAC_SECRET ni crea un segundo viaje de autorización.
+- **PREVIEW/DOWNLOAD:** se confirmó que js/secretary.js consume el endpoint directo getStudentDocumentFile; el contrato comprueba que no se invoquen createStudentDocumentAccessToken ni getSecureDocumentStream. La autorización por rol sigue en el dispatcher y la consulta directa conserva el acceso funcional al expediente/documento. TASK-142 continúa en Revisión requerida hasta completar la auditoría de todas las superficies y controles de carga.
+- **Pruebas añadidas/actualizadas:** tests/security/departmental-resource-access.test.js ahora usa dos documentos del mismo expediente y afirma una sola comprobación de ámbito por consulta; tests/security/academic-department-reference-consumer.test.js afirma ausencia de llamada interservicio, denegación local y un único control por expediente/solicitud. Se conservan pruebas de no enumeración y aislamiento.
+- **GitHub Actions:** Department Reference Consumers Local Contract run 44148585899, Node.js 24: **SUCCESS**; incluye contratos ACADEMIC/ACCOUNTING, regresión de acceso departamental y sintaxis. Accounting Import Preflight run 44148585966: **SUCCESS**. Department Scope run 44148585716: **FAILURE** únicamente en el paso histórico Phase 22 (configureSchoolDocumentTemplate no existe en ACCOUNTING); los pasos ejecutados antes del fallo, incluido academic departmental resource access, academic single authorization context, almacenamiento privado y contratos de integridad, pasaron. No se atribuye ese fallo a C1.811.
+- **Verificación adicional:** Academic-Service single authorization context run 44147882353: **SUCCESS**; Task-Service security local contracts run 44147882405: **SUCCESS**. Los runners ejecutaron Node.js 24. CLI local NOT RUN; Apps Script/Sheets/Drive reales y despliegue beta NOT RUN.
+- **Archivos de código/prueba:** backend/academic-service/Code.gs; tests/security/departmental-resource-access.test.js; tests/security/academic-department-reference-consumer.test.js. No se modificó ACCOUNTING ni USER en esta iteración.
+- **Commits de código/contratos:** b38869c0d3469b73619f6fd5b32b20197b298de0; 40b5d4f6fba8016eb63258793080a0fc527343a2; 0bb3ea2389b5640f16ecf45b1b077d950ac5ac7e; e5fa4a25570300728bdfefe4ace8e52fc124a645; e298e0c972d4fbb2fe6e6f9ebdb3b1eb1630f787; 9e45acbb471c2795ef441f5c7779adf37cccebaa; db2dcbbcfaab05770b587853fdec0e0f727c30db.
+- **Estado:** C1.811 es un incremento parcial de TASK-142/mandato C1.808. No cierra TASK-142 ni las tareas reabiertas por C1.809. T153-S05/C1.688–C1.692 queda Revisión requerida. AUD-NG-086 sigue descartada para CRUD académico; AUD-NG-084 conserva su alcance histórico de migraciones.
+- **Rama base:** sin escrituras ni cambios.
+
+**Siguiente tarea elegible (C1.812):** inventariar uploadStudentDocument y las cargas de materiales/archivos/imágenes/videos. Reducir SHA-256, inspección binaria, deduplicación y verificaciones repetidas por adjunto cuando no sean necesarias para guardar/recuperar; conservar solo validaciones mínimas de procesamiento/almacenamiento, rol en el punto de entrada y captura de fecha/usuario/registro. Después revisar notas y materiales docentes con el mismo criterio.
+===============================================================================
+
+===============================================================================
+CHECKPOINT C1.812 — IMA-EXEC-20261117-ACADEMIC-UPLOAD-SIMPLIFICATION-01
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.811
+HEAD del checkpoint anterior: db2dcbbcfaab05770b587853fdec0e0f727c30db
+HEAD recuperado al iniciar la sesión: c992e9c99886820c705027390c785db5e23ecca8
+HEAD concurrente observado y preservado: 15c4a91f60a4c5b803ed711602e4c6da678e6726
+HEAD final de implementación/contratos: a4c05140078902ebcf57d8665e4c1718b24f229e
+
+Motivo y explicación del checkpoint:
+- C1.811 dejó como siguiente incremento la simplificación de uploadStudentDocument y los adjuntos académicos. Al recuperar la rama ya existían commits posteriores que habían reducido la carga documental y eliminado la verificación SHA-256 por documento; se revisaron y conservaron, sin repetir ni revertir su trabajo.
+- La carga ahora decodifica el contenido, aplica límite de 50 MiB, determina MIME para documentos/imágenes/videos (incluidos MP4, WebM, MOV, AVI, MKV y 3GP), guarda el archivo en carpeta privada y asocia expediente/solicitud, tipo, fecha, versión y actor verificado. Las actualizaciones de versión conservan ScriptLock, historial y rollback compensatorio.
+- Se retiraron el cálculo SHA-256 por archivo y la deduplicación binaria del flujo ordinario. Los metadatos hash de nuevas versiones quedan vacíos; los valores históricos existentes se conservan al archivarse. La lectura/restauración valida existencia y privacidad del archivo, sin exigir hash para la operación ordinaria.
+- Se eliminó verifyDocumentIntegritySha256 del dispatcher, la lista RBAC y la implementación. Se mantuvo getPrivateStudentDocumentFile_ para comprobar disponibilidad y privacidad del archivo.
+- Se añadió una validación mínima de nombre: rechaza rutas/caracteres de control y extensiones ejecutables (incluida doble extensión) antes de escribir en Drive. No se reintrodujo la inspección binaria avanzada ni el hash por adjunto.
+- No se tocó todavía createTask/updateTask/createStudyMaterial/deleteStudyMaterial ni los flujos de notas/materiales docentes; permanecen para el siguiente incremento. TASK-142 y las subcapacidades reabiertas por C1.809 no se marcan completadas.
+
+Archivos de implementación/prueba modificados desde C1.811:
+- backend/academic-service/Code.gs
+- tests/security/academic-student-document-private-storage.test.js
+- tests/security/auditor-readonly-role.test.js
+- tests/security/departmental-resource-access.test.js (cambio concurrente preexistente, preservado íntegramente)
+
+Commits relevantes desde C1.811:
+- 318023c710088d114badeebb33208ce2f2182bcb — simplificación de carga y soporte de videos.
+- 91d4d54459bbb8db65f39fc47bb7eb777dc28157 — corrección MIME 3GP.
+- 9626c09cf76d13791fb031a0bfa198c2201136a5 — consolidación de definiciones duplicadas.
+- dd6b8c3291d3acdbeac6ddd4164df714ce218261 — alineación del contrato de almacenamiento/versiones.
+- c992e9c99886820c705027390c785db5e23ecca8 — retirada del endpoint SHA-256 por documento.
+- 15c4a91f60a4c5b803ed711602e4c6da678e6726 — ajuste del contrato de restauración sin hash.
+- 29fffc7fb082e2f0ba2ff34d8951b1abd1809718 — validación mínima de nombre/extensiones y prueba negativa previa a escritura.
+- e3cb74266af99acc4c5340d08ae0fa99a87ab3fd — preservación del cambio concurrente en contrato de acceso departamental.
+- a4c05140078902ebcf57d8665e4c1718b24f229e — contrato Auditor alineado con la retirada del endpoint SHA-256.
+
+Verificaciones ejecutadas:
+- Academic-Service single authorization context, GitHub Actions run 44152560639: SUCCESS. Node.js 22.23.4; node --check de Code.gs y los cinco contratos Node ejecutados, incluido academic-student-document-private-storage.test.js.
+- Accounting Import Preflight, run 44152855886: SUCCESS. Node.js 24.22.2; 46 pasos ejecutados con éxito, incluido auditor-readonly-role, contratos de adjuntos, almacenamiento privado, RBAC y sintaxis.
+- Department Reference Consumers Local Contract, run 44152616978: SUCCESS; contratos ACADEMIC/ACCOUNTING, UI y sintaxis.
+- Department Scope Contract, run 44152616945: FAILURE en Phase 22 document management suite: el contrato intenta extraer configureSchoolDocumentTemplate, función ausente en ACCOUNTING. La prueba académica de almacenamiento privado y el contrato de acceso departamental se ejecutaron y pasaron antes de ese paso. Incidencia transversal preexistente documentada en C1.811; no se atribuye al cambio de carga.
+- Node CLI local: NOT RUN; no se dispuso de checkout local verificable. Node CLI sí se ejecutó en GitHub Actions.
+- Apps Script/Sheets/Drive reales y beta desplegada: NOT RUN; las comprobaciones remotas permanecen Pendiente beta.
+
+Revisión de regresión:
+- Se verificó que el dispatcher conserva la autorización RBAC de getStudentDocumentFile y que Secretary usa la lectura directa, sin token/stream adicional.
+- Contratos verifican versión e historial, restauración sin hash, archivo privado, rollback de archivo ante fallo, lock contention, asociación de expediente/solicitud, límite de tamaño, video MP4 y rechazo de doble extensión ejecutable antes de escritura.
+- El contrato Auditor se actualizó para exigir que verifyDocumentIntegritySha256 ya no sea una acción concedida ni expuesta; Accounting Import Preflight volvió a SUCCESS.
+
+Estado: incremento parcial aprobado para carga documental de expediente; no cierra TASK-142 ni las demás tareas Revisión requerida de C1.809. No se modificó la rama base.
+Siguiente acción elegible: revisar las operaciones docentes createTask/updateTask/createStudyMaterial/deleteStudyMaterial y los flujos de notas/materiales, retirar solo revalidaciones ABAC redundantes según C1.808, preservando RBAC de entrada, actor/fecha/usuario, asignación funcional y controles de integridad necesarios.
+===============================================================================
+
+===============================================================================
+CHECKPOINT C1.813 — IMA-EXEC-20261117-TASK-MATERIAL-UPLOAD-SIMPLIFICATION-01
+===============================================================================
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.812
+HEAD inicial: a4c05140078902ebcf57d8665e4c1718b24f229e
+HEAD final de implementación/contratos: 28e8b744482910ebe49a0b55f2cc962cc8c2702c
+
+Explicación del checkpoint:
+- C1.812 simplificó el archivo documental del expediente; C1.813 extiende el mismo criterio a la carga general y a los materiales docentes de Task-Service. La nota de C1.812 que decía que esos flujos seguían pendientes era correcta en el corte anterior; C1.813 registra su continuación posterior.
+- uploadFile deja de aplicar allowlist cerrada de MIME/extensiones y validación binaria avanzada. Acepta documentos, imágenes, videos y tipos genéricos. Mantiene Base64, límite 50 MiB y saneamiento mínimo del nombre.
+- Se conserva la comprobación funcional de acceso a la tarea (estudiante) o gestión de la tarea (docente), una vez por acción. No se realiza inspección de contenido ni autorización por cada adjunto.
+- Se evita una consulta adicional de perfil solo para crear carpetas: se reutiliza el perfil devuelto por el acceso estudiantil o el grado/sección de la tarea.
+- createStudyMaterial registra los campos, autor y fecha; conserva la asignación activa de aula del docente y la restricción administrativa de material general. No consulta Drive para volver a validar el archivo al guardar el registro.
+- deleteStudyMaterial conserva la titularidad y la eliminación lógica. getStudyMaterials conserva filtros de audiencia, estado, fecha y aula. Estas son reglas funcionales de recurso, no controles binarios por archivo.
+- createTask ya no requiere el permiso dinámico adicional registerResourceOwnership; conserva el ámbito departamental y la escritura de ownership. createTask/updateTask y las notas/calificaciones permanecen en revisión.
+
+Archivos runtime y pruebas:
+- backend/task-service/Code.gs
+- tests/security/task-service-security-contract.test.js
+- tests/security/task-service-resource-ownership.test.js
+- tests/security/task-service-upload-contract.test.js
+- tests/security/task-service-deadline-history.test.js
+
+Commits relevantes:
+- e4ac52c15ecab7c9197c862dac594a0e6c35e970
+- dd2abe52f85d1b60923de924a437aa5fe8d72762
+- f4ad900af11a67a36fb152329d549019f65fc962
+- 8059482c948c8f8da9298174e25c876ae2b919cf
+- 5a9f9b70c9c071e810d22afbfe040811ce53e42f
+- fb4429fd23a092c58fd66c18af1eb2011bf99f24
+- dace282c98ccf4a93a68bd0e121bdf1af2da595e
+- 2ea6b4b86e744039681fada4ba46d1506c427611
+- d55d8d0da336ff1ebf1833e08fa64eeabec1ba7b
+- 1b1648a59aa23a8db1d2dcc04adb2aa0dbe4279d
+- 1223ccdc15a2cfc42621c680eb8418b0a0580c87
+- 28e8b744482910ebe49a0b55f2cc962cc8c2702c
+
+Verificación:
+- Task-Service security local contracts, run 44155426842: SUCCESS.
+- Task-Service backup and restore contract, run 44154540342: SUCCESS.
+- Academic-Service single authorization context, run 44152560639: SUCCESS.
+- Accounting Import Preflight, run 44152855886: SUCCESS.
+- Department Reference Consumers, run 44152616978: SUCCESS.
+- Department Scope, run 44154540443: FAILURE en Phase 22 porque tests/regression/phase22-document-management-suite-contract.test.js busca configureSchoolDocumentTemplate, función ausente en ACCOUNTING. No se atribuye a esta iteración.
+- Node CLI local NOT RUN. Node en GitHub Actions sí se ejecutó.
+- Apps Script/Sheets/Drive reales y despliegue beta NOT RUN.
+
+Estado:
+- C1.813 completa el subalcance de cargas/materiales docentes, no la tarea padre AUD-NG-158 ni TASK-142/TASK-153.
+- Las tareas reabiertas por C1.809 continúan Revisión requerida; no se marcan completadas.
+- La rama base no se modificó.
+
+Siguiente tarea:
+- C1.814: revisar createTask/updateTask y notas/calificaciones. Mantener RBAC de entrada, reutilizar actor/contexto y registrar fecha/usuario. Retirar validaciones o permisos dinámicos redundantes, sin eliminar asignación funcional de aula/tarea ni la integridad básica de escritura.
+===============================================================================
+
+
+
+
+===============================================================================
+CONTINUACIÓN C1.813 — revisión de tareas docentes y justificaciones (2026-11-17)
+===============================================================================
+HEAD revisado: 73ffbd2be605bfb68bceec1f98cd84aeb0029d31
+Rama: NG_beta_0.0.0.1_work
+
+Revisión complementaria:
+- createTask: se comprobó que el actor/ProfesorID deriva de la sesión verificada, la creación exige aula y asignación docente vigentes y el registro ResourceOwnership conserva departamento, institución, lock e idempotencia. Se retiró el permiso dinámico adicional registerResourceOwnership porque el dispatcher ya autorizó createTask/createVirtualClassroom; la escritura del registro interno no constituye una segunda acción pública. Se añadió prueba con dos docentes, dos secciones y campos de identidad falsificados.
+- updateTask: revisión del flujo existente y sus pruebas; identidad reutilizada desde el contexto verificado, lock de escritura, titularidad/asignación del docente y registro append-only de cambios de fecha límite con motivo, actor, rol, timestamp y correlación. Los tests cubren cambios sucesivos, motivo obligatorio, lock ocupado, fallo de historial/rollback y otro docente.
+- createStudyMaterial/deleteStudyMaterial/getStudyMaterials: se conservan asignación activa de aula, rol administrativo para General, autoría del docente, eliminación lógica idempotente y filtro de aulas autorizadas. No se reintrodujo una validación binaria ni una consulta Drive por adjunto.
+- uploadFile: el estudiante solo puede adjuntar a una tarea accesible y el docente solo a una tarea que administra; el tipo de archivo es genérico, con límite de 50 MiB y validación mínima de nombre/extensiones ejecutables. El perfil del estudiante se reutiliza desde la comprobación de acceso; no hay lectura adicional solo para crear carpetas.
+- AUD-NG-158: revisión del alcance docente completada en código/CI. Se preservan controles de relación funcional y ownership; se eliminó el permiso dinámico redundante. No se marca como validación beta.
+- F34-TASK03: revisión C1.813 completada sin retirar las comprobaciones necesarias. La identidad se obtiene del token verificado y se cachea por payload; el resolver mantiene asignación docente, oferta, período, matrícula y sesiones exactas. El reconocimiento vuelve a resolver el ámbito bajo lock porque la revocación antes de escribir es un criterio explícito; la evidencia privada continúa condicionada por la política institucional. No se detectó una segunda validación de sesión ni un control por cada adjunto.
+
+Verificación adicional:
+- Task-Service security local contracts, run 44155426842: SUCCESS; Node 22.23.4; task-service-security-contract, task-service-resource-ownership, grade-submission-history, deadline-history, upload-contract y single-auth-context PASS.
+- Academic-Service single authorization context, run 44155827504: SUCCESS; Node 22.23.4; node --check Code.gs y contratos single-auth, teacher-justification-abac, canonical-absence-justification, interservice-replay, migration-writer, multilevel-file-validation y student-document-private-storage PASS.
+- Los intentos intermedios 44154866754, 44155190462 y 44155239003 fallaron por escapes de salto de línea/fixture en los nuevos harness; se corrigieron. La ejecución final 44155426842 pasó todos los contratos.
+- Department Scope run 44154540443: FAILURE en Phase22 porque el contrato busca configureSchoolDocumentTemplate, ausente en ACCOUNTING. La prueba específica de Task-Service pasó en su workflow propio y la de F34 se ejecutó en el workflow académico independiente.
+- Accounting Import Preflight 44152855886, Department Reference Consumers 44152616978 y Task-Service backup/restore 44154540342: SUCCESS.
+- BETA-FUNC-102 y BETA-FUNC-110 permanecen pendientes de validación desplegada. Se registra BETA-FUNC-118 para las cargas/materiales docentes.
+- Node CLI local NOT RUN; Node se ejecutó en GitHub Actions. Apps Script/Sheets/Drive reales y despliegue beta NOT RUN.
+
+Corrección de continuidad: el texto original de C1.812 indicaba que Task-Service no se había tocado. Esa frase quedó supersedida por los commits concurrentes e4ac52c/dd2abe52 ya presentes en el árbol al registrar C1.812; C1.813 revisó esos cambios y corrigió la pérdida de aislamiento de tarea/aula/autoría antes de aceptar el subalcance.
+
+Estado actualizado:
+- AUD-NG-158: revisión de código/CI completada; beta pendiente.
+- F34-TASK03: revisión de código/CI completada; BETA-FUNC-102 pendiente.
+- TASK-142/TASK-153 y las demás subcapacidades reabiertas por C1.809 siguen abiertas; no se declaran completas.
+- Siguiente tarea elegible C1.814: revisar comentarios/notas, versiones y devoluciones de entregas y calificaciones (getSubmissionComments, addSubmissionComment, getSubmissionVersions, returnSubmissionForRevision, deleteSubmission, gradeSubmission). Mantener RBAC de entrada, actor/fecha, ownership funcional, historial y lock solo donde exista escritura compartida; retirar revalidaciones redundantes sin ampliar visibilidad.
+===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.814 — comentarios, versiones, devolución y mutaciones de entrega
+===============================================================================
+Fecha: 2026-11-17
+Sesión: IMA-EXEC-20261117-TASK-SUBMISSION-WORKFLOW-01
+Rama autorizada: NG_beta_0.0.0.1_work
+Checkpoint anterior: C1.813
+HEAD de entrada: e2e9f006aeb77a36a5c5aea4fac3d3c5d8418219
+
+Objetivo:
+Revisar y estabilizar los flujos de comentarios, historial de versiones, devolución para corrección, eliminación y calificación de entregas, manteniendo el actor verificado, el acceso por tarea y el lock en las escrituras compartidas.
+
+Cambios:
+1. `withAuthorizedTaskSubmissionMutation_` recibe la operación concreta, reutiliza la identidad verificada por el dispatcher y ejecuta la comprobación de relación tarea/entrega dentro de ScriptLock. El lock timeout se expresa como `TASK_SUBMISSION_MUTATION_LOCK_TIMEOUT`; la autorización de rol no se repite.
+2. `returnSubmissionForRevision` utiliza el wrapper común. Actualiza el estado y, si existe comentario, lo registra como nota privada con autor/rol/fecha derivados de la identidad verificada. Si falla el registro del comentario, restaura la fila de entrega; ya no llama a `addSubmissionComment` con un payload nuevo que perdía el contexto verificado.
+3. `deleteSubmission` utiliza el mismo lock y la relación tarea/entrega verificada. Mueve el archivo a papelera y elimina la fila; si falla la eliminación de la fila, restaura el archivo. Si Drive falla, la fila no se elimina.
+4. `getSubmissionVersions` deja de devolver `archivoUrl` de Drive; conserva `fileId` como referencia para solicitar previsualización mediante la acción autorizada.
+5. `getSubmissionDocumentPreviewUrl` reutiliza `getVerifiedTaskIdentity_(payload)` y pasa esa identidad al resolver de acceso. Se elimina la segunda llamada directa a `getVerifiedRequestSessionClaims_`; se mantiene la verificación de que el archivo corresponde a una única entrega accesible.
+6. `addSubmissionComment` conserva la autoría desde la sesión; el estudiante no puede crear notas privadas. `getSubmissionComments` sigue ocultando notas privadas a estudiantes. Las acciones de calificación y rúbrica continúan usando el wrapper bloqueado y el historial append-only.
+
+Archivos modificados en el alcance:
+- `backend/task-service/Code.gs`
+- `tests/security/task-service-grade-submission-history.test.js`
+- `tests/security/task-service-submission-mutation-contract.test.js` (nuevo)
+- `tests/security/task-service-resource-ownership.test.js`
+- `tests/security/task-service-single-auth-context.test.js`
+- `.github/workflows/task-service-security-contract.yml`
+
+Verificación:
+- GitHub Actions Task-Service security local contracts, run 44158016729: SUCCESS.
+- Ejecutados: task-service-security-contract, task-service-resource-ownership, task-service-grade-submission-history, task-service-submission-mutation-contract (12 contratos), task-service-deadline-history, task-service-upload-contract y task-service-single-auth-context.
+- `node --check js/teacher.js`: PASS.
+- Node.js 22.23.4 en el runner de GitHub Actions.
+- Task-Service backup/restore run 44156994361: SUCCESS.
+- Academic-Service single authorization context run 44155827504: SUCCESS.
+- Department Scope run 44156994349: FAILURE independiente en Phase22 por `configureSchoolDocumentTemplate` ausente en ACCOUNTING. No se modificó ACCOUNTING para ocultar ese fallo.
+- Se intentó checkout local, pero el entorno no resolvió github.com (DNS); por tanto, no se declara ejecución local de Node/CLI. Las pruebas Node se ejecutaron en el runner aislado de Actions.
+
+Hallazgo residual:
+- `deleteSubmission` conserva la semántica existente de eliminación física de la fila y papelera del archivo. Los registros asociados de `EntregasVersiones` y `ComentariosEntregas` no se eliminan ni archivan en cascada. No se inventó una política de retención ni se borró historial adicional; debe decidirse si el comportamiento institucional esperado es conservar historial, soft-delete o purga explícita.
+- La URL de previsualización/descarga solo se entrega después de autorización servidor y vínculo único con la entrega; la privacidad efectiva del archivo de Drive queda pendiente de BETA-FUNC-122.
+
+Beta:
+- BETA-FUNC-122 registrado para comentarios públicos/privados, versiones, previsualización autorizada, devolución con rollback, calificación, lock y eliminación con compensación. Pendiente de ejecutar en Apps Script/Sheets/Drive reales.
+
+Estado:
+- C1.814 implementación y contratos Node/CI completados.
+- No se declara validación beta ni política de retención resuelta.
+- Siguiente tarea elegible C1.815: definir y verificar la retención de comentarios/versiones al eliminar una entrega; después ejecutar BETA-FUNC-122 en beta.
+===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.815 — cierre AUD-NG-165: privacidad y trazabilidad de entregas
+===============================================================================
+Fecha: 2026-11-17
+Sesión: IMA-EXEC-20261117-AUD-NG-165-SUBMISSION-PRIVACY-02
+Rama autorizada: NG_beta_0.0.0.1_work
+Checkpoint anterior: C1.814
+HEAD inicial de esta iteración: b5fd225b43e96273bc4f24108c7d77b026e63c0c
+HEAD final de implementación y pruebas: 2ebf7ac795633554d2350a8e6e62806677ff184a
+HEAD de registro documental previo: 501e31356c54c1dd9b00a4d1ae14e2b95758804a
+
+Objetivo:
+Cerrar AUD-NG-165, derivada de TAREA-10, protegiendo comentarios privados, historial de versiones, preview documental, devoluciones y eliminación de entregas sin perder trazabilidad.
+
+Implementación:
+1. `getTaskServiceSubmissionAccess_` valida identidad, relación de estudiante/tutor, asignación docente y tarea aun cuando la consulta use entregaId. Los rechazos conservan el error externo RESOURCE_NOT_FOUND y registran operación, rol y motivo técnico sin incluir mensajes privados ni contenido de entrega.
+2. `getSubmissionComments` filtra notas privadas para estudiantes y responsables; el personal solo accede dentro de la asignación/ámbito. `addSubmissionComment` deriva autor/rol de la sesión, impide que estudiantes creen notas privadas y serializa creación de cabecera/append mediante ScriptLock.
+3. `getSubmissionVersions` valida propiedad/ámbito y no expone archivoUrl crudo. `getSubmissionDocumentPreviewUrl` acepta el archivo vigente o una versión histórica solo si EntregasVersiones enlaza fileId, tarea, estudiante y entrega única; referencias ambiguas se deniegan.
+4. `returnSubmissionForRevision` utiliza el wrapper bloqueado, verifica docente/tarea, registra comentario privado con autor real y revierte el estado si falla el append.
+5. `deleteSubmission` pasa a baja lógica idempotente: mantiene fila Entregas, archivo Drive, EntregasVersiones y ComentariosEntregas; registra Estado=Eliminada, actor, rol, fecha y motivo. No envía el archivo a papelera ni elimina evidencia.
+6. `submitAssignment` reactiva la misma EntregaID tras una baja lógica, crea una nueva versión, limpia calificación/comentario y metadatos de eliminación; el enlace externo se conserva en EntregasVersiones, no en la columna de calificación.
+7. Se añadió cobertura de lock/timeout para comentarios y reentregas, de preview de versiones antiguas, de vínculos ambiguos, de dos estudiantes/docentes y responsables vinculados/no vinculados.
+
+Archivos de código y pruebas:
+- `backend/task-service/Code.gs`
+- `tests/security/task-service-resource-ownership.test.js`
+- `tests/security/task-service-submission-mutation-contract.test.js`
+- `tests/security/task-service-submission-access-contract.test.js` (nuevo)
+- `tests/security/task-service-submission-resubmit-contract.test.js` (nuevo)
+- `tests/security/task-service-security-contract.test.js`
+
+Registros actualizados:
+- `pendientes/Docente/Pendientes.md`: AUD-NG-165 marcada completada en código/contratos locales; beta separada.
+- `Auditoría/AUDITORIA_COMPLETADAS_TAREA-10.md`: resolución y evidencia agregadas sin alterar el diagnóstico histórico.
+- `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, `Auditoria.txt` y `changueslogs.txt`: C1.815 y resultado.
+- `beta_test.txt`: BETA-FUNC-122 en el registro canónico; caso desplegado continúa Pendiente beta. La referencia recién añadida en beta_test_Parte_0002 se trasladó al archivo canónico.
+
+Verificación local/CI:
+- GitHub Actions Task-Service security local contracts, run 44171548172: SUCCESS.
+- Node.js 22.23.4; pasaron task-service-security-contract, resource-ownership, grade-submission-history (14/14), submission-mutation (13), submission-access (30), submission-resubmit, deadline-history, upload-contract y single-auth-context.
+- `node --check js/teacher.js`: PASS. Los contratos usan `vm.Script` para parsear backend/task-service/Code.gs.
+- Task-Service backup/restore run 44171274487: SUCCESS.
+- Department Scope run 44171274513: FAILURE independiente en Phase22 porque falta `configureSchoolDocumentTemplate` en ACCOUNTING; no pertenece al alcance Task-Service.
+- No hubo checkout local en el contenedor de trabajo; las pruebas Node locales/aisladas se ejecutaron en el runner de GitHub Actions. No se declara prueba de despliegue.
+
+Hallazgos y límites:
+- BETA-FUNC-122 permanece Pendiente beta para verificar permisos efectivos de Drive/Sheets, preview, comentarios, baja lógica y reentrega en Apps Script desplegado.
+- AUD-NG-149, AUD-NG-121, AUD-NG-152 y AUD-NG-124 conservan sus requisitos independientes; no se marcan completadas por esta resolución.
+
+Estado:
+- AUD-NG-165: Completada en código y contratos locales.
+- C1.815: implementación y verificación local aprobadas; beta pendiente sin bloquear el cierre.
+- Siguiente tarea elegible: revisar TAREA-11 / AUD-NG-166 y sus dependencias técnicas antes de iniciar su alcance.
+===============================================================================
+
+
+
+===============================================================================
+CHECKPOINT C1.816 — actualización normativa de seguridad proporcional y rendimiento
+===============================================================================
+Fecha: 2026-11-18
+Sesión: IMA-EXEC-20261118-NDASC-ACADEMIC-FLOW-OPTIMIZATION-01
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.815
+HEAD inicial: b61627f1d4c89ee178b341f95d3a6caa53c5abf6
+HEAD del cambio normativo: a54614f7db7ff109eb51c46fe83ed1ae98f3c83e
+HEAD final: pendiente de confirmar tras publicar este checkpoint.
+
+Objetivo y explicación:
+Registrar con redacción clara el alcance de seguridad y rendimiento solicitado para la plataforma académica y dejarlo como norma vigente, sin convertir la optimización en eliminación de autorización por rol, corrección de datos o pruebas pertinentes.
+
+Normativa:
+- Normas_Desarollo.md se actualiza de NDASC 1.4 a NDASC 1.5, vigente 2026-11-18.
+- Se añade la sección 17: seguridad proporcional al uso académico, captura de formulario/fecha/actor, cargas sin controles redundantes, autenticación y revocación de sesiones, bloqueo temporal por intentos fallidos, optimización de validaciones y estrategia de recuperación ante fallos de Node/CLI/Actions.
+- Se aclara que el servidor puede revocar sesiones inmediatamente, pero la limpieza de caché local requiere que el cliente reciba la señal o vuelva a conectarse.
+- Se mantiene una comprobación de permiso por acción, identidad derivada de sesión, integridad de los registros y validaciones funcionales indispensables.
+- Se prohíbe debilitar pruebas, omitir aserciones o modificar código ajeno para forzar un PASS.
+
+Alineación del siguiente alcance:
+- TAREA-11 / AUD-NG-166 permanece Pendiente; no se declara implementación ni cierre.
+- Se añade al backlog la aplicación explícita de NDASC 1.5 a la creación/lectura de exámenes y adjuntos: autorización una vez por acción, sin autorizaciones interservicio ni controles repetidos por archivo, conservando los requisitos funcionales de reactivos, adjuntos y snapshots.
+- La tarea elegible siguiente sigue siendo AUD-NG-166, comenzando por su inspección focalizada del estado actual del motor.
+
+Archivos documentales de esta consolidación:
+- Normas_Desarollo.md
+- pendientes/Docente/Pendientes.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0018.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- changueslogs.txt
+
+Verificación:
+- Relectura de Normas_Desarollo.md NDASC 1.5: realizada.
+- Comparación del alcance de AUD-NG-166 con el backlog: realizada.
+- Revisión documental y de límites del cambio: realizada.
+- Pruebas Node/CLI: NOT RUN (cambio exclusivamente normativo/documental).
+- GitHub Actions: NOT RUN; no se ha ejecutado workflow para este cambio documental.
+- Apps Script/servicios desplegados: NOT RUN.
+- No se afirma que AUD-NG-166 esté completada ni que el motor de exámenes esté validado.
+
+Estado y continuidad:
+- NDASC 1.5 registrada.
+- AUD-NG-166 continúa Pendiente y es la siguiente tarea elegible.
+- No se modificó código de runtime en este checkpoint.
+- No se modificó la rama base.
+===============================================================================
+
+===============================================================================
+CHECKPOINT C1.817 — avance de AUD-NG-166: modelo de reactivos y motor de exámenes
+===============================================================================
+Fecha: 2026-11-18
+Sesión: IMA-EXEC-20261118-AUD-NG-166-QUESTION-MODEL-01
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.816
+HEAD de código verificado: 754edeafa5846f529c92a39f6190aca032daeb81
+
+Objetivo:
+Continuar TAREA-11 / AUD-NG-166 aplicando NDASC 1.5: completar el modelo de reactivos y el flujo de exámenes sin autorizaciones interservicio ni controles repetidos por archivo, conservando autorización por acción, datos académicos y pruebas.
+
+Cambios implementados en esta continuación:
+- Corrección del fixture de rollback de creación de exámenes: se incorporaron los campos curriculares que el contrato de creación exige; no se retiraron aserciones.
+- Interfaz estudiantil js/exam.js: controles de selección múltiple, respuesta extensa, respuesta numérica, pareado y ordenamiento; persistencia/restauración local de progreso para esos tipos; serialización del orden en la forma que espera el calificador.
+- Interfaz docente js/teacher.js y teacher-dashboard.html: autoría de los nueve tipos de reactivo; área curricular, tema, dificultad, puntos, etiquetas, objetivos y criterios; configuración de opciones por modalidad.
+- js/results.js: presentación de respuestas estructuradas y escape de contenido dinámico para reducir interpretación de HTML no confiable.
+- Contrato nuevo tests/security/exam-service-question-modalities-contract.test.js: prueba los nueve esquemas y rechazos de configuración inválida.
+- Workflow Exam-Service: node --check para js/exam.js, js/teacher.js y js/results.js, además del contrato de nueve modalidades.
+
+Verificaciones:
+- GitHub Actions Exam-Service security local contracts, run 44221208623, SHA 754edeafa5846f529c92a39f6190aca032daeb81: SUCCESS.
+- En el mismo workflow: sintaxis de interfaz estudiantil, autoría docente, resultados, nueve esquemas, contratos de creación, mutación, lectura, acceso departamental, snapshot/entrega y analítica psicométrica: SUCCESS.
+- GitHub Actions Task-Service security local contracts 44221030915: SUCCESS.
+- UI Accessibility and Metadata Contract 44221030788: SUCCESS.
+- Academic-Service single authorization context 44221030708: SUCCESS.
+- Accounting Import Preflight Contract 44221030483: SUCCESS.
+- Regional Formatting Contract 44221030748: SUCCESS.
+- Department Scope Contract 44221030673: FAILURE ajeno al alcance de AUD-NG-166; el log falla en Phase22 por ausencia de configureSchoolDocumentTemplate en ACCOUNTING. No se modificó esa función ni se alteró su prueba.
+
+Pendiente y límites:
+- La modalidad adjunto tiene esquema y calificación manual en backend, y el formulario docente permite configurarla, pero todavía no existe el flujo completo de carga real, asociación del archivo a la entrega y consulta autorizada desde resultados. No se declara implementada.
+- Las pruebas de Node y sintaxis se ejecutaron en GitHub Actions; no se realizó prueba manual en navegador ni prueba contra Apps Script desplegado.
+- AUD-NG-166 permanece En progreso; no se declara completada. No iniciar AUD-NG-167 como sustitución de este alcance pendiente.
+- No se modificó la rama base.
+===============================================================================
+
+===============================================================================
+### C1.818 — AUD-NG-166: circuito funcional de adjuntos de examen
+- **Fecha:** 2026-11-18.
+- **Sesión:** IMA-EXEC-20261118-AUD-NG-166-ATTACHMENT-FLOW-01.
+- **Rama exclusiva:** NG_beta_0.0.0.1_work. Rama base NG_beta_0.0.0.1 sin modificaciones.
+- **HEAD verificado:** a96385531fa128583e5c2d19d842d7957de0ef09. El checkpoint registra el HEAD de código previo al commit documental.
+- **Relación con base:** ahead 4103, behind 0; estado ahead.
+- **Checkpoint anterior:** C1.817.
+- **Tarea:** AUD-NG-166, derivada de TAREA-11. Continúa En progreso; no se inicia AUD-NG-167.
+- **Implementación:** backend/exam-service/Code.gs valida los adjuntos contra el MIME configurado y 5 MiB por archivo, sanitiza nombres, crea archivos Drive con acceso privado, registra la asociación con entrega/examen/pregunta/estudiante, conserva metadatos sin base64 en RespuestasJSON, recupera bytes solo a través del resultado ya autorizado y compensa archivos/filas ante fallos de escritura. Los envíos sin adjuntos no dependen de Drive. La entrega conserva snapshot y revisión manual.
+- **Interfaz:** js/exam.js permite seleccionar y serializar archivos; js/teacher.js informa los límites; js/results.js muestra enlaces de descarga desde los datos que entrega el endpoint autorizado.
+- **Pruebas nuevas:** tests/security/exam-service-attachment-submission-contract.test.js cubre MIME no permitido, MIME declarado distinto, vínculo a entrega, lectura, archivo privado y rollback explícito/ante escritura parcial. Se integra al workflow Exam-Service.
+- **Verificaciones:** Exam-Service security local contracts run 44293396510, SHA a96385531fa128583e5c2d19d842d7957de0ef09: SUCCESS. node --check para js/exam.js, js/teacher.js y js/results.js: SUCCESS en el workflow. Contrato de nueve modalidades: SUCCESS. Contrato nuevo de adjuntos: SUCCESS. Regresiones de mutación, envío, ownership, acceso departamental, single-auth, resultados y calificaciones: SUCCESS.
+- **Historial de correcciones:** el primer CI detectó regex MIME mal formada por sustitución de texto; corregida y verificada. El contrato nuevo detectó primero el mock Drive incompleto y luego una expectativa de sanitización incorrecta; ambos corregidos. El contrato de envío detectó dependencia de Drive/Utilities incluso para envíos sin archivos; se corrigió para que solo las respuestas con adjuntos activen persistencia Drive. La ejecución final quedó verde.
+- **Hallazgo externo:** Department Scope run 44293259425 falló en Phase22 porque tests/regression/phase22-document-management-suite-contract.test.js busca configureSchoolDocumentTemplate, ausente en ACCOUNTING. No es una regresión de Exam-Service; no se cambió código fuera de la tarea.
+- **Limitaciones:** Node CLI local no ejecutado en un checkout local; las pruebas Node se ejecutaron en GitHub Actions (Node 22.23.4). No se ejecutó navegador ni Apps Script/Sheets/Drive desplegados; privacidad y funcionamiento real permanecen pendientes de beta.
+- **Siguiente acción elegible:** prueba manual en navegador y BETA-FUNC-123; recorrido de las nueve modalidades. Solo después cerrar AUD-NG-166 y avanzar a TAREA-12/AUD-NG-167.
+===============================================================================
+
+===============================================================================
+### C1.819 — AUD-NG-166: corrección de permiso Drive y verificación CI final
+- **Fecha:** 2026-11-18.
+- **Sesión:** IMA-EXEC-20261118-AUD-NG-166-DRIVE-PERMISSION-FIX-01.
+- **Rama:** NG_beta_0.0.0.1_work. No se modificó la rama base NG_beta_0.0.0.1.
+- **HEAD de código verificado:** cb71ca436b5135576b991a9544b94c2eae35635f.
+- **Relación con base:** ahead 4105, behind 0; estado ahead.
+- **Checkpoint anterior:** C1.818.
+- **Hallazgo:** la revisión de la documentación oficial de Google Apps Script indicó que DriveApp.Permission.NONE no se admite con DriveApp.Access.PRIVATE; la excepción indicada por la API es Access.ANYONE. Se corrigió el establecimiento explícito de privacidad a Access.PRIVATE + Permission.VIEW. Referencia: https://developers.google.com/apps-script/reference/drive/permission y https://developers.google.com/apps-script/reference/drive/access.
+- **Cambio:** backend/exam-service/Code.gs establece permisos privados compatibles al crear cada archivo. El contrato de adjuntos ahora afirma que la combinación PRIVATE+VIEW está presente y PRIVATE+NONE no vuelve a introducirse.
+- **Verificación:** Exam-Service security local contracts run 44293858585, SHA cb71ca436b5135576b991a9544b94c2eae35635f: SUCCESS. Pasaron node --check js/exam.js, js/teacher.js, js/results.js, contrato de nueve modalidades, contrato de adjuntos, regresiones de envío, mutación, ownership, acceso departamental, single-auth, resultados y libro de calificaciones.
+- **Hallazgo externo persistente:** Department Scope run 44293858508 debe revisarse por su contrato Phase22 que busca configureSchoolDocumentTemplate en ACCOUNTING; no corresponde a AUD-NG-166 y no se alteró ese servicio.
+- **Estado:** AUD-NG-166 permanece En progreso. La prueba CI no sustituye la prueba manual de navegador ni la comprobación real de Drive/Sheets.
+- **Siguiente acción:** ejecutar BETA-FUNC-123 y el recorrido integral de nueve modalidades; solo entonces cerrar AUD-NG-166.
+===============================================================================
+
+===============================================================================
+### C1.820 — AUD-NG-166: auditoría completa de Node.js, sintaxis y Actions
+- **Fecha:** 2026-11-18.
+- **Sesión:** IMA-EXEC-20261118-AUD-NG-166-FULL-NODE-AUDIT-01.
+- **Rama:** NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 sin modificaciones.
+- **HEAD de código:** 06edce49d355511b2089a3045c8453474e2d1002.
+- **Relación con base:** ahead 4111, behind 0; estado ahead.
+- **Checkpoint anterior:** C1.819.
+- **AUD-NG-166:** continúa En progreso; la modalidad de adjuntos está implementada y verificada en contratos, pero falta navegador y beta real.
+- **Cobertura CI:** el workflow Exam-Service incluye 35 contratos Node de forma completa; todos pasan en el run 44294486069. Pasa node --check del backend/exam-service/Code.gs y node --check de todos los archivos .js bajo js/ y backend/. Las regresiones de envío, lectura, ownership, RBAC, serialización y resultados pasan.
+- **Suite general:** 164 archivos tests/**/*.test.js ejecutados en GitHub Actions run 44294587611; 161 pasan y 3 fallan fuera del alcance actual:
+  1. tests/regression/phase22-document-management-suite-contract.test.js: busca configureSchoolDocumentTemplate, función ausente en ACCOUNTING.
+  2. tests/security/accounting-school-document-binary-integrity.test.js: busca ensureSchoolDocumentIssuedSchema_, función ausente en ACCOUNTING.
+  3. tests/security/session-token-expiry.test.js: falla el caso USER/valid en la línea 69.
+  No se tocaron servicios ACCOUNTING ni autenticación para evitar cambios no relacionados con AUD-NG-166.
+- **CLI:** no se encontró package.json, directorio cli ni script de CLI; no existe una suite CLI declarada en el repositorio.
+- **Estado global de Actions:** Exam-Service contracts pasa; la ejecución global de pruebas falla por los tres contratos externos listados. Department Scope también reportó el fallo Phase22 de ACCOUNTING en un commit previo. No se declara verde toda la CI.
+- **Siguiente acción:** navegador y BETA-FUNC-123 con Apps Script/Sheets/Drive reales, incluyendo permisos efectivos, carga/descarga, rollback, concurrencia y las nueve modalidades. No iniciar AUD-NG-167 hasta completar AUD-NG-166.
+===============================================================================
+
+===============================================================================
+### C1.821 — Cierre de implementación AUD-NG-166 y apertura de AUD-NG-167
+- **Fecha:** 2026-11-18.
+- **Sesión:** IMA-EXEC-20261118-AUD-NG-166-IMPLEMENTATION-CLOSE-01.
+- **Rama:** NG_beta_0.0.0.1_work; la rama base permanece intacta.
+- **HEAD inicial:** 2edfea2c9068be7fc70045abdf3a47ab3c68e265.
+- **Checkpoint anterior:** C1.820.
+- **Decisión NDASC 1.5:** AUD-NG-166 se marca Completada en código porque las verificaciones locales pertinentes disponibles pasaron. 35/35 contratos Exam-Service SUCCESS (44294486069); sintaxis de Code.gs y de todos los JS bajo js/ y backend/ SUCCESS.
+- **Fallas generales ajenas:** 3 de 164 pruebas generales fallan en ACCOUNTING Phase22, ACCOUNTING binary integrity y session-token-expiry USER/valid; no pertenecen a AUD-NG-166.
+- **Separación beta:** BETA-FUNC-123 sigue Pendiente beta para navegador y Apps Script/Sheets/Drive reales, permisos efectivos y recorrido de nueve modalidades. Por NDASC 1.5 estas pruebas remotas no bloquean el cierre de implementación.
+- **Archivos:** pendientes/Docente/Pendientes.md, Auditoría/INDICE_CHECKPOINTS.md y este expediente.
+- **Estado:** AUD-NG-166 Completada en código; AUD-NG-167 / TAREA-12 es la siguiente tarea elegible.
+- **Siguiente acción:** iniciar revisión e implementación de AUD-NG-167 sobre libro consolidado, ponderaciones, cálculo, rúbricas, estados, recuperación y boletines, coordinando identidad/ABAC con AUD-NG-002/AUD-NG-158.
+===============================================================================
+
+===============================================================================
+### C1.822 — AUD-NG-167: identidad contextual del libro y motor de cálculo
+- **Fecha:** 2026-11-18.
+- **Sesión:** IMA-EXEC-20261118-AUD-NG-167-CONTEXT-GRADE-CALC-01.
+- **Rama:** NG_beta_0.0.0.1_work.
+- **HEAD de código:** 6816f296a09bfb450a27b77edf0271be06f09d8c.
+- **Checkpoint anterior:** C1.821.
+- **Cambios implementados:**
+  1. CalificacionesEstudiantes extiende el esquema base de nueve columnas con AnoID, PeriodoID, Grado, Seccion, Asignatura, InstitutionID y ContextKey.
+  2. La clave se normaliza y serializa de forma estable con institución, año, período, grado, sección, asignatura, categoría y estudiante.
+  3. Guardado individual y masivo actualizan solo la fila de la clave exacta; registros antiguos sin contexto no se reutilizan ni sobrescriben.
+  4. Lectura exige contexto completo y devuelve solo notas que coinciden exactamente con institución/año/período/grupo/asignatura y ContextKey.
+  5. js/teacher.js envía AnoID de GLOBAL_SCOPE (con fallback al año actual).
+  6. calculateUnifiedAcademicGrade valida métodos, pesos, rangos, puntos y duplicados; nota cero es una nota válida; pendiente, exento, ausencia justificada y sin actividades no se convierten en cero; no se infiere equivalencia SACE ni cuadro de honor.
+  7. auditAcademicGradesIntegrity no compara nota oficial con un cálculo provisional/no final.
+- **Pruebas:**
+  - Exam-Service security local contracts: 35/35 PASS en Actions 44300650553; sintaxis Code.gs y todos los JS de js/ y backend/ PASS.
+  - Academic-Service unified grade calculation: 13/13 PASS en Actions 44300773124.
+  - Suite general del repositorio: 161/164; tres fallos preexistentes ajenos a AUD-NG-167 (Phase22 ACCOUNTING, binary integrity ACCOUNTING y session-token-expiry USER/valid).
+- **Limitaciones conocidas:** la interfaz todavía conserva pesos hardcodeados 35/40/15/10 y un cálculo cliente; no se declara integrada la configuración institucional. Las recuperaciones siguen usando CAT-GLOBAL y aún requieren asociarse a una calificación contextual real. El boletín oficial aún lee fuentes antiguas y no se declara SACE compatible.
+- **Estado:** AUD-NG-167 permanece En progreso. No cerrar la tarea hasta completar configuración de pesos contextual, cálculo servidor consumido por UI, ciclo de publicación/cierre/rectificación, recuperación y boletín desde la fuente consolidada.
+- **Siguiente acción:** implementar PonderacionesEvaluacion por institución/año/período/grado/sección/asignatura, integrarla con getGradebookData/saveGradebookGrades y retirar la tabla hardcodeada del docente.
+===============================================================================
+
+
+===============================================================================
+### C1.823 — AUD-NG-167: auditoría de continuidad del libro contextual
+===============================================================================
+Fecha: 2026-11-18
+Sesión: IMA-EXEC-20261118-AUD-NG-167-CONTINUITY-AUDIT-01
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.822
+HEAD inicial y HEAD final de código verificado: 2bf4bbad42d3aadef715031fad71d20824432329
+
+Recuperación y continuidad:
+- La rama estaba 51 commits por delante del HEAD de C1.822 (6816f296a09bfb450a27b77edf0271be06f09d8c), sin commits por detrás. Se conservaron todos los cambios existentes; no se reinició ni revirtió trabajo.
+- El último commit de código antes de este registro es 2bf4bbad42d3aadef715031fad71d20824432329 (test(gradebook): cover year-isolated and configured review submissions).
+- La comparación con NG_beta_0.0.0.1 confirma que la rama autorizada permanece ahead y no diverged; la rama base conserva HEAD 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Auditoría de AUD-NG-167:
+- Se verificó la configuración contextual de PonderacionesEvaluacion por institución/año/período/grado/sección/asignatura/categoría, su validación de suma 100 y la lectura de resúmenes ponderados desde el backend.
+- La UI docente consume categorías y resúmenes del servidor; las solicitudes de lectura usan un contador de versión para descartar respuestas obsoletas. Los pesos hardcodeados ya no son el origen del cálculo mostrado.
+- Las recuperaciones se enlazan a una evaluación y a su contexto académico; el writer rechaza CAT-GLOBAL y exige calificación previa válida. El resumen del libro filtra recuperaciones por la misma clave contextual.
+- Se verificaron las transiciones de envío a revisión, aprobación/publicación, cierre y reapertura, con controles contextuales y ScriptLock. Los contratos del workflow cubren reentrada/contención del lock, año distinto, categorías configuradas y transiciones.
+- El backend de rúbricas y evaluación por competencias dispone de contratos de seguridad, pero js/teacher.js no integra todavía formularios/acciones de autoría y evaluación para esas APIs.
+- El generador heredado generateStudentReportCard en Academic-Service sigue leyendo Calificaciones/Notas, no el libro contextual consolidado. getStudentAcademicReport en Exam-Service lee CalificacionesEstudiantes, pero su lectura no aplica todavía los siete campos de contexto a las filas ni construye un boletín oficial contextual. No se declara satisfecho el criterio de boletín consolidado.
+- No existe evidencia de equivalencia SACE; no se afirma compatibilidad.
+
+Verificaciones:
+- GitHub Actions Exam-Service security local contracts, run 44317483258, SHA 2bf4bbad42d3aadef715031fad71d20824432329: los pasos específicos de sintaxis de js/exam.js, js/teacher.js, js/results.js, modalidades, adjuntos, rúbricas, competencias, recuperaciones, mutaciones, libro contextual, revisión/cierre/reapertura y sintaxis global JavaScript finalizaron SUCCESS.
+- La ejecución general Node.js del mismo workflow terminó FAILURE: tres contratos ajenos al alcance de AUD-NG-167 fallaron: tests/regression/phase22-document-management-suite-contract.test.js (falta configureSchoolDocumentTemplate en ACCOUNTING), tests/security/accounting-school-document-binary-integrity.test.js (falta ensureSchoolDocumentIssuedSchema_ en ACCOUNTING) y tests/security/session-token-expiry.test.js (caso USER/valid). No se modificaron ACCOUNTING ni autenticación para forzar PASS.
+- El runner usó Node.js 22.23.4. La suite específica Exam-Service terminó satisfactoriamente; la suite general no se declara verde.
+- No se encontró package.json, directorio cli ni scripts CLI en el árbol del repositorio; no hay suite CLI declarada.
+- No se ejecutó Apps Script/Sheets desplegado ni navegador/beta. No se presentan esas pruebas como PASS.
+
+Estado:
+- AUD-NG-167 permanece En progreso. No se marca completada porque falta integración UI de rúbricas/competencias y boletín oficial desde la fuente consolidada con contexto verificable.
+- No se modificó código de runtime en este checkpoint ni se tocó la rama base.
+- No se alteró ningún archivo ajeno al alcance para eliminar fallos generales preexistentes.
+
+Siguiente acción elegible:
+1. Integrar en la UI docente la autoría de rúbricas y la evaluación por competencias vinculadas a catálogos y asignaciones.
+2. Sustituir el flujo heredado de boletín por lectura contextual del libro consolidado, conservando autorización de estudiante/tutor/institución y agregación por período/año.
+3. Añadir contratos Node para aislamiento entre años/instituciones, estados publicados/provisionales y recuperación aplicada; ejecutar el workflow específico y la suite general, registrando sin ocultar los tres fallos externos si persisten.
+4. Solo tras cubrir los criterios restantes, cerrar AUD-NG-167 y evaluar AUD-NG-168.
+===============================================================================
+
+
+===============================================================================
+### C1.824 — AUD-NG-167: integración del boletín contextual y UI de evaluación
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-IMPLEMENTATION-01
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.823
+HEAD inicial de esta sesión: 292a0a347caf67661fd95c5f320410dfe8259898
+HEAD de código verificado antes de registrar C1.824: 7f97e43b5d8b8f82ea5bbb3b50f82c44e9c55b44
+HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Recuperación y alcance:
+- La rama de trabajo estaba alineada con C1.823 al iniciar. Se conservaron los cambios existentes; la comparación final de código antes de este checkpoint muestra 28 commits ahead y 0 behind, sin divergencia.
+- Todos los cambios de esta sesión se mantuvieron en NG_beta_0.0.0.1_work. La rama base no fue modificada.
+- Se volvió a leer y aplicar Normas_Desarollo.md v1.5. No se añadieron reglas operativas nuevas.
+
+Implementación:
+- backend/exam-service/Code.gs:
+  - getStudentAcademicReport ahora adjunta libroConsolidado, construido desde CalificacionesEstudiantes y sus siete campos contextuales.
+  - Se agrupa por año/período/grado/sección/asignatura y se valida ContextKey contra institución y estudiante autenticado/relacionado.
+  - Solo se incorporan calificaciones publicadas y no provisionales; IDs duplicados y filas con contexto inválido se excluyen.
+  - Se aplican recuperaciones únicamente cuando su clave contextual coincide con la nota, con unicidad de ID y orden temporal.
+  - El cálculo reutiliza calculateGradebookStudentSummary_ y la configuración de PonderacionesEvaluacion; una recuperación vacía no sustituye la nota original por cero.
+  - Un boletín solo se marca oficial si existe exactamente un cierre coincidente para cada contexto y todas las asignaturas tienen cálculo completo. En otro caso se identifica como provisional.
+  - Se mantiene compatibilidad de lectura para la hoja histórica de nueve columnas, sin elevar esas filas a boletín oficial contextual; esquemas parciales o contradictorios fallan cerrados.
+- js/student.js y student-dashboard.html:
+  - Se añadió consulta del boletín por año y período, con resumen por asignatura, promedio y estado oficial/provisional.
+  - Se eliminó el uso de las calificaciones heredadas sin contexto en la vista del boletín.
+  - Se agregó control de versión y comprobación de identidad para descartar respuestas obsoletas al cambiar de estudiante en el portal familiar.
+- js/teacher.js y teacher-dashboard.html:
+  - Se integraron formularios de autoría/consulta de rúbricas y registro/consulta de evaluaciones por competencias mediante las APIs existentes.
+  - La lista de estudiantes deriva del roster contextual del libro.
+  - Se añadieron contadores de solicitud para descartar lecturas obsoletas de rúbricas y competencias.
+- backend/academic-service/Code.gs:
+  - Se retiró la generación heredada de boletines desde Calificaciones/Notas; la acción antigua devuelve CONSOLIDATED_GRADEBOOK_REQUIRED y dirige al endpoint contextual de EXAM.
+- Workflows:
+  - Se amplió la selección de rutas del workflow Exam-Service para que cambios del boletín y UI del estudiante ejecuten las suites de Node.js.
+  - Se agregó contrato de deprecación del generador académico heredado al workflow Academic-Service.
+
+Verificaciones y evidencia:
+- GitHub Actions 44519500978, SHA 77b2e07657b343d7319f4ff6b2de5a70f2b4a543:
+  - Sintaxis de js/exam.js, js/teacher.js, js/results.js, backend/exam-service/Code.gs y sintaxis global JS: SUCCESS.
+  - Suite específica Exam-Service completa: SUCCESS, incluidos los contratos nuevos de aislamiento contextual del boletín, recuperaciones vacías, esquema parcial, seguridad de getStudentAcademicReport y UI docente.
+  - Suite general de Node.js: FAILURE por tres contratos ajenos y preexistentes: configureSchoolDocumentTemplate ausente en ACCOUNTING; ensureSchoolDocumentIssuedSchema_ ausente en ACCOUNTING; caso USER/valid en session-token-expiry. No se modificaron esos módulos ni se redujo cobertura.
+- GitHub Actions 44519676142, SHA 7f97e43b5d8b8f82ea5bbb3b50f82c44e9c55b44: Academic-Service single authorization context SUCCESS; node --check de backend/academic-service/Code.gs y el nuevo contrato academic-legacy-report-card-deprecation.test.js SUCCESS, junto con las suites académicas incluidas.
+- UI Accessibility and Metadata Contract: SUCCESS en la revisión de cambios de UI.
+- Department Scope Contract sigue FAILURE por el contrato Phase 22 que requiere configureSchoolDocumentTemplate en ACCOUNTING; no es regresión de AUD-NG-167.
+- Runner Node.js 22.23.5.
+- No existe package.json, directorio CLI ni scripts CLI declarados; no hay suite CLI que ejecutar.
+- No se ejecutó Apps Script desplegado, Sheets/Drive reales ni pruebas de navegador/BETA; no se declara esa evidencia.
+
+Hallazgos y pendientes:
+- La interfaz ya consume las APIs de rúbricas/competencias, pero el repositorio no contiene un catálogo curricular formal ni un contrato/API que defina IDs y estructura de indicadores. El campo CompetenciasJSON existente en PlanificacionesPedagogicas no define por sí solo un esquema de catálogo verificable. No se declara vínculo de catálogo completado ni se inventan IDs.
+- El criterio de compatibilidad SACE permanece sin demostrar: no hay especificación de intercambio/mapeo autorizada ni evidencia de equivalencia. No se afirma compatibilidad.
+- El generador heredado de Academic-Service ya no produce boletines obsoletos; la vista de estudiante usa el informe contextual de Exam-Service.
+- La validación desplegada y de navegador sigue pendiente; las pruebas locales/Actions no sustituyen esa comprobación.
+
+Estado:
+- AUD-NG-167 permanece En progreso. No cerrar ni marcar completada hasta definir/consumir un catálogo curricular verificable para competencias/indicadores y resolver con evidencia el criterio SACE, o documentar una decisión de alcance autorizada conforme al plan.
+- No se modifica el estado de AUD-NG-168 ni se avanza a TAREA-13 mientras AUD-NG-167 conserve dependencias pendientes.
+- No se modificó la rama base.
+
+Siguiente acción elegible:
+1. Identificar el catálogo curricular institucional existente y su esquema canónico; si no existe, documentar el contrato mínimo en la tarea antes de crear almacenamiento nuevo.
+2. Validar server-side competencia/indicador contra ese catálogo y consumirlo en la UI docente.
+3. Obtener el formato/regla SACE que se debe demostrar; no presumir equivalencia por similitud de campos.
+4. Añadir contratos de aislamiento y compatibilidad para esos dos criterios; luego ejecutar de nuevo suites específicas y general.
+===============================================================================
+
+
+===============================================================================
+### C1.825 — AUD-NG-167: catálogo institucional contextual de competencias
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-CATALOG-01
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.824
+HEAD inicial de esta continuación: 7f97e43b5d8b8f82ea5bbb3b50f82c44e9c55b44
+HEAD de código verificado antes de registrar C1.825: 7d31d7dccd298793610d6132ab075d75ba4dc017
+HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Normativa y alcance:
+- Se volvió a leer y aplicar Normas_Desarollo.md v1.5. Se trabajó directamente en la rama autorizada y no se modificó la rama base.
+- Se continuó exclusivamente AUD-NG-167; no se cambió el estado ni se inició AUD-NG-168.
+- Se respetó el límite de no presumir equivalencia SACE ni inventar IDs curriculares.
+
+Implementación:
+- backend/exam-service/Code.gs:
+  - Se definió CatalogoCompetencias con esquema de 17 columnas: ID, InstitutionID, DepartmentID, AnoID, Grado, Seccion, AsignaturaID, CompetenciaID, Competencia, IndicadorID, Indicador, ProgramaCurricular, Estado, RegisteredBy, CreatedAt, UpdatedAt y ContextKey.
+  - ContextKey vincula institución, departamento, año, grado, sección, asignatura, programa curricular, competencia e indicador.
+  - getCompetencyCatalog filtra entradas activas por institución, departamentos autorizados y contexto; admite entradas institucionales globales y valida esquema, ContextKey y duplicados.
+  - saveCompetencyCatalogItem crea o actualiza por clave contextual, valida actor/ámbito/asignación docente y serializa la escritura; no genera IDs libres desde la UI.
+  - saveCompetencyEvaluation exige una entrada activa única del catálogo que coincida con el año, grado, sección, asignatura, programa, competencia, indicador y departamento/global seleccionado. Se rechazan referencias libres, inexistentes, ambiguas o fuera de ámbito.
+- js/teacher.js y teacher-dashboard.html:
+  - La interfaz docente permite registrar, consultar y seleccionar competencias e indicadores del catálogo.
+  - Se incorpora selección de departamento, conservación de la selección al refrescar y soporte de entradas institucionales globales.
+  - La evaluación transmite la referencia del catálogo y el departamento asociado; se conservan los descartes de respuestas asíncronas obsoletas.
+- Pruebas:
+  - tests/security/exam-service-competency-catalog.test.js cubre lectura institucional/departamental/global, esquema, ContextKey, duplicados, creación/actualización, asignación y concurrencia.
+  - tests/security/exam-service-competency-evaluation-mutation-security.test.js cubre referencias exactas del catálogo, asignación departamental, entrada institucional global y rechazo de indicadores libres.
+  - tests/ui/teacher-gradebook-rubric-competency-ui.test.js verifica controles y transmisión de departamento.
+  - Se añadió el escenario BETA-EXAM-105 en beta_test.txt; sigue Pendiente beta.
+
+Verificaciones:
+- GitHub Actions 44523637946, SHA 7d31d7dccd298793610d6132ab075d75ba4dc017:
+  - Sintaxis de EXAM y JS: SUCCESS.
+  - Suite específica completa Exam-Service: SUCCESS.
+  - exam-service-competency-catalog: PASS (24 contratos).
+  - Mutación de evaluación por competencias: SUCCESS.
+  - Suite general Node.js: FAILURE por tres contratos ajenos ya identificados: tests/regression/phase22-document-management-suite-contract.test.js (configureSchoolDocumentTemplate ausente en ACCOUNTING), tests/security/accounting-school-document-binary-integrity.test.js (ensureSchoolDocumentIssuedSchema_ ausente en ACCOUNTING) y tests/security/session-token-expiry.test.js (USER/valid). No se alteraron esos módulos.
+- GitHub Actions 44523509686: UI Accessibility and Metadata Contract SUCCESS.
+- Department Scope 44523509680: FAILURE por el contrato Phase 22 de ACCOUNTING (configureSchoolDocumentTemplate); no corresponde a este cambio.
+- Runner Node.js 22.23.5.
+- No se encontró package.json, directorio CLI ni scripts CLI; no hay suite CLI declarada.
+- No se ejecutó Apps Script desplegado, Sheets reales ni navegador. Los contratos Node/Actions no sustituyen BETA-EXAM-105.
+
+Pendientes:
+- BETA-EXAM-105 requiere despliegue conjunto de EXAM/UI y verificación en Sheets con dos departamentos, dos docentes, entradas globales/departamentales, manipulación de ContextKey, asignación conflictiva y concurrencia.
+- El repositorio contiene plantillas XLS bajo docs/architecture/Plantillas/SACE, pero no se ha validado su contenido ni existe evidencia de un mapeo de intercambio aprobado o equivalencia. No se declara compatibilidad SACE.
+- No se cierra AUD-NG-167: la evidencia SACE sigue pendiente y la prueba beta aún no se ha ejecutado.
+- No se modifica AUD-NG-168 ni se avanza a TAREA-13 mientras AUD-NG-167 permanezca abierta.
+- La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Siguiente acción elegible:
+1. Obtener/inspeccionar la especificación y el formato SACE autorizado para definir el mapeo mínimo verificable, sin inferir equivalencias.
+2. Preparar y ejecutar BETA-EXAM-105 con Apps Script/Sheets reales cuando el entorno de beta esté disponible.
+3. Repetir las pruebas focalizadas y la suite general; mantener registrados los tres fallos ajenos si persisten.
+===============================================================================
+
+
+===============================================================================
+### C1.826 — AUD-NG-167: evidencia documental y mapeo preliminar SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-MAP-01
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.825
+HEAD inicial de este avance documental: 925237b88847af04ef469a739023ffd6c278acf2
+HEAD de la rama base verificado previamente: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Fuentes oficiales revisadas:
+- Manual de Usuario Docente SACE, actualización junio 2025: https://sace.se.gob.hn/media/documentos_sace/Manual_de___usuario_SACE_Docente_2.pdf. Describe la descarga/carga del Excel por modalidad, curso, sección, jornada y clase; notas totales e inasistencias por parcial.
+- Manual de Usuario Docente SACE, actualización junio 2019: https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Docente.pdf. En páginas impresas 19–20 documenta el ejemplo de archivo con DOCUMENTO, IDENTIDAD, NOMBRE, inasistencias y nota total por parcial y RECUPERACIÓN; indica conservar el formato generado por SACE.
+- Manual de Usuario Director SACE: https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Director.pdf. Distingue calificaciones por parcial, resumen anual por área, acta final, acta final de recuperación, boletas interna/externa y certificación.
+- Reglamento del Sistema Nacional de Información Educativa, Acuerdo 1178-SE-2015: https://www.tsc.gob.hn/web/leyes/Reglamento_sistema_nacional_info_edu_hn.pdf. Artículos 78, 84 y 86–88: evaluación/promoción en SACE; evaluación final según manual USINIEH; certificados y calificaciones oficiales emitidos por dirección, con firmas y códigos de autenticidad SACE.
+- Reglamento del Sistema Integrado de Información Educativa, Acuerdo CNE-002-2021: https://www.tsc.gob.hn/web/leyes/Acuerdo-Ejecutivo-CNE-002-2021.pdf. Regula SIIE, REU y reportes; el texto consultado no menciona SACE y no se presume que lo derogue ni sustituya.
+
+Hallazgos de mapeo:
+- El archivo SACE se genera para modalidad, curso, sección, jornada y clase. El manual 2019 muestra dos parciales en su ejemplo, pero el manual Director presenta cuatro parciales; por ello el número de parciales no se fija y debe obtenerse de la plantilla real.
+- El Excel de calificaciones muestra DOCUMENTO, IDENTIDAD, NOMBRE, inasistencias y nota total por parcial y RECUPERACIÓN; el formato/diseño no debe modificarse y puede cargarse un parcial por vez.
+- IMA dispone de OfertaAcademica (Modalidad, Grado, Seccion, AsignaturaID, SedeID, CodigoClase), CatalogoAsignaturas, PeriodosAcademicos (fechas/orden), Personas (identidad/nombres), Usuarios.PersonaID, SesionesAsistencia/RegistrosAsistencia y libro consolidado contextual.
+- Faltantes: código oficial SACE del centro no identificado; HorariosClase no contiene una relación inequívoca JornadaID; tipo de documento no confirmado; equivalencia de PeriodoID/Orden a parciales depende del archivo actual; inasistencias deben agregarse por estudiante/clase/rango del parcial; regla exacta de la columna RECUPERACIÓN debe confirmarse.
+- Las boletas, resumen anual, actas y certificaciones del Director son artefactos distintos; el informe IMA de un periodo no demuestra equivalencia con todos ellos.
+- El artículo 88 impide llamar a un documento IMA “certificación oficial SACE”: se requieren emisión de dirección, firmas y códigos de autenticidad generados por SACE.
+
+Entregables:
+- docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md: matriz de campos, fuentes, faltantes, flujo y criterio de aceptación.
+- beta_test.txt: escenario BETA-EXAM-106 para obtener una plantilla SACE real, conservar su estructura, mapear notas/asistencias/recuperación y validar carga/resultado en un entorno autorizado.
+- pendientes/Docente/Pendientes.md actualizado con C1.826.
+
+Decisión:
+- No crear un XLSX SACE desde cero ni afirmar compatibilidad por semejanza visual.
+- No guardar credenciales SACE ni datos personales reales de alumnos en el repositorio.
+- Implementar adaptador únicamente después de obtener una plantilla SACE real de prueba, mapear celdas y confirmar la carga.
+- AUD-NG-167 permanece En progreso; el mapeo es preliminar, no compatibilidad demostrada. BETA-EXAM-105 y BETA-EXAM-106 pendientes.
+- AUD-NG-168 / TAREA-13 no se inicia.
+- No hubo cambios de código en C1.826; rama base sin modificaciones.
+
+Siguiente acción elegible:
+1. Conseguir una plantilla XLS/XLSX descargada desde SACE para un centro/clase de prueba autorizada.
+2. Confirmar el código oficial del centro, jornada, tipo documental y mapeo de parciales.
+3. Implementar el adaptador que rellene exclusivamente celdas de entrada en la plantilla original y ejecutar BETA-EXAM-106.
+===============================================================================
+
+===============================================================================
+### C1.827 — AUD-NG-167: integridad contextual, UI académica y adaptador SACE candidato
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-CONTEXT-SACE-VERIFY-02
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.826
+HEAD inicial recuperado de C1.826: 925237b88847af04ef469a739023ffd6c278acf2
+HEAD verificado al cierre: d84592de324e7fa8fb1f9bf5843f42110b91abc1
+HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+Continuidad: 67 commits posteriores al HEAD inicial de C1.826; se revisó el diff acumulado y los cambios se mantienen en los componentes de AUD-NG-167, sus contratos, UI y documentación SACE.
+
+Trabajo y revisión:
+- Se recuperó el estado real sin reiniciar el trabajo. AUD-NG-167 permanece [~] En progreso; no se marcó como completada.
+- EXAM: el esquema de EvaluacionesCompetencias utiliza 17 columnas, con año, grado, sección, institución, departamento, referencia del catálogo y ContextKey. La lectura valida el contexto institucional/departamental, año académico, asignación docente y clave contextual; las evaluaciones históricas de 10 columnas no se presentan como registros verificados.
+- EXAM: se revisaron los flujos de escritura/lectura de competencias, rúbricas, informes contextuales y las interfaces de docente/estudiante. Se corrigió la expresión regular de validación de año que impedía reconocer años de cuatro dígitos. Los contratos de prueba se ajustaron para utilizar el esquema contextual de 17 columnas y registros válidos durante las pruebas de concurrencia.
+- SACE: se incorporó un analizador/parcheador BIFF8 en js/sace-template.js y un manifest CANDIDATE para tres archivos XLS existentes. El parcheador conserva el contenedor OLE y limita las escrituras a las celdas mapeadas de inasistencias, notas y recuperación en las tres plantillas candidatas.
+- SACE: se incorporó el mapeo de filas por identidad verificada, comprobación de contexto y nombre/documento, sin depender del orden de filas. La revisión encontró y corrigió expresiones regulares mal escapadas que impedían normalizar separadores de identidad, tildes y espacios.
+- SACE: se corrigió el tratamiento de entradas vacías. Cadenas con espacios ya no se convierten silenciosamente en nota cero, inasistencia cero o recuperación cero; los valores booleanos no se aceptan como números. Las pruebas verifican notas faltantes, recuperación vacía e inasistencias vacías.
+- Se revisaron los diffs de backend/exam-service/Code.gs, js/teacher.js, js/student.js, teacher-dashboard.html, js/sace-template.js y los contratos asociados. Los cambios funcionales permanecen dentro del alcance de libro de calificaciones, competencias, rúbricas, boletín contextual y adaptador SACE.
+- Commits relevantes de esta iteración: 0b28f7f68d929dc7e1cfe00a8a6ba30853f3fe7c; 2e75aaf447453b9837b95296ff03671ce61f0e25; e223aa7feef8f05dc021517c0b6812bb7764ba78; d84592de324e7fa8fb1f9bf5843f42110b91abc1.
+
+Verificaciones:
+- GitHub Actions 44530985604 (HEAD abfc4e1e6a4cf94e8fbcc05ad0e41b560c5c29c8):
+  - Sintaxis de las interfaces de exámenes: PASS.
+  - Nueve modalidades, adjuntos, contratos de seguridad, recuperaciones, rectificaciones, cierre/reapertura y lectura: PASS.
+  - Suite completa de contratos Exam-Service: SUCCESS.
+  - Contrato UI docente de competencias: PASS.
+  - Sintaxis general JavaScript del repositorio: PASS.
+  - Suite general Node.js: FAILURE por tres pruebas fuera del alcance: tests/regression/phase22-document-management-suite-contract.test.js (configureSchoolDocumentTemplate ausente en ACCOUNTING), tests/security/accounting-school-document-binary-integrity.test.js (ensureSchoolDocumentIssuedSchema_ ausente en ACCOUNTING) y tests/security/session-token-expiry.test.js (USER/valid). No se modificaron ACCOUNTING ni USER para ocultar esos fallos.
+- GitHub Actions 44532045240 (HEAD d84592de324e7fa8fb1f9bf5843f42110b91abc1): SUCCESS.
+  - node --check de tests/security/sace-template-structure-contract.test.js: PASS.
+  - sace-template-structure-contract: PASS para tres plantillas BIFF8 candidatas.
+  - node --check js/sace-template.js: PASS.
+  - sace-template-binary-patch: PASS; conserva tamaño OLE, estructura y celdas no mapeadas; incluye mapeo de identidad/contexto y casos de valores vacíos.
+- CLI: no existe package.json, directorio CLI ni scripts CLI configurados; no hay suite CLI que ejecutar.
+- No se ejecutaron Apps Script desplegado, Sheets reales, navegador real ni carga en SACE. Las pruebas de Actions no sustituyen BETA-EXAM-105 ni BETA-EXAM-106.
+- El manifiesto mantiene officialSourceVerified=false y status=CANDIDATE. La ejecución satisfactoria de los contratos demuestra compatibilidad estructural con los tres XLS del repositorio, no procedencia oficial ni aceptación por SACE.
+
+Pendientes y límites:
+- El adaptador SACE no está integrado todavía en un flujo de exportación docente de producción ni obtiene por sí mismo las inasistencias desde SesionesAsistencia/RegistrosAsistencia.
+- Siguen sin acreditarse el código oficial SACE del centro, la jornada exacta, el tipo de documento, la correspondencia de periodos con los parciales de la plantilla vigente y la semántica oficial de recuperación.
+- No se ha recibido una plantilla descargada desde SACE para una clase de prueba autorizada ni evidencia de carga aceptada. No se debe presentar el adaptador candidato como compatibilidad oficial.
+- BETA-EXAM-105 (validación de catálogo/competencias en Sheets desplegado) y BETA-EXAM-106 (plantilla y carga SACE real) siguen pendientes de su entorno de prueba autorizado.
+- AUD-NG-167 permanece [~] En progreso. No cerrar el hallazgo ni iniciar AUD-NG-168 / TAREA-13 hasta satisfacer sus criterios funcionales y la evidencia beta/SACE requerida.
+- La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59; no se publicó ningún cambio en ella.
+
+Siguiente acción elegible:
+1. Continuar la integración del adaptador con el flujo docente usando únicamente una plantilla SACE real y verificada; no habilitar exportación de producción basada solo en archivos candidatos.
+2. Ejecutar BETA-EXAM-105 en Apps Script/Sheets desplegados y BETA-EXAM-106 con plantilla/carga SACE autorizada.
+3. Repetir la suite focalizada y la suite general; mantener separados los tres fallos externos de ACCOUNTING/USER.
+4. Cerrar AUD-NG-167 únicamente cuando se acrediten los criterios pendientes; después iniciar AUD-NG-168 / TAREA-13.
+===============================================================================
+
+===============================================================================
+### C1.828 — AUD-NG-167: validación estricta de tipo documental y fuente SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-DOCMARKER-SACE-VERIFY-03
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.827
+HEAD inicial: 9939ac460e174996acb17e8e0200ba0f7907c14e
+HEAD de código verificado antes del registro C1.828: 9939ac460e174996acb17e8e0200ba0f7907c14e
+Commit que registra C1.828: de955c15096b5aecda984359e5109bc72201a63e
+HEAD de la rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Tarea: AUD-NG-167, continuidad del adaptador SACE candidato.
+- Revisión de js/sace-template.js: mapRowsToTemplate antes permitía omitir la comparación del tipo documental cuando source.documentMarker estaba vacío o ausente. Se cambió para exigir ambos marcadores (plantilla y origen) y coincidencia normalizada exacta; la falta o discrepancia lanza SACE_STUDENT_DOCUMENT_TYPE_MISMATCH.
+- Se agregaron dos contratos negativos en tests/security/sace-template-binary-patch.test.js: marcador documental faltante en origen y marcador faltante en plantilla. Se conserva el contrato de tipo documental distinto.
+- Commit de código: 9939ac460e174996acb17e8e0200ba0f7907c14e (js/sace-template.js y tests/security/sace-template-binary-patch.test.js).
+- GitHub Actions 44533390963: SUCCESS. node --check del contrato estructural PASS; sace-template-structure-contract PASS (3 archivos BIFF8, sin emitir datos personales); node --check js/sace-template.js PASS; sace-template-binary-patch PASS (3 plantillas, solo celdas mapeadas, tamaño OLE preservado). Las pruebas negativas nuevas corrieron dentro de la suite binaria y el workflow terminó SUCCESS.
+- Investigación documental: el portal oficial SACE https://sace.se.gob.hn/descargas/descargar/archivos lista el Manual Usuario de Docente SACE. El PDF https://sace.se.gob.hn/media/documentos_sace/Manual_de___usuario_SACE_Docente_2.pdf registra actualización JUNIO 2025 en página 4; secciones 4.1.1 y 4.1.2, páginas 21–23, describen descargar y cargar archivos de notas por clase. Se agregó esta verificación a docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md.
+- La documentación oficial confirma el flujo de archivo, no entrega una plantilla real descargada de una cuenta docente autorizada. No hay evidencia de carga aceptada. Los tres XLS del repositorio permanecen CANDIDATE; officialSourceVerified=false. No se habilitó integración de producción ni se afirmó compatibilidad oficial.
+- No se dispone de conexión autorizada a Apps Script/Sheets desplegados ni credenciales/plantilla de una cuenta SACE en esta sesión; BETA-EXAM-105 y BETA-EXAM-106 no se ejecutaron en entornos reales. No inventar resultados.
+- La rama base continúa en 44d9891132332e692dbe2ba8602b41f50a508a59. Sin cambios fuera de la rama autorizada.
+
+Estado AUD-NG-167: [~] En progreso. Criterios funcionales locales y contratos específicos SACE candidatos verificados; quedan pendientes BETA-EXAM-105 (Sheets desplegados), BETA-EXAM-106 (plantilla y carga SACE autorizada), integración real con fuente de asistencia y correspondencia oficial de recuperación.
+Siguiente acción elegible: preparar el contrato de ensamblaje del exportador sin activar descarga de producción, si puede probarse con plantilla sintética y datos ficticios; mantener el guard de estado CANDIDATE. Reanudar BETA-EXAM-105/106 cuando exista entorno autorizado y evidencia necesaria. No cerrar AUD-NG-167 ni iniciar AUD-NG-168/TAREA-13.
+===============================================================================
+
+===============================================================================
+### C1.829 — AUD-NG-167: inspección de metadatos y padrón de plantilla SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-TEMPLATE-INSPECTION-04
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.828
+HEAD de código verificado antes del registro C1.829: 9fca09298d7369bcaeaf4bfe3bc586917971a8be
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Trabajo:
+- Se agregó inspectTemplate(input) a js/sace-template.js. La función usa el parser BIFF8 existente para extraer los cinco metadatos contextuales (centro, modalidad, grado/sección, jornada y asignatura) y las 22 filas de padrón (tipo de documento, identidad y nombre), sin reconstruir ni modificar el XLS.
+- El contrato tests/security/sace-template-binary-patch.test.js ahora comprueba la inspección de los cinco campos y 22 estudiantes; crea valores sintéticos; invierte el orden de la lista de origen; usa mapRowsToTemplate para comprobar que la salida respeta el orden del padrón por identidad y tipo documental; y después pasa esas filas al parcheador binario. No se imprimen nombres, identidades ni notas de los libros de muestra.
+- Commit de código: 9fca09298d7369bcaeaf4bfe3bc586917971a8be (js/sace-template.js y tests/security/sace-template-binary-patch.test.js).
+- GitHub Actions 44533727250: SUCCESS. node --check del contrato estructural PASS; contrato estructural PASS; node --check del adaptador PASS; contrato de parcheo binario PASS para tres XLS candidatos. El test de parcheo ahora ejercita inspección + emparejamiento fuera de orden + parcheo en una sola ruta.
+- Se actualizó Mapa_Compatibilidad_SACE.md: el adaptador extrae metadatos/padrón de la plantilla y empareja una lista fuente que le suministren; todavía no obtiene la lista desde el backend académico ni calcula asistencia ni está integrado con el libro/UI.
+- La prueba sigue siendo estructural/local sobre los tres XLS candidatos. No se acreditó plantilla oficial descargada ni carga aceptada. El manifest continúa CANDIDATE y officialSourceVerified=false.
+
+Pendientes:
+- Integrar la obtención de estudiantes y calificaciones del contexto docente consolidado, con filtros y permisos ya existentes; no usar la lista de muestra de los XLS como padrón fuente.
+- Obtener inasistencias por estudiante/clase/rango del parcial desde SesionesAsistencia y RegistrosAsistencia con regla explícita de cómputo.
+- Resolver código SACE del centro, jornada y tipo de documento con catálogos/datos verificados; confirmar el mapeo PeriodoID-parcial y regla de recuperación con plantilla real y procedimiento SACE.
+- BETA-EXAM-105 requiere Apps Script/Sheets desplegados; BETA-EXAM-106 requiere archivo descargado desde cuenta SACE autorizada y carga de prueba aceptada. No disponibles en esta sesión.
+- Mantener AUD-NG-167 [~] En progreso. No habilitar exportación de producción ni iniciar AUD-NG-168/TAREA-13.
+
+Siguiente acción elegible: diseñar y probar un ensamblador candidato que reciba el archivo original y la lista de estudiantes/notas ya autorizada por el contexto académico, utilizando inspectTemplate + mapRowsToTemplate + fill, sin exponer botón ni flujo de producción y manteniendo guard CANDIDATE. Solo activar después de BETA-EXAM-106 y evidencia oficial.
+===============================================================================
+
+===============================================================================
+### C1.830 — AUD-NG-167: ensamblador candidato de exportación SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-CANDIDATE-PIPELINE-05
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.829
+HEAD de código verificado antes del registro C1.830: a6abbbfdeac43dc25315881bff8f2f3bfdc8a106
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Trabajo:
+- Se agregó prepareCandidateExport(input, sourceStudents, expectedContext, options) a js/sace-template.js. El ensamblador inspecciona el archivo original con inspectTemplate, valida contexto y empareja el padrón con mapRowsToTemplate, y solo después ejecuta fill para parchear las celdas permitidas.
+- El nombre Candidate deja explícito que es una ruta de preparación técnica, no una integración aprobada ni una función de exportación de producción. No se conectó a la UI docente, no se añadieron botones ni descargas y no se modificó el estado CANDIDATE del manifiesto.
+- El contrato tests/security/sace-template-binary-patch.test.js compara el resultado del ensamblador con el resultado equivalente de inspección + mapeo + parcheo; comprueba además que un contexto de asignatura distinto es rechazado.
+- Commit de código: a6abbbfdeac43dc25315881bff8f2f3bfdc8a106 (js/sace-template.js y tests/security/sace-template-binary-patch.test.js).
+- GitHub Actions 44533933243: SUCCESS. node --check del contrato estructural PASS; contrato estructural PASS; node --check js/sace-template.js PASS; contrato binario PASS en los tres XLS candidatos. La ruta completa inspectTemplate → mapRowsToTemplate → fill se ejecutó con datos sintéticos y roster de origen invertido.
+- Se actualizó Mapa_Compatibilidad_SACE.md para documentar el ensamblador candidato y sus límites.
+- No se ejecutó integración backend, exportación UI, Apps Script/Sheets desplegados ni carga real en SACE. La plantilla oficial sigue sin estar disponible en esta sesión; los tres XLS internos son candidatos.
+
+Pendientes:
+- Conectar sourceStudents y notas desde el libro consolidado docente mediante APIs/contexto y permisos existentes; no tomar el padrón de muestra como fuente de datos.
+- Obtener y agregar inasistencias por estudiante/clase/parcial desde SesionesAsistencia y RegistrosAsistencia.
+- Resolver código SACE de centro, jornada, tipo documental, equivalencia PeriodoID-parcial y semántica de recuperación con plantilla real y procedimiento vigente.
+- BETA-EXAM-105 (Apps Script/Sheets desplegados) y BETA-EXAM-106 (plantilla SACE autorizada y carga de prueba) siguen pendientes por falta de entornos/artefactos autorizados.
+- Mantener AUD-NG-167 [~] En progreso; no exponer ni habilitar el ensamblador en producción y no iniciar AUD-NG-168/TAREA-13.
+
+Siguiente acción elegible: diseñar el proveedor de datos candidato para recibir libro consolidado y asistencia agregada por contexto, con pruebas unitarias y sin conexión de producción hasta completar BETA-EXAM-105/106.
+===============================================================================
+
+===============================================================================
+### C1.831 — AUD-NG-167: proveedor candidato de libro y asistencia para SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-DATA-PROVIDER-06
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.830
+HEAD inicial: c13b2174b8b679335e54f93be47ee28709448f1
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Trabajo:
+- Se añadió js/sace-data-provider.js con buildCandidateStudents. Consume dos snapshots del libro contextual getGradebookData, dos rangos/PeriodoID explícitos, directorio institucional de identidad/tipo documental y snapshots de SesionesAsistencia + RegistrosAsistencia.
+- Se exige mismo contexto institucional/académico, roster idéntico por UserID/nombre, periodos cerrados, resumen de nota status=calculated y nota 0–100. Si hay recuperaciones, el armado se bloquea hasta verificar la regla SACE; no se copia el resultado recuperado a la columna RECUPERACIÓN.
+- La asistencia se agrega por fecha de sesión y contexto de grado/sección/AsignaturaID/docente. Se exige un registro único por alumno/sesión; registros faltantes, duplicados y estudiantes ajenos al padrón bloquean el resultado. Tardanzas no se cuentan como inasistencias; las ausencias justificadas se cuentan provisionalmente, pendiente de regla oficial.
+- Se verificó en código que getBatchAttendanceRecords filtra por FechaRegistro y no une SesionesAsistencia; getClassAttendance no proporciona los metadatos de sesión. Por ello el módulo no llama esas APIs ni se conecta al navegador: queda pendiente un snapshot server-side autenticado que una ambas hojas.
+- Se añadió tests/security/sace-data-provider-contract.test.js con fixtures sintéticos para dos periodos, matching de padrón, identidad, notas, conteo por sesión, faltantes, duplicados, estados provisionales, recuperación no resuelta y contexto incorrecto.
+- Se amplió .github/workflows/sace-template-compatibility-contract.yml para ejecutar sintaxis y contrato del proveedor además de las pruebas SACE existentes.
+- Se actualizó docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md con las reglas, el hallazgo de fuente y límites del proveedor.
+- GitHub Actions 44536180884: SUCCESS. node --check de ambos módulos/contratos, contrato estructural SACE, parcheo binario y sace-data-provider-contract PASS.
+
+Estado AUD-NG-167: [~] En progreso. El proveedor es candidato local y aún no consume datos reales; falta el join server-side autenticado, identidad institucional verificada, regla oficial de ausencias justificadas/recuperación y mapeo PeriodoID-parcial.
+No se habilita exportación de producción ni UI. Manifiesto SACE permanece CANDIDATE/officialSourceVerified=false. BETA-EXAM-105 y BETA-EXAM-106 siguen pendientes; no iniciar AUD-NG-168/TAREA-13.
+
+Siguiente acción elegible:
+1. Diseñar un lector server-side en Academic-Service que, reutilizando el contexto de sesión/permiso existente, entregue las sesiones de clase y sus registros de asistencia con Fecha de sesión y contexto exacto; no reutilizar getBatchAttendanceRecords sin corregir su semántica.
+2. Resolver el origen de Personas.Identificacion y tipo documental desde el esquema institucional verificado.
+3. Mantener el proveedor sin conexión de producción hasta probar la integración con Sheets desplegado y plantilla SACE autorizada.
+===============================================================================
+
+===============================================================================
+### C1.832 — AUD-NG-167: verificación del proveedor y mapeo al adaptador SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-DATA-PROVIDER-VERIFY-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.831
+HEAD final verificado: 3cb6eb8b0eb5253506bf525b200f4ab02df9aa19
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Verificación:
+- Commit inicial del proveedor: de04cbe3c49065222435c5bdffc9a03f54ea3dcb.
+- GitHub Actions 44536180884: SUCCESS. Pasaron el contrato estructural SACE, parcheo binario sobre los tres XLS candidatos, node --check de js/sace-data-provider.js y del contrato nuevo, y sace-data-provider-contract.
+- Commit de ampliación de contrato: 3cb6eb8b0eb5253506bf525b200f4ab02df9aa19. Se añadió una prueba de integración del contrato que pasa sourceStudents del proveedor directamente a mapRowsToTemplate y comprueba que se conservan la identidad, el tipo documental, las notas y las inasistencias en el orden del padrón.
+- GitHub Actions 44536395133: SUCCESS. Los diez pasos funcionales del job, incluidos los contratos estructurales/binarios SACE y el contrato proveedor→mapeo de plantilla, terminaron SUCCESS.
+- Se volvió a verificar la rama de trabajo en 3cb6eb8b0eb5253506bf525b200f4ab02df9aa19 y la rama base sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Resultado:
+- El proveedor produce filas compatibles con mapRowsToTemplate bajo fixtures sintéticos. No se ejecutó contra datos reales de Sheets, ni contra una plantilla oficial descargada de SACE.
+- AUD-NG-167 permanece [~] En progreso. No se habilitó backend, UI ni exportación de producción. BETA-EXAM-105/106 y las reglas oficiales de periodo/inasistencia/recuperación siguen pendientes.
+- No se ejecutó suite general Node.js ni CLI en este checkpoint. No existe package.json/directorio CLI declarado; los tres fallos externos de la suite general ya documentados permanecen sin atribuir a este cambio.
+
+Siguiente acción elegible: implementar el snapshot server-side de sesiones y asistencia usando la identidad/contexto autenticado existente, después conectar el proveedor sin crear otra capa de autorización redundante; verificar identidad desde Personas y mantener bloqueada la salida de producción hasta la prueba SACE real.
+===============================================================================
+
+===============================================================================
+### C1.833 — AUD-NG-167: snapshot server-side autenticado de asistencia SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-ATTENDANCE-SNAPSHOT-08
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.832
+HEAD inicial: fdeb4e2f017c037c5549f1e0b61418d42fec851f
+
+Implementación:
+- Se añadió getSaceAttendanceSnapshot(payload) en backend/academic-service/Code.gs, acción autorizada para Profesor mediante ROLE_PERMISSIONS y el dispatcher existente.
+- Reutiliza getVerifiedAcademicIdentity_ y getVerifiedRequestSessionClaims_; deriva DocenteUserId del usuario autenticado y valida institutionId contra IMA_INSTITUTION_ID. No acepta identidad docente/institución del cliente.
+- Recibe anoId, grado, seccion, asignaturaId, dos PeriodoID y UserID del roster del libro; verifica año, periodos cerrados/no solapados, catálogo de asignaturas, cuenta estudiante activa, persona, identificación y matrícula activa de año/grado/sección.
+- Une SesionesAsistencia y RegistrosAsistencia por SesionID. Filtra por fecha de clase, docente, asignatura, grado y sección; devuelve solo registros del roster solicitado y sesiones cerradas/finalizadas.
+- El esquema estándar Personas no contiene tipo documental. documentMarker se deja vacío si no existe columna explícita TipoDocumento/TipoIdentificacion/DocumentoTipo; no se infiere. El proveedor SACE mantiene bloqueo ante ese dato faltante.
+- El snapshot conserva el booleano justificado; la semántica SACE de ausencias justificadas permanece sin resolver. Se anotó el conflicto/pendiente frente a la regla IMA de ausencia injustificada.
+- Se añadió tests/security/sace-attendance-snapshot-contract.test.js con fixtures sintéticos; prueba rol, institución, contexto, matrícula, identidad, sesión y registros. Se añadió al workflow Academic-Service.
+- Se registró BETA-EXAM-107 para verificar llamada real al endpoint cuando exista despliegue.
+
+Estado AUD-NG-167: [~] En progreso. Endpoint local candidato listo; no se habilita UI/producción. Pendientes tipo documental canónico, semántica SACE de justificación, libro contextual y validación con plantilla/carga oficial.
+Pruebas locales: GitHub Actions 44538593734 SUCCESS; node --check de Code.gs y contrato sace-attendance-snapshot-contract PASS, junto con single-auth-context y contratos de regresión académicos incluidos en el workflow.
+HEAD final se actualizará al publicar.
+
+Siguiente acción: resolver fuente canónica de tipo documental en el modelo de identidad (sin inferencia), y conectar el snapshot al flujo de preparación del proveedor manteniendo bloqueo si falta el marcador.
+===============================================================================
+
+===============================================================================
+### C1.834 — AUD-NG-167: verificación local del snapshot server-side
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-ATTENDANCE-VERIFY-09
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.833
+HEAD de implementación: 97d589688eafa7716784892b8f26e8ac58232967
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Verificación:
+- GitHub Actions 44538593734 — Academic-Service single authorization context: SUCCESS. Incluye node --check de backend/academic-service/Code.gs, academic-service-single-auth-context, sace-attendance-snapshot-contract y las pruebas de regresión de autorizaciones, notas, justificaciones, migración y documentos.
+- GitHub Actions 44538593785 — SACE template structure compatibility contract: SUCCESS. Se mantienen aprobados los contratos estructurales, binarios y de proveedor.
+- El contrato nuevo pasó con fixtures sintéticos: identidad del docente e institución derivadas de sesión/configuración; rechazo de rol no docente e institución discordante; periodos cerrados no solapados; asignatura y matrícula; unión Personas/Usuarios; filtro de sesiones por fecha/contexto/docente y selección de registros por roster.
+- Revisión del diff: 9 archivos cambiados, 187 adiciones/1 eliminación en Code.gs, 130 líneas de contrato nuevo, workflow, mapa, beta_test y registros de continuidad. Sin cambios en rama base.
+- La comparación Git confirma un commit de avance respecto al checkpoint previo, sin divergencia de la rama de trabajo.
+
+Limitaciones conservadas:
+- Personas estándar no tiene tipo documental; el endpoint deja documentMarker vacío y el proveedor debe rechazar la exportación hasta disponer de una fuente institucional.
+- La semántica SACE de ausencias justificadas no se decide en este cambio.
+- La prueba de servicio desplegado es BETA-EXAM-107 (Pendiente beta); no se invocó infraestructura real ni se activó UI/exportación.
+
+Estado: endpoint local completado y contrato local PASS; AUD-NG-167 sigue [~] En progreso por la integración con el proveedor y los datos/reglas/plantilla SACE pendientes.
+Siguiente acción concreta: conectar getSaceAttendanceSnapshot al ensamblador del proveedor como wrapper de preparación (sin exposición UI), y añadir pruebas que verifiquen que el tipo documental faltante bloquea el ensamblado.
+===============================================================================
+
+===============================================================================
+### C1.835 — AUD-NG-167: composición del snapshot con el proveedor SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-SNAPSHOT-PROVIDER-10
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.834
+HEAD inicial: 66d57b98ac54a21e2f0dade1a97f4d0620898c0a
+Commit de implementación: 4498d09157860fa01189f7a0494fc8caeaa08c10
+
+Trabajo:
+- Se añadió buildCandidateStudentsFromSnapshot(input) a js/sace-data-provider.js.
+- El wrapper consume attendanceSnapshot.status/data del contrato getSaceAttendanceSnapshot y los snapshots de calificaciones de ambos periodos.
+- Exige partial1PeriodId y partial2PeriodId explícitos, los resuelve contra los dos PeriodoID devueltos y no infiere el orden del parcial.
+- Reutiliza expectedContext, identityRecords, attendanceSessions y attendanceRecords del snapshot server-side; propaga las limitaciones del origen.
+- Se amplió tests/security/sace-data-provider-contract.test.js para probar la composición snapshot→proveedor, periodos duplicados, snapshot incompleto y rechazo cuando documentMarker está vacío.
+- GitHub Actions 44539068963 — SACE template structure compatibility contract: SUCCESS. Pasaron node --check del proveedor y del contrato, contrato estructural, parcheo binario y sace-data-provider-contract.
+- No se conectó por red el Academic-Service con Exam-Service; el wrapper es una composición local de contratos. No UI ni exportación productiva.
+
+Estado AUD-NG-167: [~] En progreso. El flujo candidato queda conectado por contrato; la fuente institucional actual no ofrece tipo documental en Personas y el wrapper bloquea la preparación hasta recibirlo. Siguen pendientes reglas oficiales de ausencias justificadas/recuperación, equivalencia de parciales, plantilla/carga SACE real y BETA-EXAM-105/106/107.
+
+Siguiente acción: definir el dato canónico de tipo documental en el modelo Personas/Usuarios sin inferirlo, revisar los puntos de creación/actualización de Personas y probar compatibilidad de consumidores; luego alimentar el proveedor con ese dato explícito.
+===============================================================================
+
+===============================================================================
+### C1.836 — AUD-NG-167: tipo documental canónico de Persona
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-PERSON-DOCUMENT-TYPE-11
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.835
+HEAD inicial: 1c8cd0f1e335ee022b760b86a73163309cd1fd5e
+Commits de implementación:
+- d9fd325df1d500aae04987bbb10480a49b026d87 — campo TipoIdentificacion, endpoint y proveedor.
+- 211bce478d884a93567547fe3d95ebd2500dd7f2 — corrección de sintaxis del template literal en createPerson.
+- 01ef856d0c1a22fa0cce510feb20a4777c77b2f0 — ajuste del fixture legacy para leer la celda nueva vacía.
+HEAD final de implementación: 01ef856d0c1a22fa0cce510feb20a4777c77b2f0
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Se añadió Personas.TipoIdentificacion al esquema nuevo de USER y a MIGRATION_WRITER_SCHEMAS_.
+- createPerson acepta tipoIdentificacion como texto opcional (máximo 40 caracteres), añade la columna al final en hojas antiguas y persiste solo el valor explícito. No completa tipos para identidades históricas ni deduce el tipo a partir del número.
+- El escritor de migración extiende de forma compatible el esquema legacy de diez columnas a once y rellena la nueva celda como vacía al actualizar filas antiguas, conservando el resto de campos.
+- Academic-Service devuelve documentType desde Personas.TipoIdentificacion por separado de documentMarker. No trata DNI/Pasaporte/etc. como código/marcador de plantilla SACE.
+- El proveedor conserva documentType en sourceStudents, pero sigue exigiendo un documentMarker explícito. La exportación queda bloqueada hasta confirmar y configurar la equivalencia oficial del marcador SACE.
+- Se añadieron tests/security/user-person-document-type.test.js; se ampliaron user-migration-writer.test.js, sace-attendance-snapshot-contract.test.js y sace-data-provider-contract.test.js; se actualizaron workflows USER/identity y el mapa SACE.
+
+Verificación:
+- GitHub Actions 44540993188 — Identity mapping and transport security contracts: SUCCESS. Pasaron TASK-068, snapshot de identidad USER, escritor de migración, contrato del nuevo tipo documental y transport access scope.
+- GitHub Actions 44540632344 — Academic-Service single authorization context: SUCCESS; incluye el contrato del snapshot SACE.
+- GitHub Actions 44540632057 — SACE template structure compatibility contract: SUCCESS; incluye el proveedor y su contrato snapshot→proveedor.
+- En el primer intento, 44540632487 detectó un template literal escapado en createPerson; se corrigió en 211bce y la ejecución posterior 44540993188 pasó.
+- La ejecución amplia Department Scope 44540845994 reportó un fallo no relacionado en tests/regression/phase22-document-management-suite-contract.test.js: el fixture intenta extraer configureSchoolDocumentTemplate, función ausente en el código actual. Los demás pasos de ese job, incluidos los contratos de identidad, matrícula, justificaciones, adjuntos, documentos y acceso, terminaron SUCCESS. Se registra como fallo preexistente/ajeno al cambio, no se altera esa suite en esta tarea.
+- La rama base permanece sin cambios.
+
+Límites:
+- Personas.TipoIdentificacion es dato general institucional, no un mapeo SACE. documentMarker sigue vacío si no existe fuente/catálogo explícito.
+- La semántica de ausencias justificadas, recuperación y PeriodoID→parcial continúa pendiente de confirmación oficial.
+- No se habilitó UI ni exportación productiva; BETA-EXAM-105/106/107 y plantilla/carga oficial siguen pendientes.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: definir el catálogo/equivalencia documental SACE a partir de la plantilla oficial autorizada, sin asumir que TipoIdentificacion equivale al marcador; después probar la composición completa con libro contextual y snapshot sintético, manteniendo bloqueo ante equivalencias faltantes.
+===============================================================================

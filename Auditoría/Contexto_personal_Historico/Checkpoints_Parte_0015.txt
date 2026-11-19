@@ -1,0 +1,45 @@
+===============================================================================
+## C1.769 — IMA-EXEC-20261115-TASK134-SHA256-DEDUP-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD previo al checkpoint:** ca9ef9eb8d9801cf05eab0f42d18ed8d785f2e91
+- **HEAD de rama base verificado en C1.768:** 44d9891132332e692dbe2ba8602b41f50a508a59 (sin modificaciones)
+- **Normativa:** Normas_Desarollo.md.
+
+### TASK-134 — alcance implementado
+- Academic: DocumentosEstudiantes añade HashSHA256, ImportBatchID y DocumentoReferenciaID al final, manteniendo SHA256 como columna compatible. La migración es aditiva.
+- uploadStudentDocument calcula SHA-256 sobre bytes originales decodificados antes de Drive.createFile; la lectura del repositorio y la creación se serializan con ScriptLock para prevenir carreras de duplicación.
+- Se distinguen mismo documento/idempotencia, duplicado exacto en mismo lote, duplicado existente en repositorio y referencia legítima a otro expediente. El default es RECHAZAR_DUPLICADO_EXACTO.
+- Con CREAR_ENLACE_REFERENCIA_SIN_DUPLICAR_ARCHIVO, se crea un registro de referencia con DocumentoReferenciaID y el mismo DriveFileId; no se crea otro archivo físico. La referencia conserva el hash.
+- Un contenido diferente en el mismo expediente/tipo sigue el flujo de nueva versión; restauración preserva el hash.
+- verifyDocumentIntegritySha256 se expone por el dispatcher Academic y usa el verificador privado. getStudentDocuments y getStudentDocumentFile validan el binario actual contra el hash registrado.
+- User: InventarioDocumentalLegado añade HashSHA256 con migración aditiva al final. El hash se calcula server-side desde fileData, no se acepta un hash proporcionado por el cliente; duplicados exactos dentro de la misma institución se bloquean sin revelar IDs entre departamentos.
+
+### Archivos modificados en la iteración
+- backend/academic-service/Code.gs
+- backend/user-service/Code.gs
+- tests/security/academic-student-document-private-storage.test.js
+- tests/security/user-service-legacy-document-inventory.test.js
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md
+- changueslogs.txt
+- beta_test.txt (BETA-FUNC-109)
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0015.txt
+- Auditoría/INDICE_CHECKPOINTS.md (pendiente de indexar)
+
+### Verificación
+- Parseo V8 completo Academic Code.gs: PASS.
+- Parseo V8 completo User Code.gs: PASS.
+- academic-student-document-private-storage.test.js: PASS en harness V8 aislado; cubre hash, duplicado exacto, mismo lote, política de referencia, inventario legado, nueva versión y detección de alteración.
+- user-service-legacy-document-inventory.test.js: PASS en harness V8 aislado; cubre hash de inventario, deduplicación, migración aditiva, RBAC/tenant/department y rollback de historial.
+- Los harnesses usan un SHA-256 determinista simulado para validar la lógica; no equivalen a Node CLI nativo ni a Apps Script/Drive real.
+- Node CLI local: no ejecutado. GitHub Actions no reporta workflow run para el HEAD actual.
+
+### Brechas que mantienen TASK-134 abierto
+- DocumentosEscolaresEmitidos y el servicio ACCOUNTING no tienen aún un flujo de carga/documentos conectado a esta política. backend/accounting-service/Code.gs carece de router doPost/textResponse y acciones de carga; no se declara cobertura allí.
+- BETA-FUNC-109 pendiente de ejecución real en Apps Script/Drive/Sheets.
+- TASK-134 queda parcial avanzado en Academic/User; no se marca completada hasta cerrar integración y pruebas requeridas.
+
+### Continuidad
+- Siguiente tarea P0 del flujo: TASK-135/F39-Task03 custodia protegida e inmutable de originales, ahora que la base F39-Task02 SHA-256 está implementada parcialmente. Verificar antes sus dependencias F29-Task11/15, F27-Task03 y TASK-151/TASK-152.
+===============================================================================

@@ -1,0 +1,1334 @@
+# Checkpoints — Parte 0009
+
+Continuación del historial activo desde C1.710. Los registros anteriores permanecen íntegros en Checkpoints_Parte_0008.txt.
+
+===============================================================================
+### C1.711 — IMA-EXEC-20261113-2049Z-01 — F18-Task01 — compatibilidad itemId
+- **Continuidad:** C1.710; HEAD inicial 043843bd758249893ceda089cde9b337d83ae6ce; HEAD final de código 798a23a26df3310e669c5646ce7641af8e50f59d; rama NG_beta_0.0.0.1_work.
+- **Hallazgo:** las órdenes generadas por la adjudicación TASK-181 conservan el identificador de partida como itemId; la recepción solo reconocía codigoItem/codigo/id. Las recepciones históricas podían presentar la misma forma.
+- **Corrección:** recordPurchaseReceipt reconoce itemId/ItemId en partidas de orden, detalle de recepción e historial; normaliza el identificador a codigoItem al registrar el movimiento de inventario.
+- **Prueba:** tests/security/accounting-purchase-receipt-partial.test.js verifica partida nueva itemId, recepción histórica itemId y movimiento Kardex normalizado.
+- **CI:** Department Scope 43505043553 SUCCESS (Node.js 24.22.2), incluyendo el contrato F18-Task01 y sintaxis; Identity Mapping 43504993543 SUCCESS; Department Reference Consumers 43504994056 SUCCESS para el commit anterior 239da6a. El commit final 798a23a tiene Department Scope SUCCESS.
+- **Archivos de código/prueba:** backend/accounting-service/Code.gs; tests/security/accounting-purchase-receipt-partial.test.js.
+- **Commits:** 239da6a217a684390ddf373c272b6e9a8328a4b5; 798a23a26df3310e669c5646ce7641af8e50f59d.
+- **CLI local:** NOT RUN. **Apps Script/Sheets real:** NOT RUN.
+- **Estado:** F18-Task01 validada en código y CI; BETA-FUNC-082 pendiente.
+- **Siguiente tarea:** TASK-182 — integración de recepción con activos fijos.
+===============================================================================
+
+===============================================================================
+### C1.712 — IMA-EXEC-20261113-2130Z-01 — TASK-182 — Integración de recepción con activos fijos
+- **Continuidad:** C1.711; HEAD de trabajo al iniciar esta continuación: 328111092adbad7336685a5cf12b88c6755b5439; rama exclusiva NG_beta_0.0.0.1_work.
+- **Alcance:** clasificación de inventario heredada y protegida desde solicitud; precarga de activos desde recepción conforme; vínculo con orden, proveedor, recepción, factura y obligación; registro individual por unidad; custodia inicial; navegación al expediente; prevención de duplicados y reintentos; bloqueo de consumibles, materiales, unidades dañadas/rechazadas y cantidades excedidas.
+- **Revisión técnica:** se revisaron los cambios de backend, UI y contratos; se endureció la validación de esquema patrimonial y se validó autorización antes de escrituras de esquema. El contrato incluye tres vías con itemId, herencia de clasificación, factura bloqueada/no vinculada, scope/RBAC, idempotencia, límites de cantidad, serial/código duplicado, concurrencia, rollback y lectura vacía sin mutación.
+- **Pruebas:** tests/security/accounting-purchase-asset-capitalization.test.js PASS en GitHub Actions; sintaxis Apps Script y js/accounting.js PASS; contratos TASK-181 y F18-Task01 PASS en el mismo job. Node.js 24.22.2.
+- **CI:** Department Scope Contract run 43510871686 SUCCESS para commit 94aa5fdc55e6d45dbe8aa2be9020df1aaddd101e. En el commit anterior f818bf961d32700b5448be129c571b9d3579012c, Identity Mapping 43510444981 SUCCESS y Department Reference Consumers 43510445049 SUCCESS. Se corrigieron fallos iniciales del fixture de prueba antes del PASS final; no se ocultaron resultados fallidos.
+- **Commits de implementación y correcciones:** 328111092adbad7336685a5cf12b88c6755b5439; 5dc262a9ee2018778b0385814d3e3a0f787ca6af; fd7f65aa93dcce5652deaf23cb053ff618303c04; 88cf8b752b47222577e1ad285fc31fd990e24785; 652ebf80a0a2e6bb80fef27ff827d26fc236ca06; f818bf961d32700b5448be129c571b9d3579012c; f9d3f4d3a8b78c71f19d288e3ed2696ad3212c9f; 5d9fc3be13aa3193f1133210d6f667025a4ec0d8; 94aa5fdc55e6d45dbe8aa2be9020df1aaddd101e.
+- **Limitaciones:** CLI local NOT RUN; Apps Script/Sheets desplegado NOT RUN. La prueba funcional de entorno beta queda separada como BETA-FUNC-083.
+- **Estado:** TASK-182 completada en código, revisión y CI; BETA-FUNC-083 pendiente de despliegue/validación beta.
+- **Siguiente tarea elegible:** TASK-183 — contactos múltiples, condiciones comerciales y datos bancarios protegidos de proveedores.
+===============================================================================
+
+===============================================================================
+### C1.713 — IMA-EXEC-20261113-2138Z-01 — TASK-183 — Perfil ampliado y seguridad de proveedores
+- **Continuidad:** C1.712; rama NG_beta_0.0.0.1_work; HEAD de implementación inicial de la tarea: 56e65cb4b009539c4b8cb1cf11db3834777c632f.
+- **Alcance:** RTN hondureño de 14 dígitos con detección de duplicados; estados Activo/Inactivo/Suspendido/EnEvaluacion; contactos múltiples con sustitución histórica del principal; direcciones diferenciadas para facturación fiscal, entrega y correspondencia; condiciones comerciales versionadas; cuentas bancarias en hoja separada, directorio enmascarado y lectura completa restringida a Administrador/Director/Contador; motivo y referencia documental obligatorios para cambios; auditoría durable con números enmascarados y rollback si falla la escritura; bloqueo de órdenes nuevas/emisión a proveedores suspendidos o inactivos.
+- **Interfaz:** directorio conectado al endpoint getSuppliers; formulario de alta de proveedor con contacto principal, direcciones, condiciones comerciales y datos bancarios opcionales; adición de contactos múltiples y consulta/actualización bancaria restringida por backend.
+- **Revisión técnica:** se validaron permisos en la capa de rutas y nuevamente en las funciones sensibles; se preserva el historial de contactos, direcciones, condiciones y cuentas sustituidas; las lecturas no crean hojas; el registro de auditoría no incluye cuentas completas; los cambios bancarios se serializan bajo ScriptLock y se revierten si falla la persistencia.
+- **Pruebas:** tests/security/accounting-supplier-profile.test.js PASS; TASK-182 fixed asset capitalization PASS; TASK-181 quotation matrix PASS; F18-Task01 partial receipt PASS; sintaxis Apps Script y js/accounting.js PASS. Node.js 24.22.2.
+- **CI:** Department Scope 43512317759 SUCCESS; Identity Mapping 43512317641 SUCCESS; Department Reference Consumers 43512317687 SUCCESS para commit 7dfc14f77d3ba05934f488cdf701d2eb70dd5e3e.
+- **Commits:** implementación dbd588b88ea1173c98fb160127d725b88397cb5e; corrección de fixture 8c501864aa1548e68f50d58c19914cf36ec5f39b; UI mantenimiento bancario e6492a6a473e65e8bc18e8bb7c6af62df2b84695; auditoría durable y rollback 7dfc14f77d3ba05934f488cdf701d2eb70dd5e3e.
+- **Limitaciones:** CLI local NOT RUN; Apps Script/Sheets desplegado NOT RUN. La cuenta bancaria completa permanece en una hoja separada y se protege mediante control de acceso de aplicación; no se implementó cifrado criptográfico en reposo. Validar permisos directos de la hoja en beta antes de cargar datos bancarios reales.
+- **Estado:** TASK-183 completada en código y CI; BETA-FUNC-084 pendiente de despliegue/validación beta y verificación de permisos directos de la hoja.
+- **Siguiente tarea elegible:** TASK-184 — expediente digital unificado de adquisiciones.
+===============================================================================
+
+===============================================================================
+### C1.714 — IMA-EXEC-20261113-2147Z-01 — TASK-184 — Expediente digital unificado de adquisiciones
+- **Continuidad:** C1.713; rama NG_beta_0.0.0.1_work; HEAD de inicio: a0881fc67ab2b56fb921f6162e3da460e9b237d4.
+- **Alcance:** búsqueda por solicitud, orden, factura y proveedor; expediente 360° con solicitud, cotizaciones, detalle de cotización, acta/adjudicación, orden PDF, confirmación de proveedor, recepciones parciales, facturas, conciliación Three-Way, pagos parciales y asientos; línea de tiempo con responsables/fechas solo cuando existen; métricas acumuladas de cantidades e importes; enlaces probatorios desde Drive; acceso por rol y scope; conservación de órdenes cerradas/canceladas en consulta histórica.
+- **Nuevos registros:** ConfirmacionesOrdenCompra append-only; endpoint recordPurchaseOrderConfirmation registra contacto, canal, estado, fecha, documento Drive y responsable. Facturas y pagos admiten metadatos de enlaces FACTURA_URL y COMPROBANTE_URL. Los enlaces visibles se limitan a HTTPS de drive.google.com/docs.google.com.
+- **Interfaz:** nueva subpestaña Expediente 360° en Compras; consulta interactiva; resumen de métricas, línea de tiempo, cotizaciones, adjudicación, cantidades por partida, documentos, facturas, pagos y asientos; registro de confirmación del proveedor desde el expediente.
+- **Seguridad:** getPurchaseDossier valida purchaseQuotationAccess_ y scope departamental; los enlaces se ocultan a roles sin permiso documental; URLs no HTTPS/Google Drive se descartan; el endpoint de confirmación vuelve a validar rol, scope, estado de orden y campos; lecturas no crean hojas.
+- **Benchmark de diseño:** Odoo documenta el control de facturas por cantidades recibidas y el Three-Way Match entre orden, recepción y factura; QuickBooks documenta vincular órdenes aceptadas con facturas/gastos y enlazar varias transacciones a una misma orden. Se usó como referencia para conservar vínculos de origen y saldos parciales, no como copia literal.
+- **Pruebas:** tests/security/accounting-purchase-dossier.test.js PASS; TASK-183 supplier profile PASS; TASK-182 asset capitalization PASS; TASK-181 quotation matrix PASS; F18-Task01 partial receipt PASS; sintaxis Apps Script y js/accounting.js PASS. Node.js 24.22.2.
+- **CI:** Department Scope 43514148669 SUCCESS; Department Reference Consumers 43514148647 SUCCESS; Identity Mapping 43514148747 SUCCESS para commit 2404dcde7789e16078fdcbbca66bd59f685f8b67.
+- **Commits:** e9f00aa7b1ad95643a19b18e51e43bd69b2e42df; corrección de extractor 2dec660ae8a3916f78f9c88e72dd19dda4068999; enlaces de factura/pago 7a3d1a9d56b5a834d9381aaa2dbb6fee10563742; UI de detalle 3df1c8350166455c106b5072c3ad29a6d61c7aa0; confirmaciones de proveedor 22307a86957e563d11c45e0d38f5981f74f7f615; allowlist Drive 2404dcde7789e16078fdcbbca66bd59f685f8b67.
+- **Limitaciones:** CLI local NOT RUN; Apps Script/Sheets desplegado NOT RUN. Los documentos históricos sin URL almacenada no pueden generar enlaces retroactivos; la vista los marca como no disponibles en lugar de inventarlos. La fecha de aprobación directiva no existe como campo independiente en el esquema legado y se muestra como no registrada cuando no hay evidencia.
+- **Estado:** TASK-184 completada en código y CI; BETA-FUNC-085 pendiente de validación en entorno beta.
+- **Siguiente tarea elegible:** TASK-185 — motor integral de depreciación y gestión contable de activos fijos.
+===============================================================================
+
+
+===============================================================================
+### C1.715 — IMA-EXEC-20261113-2155Z-01 — TASK-184 — revisión correctiva de privacidad, detalle y concurrencia
+- **Continuidad:** C1.714; HEAD de inicio 828421d83bf9d2e0a032af4ab41e2e4a874b862c; rama NG_beta_0.0.0.1_work. La rama base permaneció en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Hallazgos confirmados en revisión del diff:** el filtrado de documentos no eliminaba URLs incrustadas en observaciones anidadas; el contrato sustituía el helper real de allowlist por una copia de prueba; la confirmación de proveedor comprobaba la orden antes del lock pero no revalidaba estado/scope/identidad dentro de la sección crítica; la búsqueda parcial por número de factura podía localizar la orden sin adjuntar la factura; el backend cargaba detalle de cotizaciones pero no lo exponía ni renderizaba.
+- **Correcciones:** sanitización recursiva de URLs para roles sin permiso documental; prueba directa de purchaseDossierSafeUrl_ de producción; revalidación de actor, rol, scope, orden y solicitud después de adquirir ScriptLock; asociación de facturas por ID de obligación encontrado en la búsqueda; exposición de detalle comparativo por partida y presentación en UI.
+- **Pruebas ampliadas:** allowlist real HTTPS Drive/Docs, URLs externas/HTTP/javascript, scope positivo y negativo, búsqueda parcial de factura, ausencia de URLs en datos anidados de rol restringido, detalle de cotizaciones y carrera reproducible donde la orden se cancela entre validación inicial y adquisición del lock.
+- **CI:** Department Scope Contract run 43514861936 SUCCESS; Identity Mapping run 43514861917 SUCCESS; Department Reference Consumers run 43514861918 SUCCESS; contrato TASK-184 y sintaxis Apps Script/JS PASS (Node.js 24).
+- **Commit correctivo:** 828421d83bf9d2e0a032af4ab41e2e4a874b862c. CLI local NOT RUN; Apps Script/Sheets real NOT RUN.
+- **Estado:** TASK-184 permanece Completada en código/CI; BETA-FUNC-085 Pendiente beta.
+- **Siguiente tarea elegible:** TASK-185 — motor integral de depreciación y gestión contable de activos fijos.
+===============================================================================
+
+
+===============================================================================
+### C1.716 — IMA-EXEC-20261113-2213Z-01 — TASK-185 — Motor integral de depreciación
+- **Continuidad:** C1.715; HEAD de inicio 1dfd000ddb20b662c3ad200c25ed7d892f8353b6; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance completado:** ficha financiera por activo; políticas por categoría; métodos línea recta, saldo decreciente y unidades de producción; apertura histórica; mejoras capitalizables; calendario mensual/anual; asientos por partida doble; idempotencia; reversión compensatoria auditable; bajas con valor neto y ganancia/pérdida; resumen por categoría y conciliación con el libro mayor.
+- **Revisión de código:** diff de implementación acotado a backend/accounting-service/Code.gs, js/accounting.js y el contrato específico. Se corrigieron el corte histórico de reportes, el conflicto de reutilización de clave de mejora y la carrera entre validación del activo y adquisición de ScriptLock. Se revisaron preservación de esquema/filas, balance de asientos, reversión, residual, referencias de libro mayor y sintaxis.
+- **Pruebas:** tests/security/accounting-asset-depreciation.test.js PASS; contrato de TASK-182 y regresiones contables del workflow PASS; node --check < backend/accounting-service/Code.gs y node --check js/accounting.js PASS en el runner.
+- **CI:** Department Scope Contract run 43519538296 SUCCESS (Node.js 24.22.2). Identity Mapping run 43519439041 y Department Reference Consumers run 43519439164 SUCCESS en el commit de código anterior 63562112b39dec34b515e18393382153becdcbb3.
+- **Commits de cierre:** 1dfd000ddb20b662c3ad200c25ed7d892f8353b6 (HEAD heredado con implementación inicial); e6ac1f0162b916b6de15f34b5d91c71ed20c6280 (resumen por categoría); 8968286f05c7afed7d83f7b1249769e0c24a31e3 (corte histórico/idempotencia); 63562112b39dec34b515e18393382153becdcbb3 (revalidación bajo lock); 3f0673034ca6a18b587dd416c3a87a1a2bcdc74d (pruebas de corte histórico y claves idempotentes).
+- **Archivos de código/prueba:** backend/accounting-service/Code.gs, js/accounting.js, tests/security/accounting-asset-depreciation.test.js.
+- **Limitaciones:** CLI local NOT RUN por ausencia de checkout local y resolución DNS en el contenedor; Apps Script/Sheets desplegado NOT RUN. BETA-FUNC-086 documenta la validación en entorno beta. No se usaron datos productivos.
+- **Estado:** TASK-185 completada en código, revisión y CI; BETA-FUNC-086 Pendiente beta.
+- **Siguiente tarea elegible:** TASK-186 — catálogo maestro institucional de artículos/materiales. F19-Task01 cuenta con soporte técnico multialmacén en recordInventoryMovement y getInventoryKardex; F19-TASK05 es el registro de alcance equivalente que se resolverá junto con TASK-186. TASK-188 se mantiene detrás de la disponibilidad del catálogo.
+===============================================================================
+
+===============================================================================
+### C1.717 — IMA-EXEC-20261113-2255Z-01 — TASK-186 + F19-TASK05 — Catálogo maestro institucional
+- **Continuidad:** C1.716; HEAD inicial 1dfd000ddb20b662c3ad200c25ed7d892f8353b6; rama exclusiva NG_beta_0.0.0.1_work. HEAD final verificado: c60464986eef21906e5f0c012b126a67e8dd14ad. Rama base NG_beta_0.0.0.1 sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance implementado:** catálogo independiente CatalogoArticulos; ficha editable con código institucional normalizado e inmutable tras alta, nombre normalizado, categoría/subcategoría, unidad y base, factor de conversión, marca/modelo, imagen, códigos de barras/QR, especificaciones, proveedor habitual, costos referencial/último/promedio, mínimos/máximos/punto de reposición, estado, observaciones y vínculo opcional a activo fijo.
+- **Categorías/unidades:** administración dinámica; unidades base y conversiones compatibles; rechazo de unidades incompatibles; validación de límites de stock y punto de reposición.
+- **Integración:** Kardex y solicitudes internas/de compra requieren artículos existentes y activos; movimientos registran ItemID, cantidad base, unidad original y factor; entradas de recepción validan el catálogo; transferencias y recepciones reutilizan el helper bajo el lock existente para evitar locks anidados; el backend ignora el indicador de cantidad base enviado por clientes externos para impedir omitir conversiones.
+- **Duplicados e historia:** normalización de código/nombre, sugerencias de similitud, código único, desactivación lógica, IDs inmutables; importación CSV compatible con Excel con validación completa antes de escribir; exportación CSV; consulta vincula históricos por código y lista registros sin catálogo de Kardex, solicitudes y órdenes para reconciliación, sin borrar filas antiguas.
+- **Interfaz:** pestaña Catálogo con alta/edición, categorías/unidades, importación/exportación, ficha ampliada y reconciliación; Kardex, transferencias, solicitudes internas y solicitudes de compra usan selectores de catálogo.
+- **Revisión técnica:** se corrigió la conversión por unidad en movimientos internos; se evitó re-adquirir ScriptLock desde operaciones que ya lo poseen; se protegió el identificador del catálogo y el historial; se corrigió una redeclaración de identificador en la UI del editor. El árbol Git completo fue restaurado tras detectar un primer árbol incompleto; el diff final respecto de C1.716 se limita a workflow, Code.gs, accounting.js y tres contratos de prueba. Árbol final: 1,222 archivos, no truncado.
+- **Pruebas:** tests/security/accounting-catalog.test.js PASS (normalización, duplicados/sugerencias, conversión caja×12, incompatibilidad, límites stock, solicitudes, legado, importación atómica, exportación y bloqueo de inactivos); tests/security/accounting-purchase-receipt-partial.test.js PASS; tests/security/accounting-purchase-asset-capitalization.test.js PASS; payroll journal integration y contratos de sintaxis Apps Script/JS PASS. GitHub Actions Node.js 24.22.2: Department Scope run 43522764235 SUCCESS; Identity Mapping run 43522567093 SUCCESS; Department Reference Consumers run 43522567045 SUCCESS.
+- **Limitaciones:** CLI local NOT RUN por ausencia de checkout local/resolución DNS; las pruebas Node/CLI se ejecutaron en GitHub Actions. Apps Script/Sheets real NOT RUN. Validación desplegada pendiente en BETA-FUNC-087.
+- **Commits relevantes:** f9a689f (ficha ampliada/UI), 65b97bf (límites de stock), a9e142c (movimientos bajo lock), e291484 (identificadores/historial inmutables), c604649 (corrección de sintaxis del editor). Commits de corrección/restauración del árbol y contratos conservados en el historial.
+- **Estado:** TASK-186 completada en código y CI; F19-TASK05 satisfecha por el mismo alcance. BETA-FUNC-087 pendiente beta.
+- **Siguiente tarea elegible:** TASK-188 — integración contable de entregas y consumo de materiales; sus dependencias de catálogo (TASK-186/F19-TASK05), solicitudes y servicio de asientos ya están disponibles.
+===============================================================================
+
+===============================================================================
+### C1.718 — IMA-EXEC-20261113-2336Z-01 — TASK-188 — Integración contable de entregas y consumo de materiales
+- **Continuidad:** C1.717; HEAD inicial recuperado 8b66a0c1530b858f95cbc84ac0e955bba2172c08 (18 commits posteriores al checkpoint C1.717, con TASK-188 parcialmente iniciada). Rama exclusiva NG_beta_0.0.0.1_work. Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance completado:** departamento y centro de costo en requisiciones; contabilización inmediata 5201/1301; materiales asignados 1302/1301 hasta consumo; consumo efectivo 5201/1302; devoluciones con reversión contable; transferencias internas sin gasto; repuestos de mantenimiento descontados de Kardex y cargados al departamento/costo del activo custodio o al departamento autorizado explícito.
+- **Integridad y seguridad:** identidad verificada en auditoría de entrega; autorización departamental revalidada dentro de ScriptLock; consultas de requisiciones limitadas al scope; claves de idempotencia validan el payload completo y el asiento; colisiones de asiento/ledger se rechazan; costos referenciales no se usan como costo contable; esquemas de requisición, mantenimiento y ledger se validan sin sobrescribir encabezados desconocidos; fallos revierten filas añadidas de Kardex y diario.
+- **Pruebas añadidas:** consulta de centro de costo/modo; scope positivo/negativo; actor no suplantable; entrega y devolución idempotentes; conflicto por reuso de ID; costo promedio y fallback a última adquisición; rechazo de costo referencial; transferencia sin gasto; consumo de mantenimiento por departamento, reintento, conflicto, lock ocupado y schema conflict.
+- **Commits de implementación:** 1e7160fad1babbc33bd565bcc7d1076fcd1e98d6; 331c1effb7683615827e7bef890c43e6d1b5908a; 2727e6b21785f5afc6cd749d78f59a14b8edcc32; 83ceac214a4429c7809796e94aac973b79348c9a.
+- **GitHub Actions:** Department Scope 43528354275 SUCCESS; Department Reference Consumers 43528354359 SUCCESS; Identity Mapping 43528354318 SUCCESS. El workflow ejecutó node tests/security/accounting-catalog.test.js y los chequeos de sintaxis de backend Apps Script y JavaScript con Node.js 24.
+- **Limitaciones:** CLI local NOT RUN por fallo DNS al clonar github.com; Apps Script/Sheets real NOT RUN. Validación desplegada separada en BETA-FUNC-088.
+- **HEAD de implementación verificado:** 83ceac214a4429c7809796e94aac973b79348c9a. **Archivos de implementación:** backend/accounting-service/Code.gs, js/accounting.js, tests/security/accounting-catalog.test.js.
+- **Estado:** TASK-188 completada en código y CI; BETA-FUNC-088 pendiente.
+- **Siguiente tarea elegible:** TASK-189 — valoración económica PEPS/Promedio ponderado del inventario.
+===============================================================================
+
+===============================================================================
+### C1.719 — IMA-EXEC-20261114-1335Z-01 — TASK-189 — Valoración económica integral del inventario
+- **Continuidad:** C1.718; HEAD inicial de esta continuación 103680a7af7b0f4066d7a08f14e2a51508640334; rama exclusiva NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 verificada en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance:** capas de valoración PEPS y promedio ponderado por categoría; costos reales vinculados a entradas; salidas valorizadas; reportes por artículo/ubicación/categoría con fecha de corte; conciliación con 1301/1302; exportación CSV compatible con Excel y PDF en Drive; integración con transferencias y movimientos de inventario existentes.
+- **Correcciones de revisión:** el promedio ponderado ahora conserva el costo real de cada entrada en el movimiento y solo actualiza el costo medio del saldo; transferencias entre almacenes conservan el valor contable, incluyendo mercancía aún en tránsito; las recepciones superiores a lo despachado se rechazan; las transferencias compuestas revierten Kardex, capas, movimientos y registro de transferencia si falla un paso; cambiar el método de una categoría con capas positivas requiere migración controlada y no reescribe costos históricos.
+- **Pruebas añadidas/ampliadas:** PEPS con capas de distinto costo; promedio ponderado y valor real del saldo; ajustes positivos/negativos con efecto monetario; transferencia promedio entre almacenes; saldo en tránsito y corte histórico previo a recepción; recepción excesiva denegada; rollback de transferencia; bloqueo de cambio de método con existencias; reporte, CSV y generación PDF con mocks de Drive.
+- **CI final:** Department Scope Contract run 43600482783 SUCCESS en HEAD 99961daf2595aadfb57eb807a936bee17769b4e7; incluye accounting-catalog.test.js, regresiones contables existentes y syntax-check Apps Script/JS en Node.js 24. Identity Mapping run 43600317336 SUCCESS y Department Reference Consumers run 43600317364 SUCCESS en commit de código f54a0f40607a19113b0abed88f8a8a555c3682be; los commits posteriores solo ajustaron/extendieron el contrato de pruebas.
+- **Correcciones de pruebas:** dos ejecuciones iniciales detectaron defectos en el propio contrato (regex de URL PDF y ubicación de la aserción de cambio de método); ambos se corrigieron y la ejecución final del contrato completo terminó SUCCESS. No se ocultaron los fallos intermedios.
+- **Archivos:** backend/accounting-service/Code.gs; js/accounting.js (UI de valoración existente en el alcance); tests/security/accounting-catalog.test.js; beta_test_Parte_0002.txt; pendientes/Contabilidad/Pendientes.md; este checkpoint e índice.
+- **Limitaciones:** CLI en workstation NOT RUN; la verificación aislada se ejecutó en runner Node.js 24 de GitHub Actions. Apps Script/Sheets/Drive desplegados NOT RUN; se reserva BETA-FUNC-089. La exportación Excel es CSV compatible con Excel. El reporte señala diferencias de conciliación y costos incompletos en vez de declarar balance sin evidencia.
+- **Estado:** TASK-189 completada en código, revisión y CI; BETA-FUNC-089 pendiente de validación beta, no bloqueante para el cierre de implementación.
+- **Siguiente tarea elegible:** TASK-190 — reservas, disponibilidad y reposición inteligente de materiales.
+===============================================================================
+
+
+===============================================================================
+### C1.720 — IMA-EXEC-20261114-1351Z-01 — TASK-190 — Reservas, disponibilidad y reposición inteligente
+- **Continuidad:** C1.719; HEAD inicial 29f87797a13899711905bae1c88f5dc0fc652cb6; rama exclusiva NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 verificada sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance implementado:** ledger InventoryReservations separado del Kardex; aprobación de requisiciones con reserva de unidades base; validación de existencia física menos reservas activas; liberación por cancelación/rechazo/modificación; consumo de reserva en entrega real; estado de reserva y auditoría de actor; políticas por artículo/almacén en InventoryReplenishmentPolicies; motor de sugerencias por consumo de 90 días, cobertura, plazo de entrega, órdenes pendientes de recepción y transferencias en tránsito; conversión de sugerencias a solicitudes internas de compra desde la interfaz.
+- **Integridad y concurrencia:** las aprobaciones, entregas y cambios de políticas usan LockService; las sugerencias leen una instantánea bajo lock; la escritura de reservas revierte filas parciales; la transición de entrega restaura el estado de requisición y reservas si falla la finalización; se valida correspondencia exacta entre partidas aprobadas y reservas antes de entregar. Las reservas no alteran el Kardex hasta la entrega.
+- **Pruebas añadidas/ampliadas:** reserva sin mutación física; rechazo de sobrecompromiso; liberación por cancelación/rechazo/modificación; bloqueo ocupado; consumo de reserva al entregar; sugerencias con transferencia en tránsito y orden con recepción parcial; prevención de sobrecompra; cálculo de cantidad hasta stock objetivo; regresión de entrega/devolución y valoración.
+- **CI final:** Department Scope Contract run 43601852804 SUCCESS; Identity Mapping and Transport Security run 43601852765 SUCCESS; Department Reference Consumers run 43601852760 SUCCESS; todos en HEAD 705b879c50787455da15fc3785b3392841f3ea08. El contrato Node tests/security/accounting-catalog.test.js y las pruebas de regresión contables ejecutaron en Node.js 24.22.2; el paso Syntax-check updated Apps Script services terminó SUCCESS.
+- **Correcciones de pruebas:** los primeros runs detectaron primero el alcance de extracción de constantes en el harness, luego fixtures que entregaban requisiciones sin aprobar y finalmente la contaminación del fixture de transferencia en pruebas de valoración. Se corrigieron y se reejecutó la suite completa; el run final terminó SUCCESS. Los fallos intermedios se conservan en Actions y no se reportan como PASS.
+- **Archivos:** backend/accounting-service/Code.gs; js/accounting.js; tests/security/accounting-catalog.test.js; pendientes/Contabilidad/Pendientes.md; beta_test_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; este checkpoint.
+- **Limitaciones:** Node.js CLI de pruebas y sintaxis se ejecutaron en GitHub Actions; no se ejecutó un CLI local separado ni se encontró un target npm independiente en el alcance revisado. Apps Script/Google Sheets desplegados y Drive real NOT RUN; BETA-FUNC-090 queda pendiente de validación en entorno aislado. No se ejecutó despliegue ni se modificó otra rama.
+- **Estado:** TASK-190 completada en código, revisión y CI; BETA-FUNC-090 pendiente de validación beta desplegada.
+- **HEAD verificado:** 705b879c50787455da15fc3785b3392841f3ea08. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Siguiente tarea candidata:** TASK-200 — facturación automática de servicios y cargos recurrentes. Su dependencia F21-Task01 figura como completada históricamente, aunque pendiente de revalidación independiente; confirmar sus callsites antes de cerrar TASK-200.
+===============================================================================
+
+C1.721 — IMA-EXEC-20261114-TASK200-01 — TASK-200 — Facturación automática de servicios y cargos recurrentes
+- **Continuidad:** C1.720; HEAD inicial 6a621fb069f9acfd4b2c120fd78c8d46a50e289b; rama exclusiva NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 verificada sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance implementado:** TransporteTarifas por ruta y modalidad COMPLETA/MEDIA, vigencias de tarifa y concepto base Transporte escolar en ConceptosCobro; extensión no destructiva de TransporteAsignaciones con fechas de inicio/fin y modalidad; integración de assignStudentTransport con CargosEstudiante; generación mensual por período; clave idempotente TRN-MM-YYYY-ESTUDIANTE; prorrateo por días activos en altas/cancelaciones; ajustes de importe auditables; cancelación que detiene períodos posteriores; permisos para Director/Subdirector/Contador.
+- **Integridad y concurrencia:** generación y cancelación usan ScriptLock; la generación mensual toma snapshot de CargosEstudiante y revierte escrituras parciales ante error; asignación revierte fila y cargos si falla la sincronización; cancelación restaura asignación y cargos si falla el ajuste. Tarifas ausentes generan advertencia y no crean cargos parciales.
+- **Dependencia F21-Task01:** se revalidó el callsite de asignación y el control de capacidad bajo lock; el nuevo contrato comprueba rechazo por sobrecapacidad. No se declara una revalidación integral de todos los componentes de F21-Task01.
+- **Pruebas:** tests/security/accounting-transport-monthly-charges.test.js PASS; cubre tarifas completa/media, cargo al asignar, prorrateo de alta/cancelación, idempotencia, ausencia de facturación futura, ruta sin tarifa, sobrecapacidad, permisos y lock ocupado. Syntax-check de servicios Apps Script PASS.
+- **CI:** Identity Mapping and Transport Security run 43603216507 SUCCESS; Department Reference Consumers run 43603216493 SUCCESS; Department Scope run 43603216482 falló inicialmente por sintaxis del fixture y se corrigió; run final 43603405636 SUCCESS, incluyendo contrato TASK-200 y Syntax-check updated Apps Script services.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-transport-monthly-charges.test.js; .github/workflows/department-scope-contract.yml; pendientes/Contabilidad/Pendientes.md; beta_test_Parte_0002.txt; changueslogs.txt; índice y este checkpoint.
+- **Limitaciones:** no existe package.json ni suite CLI independiente en el árbol revisado; CLI local NOT RUN. Apps Script/Google Sheets reales NOT RUN; no se ejecutó despliegue. BETA-FUNC-091 queda pendiente de validación en entorno beta aislado.
+- **Estado:** TASK-200 completada en código, revisión y CI; BETA-FUNC-091 pendiente de validación beta desplegada.
+- **HEAD de implementación:** 6a621fb069f9acfd4b2c120fd78c8d46a50e289b. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Siguiente tarea candidata:** TASK-205 — administración centralizada de tarifas, contratos y condiciones de servicios; revisar dependencia F21-Task13 y confirmar el alcance ya implementado antes de modificar.
+===============================================================================
+
+===============================================================================
+### C1.722 — IMA-EXEC-20261114-TASK205-01 — TASK-205 — Tarifas centralizadas, vigencias y condiciones de servicios
+- **Continuidad:** C1.721; HEAD inicial de esta iteración e69dcfb5d146ae7f135c398ac198cc25af486eef; rama exclusiva NG_beta_0.0.0.1_work; rama base verificada sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance revisado:** catálogo ServiciosTarifas con administración desde panel contable; tarifas por servicio, modalidad, ruta, período y vigencia; concepto financiero; descuentos por hermanos y becas aprobadas con límite; políticas de prorrateo de altas/bajas; integración del catálogo central con el cálculo de transporte. Se preservan cargos ya emitidos ante cambios de tarifa.
+- **Corrección de revisión:** se detectó que editar una tarifa con la misma fecha de inicio podía extender su fecha final más allá de la siguiente versión futura. Se ajustó manageServiceTariffLocked_ para limitar la versión anterior al día previo a la siguiente vigencia y se agregó regresión explícita.
+- **Pruebas:** tests/security/accounting-service-tariffs.test.js PASS en Node.js 24.22.2 dentro de GitHub Actions; cubre versionado, ausencia de solapamiento al editar la versión previa, inmutabilidad de cargos históricos, descuento por hermanos/beca y tope, rechazo de entrada/rol inválidos y lock ocupado. Syntax-check de servicios Apps Script PASS.
+- **CI final:** Department Scope Contract run 43614101832 SUCCESS; Department Reference Consumers run 43614101548 SUCCESS; Identity Mapping run 43614101542 SUCCESS. El test de tarifas centralizadas y el contrato de transporte terminaron SUCCESS.
+- **Code review:** revisión focalizada de manageServiceTariffLocked_, manageServiceTariff, getServiceTariffs, transportFindTariff_, transportRecalculateStudentMonthlyChargeLocked_, permisos, dispatch, UI y contrato Node. El diff correctivo de esta iteración se limitó al servicio contable y su prueba; no se reescribieron archivos ajenos.
+- **Dependencia:** F21-Task13 en el informe de Fase 21 corresponde a transporte extraordinario/excursiones; no es un prerrequisito técnico del catálogo de tarifas. Se clasifica como informativa/no bloqueante.
+- **Archivos de implementación de TASK-205:** backend/accounting-service/Code.gs, js/accounting.js, dashboard-contabilidad.html, tests/security/accounting-service-tariffs.test.js, .github/workflows/department-scope-contract.yml.
+- **Archivos de cierre:** pendientes/Contabilidad/Pendientes.md, beta_test_Parte_0002.txt, changueslogs.txt, Auditoría/INDICE_CHECKPOINTS.md y este checkpoint.
+- **Commits de implementación/corrección:** 8ddbc7ce239864bd5325f5f3be20939397b5142f, f6e65cfca61092e20ffc4072d3cac8f1def05407, e69dcfb5d146ae7f135c398ac198cc25af486eef, 8b6e885080401344de86922f9ebb4d5449ea6617.
+- **Limitaciones:** no hay checkout/runner CLI local disponible en esta sesión; CLI independiente NOT RUN. Apps Script/Google Sheets reales NOT RUN; no se desplegó. BETA-FUNC-092 queda pendiente de validación en entorno beta aislado. El lock ocupado se probó; una prueba de estrés concurrente contra Apps Script real queda en beta.
+- **Estado:** TASK-205 completada en código, revisión y CI; validación beta separada.
+- **HEAD de código revisado:** 8b6e885080401344de86922f9ebb4d5449ea6617. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+- **Siguiente tarea elegible:** TASK-210 — consolidación de cafetería y tienda con estados de cuenta familiares; confirmar callsites y la dependencia F15-Task01 antes de modificar.
+===============================================================================
+
+
+===============================================================================
+### C1.723 — IMA-EXEC-20261114-TASK210-PREFLIGHT-01 — TASK-210 — Auditoría de preparación y bloqueo de seguridad
+- **Continuidad:** C1.722; HEAD inicial 27ed8ae879911601d75efe0d52ce253f5e2393c2; rama exclusiva NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 verificada en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Alcance de esta iteración:** auditoría de requisitos y callsites de TASK-210. No se modificó código productivo ni se alteraron datos.
+- **Hallazgos verificados:** createCafeteriaOrder y createStoreOrder no integran el consumo con CargosEstudiante ni con el ledger de crédito familiar; processFamilyCreditPurchase no valida PIN, identidad del responsable ni relación familiar, no usa lock y no impide movimientos duplicados persistentes; configureFamilyCreditAuthorization tampoco vincula el actor firmado al responsable. Las anulaciones/devoluciones no revierten de forma coordinada el saldo de crédito. Las órdenes no validan íntegramente IDs/cantidades/stock y las mutaciones de inventario no están serializadas en estos callsites.
+- **PIN:** no existe verificador, hash, salt, flujo de alta/cambio ni campo PIN en CreditoFamiliarAutorizaciones (esquema actual de 10 columnas). Tampoco se encontró flujo de PIN en los módulos ACCOUNTING, USER, js/student.js, js/ui-common.js ni dashboards de cafetería/tienda revisados. La exigencia funcional de autorización por PIN no puede preservarse ni probarse contra una implementación existente.
+- **Idempotencia:** el middleware genérico de doPost usa CacheService con ventana temporal de 6 horas; no sustituye una clave persistente y única en el libro de movimientos para compras financieras.
+- **Dependencias:** F15-Task01 corresponde a facturación fiscal SAR y no es un prerrequisito técnico directo del ledger de crédito familiar. F15-Task04 (billetera familiar) aparece pendiente en el backlog recuperado; no se asumió que su implementación estuviera disponible.
+- **Pruebas:** revisión estática de fuentes, permisos, dispatch, callsites y backlogs realizada. No se ejecutaron pruebas de código porque no hubo cambios de implementación. Los workflows de TASK-205 en Node.js 24.22.2 y sintaxis Apps Script permanecen SUCCESS en los runs 43614101832, 43614101542 y 43614101548; no son evidencia de TASK-210.
+- **Estado:** TASK-210 continúa Pendiente; no se marca completada. La integración de compras/crédito requiere definir la política de PIN que no está implementada ni especificada en el repositorio, antes de habilitar débitos financieros.
+- **HEAD final de documentación:** se verificará tras publicar este checkpoint. Rama base sin cambios esperados.
+- **Siguiente acción:** definir la política de PIN familiar y luego implementar el flujo transaccional con identidad/relación verificadas, límites diario/mensual, idempotencia persistente, conciliación de cargos y reversos; añadir pruebas locales de concurrencia, duplicados, rollback, autorización y sintaxis antes de cerrar TASK-210.
+===============================================================================
+
+===============================================================================
+### C1.724 — IMA-EXEC-20261114-TASK209-01 — TASK-209 — Optimización de rutas, orden de paradas y planificación de recorridos
+- **Continuidad:** C1.723; HEAD inicial 86b0ddc7836c56c95b92846c6e60ab2ad3bedf27; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Elegibilidad:** F21-Task09 (integración financiera automática de transporte) ya está cubierta por TASK-200/C1.721. La dependencia geográfica se resuelve con coordenadas explícitas en ParadasJSON; no se presupone ni inventa geocodificación.
+- **Implementación:** optimizeRouteStopsSequence genera propuestas con distancia Haversine, tiempo aproximado basado en velocidad promedio configurada, ventanas horarias y duración de paradas. Mantiene fijo el origen y el destino y aplica búsqueda de vecino más cercano con mejora 2-opt validada contra las ventanas.
+- **Gobierno de cambios:** getRouteOptimizationProposals permite comparar; approveRouteStopsOptimization aplica solo con aprobación explícita y snapshot vigente; rejectRouteStopsOptimization registra rechazo y motivo. Ninguna propuesta modifica la ruta activa al crearse. manageTransportRoute y la aprobación comparten ScriptLock; una propuesta obsoleta falla cerrada.
+- **Pruebas:** tests/security/accounting-transport-route-optimization.test.js PASS en Node.js 24.22.2; cubre distancias, ventanas, coordenadas inválidas, origen/destino, propuesta sin mutación, aprobación, rechazo, idempotencia, ruta obsoleta, RBAC y lock. Syntax-check Apps Script PASS.
+- **CI final:** Department Scope Contract run 43615291620 SUCCESS; Identity Mapping run 43615291629 SUCCESS; Department Reference Consumers run 43615291613 SUCCESS. El primer run 43615033670 falló por reasignación de const en el optimizador; se corrigió en 9989a11 y la suite final pasó. El contrato se amplió con rechazo en f5932ee y volvió a pasar.
+- **Code review:** se revisaron parseo de JSON/coordenadas, rangos lat/lng, ventanas, tiempos AM/PM, origen/destino, permisos, no mutación hasta aprobación, optimistic concurrency, ScriptLock y rollback de la decisión. No se modificaron otras ramas.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-transport-route-optimization.test.js; .github/workflows/department-scope-contract.yml; pendientes/Secretaria/Pendientes.md; beta_test_Parte_0002.txt; changueslogs.txt; índice y este checkpoint.
+- **Commits:** 7717edd002d14040d65adbc80d5719c4be686a23; 9989a11b837f29d0fa6c6380b366e4f59bf0147a; f5932ee2fb4928d926041cdac2e4997fb8592db5.
+- **Limitaciones:** no hay geocodificación externa; las rutas existentes sin coordenadas deben actualizarse antes de optimizarlas. Velocidad media debe indicarse por solicitud. Apps Script/Sheets real NOT RUN; BETA-FUNC-093 pendiente. No se ejecutó CLI local independiente.
+- **Estado:** TASK-209 completada en código, revisión y CI; validación beta y coordenadas reales pendientes.
+- **HEAD de código:** f5932ee2fb4928d926041cdac2e4997fb8592db5. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Siguiente preflight:** TASK-206 — necesidades especiales de movilidad/accesibilidad. Confirmar disponibilidad y permisos del expediente médico; la revisión inicial no encontró esquema ExpedientesMedicos en los servicios backend. TASK-210 continúa pendiente por ausencia de política PIN familiar (C1.723).
+===============================================================================
+
+
+===============================================================================
+### C1.725 — IMA-REQ-20261114-SESSION-FAMILY-PIN-01 — Decisión de producto: sesiones ágiles y aprobación de crédito familiar
+- **Continuidad:** C1.724 documental anterior no publicado por avance concurrente de la rama; HEAD inicial verificado para este registro ef3480bde5feb34902e9613a767028ce2ed40cac; rama exclusiva NG_beta_0.0.0.1_work; rama base esperada 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Decisión explícita del usuario — sesiones:** autenticación de credenciales al iniciar sesión; mantener la sesión activa en el dispositivo y evitar cierres de sesión o solicitudes repetidas de credenciales durante el uso normal y por actualizaciones ordinarias. Definir un máximo configurable de sesiones/dispositivos activos por usuario y una política sencilla al alcanzar el límite.
+- **Rendimiento:** priorizar consultas y operaciones ágiles en Apps Script. Evitar verificaciones costosas, duplicadas o innecesarias en cada consulta/acción. Reutilizar el contexto de identidad/sesión ya validado y mantener únicamente controles esenciales del lado servidor para proteger operaciones sensibles e integridad; no convertir cada operación en una reautenticación ni introducir esperas evitables. La verificación técnica mínima de una sesión/token, cuando sea necesaria para confiar en la petición, debe ser ligera y no pedir credenciales de nuevo.
+- **Decisión explícita del usuario — crédito familiar:** sí se requiere un PIN familiar como mecanismo separado para que el padre/madre/tutor autorizado pueda aprobar el uso o autorización de crédito familiar; el alumno no puede aprobar ni autoautorizar su propio crédito. El PIN no sustituye el inicio de sesión ni debe confundirse con una reautenticación de la sesión en cada consulta. La aprobación debe vincularse a un responsable/tutor legítimo y al estudiante/crédito correspondiente.
+- **Límites de alcance:** no se ha decidido aún si el PIN se solicita por cada compra o al conceder/autorizar un cupo de crédito, ni el flujo exacto de alta, recuperación o cambio del PIN. No inventar esas reglas; diseñar una experiencia sencilla y solicitar definición solo si el flujo técnico requiere esa decisión. Nunca almacenar PIN en texto claro.
+- **TASK-210:** permanece Pendiente y sin cambios de código. Incorporar estos requisitos al diseño de autorización familiar antes de habilitar débitos. Mantener idempotencia financiera persistente, control de concurrencia, conciliación y reversos; los controles de integridad no deben traducirse en reautenticación repetitiva.
+- **Pruebas:** no se ejecutaron pruebas de código; este checkpoint registra decisiones/requisitos, no implementación. No declarar PASS.
+- **Archivos previstos para registro:** checkpoint, índice, changelog y backlog maestro del padre. Rama base no debe modificarse.
+- **Siguiente acción:** revisar el diseño existente de sesiones y la autorización familiar; proponer/implementar límites configurables de sesiones activas y flujo PIN tutor de forma ligera, con pruebas de rendimiento/seguridad e integración en TASK-210.
+===============================================================================
+
+
+===============================================================================
+### C1.726 — IMA-REQ-20261114-FAMILY-CREDIT-APPROVAL-02 — Configuración de modalidad PIN familiar
+- **Continuidad:** C1.725; HEAD inicial verificado 3bd228bbd9499011295657fda512b3d7a6549938; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Decisión explícita del usuario:** la modalidad de aprobación PIN debe ser configurable desde Configuración → Opciones del Rol del panel del padre/tutor.
+- **Modalidades funcionales:** `POR_COMPRA` requiere aprobación explícita del tutor con PIN para cada pedido antes del débito; `POR_CUPO` requiere PIN al autorizar/activar el cupo y permite compras posteriores dentro de los límites diario/mensual aprobados sin volver a solicitar el PIN en cada compra.
+- **Autoridad y seguridad:** la preferencia se persiste y aplica en el servidor, vinculada al tutor autenticado y a sus relaciones familiares aprobadas. El alumno no puede establecer ni cambiar la política del tutor, ni autoaprobar consumos. Ante configuración ausente/inválida o identidad/relación no verificable, se deniega el débito. PIN separado de la sesión y nunca en texto claro.
+- **Pendiente de diseño técnico:** alta, cambio y recuperación del PIN; la implementación no debe inventar un mecanismo de recuperación que debilite la autorización.
+- **Alcance del checkpoint:** decisión de producto y actualización documental; no hubo cambios de código ni pruebas. TASK-210 permanece Pendiente.
+- **Archivos:** pendientes/Padre/Pendientes.md, changueslogs.txt, índice de checkpoints y este archivo.
+- **HEAD final:** se verificará tras el commit. Rama base sin cambios.
+- **Siguiente acción:** implementar persistencia server-side de la política, PIN seguro y UI en panel del tutor; integrar las compras y reversiones de cafetería/tienda con ledger transaccional, idempotencia persistente y control de concurrencia.
+===============================================================================
+
+===============================================================================
+### C1.727 — IMA-EXEC-20261114-TASK210-APPROVAL-PREFERENCE-01 — Persistencia de modalidad de aprobación familiar y bloqueo seguro de débitos
+- **Continuidad:** C1.726; HEAD inicial verificado e6e04bcba4cf8e94ae756281a1a81657037503ed; rama exclusiva NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 verificada sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Implementación:** se agregó la hoja CreditoFamiliarConfiguracion para guardar una modalidad por responsable/tutor autenticado. Opciones disponibles: POR_COMPRA y POR_CUPO. La consulta y el guardado se exponen mediante acciones ACCOUNTING, permitidas a Padre, Tutor y Responsable.
+- **UI:** Configuración → Opciones del Rol del panel del padre/tutor permite consultar y guardar la modalidad. La interfaz informa expresamente que guardar la modalidad no habilita débitos mientras no exista verificación PIN.
+- **Autorización:** la configuración obtiene al actor exclusivamente de _verifiedUserId/_verifiedRole establecidos por validateRolePermission; exige rol de tutor y relación familiar activa. configureFamilyCreditAuthorization exige que el responsable sea el actor autenticado, relación aprobada/vigente con el estudiante, límites numéricos positivos con límite mensual no menor al diario, estado permitido, bloqueo de concurrencia y unicidad de autorización. getFamilyCreditAuthorizations limita las lecturas de tutores a sus propios representados y las de estudiantes a su propia cuenta.
+- **Fallo seguro:** processFamilyCreditPurchase, createStoreOrder con método de crédito familiar y createCafeteriaOrder (crédito familiar predeterminado) rechazan el débito con FAMILY_CREDIT_PIN_APPROVAL_REQUIRED. Esto evita que la preferencia configurable se interprete como PIN ya verificado y bloquea los callsites que antes podían omitir el flujo PIN.
+- **Pruebas:** contrato Node.js aislado para modalidad, identidad, rol, relación activa, propiedad tutor-estudiante, aislamiento de lectura, límites inválidos, duplicados de configuración, bloqueo de lock y rechazo de débitos añadido. Ejecución local del arnés aislado en Node.js 22.16.0: PASS. El test versionado se agregó al workflow Department Scope; syntax-check completo de Code.gs y ui-common.js y ejecución del test desde checkout de CI quedan pendientes del run disparado por el commit.
+- **Limitaciones:** no se implementó todavía alta/cambio/recuperación del PIN, verificación criptográfica del PIN, autorización POR_COMPRA/POR_CUPO durante pedidos, ledger persistente, idempotencia financiera, stock transaccional ni reversos coordinados. Por ello TASK-210 sigue Pendiente y los débitos por crédito familiar permanecen deshabilitados. CLI de repositorio completo y Apps Script/Sheets reales NOT RUN.
+- **Archivos:** backend/accounting-service/Code.gs; js/ui-common.js; tests/security/accounting-family-credit-preference.test.js; .github/workflows/department-scope-contract.yml; pendientes/Padre/Pendientes.md; changueslogs.txt; índice y este checkpoint.
+- **Estado:** hito parcial de seguridad/configuración; no se marca TASK-210 completada.
+- **HEAD final:** se verificará tras publicar el commit. Rama base no se modifica.
+- **Siguiente acción:** implementar PIN con HMAC-SHA256 y salt por tutor, flujo de alta/cambio seguro; aplicar POR_COMPRA/POR_CUPO en la autorización del cupo y pedido; consolidar cafetería/tienda con stock, ledger, idempotencia persistente, concurrencia, conciliación y reversos; ampliar contratos Node y verificar CI.
+===============================================================================
+
+===============================================================================
+### C1.728 — IMA-EXEC-20261114-TASK210-FAMILY-PIN-01 — PIN familiar protegido y aprobación de cupo
+- **Continuidad:** C1.727; HEAD inicial 54374c8dba278c0671ba2e0df03fb170ae60ef49; rama exclusiva NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 verificada sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **PIN:** alta inicial desde el panel del tutor con PIN numérico de 6 dígitos y confirmación; el cambio de un PIN existente exige el PIN actual. Se guarda un HMAC-SHA256 con salt individual por tutor y clave AUTH_TOKEN_SECRET; nunca se almacena el PIN en texto claro. La comparación se realiza en tiempo constante para hashes de igual longitud.
+- **Protección contra fuerza bruta:** contador persistente de intentos fallidos; al quinto intento incorrecto se aplica bloqueo temporal de 15 minutos. El estado de bloqueo se actualiza bajo ScriptLock.
+- **Migración compatible:** CreditoFamiliarConfiguracion amplía su esquema de 5 a 10 columnas para salt/hash/fecha/intentos/bloqueo; CreditoFamiliarAutorizaciones amplía de 10 a 13 columnas para modalidad y metadatos de aprobación PIN. La migración valida prefijos de encabezados y falla si encuentra esquemas incompatibles.
+- **Autorización POR_CUPO:** configureFamilyCreditAuthorization exige PIN configurado y, cuando la modalidad es POR_CUPO, verifica el PIN antes de activar/actualizar el cupo y persiste aprobador/fecha. En POR_COMPRA exige que el tutor tenga PIN configurado; la verificación por pedido queda pendiente.
+- **Privacidad de registros:** sanitizePayloadForLog oculta cualquier campo cuyo nombre contenga PIN. doPost deja de registrar e.postData.contents sin filtrar; en acciones de PIN/crédito omite por completo el payload del registro y en otros errores registra solo payload sanitizable; cuerpos no parseables se omiten.
+- **UI:** el panel del padre/tutor permite establecer/cambiar el PIN; el PIN actual solo se solicita si ya existe. No se implementó recuperación/reset; el cambio normal exige PIN actual.
+- **Pruebas:** el contrato se amplió para probar migración de esquemas, almacenamiento no reversible/plaintext, cambio con PIN actual, rechazo de PIN incorrecto, bloqueo al quinto intento, aprobación POR_CUPO, aislamiento de lecturas y ausencia de PIN en logs. Resultado local y CI se registrarán después de ejecutar el workflow para este commit.
+- **Limitaciones:** processFamilyCreditPurchase y los pedidos de tienda/cafetería continúan rechazando crédito familiar. Aún falta verificación PIN por compra POR_COMPRA, conciliación de débito, ledger financiero persistente, idempotencia durable, stock transaccional, control de concurrencia coordinado con pedidos y reversos. TASK-210 permanece Pendiente. Apps Script/Sheets reales y CLI de repositorio completo NOT RUN.
+- **Archivos:** backend/accounting-service/Code.gs; js/ui-common.js; tests/security/accounting-family-credit-preference.test.js; pendientes/Padre/Pendientes.md; changueslogs.txt; índice y este checkpoint.
+- **Estado:** implementación parcial de PIN y aprobación de cupo; no se habilitan débitos familiares.
+- **HEAD final:** se verificará tras publicar el commit. Rama base no se modifica.
+- **Siguiente acción:** integrar el PIN POR_COMPRA en los flujos reales de pedidos; aplicar transacción coordinada de inventario/orden/ledger con idempotencia persistente, reversos y pruebas de carrera; luego habilitar solo las modalidades completas.
+===============================================================================
+
+
+===============================================================================
+### C1.729 — IMA-EXEC-20261114-TASK210-STATEMENT-LEDGER-01 — Aislamiento de estado de cuenta y lectura de consumos de crédito familiar
+- **Continuidad:** C1.728; HEAD inicial e33b482b3a65c04d97ff06bdd30c599d0e0362f7; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- **Corrección criptográfica:** el HMAC del PIN ahora utiliza un secreto dedicado persistente `FAMILY_CREDIT_PIN_SECRET`, separado de `AUTH_TOKEN_SECRET`; la rotación de la clave de sesión no invalida los PIN familiares. La clave dedicada se inicializa una sola vez en ScriptProperties y se valida antes de usarla.
+- **Estado de cuenta:** `getStudentAccountStatement` ahora limita la consulta del padre/tutor a estudiantes con relación familiar activa aprobada; el estudiante siempre consulta su propio expediente aunque envíe otro ID.
+- **Conciliación de lectura:** se incorporan movimientos de crédito familiar aprobados y reversados en una sección separada del estado de cuenta. Los reversos se presentan como importes negativos y se netean en `totalConsumoCreditoFamiliar`; no se suman a cargos ni se alteran el saldo de colegiatura, evitando doble contabilización.
+- **Pruebas agregadas:** secreto PIN separado; lectura de movimientos aprobados/reversos; exclusión de pendientes; saldo de colegiatura independiente; aislamiento positivo/negativo de tutor y estudiante. Resultado CI se verificará tras el commit.
+- **Limitaciones:** todavía no existe el flujo POR_COMPRA ni el débito coordinado de orden, stock y ledger; no se ejecutan reversos de pedidos ni idempotencia financiera durable. Las compras a crédito continúan bloqueadas. TASK-210 permanece Pendiente.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-family-credit-preference.test.js; backlog del padre; changelog; índice y este checkpoint.
+- **Estado:** implementación parcial; no se habilitan débitos familiares.
+- **HEAD final:** se verificará tras publicar el commit; rama base sin cambios.
+- **Siguiente acción:** diseñar e implementar el flujo de pedido pendiente y aprobación POR_COMPRA, seguido de transacción coordinada, stock, idempotencia persistente, reversos y pruebas concurrentes.
+===============================================================================
+
+
+===============================================================================
+### C1.730 — IMA-EXEC-20261114-TASK210-ORDER-READ-OWNERSHIP-01 — Aislamiento de consultas de pedidos familiares
+- **Continuidad:** C1.729; HEAD inicial c08e391f40130b1cfae9ac4a1c5d7ae8e2c5efe1; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- **Code review:** se detectó que las consultas getStoreOrders y getCafeteriaOrders aceptaban filtros de estudiante/responsable enviados por el cliente sin verificar relación familiar; la consulta podía exponer pedidos de otros alumnos.
+- **Corrección:** se agregó resolución única de estudiantes vinculados a un tutor desde Usuarios/RelacionesFamiliares y se limitan las lecturas de tienda y cafetería a esos estudiantes. El alumno queda restringido a su propio ID, ignorando filtros de terceros; los roles operativos conservan su alcance existente.
+- **Normalización:** la expresión de eliminación de diacríticos en el control de rol usa el rango Unicode correcto.
+- **Pruebas agregadas:** tutor consulta pedidos de estudiante vinculado; tutor recibe rechazo al consultar otro estudiante; estudiante no puede forzar ID ajeno en tienda ni cafetería.
+- **CI C1.729:** Node.js 24.22.2, contrato familiar y sintaxis Apps Script PASS; Department Scope 43621207245 SUCCESS; Identity Mapping 43621207229 SUCCESS; Department Reference Consumers 43621207258 SUCCESS. C1.728 también quedó verificado por Department Scope 43619960458 SUCCESS (incluye contrato PIN y syntax-check).
+- **Limitaciones:** CLI local independiente NOT RUN; Apps Script/Google Sheets desplegado NOT RUN. El débito POR_COMPRA, la aprobación de pedido, el ledger financiero durable, stock transaccional y reversos continúan pendientes. TASK-210 sigue Pendiente y los débitos permanecen bloqueados.
+- **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-family-credit-preference.test.js; backlog del padre; changelog; índice y este checkpoint.
+- **Estado:** implementación parcial; sin habilitación de cargos.
+- **HEAD final:** se verificará tras el commit; rama base sin cambios.
+- **Siguiente acción:** implementar el pedido familiar pendiente y la aprobación del tutor con PIN por compra, manteniendo el cargo bloqueado hasta el registro financiero idempotente y la actualización consistente del inventario.
+===============================================================================
+
+
+===============================================================================
+### C1.731 — IMA-EXEC-20261114-TASK210-CAFETERIA-READ-COMPAT-01 — Compatibilidad de consulta familiar de cafetería
+- **Continuidad:** C1.730; HEAD inicial 29882555d1382a730b054e69af90606be9615977; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- **Code review:** las órdenes históricas de cafetería pueden registrar al propio estudiante en la columna ResponsableUserId cuando el pedido se crea sin responsable explícito. Filtrar la consulta del tutor por esa columna habría ocultado pedidos válidos de sus representados.
+- **Corrección:** la consulta de tutor verifica el parámetro de responsable si se envía, pero filtra los pedidos por el conjunto de estudiantes vinculados y no por el valor histórico de ResponsableUserId. Se conserva compatibilidad con pedidos anteriores.
+- **Prueba:** el fixture de cafetería usa ResponsableUserId igual al estudiante y verifica que el tutor vinculado pueda consultar el pedido. CI de esta corrección queda pendiente.
+- **Estado:** TASK-210 sigue Pendiente; no hay aprobación POR_COMPRA ni débitos familiares habilitados.
+===============================================================================
+
+
+===============================================================================
+### C1.732 — IMA-EXEC-20261114-TASK210-STUDENT-READ-OVERRIDE-01 — Forzar identidad verificada en consultas de pedidos
+- **Continuidad:** C1.731; HEAD inicial e5c9e26d01d3332db48dbf1946cf839442d97cbc; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- **Hallazgo de pruebas:** el contrato Node detectó que las funciones de consulta de pedidos rechazaban el ID ajeno enviado por un alumno, mientras el comportamiento seguro requerido es ignorar el filtro del cliente y resolver siempre al alumno autenticado. El middleware ya valida la petición, pero la función conserva el mismo comportamiento fail-safe en llamada directa.
+- **Corrección:** getStoreOrders y getCafeteriaOrders sustituyen cualquier ID de estudiante suministrado por el ID de sesión verificado, sin devolver ni consultar registros de terceros.
+- **Verificación:** el primer workflow C1.730 falló en el contrato de lectura estudiantil por este desacuerdo; el test existente comprueba que el resultado se limita al actor autenticado. CI de la corrección queda pendiente.
+- **Estado:** TASK-210 sigue Pendiente; débitos familiares continúan bloqueados.
+===============================================================================
+
+
+===============================================================================
+### C1.733 — IMA-EXEC-20261114-TASK210-ORDER-STOCK-GUARD-01 — Validación y concurrencia en creación de pedidos
+- **Continuidad:** C1.732; HEAD inicial `956793bb91efa121bfe9f1e84d2906c0aa76a5f7`; rama exclusiva `NG_beta_0.0.0.1_work`; rama base `44d9891132332e692dbe2ba8602b41f50a508a59` sin cambios.
+- **Implementación:** `createStoreOrder` y `createCafeteriaOrder` toman `ScriptLock` antes de leer existencias y mantienen el bloqueo hasta registrar pedido/stock. Se valida catálogo completo, cantidades enteras positivas, precio y stock numéricos, y disponibilidad de todas las líneas antes de descontar. Las líneas repetidas se agrupan; los IDs usan `Utilities.getUuid()`.
+- **Recuperación:** si falla el append del pedido después de descontar existencias, se restauran las cantidades/estados de stock modificados; si la restauración falla, se informa explícitamente `*_STOCK_ROLLBACK_FAILED`.
+- **Ownership:** las funciones de creación sustituyen el estudiante objetivo por `_verifiedUserId` para alumno; padre/tutor solo puede crear para estudiantes dentro de sus relaciones activas aprobadas. Los roles operativos conservan el alcance previo.
+- **Seguridad financiera:** las compras con `CreditoFamiliar` siguen rechazándose con `FAMILY_CREDIT_PIN_APPROVAL_REQUIRED`; `processFamilyCreditPurchase` continúa cerrado. No se habilita débito hasta terminar aprobación POR_COMPRA/POR_CUPO, ledger persistente, idempotencia, reversos y conciliación.
+- **Pruebas agregadas:** contrato Node cubre líneas duplicadas, stock insuficiente, producto inexistente, cantidad inválida, lock ocupado, rollback tras error de append, identidad del alumno y relación tutor-estudiante. **Ejecución local:** NOT RUN en este entorno; CI se dispara al publicar el commit y se verificará por separado. Apps Script/Sheets reales: NOT RUN.
+- **Revisión:** cambio limitado a las dos funciones de creación y al contrato relacionado; no se modificaron esquemas ni se eliminaron líneas de otros módulos.
+- **Estado:** hito parcial; TASK-210 permanece Pendiente y sin débitos familiares habilitados.
+- **Archivos:** `backend/accounting-service/Code.gs`; `tests/security/accounting-family-credit-preference.test.js`; backlog del padre; changelog; índice y este checkpoint.
+- **HEAD final:** se verificará tras el commit; rama base sin cambios.
+- **Siguiente acción:** implementar solicitud/aprobación POR_COMPRA con PIN desde el panel del tutor; luego débito/ledger durable, idempotencia persistente, conciliación y reversos de pedidos con pruebas de carrera y recuperación.
+===============================================================================
+
+
+===============================================================================
+### C1.734 — IMA-EXEC-20261114-TASK210-FAMILY-CREDIT-FLOW-02 — Aprobación y reversión de crédito familiar
+- **Continuidad:** C1.733; HEAD inicial 99f0c2a195d648a7d112f5faa34c1b42ad8c6da8; rama exclusiva NG_beta_0.0.0.1_work; rama base 44d9891132332e692dbe2ba8602b41f50a508a59 sin cambios.
+- **Implementación POR_COMPRA:** pedidos de tienda y cafetería quedan en PendienteAprobacionFamiliar; el tutor vinculado revisa y aprueba con PIN. processFamilyCreditPurchase verifica actor, relación activa, autorización, modalidad, PIN, límites diario/mensual y referencia persistente; registra un solo movimiento y actualiza saldo. Reintentos idénticos devuelven resultado idempotente.
+- **Implementación POR_CUPO:** la autorización del cupo exige PIN del tutor y registra PinApprovedBy/PinApprovedAt; las compras posteriores validan la autorización vigente y registran el débito sin solicitar PIN en cada pedido. El tutor financiero se obtiene de la autorización server-side.
+- **Reversos:** updateStoreOrderStatus y updateCafeteriaOrderStatus procesan cancelaciones/rechazos/devoluciones/reembolsos. Se crea un movimiento negativo vinculado al movimiento aprobado, se restaura el saldo usado y la repetición no duplica el reverso. Los consumos reembolsados se excluyen de límites diario/mensual. Si falla la escritura del reverso, se conserva el estado financiero original o se marca el intento de reversión como anulado.
+- **Estado de cuenta:** los movimientos aprobados y reversados se muestran en sección familiar separada y no se suman de nuevo a CargosEstudiante ni al saldo pendiente de colegiatura; el contrato verifica que el saldo escolar permanezca intacto.
+- **Interfaz:** se corrigieron las expresiones regulares de PIN y normalización de estado para la bandeja de pedidos pendientes del tutor.
+- **Pruebas:** tests/security/accounting-family-credit-preference.test.js cubre almacenamiento HMAC/salt, roles/relaciones, POR_COMPRA, POR_CUPO, pedidos de ambos establecimientos, límites, idempotencia, reversos, bloqueo por ScriptLock, rollback y stock. Node.js 24.22.2 PASS en GitHub Actions; syntax-check Apps Script PASS.
+- **CI:** código 48650223c8d315cd7b68115379f0554d762f46d6: Department Scope run 43625477144 SUCCESS; Identity Mapping 43625477146 SUCCESS; Department Reference Consumers 43625477154 SUCCESS. Contrato extendido commit 5f8f5f2619789061e8c20fc4b162f540b32acced: Department Scope run 43625761904 SUCCESS.
+- **Archivos de código/prueba:** backend/accounting-service/Code.gs, js/ui-common.js, tests/security/accounting-family-credit-preference.test.js. Se actualizaron además backlog del padre, changelog, índice y este checkpoint.
+- **Límites:** Node se ejecutó en CI, no en una segunda ejecución local independiente; no hay paquete/comando CLI de proyecto identificado; Apps Script/Sheets reales no se ejecutaron. No se verificó aún un reporte consolidado de ventas que concilie exactamente pedidos, movimientos aprobados y reversos.
+- **Estado:** hito parcial verificado; TASK-210 permanece Pendiente por conciliación de reportes de ventas y cierre integral. No se marca completada.
+- **HEAD final:** se verificará tras publicar el commit documental; rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Siguiente acción:** localizar reportes de ventas y conciliar sus totales netos con movimientos aprobados menos reversos; ampliar pruebas y cerrar TASK-210 solo con evidencia.
+===============================================================================
+
+
+===============================================================================
+### C1.735 — IMA-EXEC-20261114-TASK210-SALES-RECONCILIATION-01 — Conciliación de ventas y cierre de TASK-210
+- **Continuidad:** C1.734; HEAD inicial `62f98c50f84b041a2561c2b08483227b2745eee8`; rama exclusiva `NG_beta_0.0.0.1_work`; rama base `44d9891132332e692dbe2ba8602b41f50a508a59` sin cambios.
+- **Reporte:** se implementó getFamilyCreditSalesReconciliation con acceso de Contador, Director, Subdirector y Administrador; usa ScriptLock para una lectura consistente de pedidos y movimientos.
+- **Conciliación:** verifica que cada pedido de crédito familiar de tienda/cafetería tenga como máximo un débito aprobado; compara estudiante, responsable, establecimiento e importe; enlaza reversos por ID del movimiento original; calcula ventas brutas, devoluciones y netas; informa pendientes, huérfanos, débitos faltantes/duplicados, importes inconsistentes y reversos con titular o importe discordante.
+- **Interfaz:** la pestaña Contabilidad → Informes ahora presenta la conciliación de crédito familiar por tienda, cafetería y total, con diferencias identificadas.
+- **Pruebas:** el contrato Node cubre coincidencia correcta, pedido pendiente, devolución completa, movimiento huérfano, responsable de reverso discordante, rol no autorizado y bloqueo por ScriptLock; comprueba router, RBAC y UI. Node.js 24.22.2 PASS; node --check para Code.gs y JS afectados PASS.
+- **CI:** reporte f425ceb2ea5ad350554beaf075906a7bb1952b7c: Department Scope 43626290445 SUCCESS, Identity Mapping 43626290452 SUCCESS, Department Reference Consumers 43626290390 SUCCESS. Corrección 33b42763798b3e6aa1e154160ad4cd81faf6a94e: Department Scope 43626558232 SUCCESS, Identity Mapping 43626558231 SUCCESS, Department Reference Consumers 43626558236 SUCCESS. UI c5d6135a41a3d5e9bddec6b533e9c33fe47e6d0b: Department Scope 43626395382 SUCCESS. Contrato final e656660e7fb1c56fa3afe8fa1ee8d7b8b47c13cc: Department Scope 43626679591 SUCCESS.
+- **Archivos:** backend/accounting-service/Code.gs; js/ui-common.js; js/accounting.js; tests/security/accounting-family-credit-preference.test.js; backlog del padre; changelog; índice y este checkpoint.
+- **Límites:** pruebas Node y sintaxis se ejecutaron en GitHub Actions; no se ejecutó una segunda copia local independiente ni un CLI específico porque no se encontró paquete/comando CLI de proyecto. Apps Script/Sheets reales no se ejecutaron; validación beta pendiente.
+- **Estado:** TASK-210 completada en código, revisión y CI. No se considera que la validación beta haya sido ejecutada.
+- **HEAD final:** se verificará tras el commit documental; rama base debe permanecer en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Siguiente tarea elegible:** TASK-211 — ampliación del sistema de actividades extracurriculares y sus servicios asociados (PM-05).
+===============================================================================
+
+
+===============================================================================
+### C1.736 — IMA-EXEC-20261114-TASK211-EXTRACURRICULAR-01 — Actividades extracurriculares e inscripciones familiares
+- **Continuidad:** C1.735; HEAD inicial 6e6604c406ce9b6adff4a41563bc49e6609ba37e; rama exclusiva NG_beta_0.0.0.1_work; rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Backend académico:** se extendió ActividadesExtracurriculares de forma compatible, preservando columnas históricas y agregando cupo máximo, tarifa, transporte extraordinario, fecha de inicio y fin. Guardado tipo upsert; actualizaciones parciales conservan horarios, responsables, supervisores, cupos, tarifas y ruta existentes. Se validan JSON, rangos de fechas y reducción de cupo por debajo de inscripciones activas.
+- **ServiciosInscripciones:** nuevo esquema con estudiante, responsable, estado, cargo, importe, transporte y posición de lista de espera. Los padres/tutores/responsables solo pueden gestionar estudiantes con relación familiar activa y aprobada, verificada en servidor.
+- **Capacidad y concurrencia:** ScriptLock en configuración, inscripción, consulta familiar y cancelación. La capacidad se cuenta bajo lock; al llenarse, la inscripción pasa a ListaEspera sin cargo. Al liberarse una plaza se promueve el primer registro, crea su cargo si corresponde y recalcula posiciones. La repetición de cancelación no sobreasigna plazas ni crea cargos duplicados.
+- **Contabilidad:** los cargos se insertan en CargosEstudiante con el encabezado contable de 12 columnas, CargoID determinista y ClaveUnicaDedupe. Las inscripciones pagadas se presentan como Confirmadas; el portal no cancela ni anula cargos pagados y remite la devolución a administración.
+- **Transporte:** una actividad que requiera transporte debe asociar rutaId, fecha de evento y destino; la ruta debe existir y estar activa en TransporteRutas. La vigencia se vuelve a validar al inscribir. El identificador y detalles se copian a la inscripción.
+- **UI:** js/ui-common.js y app/html/dashboards/dynamic-dashboard.html incorporan panel de configuración para Director/Subdirector/Administrador y panel familiar para Padre/Tutor/Responsable, con consulta, inscripción, lista de espera y cancelación de cargos no pagados.
+- **Permisos:** se añadieron rutas y permisos explícitos para Director/Subdirector y Padre/Tutor/Responsable; el catálogo de actividades se habilita para estos roles. Las funciones validan además la identidad/rol verificados.
+- **Pruebas:** tests/security/academic-extracurricular-enrollment.test.js cubre capacidad, rebaja de cupo, ruta activa/inactiva, relación familiar, idempotencia, lista de espera, promoción, cargo único, pago, cancelación, fechas/JSON y UI wiring. Node.js 24.22.2 PASS; syntax-check Apps Script y JS PASS.
+- **CI:** Department Scope Contract 43628920481 SUCCESS (HEAD final); Department Scope 43628902385 SUCCESS; Department Reference Consumers 43628902415 SUCCESS; Task-Service security 43628902373 SUCCESS.
+- **Archivos modificados desde C1.735:** .github/workflows/department-scope-contract.yml, app/html/dashboards/dynamic-dashboard.html, backend/academic-service/Code.gs, js/ui-common.js, tests/security/academic-extracurricular-enrollment.test.js; backlog, changelog, índice y este checkpoint.
+- **Límites:** no se ejecutó un CLI específico (no se encontró CLI del proyecto); la UI tiene contrato estático y no prueba E2E real; Apps Script/Sheets productivo no se ejecutó. La validación beta desplegada queda pendiente y no se declara realizada.
+- **Estado:** TASK-211 completada en código, revisión y CI.
+- **HEAD previo al commit documental:** 7c84f1febadaed2544db4911836efa29f4d523af; rama base 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Siguiente tarea elegible del Plan Maestro PM-05:** TASK-392 — configuración centralizada de servicios complementarios institucionales (P2).
+===============================================================================
+
+
+===============================================================================
+### C1.737 — IMA-EXEC-20261115-TASK392-CATALOG-01 — Catálogo centralizado de servicios complementarios
+- **Continuidad:** C1.736. HEAD inicial de esta corrección: 38684804eee9e04e98a81df76e6124cd37f3300f. La rama ya contenía 16 commits de implementación de TASK-392; se continuó desde ellos sin repetir el desarrollo.
+- **Rama:** NG_beta_0.0.0.1_work. Rama base de solo lectura NG_beta_0.0.0.1; HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Implementación:** catálogo ServiciosCatalogoInstitucional para modalidades RECURRENTE, POR_CONSUMO y POR_EVENTO, categoría, cupos, responsables, tarifas, reglas de autorización familiar, año lectivo, estado, fechas de vigencia, origen y metadatos. Panel administrativo para alta/edición y pausa/activación de servicios heredados.
+- **Integración:** la tienda y cafetería verifican el estado institucional antes de procesar pedidos; las actividades extracurriculares comprueban disponibilidad al consultar/inscribir. Sin configuración explícita, los módulos heredados conservan su comportamiento anterior.
+- **Revisión/corrección:** se detectó que la comprobación de disponibilidad de tienda/cafetería ocurría antes de adquirir ScriptLock, permitiendo una carrera con la pausa. Se movió la comprobación dentro del lock y antes de leer/modificar existencias. La edición que cambia el año lectivo ahora crea una nueva versión para preservar el registro anterior; IDs no existentes y duplicados por clave/año se rechazan.
+- **Archivos de implementación de TASK-392:** .github/workflows/department-scope-contract.yml; app/html/dashboards/dynamic-dashboard.html; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; js/ui-common.js; tests/security/academic-extracurricular-enrollment.test.js; tests/security/accounting-complementary-services.test.js; tests/security/accounting-family-credit-preference.test.js.
+- **Corrección final:** backend/accounting-service/Code.gs; tests/security/accounting-complementary-services.test.js.
+- **Pruebas locales aisladas:** contrato Node.js 24.22.2 PASS en GitHub Actions, incluyendo compatibilidad heredada, alta/upsert, versión por año, duplicados, permisos, estados por año y orden de adquisición del lock; node --check Apps Script/JS PASS.
+- **GitHub Actions:** Department Scope Contract 43671785558 SUCCESS; Identity mapping and transport security contracts 43671785546 SUCCESS; Department Reference Consumers Local Contract 43671785553 SUCCESS. HEAD de CI: 8f7714ea0edcb49e2fc7b496f374d9fbc550a792.
+- **CLI:** no existe package.json ni CLI del proyecto en el árbol del repositorio; NOT APPLICABLE / NOT RUN.
+- **Limitaciones:** no se ejecutó Apps Script/Sheets desplegado ni E2E real de navegador. BETA-FUNC-094 queda Pendiente beta. No se usaron datos productivos.
+- **Estado:** TASK-392 completada en código, revisión y CI.
+- **Siguiente tarea elegible:** TASK-391 — indicadores de eficiencia operativa y análisis de demanda de transporte; verificar primero disponibilidad y contrato de F21-Task27, viajes, asignaciones y fuentes de costos.
+- **HEAD final de implementación:** 8f7714ea0edcb49e2fc7b496f374d9fbc550a792; **commit que registra C1.737:** 94827d968b29065a89355a8411a97ace416f05b2; rama base verificada en 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================
+
+
+===============================================================================
+### C1.738 — IMA-EXEC-20261115-TASK391-SOURCE-READINESS-01 — Verificación de fuentes para métricas de transporte
+- **Continuidad:** C1.737. HEAD inicial de esta revisión: a0e28223c3e2ec25c03dd49e0d1d116470c043a9. Rama exclusiva NG_beta_0.0.0.1_work; rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea siguiente:** TASK-391 — indicadores de eficiencia operativa y análisis de demanda de transporte (PM-05), todavía Pendiente; no se modificó su código ni se cambió su estado.
+- **Dependencia revisada:** F21-27 aparece como “Asistencia a servicios complementarios — Completa y verificada” en la auditoría de Fase 21. Los datos actuales de rutas, asignaciones, viajes y asistencia a bordo/descenso existen y permiten implementar ocupación, puntualidad y duración promedio.
+- **Hallazgo de fuente de costos:** la auditoría F21-21 indica “Control de combustible y kilometraje — Ausente”. TransporteVehiculos solo contiene kilometraje acumulado actual y TransporteViajes conserva ruta, unidad, conductor, acompañante, fecha, jornada, horas de inicio/fin, estado y observaciones; no existe una bitácora de combustible ni costos operativos vinculados a viajes/vehículos. No se puede calcular costo por estudiante sin inventar valores o una fuente.
+- **Hallazgo de demanda no cubierta:** no existe hoja/contrato de solicitudes de transporte, lista de espera georreferenciada ni fuente de demanda residencial no atendida. TransporteAsignaciones solo representa asignaciones existentes; no permite inferir qué estudiantes necesitan transporte ni dónde hay demanda sin cobertura. Tampoco hay una regla de radio/distancia de cobertura configurada.
+- **Decisión de continuidad:** los indicadores calculables con datos existentes pueden desarrollarse como subflujo independiente. El costo por estudiante y la identificación de zonas sin cobertura deben permanecer explícitamente “sin datos” hasta disponer de fuentes verificables y una regla de cobertura configurable; no se inventarán datos ni umbrales.
+- **Archivos de código:** ninguno modificado en esta revisión. Fuentes inspeccionadas: backend/accounting-service/Code.gs y Auditoría/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md.
+- **Estado:** preanálisis de TASK-391; la tarea sigue Pendiente. Sin pruebas ni cambios de código ejecutados para TASK-391.
+- **Siguiente acción:** implementar el subflujo de ocupación, puntualidad y duración con pruebas locales; mantener separados los dos indicadores que requieren nuevos contratos de captura y datos.
+===============================================================================
+
+
+C1.739 — IMA-EXEC-20261115-TASK391-OPS-METRICS-01 — Indicadores agregados de eficiencia de transporte
+- **Continuidad:** C1.738. HEAD inicial de implementación: 92d491e8156ebe8c7cdffc0f86cea200fef1abb5. HEAD funcional verificado: 8fca60de7ba70ea75930f1c2b506900f15acc0bf. Rama exclusiva NG_beta_0.0.0.1_work; rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea:** TASK-391 (PM-05, Dirección), implementación parcial del subflujo calculable. La tarea permanece Pendiente; no se declara completada porque faltan fuentes para costo operativo por estudiante y demanda geográfica sin cobertura.
+- **Implementación:** nueva acción de solo lectura getTransportEfficiencyMetrics. Agrupa indicadores por ruta/jornada, calcula ocupación promedio, puntualidad y duración promedio a partir de viajes y asignaciones. Usa registros reales de abordaje cuando existen y marca por separado las estimaciones basadas en asignaciones activas cuando falta bitácora del viaje; no limita porcentajes superiores a 100 y detecta sobrecapacidad por viaje.
+- **Seguridad/concurrencia:** identidad verificada y rol vigente de Administrador/Director/Subdirector; rechazo antes de adquirir ScriptLock para identidades no autorizadas; revalidación del rol dentro del lock; lecturas agregadas sin datos identificativos de estudiantes, paradas ni coordenadas; liberación del lock en finally. La acción no crea hojas ni datos por defecto ni modifica registros fuente.
+- **Definiciones:** puntualidad compara inicio real con hora programada sin tolerancia no configurada; duración usa HoraInicio/HoraFin válidas; filtros opcionales de fecha, ruta y jornada.
+- **Brechas no inventadas:** costo operativo por estudiante permanece SIN_DATOS porque no hay bitácora de combustible/costos por viaje; demanda geográfica sin cobertura permanece SIN_DATOS porque no hay solicitudes georreferenciadas ni regla de cobertura. Ambas causas se devuelven explícitamente al cliente.
+- **Interfaz:** botón y modal en dashboard-direccion.html con filtros, tarjetas KPI y barras por ruta/jornada; valores dinámicos se insertan mediante textContent, no HTML interpolado.
+- **Archivos modificados:** backend/accounting-service/Code.gs; dashboard-direccion.html; js/transport-analytics.js (nuevo); tests/security/accounting-transport-efficiency-metrics.test.js (nuevo); .github/workflows/department-scope-contract.yml; beta_test_Parte_0002.txt; pendientes/Dirección/Pendientes.md; Auditoria.txt; changueslogs.txt; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt.
+- **Commits de implementación/corrección:** 9bb696767b3c54ea5af24eb0f0d0fc789614d263; 996e008d396dee12c650f917de8cd57fa7ed0293; 8fca60de7ba70ea75930f1c2b506900f15acc0bf. Este último es el HEAD funcional de TASK-391.
+- **Pruebas Node.js:** nuevo contrato de autorización, agregación, fechas, capacidad excedida, ausencia de datos, inmutabilidad de hojas, exclusión de lock para no autorizados, revalidación de identidad, liberación de lock y wiring de dashboard: PASS en Department Scope run 43673593703, step 30. Node 24 configurado en CI.
+- **Regresión/sintaxis:** todos los pasos del Department Scope Contract SUCCESS; syntax-check de servicios Apps Script y js/transport-analytics.js PASS (step 57). Identity Mapping/Transport Security run 43673593702 SUCCESS; Department Reference Consumers run 43673593667 SUCCESS.
+- **CLI/local:** no hay package.json, lockfile ni CLI de proyecto en el repositorio; CLI no aplica. No se ejecutó Node en un checkout local del agente; las pruebas Node se ejecutaron en el runner de GitHub Actions.
+- **Beta/runtime:** Apps Script/Sheets real y E2E de navegador no ejecutados; BETA-FUNC-095 queda Pendiente beta.
+- **Estado:** subflujo de ocupación/puntualidad/duración implementado y verificado en código/CI; TASK-391 continúa Pendiente por las dos fuentes de datos ausentes.
+- **Siguiente tarea elegible:** TASK-490 (P1) — completar evidencia de aislamiento servidor de expedientes y solicitudes laborales. El código de vacaciones ya aplica acceso SELF/ámbito departamental; falta un contrato explícito para getEmployeeRecords y verificación de todos los callsites antes de cerrar. TASK-489 se mantiene después de la verificación de aislamiento para no exponer un panel con datos de terceros.
+===============================================================================
+
+
+C1.740 — IMA-EXEC-20261115-TASK490-EMPLOYEE-OWNERSHIP-01 — Aislamiento de expedientes y solicitudes laborales
+- **Continuidad:** C1.739. HEAD inicial: 665c6c6cee67b2f80d49385979dd03ef967a045b (checkpoint C1.739). HEAD funcional verificado: 88e1b6f176b38358bc94f2eef698996a831bf2fa. Rama exclusiva NG_beta_0.0.0.1_work; rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea:** TASK-490, PM-01, Dirección, P1, hallazgo AUD-NG-193. Completada en código/CI; BETA-FUNC-096 pendiente de ejecución en entorno Apps Script/Sheets.
+- **Aislamiento SELF:** getEmployeeRecords deriva actor/rol desde token verificado; el rol Empleado obtiene únicamente su expediente. Los filtros userId/expedienteId aportados por el cliente no cambian titularidad; un ID ajeno produce RESOURCE_NOT_FOUND sin revelar existencia. Las observaciones internas no se devuelven en la vista SELF.
+- **Aislamiento de solicitudes:** getVacationRequests y su wrapper getLeaveVacationRequests resuelven el expediente desde identidad verificada; el empleado solo ve solicitudes propias. Manipular expedienteId se rechaza con respuesta indistinguible de recurso inexistente.
+- **Ámbitos administrativos:** RecursosHumanos conserva acceso dentro del ámbito departamental verificado; el acceso institucional global solo se permite con ámbito institucional vigente. Director/Subdirector/Contador/Administrador conservan el alcance explícitamente permitido por RBAC y ABAC.
+- **Auditoría:** los intentos de acceso SELF a IDs ajenos generan UNAUTHORIZED_EMPLOYEE_RESOURCE_ACCESS; el evento registra identidad/rol verificados y presencia de filtros, no el ID objetivo enviado por el atacante.
+- **Pruebas:** ampliado accounting-vacation-medical-leave-ownership.test.js con empleado A/B, userId/expedienteId manipulados, filtros ausentes, rol no autorizado, HR departamental A/B, HR institucional, Administrador, notas internas y auditoría sin IDs objetivo. Se conserva la prueba departmental resource access para Director/HR/Admin y ausencia de mutaciones.
+- **Commits relevantes:** 7e464c1be093cf78c26db772e2487a0e61f5ddbc (implementación inicial); a289114f817f4c1a356b1262744faa287d49aea2 (corrección de normalización y acceso); 88e1b6f176b38358bc94f2eef698996a831bf2fa (cobertura de HR institucional). HEAD funcional: 88e1b6f176b38358bc94f2eef698996a831bf2fa.
+- **Archivos funcionales modificados:** backend/accounting-service/Code.gs; tests/security/accounting-vacation-medical-leave-ownership.test.js. No se modificó backend/user-service/Code.gs porque los endpoints auditados residen en accounting-service.
+- **CI:** Department Scope Contract run 43674129348 SUCCESS; pasos de ownership de vacaciones/ausencias (9), acceso departamental (37) y syntax-check Apps Script (57) PASS. Identity Mapping/Transport Security run 43674075666 SUCCESS; Department Reference Consumers run 43674075654 SUCCESS. Los fallos intermedios por dependencia de test harness y expectativas de gate se corrigieron; el HEAD final tiene los tres workflows relevantes aprobados.
+- **CLI/local:** el repositorio no contiene package.json, lockfile ni CLI propio; CLI no aplica. No se ejecutó Node en checkout local del agente; Node 24 ejecutó contratos en GitHub Actions.
+- **Beta/runtime:** no se ejecutó navegador ni Apps Script/Sheets real; BETA-FUNC-096 queda Pendiente.
+- **Estado:** criterios de aislamiento, rechazo, auditoría y alcance administrativo cubiertos por contratos Node y CI. TASK-490 completada en código/CI; beta pendiente.
+- **Siguiente tarea elegible:** AUD-NG-174 (PM-02, contratos de plataforma), requisito técnico explícito de TASK-489. El Plan Maestro lo identifica por fetchApi, textResponse, validateApiContractsTestSuite, ContentService.MimeType.TEXT e isFallback. La referencia no aparece como tarea desarrollada en pendientes/Otros/Pendientes.md; se inspeccionará su estado real en código y pruebas antes de modificar. TASK-489 no se adelantará hasta verificar esa dependencia.
+===============================================================================
+
+
+C1.741 — IMA-EXEC-20261115-AUD-NG-174-API-CONTRACT-01 — Contrato API versionado y manejo uniforme de errores
+- **Continuidad:** C1.740. HEAD inicial verificado: 1b7e0080d851b26709781c3790026b693620f0f8. HEAD funcional verificado: a944150477fa4f0982a982b750c530391035428a. Rama exclusiva NG_beta_0.0.0.1_work; rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea:** AUD-NG-174 (PM-02), normalizar contratos API y manejo de errores entre cliente y microservicios. Completada en código/CI; validación beta pendiente.
+- **Contrato servidor:** Academic y Accounting emiten apiVersion 1.0.0; status success con data, o status error con error.code/error.message/error.details; meta incluye timestamp, correlationId y servicio. Se mantienen alias superiores y campos de respuesta existentes para compatibilidad. El mensaje público se mapea por código estable y no expone excepciones internas.
+- **Transporte Apps Script:** textResponse serializa JSON y mantiene ContentService.MimeType.TEXT; el MIME no se usa como sustituto de validación. doPost propaga correlationId y responde por el helper versionado; el catch devuelve mensaje público genérico.
+- **Cliente:** fetchApi valida JSON, status, versión, data/error y metadata; exige v1.0.0 para ACADEMIC/ACCOUNTING y normaliza respuestas legacy de otros servicios con adaptador explícito. Los errores de red, timeout, HTTP, HTML, JSON inválido, versión incompatible y dependencia no disponible son status:error; nunca se convierten en success/data:[]; una colección vacía explícita sigue siendo success.
+- **Seguridad UI:** mensajes de error se insertan con textContent/DOM, no innerHTML. La caché se reconcilia solo con respuestas success.
+- **Timeout:** se conserva la configuración/ciclo existente de AUD-NG-007; no se duplica ni cambia su política.
+- **Suite común:** validateApiContractsTestSuite en Academic y Accounting prueba éxito, vacío legítimo, error estructurado, mensaje seguro y que un error no cuente como éxito.
+- **Pruebas Node/HTTP:** tests/contracts/api-response-contract.test.js ejecuta ambos helpers de servidor y un servidor HTTP local para éxito, error, vacío, JSON inválido, HTML, HTTP 503, versión ausente, data ausente, adaptador legacy, URL ausente, timeout y caída de red; también comprueba doPost y ausencia de innerHTML en fetchApi.
+- **Archivos modificados:** js/api.js; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; tests/contracts/api-response-contract.test.js (nuevo); .github/workflows/department-scope-contract.yml; pendientes/Otros/Pendientes.md; pendientes/Dirección/Pendientes.md; Auditoría/AUDITORIA_COMPLETADAS_T-UX-12.md; changueslogs.txt; beta_test_Parte_0002.txt; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt.
+- **Commits funcionales:** d7afaac6459f7cace2e80f302ae066c747feaf0a (contrato cliente/servidor y suite); a944150477fa4f0982a982b750c530391035428a (corrección de doPost para delegar en textResponse y test estático antirrecursión). HEAD funcional: a944150477fa4f0982a982b750c530391035428a.
+- **CI final:** Department Scope Contract 43675111519 SUCCESS (incluye API HTTP contract step 31 PASS y syntax step 58 PASS); Identity Mapping/Transport Security 43675111535 SUCCESS; Department Reference Consumers 43675111514 SUCCESS; Task-Service security 43675111510 SUCCESS. Node 24 ejecutó las pruebas.
+- **Incidencias intermedias:** las ejecuciones de desarrollo detectaron y corrigieron el contexto de versión en VM, la simulación de timeout y un wrapper recursivo en doPost; el test final añade comprobación explícita del wrapper. Las ejecuciones finales del HEAD funcional están aprobadas. El run 43674625655 quedó obsoleto/in progress en un commit previo con la primera versión del test HTTP sin limpieza; no se considera evidencia de aprobación.
+- **CLI/local:** no existe package.json, lockfile ni CLI de proyecto; CLI no aplica. No se ejecutó Node en checkout local del agente; Node 24 se ejecutó en GitHub Actions.
+- **Beta/runtime:** Apps Script desplegado y navegador real no ejecutados; BETA-FUNC-097 queda Pendiente.
+- **Estado:** alcance visible en Plan Maestro implementado y verificado por contratos Node/HTTP y CI. AUD-NG-174 completada en código/CI; beta pendiente.
+- **Siguiente tarea elegible:** TASK-489 (P1, T-UX-12), al quedar satisfecha su dependencia técnica de contrato API versionado. Corregir DTO/renderizado de solicitudes de vacaciones del dashboard RR. HH. sin ampliar exposición; mantener TASK-490 como control de aislamiento.
+===============================================================================
+
+
+C1.742 — IMA-EXEC-20261115-TASK-489-HR-VACATION-DASHBOARD-01 — Contrato DTO y estados del panel de RR. HH.
+- **Continuidad:** C1.741. HEAD inicial verificado: 2d787d424fb390428ba4a9bcf136cfde8d521f97. HEAD funcional verificado: 0bf5f09536f011c7f255910a941535769e64273e. Rama exclusiva NG_beta_0.0.0.1_work; rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Tarea:** TASK-489 (PM-05, P1), corregir contrato de datos entre el panel de Recursos Humanos y solicitudes de vacaciones. Completada en código/CI; validación beta pendiente.
+- **Backend Accounting:** getVacationRequests/getLeaveVacationRequests entregan data como arreglo explícito y conservan solicitudes como alias; incluyen total, empleadoNombre, tipo/tipoSolicitud, expedienteId, fechas, días, estado normalizado y estadoOriginal. PendienteAprobacion se normaliza a Pendiente; Aprobado/Rechazado/Cancelado conservan su semántica.
+- **Identidad de empleado:** el nombre se resuelve desde Personas por PersonaID único. No se sustituye con userId, expedienteId ni observaciones. Si no existe un nombre único se devuelve vacío y la UI presenta “Nombre no disponible”; el expediente se muestra solo como metadato.
+- **Privacidad:** solicitudes para autoservicio omiten observaciones y aprobadoPor; RR. HH. conserva esos campos para su flujo autorizado. No se amplían permisos ni se cambia el resolver de ámbito.
+- **UI:** loadHRDashboardData consume data[]; renderiza estados pendientes/aprobadas/rechazadas, contador pendiente, carga, vacío, error, respuesta incompleta y caída del servicio. Errores no se presentan como cero solicitudes. Los datos se construyen con DOM/textContent, no interpolación HTML. Se actualizó cache-busting de js/api.js a v=25.
+- **Pruebas:** tests/regression/hr-vacation-dashboard-contract.test.js valida DTO UI, nombres, contador, estados, vacío, error, respuesta incompleta, outage y ausencia de innerHTML. accounting-vacation-medical-leave-ownership valida DTO, nombres, estado original y privacidad; departmental-resource-access y employee self-service preservan aislamiento.
+- **CI final:** Department Scope Contract 43675596189 SUCCESS (incluye accounting vacation ownership, employee self-service, nuevo HR dashboard contract, departmental access y syntax check); Department Reference Consumers 43675596202 SUCCESS; Identity Mapping and Transport Security 43675596211 SUCCESS. Node 24.
+- **Commits funcionales:** d47c99ed32bdc2307cd20ab801d6338f379e6bb0 (DTO, UI, pruebas y workflow); 0bf5f09536f011c7f255910a941535769e64273e (conserva observaciones/aprobadoPor para RR. HH. y los excluye del autoservicio). HEAD funcional: 0bf5f09536f011c7f255910a941535769e64273e.
+- **CLI/local:** no existe package.json, lockfile ni CLI de proyecto; no aplica. Node 24 se ejecutó en GitHub Actions.
+- **Beta/runtime:** Apps Script desplegado y navegador real no ejecutados; BETA-FUNC-098 queda Pendiente.
+- **Estado:** TASK-489 completada en código/CI; BETA-FUNC-098 pendiente.
+- **Siguiente tarea elegible:** AUD-NG-063 — proteger secretos y credenciales del proveedor de firma avanzada. La tarea técnica puede ejecutarse sin esperar integración PSC real; F22-TASK04 conserva sus dependencias de proveedor/credenciales para la conexión externa.
+===============================================================================
+
+
+===============================================================================
+C1.743 — IMA-EXEC-20261115-F22-TASK04-CALLBACK-CONTRACT-01 — Contrato local del callback autenticado de firma avanzada
+- **Continuidad:** C1.742. HEAD inicial de la iteración: 7e6aee659bf6d6278d232d04c4f69faf8dfe377c. Commit funcional: 588bfd247cc78138d38b51b1fa5b2ca3d599640d. Rama exclusiva NG_beta_0.0.0.1_work; rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Reconciliación de continuidad:** AUD-NG-063 ya está completada en C1.474. Su corrección adicional (exigir proveedor configurado/activo, único y explícito en createAdvancedSignatureRequest) ya existe en backend/user-service/Code.gs y está cubierta por el contrato user-service-signature-ownership.test.js. No se repitió.
+- **Alcance de esta unidad:** F22-TASK04 — subalcance de contrato local del callback. Se añadió tests/security/user-service-signature-provider-callback.test.js y se integró al workflow Department Scope Contract. No hubo cambios de lógica productiva.
+- **Comportamiento cubierto:** envelope y allowlist; HMAC; secreto Script Properties ausente/no disponible; timestamp vencido; origen/destino/acción inválidos; payload extra o inválido; anti-replay; lock ocupado y reentrada concurrente; auditoría; respuesta AUTHENTICATED_PENDING_VALIDATION sin mutar estado transaccional ni afirmar validación X.509.
+- **Pruebas locales:** Node.js v22.16.0; node --check del código exacto de handleSignatureProviderCallback_ extraído de la rama y del nuevo test PASS; 14 escenarios del contrato PASS. El contenedor no pudo resolver github.com (DNS), por lo que no hubo checkout local completo; el harness se ejecutó de forma aislada contra el cuerpo de función recuperado del archivo vigente.
+- **GitHub Actions:** Department Scope Contract run 43678080608; Node.js 24. Los pasos del job se observaron completados SUCCESS, incluido el nuevo contrato y el chequeo de sintaxis. Estado terminal del run al registrar este checkpoint: SUCCESS. No se declara conclusión SUCCESS si la API aún no la refleja.
+- **Archivos modificados:** tests/security/user-service-signature-provider-callback.test.js (nuevo); .github/workflows/department-scope-contract.yml; este checkpoint; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; changueslogs.txt.
+- **Riesgos/limitaciones:** F22-TASK04 permanece Pendiente en su alcance de integración real. No se ha identificado/seleccionado un PSC acreditado ni se dispone de contrato API/protocolo de autenticación, endpoint autorizado, credenciales de prueba, raíz/cadena X.509 confiable ni fuente de sellado de tiempo. El callback actual solo autentica HMAC y reserva anti-replay; no valida certificado/cadena, firma cualificada, sello de tiempo ni transacción contra PSC. No se enviaron documentos a terceros ni se simuló un proveedor real.
+- **Estado:** subalcance de contrato local completado; integración PSC real pendiente por prerrequisitos técnicos específicos. BETA-FUNC-027 continúa Pendiente beta.
+- **Siguiente acción concreta:** cuando exista PSC/protocolo y credenciales de prueba autorizados, implementar su adaptador específico y contratos de validación de certificado, cadena, sello de tiempo, hash del PDF y transición transaccional; hasta entonces no afirmar firma avanzada válida.
+===============================================================================
+
+
+===============================================================================
+C1.744 — IMA-EXEC-20261115-F22-TASK10-REGRESSION-CONTRACT-01 — Corrección parcial y aislamiento de contratos de regresión Fase 22
+- **Continuidad:** C1.743. HEAD funcional verificado: 83fee5ef496c9c562c66ee3a02fed5446448e724. Rama exclusiva NG_beta_0.0.0.1_work. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Requisito original:** F22-Task10 exige suite integral de 53 pruebas para emisión CUV, concurrencia, versionado, validación de firmas y no regresión. El estado histórico [X] no se interpreta como cierre; el informe mantiene Pendiente.
+- **Defectos corregidos:** PT22-01 ahora usa codigoDocumento/titulo/camposJSON y captura el ID realmente generado; PT22-02 reutiliza exactamente ese ID. PT22-08 usa nombreFormato/columnasDetectadas del contrato real. PT22-11 ya no llama directamente a getAdvancedSignatureProviderConfig desde ACCOUNTING (función de otro servicio); comprueba CUV inexistente. PT22-07/PT22-02/PT22-12 describen con precisión que el digest de metadatos/texto no prueba firma de bytes ni certificado persistido. La suite devuelve status=error y PHASE22_REGRESSION_FAILED cuando falla cualquier caso.
+- **Corrección de lectura:** verifySchoolDocumentByCUV consulta getSheetByName y no crea hojas faltantes; tampoco crea FirmasConformidades durante una consulta sin registros.
+- **Corrección SACE:** generateSACEReportFile da prioridad a Ausente/Exento sobre notaFinal=null y conserva Pendiente como PENDIENTE. PT22-09 comprueba los tres estados.
+- **Pruebas añadidas:** tests/regression/phase22-document-management-suite-contract.test.js extrae funciones reales del archivo ACCOUNTING y ejecuta el contrato con SpreadsheetApp en memoria (IN_MEMORY_TEST_ONLY). Comprueba las 12 pruebas del orquestador, propagación de fallos, fixtures de plantilla/documento/SACE y lectura CUV sin crear hojas. No accede a hojas institucionales ni Drive.
+- **Pruebas locales:** Node.js v22.16.0; node --check y contrato aislado PASS. El contenedor no tuvo checkout completo del repositorio; la ejecución local fue sobre una copia temporal/harness aislado. La ejecución CI sí utilizó el código exacto del commit.
+- **GitHub Actions:** run 43679192402 Department Scope Contract SUCCESS; paso Run Phase 22 document management suite contract SUCCESS; Syntax-check updated Apps Script services SUCCESS. Runs 43679192378 (Identity mapping and transport security) y 43679192396 (Department Reference Consumers) SUCCESS. El run previo 43679125644 falló en PT22-09 al detectar que Ausente/Exento se convertían en PENDIENTE; se corrigió en 83fee5e y la ejecución posterior pasó.
+- **Archivos modificados:** backend/accounting-service/Code.gs; tests/regression/phase22-document-management-suite-contract.test.js; .github/workflows/department-scope-contract.yml; este checkpoint; Auditoría/INDICE_CHECKPOINTS.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; changueslogs.txt.
+- **Límites pendientes:** F22-Task10 NO está completada: el orquestador mantiene 12 casos frente a los 53 requeridos. No se ha demostrado todavía cobertura de concurrencia/versionado/firmas completas ni regresión integral. El orquestador Apps Script legado todavía ejecuta operaciones de escritura si se invoca directamente contra su Spreadsheet configurado; no ejecutarlo contra datos institucionales hasta desplegarlo con fixture/Spreadsheet desechable. El harness Node sí está aislado en memoria.
+- **Estado:** subalcance de corrección contractual y harness en memoria completado; F22-Task10 permanece Pendiente.
+- **Siguiente tarea elegible:** F22-Task01 (P0), inspección binaria estricta y privacidad de adjuntos en ACCOUNTING y USER; validar PDF/imagen/OpenXML, MIME/extensión, archivos desconocidos/truncados, caminos de entrada y almacenamiento/descarga privada. F22-Task02/03 y F22-Task04 permanecen pendientes en sus alcances originales.
+===============================================================================
+
+
+===============================================================================
+C1.745 — IMA-EXEC-20261115-F22-TASK01-STRICT-BINARY-VALIDATION-01 — Política binaria compartida ACCOUNTING/USER
+- **Continuidad:** C1.744. HEAD funcional verificado: 48c6c2e098079dad5833cf35ff3bcec3a37367a0. Rama de trabajo exclusiva NG_beta_0.0.0.1_work. Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- **Cambios:** validateFileBinaryIntegrity quedó idéntica en backend/accounting-service/Code.gs y backend/user-service/Code.gs. Ahora exige archivo/nombre, extensión admitida, nombre sin rutas, Base64 válido, MIME compatible, límite de tamaño y estructura mínima completa.
+- **Formatos:** PDF exige cabecera, startxref y %%EOF; JPEG SOI/EOI; PNG IHDR/IDAT/IEND; WEBP RIFF/WEBP con chunks; DOCX/XLSX inspeccionan EOCD/directorio central ZIP, cabeceras locales y entradas OpenXML requeridas. Se rechazan extensiones desconocidas, MIME cruzado, rutas internas ZIP, archivos vacíos y ejecutables.
+- **Pruebas:** tests/security/file-binary-validation-contract.test.js ejecuta 24 escenarios por servicio (48 combinaciones) y comprueba que ambas funciones permanecen idénticas. Node local v22.16.0: 48 combinaciones PASS.
+- **GitHub Actions:** 43680158966 Department Scope Contract SUCCESS (incluye binary validation contract y Phase22 regression contract); 43680158922 Identity mapping and transport security SUCCESS; 43680158941 Department Reference Consumers Local Contract SUCCESS; 43680158904 Task-Service security local contracts SUCCESS.
+- **Riesgos pendientes de F22-Task01:** los callsites aún no exigen el par completo en todas las rutas. uploadPaymentVoucher puede continuar sin adjunto si falta uno de los campos y actualmente absorbe errores de Drive; submitInstitutionalFormRequest acepta adjuntoUrl/adjuntoFileId enviados por el cliente, comparte con ANYONE_WITH_LINK y puede persistir solicitud aunque falle la subida. Los endpoints de ausencia/trámite también aceptan adjuntoUrl externo. No se declara completada la privacidad ni la descarga autorizada.
+- **Límite de la validación:** la inspección es estructural, no sustituye un parser completo de PDF/XML ni verifica CRC/descompresión de todas las entradas ZIP. La aceptación OpenXML exige contenedor ZIP coherente y las entradas obligatorias.
+- **Estado:** subalcance de validación binaria compartida completado; F22-Task01 permanece En progreso.
+- **Siguiente tarea elegible:** exigir pares de adjunto, fallar de forma cerrada ante errores de Drive, eliminar referencias de archivo controladas por cliente y diseñar descarga privada con autorización institucional para formularios/vouchers.
+===============================================================================
+
+
+===============================================================================
+C1.746 — IMA-EXEC-20261115-F22-TASK01-PRIVATE-ATTACHMENT-DELIVERY-02 — Persistencia privada y descarga autorizada
+- **Continuidad:** C1.745. HEAD registrado en C1.745: 48c6c2e098079dad5833cf35ff3bcec3a37367a0. Se verificó que el HEAD 11fd9cbc97fd23ec460f631bbbda6ed3057f91ab es descendiente directo de esa línea (12 commits adelante, 0 atrás); no hubo divergencia ni pérdida de historial. La rama de trabajo se mantuvo exclusivamente en NG_beta_0.0.0.1_work.
+- **Alcance completado:** uploadPaymentVoucher exige fileData/fileName y persiste solo en carpeta/archivo privados; USER submitInstitutionalFormRequest, submitStudentAbsenceJustification, submitAdministrativeRequest y submitJointFamilyPayment utilizan createPrivateRequestAttachment_, rechazan adjuntoUrl/comprobanteUrl y adjuntoFileId/comprobanteFileId enviados por cliente, exigen el par cuando existe archivo y compensan fallos de persistencia. El pago conjunto revierte distribuciones/encabezado parciales y el adjunto si falla la escritura.
+- **Recuperación y privacidad:** getPaymentVoucherFile y getAdministrativeRequestAttachment exigen identidad y ámbito autorizado, recuperan la referencia desde la hoja y comprueban privacidad, tamaño, MIME y contenido binario antes de entregar Base64. La descarga de comprobantes rechaza también referencias históricas cuyo archivo siga siendo público. getAdministrativeRequests deja de devolver URLs de adjuntos; expone únicamente tieneAdjunto. La UI de estudiante usa el endpoint protegido y Blob URL local, que revoca al cerrar la vista previa.
+- **Correcciones de auditoría:** se cerró el bypass de enlaces legacy públicos en comprobantes y la exposición de adjuntoUrl en el DTO de solicitudes. Se añadieron verificaciones binarias al recuperar comprobantes. La revisión confirmó que el único ANYONE_WITH_LINK restante en USER pertenece al flujo público de imágenes de Noticias_Imagenes, ajeno a los adjuntos documentales de esta tarea; no se modificó para evitar cambios fuera de alcance.
+- **Pruebas:** tests/security/file-binary-validation-contract.test.js: 24 escenarios por servicio, 48 combinaciones; validadores idénticos ACCOUNTING/USER. tests/security/file-attachment-persistence-contract.test.js: rutas de entrada USER, almacenamiento privado ACCOUNTING/USER, fallo de permisos, rollback, pares, referencias no confiables, descarga autenticada y supresión de URLs legacy. tests/security/accounting-departmental-resource-access.test.js: descarga propia/tutor y denegación de comprobante legacy público. Pruebas de cliente privado y sintaxis de student.js/auth.js también PASS.
+- **GitHub Actions:** Department Scope Contract run 43686093512 — SUCCESS, Node.js 24.22.2; ejecutó contratos generales, binary validation, private attachment persistence/authorization, Phase 22 contract, sintaxis Apps Script y clientes. Run 43686001435 — SUCCESS tras corregir fixtures que no modelaban getSharingAccess/validateFileBinaryIntegrity. Run 43685937158 falló inicialmente por esos fixtures desactualizados; no fue fallo de lógica productiva y quedó resuelto en el run posterior. Los workflows Identity Mapping, Task-Service y Department Reference Consumers del HEAD anterior también fueron SUCCESS.
+- **Revisión de regresiones/concurrencia:** carpeta privada bajo ScriptLock; uploads de voucher bajo ScriptLock; pago conjunto bajo ScriptLock con rollback de filas; UUID por solicitud; descargas read-only; sin escritura de archivos compartidos. La primera ejecución CI detectó una expectativa de fixture incompatible con el nuevo control de privacidad; se actualizó el fixture y se volvió a ejecutar toda la matriz.
+- **Archivos de implementación y pruebas:** backend/accounting-service/Code.gs; backend/user-service/Code.gs; js/student.js (integración protegida ya existente y verificada); tests/security/file-attachment-persistence-contract.test.js; tests/security/accounting-departmental-resource-access.test.js.
+- **Commits de esta iteración:** bf905e23817be980da3466b5c6aa445b18924ae3; 720f705f24038bdeba100bfd2acf6b80a61e1d03; 1b642ace54c98245307562e9e2664defffd1ec77. Los cambios previos de almacenamiento/rollback/descarga constan en commits ascendientes de la rama.
+- **CLI y ejecución local:** el repositorio no contiene package.json, directorio cli/bin/scripts ni comando CLI de proyecto. No se ejecutó CLI inexistente. El entorno local no pudo clonar/descargar GitHub por fallo DNS; por tanto no se declara Node local PASS. La ejecución real de Node.js 24 y sintaxis se verificó en GitHub Actions.
+- **Límites y riesgo residual:** no se ejecutó beta desplegada contra Google Apps Script/Drive/Sheets ni datos productivos; BETA-FUNC-099 queda pendiente. La validación es estructural y estricta para los formatos permitidos, no un antivirus ni un parser completo de PDF/OpenXML; la inspección ZIP no certifica CRC/descompresión de cada entrada. No se afirma garantía anti-malware absoluta.
+- **Estado:** F22-Task01 completada en código, revisión y CI. La validación operativa real de Drive/Sheets permanece pendiente en beta aislada.
+- **Siguiente tarea elegible:** F22-Task02 (P0) — vincular SHA-256 a los bytes PDF definitivos y versión inmutable, verificar el hash desde Drive y derivar firmante/rol de la sesión autenticada.
+===============================================================================
+
+
+## C1.747 — IMA-EXEC-20261115-F22-TASK01-ACADEMIC-PRIVATE-DOCUMENTS-03
+**Fecha:** 2026-11-15  
+**Rama autorizada:** \`NG_beta_0.0.0.1_work\`  
+**Rama base protegida:** \`NG_beta_0.0.0.1\`  
+**Checkpoint anterior:** C1.746  
+**Estado:** F22-Task01 cerrada nuevamente en código y CI; validación beta real pendiente.
+
+### 1. Verificación de continuidad
+- HEAD inicial verificado de la rama de trabajo: \`bf8e15b0bcfa77494d0f6628d0e2adf641418ce3\`.
+- HEAD de la rama base verificado sin modificaciones: \`44d9891132332e692dbe2ba8602b41f50a508a59\`.
+- Commits de implementación y corrección de contratos en la rama autorizada:
+  - \`06af21b369c135c6866dee82994c7d61898af383\` — implementación ACADEMIC, UI Secretaría, prueba privada y workflow.
+  - \`2e47b6d7484dca530e0794e8d05c1359b35f0081\` — fixtures de alcance e identidad alineados con la nueva versión de esquema.
+  - \`5e267ac32f21236722905f5b9ef8081768b661ad\` — normalización del contrato de esquema para no depender de espacios de formato.
+- HEAD verificado antes del commit de este checkpoint: \`5e267ac32f21236722905f5b9ef8081768b661ad\`.
+- Se volvió a consultar \`Normas_Desarollo.md\` y se mantuvo como única normativa operativa. No se modificó ni publicó en la rama base.
+
+### 2. Tarea ejecutada
+**F22-Task01 — Persistencia privada, integridad y entrega autorizada de adjuntos.**
+
+La revisión transversal posterior a C1.746 detectó que ACADEMIC/uploadStudentDocument era una ruta adicional no cubierta por el cierre anterior: aceptaba MIME declarado por cliente, persistía DriveUrl directo y no guardaba hash/versión verificables. Se registró AUD-NG-392 y se reabrió la tarea dentro de esta iteración.
+
+Correcciones implementadas:
+- Validación binaria real por extensión, MIME detectado, firma del archivo, Base64 y tamaño; no se confía en el MIME enviado por el cliente.
+- Exigencia de fileName/fileData y verificación de que los bytes leídos después de guardar coinciden con los bytes recibidos.
+- Carpeta y archivos de documentos estudiantiles privados; el flujo falla de forma segura si no puede aplicar permisos y revierte el archivo recién creado.
+- Persistencia de VersionDocumento y SHA256 en DocumentosEstudiante; historial de versiones con hash/versión y migración de encabezado sin perder filas legacy.
+- Reemplazo por identidad de expediente/solicitud/tipo, archivado de la versión previa y restauración de versión privada/hash verificado bajo LockService.
+- Nuevo endpoint getStudentDocumentFile con identidad y alcance verificados, comprobación de privacidad e integridad y entrega de bytes; respuestas de listado/historial sin DriveFileId ni DriveUrl.
+- UI de Secretaría actualizada para abrir el archivo mediante Blob URL y endpoint autenticado; no presenta enlace directo de Drive ni vista previa de archivo no verificable.
+- Filtro estricto de listado cuando expediente y solicitud se proporcionan juntos.
+
+### 3. Archivos de implementación y pruebas
+- \`backend/academic-service/Code.gs\`
+- \`js/secretary.js\`
+- \`tests/security/academic-department-reference-consumer.test.js\`
+- \`tests/security/academic-student-document-private-storage.test.js\`
+- \`tests/security/departmental-resource-access.test.js\`
+- \`tests/security/identity-mapping-contract.test.js\`
+- \`.github/workflows/department-scope-contract.yml\`
+
+### 4. Verificaciones
+**GitHub Actions — SUCCESS:**
+- Department Scope Contract, run \`43688056861\`: PASS; incluye contrato de almacenamiento privado/versionado/descarga y \`node --check js/secretary.js\`.
+- Department Reference Consumers, run \`43688056890\`: PASS; incluye consumidores de referencia y controles de alcance departamental.
+- Identity Mapping and Transport Security Contracts, run \`43688115358\`: PASS.
+- Los primeros intentos detectaron fixtures de prueba incompletos (helper de migración del historial y comparación de esquema sensible a espacios); ambos se corrigieron y las ejecuciones posteriores finalizaron satisfactoriamente.
+
+**Ejecución local:** Node v22.16.0 está instalado, pero no fue posible obtener un checkout local porque la resolución DNS de github.com falló. Por tanto, no se declara ejecución local de los comandos Node. Las pruebas y verificaciones de sintaxis se ejecutaron en GitHub Actions con la versión Node configurada por el workflow.
+
+**Pendiente:** validación funcional en Apps Script/Drive/Sheets del entorno beta. No se afirma que se haya ejecutado.
+
+### 5. Hallazgos, dependencias y estado beta
+- AUD-NG-392: corregido en código y cubierto por contratos; no queda abierto como bloqueo de implementación.
+- BETA-FUNC-099 actualizado para incluir la ruta ACADEMIC, versionado, descarga, restauración, verificación de bytes y vínculo de firma. Estado: pendiente de ejecución real en beta.
+- No se requiere un proveedor PSC para cerrar el contrato manual de integridad; la integración avanzada permanece sujeta a F22-Task04 y a un proveedor real autorizado.
+
+### 6. Continuidad
+- **F22-Task01:** completada en código/revisión/CI; beta pendiente.
+- **Siguiente tarea elegible:** F22-Task02 — vincular SHA-256 a los bytes y versión exactos del documento firmado.
+- Reanudar desde HEAD \`5e267ac32f21236722905f5b9ef8081768b661ad\` más el commit de este checkpoint.
+
+
+### C1.748 — F22-Task02 — integridad criptográfica del PDF y versión firmada
+
+**Rama autorizada:** `NG_beta_0.0.0.1_work`  
+**Rama base:** `NG_beta_0.0.0.1`  
+**Checkpoint anterior:** C1.747  
+**HEAD inicial verificado:** `c7fbb2098f7eb14e95cb62102700e481e0f8c035`  
+**HEAD antes del commit de checkpoint:** `a4fe3b4d1f5ca09dcb25ec8294a20f3492f5d0ad`  
+**HEAD de rama base verificado sin cambios:** `44d9891132332e692dbe2ba8602b41f50a508a59`  
+**Estado:** F22-Task02 completada en código/revisión/CI; BETA-FUNC-099 pendiente.
+
+#### 1. Requisito y alcance ejecutado
+F22-Task02 exige que la huella SHA-256 se derive de los bytes PDF reales y quede ligada a un documento/version inmutable, CUV e identidad/rol autenticados; la verificación debe recuperar los bytes y recalcular el hash. No se considera evidencia un hash de metadatos ni datos de firmante aportados por el cliente.
+
+Se verificó y completó el flujo de emisión en ACCOUNTING: `generateSchoolDocument` genera PDF, valida su estructura, persiste en Drive privado, vuelve a leer los bytes almacenados, compara longitud y SHA-256 con los bytes generados y guarda DriveFileID, SHA256, VersionDocumento y CUV bajo ScriptLock; si falla la persistencia, elimina/compensa el archivo creado. `verifySchoolDocumentByCUV` recupera el archivo privado, valida PDF, recalcula SHA-256 y compara con el registro; detecta archivo ausente, público, inválido o alterado y solo asocia firmas con el mismo hash y versión.
+
+En USER, `registerDocumentSignature` exige identidad/rol de sesión verificados, resuelve el documento y propietario mediante scope, comprueba PDF privado, versión/hash persistidos, recalcula SHA-256 de los bytes recuperados y hace segunda lectura para detectar cambios durante la operación. Rechaza hash del cliente que no coincida, firmante suplantado, documento alterado, público o sin metadatos; guarda hash, signatureHash, versión, método y transacción. Los reintentos exactos son idempotentes y ScriptLock serializa la escritura.
+
+La revisión adicional detectó que `createAdvancedSignatureRequest` calculaba el hash del archivo, pero no verificaba su coincidencia con la huella/version persistidas ni guardaba la versión en la transacción. Se corrigió: exige metadatos, archivo PDF privado/no eliminado, hash real igual al almacenado, segunda lectura estable, columna VersionDocumento y devolución de la versión en consulta de estado. La transacción permanece Pendiente; no se afirma firma avanzada validada ni integración PSC real.
+
+#### 2. Archivos modificados en la tarea
+- `backend/user-service/Code.gs`
+- `tests/security/user-service-signature-document-integrity.test.js`
+- `tests/security/user-service-signature-ownership.test.js`
+- `tests/security/accounting-school-document-binary-integrity.test.js`
+- `tests/regression/phase22-document-management-suite-contract.test.js`
+- `backend/accounting-service/Code.gs` y pruebas de emisión/verificación se revisaron como implementación preexistente ya incorporada antes del HEAD inicial de esta sesión; no se reescribieron en esta iteración.
+
+Commits de implementación/ajuste reconciliados desde C1.747: `07b6bdbb641e0c3208602a9292df00304e2cc415`, `07e0fa8b0068d0d08c0d5607afff4c39b52fcaa8`, `bd05686096e5439f5c3a4cd9628413dec2974230`, `7f483940db9848e088d3146ad9618474f2c1922b`, `c7fbb2098f7eb14e95cb62102700e481e0f8c035`, `466fcbaa50e0158676a0a81941b70261ee6c83e8`, `20754fc18abfec7e4db44f5de716238efb165b0a`, `a4fe3b4d1f5ca09dcb25ec8294a20f3492f5d0ad`.
+
+#### 3. Revisión y pruebas
+- Revisión focalizada de generación PDF, privacidad Drive, esquema/versionado, CUV, hash de bytes, identidad/rol, idempotencia, ScriptLock, lecturas repetidas y tratamiento de errores/rollback.
+- Contrato `user-service-signature-document-integrity`: PASS; cubre hash real, versionado, idempotencia, mismatch, archivo alterado/público, lock ocupado y cambio entre lecturas.
+- Contrato `user-service-signature-ownership`: PASS; ampliado para hash persistido, versión exacta, archivo privado, archivo en papelera, alteración durante lectura, ausencia de metadatos, hash cliente inválido, identidad/scope, idempotencia y reentrada.
+- Contrato `accounting-school-document-binary-integrity` y regresión Phase 22: incluidos en el workflow y PASS.
+- GitHub Actions Node.js 24.22.2: Department Scope Contract run `43726054293` SUCCESS; Task-Service security contracts run `43725992636` SUCCESS; Identity Mapping and Transport Security run `43725992655` SUCCESS. Los runs Department Scope `43725929320` y `43725992635` fallaron por una aserción de fixture que esperaba dos lecturas incluso cuando el hash aportado por cliente se rechaza antes de la segunda lectura; la aserción se corrigió y el run `43726054293` pasó.
+- Sintaxis Apps Script/JS y clientes: PASS en el workflow. CLI: no aplicable; el repositorio no contiene `package.json` ni scripts CLI. Node local: NOT RUN en esta sesión porque no se dispuso de checkout local ejecutable; la ejecución Node efectiva se realizó en CI. No se presenta CI como prueba local.
+
+#### 4. Límites y estado beta
+- BETA-FUNC-099 conserva la verificación real en Apps Script/Drive/Sheets como Pendiente beta; no se ejecutó contra documentos ni datos institucionales productivos.
+- F22-Task04 sigue pendiente para integración PSC real, certificados X.509, cadena de confianza y sello de tiempo. La ruta manual no se describe como firma avanzada cualificada.
+- No se modificó `NG_beta_0.0.0.1` ni otra rama.
+
+#### 5. Continuidad
+- **F22-Task02:** completada en código/revisión/CI; beta pendiente.
+- **Siguiente candidata:** F22-Task03, certificado probatorio persistido; antes de cerrar su alcance completo, separar la generación verificable para conformidades manuales de las dependencias aún no satisfechas de PSC/múltiples firmantes. No declarar F22-Task03 completada por la sola existencia de un certificado en memoria.
+- Reanudar desde el commit que incorpora este checkpoint, manteniendo exclusivamente `NG_beta_0.0.0.1_work`.
+
+
+### C1.749 — F22-Task03 — aislamiento de resumen de auditoría por hash y versión
+
+**Rama:** `NG_beta_0.0.0.1_work`  
+**Checkpoint anterior:** C1.748  
+**HEAD inicial:** `00c59edc0ba9b2b40c0748414ea58fe7387e2e65`  
+**HEAD antes del commit de checkpoint:** `d7094f1c66088bed6b73d87e019047270cff2412`  
+**Rama base:** `NG_beta_0.0.0.1` — HEAD sin cambios `44d9891132332e692dbe2ba8602b41f50a508a59`.
+
+#### Subflujo seguro ejecutado (F22-Task03, no cierre de tarea)
+La selección topológica confirmó un ciclo de dependencias: F22-Task03 requiere F22-Task04 y el flujo multifirmante; F22-Task06 requiere F22-Task03/04. La integración PSC real sigue sin proveedor/credenciales/PKI verificados, y el flujo multifirmante no está implementado. No se debe emitir ni persistir un certificado probatorio cuando el estado de firma no puede validarse criptográficamente ni se conoce el conjunto completo de firmantes requeridos.
+
+Se aisló y corrigió un subflujo independiente en `generateSignatureAuditCertificate`: el resumen de auditoría (que sigue etiquetado explícitamente `RESUMEN_AUDITORIA_NO_PROBATORIO`) ahora exige VersionDocumento y SHA-256 persistidos del documento autorizado y solo incluye firmas que coinciden simultáneamente con solicitud, documento, hash y versión vigentes. El resultado y cada entrada de firmante exponen la versión exacta. Firmas de versiones históricas, hashes diferentes o metadatos incompletos no se mezclan con el resumen actual.
+
+#### Archivos y commits
+- `backend/user-service/Code.gs`
+- `tests/security/user-service-signature-ownership.test.js`
+- Commit de implementación: `6a8db849dba5b6b7e96b780c4a65a2764c5b94c8`.
+- Commit de fixtures SHA-256 válidos: `d7094f1c66088bed6b73d87e019047270cff2412`.
+
+#### Verificaciones
+- Contrato Node `user-service-signature-ownership`: PASS, incluyendo versión actual, hash exacto, exclusión de firmas históricas, rechazo de hash distinto y metadatos incompletos.
+- Contratos de callback PSC y de integridad documental USER: PASS.
+- Sintaxis Apps Script/JS y clientes: PASS en GitHub Actions.
+- Department Scope Contract run `43726394404`: SUCCESS, Node.js 24.22.2.
+- Node local: NOT RUN; no se dispuso de checkout local ejecutable. CLI no aplicable al repositorio (sin `package.json` ni scripts CLI).
+
+#### Estado y continuidad
+- **F22-Task03:** sigue Pendiente; este checkpoint cierra únicamente el subflujo de aislamiento por hash/versión. No existe aún certificado independiente persistido, disparador de finalización, validación PSC real ni regla de finalización multifirmante. El resumen en memoria no se presenta como certificado probatorio.
+- **Dependencias bloqueantes para el cierre:** F22-Task04 (PSC real con endpoint/credenciales/cadena de confianza) y F22-Task06 (firmantes requeridos, orden, estados y finalización). No se marca la tarea completa.
+- Continuar con el siguiente subflujo P0 técnicamente independiente de PM-06; no forzar F22-Task03/04/06 ni crear evidencia ficticia.
+
+
+### C1.750 — F34-Task01 — ciclo canónico de justificaciones y asistencia
+
+- **Fecha:** 2026-11-15.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Checkpoint anterior:** C1.749.
+- **HEAD al iniciar:** 1addc1552ef788ea89eebf741abc7debe123f9a2.
+- **HEAD antes del checkpoint documental:** 0910e6fca94a88e3c7b538d877192d411e1e1594.
+- **Rama base protegida:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- **Estado:** F34-Task01 completada en código, revisión y CI; BETA-FUNC-100 pendiente de validación real.
+
+#### Implementación
+- ACADEMIC es el propietario del registro canónico JustificacionesAsistencia. USER crea SolicitudesTramites como proyección y delega el alta/revisión a ACADEMIC con sobre HMAC firmado; la ruta directa ACADEMIC usa el mismo motor.
+- Se agregan vínculos estructurados por JustificacionID/SolicitudID, alumno, fecha, período y sesiones exactas. RegistrosAsistencia conserva el estado original y añade JustificacionID.
+- La resolución de sesión usa alumno + fecha exacta y SesionesAsistencia o identificador diario exacto; se rechazan períodos/sesiones ambiguos, duplicados, registros sin vínculo y estados presentes.
+- La aprobación actualiza Justificado=true y JustificacionID en los registros ausentes/tardíos correspondientes. Rechazo y solicitud de información no alteran asistencia. Revocación revierte únicamente registros enlazados a la justificación, con historial de decisiones.
+- Las escrituras parciales quedan en estado pendiente y son idempotentes/reconciliables; reconcilePendingAttendanceJustifications repara decisiones parciales y proyecciones USER pendientes.
+- Se bloquearon las rutas genéricas updateRequestStatus y processWorkflowDecision para que no puedan resolver justificaciones de ausencia fuera del flujo canónico. La interfaz estudiantil solicita el período académico.
+- Se añadieron controles de esquema duplicado, período fuera de vigencia/ambiguo y ownership del alumno.
+
+#### Archivos
+- backend/academic-service/Code.gs
+- backend/user-service/Code.gs
+- js/student.js
+- tests/security/academic-absence-justification-canonical.test.js
+- .github/workflows/department-scope-contract.yml
+- beta_test_Parte_0002.txt
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- changueslogs.txt
+
+#### Commits de implementación y endurecimiento
+- c8fb91e3d690cf809dd9c76a2cc8714001beb127 — motor canónico USER/ACADEMIC y contrato inicial.
+- d47b8e3d26805261ac2ed4cdbaba59daa1801c9a — fixture de sesión no ambigua.
+- a2d59ba6f070304e7ba661e3aebbaf8988409c29 — bloqueo de processWorkflowDecision genérico.
+- 3e691fd6949909acce49259858eb6b715aebfe08 — validación de períodos y encabezados duplicados.
+- 7ea4e30932d46931a9a1a63dd447a8df5dcd98d8 — reconciliación de proyecciones USER.
+- f10213b5b4670bf3ce006f5311a18916722c6c37 — cobertura Node de presentación/revisión USER.
+- 0910e6fca94a88e3c7b538d877192d411e1e1594 — corrección del extractor multiarchivo del contrato.
+
+#### Verificación
+- Department Scope Contract run 43727954380: SUCCESS; contrato académico canónico y sintaxis Apps Script/JS PASS.
+- Department Scope Contract run 43727778200: SUCCESS.
+- Department Reference Consumers run 43727778243: SUCCESS.
+- Task-Service security run 43727778249: SUCCESS.
+- Identity Mapping and Transport Security run 43727738102: SUCCESS.
+- Node.js 24.22.2 ejecutó el contrato en CI. Node local NOT RUN; no se obtuvo checkout local ejecutable. CLI no aplicable por ausencia de package.json/scripts.
+- No se desplegó Apps Script ni se ejecutaron pruebas reales contra Drive/Sheets productivos.
+
+#### Dependencias de beta y límites
+- Configurar ACADEMIC_SERVICE_URL en Script Properties de USER con la URL /exec de ACADEMIC.
+- Configurar el mismo IMA_MIGRATION_HMAC_SECRET de al menos 32 caracteres en USER y ACADEMIC; no registrar el secreto en repositorio/logs.
+- Autorizar UrlFetch y desplegar versiones compatibles de ambos servicios.
+- Ejecutar BETA-FUNC-100 con datos sintéticos, pruebas de permisos, idempotencia, reintentos, concurrencia y fallos parciales.
+- No se declara verificada la operación interservicio en producción ni la integración real con Apps Script/Sheets.
+
+#### Continuidad
+- Próxima tarea P0: F34-Task02 — bandeja de salida departamental y acuses de entrega/lectura.
+- F22-Task03 continúa pendiente por PSC real, artefacto probatorio persistido y flujo multifirmante; no se altera su estado.
+
+
+### C1.751 — F34-Task02 — bandeja de salida y acuses documentales verificables
+
+- **Fecha:** 2026-11-15.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Checkpoint anterior:** C1.750.
+- **HEAD al iniciar:** 65f14390bf9056f8e0dc92fc8e851e6528991526.
+- **HEAD de implementación antes del checkpoint documental:** 5a7204926f54e0e7367b820bc837b9c8e3ea246b.
+- **Rama base protegida:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- **Estado:** núcleo backend F34-Task02 completado en código/revisión/CI; BETA-FUNC-101 e integración transversal pendientes.
+
+#### Implementación
+- Se creó EntregasDocumentales con identidad del documento/solicitud, nombre, versión, SHA-256, destinatario, emisor, institución/departamento, canal, estado de despacho, timestamps, hashes de apertura/confirmación, acuse, notificación, idempotencia, correlación, historial, expiración y revocación.
+- registerDepartmentalDocumentDelivery exige documento emitido en DocumentosEscolaresEmitidos, destinatario exacto, emisor autenticado con scope sobre el expediente/departamento, archivo Drive privado y SHA-256/version coincidentes con los bytes/metadatos actuales.
+- getDepartmentalOutbox filtra por institución/departamento activo, documento, destinatario, estado y fechas. getMyDocumentDeliveries limita al destinatario autenticado.
+- El despacho actual es PLATAFORMA. ACEPTADO_POR_PLATAFORMA significa que la notificación fue registrada en la bandeja interna; no se interpreta como entrega de correo, lectura humana ni recepción formal.
+- openDepartmentalDocumentDelivery registra una apertura autenticada después de comprobar destinatario, vigencia del enlace, privacidad, hash y versión. confirmDepartmentalDocumentReceipt exige confirmación explícita y persiste timestamp/hash/actor. revokeDepartmentalDocumentDeliveryLink impide aperturas posteriores sin borrar el historial.
+- Los reintentos usan EntregaID/deduplicationKey; fallos quedan PENDIENTE_REINTENTO y se pueden recuperar sin duplicar notificaciones.
+
+#### Archivos
+- backend/user-service/Code.gs
+- tests/security/user-service-departmental-outbox.test.js
+- .github/workflows/department-scope-contract.yml
+- beta_test_Parte_0002.txt
+- pendientes/Dirección/Pendientes.md
+- Auditoría/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- changueslogs.txt
+
+#### Commits
+- 0bfb106e588fe2cf0895c0adbbba9cbf89e276c0 — outbox departamental, schema, dispatch interno y acuses.
+- 00e924f0b7ba11f25c44ca2cf086e276cb76184e — endurecimiento de scope departamental y retry.
+- 5a7204926f54e0e7367b820bc837b9c8e3ea246b — exposición de hashes/timestamps de apertura y confirmación.
+
+#### Verificación
+- Department Scope Contract run 43729081735: SUCCESS; test outbox y sintaxis Apps Script/JS PASS.
+- Task-Service security run 43729081760: SUCCESS.
+- Identity Mapping and Transport Security run 43729081762: SUCCESS.
+- Node.js 24.22.2 ejecutó los contratos en CI. Node local NOT RUN; checkout local no disponible. CLI no aplicable por ausencia de package.json/scripts.
+- No se desplegó Apps Script ni se ejecutaron pruebas reales contra Drive/Sheets productivos.
+
+#### Límites y dependencias
+- Solo se activa el canal PLATAFORMA. Correo/multicanal depende de TASK-316.
+- La integración con bandejas unificadas depende de TASK-221/TASK-318; la orquestación de eventos depende de TASK-227; la UI final de F34-Task08.
+- FechaApertura representa un evento autenticado del flujo del portal, no prueba de lectura humana del PDF. La recepción formal es una acción explícita independiente.
+- PORTAL_BASE_URL es opcional; sin UI, el destinatario consulta mediante getMyDocumentDeliveries.
+- BETA-FUNC-101 pendiente con documento sintético emitido, archivo privado, hash/version, ResourceOwnership y scope real.
+
+#### Continuidad
+- Siguiente tarea P0: F34-Task03 — ABAC docente para consultar justificaciones de estudiantes inscritos.
+- TASK-221, TASK-227, TASK-316 y TASK-318 permanecen pendientes; no se marcan como completadas.
+- F22-Task03 sigue pendiente por PSC real, certificado persistido y multifirmante.
+
+
+### C1.752 — F34-Task03 — acceso contextual ABAC docente a justificaciones
+
+- **Fecha:** 2026-11-15.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Checkpoint anterior:** C1.751.
+- **HEAD al iniciar la tarea:** 7fac571312597ab2c0392228d6691a2bb0693e20.
+- **HEAD de implementación y verificación:** 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38.
+- **Rama base protegida:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+- **Estado:** F34-Task03 completada en código, revisión y CI. BETA-FUNC-102 pendiente de validación con Apps Script/Sheets desplegados.
+
+#### Implementación
+- Se creó getTeacherStudentJustifications en ACADEMIC y se habilitó exclusivamente para roles docentes permitidos. La identidad se deriva del token de sesión verificado; el endpoint no confía en IDs de usuario o rol enviados libremente.
+- La consulta valida en servidor la cadena docente → asignación activa → oferta académica activa → período vigente → matrícula confirmada y única → sesión exacta del docente → registro de asistencia del alumno. Las asignaciones deben cubrir la fecha afectada; las ofertas, períodos, matrículas, sesiones, asistencias y justificaciones duplicadas o ambiguas fallan cerradas.
+- Cada docente ve solo las sesiones de su asignatura. Si una justificación cubre varias asignaturas, se fragmenta el resultado por sesiones autorizadas; no se devuelve el conjunto completo de sesiones a todos los docentes.
+- El DTO docente minimiza datos: estudiante, grado/sección, fecha/período, estado, observaciones públicas y sesiones autorizadas. No expone motivo declarado, notas administrativas internas, adjunto, ID del alumno ni datos familiares.
+- La política DOCENTE_VISIBILIDAD_EVIDENCIAS_MEDICAS es restrictiva por defecto. La exposición completa requiere configuración explícita por Administrador/Director; configuración ausente, inactiva, ambigua o sin estado válido se resuelve como SOLO_DICTAMEN_SECRETARIA.
+- getTeacherJustificationEvidence revalida el ámbito docente y la política, y exige archivo privado, no eliminado, de tamaño máximo 2 MiB y MIME PDF/JPEG/PNG. La integridad SHA-256 de adjuntos queda para F34-Task04; no se afirma aquí verificación criptográfica del binario.
+- acknowledgeTeacherStudentJustification registra CONOCIMIENTO o CONFORMIDAD por sesión con hash de registro, actor autenticado, timestamp, ScriptLock, revalidación del ámbito dentro del lock e idempotencia. No altera la decisión de Secretaría.
+- Se integró la pestaña de justificaciones en teacher-dashboard.html y js/teacher.js con carga, actualización, registro de constancias y apertura de evidencia autorizada.
+
+#### Archivos
+- backend/academic-service/Code.gs
+- teacher-dashboard.html
+- js/teacher.js
+- tests/security/academic-teacher-justification-abac.test.js
+- .github/workflows/department-scope-contract.yml (contrato ya integrado)
+- pendientes/Docente/Pendientes.md
+- beta_test_Parte_0002.txt
+- Auditoría/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- changueslogs.txt
+
+#### Commits de implementación y endurecimiento
+- 1d1aecaffae0fc18749d418d1182682b992feccd — consulta ABAC, DTO mínimo, constancias y evidencia condicionada.
+- f98d96a3456ed0eb38dab3dcab8fb67b6ff828ca y 1e05c046c0dfafe0b49f8d25f5b6243c0c329e27 — correcciones del extractor del contrato.
+- d42fb6651f8bbef86dd2e0443844253d238540f0 — integración del cliente teacher con fetchApi compartido.
+- fc5197eddc3bd78e144f75cc2c8e0265c4caf14e — revalidación del ámbito al registrar constancias.
+- eb4dba0f06b773229bb81363c14752abbd8b53d1 — matrícula vigente y período activo.
+- 5f0f5f55eb570a4e230477b57713aee74a4e2032 y 1cfb4df8791918187d8b0b7d12f2348eb4853f9e — cobertura de revocación y utilidades de fecha Apps Script.
+- a0c84c8abd1a1201f7db902e9a412f0c148b7f17 — rechazo de matrículas retiradas/históricas.
+- 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38 — política de evidencia fail-closed y cobertura adicional de fechas/revocación.
+
+#### Verificación
+- Department Scope Contract run 43737615044: SUCCESS; contrato ABAC docente PASS, sintaxis Apps Script/JS PASS y suite configurada completada.
+- Task-Service security run 43737615057: SUCCESS.
+- Department Reference Consumers run 43737615098: SUCCESS.
+- Department Scope Contract run 43737343581: SUCCESS en el HEAD previo al endurecimiento final.
+- El contrato prueba separación entre docentes, alumno fuera de asignación, matrícula retirada, período vencido, oferta inactiva, ausencia de matrícula, sesiones ajenas, justificación duplicada, permisos por rol, auditoría, revalidación después de revocación, lock, idempotencia y política/privacidad de evidencias.
+- CI ejecutó Node.js 24.22.2. Node local NOT RUN: se intentó obtener checkout de la rama autorizada, pero el entorno no pudo resolver github.com (DNS). CLI no aplicable por ausencia de scripts de proyecto confirmada en la inspección previa.
+- No se desplegó Apps Script ni se ejecutaron pruebas reales contra Sheets/Drive productivos.
+
+#### Límites y dependencias
+- BETA-FUNC-102 pendiente: probar con docentes y alumnos sintéticos, asignaciones y matrículas reales de beta, períodos, sesiones, constancias, evidencia privada y denegaciones.
+- La evidencia adjunta no tiene todavía hash SHA-256 persistido/verificado en este subflujo; corresponde a F34-Task04.
+- La visibilidad de evidencias médicas completas está deshabilitada salvo decisión explícita de Administrador/Director. No debe interpretarse como permiso general para consultar expedientes.
+- F34-Task01 y F34-Task02 conservan sus pruebas beta pendientes. F22-Task03 continúa pendiente por PSC real, artefacto probatorio persistido y multifirmante.
+
+#### Continuidad
+- Siguiente prioridad P0 del Plan Maestro: F34-Task04 — añadir SHA-256 a adjuntos y evidencias documentales. El identificador figura en la matriz del Plan Maestro, pero no se localizó una ficha operativa equivalente en pendientes/Otros; ejecutar a partir del alcance F34-10 de la auditoría, sin inventar requisitos adicionales.
+
+
+### C1.753 — F34-Task04 — integridad SHA-256 de adjuntos y evidencias
+- **Fecha:** 2026-11-15.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Checkpoint anterior:** C1.752.
+- **HEAD de inicio:** 4d2093012e6cc46d5c273d66574c15659ef8b12d.
+- **Commit de prueba:** 8c81df2843b88ce2af6a05a99ae692b8ab4a55af.
+- **CI:** Department Scope Contract run 43740294235 — SUCCESS; Node.js 24; sintaxis Apps Script/JS PASS.
+- **Estado:** F34-Task04 completada en código y CI. Validación beta real de Drive/Sheets pendiente.
+
+#### Alcance verificado
+- USER calcula SHA-256 de los bytes fuente y vuelve a leer los bytes persistidos en Drive; compara hash, longitud, MIME y privacidad antes de registrar evidencia como VERIFICADO.
+- Se persisten SHA-256, versión, tamaño, MIME, fecha ISO de recepción y estado en SolicitudesTramites para justificaciones, trámites y formularios institucionales.
+- ACADEMIC conserva metadatos SHA-256 por evidencia en JustificacionesAsistencia; el flujo canónico revalida archivo privado, bytes, tamaño, MIME y hash antes de persistir.
+- La descarga administrativa recalcula el hash y rechaza discrepancias o metadatos/versiones inválidos. Los archivos históricos sin huella se identifican explícitamente como LEGACY_UNVERIFIED; nunca se presentan como verificados.
+- La consulta docente de evidencia vuelve a calcular SHA-256 y bloquea archivos alterados, eliminados o no privados.
+- Se amplió tests/security/user-service-request-attachment-integrity.test.js para simular que Drive devuelve bytes distintos después de la carga; el helper debe lanzar ATTACHMENT_STORAGE_INTEGRITY_MISMATCH y retirar el archivo huérfano.
+
+#### Archivos
+- backend/user-service/Code.gs (implementación ya presente en HEAD de inicio; revisada, sin cambios de producción en esta iteración).
+- backend/academic-service/Code.gs (implementación ya presente en HEAD de inicio; revisada, sin cambios de producción en esta iteración).
+- tests/security/user-service-request-attachment-integrity.test.js.
+
+#### Verificación
+- Department Scope Contract run 43740294235: SUCCESS.
+- Node.js 24 ejecutó la suite completa del workflow; el paso específico “Run request attachment SHA-256 integrity and tamper detection contract” SUCCESS.
+- Sintaxis de servicios Apps Script/JS: SUCCESS en el mismo workflow.
+- Se revisaron contratos de adjuntos USER, justificación canónica ACADEMIC, evidencia docente y bandeja documental; sin cambios de producción ni regresiones introducidas.
+- No se ejecutó Apps Script desplegado ni se accedió a Drive/Sheets productivos. Node local no fue necesario: la suite se ejecutó en GitHub Actions. No se ejecutó CLI independiente.
+
+#### Límites y continuidad
+- BETA-FUNC de F34-Task04 pendiente: carga, descarga, sustitución controlada, privacidad y evidencia histórica en Drive/Sheets de entorno beta.
+- TASK-106 sigue pendiente: su alcance adicional incluye múltiples adjuntos/versiones v2+, inmutabilidad de evidencias previas a aprobación/firma, vínculo de decisiones con hashes y parametrización institucional ante discrepancias. No se declara cubierto por F34-Task04.
+- Próxima tarea elegible: revalidar TASK-105 (P0, orden 1) tras satisfacer su dependencia F34-Task04; si sus criterios ya están cubiertos por C1.750, registrar evidencia sin duplicar implementación. TASK-106 permanece P0, orden 2.
+
+
+### C1.754 — TASK-105 — ciclo canónico de justificaciones y sincronización de asistencia
+- **Fecha:** 2026-11-15.
+- **Rama autorizada:** NG_beta_0.0.0.1_work.
+- **Checkpoint anterior:** C1.753.
+- **HEAD al iniciar TASK-105:** d8c71a67531fe83984173d643a2e2f5120a57234.
+- **HEAD de implementación y CI:** 3aa12165290ef2daa6f6e709ed879f967a96baa6.
+- **Rama base:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- **Estado:** TASK-105 completada en código, revisión y CI. BETA-FUNC-103 pendiente de ejecución en Apps Script/Sheets/Drive beta.
+
+#### Implementación
+- Se unificó el flujo USER → ACADEMIC canónico, conservando el ID de solicitud/justificación, estudiante, usuario/representante, fechas afectadas, sesiones exactas, adjunto y decisión administrativa.
+- USER serializa la prelectura y el alta mediante ScriptLock en secciones separadas de la creación de adjuntos, evitando lock anidado con la creación de carpetas Drive. Revalida dentro del lock; duplicados ambiguos fallan cerrados; reintentos comparan motivo y hash de adjunto y no crean filas duplicadas.
+- Se añadieron FechasAfectadasJSON y SesionIDsSolicitadasJSON. El portal familiar permite enviar un rango de fechas; ACADEMIC valida cada fecha dentro del mismo período y resuelve la unión exacta de sesiones de clase. Los docentes reciben únicamente sus sesiones autorizadas y todas las fechas del expediente.
+- La aprobación puede abarcar todas las sesiones o un subconjunto explícito. Se conserva el conjunto solicitado, el subconjunto aprobado y el alcance TOTAL/PARCIAL; sesiones no aprobadas no se modifican. La política TODO_O_NADA deniega subconjuntos.
+- JUSTIFICACION_IMPACTO_AUTOMATICO_ASISTENCIA soporta INMEDIATO_AL_APROBAR_SECRETARIA (predeterminado) y REQUIERE_CONFORMIDAD_PREVIA_DOCENTE. En el segundo modo se exige una constancia CONFORMIDAD activa por sesión y se verifica su hash SHA-256 antes de permitir la aprobación.
+- PERMITIR_JUSTIFICACION_PARCIAL_DIAS soporta HABILITADO y TODO_O_NADA. La configuración se guarda en ConfiguracionInstitucional mediante saveAbsenceJustificationPolicies, restringida a Administrador/Director.
+- La sincronización de asistencia es idempotente y recuperable: decisiones pendientes/rechazadas/observadas no mutan asistencia; aprobaciones actualizan solo sesiones seleccionadas; fallos mantienen estado pendiente para reconciliación; revocaciones revierten el indicador y el vínculo sin borrar el historial.
+- Se integró bandeja de Secretaría en dashboard-secretaria.html/js/secretary.js con consulta institucional, aprobación total/parcial, rechazo y apertura de adjuntos privados tras revalidar integridad. El rol docente no puede invocar revisión administrativa. El panel docente muestra todas las fechas afectadas.
+
+#### Archivos
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- js/student.js
+- js/teacher.js
+- js/secretary.js
+- dashboard-secretaria.html
+- tests/security/academic-absence-justification-canonical.test.js
+- tests/security/academic-teacher-justification-abac.test.js
+- pendientes/Docente/Pendientes.md
+- beta_test_Parte_0002.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0009.txt
+- changueslogs.txt
+
+#### Verificación
+- Department Scope Contract run 43742077374: SUCCESS en HEAD 3aa12165290ef2daa6f6e709ed879f967a96baa6. Node.js 24; contrato canónico, fechas múltiples, aprobación parcial, configuración, hash de conformidad, reintentos, recuperación y ABAC docente PASS; sintaxis Apps Script/JS, js/student.js y js/secretary.js PASS.
+- Identity Mapping and Transport Security Contracts run 43742077382: SUCCESS.
+- Contratos previos de cola institucional/aislamiento, puente USER de revisión parcial y proyección de sesiones parciales: PASS.
+- No se desplegó Apps Script ni se modificaron datos reales de Sheets/Drive. No se declara validación productiva.
+
+#### Límites y continuidad
+- BETA-FUNC-103 pendiente: ejecutar con estudiantes/representantes, Secretaría, dos docentes, sesiones de varios días, evidencia sintética privada, políticas HABILITADO/TODO_O_NADA, modo de conformidad previa, reintentos, fallo parcial y revocación en entorno beta.
+- **Siguiente P0 elegible:** TASK-106 — integridad criptográfica, versionado y protección contra sustitución de evidencias documentales (orden 2). F34-Task01 y F34-Task04 están completadas; no se debe confundir este alcance con el versionado múltiple/inmutabilidad adicional de TASK-106.
+
+===============================================================================
+## C1.755 — IMA-EXEC-20261115-TASK106-EVIDENCE-INTEGRITY-01
+- **Fecha:** 2026-11-15
+- **Rama autorizada:** NG_beta_0.0.0.1_work
+- **Rama base:** NG_beta_0.0.0.1 — verificada sin modificaciones.
+- **Checkpoint anterior:** C1.754.
+- **Normativa aplicada:** Normas_Desarollo.md; sin despliegue ni cambios fuera de la rama autorizada.
+- **HEAD de implementación verificado:** 2db32093801846f2d74be81be54d4b6bb4dbdd57.
+- **Commits documentales previos:** BETA-FUNC-104 bd0c67c254e9fc8ee521d4276002ee929c24cf63; cierre TASK-106 f5ac9e7f3bf189be3b5eaf7cf946ba39c2a1cdad; changelog 700831939e3946d96ca3b274b43928a3ab375b69.
+
+### Tarea cerrada
+TASK-106 — Integridad criptográfica, versionado y protección contra sustitución de evidencias documentales.
+
+### Implementación
+- **USER:** cálculo SHA-256 sobre bytes reales y read-back; metadatos independientes por adjunto; IDs de evidencia/solicitud, nombre original, MIME, tamaño, fecha ISO, usuario, versión y referencia privada de Drive. Verificación al consultar/descargar; detección de alteración; versiones históricas; subsanación con rollback; varios adjuntos por solicitud; bloqueo de sustitución después de aprobación.
+- **ACADEMIC:** la aprobación vincula el snapshot/hash y los IDs exactos de evidencia revisados. El conjunto de evidencia solo puede cambiar tras estado RequiereInformacion; el historial conserva el conjunto anterior y el nuevo. La revisión se serializa con la subsanación.
+- **ACCOUNTING:** comprobantes de pago privados con SHA-256, SolicitudID, EvidenciaID, DriveFileID, nombre original, MIME, tamaño, fecha, versión y hash/actor/estado de decisión. Se detecta también el cambio de nombre. Observado permite una nueva versión; decisiones finales bloquean sustituciones. Versiones anteriores permanecen verificables y descargables por roles autorizados.
+- **Configuración:** BLOQUEO_AUTOMATICO_POR_DISCREPANCIA_HASH admite modo estricto y advertencia; configuración ausente, duplicada o inválida vuelve a modo estricto.
+- **UI:** Secretaría puede consultar y verificar evidencias sin exponer URLs públicas ni IDs de Drive en DTOs.
+
+### Archivos de implementación y pruebas
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/accounting-service/Code.gs
+- js/secretary.js
+- .github/workflows/department-scope-contract.yml
+- tests/security/academic-absence-justification-canonical.test.js
+- tests/security/user-service-request-attachment-integrity.test.js
+- tests/security/accounting-payment-voucher-evidence-integrity.test.js
+- tests/security/accounting-departmental-resource-access.test.js
+- tests/security/file-attachment-persistence-contract.test.js
+
+### Verificación
+- **Department Scope:** run 43746597438 — SUCCESS; contratos canónicos USER/ACADEMIC, múltiples evidencias, histórico, adjuntos privados, ACCOUNTING, versionado y sintaxis Apps Script.
+- **Identity Mapping and Transport Security:** run 43746563028 — SUCCESS.
+- **Department Reference Consumers:** run 43746563035 — SUCCESS.
+- **Node.js en GitHub Actions:** PASS; comprobación de sintaxis de servicios Apps Script PASS.
+- **Node local:** NOT RUN. No se realizó checkout local.
+- **CLI independiente:** no aplicable; el repositorio no declara package.json ni entrypoint CLI.
+- **Prueba real beta Apps Script/Sheets/Drive:** pendiente; BETA-FUNC-104 preparada en beta_test_Parte_0002.txt.
+
+### Hallazgos y límites
+- Los adjuntos históricos sin hash se identifican como LEGACY_UNVERIFIED. Pueden consultarse con advertencia por roles autorizados, pero no se presentan como evidencia verificada ni sustentan una nueva aprobación sin reingreso verificable.
+- No se desplegó código ni se modificó producción.
+- No se detectó ni se ejecutó una CLI independiente.
+
+### Continuidad
+- TASK-106 completada en código y CI.
+- Siguiente: auditar dependencias de TASK-108 y F34-Task06 antes de seleccionar la siguiente tarea elegible; no asumir que TASK-108 está desbloqueada solo por completar F34-Task04.
+===============================================================================
+
+
+===============================================================================
+## C1.756 — IMA-EXEC-20261115-F34-TASK06-REACTIVE-WORKFLOW-NOTIFICATIONS-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD inicial de sesión:** f8a67705d87388a0e2c1e1acc9b2edc4f21d44e0
+- **HEAD de código F34-TASK06:** 3b667725c840f3db88161e3cd82434eb2d91668c
+- **Commit de pruebas/aislamiento y CI PASS:** d36a52e63386363dab5d01346c1de8056c6ca417
+- **HEAD previo a publicar este checkpoint:** 6041d84f60eb0a02a1fa49b99978bd9d33ea91a2
+- **Normativa:** Normas_Desarollo.md v1.4, única normativa operativa.
+
+### Alcance implementado
+- processWorkflowDecision conserva la escritura de la decisión y el estado; prepara el aviso dentro de la unidad y lo despacha solo después de liberar el ScriptLock.
+- Estados notificados: Requiere Corrección, Aprobada y Rechazada; destinatario derivado del UserId de la solicitud.
+- Contenido mínimo: estado, acción requerida, observaciones públicas, fecha límite si existe y enlace HTTPS al portal. No se transmiten observaciones internas.
+- Consentimiento de correo fail-closed: email solo si existe una preferencia explícita persistida; de lo contrario se usa bandeja interna.
+- sendMultiChannelNotification aplica deduplicación bajo ScriptLock, conserva compatibilidad con userId de tipo email, escapa HTML y deja Pendiente_Reintento ante fallos/cuotas de MailApp.
+
+### Archivos de código/pruebas
+- backend/user-service/Code.gs
+- tests/security/user-service-workflow-notifications.test.js
+- .github/workflows/department-scope-contract.yml
+
+### Registros actualizados
+- pendientes/Secretaria/Pendientes.md — F34-TASK06 completada en código/CI.
+- Auditoría/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md — evidencia C1.756.
+- changueslogs.txt — registro de entrega.
+- beta_test_Parte_0002.txt — BETA-FUNC-105 pendiente beta.
+- Auditoría/INDICE_CHECKPOINTS.md — índice C1.756.
+
+### Verificación
+- Node.js local v22, harness aislado con mocks: PASS (tres estados, privacidad, consentimiento, notificación después del lock, deduplicación, cuota/reintento, compatibilidad email y escape HTML).
+- Parseo de backend USER completo: PASS.
+- GitHub Actions Department Scope Contract, Node 24: SUCCESS; incluye user-service-workflow-notifications.test.js y la suite de contratos existente.
+- CLI independiente: no aplicable; el repositorio no declara package.json ni entrypoint CLI.
+- Diff revisado: cambios acotados a notificaciones y salida del workflow; no se modificaron notas internas ni estados canónicos.
+
+### Límites / beta
+- BETA-FUNC-105 pendiente para validar Apps Script, Sheets y MailApp reales, consentimiento, cuotas y reintentos desplegados.
+- No se declara WhatsApp ni entrega formal documental. La apertura del correo no equivale a acuse de recibo.
+
+### Estado y continuidad
+- F34-TASK06: completada en código y CI; beta pendiente.
+- Siguiente tarea elegible: TASK-108 (P0), bandeja de salida institucional y control de entregas con acuses, reutilizando el núcleo F34-Task02 y las dependencias F34-Task04/F34-Task06. No reconstruir la funcionalidad ya implementada.
+===============================================================================
+
+
+===============================================================================
+## C1.757 — IMA-EXEC-20261115-TASK108-OUTBOX-DELIVERY-CONTROLS-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD inicial:** 3b69408e2e0d740747c4c6ab80bbffcf508d409
+- **HEAD de implementación USER:** 0026d3fcf4b779db05c05231e18617707a741689
+- **HEAD de pruebas de contrato:** 06bd0dd1191b6c159fb4cc7e0c18047729760946
+- **CI verificado:** ima/department-scope-contract SUCCESS (Node 24) en 06bd0dd1191b6c159fb4cc7e0c18047729760946
+- **HEAD previo a publicar este checkpoint:** 3b69408e2e0d740747c4c6ab80bbffcf508d409
+- **Normativa:** Normas_Desarollo.md v1.4.
+
+### Alcance completado en USER
+- Bandeja personal del emisor getMyDepartmentalOutbox, filtrada por identidad autenticada, y bandeja departamental con rechazo de remitente suplantado.
+- Alias sendInstitutionalDispatch y lote sendInstitutionalDispatchBatch, con clave idempotente estable por documento y estado individual por destinatario. Cada destinatario debe tener un documento emitido canónico propio para preservar ownership.
+- Canales PLATAFORMA, CORREO y PLATAFORMA_Y_CORREO; correo requiere consentimiento explícito en Usuarios. No se habilita push sin proveedor.
+- Modalidad tenant-scoped MODALIDAD_ACUSE_RECIBO_NOTIFICACIONES; default EXPLICITO_CLIC_CONFIRMACION. AUTOMATICO_POR_LECTURA genera RECIBIDO_AUTOMATICO_POR_LECTURA con advertencia y sin FechaConfirmacion/SHA256Confirmacion.
+- Reintentos de correo serializados con ScriptLock y HTML escapado; el éxito del reintento sincroniza EstadoCorreo en EntregasDocumentales y agrega DOCUMENT_EMAIL_RETRY_SENT. Los eventos de fallos anteriores permanecen en HistorialEventosJSON.
+- Se elimina propiedad duplicada fechaRevocacionEnlace de la respuesta getMyDocumentDeliveries.
+
+### Archivos
+- backend/user-service/Code.gs
+- tests/security/user-service-departmental-outbox.test.js
+- tests/security/user-service-workflow-notifications.test.js
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md
+- changueslogs.txt
+- beta_test_Parte_0002.txt (BETA-FUNC-106)
+
+### Verificación
+- Parseo de backend USER completo: PASS.
+- Parseo y extracción de 25 funciones de entrega/acuse: PASS.
+- Harness aislado V8 con mocks: PASS (lote, destinatarios, consentimiento, bandeja personal, suplantación, modo automático).
+- Reintento de correo con cuota simulada: PASS (Pendiente_Reintento -> Entregado, HTML escapado, estado de entrega reconciliado).
+- GitHub Actions Department Scope Contract: SUCCESS, Node 24; incluye pruebas de bandeja/outbox y notificaciones.
+- No se alteró el branch base. No se registró IP de cliente inventada.
+
+### Límites que mantienen TASK-108 abierto
+- Apps Script Web App no expone IP cliente confiable al handler actual; requiere proxy/gateway confiable y contrato autenticado.
+- backend/accounting-service/Code.gs está vacío; falta modelo canónico de comprobantes contables y su autorización para conectarlo.
+- No existe proveedor push ni modelo de múltiples adjuntos; el despacho por lote usa un documento canónico por destinatario.
+- BETA-FUNC-106 pendiente de despliegue real en Apps Script/Drive/Sheets/MailApp.
+
+### Estado y continuidad
+- TASK-108: parcial avanzado en código/CI; no se marca completada por los criterios externos pendientes.
+- Siguiente tarea elegible independiente: TASK-130 (ayudas permanentes y descripciones de formularios), sujeto a verificar F38-Task01/F38-Task02 y Normas_Desarollo.md.
+===============================================================================
+
+
+===============================================================================
+## C1.758 — IMA-EXEC-20261115-TASK130-PERMANENT-FIELD-HELP-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD antes del checkpoint:** 8ebde86683e10ad2bb1eb6130a9de89fd696aa82
+- **Normativa leída:** Normas_Desarollo.md v1.4.
+- **Tarea:** TASK-130 — ayudas permanentes, descripciones completas y confirmaciones independientes.
+
+### Cambios
+- js/ui-common.js: required marker visible; setFieldValidationError/clearFieldValidationError; los errores se asocian con role=alert, aria-live, aria-invalid y aria-describedby. El clear preserva la ayuda permanente y las descripciones anteriores.
+- teacher-dashboard.html: dos campos de calificación enlazados a calificaciones.nota y restricciones min=0/max=100/step=0.01, compatibles con auditoría backend.
+- tests/security/ui-common-permanent-help.test.js: fixture DOM para fallback, idempotencia, required marker, ARIA, error inline y confirmación crítica.
+- Confirmaciones críticas inspeccionadas: deleteScheduleBlock retorna antes de la mutación al cancelar; voidCharge aplica confirmAccountingSensitiveOperation_ antes de callApi.
+- El catálogo getUIMetadataCatalog y su fallback ya existentes se preservan; no se convierten metadatos en controles de autorización.
+
+### Archivos
+- js/ui-common.js
+- teacher-dashboard.html
+- tests/security/ui-common-permanent-help.test.js
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_38_AYUDA_CONTEXTUAL_METADATOS_APRENDIZAJE.md
+- changueslogs.txt
+- beta_test_Parte_0002.txt
+
+### Verificación
+- Compilación sintáctica V8 PASS: js/ui-common.js, tests/security/ui-common-permanent-help.test.js, tests/security/user-service-ui-metadata.test.js, js/teacher.js y js/accounting.js.
+- Revisión estática: calificaciones 0–100 consistente con auditAcademicGradesIntegrity; cancelaciones de horario/pago preceden llamadas al backend.
+- Node CLI test suite: NO EJECUTADA en esta sesión; no se obtuvo un workflow run/estado de Actions para este commit. No se declara PASS.
+- Pruebas manuales de teclado, lector de pantalla, móvil, zoom y formularios reales pendientes.
+
+### Brechas que mantienen TASK-130 abierto
+- No están etiquetados todos los campos reales de matrícula/admisión, importación y adjuntos con límites contrastados con sus validadores.
+- Falta verificar el handler real de cierre de actas de calificaciones.
+- El test DOM agregado aún requiere ejecución Node CLI y validación beta.
+- F38-Task01/02 continúan figurando pendientes en la auditoría maestra, aunque hay implementaciones parciales verificables de tooltip y catálogo.
+
+### Estado y continuidad
+- TASK-130: avance parcial, no se marca completada.
+- Rama base NG_beta_0.0.0.1 no fue modificada.
+- Siguiente paso elegible: ampliar mapeo de metadatos en los formularios reales de Secretaría/Admisión y las importaciones, verificando primero cada restricción contra el backend correspondiente; después ejecutar suite Node y CI.
+===============================================================================
+
+
+===============================================================================
+## C1.759 — IMA-EXEC-20261115-TASK130-IDENTITY-HELP-CONSISTENCY-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD antes del checkpoint:** 54a9046458a2630a17054108835b4aecab94ff48
+- **Tarea:** TASK-130 — coherencia de ayudas permanentes en campos de identidad.
+
+### Hallazgo y corrección
+- El buscador de identidad de Secretaría recibe DNI, RNE u otros identificadores de la fuente. La ayuda previa matricula.identidad explicaba solo el DNI hondureño de 13 dígitos y era incorrecta para el campo de búsqueda.
+- Añadida clave identidad.busqueda en getUIMetadataCatalog y fallback local. Explica el propósito de búsqueda y aclara que la coincidencia requiere revisión humana y no acredita identidad.
+- js/secretary.js asigna identidad.busqueda a identity-search-identificacion y identity-search-responsable. matricula.identidad queda reservada al DNI del proceso de matrícula.
+- tests/security/user-service-ui-metadata.test.js incorpora aserciones para la clave y para evitar la regresión.
+
+### Archivos
+- backend/user-service/Code.gs
+- js/ui-common.js
+- js/secretary.js
+- tests/security/user-service-ui-metadata.test.js
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_38_AYUDA_CONTEXTUAL_METADATOS_APRENDIZAJE.md
+- changueslogs.txt
+
+### Verificación
+- Parseo sintáctico V8 PASS: backend USER, UI común, Secretaría y test de catálogo.
+- Comparación de guía con findPersonMatches: el identificador de búsqueda se clasifica como evidencia y el backend exige revisión humana; no hay fusión automática.
+- Node CLI/GitHub Actions: sin ejecución disponible para este commit; status checks y workflow runs consultados, ambos sin resultados. No se declara prueba de ejecución PASS.
+
+### Estado
+- TASK-130 sigue parcial. La guía de búsqueda es ahora coherente con el contrato real.
+- HEAD previo al checkpoint verificado: 54a9046458a2630a17054108835b4aecab94ff48.
+- Rama base NG_beta_0.0.0.1 sin modificaciones.
+===============================================================================
+
+
+===============================================================================
+## C1.760 — IMA-EXEC-20261115-TASK130-NATIVE-FIELD-VALIDATION-CI-01
+- **Fecha:** 2026-11-15
+- **Rama:** NG_beta_0.0.0.1_work (única rama modificada)
+- **HEAD antes del checkpoint:** 43e8f1a447ef87c65ab29db0dc39963a641180f1
+- **Tarea:** TASK-130 — ayudas permanentes, errores inline y confirmaciones independientes.
+
+### Implementación
+- js/ui-common.js: los eventos nativos invalid/input/change se capturan a nivel documento. El validationMessage se presenta bajo el control con role=alert/aria-live, aria-invalid y aria-describedby; al corregirse el control, se elimina solo el error y se conserva la ayuda permanente.
+- tests/security/ui-common-permanent-help.test.js cubre la captura del evento invalid (no burbujeante), visualización del mensaje y limpieza al corregir.
+- .github/workflows/ui-accessibility-contract.yml incluye el test DOM nuevo y amplía filtros de push/PR para formularios y scripts dependientes.
+
+### Pruebas
+- Compilación sintáctica V8 PASS para js/ui-common.js, backend/user-service/Code.gs, js/secretary.js, js/teacher.js, js/accounting.js, tests/security/ui-common-permanent-help.test.js, tests/security/user-service-ui-metadata.test.js y tests/ui/permanent-form-help.test.js.
+- Node CLI y GitHub Actions: ejecución no verificable con el conector disponible (sin resultados de status/check-run/workflow-run expuestos). No se declara PASS.
+- Pruebas de navegador/lector de pantalla/tacto aún pendientes.
+
+### Archivos del avance
+- js/ui-common.js
+- tests/security/ui-common-permanent-help.test.js
+- tests/security/user-service-ui-metadata.test.js
+- tests/ui/permanent-form-help.test.js
+- .github/workflows/ui-accessibility-contract.yml
+- backend/user-service/Code.gs
+- js/secretary.js
+- teacher-dashboard.html
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_38_AYUDA_CONTEXTUAL_METADATOS_APRENDIZAJE.md
+- changueslogs.txt
+
+### Estado y continuidad
+- TASK-130 continúa parcial; no se cierra hasta cubrir formularios reales de matrícula/importación/adjuntos y verificar el handler de cierre de actas, además de pruebas Node/CI y accesibilidad.
+- HEAD base verificado antes de checkpoint: 44d9891132332e692dbe2ba8602b41f50a508a59; no se publicó ningún cambio en esa rama.
+===============================================================================
+
+
+===============================================================================
+## C1.761 — IMA-EXEC-20261115-TASK130-NODE-HELP-CONTRACT-01
+- **Fecha:** 2026-11-15
+- **Rama:** NG_beta_0.0.0.1_work
+- **HEAD antes del checkpoint:** a760ac3fbb14030e62ec0427b07e019c933a9603
+- **Tarea:** TASK-130 — ayudas permanentes y validación accesible.
+
+### Pruebas y CI
+- .github/workflows/ui-accessibility-contract.yml y .github/workflows/department-scope-contract.yml incluyen tests/security/ui-common-permanent-help.test.js.
+- tests/ui/permanent-form-help.test.js ahora verifica también los campos calificacion y edit-puntaje, clave calificaciones.nota, min=0, max=100 y step=0.01.
+- GitHub Actions `ima/department-scope-contract: success` confirmado en c92724908578f5acf02867e3d51ce24518800876 y f81732c70468448e1fea395bd595ef663ae61fe4. El segundo commit incluye las aserciones de rango y el test de formularios.
+- Parseo sintáctico V8 PASS de JS, backend y scripts inline de los dashboards revisados.
+
+### Estado de la tarea
+- El contrato automatizado de Node 24 se ejecutó y pasó en los commits indicados.
+- TASK-130 permanece parcial por la cobertura restante de formularios de matrícula/importación/adjuntos, handler de cierre de actas y validación manual de accesibilidad en navegador/lector de pantalla/móvil.
+- No se atribuye el estado success a commits posteriores que solo modificaron documentación.
+- Rama base sin modificaciones; no se publicaron cambios en otras ramas.
+===============================================================================
+
+
+===============================================================================
+## C1.762 — IMA-EXEC-20261115-TASK132-LEGACY-DOCUMENT-INVENTORY-01
+- **Fecha:** 2026-11-15
+- **Rama exclusiva:** NG_beta_0.0.0.1_work
+- **HEAD antes del checkpoint:** 399a2bdec0735f987aacf06cbc5c51ada1c8fee6
+- **HEAD de código/inventario:** c955fc6ffc51081daed3e85976575865a6f6b8d6
+- **HEAD de test con rollback:** be9a598c6fe4e052bb572a5bb6c9f512469fe102
+- **HEAD base verificado:** NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59
+- **Normativa:** Normas_Desarollo.md v1.4.
+
+### Decisión de arquitectura
+- backend/accounting-service/Code.gs está vacío en la rama. El inventario se implementa y expone en USER, donde residen identidad firmada, permisos, getUserContextScope y aislamiento por institución/departamento. No se crea una falsa fachada de ACCOUNTING sin un servicio desplegable.
+
+### Implementación
+- Se añaden registerLegacyDocumentInventory y getLegacyDocumentInventory y se registran en doPost.
+- InventarioDocumentalLegado se crea al primer registro con los campos de TASK-132, InstitutionID, SubcategoriaDocumental y ClaveOrigen. HistorialInventarioDocumentalLegado conserva campo, valor anterior/nuevo, actor, rol, fecha y correlationId.
+- Se admiten soportes FISICO/DIGITAL/MIXTO, sin requerir subida inmediata a Drive; categorías REGISTROS_DE_DATOS, PLANTILLAS y DOCUMENTOS_HISTORICOS; los diez estados de transición especificados.
+- Subcategorías libres y agrupadas por departamento. ClaveOrigen estable y única por institución, no basada en el nombre; DocumentoId estable en actualizaciones.
+- Autorización por validateRolePermission + getUserContextScope. Aislamiento InstitutionID y departmentIds; propietario departamental inmutable. Director/Administrador con ámbito institucional pueden consultar el consolidado. Un duplicado de otro departamento no revela su DocumentoId.
+- Filtros por departamento, categoría, formato, responsable, período y estado; paginación; exportación CSV protegida contra fórmulas.
+- ScriptLock serializa escrituras. Si falla el historial, la operación revierte la fila de inventario. Lecturas validan esquema y fallan cerradas ante drift.
+
+### Archivos
+- backend/user-service/Code.gs
+- tests/security/user-service-legacy-document-inventory.test.js
+- .github/workflows/department-scope-contract.yml
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md
+- changueslogs.txt
+- beta_test_Parte_0002.txt
+
+### Verificación
+- Compilación sintáctica V8 PASS: backend USER y test de inventario.
+- Harness aislado V8 del test de contrato PASS, incluyendo aislamiento tenant/departamento, ID estable, deduplicación, historial, filtros, CSV, validación, bloqueo, rollback, RBAC y routing.
+- GitHub Actions `ima/department-scope-contract: success` confirmado en be9a598c6fe4e052bb572a5bb6c9f512469fe102. El job ejecuta Node 24 y el test de inventario agregado.
+- Una ejecución anterior falló por error del extractor del test y por índice de departamento omitido; ambos se corrigieron y el commit posterior pasó.
+
+### Estado y continuidad
+- TASK-132: backend avanzado y contratos CI aprobados; no se cierra por falta de UI de inventario y validación beta real con Sheets/roles de los departamentos.
+- No se modificó ACCOUNTING porque el archivo está vacío; no se alteró la rama base ni se publicaron cambios en otra rama.
+- Siguiente tarea elegible: TASK-133 (motor de validación multinivel de archivos/documentos), dependiente de F39-Task01; iniciar solo después de verificar el estado real del checkpoint y los validadores existentes para evitar duplicación.
+===============================================================================
+
+
+===============================================================================
+## C1.763 — IMA-EXEC-20261115-TASK130-PERMANENT-HELP-XLSX-SECRETARY-01
+- Fecha: 2026-11-15
+- Rama exclusiva: NG_beta_0.0.0.1_work
+- HEAD de código/metadata: aad0684ba981fc818843eb799e94b25720be9b0a
+- HEAD de fallback UI: 8a29c5645b8cb86fd233f960f565f0015f6af606
+- HEAD de formularios/tests: 58176b77c5d44b80eb59f95054d1112790cd0b01
+- HEAD de prueba corregida: 385f59f9dc576bf0099946db3774e51bbe944a40
+- HEAD beta/documentación previo a checkpoint: 84a284ae36b4a19a1e4bcc9a9638450b82e6759a
+- HEAD base verificado: NG_beta_0.0.0.1 = 44d9891132332e692dbe2ba8602b41f50a508a59
+- Normativa: Normas_Desarollo.md v1.4.
+
+### Alcance
+- Se amplía getUIMetadataCatalog y el fallback de ui-common.js con importacion.xlsx, incluyendo exactamente .xlsx, MIME OpenXML, maxBytes=10 MiB, rechazo de archivo vacío/cifrado/truncado/dañado y revisión de vista previa. La restricción coincide con validateExcelFileEnvelope en js/teacher.js.
+- Se vincula el input excel-file-input a importacion.xlsx.
+- Se agregan ayudas permanentes de calendario en evm-fecha-inicio, evm-fecha-fin e identity-search-fecha del dashboard de Secretaría; se conserva fecha inicial obligatoria y fecha final opcional.
+- Se amplían los tests de catálogo y formulario, y BETA-FUNC-107 documenta los escenarios adicionales.
+
+### Archivos modificados en este avance
+- backend/user-service/Code.gs
+- js/ui-common.js
+- teacher-dashboard.html
+- dashboard-secretaria.html
+- tests/security/user-service-ui-metadata.test.js
+- tests/ui/permanent-form-help.test.js
+- pendientes/Secretaria/Pendientes.md
+- Auditoría/AUDITORIA_FASE_38_AYUDA_CONTEXTUAL_METADATOS_APRENDIZAJE.md
+- changueslogs.txt
+- beta_test_Parte_0002.txt
+
+### Verificación
+- Cuatro contratos UI/metadatos ejecutados en harness JS aislado PASS: ui-common-permanent-help, permanent-form-help, user-service-ui-metadata y accessible-tooltips.
+- Sintaxis V8 PASS: backend/user-service/Code.gs, js/ui-common.js, js/teacher.js, js/secretary.js, js/accounting.js y js/student.js.
+- GitHub Actions ima/department-scope-contract: success confirmado en 385f59f9dc576bf0099946db3774e51bbe944a40 (Node 24; workflow ejecuta los contratos UI/metadatos y chequeos de sintaxis pertinentes).
+- El commit 2754939 tuvo un fallo intermedio porque la prueba se publicó antes de la ayuda en dashboard-secretaria.html y la aserción de atributo required usó una expresión incorrecta. Ambos defectos se corrigieron; harness local PASS y commit 385f59f con Actions SUCCESS. No se oculta el fallo anterior.
+- La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59; todos los writes fueron dirigidos a NG_beta_0.0.0.1_work.
+
+### Estado y continuidad
+- TASK-130 permanece abierto: falta cobertura exhaustiva de formularios dinámicos y revisión de límites de adjuntos restantes con sus validadores reales; falta prueba manual de teclado, lector de pantalla, tacto, zoom y cancelación sin mutación en navegador.
+- BETA-FUNC-107 pendiente de ejecución en entorno beta real.
+- Siguiente tarea P0 elegible según el checkpoint C1.762 y Plan Maestro: TASK-133, previa lectura de F39-Task01 y verificación de validadores existentes para no duplicar capacidades.
+===============================================================================

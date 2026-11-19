@@ -1,0 +1,46 @@
+const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm"),path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"../../backend/accounting-service/Code.gs"),"utf8");new vm.Script(src);
+function extract(name){const start=src.indexOf("function "+name+"(");assert.ok(start>=0,name);const open=src.indexOf("{",start);let depth=0,quote=null,escape=false,line=false,block=false;for(let i=open;i<src.length;i++){const c=src[i],n=src[i+1];if(line){if(c==="\n")line=false;continue;}if(block){if(c==="*"&&n==="/"){block=false;i++;}continue;}if(quote){if(escape){escape=false;continue;}if(c==="\\"){escape=true;continue;}if(c===quote)quote=null;continue;}if(c==="/"&&n==="/"){line=true;i++;continue;}if(c==="/"&&n==="*"){block=true;i++;continue;}if(c==="'"||c==='"'||c==="\`"){quote=c;continue;}if(c==="{")depth++;else if(c==="}"&&--depth===0)return src.slice(start,i+1);}throw Error("unclosed "+name);}
+function sheet(rows){return{rows:rows.map(r=>r.slice()),getDataRange(){return{getValues:()=>this.rows.map(r=>r.slice())};},getLastRow(){return this.rows.length;},getRange(r,c,nr,nc){const self=this;return{setValues(values){values.forEach((row,i)=>{while(self.rows.length<r+i)self.rows.push(new Array(self.rows[0].length).fill(""));self.rows[r+i-1]=row.slice();});},setValue(value){while(self.rows.length<r)self.rows.push(new Array(self.rows[0].length).fill(""));self.rows[r-1][c-1]=value;}};},appendRow(row){this.rows.push(row.slice());}};}
+const MH=["MatriculaID","Fecha","UserId","Alumno","Grado","Seccion","AnoLectivo","Tipo","Estado","BecaDescuento","Observaciones"],TH=["TarifaID","AnoLectivo","NivelGrado","ConceptoID","MontoTotal","CuotasNum","VencimientoJSON","Estado","Observaciones"],CH=["ConceptoID","Fecha","NombreConcepto","MontoBase","AplicaAGrado","PeriodoVigencia","Estado","Observaciones"],FH=["CargoID","Fecha","UserId","Concepto","MontoBase","Descuento","MontoFinal","Estado","FechaVencimiento","Observaciones","ClaveUnicaDedupe","BatchId"];
+function setup(){const sheets={Matriculas:sheet([MH,["MAT1",new Date(),"U1","Ana","Séptimo","A","2027","Nuevo","Confirmada",25,""],["MAT2",new Date(),"U2","Luis","Séptimo","B","2027","Nuevo","Activa",0,""],["MAT3",new Date(),"U3","Eva","Octavo","A","2027","Nuevo","Activa",0,""],["MAT4",new Date(),"U4","Inactiva","Séptimo","A","2027","Nuevo","Retirada",0,""],["MAT5",new Date(),"U5","Otro año","Séptimo","A","2028","Nuevo","Activa",0,""]]),TarifasPlanPago:sheet([TH,["T1","2027","Séptimo","M1",12000,10,'["2027-01-10","2027-02-10"]',"Activa",""],["T2","2027","Séptimo","M2",6000,10,"[]","Activa",""],["T3","2027","Octavo","M1",24000,10,"[]","Activa",""],["T4","2028","Séptimo","M1",13000,10,"[]","Activa",""]]),ConceptosCobro:sheet([CH,["M1",new Date(),"Colegiatura",0,"","","Activo",""],["M2",new Date(),"Transporte",0,"","","Activo",""]]),CargosEstudiante:sheet([FH])};
+const ss={getSheetByName:n=>sheets[n]||null};const sharedLock={locked:false,tryLock(){if(this.locked)return false;this.locked=true;return true;},releaseLock(){this.locked=false;}};const context={SpreadsheetApp:{openById:()=>ss},SPREADSHEET_ID:"TEST",LockService:{getScriptLock:()=>sharedLock},normalizeString:v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(),logStructuredEvent:()=>{},applyApprovedScholarshipsToCharges:()=>{},Date,Math,JSON,Number,String,Set,Map,isFinite,parseFloat,parseInt,Error};
+const names=["monthlyChargeHeaderMap_","normalizeMonthlyChargeMonth_","monthlyChargeDedupeKey_","resolveMonthlyChargeTariff_","monthlyChargeExistingKey_","previewBatchMonthlyCharges","generateBatchMonthlyCharges"];vm.runInNewContext(names.map(extract).join("\n")+"\nthis.preview=previewBatchMonthlyCharges;this.generate=generateBatchMonthlyCharges;",context);return{context,sheets};}
+{
+const h=setup(),p=h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(p.totalEstudiantesElegibles,2);assert.equal(p.estudiantesParaGenerar,2);assert.equal(p.mesClave,"01");assert.equal(Array.from(p.desglose, x => x.userId).join(","),"U1,U2");assert.equal(p.desglose[0].montoBase,1200);assert.equal(p.desglose[0].descuento,300);assert.equal(p.desglose[0].montoFinal,900);
+}
+{
+const h=setup(),p=h.context.preview({anoLectivo:"2027",mesPeriodo:"1",nivelGrado:"Séptimo",conceptoId:"M1",seccion:"A"});assert.equal(p.totalEstudiantesElegibles,1);assert.equal(p.desglose[0].userId,"U1");
+}
+{
+const h=setup(),p8=h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Octavo",conceptoId:"M1"}),pNext=h.context.preview({anoLectivo:"2028",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(p8.desglose[0].userId,"U3");assert.equal(p8.desglose[0].montoBase,2400);assert.equal(pNext.desglose[0].userId,"U5");assert.equal(pNext.desglose[0].montoBase,1300);
+}
+{
+const h=setup();h.sheets.TarifasPlanPago.rows.splice(1,1);const p=h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(p.estudiantesSinTarifa,2);assert.equal(p.estudiantesParaGenerar,0);assert.ok(p.desglose.every(x=>x.estado==="SinTarifa"&&x.montoFinal===0));const g=h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(g.creados,0);assert.equal(h.sheets.CargosEstudiante.rows.length,1);assert.equal(g.sinTarifa,2);
+}
+{
+const h=setup(),a=h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(a.creados,2);const retry=h.context.generate({anoLectivo:"2027",mesPeriodo:"01",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(retry.creados,0);assert.equal(retry.omitidos,2);const feb=h.context.generate({anoLectivo:"2027",mesPeriodo:"Febrero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(feb.creados,2);const other=h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M2"});assert.equal(other.creados,2);assert.equal(h.sheets.CargosEstudiante.rows.length,7);const keys=h.sheets.CargosEstudiante.rows.slice(1).map(r=>r[10]);assert.equal(new Set(keys).size,6);
+}
+{
+const h=setup();h.sheets.CargosEstudiante.rows.push(["LEGACY",new Date(),"U1","Colegiatura",1200,0,1200,"Pendiente","","","u1_colegiatura_enero_2027",""]);const p=h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(p.desglose.find(x=>x.userId==="U1").estado,"YaGenerado");assert.equal(p.desglose.find(x=>x.userId==="U2").estado,"PendienteGenerar");
+}
+{
+const h=setup();h.sheets.CargosEstudiante.rows.push(["LEGACY",new Date(),"U1","Colegiatura",1200,0,1200,"Pendiente","","","u1_colegiatura",""]);const p=h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(p.desglose.find(x=>x.userId==="U1").estado,"PendienteGenerar");
+}
+{
+const h=setup();assert.throws(()=>h.context.preview({anoLectivo:"2027",mesPeriodo:"13",conceptoId:"M1"}),/MONTHLY_CHARGE_PERIOD_INVALID/);h.sheets.Matriculas.rows[0]=["Id",...MH.slice(1)];assert.throws(()=>h.context.preview({anoLectivo:"2027",mesPeriodo:"Enero",conceptoId:"M1"}),/MONTHLY_CHARGE_SCHEMA_INVALID:MatriculaID/);
+}
+{
+const h=setup();h.context.LockService.getScriptLock=()=>({tryLock:()=>false,releaseLock:()=>{}});const g=h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(g.code,"LOCK_TIMEOUT");
+}
+
+{
+const h=setup();h.sheets.Matriculas.rows.push(h.sheets.Matriculas.rows[1].slice());const g=h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(g.creados,2);assert.equal(h.sheets.CargosEstudiante.rows.length,3);assert.equal(new Set(h.sheets.CargosEstudiante.rows.slice(1).map(r=>r[10])).size,2);
+}
+{
+const h=setup();let nested=null;const original=h.sheets.CargosEstudiante.getRange.bind(h.sheets.CargosEstudiante);h.sheets.CargosEstudiante.getRange=(...args)=>{const range=original(...args),write=range.setValues.bind(range);range.setValues=values=>{nested=h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});return write(values);};return range;};const outer=h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(nested.code,"LOCK_TIMEOUT");assert.equal(outer.creados,2);assert.equal(h.sheets.CargosEstudiante.rows.length,3);
+}
+{
+const h=setup();let fail=true;const original=h.sheets.CargosEstudiante.getRange.bind(h.sheets.CargosEstudiante);h.sheets.CargosEstudiante.getRange=(...args)=>{const range=original(...args),write=range.setValues.bind(range);range.setValues=values=>{if(fail){fail=false;throw new Error("SIMULATED_WRITE_FAILURE");}return write(values);};return range;};assert.throws(()=>h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"}),/SIMULATED_WRITE_FAILURE/);const retry=h.context.generate({anoLectivo:"2027",mesPeriodo:"Enero",nivelGrado:"Séptimo",conceptoId:"M1"});assert.equal(retry.creados,2);assert.equal(h.sheets.CargosEstudiante.rows.length,3);
+}
+console.log("ACCOUNTING monthly charge period contract PASS.");

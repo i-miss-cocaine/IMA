@@ -1,0 +1,25 @@
+===============================================================================
+## C1.766 — IMA-EXEC-20261115-TASK133-ACCOUNTING-ROUTER-BLOCKER-01
+- **Fecha:** 2026-11-15
+- **Rama:** NG_beta_0.0.0.1_work (única rama modificada)
+- **HEAD previo a checkpoint:** 95cbbba89d55822c4721106e88306492dc15a2d3
+- **HEAD de rama base verificado:** 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios)
+- **Normativa:** Normas_Desarollo.md.
+
+### Hallazgo que bloquea la integración de UI
+- js/api.js envía acciones por fetchApi(service, action, payload) a SERVICE_URLS[service], por POST y espera un sobre API versionado.
+- backend/accounting-service/Code.gs no contiene doPost ni textResponse ni un switch/router de acciones.
+- El servicio tampoco define localmente verifySessionToken, createInterServiceEnvelope o assertEmployeeExpedienteScopeAccess_; los helpers de preflight dependen de esos adaptadores y fallan cerrados si no están disponibles.
+- Por tanto, validateImportPreview e importDataWithColumnMapping no están expuestos como endpoints invocables desde ACCOUNTING. Conectar dashboard-contabilidad o Secretaría ahora crearía una UI sin ruta de backend autenticada. No se añadió un doPost parcial que pueda interceptar o romper acciones contables existentes.
+
+### Estado técnico conservado
+- Se mantienen los contratos aislados de preflight semántico, importación departamental, lectura referencial HMAC y validación binaria.
+- accounting-import-semantic-preflight.test.js ahora verifica idempotencyKey estable al reintentar una importación parcial confirmada.
+- Contratos V8 aislados PASS; Node CLI nativo no ejecutado.
+- Último CI observado en HEAD ecddb6422ced09d797f9f77969d496cd8d554fe2: ima/department-reference-consumers SUCCESS; ima/department-scope-contract FAILURE por la suite transversal de APIs de RR. HH./nómina/pagos ausentes en la línea base.
+- No hay workflow runs reportados para el HEAD actual al momento de este checkpoint.
+
+### Continuidad
+- TASK-133 sigue abierto. Para continuar con UI se debe restaurar/definir el router ACCOUNTING completo, el contrato API versionado, autenticación de sesión y adaptadores interservicio/ownership, preservando las acciones contables existentes.
+- Después conectar previewHash/confirmación, implementar snapshot remoto USER/ACADEMIC, OCR y ejecutar BETA-FUNC-108 en Apps Script/Drive/Sheets reales.
+===============================================================================
