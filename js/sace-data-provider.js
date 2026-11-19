@@ -70,13 +70,6 @@
       sessionIds.add(id);
       const day = dateKey(session.fecha);
       if (!day) throw new Error("SACE_ATTENDANCE_SESSION_DATE_INVALID");
-      if (["CERRADA", "CERRADO", "FINALIZADA", "FINALIZADO", "COMPLETADA", "COMPLETADO"].indexOf(text(session.estado)) === -1) {
-        throw new Error("SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial1");
-      }
-      const closeTimestamp = String(session.fechaCierre == null ? "" : session.fechaCierre).trim();
-      if (!closeTimestamp || !Number.isFinite(Date.parse(closeTimestamp))) {
-        throw new Error("SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:partial1");
-      }
       let label = "";
       if (day >= period1.start && day <= period1.end) label = "partial1";
       else if (day >= period2.start && day <= period2.end) label = "partial2";
@@ -85,6 +78,13 @@
           text(session.seccion) !== text(expected.seccion) ||
           text(session.asignaturaId) !== text(expected.asignaturaId) ||
           String(session.docenteUserId || "").trim() !== expected.teacherUserId) return;
+      if (["CERRADA", "CERRADO", "FINALIZADA", "FINALIZADO", "COMPLETADA", "COMPLETADO"].indexOf(text(session.estado)) === -1) {
+        throw new Error("SACE_ATTENDANCE_SESSION_NOT_CLOSED:" + label);
+      }
+      const closeTimestamp = String(session.fechaCierre == null ? "" : session.fechaCierre).trim();
+      if (!closeTimestamp || !Number.isFinite(Date.parse(closeTimestamp))) {
+        throw new Error("SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:" + label);
+      }
       selected[label].push({ id, date: day });
     });
     if (!selected.partial1.length) throw new Error("SACE_ATTENDANCE_SESSIONS_EMPTY:partial1");

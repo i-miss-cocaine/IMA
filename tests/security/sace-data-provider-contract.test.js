@@ -127,6 +127,12 @@ assert.throws(() => build({ identityRecords: identityRecords.slice(1) }), /SACE_
 assert.throws(() => build({ attendanceSessions: sessions.concat(sessions[0]) }), /SACE_ATTENDANCE_SESSION_DUPLICATE/);
 assert.throws(() => build({ attendanceSessions: sessions.map(session => session.sesionId === "S-1" ? Object.assign({}, session, { estado: "Abierta" }) : session) }), /SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial1/);
 assert.throws(() => build({ attendanceSessions: sessions.map(session => session.sesionId === "S-1" ? Object.assign({}, session, { fechaCierre: "" }) : session) }), /SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:partial1/);
+assert.throws(() => build({ attendanceSessions: sessions.map(session => session.sesionId === "S-2" ? Object.assign({}, session, { estado: "Abierta" }) : session) }), /SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial2/);
+assert.throws(() => build({ attendanceSessions: sessions.map(session => session.sesionId === "S-2" ? Object.assign({}, session, { fechaCierre: "" }) : session) }), /SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:partial2/);
+const irrelevantOpenSessions = sessions.map(session => ["S-OTHER", "S-OUTSIDE"].includes(session.sesionId)
+  ? Object.assign({}, session, { estado: "Abierta", fechaCierre: "" }) : session);
+assert.deepEqual(build({ attendanceSessions: irrelevantOpenSessions }).sourceStudents, result.sourceStudents,
+  "open sessions outside the requested periods or class/teacher scope must not invalidate the candidate");
 assert.throws(() => build({ identityRecords: identityRecords.concat(identityRecords[0]) }), /SACE_IDENTITY_RECORD_DUPLICATE/);
 assert.throws(() => build({ partial2Period: { periodoId: "PER-1", anoId: "2026", fechaInicio: "2026-05-01", fechaFin: "2026-07-31" } }), /SACE_PERIODS_MUST_BE_DISTINCT/);
 assert.throws(() => build({ partial1Period: Object.assign({}, periods.partial1Period, { anoId: "2025" }) }), /SACE_PERIOD_YEAR_MISMATCH:partial1/);
