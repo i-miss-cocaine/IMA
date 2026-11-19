@@ -10,9 +10,11 @@ on:
       - 'js/student.js'
       - 'student-dashboard.html'
       - 'tests/ui/student-contextual-report-ui.test.js'
+      - 'tests/ui/teacher-gradebook-rubric-competency-ui.test.js'
       - 'teacher-dashboard.html'
       - 'tests/security/exam-service-question-modalities-contract.test.js'
       - 'tests/security/exam-service-attachment-submission-contract.test.js'
+      - 'tests/ui/teacher-gradebook-rubric-competency-ui.test.js'
       - 'js/student.js'
       - 'student-dashboard.html'
       - 'tests/ui/student-contextual-report-ui.test.js'
@@ -150,6 +152,8 @@ jobs:
             fi
           done
           exit "$failed"
+      - name: Run teacher gradebook competency catalog UI contract
+        run: node tests/ui/teacher-gradebook-rubric-competency-ui.test.js
       - name: Check repository JavaScript syntax
         run: |
           set -e
