@@ -1,0 +1,21 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const html = fs.readFileSync(path.join(__dirname, "../../teacher-dashboard.html"), "utf8");
+const js = fs.readFileSync(path.join(__dirname, "../../js/teacher.js"), "utf8");
+for (const id of ["gb-rubric-title", "gb-rubric-criteria", "gb-rubric-list",
+  "gb-competency-student", "gb-competency-id", "gb-indicator-id",
+  "gb-competency-rubric", "gb-competency-level", "gb-competency-observations",
+  "gb-competency-list"]) assert.ok(html.includes('id="' + id + '"'), "missing UI control " + id);
+for (const contract of [
+  "fetchApi('EXAM', 'getRubrics'",
+  "fetchApi('EXAM', 'saveRubric'",
+  "fetchApi('EXAM', 'getCompetencyEvaluations'",
+  "fetchApi('EXAM', 'saveCompetencyEvaluation'",
+  "renderGradebookAssessmentOptions()",
+  "gradebookCompetencyRequestVersion"
+]) assert.ok(js.includes(contract), "missing UI integration " + contract);
+assert.ok(js.includes("requestVersion !== gradebookCompetencyRequestVersion"),
+  "stale competency responses must be discarded");
+process.stdout.write("teacher-gradebook-rubric-competency-ui: PASS (16 contracts)\\n");

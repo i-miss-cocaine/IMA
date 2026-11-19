@@ -5555,6 +5555,7 @@ function toBase64(file) {
             if (res.status === 'success' && res.data) {
                 currentGradebookData = res.data;
                 renderGradebookTable();
+                renderGradebookAssessmentOptions();
             } else {
                 currentGradebookData = { alumnos: [], calificaciones: [], recuperaciones: [], categories: [], estadoPeriodo: 'Abierto' };
                 tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-500">${res.message || 'Error al obtener libro de calificaciones'}</td></tr>`;
@@ -5860,6 +5861,134 @@ function toBase64(file) {
         const summary = currentGradebookData?.resumenes?.[userId];
         window.quickRecoveryPrompt(userId, "Estudiante " + userId,
             summary?.notaFinal ?? null, categoryId);
+    });
+
+    let gradebookCompetencyRequestVersion = 0;
+    const escapeGradebookHtml = value => String(value == null ? "" : value).replace(/[&<>"']/g, char =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+
+    function renderGradebookAssessmentOptions() {
+        const select = document.getElementById('gb-competency-student');
+        if (!select) return;
+        const previous = select.value;
+        const students = Array.isArray(currentGradebookData?.alumnos) ? currentGradebookData.alumnos : [];
+        select.innerHTML = '<option value="">Seleccione un estudiante</option>' + students.map(student =>
+            '<option value="' + escapeGradebookHtml(student.userId) + '">' +
+            escapeGradebookHtml(student.nombreCompleto || student.userId) + '</option>').join('');
+        if (students.some(student => String(student.userId) === previous)) select.value = previous;
+    }
+
+    async function loadGradebookRubrics() {
+        const list = document.getElementById('gb-rubric-list');
+        const rubricSelect = document.getElementById('gb-competency-rubric');
+        if (!list || !rubricSelect) return;
+        list.textContent = "Consultando rúbricas...";
+        try {
+            const context = getGradebookContextPayload();
+            const response = await fetchApi('EXAM', 'getRubrics', {
+                ...context, profesorId: currentUser.userId, asignatura: context.asignatura
+            });
+            if (!response || response.status !== 'success' || !Array.isArray(response.data)) {
+                throw new Error(response?.message || "No fue posible consultar las rúbricas.");
+            }
+            const rubrics = response.data;
+            rubricSelect.innerHTML = '<option value="">Sin rúbrica</option>' + rubrics.map(rubric =>
+                '<option value="' + escapeGradebookHtml(rubric.rubricaId) + '">' +
+                escapeGradebookHtml(rubric.titulo) + '</option>').join('');
+            list.textContent = rubrics.length
+                ? rubrics.map(rubric => rubric.titulo + " (" + rubric.rubricaId + ")").join(" · ")
+                : "No hay rúbricas activas para esta asignatura.";
+        } catch (error) {
+            list.textContent = "Error al consultar rúbricas: " + error.message;
+        }
+    }
+
+    async function loadGradebookCompetencyEvaluations() {
+        const list = document.getElementById('gb-competency-list');
+        const studentSelect = document.getElementById('gb-competency-student');
+        if (!list || !studentSelect) return;
+        const userId = String(studentSelect.value || "").trim();
+        if (!userId) { list.textContent = "Seleccione un estudiante."; return; }
+        const requestVersion = ++gradebookCompetencyRequestVersion;
+        list.textContent = "Consultando evaluaciones...";
+        try {
+            const context = getGradebookContextPayload();
+            const response = await fetchApi('EXAM', 'getCompetencyEvaluations', {
+                ...context, userId, asignaturaId: context.asignatura,
+                periodoId: context.periodoId, profesorId: currentUser.userId
+            });
+            if (requestVersion !== gradebookCompetencyRequestVersion) return;
+            if (!response || response.status !== 'success' || !Array.isArray(response.data)) {
+                throw new Error(response?.message || "No fue posible consultar las evaluaciones.");
+            }
+            list.textContent = response.data.length
+                ? response.data.map(item => item.competenciaId + " / " + item.indicadorId +
+                    " — " + item.nivelDesempeno).join(" · ")
+                : "No hay evaluaciones registradas para este estudiante y contexto.";
+        } catch (error) {
+            if (requestVersion === gradebookCompetencyRequestVersion) {
+                list.textContent = "Error al consultar evaluaciones: " + error.message;
+            }
+        }
+    }
+
+    document.getElementById('btn-gb-load-rubrics')?.addEventListener('click', loadGradebookRubrics);
+    document.getElementById('btn-gb-load-competencies')?.addEventListener('click', loadGradebookCompetencyEvaluations);
+    document.getElementById('gb-competency-student')?.addEventListener('change', loadGradebookCompetencyEvaluations);
+
+    document.getElementById('btn-gb-save-rubric')?.addEventListener('click', async () => {
+        const title = String(document.getElementById('gb-rubric-title')?.value || "").trim();
+        let criteria;
+        try { criteria = JSON.parse(document.getElementById('gb-rubric-criteria')?.value || "[]"); }
+        catch (_) { alert("Los criterios deben contener JSON válido."); return; }
+        if (!title || !Array.isArray(criteria) || criteria.length > 30) {
+            alert("Ingrese un título y una lista válida de hasta 30 criterios.");
+            return;
+        }
+        const button = document.getElementById('btn-gb-save-rubric');
+        button.disabled = true;
+        try {
+            const context = getGradebookContextPayload();
+            const response = await fetchApi('EXAM', 'saveRubric', {
+                ...context, profesorId: currentUser.userId, titulo: title,
+                asignatura: context.asignatura, criterios: criteria
+            });
+            if (!response || response.status !== 'success') throw new Error(response?.message || "No fue posible guardar la rúbrica.");
+            document.getElementById('gb-rubric-title').value = "";
+            await loadGradebookRubrics();
+            alert(response.message || "Rúbrica guardada.");
+        } catch (error) {
+            alert("Error al guardar la rúbrica: " + error.message);
+        } finally { button.disabled = false; }
+    });
+
+    document.getElementById('btn-gb-save-competency')?.addEventListener('click', async () => {
+        const context = getGradebookContextPayload();
+        const userId = String(document.getElementById('gb-competency-student')?.value || "").trim();
+        const competenciaId = String(document.getElementById('gb-competency-id')?.value || "").trim();
+        const indicadorId = String(document.getElementById('gb-indicator-id')?.value || "").trim();
+        const nivelDesempeno = String(document.getElementById('gb-competency-level')?.value || "").trim();
+        if (!userId || !competenciaId || !indicadorId || !nivelDesempeno) {
+            alert("Seleccione un estudiante e indique competencia, indicador y nivel de desempeño.");
+            return;
+        }
+        const button = document.getElementById('btn-gb-save-competency');
+        button.disabled = true;
+        try {
+            const response = await fetchApi('EXAM', 'saveCompetencyEvaluation', {
+                ...context, userId, competenciaId, indicadorId, nivelDesempeno,
+                observaciones: String(document.getElementById('gb-competency-observations')?.value || "").trim(),
+                rubricaId: String(document.getElementById('gb-competency-rubric')?.value || "").trim(),
+                asignaturaId: context.asignatura, periodoId: context.periodoId,
+                profesorId: currentUser.userId
+            });
+            if (!response || response.status !== 'success') throw new Error(response?.message || "No fue posible registrar la evaluación.");
+            document.getElementById('gb-competency-observations').value = "";
+            await loadGradebookCompetencyEvaluations();
+            alert(response.message || "Evaluación por competencias registrada.");
+        } catch (error) {
+            alert("Error al registrar la evaluación: " + error.message);
+        } finally { button.disabled = false; }
     });
 
     // --- MÓDULO DE CONTROL DE ASISTENCIA Y CONVIVENCIA ESCOLAR (FASE 10) ---
