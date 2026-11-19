@@ -63,9 +63,10 @@ function fixture(options = {}) {
   if (options.conflictingAssignment) configRows.push(["CFG-2", "", "P1", "10", "A", "Math", "", "", "PROF-2"]);
   if (options.noAssignment) configRows.splice(1, 1);
   if (options.otherAssignment) configRows.push(["CFG-2", "", "P1", "10", "A", "Science", "", "", "PROF-1"]);
+  const catalogContextKey = JSON.stringify(["inst-1", "dept-1", "2026", "10", "a", "math", "plan-a", "comp-1", "ind-1"]);
   const catalogRows = [catalogHeaders,
     ["CAT-1", "INST-1", "DEPT-1", "2026", "10", "A", "Math", "COMP-1", "Competencia",
-      "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN-1", "2026-01-01", "2026-01-01", "context-key"]];
+      "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN-1", "2026-01-01", "2026-01-01", catalogContextKey]];
   const sheets = {
     CatalogoCompetencias: makeSheet(options.catalogRows || catalogRows, options, "catalog", state),
     Usuarios: makeSheet(userRows, options, "users", state),
@@ -124,7 +125,7 @@ function fixture(options = {}) {
     Utilities: { getUuid() { state.uuid++; return "UUID-" + state.uuid; } }
   };
   const names = ["saveCompetencyEvaluation", "withAuthorizedCompetencyEvaluationMutation_",
-    "getAuthorizedCompetencyEvaluationMutationContext_", "saveCompetencyEvaluationUnlocked_", "getExamStudentProfile_"];
+    "getAuthorizedCompetencyEvaluationMutationContext_", "competencyCatalogContextKey_", "saveCompetencyEvaluationUnlocked_", "getExamStudentProfile_"];
   vm.runInNewContext(names.map(extract).join("\n") + "\nthis.saveCompetencyEvaluation = saveCompetencyEvaluation;", runtime);
   const payload = Object.assign({ sessionToken: "synthetic", userId: "STU-1", competenciaId: "COMP-1",
     indicadorId: "IND-1", anoId: "2026", programaCurricular: "PLAN-A", asignaturaId: "Math", periodoId: "P1", nivelDesempeno: "Alto", observaciones: "Observación", rubricaId: "RUB-1" },
