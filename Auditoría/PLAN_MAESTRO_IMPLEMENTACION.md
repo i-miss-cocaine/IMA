@@ -1724,6 +1724,8 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10. Historial de versiones
 
+- **1.3 (2026-11-19):** se añade AUD-NG-254 como última tarea PM-09 para auditar la conformidad de todos los módulos con NDASC 1.5, identificar ajustes de módulos heredados y generar acciones correctivas trazables. Se actualiza el inventario de 1.346 a 1.347 tareas.
+
 - **1.1 (2026-11-09):** se incorpora «Orden PM» y la ruta exacta de requisitos para cada uno de los 1.346 IDs; se agrupan las filas por PM-00 a PM-09; se explicita el algoritmo obligatorio de selección topológica y desempate dentro de cada fase.
 
 
@@ -6052,3 +6054,13 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Se reconciliaron BETA-EXAM-105/106/108/112 (beta y fuente/regla oficial) y BETA-EXAM-107/110/111/113 (despliegues y comunicación real). Código de centro y JornadaID siguen sin equivalencia acreditada.
 - Revisión estática del proveedor/orquestador y snapshots no encontró evidencia suficiente para habilitar producción; el candidato continúa en memoria y aislado. No se modificó código.
 - No se inicia AUD-NG-168/TAREA-13 mientras siga vigente la dependencia declarada por el Plan Maestro. La ausencia de despliegue/plantilla oficial no invalida ni bloquea verificaciones locales independientes.
+
+### C1.862 — registro de AUD-NG-254 como auditoría final de política
+- **Solicitud:** incorporar al final del Plan Maestro una auditoría transversal para verificar que los módulos se apegan a NDASC 1.5 y detectar módulos heredados que requieran ajustes.
+- **Tarea creada:** AUD-NG-254 en `pendientes/Otros/Pendientes.md`, última fila de PM-09. Revisa configuración institucional dinámica de roles/responsabilidades/ámbitos; ausencia de reglas rígidas por nombre de cargo; autorización en el punto de entrada; reutilización eficiente del contexto de sesión; aislamiento institucional y rendimiento proporcional.
+- **Entregable definido:** matriz completa de módulos (Conforme / Requiere ajuste / No aplica / Evidencia insuficiente), informe con evidencia y tareas correctivas específicas en los backlogs correspondientes.
+- **Secuenciación:** se ejecuta después de todas las demás tareas del Plan Maestro; no bloquea el trabajo previo ni introduce controles más restrictivos.
+- **Archivos:** `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`, `pendientes/Otros/Pendientes.md`, `changueslogs.txt`.
+- **Publicación:** commits de documentación 9918e7525e76482df58125976154a7db66d561fe, 7c0773c678b2a0daa82f6e0826f0618fbb37e986 y d6415e7648ed19073f2886e1bb458e54f0823a34. HEAD verificado al iniciar este checkpoint: d6415e7648ed19073f2886e1bb458e54f0823a34.
+- **Verificación:** referencias AUD-NG-254 presentes en plan, backlog y changelog; conteo del inventario actualizado. No se ejecutaron pruebas de código porque este cambio solo registra una tarea documental.
+- **Estado:** tarea nueva Pendiente; no se afirma ejecutada la auditoría de módulos.
