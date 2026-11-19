@@ -26,6 +26,6 @@ for (const id of ["gb-catalog-program", "gb-catalog-competency-id", "gb-catalog-
 assert.ok(js.includes("fetchApi('EXAM', 'getCompetencyCatalog'"));
 assert.ok(js.includes("fetchApi('EXAM', 'saveCompetencyCatalogItem'"));
 assert.ok(js.includes("gradebookCatalogRequestVersion"));
-assert.ok(js.includes("departmentId: String(document.getElementById('gb-catalog-department')?.value || \"\").trim()"));
+assert.ok(js.includes("departmentId: String(gradebookCompetencyCatalog[Number(document.getElementById('gb-competency-catalog')?.value)]?.departmentId || \\"\\").trim()"));
 assert.ok(js.includes("departmentId: String(document.getElementById('gb-competency-department-id')?.value || \"\").trim()"));
 process.stdout.write("teacher-gradebook-rubric-competency-ui: PASS (16 contracts)\n");
