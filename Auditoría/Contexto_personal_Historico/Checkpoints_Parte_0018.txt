@@ -1482,3 +1482,45 @@ Estado AUD-NG-167: [~] En progreso. El flujo candidato queda conectado por contr
 
 Siguiente acción: definir el dato canónico de tipo documental en el modelo Personas/Usuarios sin inferirlo, revisar los puntos de creación/actualización de Personas y probar compatibilidad de consumidores; luego alimentar el proveedor con ese dato explícito.
 ===============================================================================
+
+===============================================================================
+### C1.836 — AUD-NG-167: tipo documental canónico de Persona
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-PERSON-DOCUMENT-TYPE-11
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.835
+HEAD inicial: 1c8cd0f1e335ee022b760b86a73163309cd1fd5e
+Commits de implementación:
+- d9fd325df1d500aae04987bbb10480a49b026d87 — campo TipoIdentificacion, endpoint y proveedor.
+- 211bce478d884a93567547fe3d95ebd2500dd7f2 — corrección de sintaxis del template literal en createPerson.
+- 01ef856d0c1a22fa0cce510feb20a4777c77b2f0 — ajuste del fixture legacy para leer la celda nueva vacía.
+HEAD final de implementación: 01ef856d0c1a22fa0cce510feb20a4777c77b2f0
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Se añadió Personas.TipoIdentificacion al esquema nuevo de USER y a MIGRATION_WRITER_SCHEMAS_.
+- createPerson acepta tipoIdentificacion como texto opcional (máximo 40 caracteres), añade la columna al final en hojas antiguas y persiste solo el valor explícito. No completa tipos para identidades históricas ni deduce el tipo a partir del número.
+- El escritor de migración extiende de forma compatible el esquema legacy de diez columnas a once y rellena la nueva celda como vacía al actualizar filas antiguas, conservando el resto de campos.
+- Academic-Service devuelve documentType desde Personas.TipoIdentificacion por separado de documentMarker. No trata DNI/Pasaporte/etc. como código/marcador de plantilla SACE.
+- El proveedor conserva documentType en sourceStudents, pero sigue exigiendo un documentMarker explícito. La exportación queda bloqueada hasta confirmar y configurar la equivalencia oficial del marcador SACE.
+- Se añadieron tests/security/user-person-document-type.test.js; se ampliaron user-migration-writer.test.js, sace-attendance-snapshot-contract.test.js y sace-data-provider-contract.test.js; se actualizaron workflows USER/identity y el mapa SACE.
+
+Verificación:
+- GitHub Actions 44540993188 — Identity mapping and transport security contracts: SUCCESS. Pasaron TASK-068, snapshot de identidad USER, escritor de migración, contrato del nuevo tipo documental y transport access scope.
+- GitHub Actions 44540632344 — Academic-Service single authorization context: SUCCESS; incluye el contrato del snapshot SACE.
+- GitHub Actions 44540632057 — SACE template structure compatibility contract: SUCCESS; incluye el proveedor y su contrato snapshot→proveedor.
+- En el primer intento, 44540632487 detectó un template literal escapado en createPerson; se corrigió en 211bce y la ejecución posterior 44540993188 pasó.
+- La ejecución amplia Department Scope 44540845994 reportó un fallo no relacionado en tests/regression/phase22-document-management-suite-contract.test.js: el fixture intenta extraer configureSchoolDocumentTemplate, función ausente en el código actual. Los demás pasos de ese job, incluidos los contratos de identidad, matrícula, justificaciones, adjuntos, documentos y acceso, terminaron SUCCESS. Se registra como fallo preexistente/ajeno al cambio, no se altera esa suite en esta tarea.
+- La rama base permanece sin cambios.
+
+Límites:
+- Personas.TipoIdentificacion es dato general institucional, no un mapeo SACE. documentMarker sigue vacío si no existe fuente/catálogo explícito.
+- La semántica de ausencias justificadas, recuperación y PeriodoID→parcial continúa pendiente de confirmación oficial.
+- No se habilitó UI ni exportación productiva; BETA-EXAM-105/106/107 y plantilla/carga oficial siguen pendientes.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: definir el catálogo/equivalencia documental SACE a partir de la plantilla oficial autorizada, sin asumir que TipoIdentificacion equivale al marcador; después probar la composición completa con libro contextual y snapshot sintético, manteniendo bloqueo ante equivalencias faltantes.
+===============================================================================
