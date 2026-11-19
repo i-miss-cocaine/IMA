@@ -12,6 +12,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root,
 for (const entry of manifest.templates) {
   const file = path.join(root, "docs/architecture/Plantillas/SACE", entry.fileName);
   const templateBytes = new Uint8Array(fs.readFileSync(file));
+  const originalTemplateBytes = Array.from(templateBytes);
   const templateInfo = templates.inspectTemplate(templateBytes);
   const sourceRows = Array.from({ length: 22 }, (_, index) => ({
     partial1Absences: index % 3,
@@ -149,6 +150,8 @@ for (const entry of manifest.templates) {
   assert.equal(result.sourceStudentCount, 22);
   assert.equal(result.verifiedRowCount, 22);
   assert.equal(result.outputBytes.length, templateBytes.length);
+  assert.notEqual(result.outputBytes, templateBytes, "candidate generation must return a separate byte buffer");
+  assert.deepEqual(Array.from(templateBytes), originalTemplateBytes, "candidate generation must not mutate the source template bytes");
   assert(result.limitations.includes("synthetic source snapshot; no live service or official SACE mapping"));
   assert(result.limitations.some(item => item.includes("not been independently verified against an official SACE source")));
   const openSessionSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
