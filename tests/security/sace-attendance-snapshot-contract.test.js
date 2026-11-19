@@ -42,13 +42,13 @@ const tables = {
     ["MAT-2", "2026-01-01", "STU-2", "Luis Gómez", "11", "A", "YEAR-2026", "Regular", "Activa", "", ""]
   ],
   SesionesAsistencia: [
-    ["SesionID", "Fecha", "HoraInicio", "HoraFin", "Grado", "Seccion", "AsignaturaID", "DocenteUserId", "Estado", "Observaciones"],
-    ["S-1", "2026-02-03", "", "", "11", "A", "SUB-1", "TEACHER-1", "Cerrada", ""],
-    ["S-2", "2026-05-03", "", "", "11", "A", "SUB-1", "TEACHER-1", "Finalizada", ""],
-    ["S-WRONG-TEACHER", "2026-02-03", "", "", "11", "A", "SUB-1", "TEACHER-2", "Cerrada", ""],
-    ["S-WRONG-SUBJECT", "2026-02-03", "", "", "11", "A", "SUB-2", "TEACHER-1", "Cerrada", ""],
-    ["S-CANCELLED", "2026-02-03", "", "", "11", "A", "SUB-1", "TEACHER-1", "Cancelada", ""],
-    ["S-OUTSIDE", "2026-07-03", "", "", "11", "A", "SUB-1", "TEACHER-1", "Cerrada", ""]
+    ["SesionID", "Fecha", "HoraInicio", "HoraFin", "Grado", "Seccion", "AsignaturaID", "DocenteUserId", "Estado", "Observaciones", "FechaCierre"],
+    ["S-1", "2026-02-03", "", "", "11", "A", "SUB-1", "TEACHER-1", "Cerrada", "", "2026-02-03T08:00:00Z"],
+    ["S-2", "2026-05-03", "", "", "11", "A", "SUB-1", "TEACHER-1", "Finalizada", "", "2026-05-03T08:00:00Z"],
+    ["S-WRONG-TEACHER", "2026-02-03", "", "", "11", "A", "SUB-1", "TEACHER-2", "Cerrada", "", "2026-02-03T08:00:00Z"],
+    ["S-WRONG-SUBJECT", "2026-02-03", "", "", "11", "A", "SUB-2", "TEACHER-1", "Cerrada", "", "2026-02-03T08:00:00Z"],
+    ["S-CANCELLED", "2026-02-03", "", "", "11", "A", "SUB-1", "TEACHER-1", "Cancelada", "", ""],
+    ["S-OUTSIDE", "2026-07-03", "", "", "11", "A", "SUB-1", "TEACHER-1", "Cerrada", "", "2026-07-03T08:00:00Z"]
   ],
   RegistrosAsistencia: [
     ["RegistroID", "SesionID", "UserId", "EstadoAsistencia", "HoraLlegada", "MinutosTardanza", "Justificado", "ObservacionDocente", "FechaRegistro", "JustificacionID"],
@@ -135,6 +135,7 @@ assert.deepEqual(Array.from(result.data.identityRecords, row => [row.userId, row
   ["STU-1", "0801-2000-00001", "DNI", ""], ["STU-2", "0801-2000-00002", "DNI", ""]
 ], "identity and document type are fetched from USER service; no local Personas sheet is required");
 assert.equal(result.data.attendanceSessions.length, 2);
+assert.equal(result.data.attendanceSessions.every(session => typeof session.fechaCierre === "string" && session.fechaCierre.length > 0), true);
 assert.deepEqual(Array.from(result.data.attendanceSessions, row => row.sesionId), ["S-1", "S-2"]);
 assert.equal(result.data.attendanceRecords.length, 4);
 assert.equal(result.data.attendanceRecords.find(row => row.registroId === "R-4").justificado, true);
