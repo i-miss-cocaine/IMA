@@ -3754,27 +3754,59 @@ function buildSaceGradebookSnapshotUnlocked_(request, context, periodoId, parcia
     const nombreCompleto = required(student.nombreCompleto, "SACE_GRADEBOOK_STUDENT_NAME_REQUIRED");
     return { userId, nombreCompleto, grado: expected.grado, seccion: expected.seccion };
   });
+  const summaryKeys = Object.keys(data.resumenes);
+  if (summaryKeys.length !== requested.length ||
+      summaryKeys.some(userId => requested.indexOf(userId) === -1)) {
+    throw new Error("SACE_GRADEBOOK_SUMMARY_SCOPE_INVALID");
+  }
   const resumenes = Object.create(null);
   requested.forEach(userId => {
+    if (!Object.prototype.hasOwnProperty.call(data.resumenes, userId)) {
+      throw new Error("SACE_GRADEBOOK_SUMMARY_MISSING");
+    }
     const summary = data.resumenes[userId];
     if (!summary || String(summary.userId || "").trim() !== userId) {
       throw new Error("SACE_GRADEBOOK_SUMMARY_MISSING");
     }
-    resumenes[userId] = {
-      userId,
-      status: String(summary.status || ""),
-      notaFinal: summary.notaFinal == null ? null : Number(summary.notaFinal),
-      avancePonderado: summary.avancePonderado == null ? null : Number(summary.avancePonderado),
-      ponderacionPendiente: summary.ponderacionPendiente == null ? null : Number(summary.ponderacionPendiente)
+    const status = String(summary.status || "").trim();
+    if (["calculated", "provisional", "pending", "no_grade", "not_configured"].indexOf(status) === -1) {
+      throw new Error("SACE_GRADEBOOK_SUMMARY_STATUS_INVALID");
+    }
+    const numeric = (value, code) => {
+      if (value == null) return null;
+      const number = Number(value);
+      if (!Number.isFinite(number) || number < 0 || number > 100) throw new Error(code);
+      return number;
     };
+    const notaFinal = numeric(summary.notaFinal, "SACE_GRADEBOOK_SUMMARY_GRADE_INVALID");
+    const avancePonderado = numeric(summary.avancePonderado, "SACE_GRADEBOOK_SUMMARY_PROGRESS_INVALID");
+    const ponderacionPendiente = numeric(summary.ponderacionPendiente, "SACE_GRADEBOOK_SUMMARY_PENDING_INVALID");
+    if (ponderacionPendiente === null) throw new Error("SACE_GRADEBOOK_SUMMARY_PENDING_INVALID");
+    if ((status === "calculated" && notaFinal === null) ||
+        (status !== "calculated" && notaFinal !== null)) {
+      throw new Error("SACE_GRADEBOOK_SUMMARY_STATUS_INVALID");
+    }
+    resumenes[userId] = { userId, status, notaFinal, avancePonderado, ponderacionPendiente };
   });
-  const recoveries = Array.isArray(data.recuperaciones) ? data.recuperaciones
-    .filter(row => requested.indexOf(String(row.userId || "").trim()) !== -1)
-    .map(row => ({
-      userId: String(row.userId || "").trim(),
-      evaluacionId: String(row.evaluacionId || "").trim(),
-      notaFinalCalculada: row.notaFinalCalculada == null ? null : Number(row.notaFinalCalculada)
-    })) : [];
+  if (!Array.isArray(data.recuperaciones)) throw new Error("SACE_GRADEBOOK_RECOVERY_DATA_INCOMPLETE");
+  const recoveryIds = new Set();
+  const recoveries = data.recuperaciones.reduce((result, row) => {
+    const userId = required(row && row.userId, "SACE_GRADEBOOK_RECOVERY_USER_REQUIRED");
+    if (requested.indexOf(userId) === -1) return result;
+    const recoveryId = required(row.recuperacionId, "SACE_GRADEBOOK_RECOVERY_ID_REQUIRED");
+    const evaluacionId = required(row.evaluacionId, "SACE_GRADEBOOK_RECOVERY_EVALUATION_REQUIRED");
+    if (recoveryIds.has(recoveryId)) throw new Error("SACE_GRADEBOOK_RECOVERY_DUPLICATE");
+    recoveryIds.add(recoveryId);
+    let notaFinalCalculada = null;
+    if (row.notaFinalCalculada != null) {
+      notaFinalCalculada = Number(row.notaFinalCalculada);
+      if (!Number.isFinite(notaFinalCalculada) || notaFinalCalculada < 0 || notaFinalCalculada > 100) {
+        throw new Error("SACE_GRADEBOOK_RECOVERY_GRADE_INVALID");
+      }
+    }
+    result.push({ userId, evaluacionId, notaFinalCalculada });
+    return result;
+  }, []);
   return {
     status: "success",
     data: {

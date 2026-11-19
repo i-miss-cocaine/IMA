@@ -57,7 +57,7 @@ const fixture = {
       "STU-3": { userId: "STU-3", status: "calculated", notaFinal: 100 }
     },
     recuperaciones: [
-      { userId: "STU-1", evaluacionId: "CAT-1", notaFinalCalculada: 95, privateField: "x" },
+      { recuperacionId: "REC-1", userId: "STU-1", evaluacionId: "CAT-1", notaFinalCalculada: 95, privateField: "x" },
       { userId: "STU-3", evaluacionId: "CAT-2", notaFinalCalculada: 99 }
     ],
     estadoPeriodo: "Cerrado",
@@ -129,6 +129,25 @@ assert.equal(result.data.contexto.parcial, "I Parcial");
 assert.equal(result.data.estadoPeriodo, "Cerrado");
 assert.equal(JSON.stringify(result).includes("private-ana"), false, "student email must not leave Exam-Service");
 assert.equal(JSON.stringify(result).includes("must-not-leak"), false, "unapproved gradebook fields must not leave Exam-Service");
+const extraSummary = JSON.parse(JSON.stringify(fixture));
+extraSummary.data.resumenes["STU-3"] = { userId: "STU-3", status: "calculated", notaFinal: 100 };
+assert.throws(() => createContext(extraSummary).context.runSnapshot(basePayload), /SACE_GRADEBOOK_SUMMARY_SCOPE_INVALID/);
+const invalidSummary = JSON.parse(JSON.stringify(fixture));
+invalidSummary.data.resumenes["STU-1"].notaFinal = 101;
+assert.throws(() => createContext(invalidSummary).context.runSnapshot(basePayload), /SACE_GRADEBOOK_SUMMARY_GRADE_INVALID/);
+const unknownSummaryStatus = JSON.parse(JSON.stringify(fixture));
+unknownSummaryStatus.data.resumenes["STU-1"].status = "unverified";
+assert.throws(() => createContext(unknownSummaryStatus).context.runSnapshot(basePayload), /SACE_GRADEBOOK_SUMMARY_STATUS_INVALID/);
+const missingRecoveryId = JSON.parse(JSON.stringify(fixture));
+delete missingRecoveryId.data.recuperaciones[0].recuperacionId;
+assert.throws(() => createContext(missingRecoveryId).context.runSnapshot(basePayload), /SACE_GRADEBOOK_RECOVERY_ID_REQUIRED/);
+const duplicateRecoveryId = JSON.parse(JSON.stringify(fixture));
+duplicateRecoveryId.data.recuperaciones.push(Object.assign({}, duplicateRecoveryId.data.recuperaciones[0], { evaluacionId: "CAT-2" }));
+assert.throws(() => createContext(duplicateRecoveryId).context.runSnapshot(basePayload), /SACE_GRADEBOOK_RECOVERY_DUPLICATE/);
+const invalidRecoveryGrade = JSON.parse(JSON.stringify(fixture));
+invalidRecoveryGrade.data.recuperaciones[0].notaFinalCalculada = 120;
+assert.throws(() => createContext(invalidRecoveryGrade).context.runSnapshot(basePayload), /SACE_GRADEBOOK_RECOVERY_GRADE_INVALID/);
+
 
 assert.throws(() => createContext(fixture).context.runSnapshot(Object.assign({}, basePayload, {
   studentIds: ["STU-1", "STU-1"]
