@@ -2994,11 +2994,14 @@ function getCompetencyCatalogUnlocked_(payload, context) {
     (!p.seccion || normalizeString(row[5]) === normalizeString(p.seccion)) &&
     (!p.asignaturaId || normalizeString(row[6]) === normalizeString(p.asignaturaId)) &&
     (!p.programaCurricular || normalizeString(row[11]) === normalizeString(p.programaCurricular))
-  ).map(row => ({
-    catalogItemId: row[0], departmentId: row[2], anoId: row[3], grado: row[4], seccion: row[5],
-    asignaturaId: row[6], competenciaId: row[7], competencia: row[8], indicadorId: row[9],
-    indicador: row[10], programaCurricular: row[11], estado: row[12]
-  }));
+  ).map(row => {
+    const item = { catalogItemId: row[0], departmentId: row[2], anoId: row[3], grado: row[4], seccion: row[5],
+      asignaturaId: row[6], competenciaId: row[7], competencia: row[8], indicadorId: row[9],
+      indicador: row[10], programaCurricular: row[11], estado: row[12] };
+    const expectedKey = competencyCatalogContextKey_({ institutionId: scope.institutionId, ...item });
+    if (String(row[16] || "") !== expectedKey) throw new Error("COMPETENCY_CATALOG_CONTEXT_KEY_INVALID");
+    return item;
+  });
   const pairs = Object.create(null);
   result.forEach(item => {
     const key = competencyCatalogContextKey_({ institutionId: scope.institutionId, ...item });
@@ -3081,11 +3084,20 @@ function saveCompetencyCatalogItem(payload) {
       competenciaId, indicadorId, programaCurricular };
     const contextKey = competencyCatalogContextKey_(item);
     const matches = rows.slice(1).map((row, index) => ({ row, rowIndex: index + 1 }))
-      .filter(entry => String(entry.row[16] || "") === contextKey);
+      .filter(entry => String(entry.row[1] || "").trim() === String(scope.institutionId).trim() &&
+        String(entry.row[2] || "").trim() === departmentId &&
+        String(entry.row[3] || "").trim() === anoId &&
+        normalizeString(entry.row[4]) === normalizeString(grado) &&
+        normalizeString(entry.row[5]) === normalizeString(seccion) &&
+        normalizeString(entry.row[6]) === normalizeString(asignaturaId) &&
+        String(entry.row[7] || "").trim() === competenciaId &&
+        String(entry.row[9] || "").trim() === indicadorId &&
+        normalizeString(entry.row[11]) === normalizeString(programaCurricular));
     if (matches.length > 1) throw new Error("COMPETENCY_CATALOG_DUPLICATE_ENTRY");
     const now = new Date().toISOString();
     if (matches.length === 1) {
       const existing = matches[0].row;
+      if (String(existing[16] || "") !== contextKey) throw new Error("COMPETENCY_CATALOG_CONTEXT_KEY_INVALID");
       if (String(existing[12] || "").trim().toUpperCase() === "INACTIVE") throw new Error("COMPETENCY_CATALOG_ENTRY_INACTIVE");
       sheet.getRange(matches[0].rowIndex + 1, 9, 1, 3).setValues([[competencia, indicadorId, indicador]]);
       sheet.getRange(matches[0].rowIndex + 1, 16).setValue(now);
@@ -3203,6 +3215,9 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
     String(row[7] || "").trim() === competenciaId &&
     String(row[9] || "").trim() === indicadorId &&
     String(row[12] || "").trim().toUpperCase() === "ACTIVE" &&
+    String(row[16] || "") === competencyCatalogContextKey_({ institutionId: scope.institutionId,
+      departmentId: row[2], anoId: row[3], grado: row[4], seccion: row[5], asignaturaId: row[6],
+      competenciaId: row[7], programaCurricular: row[11], indicadorId: row[9] }) &&
     (!program || normalizeString(row[11]) === normalizeString(program)));
   if (catalogMatches.length !== 1) {
     throw new Error(catalogMatches.length ? "COMPETENCY_CATALOG_ENTRY_AMBIGUOUS" : "COMPETENCY_CATALOG_ITEM_NOT_FOUND");
