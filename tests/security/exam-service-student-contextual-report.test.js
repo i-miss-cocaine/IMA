@@ -135,6 +135,23 @@ test("an open period cannot produce an official report", () => {
   const result = x.run({ anoId: "2026", periodoId: "P1" });
   assert.equal(result.esDocumentoOficial, false);
 });
+test("legacy closure schema never promotes a contextual report to official", () => {
+  const x = fixture();
+  x.sheets.CierresPeriodos.rows = [
+    ["ID", "Fecha", "Parcial", "Grado", "Seccion", "Asignatura", "ProfesorID", "Estado"],
+    ["OLD-CLOSE", new Date(), "P1", "10", "A", "Matemáticas", "PROF", "Cerrado"]
+  ];
+  const result = x.run({ anoId: "2026", periodoId: "P1" });
+  assert.equal(result.esDocumentoOficial, false);
+  assert.equal(result.estadoPeriodo, "Abierto");
+  assert.equal(result.detalleAsignaturas.length, 2);
+});
+test("invalid closure schema fails closed", () => {
+  const x = fixture();
+  x.sheets.CierresPeriodos.rows[0] = x.sheets.CierresPeriodos.rows[0].slice(0, 7);
+  assert.throws(() => x.run({ anoId: "2026", periodoId: "P1" }),
+    /STUDENT_ACADEMIC_REPORT_CLOSURE_SCHEMA_INVALID/);
+});
 test("partial grade context schema fails closed", () => {
   const x = fixture();
   x.sheets.CalificacionesEstudiantes.rows[0] = x.sheets.CalificacionesEstudiantes.rows[0].slice(0, 12);
