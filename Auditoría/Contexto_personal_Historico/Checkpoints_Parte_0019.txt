@@ -1011,3 +1011,43 @@ Verificación nueva: reconciliación de referencias y revisión estática; CI ex
 Estado AUD-NG-167: [~] En progreso; dependencias externas explícitas.
 Siguiente acción elegible: continuar auditoría local de los contratos de transporte y snapshots Academic/Exam para detectar defectos reproducibles sin inventar credenciales, reglas ni plantilla oficial; mantener el candidato aislado.
 ===============================================================================
+
+===============================================================================
+### C1.864 — AUD-NG-167: alcance correcto de validación de sesiones SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-SESSION-SCOPE-VALIDATION-37
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.863
+HEAD inicial de esta unidad: 59ad4103ece346f138e1aab125b1c4d0ff367ea9
+HEAD final verificado: 509a666790d588e89d04710dfe9ebdfefc7a1234
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo y corrección:
+- La validación de estado/cierre de sesión se ejecutaba antes de determinar el período y verificar el contexto académico/docente.
+- Los errores de cierre y timestamp estaban etiquetados de forma fija como partial1, aunque la sesión correspondiera a partial2.
+- Se reordenó el flujo: validar ID/fecha, resolver parcial, filtrar período y contexto, y solo entonces exigir estado cerrado y timestamp válido. Los códigos ahora conservan el parcial correcto.
+- Se añadieron regresiones para sesión abierta y timestamp ausente en partial2, y para sesiones abiertas fuera del período o de la clase/docente seleccionados; estas últimas no invalidan el candidato.
+- No se cambió el transporte interservicio ni se habilitó salida de producción.
+
+Archivos modificados:
+- js/sace-data-provider.js
+- tests/security/sace-data-provider-contract.test.js
+
+Verificación:
+- GitHub Actions 44626673467 — SACE template structure compatibility contract: SUCCESS. Node.js 22; node --check y contratos de estructura, parcheo binario, proveedor, orquestador y aislamiento: PASS.
+- GitHub Actions 44626673436 — Academic-Service single authorization context: SUCCESS.
+- Revisión del diff del commit 509a666: únicamente los dos archivos de alcance; no se alteró la rama base.
+- No se ejecutó CLI local: el árbol no declara package.json, lockfile ni CLI. La verificación Node.js se ejecutó en Actions; no se afirma ejecución Node local en este entorno.
+- Las Actions previas 44626312322 y 44626269143 fallaron en el workflow SACE durante la transición de etiquetas; la revisión de jobs posterior 44626371338 y 44626371435 pasó y el commit final 509a666 ejecutó ambos workflows con SUCCESS.
+
+Estado:
+- Unidad local de validación de sesiones completada.
+- AUD-NG-167 permanece En progreso por las dependencias beta y oficiales ya registradas (BETA-EXAM-105..113, equivalencias institucionales y plantilla/regla SACE oficial). No se marca cerrada ni se inicia AUD-NG-168.
+- Salida XLS continúa estrictamente CANDIDATE.
+
+Siguiente acción elegible:
+- Continuar auditoría local de la consistencia del snapshot Academic-Service: verificar que las sesiones abiertas o inconsistentes dentro de períodos académicos cerrados no se omitan silenciosamente; mantener los contratos de Exam-Service y el transporte autenticado.
+===============================================================================

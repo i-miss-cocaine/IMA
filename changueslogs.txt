@@ -4320,3 +4320,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.864 — AUD-NG-167: sesiones y registros de asistencia de ambos parciales se indexan en una sola pasada; pruebas V8 compatibles de proveedor, orquestador e aislamiento PASS. No es CI Node/Actions; XLS sigue CANDIDATE. Commits b7bf4459a3030538a528b1a4484b37fdd48e030f, f84b6e0a9ead7abbcd682d18d5d6a47d339dad1e, c096563037abd4b9a4f90d8b777e0324ccb1c549, 3556f5d788d8c54aa1575d9f586962f21a488456.
 
 [2026-11-19] C1.865 — AUD-NG-167: sesiones fuera de los dos periodos o del contexto solicitado ya no bloquean el candidato; validación de cierre se aplica a sesiones seleccionadas. Contratos proveedor/orquestador PASS en V8 compatible; no es CI Node/Actions. Commit 509a666790d588e89d04710dfe9ebdfefc7a1234.
+
+[2026-11-19] C1.864 — AUD-NG-167: proveedor valida estado/cierre solo tras filtrar período y contexto; errores identifican partial1/partial2; regresiones para sesiones abiertas, timestamp ausente y sesiones irrelevantes. Actions 44626673467 y 44626673436 SUCCESS. Commit 509a666790d588e89d04710dfe9ebdfefc7a1234.
