@@ -448,3 +448,47 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar los mapeos restantes (centro, modalidad, jornada, asignatura, tipo documental y recuperación) para separar lo que puede validarse con datos locales de lo que exige plantilla/fuente oficial; mantener la salida como candidato.
 ===============================================================================
+
+
+===============================================================================
+### C1.848 — AUD-NG-167: bloqueo común para todas las lecturas locales del snapshot
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-LOCAL-SNAPSHOT-LOCK-23
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.847
+HEAD inicial: 1fd50804ed939190cf6f143d363aa13e95f77a81
+HEAD de implementación y verificación: 4a6f49a1020f679be98cbef703f9674388190194
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- getSaceAttendanceSnapshot adquiere el ScriptLock antes de leer AnosLectivos, PeriodosAcademicos, CatalogoAsignaturas, Matriculas, SesionesAsistencia, RegistrosAsistencia y JustificacionesAsistencia. La validación local de matrícula ya no ocurre antes del bloqueo.
+- USER-Service se consulta después de liberar el lock; Exam-Service también permanece fuera de la sección bloqueada. Si el lock no se adquiere, se devuelve SACE_ATTENDANCE_SNAPSHOT_LOCK_TIMEOUT sin leer fuentes ni liberar un lock ajeno.
+- Se identificó reconcileStudentLifecycleState como escritor de Matriculas que no usaba el bloqueo. Ahora serializa sus lecturas y correcciones con el mismo ScriptLock y lo libera mediante finally.
+- El contrato comprueba que todas las hojas locales del snapshot se lean con lockHeld=true, que USER/Exam se invoquen después de la liberación, que timeout y fallos liberen correctamente y que los principales escritores de matrícula usen LockService.getScriptLock.
+- Auditoría de escritores: createStudentEnrollment, registerStudentEnrollment, convertAdmissionToStudent, changeStudentSection, recordStudentTransfer, recordStudentWithdrawal, processStudentGraduation y reconcileStudentLifecycleState coordinan con el lock compartido. registerStudentEnrollmentInternal_ se invoca desde wrappers que ya lo mantienen.
+
+Archivos modificados desde C1.847:
+- backend/academic-service/Code.gs
+- tests/security/sace-attendance-snapshot-contract.test.js
+
+Verificación:
+- PASS: Academic-Service single authorization context, Actions 44566020450; incluye node --check y sace-attendance-snapshot-contract con integración snapshot→proveedor.
+- PASS: Accounting Import Preflight Contract 44566020556.
+- PASS: Department Reference Consumers Local Contract 44566020390.
+- PASS: Task-Service security local contracts 44566020427.
+- PASS: Hierarchical Configuration Contract 44566020399.
+- FAIL ajeno: Department Scope Contract 44566020516, en phase22-document-management-suite-contract.test.js por función configureSchoolDocumentTemplate ausente. La misma función no existe en Code.gs en C1.843 (33994be...) ni en HEAD 4a6f49a...; por tanto el fallo ya existía antes de esta tarea y no fue causado por los cambios de snapshot.
+- Harness V8 de compatibilidad: sintaxis, snapshot→proveedor, lectura de las siete fuentes bajo lock, llamadas remotas después del release y auditoría de escritores PASS.
+- Diferencia neta desde C1.847: solo Code.gs y el contrato del snapshot.
+- Rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Beta actualizado:
+- BETA-EXAM-107 y BETA-EXAM-113 ahora incluyen pruebas de concurrencia: snapshot frente a mutación de matrícula/asistencia/justificación, espera/timeout del ScriptLock y reintento tras liberar el lock.
+- Estos casos siguen Pendiente beta; las pruebas locales no sustituyen una ejecución real en Apps Script/Sheets.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: continuar la auditoría de mapeos y validar que el proveedor y orquestador mantengan la salida CANDIDATE sin escrituras/descargas; los beta oficiales permanecen pendientes.
+===============================================================================

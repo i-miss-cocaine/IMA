@@ -5978,3 +5978,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El contrato comprueba que el orquestador devuelve un buffer separado y no modifica el XLS fuente. El proveedor exige `AnoID` coincidente con el contexto y rangos de parciales no solapados/invertidos.
 - SACE Actions 44564738163 y 44564960798 SUCCESS; Academic-Service Actions 44564960766 SUCCESS. Node 22.23.5, sintaxis y contratos PASS. Solo tres archivos cambiados desde C1.846; rama base intacta.
 - AUD-NG-167 sigue En progreso; siguiente: revisar mapeos pendientes y separar evidencia local de validación oficial/beta.
+
+### C1.848 — AUD-NG-167: bloqueo integral del snapshot local
+- El ScriptLock se adquiere antes de leer año, periodos, asignatura, matrículas, sesiones, registros y justificaciones; USER/Exam quedan fuera del lock. `reconcileStudentLifecycleState` ahora usa el mismo lock.
+- Contrato de snapshot y auditoría estática de escritores PASS. Academic Actions 44566020450 y cuatro workflows transversales PASS; Department Scope 44566020516 falla por `configureSchoolDocumentTemplate` ausente también en C1.843, ajeno al cambio.
+- BETA-EXAM-107/113 se amplían con concurrencia real pendiente. AUD-NG-167 continúa en progreso.

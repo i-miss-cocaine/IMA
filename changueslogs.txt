@@ -4283,3 +4283,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.846 — AUD-NG-167: integración de getSaceAttendanceSnapshot real con proveedor; orquestador valida mapeo académico↔plantilla explícito, rechaza contradicciones y conserva limitación si falta. Academic Actions 44563404725 y SACE Actions 44564429486 SUCCESS. Mapeos oficiales y beta real pendientes.
 
 [2026-11-19] C1.847 — AUD-NG-167: generación candidata sin mutar el XLS fuente; proveedor exige mismo AnoID y periodos parciales no solapados. SACE Actions 44564738163/44564960798 y Academic Actions 44564960766 SUCCESS.
+
+[2026-11-19] C1.848 — AUD-NG-167: snapshot bloquea todas las fuentes locales y los escritores de matrícula comparten ScriptLock; BETA-EXAM-107/113 actualizados con pruebas de concurrencia real pendientes. Academic Actions 44566020450 PASS; Department Scope falla por función preexistente ausente.

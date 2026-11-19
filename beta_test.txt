@@ -1955,6 +1955,8 @@ Pasos:
 4. Incluir sesiones de otro docente, asignatura, sección, fecha fuera de periodos y estado cancelado; verificar que se excluyen.
 5. Verificar que se incluyen solo registros de las sesiones filtradas y alumnos con matrícula activa en el contexto.
 6. Repetir con rol no Profesor, institución discordante, credential ausente, periodo abierto, alumno no matriculado y duplicidad de identidad; verificar rechazo controlado.
+7. Ejecutar en paralelo un snapshot y una mutación de matrícula (`createStudentEnrollment`, `changeStudentSection`, traslado/retiro/graduación o `reconcileStudentLifecycleState(autoFix=true)`); verificar que el lock serializa ambas operaciones y que el snapshot refleja un estado completo anterior o posterior, nunca una mezcla.
+8. Mantener el ScriptLock ocupado desde otra ejecución, invocar el snapshot y verificar `SACE_ATTENDANCE_SNAPSHOT_LOCK_TIMEOUT`; liberar el lock y reintentar, confirmando éxito y ausencia de bloqueo residual.
 Resultado esperado:
 - Solo se devuelve el ámbito autorizado de la clase; identidad/tipo documental coinciden con USER.Personas.
 - Academic-Service no requiere hoja Personas local y USER-Service no devuelve email ni teléfono.
@@ -2108,6 +2110,8 @@ Pasos:
 5. Simular PendienteSincronizacion o RevocacionPendienteSincronizacion, incluso si el registro aún no recibió el vínculo; el snapshot debe rechazar y no contar como ausencia ordinaria.
 6. Simular aprobación canónica sincronizada sin JustificacionID en RegistrosAsistencia; debe rechazarse por vínculo inconsistente.
 7. Revocar una aprobación y comprobar que, después de sincronizar la revocación, Justificado=false y JustificacionID vacío dejan de ser tratados como justificación aprobada.
+8. Ejecutar en paralelo la aprobación/revocación y getSaceAttendanceSnapshot; verificar que ambos usan el mismo ScriptLock y que el snapshot no combina JustificacionID/Justificado de estados distintos.
+9. Mantener el ScriptLock ocupado durante una llamada de snapshot y verificar timeout controlado, sin consultas remotas ni liberación de un lock que no pertenece a esa ejecución.
 Resultado esperado:
 - Solo las justificaciones Aprobada + SINCRONIZADO y vinculadas al registro exacto se marcan justificadas.
 - Estados pendientes, inconsistentes o ambiguos bloquean el snapshot.
