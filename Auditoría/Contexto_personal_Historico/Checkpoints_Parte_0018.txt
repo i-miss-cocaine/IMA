@@ -1088,3 +1088,65 @@ Siguiente acción elegible:
 3. Obtener el formato/regla SACE que se debe demostrar; no presumir equivalencia por similitud de campos.
 4. Añadir contratos de aislamiento y compatibilidad para esos dos criterios; luego ejecutar de nuevo suites específicas y general.
 ===============================================================================
+
+
+===============================================================================
+### C1.825 — AUD-NG-167: catálogo institucional contextual de competencias
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-CATALOG-01
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.824
+HEAD inicial de esta continuación: 7f97e43b5d8b8f82ea5bbb3b50f82c44e9c55b44
+HEAD de código verificado antes de registrar C1.825: 7d31d7dccd298793610d6132ab075d75ba4dc017
+HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Normativa y alcance:
+- Se volvió a leer y aplicar Normas_Desarollo.md v1.5. Se trabajó directamente en la rama autorizada y no se modificó la rama base.
+- Se continuó exclusivamente AUD-NG-167; no se cambió el estado ni se inició AUD-NG-168.
+- Se respetó el límite de no presumir equivalencia SACE ni inventar IDs curriculares.
+
+Implementación:
+- backend/exam-service/Code.gs:
+  - Se definió CatalogoCompetencias con esquema de 17 columnas: ID, InstitutionID, DepartmentID, AnoID, Grado, Seccion, AsignaturaID, CompetenciaID, Competencia, IndicadorID, Indicador, ProgramaCurricular, Estado, RegisteredBy, CreatedAt, UpdatedAt y ContextKey.
+  - ContextKey vincula institución, departamento, año, grado, sección, asignatura, programa curricular, competencia e indicador.
+  - getCompetencyCatalog filtra entradas activas por institución, departamentos autorizados y contexto; admite entradas institucionales globales y valida esquema, ContextKey y duplicados.
+  - saveCompetencyCatalogItem crea o actualiza por clave contextual, valida actor/ámbito/asignación docente y serializa la escritura; no genera IDs libres desde la UI.
+  - saveCompetencyEvaluation exige una entrada activa única del catálogo que coincida con el año, grado, sección, asignatura, programa, competencia, indicador y departamento/global seleccionado. Se rechazan referencias libres, inexistentes, ambiguas o fuera de ámbito.
+- js/teacher.js y teacher-dashboard.html:
+  - La interfaz docente permite registrar, consultar y seleccionar competencias e indicadores del catálogo.
+  - Se incorpora selección de departamento, conservación de la selección al refrescar y soporte de entradas institucionales globales.
+  - La evaluación transmite la referencia del catálogo y el departamento asociado; se conservan los descartes de respuestas asíncronas obsoletas.
+- Pruebas:
+  - tests/security/exam-service-competency-catalog.test.js cubre lectura institucional/departamental/global, esquema, ContextKey, duplicados, creación/actualización, asignación y concurrencia.
+  - tests/security/exam-service-competency-evaluation-mutation-security.test.js cubre referencias exactas del catálogo, asignación departamental, entrada institucional global y rechazo de indicadores libres.
+  - tests/ui/teacher-gradebook-rubric-competency-ui.test.js verifica controles y transmisión de departamento.
+  - Se añadió el escenario BETA-EXAM-105 en beta_test.txt; sigue Pendiente beta.
+
+Verificaciones:
+- GitHub Actions 44523637946, SHA 7d31d7dccd298793610d6132ab075d75ba4dc017:
+  - Sintaxis de EXAM y JS: SUCCESS.
+  - Suite específica completa Exam-Service: SUCCESS.
+  - exam-service-competency-catalog: PASS (24 contratos).
+  - Mutación de evaluación por competencias: SUCCESS.
+  - Suite general Node.js: FAILURE por tres contratos ajenos ya identificados: tests/regression/phase22-document-management-suite-contract.test.js (configureSchoolDocumentTemplate ausente en ACCOUNTING), tests/security/accounting-school-document-binary-integrity.test.js (ensureSchoolDocumentIssuedSchema_ ausente en ACCOUNTING) y tests/security/session-token-expiry.test.js (USER/valid). No se alteraron esos módulos.
+- GitHub Actions 44523509686: UI Accessibility and Metadata Contract SUCCESS.
+- Department Scope 44523509680: FAILURE por el contrato Phase 22 de ACCOUNTING (configureSchoolDocumentTemplate); no corresponde a este cambio.
+- Runner Node.js 22.23.5.
+- No se encontró package.json, directorio CLI ni scripts CLI; no hay suite CLI declarada.
+- No se ejecutó Apps Script desplegado, Sheets reales ni navegador. Los contratos Node/Actions no sustituyen BETA-EXAM-105.
+
+Pendientes:
+- BETA-EXAM-105 requiere despliegue conjunto de EXAM/UI y verificación en Sheets con dos departamentos, dos docentes, entradas globales/departamentales, manipulación de ContextKey, asignación conflictiva y concurrencia.
+- El repositorio contiene plantillas XLS bajo docs/architecture/Plantillas/SACE, pero no se ha validado su contenido ni existe evidencia de un mapeo de intercambio aprobado o equivalencia. No se declara compatibilidad SACE.
+- No se cierra AUD-NG-167: la evidencia SACE sigue pendiente y la prueba beta aún no se ha ejecutado.
+- No se modifica AUD-NG-168 ni se avanza a TAREA-13 mientras AUD-NG-167 permanezca abierta.
+- La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Siguiente acción elegible:
+1. Obtener/inspeccionar la especificación y el formato SACE autorizado para definir el mapeo mínimo verificable, sin inferir equivalencias.
+2. Preparar y ejecutar BETA-EXAM-105 con Apps Script/Sheets reales cuando el entorno de beta esté disponible.
+3. Repetir las pruebas focalizadas y la suite general; mantener registrados los tres fallos ajenos si persisten.
+===============================================================================
