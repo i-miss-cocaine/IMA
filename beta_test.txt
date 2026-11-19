@@ -1985,3 +1985,23 @@ Resultado esperado:
 Estado: Pendiente de plantilla oficial y revisión institucional.
 Evidencia requerida: plantilla oficial anonimizada, versión/fecha, tabla de equivalencias aprobada y reporte de casos positivos/negativos.
 ===============================================================================
+
+===============================================================================
+BETA-EXAM-109 — Orquestación completa del candidato SACE en memoria
+===============================================================================
+Módulo/rol: proveedor SACE / ejecución interna
+Tarea/requisito: AUD-NG-167 — composición snapshot→plantilla→XLS candidato
+Objetivo: validar que el flujo completo consume snapshots académicos y de asistencia, mapeo documental explícito y plantilla, y genera un XLS candidato íntegro sin efectos externos.
+Precondiciones:
+- Plantilla docente oficial autorizada para la prueba real; los contratos locales usan las tres plantillas versionadas del repositorio.
+- Snapshot server-side autenticado y dos libros contextuales cerrados.
+- Tabla de equivalencias documentType→documentMarker revisada con la plantilla.
+Pasos:
+1. Ejecutar prepareCandidateExportFromSnapshot con todos los insumos y escala explícitos.
+2. Verificar 22 filas en el orden del padrón por identidad/nombre/marcador.
+3. Verificar D/E/F/G/H por fila y preservación de fórmulas, validaciones, merges y estructura OLE.
+4. Repetir con tipo sin mapeo, marcador conflictivo, contexto distinto y datos no calculados; comprobar rechazo.
+5. Confirmar que el flujo solo devuelve bytes candidatos y no guarda, descarga ni carga a SACE.
+Estado: contrato local pendiente de Actions; validación beta real pendiente de BETA-EXAM-105/106/107/108.
+Evidencia requerida: reporte del contrato, hash de salida anonimizada, inspección de integridad OLE y aprobación de plantilla/mapeo.
+===============================================================================

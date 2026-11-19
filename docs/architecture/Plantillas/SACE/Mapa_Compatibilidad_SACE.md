@@ -149,3 +149,12 @@ Academic-Service devuelve `documentType` separado de `documentMarker`. La planti
 El wrapper `buildCandidateStudentsFromSnapshot` ahora requiere `documentTypeMappings`, una lista explícita de pares `{ documentType, documentMarker }`. Normaliza el tipo para detectar duplicados de escritura/acentos, exige tipo y marcador no vacíos, rechaza tipos sin correspondencia y conflictos con cualquier marcador ya presente en el snapshot. El marcador resultante se entrega al matching de la plantilla, que aún debe confirmar igualdad por identidad y marcador.
 
 No se agregan equivalencias predeterminadas. Los pares usados en pruebas son datos sintéticos y no constituyen una afirmación sobre los códigos oficiales SACE. La configuración real requiere inspeccionar una plantilla docente autorizada y confirmar su diccionario/campo. La salida sigue siendo CANDIDATE y no se habilita la descarga.
+
+
+## 12. Orquestación local snapshot→plantilla→XLS candidato — C1.838
+
+Se creó `js/sace-export-orchestrator.js` como módulo puro de composición en memoria. Recibe bytes de plantilla, snapshot de asistencia autenticado, los dos snapshots de calificaciones, IDs explícitos de parciales, equivalencias documentType→documentMarker, contexto de plantilla y configuración de escala. Invoca el proveedor, resuelve filas por identidad/nombre/marcador y ejecuta `prepareCandidateExport`.
+
+Después de generar el archivo, vuelve a inspeccionar el XLS y verifica las 22 filas en las cinco celdas editables (inasistencias y notas de ambos parciales y recuperación), además de tamaño OLE, capacidad, fórmulas, validaciones y merges. Devuelve bytes en memoria con estado `candidate`, cantidad de filas y limitaciones; no escribe archivos, no descarga, no invoca SACE y no se integra a UI.
+
+El contrato usa las tres plantillas XLS versionadas en el repositorio y snapshots/identidades/calificaciones/asistencia sintéticos. Demuestra la ruta de extremo a extremo local, no la compatibilidad oficial ni la carga real. Los mapeos documentales de prueba son ficticios; la equivalencia real debe ser aprobada con plantilla docente autorizada.
