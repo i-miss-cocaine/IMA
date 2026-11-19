@@ -6023,3 +6023,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El contrato comprueba que snapshot, mapeos y gradebooks no se mutan y que llamadas repetidas con entradas idénticas generan el mismo XLS candidato byte a byte. El template fuente permanece intacto.
 - SACE Action 44570887832 SUCCESS (Node.js 22; sintaxis y todas las suites SACE).
 - AUD-NG-167 sigue En progreso; siguiente: revisar el cómputo de ausencias y la política explícita COUNT/EXCLUDE.
+
+### C1.857 — AUD-NG-167: estados de asistencia
+- El proveedor incluye JUSTIFICADA como ausencia, exige justificación canónica verificada y rechaza estados desconocidos en vez de omitirlos. Pruebas cubren COUNT, EXCLUDE y estados inválidos.
+- SACE Action 44571350626 y Academic-Service Action 44571350546 SUCCESS; Node.js 22, snapshot y contratos de justificación PASS.
+- AUD-NG-167 sigue En progreso; siguiente: distinguir tardanza justificada de ausencia justificada sin contar tardanzas.

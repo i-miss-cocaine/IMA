@@ -810,3 +810,43 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar las limitaciones del cómputo de inasistencias y la política COUNT/EXCLUDE, sin convertir una opción provisional en regla SACE oficial.
 ===============================================================================
+
+
+===============================================================================
+### C1.857 — AUD-NG-167: estados de asistencia y justificación canónica
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-ATTENDANCE-STATE-32
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.856
+HEAD de implementación: 9f4391264ac8735ee7a1ebd4abedf03c754739e1
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo e implementación:
+- El catálogo local de asistencia permite el estado Justificada, pero el proveedor no lo reconocía como ausencia. Eso podía hacer que una fila con estado Justificada se omitiera silenciosamente del cómputo, incluso con COUNT.
+- JUSTIFICADA se incluye ahora entre los estados de ausencia. Para aceptar ese estado, el registro debe tener Justificado=true y justificacionVerificada=true; de lo contrario se rechaza con SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED.
+- Los estados no reconocidos se rechazan con SACE_ATTENDANCE_STATE_UNSUPPORTED, en lugar de ser ignorados silenciosamente.
+- Se añadieron pruebas de COUNT, EXCLUDE, estado Justificada sin justificación verificada y estado desconocido.
+- La política COUNT/EXCLUDE sigue siendo entrada explícita; esta corrección no declara una regla oficial SACE.
+
+Archivos modificados desde C1.856:
+- js/sace-data-provider.js
+- tests/security/sace-data-provider-contract.test.js
+
+Verificación:
+- GitHub Actions 44571350626 — SACE template structure compatibility contract: SUCCESS.
+- GitHub Actions 44571350546 — Academic-Service single authorization context: SUCCESS; snapshot, cierre de sesión y justificación canónica PASS.
+- Node.js 22: sintaxis, proveedor, orquestador, estructura, parcheo binario y aislamiento PASS.
+- Diff revisado: clasificación de estados y pruebas; no se modifican formularios ni escritores generales de asistencia.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- La política institucional SACE para ausencias justificadas sigue pendiente de BETA-EXAM-112. El candidato no presenta COUNT ni EXCLUDE como norma oficial.
+- La opción UI Justificada continúa siendo un estado local heredado; el proveedor exige que exista justificación canónica verificada para exportarlo como tal.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar si el snapshot puede distinguir una tardanza justificada de una ausencia justificada sin contar tardanzas como inasistencias; conservar ambas condiciones por separado.
+===============================================================================
