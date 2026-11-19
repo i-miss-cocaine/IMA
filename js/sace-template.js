@@ -486,6 +486,16 @@
   }
   function inspectTemplate(input) {
     const parsed = parseCompound(input);
+    const expectedHeaders = {
+      A6: "DOCUMENTO", B6: "IDENTIDAD", C6: "NOMBRE",
+      D6: "PARCIAL I", F6: "PARCIAL II", H6: "RECUPERACIÓN",
+      D7: "INASISTENCIAS", E7: "NOTA TOTAL", F7: "INASISTENCIAS", G7: "NOTA TOTAL"
+    };
+    Object.keys(expectedHeaders).forEach(cell => {
+      if (normalizeText(parsed.get(cell)) !== normalizeText(expectedHeaders[cell])) {
+        throw new Error("SACE_TEMPLATE_HEADER_MISMATCH:" + cell);
+      }
+    });
     const metadata = {
       institution: parsed.get("A1"),
       modality: parsed.get("A2"),

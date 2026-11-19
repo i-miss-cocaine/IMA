@@ -11,6 +11,14 @@ for (const template of manifest.templates) {
   const original = fs.readFileSync(file);
   const before = tools.inspect(original);
   const templateInfo = tools.inspectTemplate(original);
+  const alteredHeader = Buffer.from(original);
+  const headerEncodings = [Buffer.from("PARCIAL II", "utf16le"), Buffer.from("PARCIAL II", "latin1")];
+  const headerNeedle = headerEncodings.find(value => alteredHeader.indexOf(value) !== -1);
+  assert.ok(headerNeedle, "partial II header bytes must be present in the source workbook");
+  const headerOffset = alteredHeader.indexOf(headerNeedle);
+  alteredHeader[headerOffset + headerNeedle.length - (headerNeedle === headerEncodings[0] ? 2 : 1)] = "X".charCodeAt(0);
+  assert.throws(() => tools.inspectTemplate(alteredHeader), /SACE_TEMPLATE_HEADER_MISMATCH:F6/,
+    "candidate inspection must reject a workbook whose partial headers no longer match the cell mapping");
   assert.equal(templateInfo.students.length, 22, "template inspection must return every student row");
   assert.ok(Object.values(templateInfo.metadata).every(value => typeof value === "string" && value.trim()),
     "template inspection must return all five context fields");
