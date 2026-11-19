@@ -5,6 +5,10 @@ on:
     paths:
       - 'docs/architecture/Plantillas/SACE/**'
       - 'tests/security/sace-template-structure-contract.test.js'
+      - 'js/sace-template.js'
+      - 'tests/security/sace-template-binary-patch.test.js'
+      - 'js/sace-template.js'
+      - 'tests/security/sace-template-binary-patch.test.js'
       - '.github/workflows/sace-template-compatibility-contract.yml'
   pull_request:
     branches: [NG_beta_0.0.0.1_work]
@@ -21,3 +25,5 @@ jobs:
           node-version: '22'
       - run: node --check tests/security/sace-template-structure-contract.test.js
       - run: node tests/security/sace-template-structure-contract.test.js
+      - run: node --check js/sace-template.js
+      - run: node tests/security/sace-template-binary-patch.test.js
