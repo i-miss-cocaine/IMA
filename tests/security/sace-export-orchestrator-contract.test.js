@@ -244,8 +244,8 @@ assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
   attendanceSnapshot: incompleteAcademicSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2"
 }), /SACE_GRADEBOOK_SNAPSHOTS_REQUIRED/);
 const duplicateAcademicSnapshot = { status: "success", data: { gradebookSnapshots: [
-  { periodoId: "PER-1", snapshot: { status: "success", data: { contexto: { periodoId: "PER-1" } } } },
-  { periodoId: "PER-1", snapshot: { status: "success", data: { contexto: { periodoId: "PER-1" } } } }
+  { periodoId: "PER-1", parcial: "I Parcial", snapshot: { status: "success", data: { contexto: { periodoId: "PER-1", parcial: "I Parcial" } } } },
+  { periodoId: "PER-1", parcial: "I Parcial", snapshot: { status: "success", data: { contexto: { periodoId: "PER-1", parcial: "I Parcial" } } } }
 ] } };
 assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
   attendanceSnapshot: duplicateAcademicSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2"
