@@ -3706,6 +3706,28 @@ function getSaceGradebookSnapshot(payload) {
     if (String(sourceContext.periodoId || "").trim() !== parcial) {
       throw new Error("SACE_GRADEBOOK_PERIOD_MAPPING_MISMATCH");
     }
+    const closureSheet = context && context.ss && context.ss.getSheetByName("CierresPeriodos");
+    if (!closureSheet) throw new Error("SACE_GRADEBOOK_CLOSURE_SOURCE_MISSING");
+    const closureRows = closureSheet.getDataRange().getValues();
+    const closureHeaders = closureRows.length ? closureRows[0].map(value => String(value || "").trim()) : [];
+    const closureFields = ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "Estado"];
+    if (closureFields.some(header => closureHeaders.indexOf(header) === -1)) {
+      throw new Error("SACE_GRADEBOOK_CLOSURE_CONTEXT_UNVERIFIABLE");
+    }
+    const closureIndex = {};
+    closureHeaders.forEach((header, index) => { closureIndex[header] = index; });
+    const matchingClosures = closureRows.slice(1).filter(row =>
+      String(row[closureIndex.AnoID] || "").trim() === expected.anoId &&
+      String(row[closureIndex.PeriodoID] || "").trim() === parcial &&
+      String(row[closureIndex.Grado] || "").trim() === expected.grado &&
+      String(row[closureIndex.Seccion] || "").trim() === expected.seccion &&
+      String(row[closureIndex.Asignatura] || "").trim() === expected.asignatura);
+    if (matchingClosures.length !== 1 ||
+        String(matchingClosures[0][closureIndex.Estado] || "").trim().toUpperCase() !== "CERRADO" ||
+        !String(matchingClosures[0][closureIndex.CierreID] || "").trim()) {
+      throw new Error(matchingClosures.length > 1 ?
+        "SACE_GRADEBOOK_CLOSURE_AMBIGUOUS" : "SACE_GRADEBOOK_PERIOD_NOT_CLOSED");
+    }
     if (String(data.estadoPeriodo || "").trim().toUpperCase() !== "CERRADO") {
       throw new Error("SACE_GRADEBOOK_PERIOD_NOT_CLOSED");
     }

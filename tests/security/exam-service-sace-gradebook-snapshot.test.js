@@ -60,7 +60,10 @@ const fixture = {
   }
 };
 
-function createContext(snapshot = fixture) {
+function createContext(snapshot = fixture, closureRows = [
+  ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "Estado"],
+  ["CLOSE-1", "YEAR-2026", "I Parcial", "11", "A", "Informática", "Cerrado"]
+]) {
   const calls = { authorization: 0, worker: 0 };
   const context = {
     withAuthorizedExamRead_(action, payload, reader) {
@@ -68,7 +71,13 @@ function createContext(snapshot = fixture) {
       assert.equal(action, "getSaceGradebookSnapshot");
       assert.equal(payload.sessionToken, "SESSION-TEACHER");
       return reader({ actor: { userId: "TEACHER-1", role: "Profesor" },
-        scope: { authorized: true, institutionId: "INST-1" } });
+        scope: { authorized: true, institutionId: "INST-1" },
+        ss: { getSheetByName(name) {
+          return name === "CierresPeriodos" ? {
+            getDataRange() { return { getValues() { return closureRows.map(row => row.slice()); } }; }
+          } : null;
+        } }
+      });
     },
     getGradebookDataUnlocked_(payload, authorizedContext) {
       calls.worker++;
@@ -120,6 +129,17 @@ const wrongPeriod = JSON.parse(JSON.stringify(fixture)); wrongPeriod.data.contex
 assert.throws(() => createContext(wrongPeriod).context.runSnapshot(basePayload), /SACE_GRADEBOOK_PERIOD_MAPPING_MISMATCH/);
 const missingSummary = JSON.parse(JSON.stringify(fixture)); delete missingSummary.data.resumenes["STU-2"];
 assert.throws(() => createContext(missingSummary).context.runSnapshot(basePayload), /SACE_GRADEBOOK_SUMMARY_MISSING/);
+const wrongYearClosure = [
+  ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "Estado"],
+  ["CLOSE-OLD", "YEAR-2025", "I Parcial", "11", "A", "Informática", "Cerrado"]
+];
+assert.throws(() => createContext(fixture, wrongYearClosure).context.runSnapshot(basePayload), /SACE_GRADEBOOK_PERIOD_NOT_CLOSED/);
+const duplicateClosures = [
+  ["CierreID", "AnoID", "PeriodoID", "Grado", "Seccion", "Asignatura", "Estado"],
+  ["CLOSE-1", "YEAR-2026", "I Parcial", "11", "A", "Informática", "Cerrado"],
+  ["CLOSE-2", "YEAR-2026", "I Parcial", "11", "A", "Informática", "Cerrado"]
+];
+assert.throws(() => createContext(fixture, duplicateClosures).context.runSnapshot(basePayload), /SACE_GRADEBOOK_CLOSURE_AMBIGUOUS/);
 const duplicateRoster = JSON.parse(JSON.stringify(fixture)); duplicateRoster.data.alumnos.push(duplicateRoster.data.alumnos[0]);
 assert.throws(() => createContext(duplicateRoster).context.runSnapshot(basePayload), /SACE_GRADEBOOK_ROSTER_AMBIGUOUS/);
 
