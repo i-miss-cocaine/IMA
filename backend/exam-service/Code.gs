@@ -3804,7 +3804,7 @@ function buildSaceGradebookSnapshotUnlocked_(request, context, periodoId, parcia
         throw new Error("SACE_GRADEBOOK_RECOVERY_GRADE_INVALID");
       }
     }
-    result.push({ userId, evaluacionId, notaFinalCalculada });
+    result.push({ recuperacionId: recoveryId, userId, evaluacionId, notaFinalCalculada });
     return result;
   }, []);
   return {

@@ -122,7 +122,7 @@ assert.deepEqual(JSON.parse(JSON.stringify(result.data.resumenes)), {
   "STU-2": { userId: "STU-2", status: "pending", notaFinal: null, avancePonderado: null, ponderacionPendiente: 100 }
 });
 assert.deepEqual(JSON.parse(JSON.stringify(result.data.recuperaciones)), [
-  { userId: "STU-1", evaluacionId: "CAT-1", notaFinalCalculada: 95 }
+  { recuperacionId: "REC-1", userId: "STU-1", evaluacionId: "CAT-1", notaFinalCalculada: 95 }
 ]);
 assert.equal(result.data.contexto.periodoId, "PER-2026-1", "academic PeriodoID must be returned separately from the explicit Exam-Service parcial label");
 assert.equal(result.data.contexto.parcial, "I Parcial");

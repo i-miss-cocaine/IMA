@@ -11098,20 +11098,63 @@ function requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUser
       }
     });
     if (!Array.isArray(data.alumnos) || !data.resumenes || typeof data.resumenes !== "object" ||
+        !Array.isArray(data.recuperaciones) ||
         String(data.estadoPeriodo || "").trim().toUpperCase() !== "CERRADO") {
       throw new Error("SACE_GRADEBOOK_RESPONSE_INCOMPLETE");
+    }
+    const expectedStudents = studentIds.map(function(id) { return String(id).trim(); });
+    if (new Set(expectedStudents).size !== expectedStudents.length || expectedStudents.some(function(id) { return !id; })) {
+      throw new Error("SACE_GRADEBOOK_RESPONSE_ROSTER_INVALID");
     }
     const returnedStudents = new Set();
     data.alumnos.forEach(function(student) {
       const id = String(student && student.userId || "").trim();
-      if (!id || returnedStudents.has(id) || studentIds.indexOf(id) === -1) {
+      if (!id || returnedStudents.has(id) || expectedStudents.indexOf(id) === -1 ||
+          !String(student.nombreCompleto || "").trim()) {
         throw new Error("SACE_GRADEBOOK_RESPONSE_ROSTER_INVALID");
       }
       returnedStudents.add(id);
     });
-    if (returnedStudents.size !== studentIds.length) {
+    if (returnedStudents.size !== expectedStudents.length) {
       throw new Error("SACE_GRADEBOOK_RESPONSE_ROSTER_INCOMPLETE");
     }
+    const summaryKeys = Object.keys(data.resumenes);
+    if (summaryKeys.length !== expectedStudents.length ||
+        summaryKeys.some(function(id) { return expectedStudents.indexOf(id) === -1; })) {
+      throw new Error("SACE_GRADEBOOK_RESPONSE_SUMMARY_SCOPE_INVALID");
+    }
+    expectedStudents.forEach(function(id) {
+      const summary = data.resumenes[id];
+      const status = String(summary && summary.status || "").trim();
+      if (!summary || String(summary.userId || "").trim() !== id ||
+          ["calculated", "provisional", "pending", "no_grade", "not_configured"].indexOf(status) === -1) {
+        throw new Error("SACE_GRADEBOOK_RESPONSE_SUMMARY_INVALID");
+      }
+      const validateNumber = function(value) {
+        if (value == null) return true;
+        const number = Number(value);
+        return Number.isFinite(number) && number >= 0 && number <= 100;
+      };
+      if (!validateNumber(summary.notaFinal) || !validateNumber(summary.avancePonderado) ||
+          !validateNumber(summary.ponderacionPendiente) || summary.ponderacionPendiente == null ||
+          (status === "calculated" && summary.notaFinal == null) ||
+          (status !== "calculated" && summary.notaFinal != null)) {
+        throw new Error("SACE_GRADEBOOK_RESPONSE_SUMMARY_INVALID");
+      }
+    });
+    const recoveryIds = new Set();
+    data.recuperaciones.forEach(function(recovery) {
+      const recoveryId = String(recovery && recovery.recuperacionId || "").trim();
+      const userId = String(recovery && recovery.userId || "").trim();
+      const evaluacionId = String(recovery && recovery.evaluacionId || "").trim();
+      const grade = recovery && recovery.notaFinalCalculada;
+      if (!recoveryId || !userId || expectedStudents.indexOf(userId) === -1 || !evaluacionId ||
+          recoveryIds.has(recoveryId) ||
+          (grade != null && (!Number.isFinite(Number(grade)) || Number(grade) < 0 || Number(grade) > 100))) {
+        throw new Error("SACE_GRADEBOOK_RESPONSE_RECOVERY_INVALID");
+      }
+      recoveryIds.add(recoveryId);
+    });
     return { periodoId: period.periodoId, parcial: period.parcial, snapshot: item.snapshot };
   });
 }

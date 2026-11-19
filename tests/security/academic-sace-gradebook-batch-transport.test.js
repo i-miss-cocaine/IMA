@@ -41,6 +41,7 @@ function snapshot(periodoId, parcial, institutionId = "INST-1") {
   return { status: "success", data: {
     alumnos: studentIds.map(userId => ({ userId, nombreCompleto: userId + " Name" })),
     resumenes: Object.fromEntries(studentIds.map(userId => [userId, { userId, status: "calculated", notaFinal: 90 }])),
+    recuperaciones: [],
     estadoPeriodo: "Cerrado",
     contexto: Object.assign({}, expectedContext, { periodoId, parcial, institutionId })
   } };
@@ -88,6 +89,24 @@ assert.equal(envelope.payload.sessionToken, "SESSION-TEACHER");
 assert.deepEqual(envelope.payload.periods, periods);
 assert.deepEqual(envelope.payload.studentIds, studentIds);
 assert.equal(envelope.payload.profesorId, "TEACHER-1");
+const extraSummary = JSON.parse(JSON.stringify(successResponse));
+extraSummary.data.snapshots[0].snapshot.data.resumenes["STU-3"] = { userId: "STU-3", status: "calculated", notaFinal: 90 };
+assert.throws(() => createTransport(extraSummary).context.callTransport(
+  request, studentIds, "TEACHER-1", expectedContext, periods
+), /SACE_GRADEBOOK_RESPONSE_SUMMARY_SCOPE_INVALID/);
+const missingSummary = JSON.parse(JSON.stringify(successResponse));
+delete missingSummary.data.snapshots[0].snapshot.data.resumenes["STU-2"];
+assert.throws(() => createTransport(missingSummary).context.callTransport(
+  request, studentIds, "TEACHER-1", expectedContext, periods
+), /SACE_GRADEBOOK_RESPONSE_SUMMARY_SCOPE_INVALID/);
+const invalidRecovery = JSON.parse(JSON.stringify(successResponse));
+invalidRecovery.data.snapshots[0].snapshot.data.recuperaciones = [
+  { recuperacionId: "REC-1", userId: "STU-3", evaluacionId: "CAT-1", notaFinalCalculada: 95 }
+];
+assert.throws(() => createTransport(invalidRecovery).context.callTransport(
+  request, studentIds, "TEACHER-1", expectedContext, periods
+), /SACE_GRADEBOOK_RESPONSE_RECOVERY_INVALID/);
+
 
 const wrongInstitution = JSON.parse(JSON.stringify(successResponse));
 wrongInstitution.data.snapshots[1].snapshot.data.contexto.institutionId = "INST-OTHER";
