@@ -89,15 +89,20 @@
     });
     if (!selected.partial1.length) throw new Error("SACE_ATTENDANCE_SESSIONS_EMPTY:partial1");
     if (!selected.partial2.length) throw new Error("SACE_ATTENDANCE_SESSIONS_EMPTY:partial2");
-    const selectedIds = new Set(selected.partial1.concat(selected.partial2).map(session => session.id));
+    const selectedLabels = new Map();
+    selected.partial1.concat(selected.partial2).forEach(session => {
+      selectedLabels.set(session.id, session.date >= period1.start && session.date <= period1.end ? "partial1" : "partial2");
+    });
+    const selectedIds = new Set(selectedLabels.keys());
     const studentSet = new Set(studentIds), byKey = new Map();
     records.forEach(record => {
       const sessionId = String(record && record.sesionId || "").trim();
       if (!selectedIds.has(sessionId)) return;
       const userId = String(record && record.userId || "").trim();
-      if (!studentSet.has(userId)) throw new Error("SACE_ATTENDANCE_STUDENT_OUTSIDE_ROSTER");
+      const label = selectedLabels.get(sessionId);
+      if (!studentSet.has(userId)) throw new Error("SACE_ATTENDANCE_STUDENT_OUTSIDE_ROSTER:" + label);
       const key = sessionId + "|" + userId;
-      if (byKey.has(key)) throw new Error("SACE_ATTENDANCE_RECORD_DUPLICATE");
+      if (byKey.has(key)) throw new Error("SACE_ATTENDANCE_RECORD_DUPLICATE:" + label);
       byKey.set(key, record);
     });
     const buildCounts = label => {
