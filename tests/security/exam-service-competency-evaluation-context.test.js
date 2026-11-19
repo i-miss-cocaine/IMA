@@ -69,7 +69,7 @@ function fixture(options = {}) {
 }
 const student = { userId: "STU-1", role: "Estudiante" };
 let x = fixture();
-let result = x.run(student, { anoId: "2026", periodoId: "P1", asignaturaId: "Math" });
+let result = x.run(student, { anoId: "2026", periodoId: "P1", grado: "10", seccion: "A", asignaturaId: "Math", departmentId: "DEPT-A" });
 assert.equal(result.total, 1);
 assert.equal(result.data[0].evaluacionCompetenciaId, "E-1");
 assert.equal(result.data[0].catalogItemId, "CAT-1");
