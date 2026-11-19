@@ -22,11 +22,14 @@ function (provider, templates) {
     return String(value == null ? "" : value).normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
   }
+  function normalizeGradeSection(value) {
+    return normalizeContextText(value).replace(/[.°º]/g, " ").replace(/\\s+/g, " ").trim();
+  }
   function assertTemplateMatchesAcademicSnapshot(snapshot, templateContext) {
     const context = snapshot && snapshot.data && snapshot.data.expectedContext;
     if (!context) throw new Error("SACE_ATTENDANCE_CONTEXT_REQUIRED");
     const gradeSection = [context.grado, context.seccion].map(value => String(value == null ? "" : value).trim()).filter(Boolean).join(" ");
-    if (!normalizeContextText(gradeSection) || normalizeContextText(gradeSection) !== normalizeContextText(templateContext.gradeSection)) {
+    if (!normalizeGradeSection(gradeSection) || normalizeGradeSection(gradeSection) !== normalizeGradeSection(templateContext.gradeSection)) {
       throw new Error("SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:gradeSection");
     }
     if (!normalizeContextText(context.asignatura) || normalizeContextText(context.asignatura) !== normalizeContextText(templateContext.subject)) {
