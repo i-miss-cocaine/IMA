@@ -148,6 +148,22 @@ for (const entry of manifest.templates) {
   assert.equal(result.verifiedRowCount, 22);
   assert.equal(result.outputBytes.length, templateBytes.length);
   assert(result.limitations.includes("synthetic source snapshot; no live service or official SACE mapping"));
+  const openSessionSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
+  openSessionSnapshot.data.attendanceSessions[0].estado = "Abierta";
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: openSessionSnapshot,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial1/);
+  const missingCloseSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
+  missingCloseSnapshot.data.attendanceSessions[0].fechaCierre = "";
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: missingCloseSnapshot,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:partial1/);
   const output = templates.inspect(result.outputBytes);
   sourceRows.forEach((expected, index) => {
     const row = 8 + index;
