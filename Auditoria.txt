@@ -3081,3 +3081,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - La rama autorizada contiene 51 commits posteriores a C1.822; todos se conservaron. El alcance añadido de ponderaciones contextuales, cálculo servidor, recuperación contextual y transiciones del libro tiene contratos específicos verdes en Actions 44317483258.
 - Pendiente de cierre: la UI docente no consume todavía las APIs de rúbricas/competencias; el generador heredado generateStudentReportCard sigue leyendo Calificaciones/Notas; getStudentAcademicReport no filtra filas por los campos de contexto del libro. Estos puntos afectan los criterios originales de AUD-NG-167 y deben resolverse antes de marcarla completada.
 - Fallos generales observados en Actions 44317483258: configureSchoolDocumentTemplate ausente en ACCOUNTING, ensureSchoolDocumentIssuedSchema_ ausente en ACCOUNTING y USER/valid en session-token-expiry. No son evidencia de regresión de AUD-NG-167 y no se modificaron módulos ajenos.
+
+
+### C1.824 — AUD-NG-167: avance de implementación (2026-11-19)
+- Se añadió el boletín contextual al informe EXAM: agrupación por año/período/grado/sección/asignatura, ContextKey, institución y estudiante; se aplican ponderaciones y recuperaciones del mismo contexto.
+- El estado oficial exige cierre único coincidente y cálculo completo; las notas provisionales no se convierten en cero. El generador heredado de Academic-Service se retiró para evitar boletines desde Calificaciones/Notas.
+- La UI de estudiante consume el informe contextual y la UI docente integra las APIs existentes de rúbricas y competencias. Las lecturas asíncronas descartan respuestas obsoletas.
+- Actions 44519500978: sintaxis y suite específica Exam-Service SUCCESS; suite general 3 fallos externos (dos ACCOUNTING y USER/valid en session-token-expiry). Actions 44519676142: Academic-Service y contrato de deprecación SUCCESS. Sin CLI declarada ni prueba desplegada.
+- AUD-NG-167 sigue En progreso: no se encontró un catálogo curricular formal de competencias/indicadores ni evidencia de compatibilidad SACE. No se marca completada.

@@ -1016,3 +1016,75 @@ Siguiente acción elegible:
 3. Añadir contratos Node para aislamiento entre años/instituciones, estados publicados/provisionales y recuperación aplicada; ejecutar el workflow específico y la suite general, registrando sin ocultar los tres fallos externos si persisten.
 4. Solo tras cubrir los criterios restantes, cerrar AUD-NG-167 y evaluar AUD-NG-168.
 ===============================================================================
+
+
+===============================================================================
+### C1.824 — AUD-NG-167: integración del boletín contextual y UI de evaluación
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-IMPLEMENTATION-01
+Repositorio: i-miss-cocaine/IMA
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.823
+HEAD inicial de esta sesión: 292a0a347caf67661fd95c5f320410dfe8259898
+HEAD de código verificado antes de registrar C1.824: 7f97e43b5d8b8f82ea5bbb3b50f82c44e9c55b44
+HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Recuperación y alcance:
+- La rama de trabajo estaba alineada con C1.823 al iniciar. Se conservaron los cambios existentes; la comparación final de código antes de este checkpoint muestra 28 commits ahead y 0 behind, sin divergencia.
+- Todos los cambios de esta sesión se mantuvieron en NG_beta_0.0.0.1_work. La rama base no fue modificada.
+- Se volvió a leer y aplicar Normas_Desarollo.md v1.5. No se añadieron reglas operativas nuevas.
+
+Implementación:
+- backend/exam-service/Code.gs:
+  - getStudentAcademicReport ahora adjunta libroConsolidado, construido desde CalificacionesEstudiantes y sus siete campos contextuales.
+  - Se agrupa por año/período/grado/sección/asignatura y se valida ContextKey contra institución y estudiante autenticado/relacionado.
+  - Solo se incorporan calificaciones publicadas y no provisionales; IDs duplicados y filas con contexto inválido se excluyen.
+  - Se aplican recuperaciones únicamente cuando su clave contextual coincide con la nota, con unicidad de ID y orden temporal.
+  - El cálculo reutiliza calculateGradebookStudentSummary_ y la configuración de PonderacionesEvaluacion; una recuperación vacía no sustituye la nota original por cero.
+  - Un boletín solo se marca oficial si existe exactamente un cierre coincidente para cada contexto y todas las asignaturas tienen cálculo completo. En otro caso se identifica como provisional.
+  - Se mantiene compatibilidad de lectura para la hoja histórica de nueve columnas, sin elevar esas filas a boletín oficial contextual; esquemas parciales o contradictorios fallan cerrados.
+- js/student.js y student-dashboard.html:
+  - Se añadió consulta del boletín por año y período, con resumen por asignatura, promedio y estado oficial/provisional.
+  - Se eliminó el uso de las calificaciones heredadas sin contexto en la vista del boletín.
+  - Se agregó control de versión y comprobación de identidad para descartar respuestas obsoletas al cambiar de estudiante en el portal familiar.
+- js/teacher.js y teacher-dashboard.html:
+  - Se integraron formularios de autoría/consulta de rúbricas y registro/consulta de evaluaciones por competencias mediante las APIs existentes.
+  - La lista de estudiantes deriva del roster contextual del libro.
+  - Se añadieron contadores de solicitud para descartar lecturas obsoletas de rúbricas y competencias.
+- backend/academic-service/Code.gs:
+  - Se retiró la generación heredada de boletines desde Calificaciones/Notas; la acción antigua devuelve CONSOLIDATED_GRADEBOOK_REQUIRED y dirige al endpoint contextual de EXAM.
+- Workflows:
+  - Se amplió la selección de rutas del workflow Exam-Service para que cambios del boletín y UI del estudiante ejecuten las suites de Node.js.
+  - Se agregó contrato de deprecación del generador académico heredado al workflow Academic-Service.
+
+Verificaciones y evidencia:
+- GitHub Actions 44519500978, SHA 77b2e07657b343d7319f4ff6b2de5a70f2b4a543:
+  - Sintaxis de js/exam.js, js/teacher.js, js/results.js, backend/exam-service/Code.gs y sintaxis global JS: SUCCESS.
+  - Suite específica Exam-Service completa: SUCCESS, incluidos los contratos nuevos de aislamiento contextual del boletín, recuperaciones vacías, esquema parcial, seguridad de getStudentAcademicReport y UI docente.
+  - Suite general de Node.js: FAILURE por tres contratos ajenos y preexistentes: configureSchoolDocumentTemplate ausente en ACCOUNTING; ensureSchoolDocumentIssuedSchema_ ausente en ACCOUNTING; caso USER/valid en session-token-expiry. No se modificaron esos módulos ni se redujo cobertura.
+- GitHub Actions 44519676142, SHA 7f97e43b5d8b8f82ea5bbb3b50f82c44e9c55b44: Academic-Service single authorization context SUCCESS; node --check de backend/academic-service/Code.gs y el nuevo contrato academic-legacy-report-card-deprecation.test.js SUCCESS, junto con las suites académicas incluidas.
+- UI Accessibility and Metadata Contract: SUCCESS en la revisión de cambios de UI.
+- Department Scope Contract sigue FAILURE por el contrato Phase 22 que requiere configureSchoolDocumentTemplate en ACCOUNTING; no es regresión de AUD-NG-167.
+- Runner Node.js 22.23.5.
+- No existe package.json, directorio CLI ni scripts CLI declarados; no hay suite CLI que ejecutar.
+- No se ejecutó Apps Script desplegado, Sheets/Drive reales ni pruebas de navegador/BETA; no se declara esa evidencia.
+
+Hallazgos y pendientes:
+- La interfaz ya consume las APIs de rúbricas/competencias, pero el repositorio no contiene un catálogo curricular formal ni un contrato/API que defina IDs y estructura de indicadores. El campo CompetenciasJSON existente en PlanificacionesPedagogicas no define por sí solo un esquema de catálogo verificable. No se declara vínculo de catálogo completado ni se inventan IDs.
+- El criterio de compatibilidad SACE permanece sin demostrar: no hay especificación de intercambio/mapeo autorizada ni evidencia de equivalencia. No se afirma compatibilidad.
+- El generador heredado de Academic-Service ya no produce boletines obsoletos; la vista de estudiante usa el informe contextual de Exam-Service.
+- La validación desplegada y de navegador sigue pendiente; las pruebas locales/Actions no sustituyen esa comprobación.
+
+Estado:
+- AUD-NG-167 permanece En progreso. No cerrar ni marcar completada hasta definir/consumir un catálogo curricular verificable para competencias/indicadores y resolver con evidencia el criterio SACE, o documentar una decisión de alcance autorizada conforme al plan.
+- No se modifica el estado de AUD-NG-168 ni se avanza a TAREA-13 mientras AUD-NG-167 conserve dependencias pendientes.
+- No se modificó la rama base.
+
+Siguiente acción elegible:
+1. Identificar el catálogo curricular institucional existente y su esquema canónico; si no existe, documentar el contrato mínimo en la tarea antes de crear almacenamiento nuevo.
+2. Validar server-side competencia/indicador contra ese catálogo y consumirlo en la UI docente.
+3. Obtener el formato/regla SACE que se debe demostrar; no presumir equivalencia por similitud de campos.
+4. Añadir contratos de aislamiento y compatibilidad para esos dos criterios; luego ejecutar de nuevo suites específicas y general.
+===============================================================================

@@ -4231,3 +4231,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-18] C1.823 — AUD-NG-167: se recuperaron y revisaron 51 commits posteriores a C1.822. Ponderaciones contextuales, resumen servidor, recuperación contextual y ciclo de revisión/publicación/cierre cuentan con contratos específicos PASS. La tarea sigue en progreso: faltan UI de rúbricas/competencias y boletín oficial desde el libro consolidado. Actions 44317483258: suite Exam-Service específica PASS; suite general 3 fallos externos (dos ACCOUNTING y USER/valid en session-token-expiry). Sin package.json/CLI declarada; no se ejecutó beta desplegada.
+
+
+[2026-11-19] C1.824 — AUD-NG-167: boletín contextual desde EXAM con aislamiento por ContextKey, ponderaciones y recuperaciones; oficial solo tras cierre y cálculo completo. UI estudiante/docente integrada con protección frente a respuestas asíncronas obsoletas. Se retiró el generador heredado de Academic-Service. Exam-Service específico y Academic-Service SUCCESS; suite general 3 fallos externos (dos ACCOUNTING y USER/valid). Sin CLI ni beta desplegada. Pendiente catálogo curricular verificable y evidencia SACE; tarea continúa en progreso.
