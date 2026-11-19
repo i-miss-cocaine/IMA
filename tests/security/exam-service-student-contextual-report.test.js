@@ -77,8 +77,10 @@ function fixture() {
     ])
   };
   const ss = { getSheetByName: name => sheets[name] || null };
-  const weights = (spreadsheet, context) => [{ categoriaId: "CAT-1", porcentajePonderacion: 50 },
-    { categoriaId: "CAT-2", porcentajePonderacion: 50 }];
+  const weights = (spreadsheet, context) => context.asignatura === "Ciencias"
+    ? [{ categoriaId: "CAT-1", porcentajePonderacion: 100 }]
+    : [{ categoriaId: "CAT-1", porcentajePonderacion: 50 },
+      { categoriaId: "CAT-2", porcentajePonderacion: 50 }];
   const summarize = (userId, rows, categories, recs) => {
     const score = rows.reduce((sum, row) => {
       const recovery = recs.find(item => item.evaluacionId === row.evaluacionId);
@@ -107,8 +109,11 @@ test("excludes unpublished drafts and other students", () => {
   assert.equal(math.categorias.some(row => row.categoriaId === "CAT-3"), false);
 });
 test("validates institutional ownership and contextual key", () => {
-  const result = fixture().run({ anoId: "2026", periodoId: "P1" });
-  assert.ok(result.detalleAsignaturas.every(row => row.asignatura !== "NoContext"));
+  const x = fixture();
+  x.sheets.CalificacionesEstudiantes.rows.find(row => row[0] === "G-2")[15] = "invalid-context-key";
+  const result = x.run({ anoId: "2026", periodoId: "P1" });
+  const math = result.detalleAsignaturas.find(row => row.asignatura === "Matemáticas");
+  assert.equal(math.categorias.some(row => row.categoriaId === "CAT-2"), false);
 });
 test("recovery is applied only to matching year, institution and subject context", () => {
   const result = fixture().run({ anoId: "2026", periodoId: "P1" });
@@ -117,6 +122,17 @@ test("recovery is applied only to matching year, institution and subject context
 });
 test("provisional report is not marked official without explicit context", () => {
   const result = fixture().run({});
+  assert.equal(result.esDocumentoOficial, false);
+});
+test("official report requires the matching academic period to be closed", () => {
+  const result = fixture().run({ anoId: "2026", periodoId: "P1" });
+  assert.equal(result.esDocumentoOficial, true);
+  assert.equal(result.estadoPeriodo, "Cerrado");
+});
+test("an open period cannot produce an official report", () => {
+  const x = fixture();
+  x.sheets.CierresPeriodos.rows[1][7] = "Abierto";
+  const result = x.run({ anoId: "2026", periodoId: "P1" });
   assert.equal(result.esDocumentoOficial, false);
 });
 test("legacy unscoped recovery rows are ignored", () => {
