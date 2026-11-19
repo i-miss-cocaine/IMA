@@ -40,7 +40,7 @@ const expectedContext = {
 function snapshot(periodoId, parcial, institutionId = "INST-1") {
   return { status: "success", data: {
     alumnos: studentIds.map(userId => ({ userId, nombreCompleto: userId + " Name" })),
-    resumenes: Object.fromEntries(studentIds.map(userId => [userId, { userId, status: "calculated", notaFinal: 90 }])),
+    resumenes: Object.fromEntries(studentIds.map(userId => [userId, { userId, status: "calculated", notaFinal: 90, avancePonderado: 90, ponderacionPendiente: 0 }])),
     recuperaciones: [],
     estadoPeriodo: "Cerrado",
     contexto: Object.assign({}, expectedContext, { periodoId, parcial, institutionId })
