@@ -1091,3 +1091,57 @@ La secuencia canónica C1.862–C1.866 se reconstruye aquí desde los registros 
 - Commit de implementación: 509a666790d588e89d04710dfe9ebdfefc7a1234. Checkpoint/continuidad documental: 2d74abd9eea8cd672c00f603cfd83dc31ab788ec y aclaración de numeración: 6745725ba8d93036a4032977a7082e969b1fdaba.
 - AUD-NG-167 permanece En progreso por requisitos de fuente/plantilla oficial y validaciones beta explícitas. XLS continúa CANDIDATE.
 ===============================================================================
+
+===============================================================================
+### C1.867 — AUD-NG-167: snapshots de ambos parciales bajo un único bloqueo Exam-Service
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-ATOMIC-GRADEBOOK-SNAPSHOT-38
+Rama: NG_beta_0.0.0.1_work
+HEAD de partida: 53b8b957cdb6337bb88a00aee9d1d4cff7013001
+HEAD de implementación: d616449b4e7f29d0c07bdca6d76711045e07cf80
+HEAD final de pruebas/corrección: 8461857a96b95b3a1413428766c56e8ffed5b113
+Rama base: NG_beta_0.0.0.1
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo:
+- Academic-Service solicitaba los dos libros de calificaciones mediante dos llamadas independientes a Exam-Service. Cada llamada protegía su lectura con ScriptLock, pero una rectificación autorizada podía ejecutarse entre ambas y producir un candidato con parciales capturados en instantes distintos.
+
+Implementación:
+- Se añadió getSaceGradebookSnapshots, autorizado únicamente para Profesor mediante ROLE_PERMISSIONS y doPost.
+- El endpoint reutiliza un único withAuthorizedExamRead_ y mantiene el mismo ScriptLock mientras lee y valida ambos parciales; cada lectura reutiliza buildSaceGradebookSnapshotUnlocked_ y conserva validaciones de institución, año, período/parcial, cierre único, roster y DTO mínimo.
+- Academic-Service envía ambos períodos en una sola petición autenticada, verifica exactamente dos respuestas, mapeo, contexto institucional/académico y roster, y conserva la forma de gradebookSnapshots consumida por el proveedor.
+- Se mantuvo getSaceGradebookSnapshot para compatibilidad con consumidores existentes.
+- Se añadieron contratos de Exam-Service para demostrar una autorización/bloqueo y dos lecturas dentro de ese mismo bloqueo, y contrato de transporte Academic para una única petición y respuestas incompletas/contradictorias.
+- No se realizó despliegue Apps Script ni se afirmó prueba de concurrencia real en Sheets; la evidencia es de contrato aislado.
+
+Archivos modificados:
+- backend/exam-service/Code.gs
+- backend/academic-service/Code.gs
+- tests/security/exam-service-sace-gradebook-snapshot.test.js
+- tests/security/sace-attendance-snapshot-contract.test.js
+- tests/security/academic-sace-gradebook-batch-transport.test.js (nuevo)
+- .github/workflows/academic-service-single-auth-context.yml
+
+Commits:
+- d616449b4e7f29d0c07bdca6d76711045e07cf80 — implementación, tests y workflow.
+- 8461857a96b95b3a1413428766c56e8ffed5b113 — corrección del fixture del contrato Academic tras primera ejecución fallida.
+
+Verificación:
+- Academic-Service Action 44628383775: SUCCESS, Node.js 22.23.4. node --check y los contratos academic-service-single-auth-context, sace-attendance-snapshot, academic-sace-gradebook-batch-transport y resto de la suite Academic: PASS.
+- Exam-Service Action 44628272688: el contrato exam-service-sace-gradebook-snapshot y node --check de Exam-Service: PASS; todos los contratos exam-service-* revisados en el job pasaron. El job global quedó FAILURE por tests/regression/phase22-document-management-suite-contract.test.js, que falla porque no encuentra configureSchoolDocumentTemplate.
+- Department Scope Action 44628272394: FAILURE por el mismo contrato Phase 22. Se verificó que backend/accounting-service/Code.gs no fue modificado por estos commits y ya carecía de configureSchoolDocumentTemplate en el HEAD 53b8b957; la rama base sí contiene esa función. Se registra como regresión previa de la rama de trabajo, fuera del alcance AUD-NG-167; no se alteró Accounting.
+- Actions adicionales en el mismo HEAD: Department Reference Consumers 44628272558 SUCCESS; Task-Service 44628272560 SUCCESS; Accounting Import Preflight 44628272493 SUCCESS; Hierarchical Configuration 44628272650 SUCCESS.
+- El primer Academic run 44628272826 falló por un fixture de test que devolvía el envelope externo en vez del array normalizado del helper. Se corrigió en 8461857 y el rerun 44628383775 quedó SUCCESS.
+- Se intentó checkout local para ejecutar Node, pero el entorno no pudo resolver github.com (DNS). Node.js se ejecutó en Actions; no se afirma ejecución Node local.
+- El árbol no contiene package.json, lockfile ni CLI; CLI no aplica. No se modificó ninguna rama distinta de NG_beta_0.0.0.1_work.
+
+Estado:
+- Unidad de consistencia de snapshots completada a nivel de código y contratos.
+- AUD-NG-167 permanece En progreso por validaciones beta y fuente/plantilla oficial SACE pendientes (BETA-EXAM-105..113 y equivalencias institucionales no demostradas).
+- Salida XLS continúa CANDIDATE; no se habilitó producción.
+- Rama base sin cambios. No se modifica la regresión Phase 22 porque es ajena al alcance y debe triagearse en su tarea propietaria.
+
+Siguiente acción elegible:
+- Continuar AUD-NG-167 con auditoría de contratos del directorio de identidad USER y su coherencia con roster/matrícula, sin inferir equivalencias documentales; después revisar la propagación segura de errores interservicio.
+===============================================================================
