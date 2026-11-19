@@ -4297,3 +4297,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.853 — AUD-NG-167: limitación explícita de procedencia/vigencia/año de plantilla en cada candidato; Action 44569733548 SUCCESS.
 
 [2026-11-19] C1.854 — AUD-NG-167: correspondencia de PeriodoID/parcial/columna verificada localmente; Action 44570312787 SUCCESS.
+
+[2026-11-19] C1.855 — AUD-NG-167: coherencia integrada de año/PeriodoID/rangos verificada con pruebas negativas; Action 44570594868 SUCCESS.

@@ -734,3 +734,41 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar que el año lectivo, PeriodoID y rangos de fechas del snapshot de asistencia coincidan con los gradebookSnapshots y la selección de parciales en el orquestador.
 ===============================================================================
+
+
+===============================================================================
+### C1.855 — AUD-NG-167: coherencia integrada de año, periodo y rango temporal
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-CONTEXT-CONSISTENCY-30
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.854
+HEAD inicial: 2f5ddeb77c7965ecea41308afada9ee162db26aa
+HEAD de pruebas: 4fef79bfb636c0b62e26ba5e898f0f62ed665f45
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación de pruebas:
+- Se amplió el contrato integrado del orquestador para verificar el contexto de año de los gradebookSnapshots contra expectedContext. Un año distinto se rechaza con SACE_GRADEBOOK_CONTEXT_MISMATCH:partial1:anoId.
+- Se verifica que el AnoID de cada periodo del snapshot de asistencia coincida con el año académico; el año divergente se rechaza con SACE_PERIOD_YEAR_MISMATCH:partial1.
+- Se verifica que los rangos de los dos periodos no se solapen ni estén invertidos a través del flujo completo; la superposición se rechaza con SACE_PERIOD_RANGE_OVERLAP_OR_ORDER_INVALID.
+- Las pruebas se ejecutan mediante prepareCandidateExportFromAcademicSnapshot, no solo contra funciones aisladas del proveedor.
+
+Archivos modificados desde C1.854:
+- tests/security/sace-export-orchestrator-contract.test.js
+
+Verificación:
+- GitHub Actions 44570594868 — SACE template structure compatibility contract: SUCCESS.
+- Node.js 22: sintaxis, estructura, parcheo, proveedor, orquestador, mapeo parcial, coherencia de año/periodo/rangos y aislamiento candidato PASS.
+- Diff revisado: tres escenarios negativos integrados; sin cambios en código productivo.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- El contrato demuestra coherencia local de snapshots y periodos sintéticos; no sustituye la prueba de servicio desplegado ni acredita la equivalencia oficial de periodos SACE.
+- BETA-EXAM-106/107/110/111/113 y la confirmación de política BETA-EXAM-112 conservan sus estados beta.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar el orden de operaciones y los efectos del proveedor/orquestador sobre los snapshots recibidos, incluida la no mutación de sus datos de entrada.
+===============================================================================

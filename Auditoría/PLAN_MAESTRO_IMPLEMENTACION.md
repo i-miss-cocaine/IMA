@@ -6013,3 +6013,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El orquestador exige que cada gradebookSnapshot identifique I/II Parcial de forma coherente en el envelope y en el contexto Exam-Service; vincula esos labels con las columnas PARCIAL I/II del XLS candidato. El proveedor valida también orden y no solapamiento temporal.
 - Pruebas negativas de mapeo invertido y discrepancia envelope/contexto PASS. SACE Action 44570312787 SUCCESS (Node.js 22; todas las suites del workflow).
 - AUD-NG-167 sigue En progreso; siguiente: revisar año, PeriodoID y rangos temporales de asistencia/gradebook.
+
+### C1.855 — AUD-NG-167: coherencia integrada de año y periodos
+- El contrato del orquestador prueba que gradebooks y periodos comparten año, que los rangos no se solapan y que estas condiciones se cumplen desde el flujo snapshot→candidato. Se agregaron tres pruebas negativas integradas.
+- SACE Action 44570594868 SUCCESS (Node.js 22; todas las suites SACE).
+- AUD-NG-167 continúa En progreso; siguiente: revisar no mutación de snapshots y orden de operaciones.
