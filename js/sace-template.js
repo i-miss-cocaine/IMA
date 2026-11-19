@@ -484,8 +484,8 @@
   function normalizeIdentity(value) {
     return String(value == null ? "" : value).replace(/[\s.-]/g, "").toUpperCase();
   }
-  function inspectTemplate(input) {
-    const parsed = parseCompound(input);
+  function inspectTemplate(input, parsedInput) {
+    const parsed = parsedInput && typeof parsedInput.get === "function" ? parsedInput : parseCompound(input);
     const metadata = {
       institution: parsed.get("A1"),
       modality: parsed.get("A2"),
