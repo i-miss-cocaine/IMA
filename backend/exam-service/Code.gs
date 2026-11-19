@@ -5195,10 +5195,10 @@ function buildStudentAcademicReportGradebook_(ss, scope, targetUserId, payload) 
   if (!rows.length || baseHeaders.some((header, index) => String(rows[0][index] || "").trim() !== header)) {
     throw new Error("STUDENT_ACADEMIC_REPORT_SCHEMA_INVALID");
   }
-  if (rows[0].length < 16) return { contextos: [], detalleAsignaturas: [], resumenGeneral: {
+  if (rows[0].length === 9) return { contextos: [], detalleAsignaturas: [], resumenGeneral: {
     totalAsignaturas: 0, promedioGeneral: null, asignaturasAprobadas: 0, asignaturasReprobadas: 0
   }, esDocumentoOficial: false };
-  if (contextHeaders.some((header, index) =>
+  if (rows[0].length !== 16 || contextHeaders.some((header, index) =>
       String(rows[0][9 + index] || "").trim() !== header)) {
     throw new Error("STUDENT_ACADEMIC_REPORT_CONTEXT_SCHEMA_INVALID");
   }
@@ -5244,9 +5244,9 @@ function buildStudentAcademicReportGradebook_(ss, scope, targetUserId, payload) 
       String(recoveryRows[0][index] || "").trim() !== header)) {
     throw new Error("STUDENT_ACADEMIC_REPORT_SCHEMA_INVALID");
   }
-  const recoveryHasContext = recoveryRows.length > 0 && recoveryRows[0].length >= 16 &&
+  const recoveryHasContext = recoveryRows.length > 0 && recoveryRows[0].length === 16 &&
     contextHeaders.every((header, index) => String(recoveryRows[0][9 + index] || "").trim() === header);
-  if (recoveryRows.length && recoveryRows[0].length > 9 && !recoveryHasContext) {
+  if (recoveryRows.length && recoveryRows[0].length !== 9 && !recoveryHasContext) {
     throw new Error("STUDENT_ACADEMIC_REPORT_CONTEXT_SCHEMA_INVALID");
   }
   const contextualRecoveryRows = recoveryHasContext ? recoveryRows.slice(1) : [];
