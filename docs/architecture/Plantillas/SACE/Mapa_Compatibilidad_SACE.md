@@ -201,3 +201,16 @@ El contrato sace-export-orchestrator-contract.test.js ahora construye snapshots 
 
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: hacer explícita la política de inasistencias justificadas. El proveedor no debe asumir si una ausencia justificada cuenta para SACE; debe exigir una regla configurada y probada, conservando el bloqueo cuando no exista decisión institucional/plantilla oficial.
+
+
+## 16. Política explícita de ausencias justificadas — C1.842
+
+Se eliminó la decisión implícita de contar todas las ausencias justificadas. El proveedor ahora exige absencePolicy.justifiedAbsenceMode con uno de dos valores explícitos: COUNT o EXCLUDE. COUNT incluye las ausencias justificadas; EXCLUDE las omite. Las tardanzas y otros estados no incluidos en el catálogo de ausencias siguen sin incrementar el contador.
+
+Cada registro de asistencia debe incluir el booleano justificado; si falta o no es booleano, el proveedor rechaza el cálculo. Si no se proporciona una política válida, también falla cerrado. La respuesta candidate conserva el modo seleccionado y declara que es una entrada explícita todavía no confirmada contra la regla oficial SACE. No se agregan valores predeterminados.
+
+El parámetro se propaga desde prepareCandidateExportFromAcademicSnapshot hasta el proveedor. Los contratos prueban ambos modos, ausencia de política, modo inválido y estado de justificación faltante. Los fixtures son sintéticos; COUNT y EXCLUDE son opciones configurables, no equivalencias oficiales declaradas.
+
+**Verificación:** GitHub Actions 44550379659 — SACE template structure compatibility contract: SUCCESS. Pasaron sintaxis y contratos del proveedor/orquestador, pruebas estructurales XLS y parcheo binario.
+
+**Límite:** la selección institucional del modo queda pendiente de BETA-EXAM-112 y evidencia oficial autorizada. El resultado permanece CANDIDATE; no se habilita UI, descarga ni carga SACE.

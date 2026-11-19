@@ -2064,3 +2064,28 @@ Resultado esperado:
 Estado: Pendiente beta.
 Evidencia requerida: respuestas anonimizadas de ambos snapshots, trazas de autorización y de los casos negativos, comprobación de minimización del DTO y hash/versión de los despliegues.
 ===============================================================================
+
+===============================================================================
+BETA-EXAM-112 — Confirmación de política de inasistencias justificadas SACE
+===============================================================================
+Módulo/rol: proveedor SACE / responsable académico autorizado
+Tarea/requisito: AUD-NG-167 — cómputo de inasistencias por parcial
+Objetivo: determinar y registrar, con fuente oficial, si una ausencia marcada como justificada debe contarse o excluirse del campo de inasistencias de la plantilla SACE.
+Precondiciones:
+- Plantilla SACE descargada desde sesión docente autorizada, con versión/fecha y campo de inasistencias identificados.
+- Manual o instrucción oficial vigente que establezca el tratamiento de ausencias justificadas, o confirmación formal de la Secretaría de Educación/autoridad institucional competente.
+- Dataset beta sintético que contenga ausencia justificada, ausencia no justificada, presencia y tardanza.
+Pasos:
+1. Consultar la fuente oficial vigente y registrar documento, versión/fecha, página/sección y texto aplicable.
+2. Determinar si las ausencias justificadas se incluyen o excluyen del total SACE.
+3. Configurar absencePolicy.justifiedAbsenceMode como COUNT o EXCLUDE según la fuente aprobada; no activar un valor por defecto.
+4. Ejecutar el contrato del proveedor con ambos modos y comprobar que solo cambia el tratamiento de registros Ausente/Ausencia/Falta/Inasistencia/Absent con justificado=true.
+5. Verificar que tardanzas no se cuentan, estados de justificación faltantes se rechazan y ausencia de política/valor inválido bloquea el candidato.
+6. Registrar la aprobación institucional del modo y volver a probar con un snapshot beta anonimizado.
+Resultado esperado:
+- Modo explícito respaldado por fuente oficial y aprobado por responsable institucional.
+- Ningún modo se presenta como oficial antes de obtener la evidencia.
+- Sin política confirmada, el proveedor solo puede generar un candidato con limitación explícita; no se habilita exportación productiva.
+Estado: Pendiente de evidencia oficial/validación institucional.
+Evidencia requerida: referencia oficial, página/sección, decisión aprobada, configuración aplicada y reporte anonimizado de pruebas positivas/negativas.
+===============================================================================

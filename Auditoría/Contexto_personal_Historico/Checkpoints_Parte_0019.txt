@@ -193,3 +193,37 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: hacer explícita y obligatoria la política de cómputo de ausencias justificadas; bloquear la preparación si no se proporciona una regla institucional confirmada.
 ===============================================================================
+
+===============================================================================
+### C1.842 — AUD-NG-167: política explícita para ausencias justificadas
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-JUSTIFIED-ABSENCE-POLICY-17
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.841
+Commit de implementación: f4057872651d8753df8573e558212d951391ea79
+HEAD final de implementación: f4057872651d8753df8573e558212d951391ea79
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- buildCandidateStudents exige absencePolicy.justifiedAbsenceMode con valor COUNT o EXCLUDE; no hay valor por defecto.
+- COUNT incluye ausencias justificadas; EXCLUDE las omite. Estados de tardanza no se cuentan.
+- Cada registro de asistencia debe contener justificado booleano; si falta o tiene otro tipo, se rechaza.
+- buildCandidateStudentsFromSnapshot propaga la política explícita y el orquestador Academic→XLS la transmite sin sustituirla.
+- El resultado candidate expone el modo configurado y declara que la regla no está confirmada contra SACE oficial.
+- Se amplió tests/security/sace-data-provider-contract.test.js con casos COUNT, EXCLUDE, política ausente/inválida y justificado faltante; se amplió el contrato del orquestador con la política explícita.
+
+Verificación:
+- GitHub Actions 44550379659 — SACE template structure compatibility contract: SUCCESS.
+- Pasaron node --check y contratos de js/sace-data-provider.js, tests/security/sace-data-provider-contract.test.js, js/sace-export-orchestrator.js y tests/security/sace-export-orchestrator-contract.test.js; también contratos estructural y binario de plantillas.
+- Rama base intacta.
+
+Límites:
+- No se selecciona COUNT ni EXCLUDE como regla oficial de IMA/SACE; son modos configurables. La decisión debe sustentarse en BETA-EXAM-112.
+- No se habilita UI, descarga ni exportación productiva. La plantilla oficial, la equivalencia documental y reglas de recuperación siguen pendientes.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar el tratamiento de ausencias en el endpoint Academic y la forma en que justificaciones aprobadas se representan en RegistrosAsistencia; garantizar que el booleano justificado provenga de un registro de justificación vigente y aprobado, no de un dato arbitrario o inconsistente.
+===============================================================================
