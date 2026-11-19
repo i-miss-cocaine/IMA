@@ -3177,6 +3177,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    let studentAcademicReportRequestVersion = 0;
     // --- CONSULTA DE RESULTADOS ACADÉMICOS OFICIALES Y BOLETÍN CONTEXTUAL ---
     async function loadStudentAcademicResults() {
         const container = document.getElementById('student-academic-results-container');
@@ -3193,6 +3194,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const anoId = String(yearInput?.value || "").trim();
         const periodoId = String(periodInput?.value || "").trim();
+        const requestVersion = ++studentAcademicReportRequestVersion;
+        const requestedUserId = String(currentUser?.userId || "").trim();
         if (!/^20\d{2}$/.test(anoId) || !periodoId) {
             container.textContent = "Seleccione un año lectivo y un período válidos.";
             return;
@@ -3202,8 +3205,10 @@ document.addEventListener('DOMContentLoaded', function() {
             ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
         try {
             const res = await fetchApi('EXAM', 'getStudentAcademicReport', {
-                userId: currentUser.userId, anoId, periodoId
+                userId: requestedUserId, anoId, periodoId
             });
+            if (requestVersion !== studentAcademicReportRequestVersion ||
+                requestedUserId !== String(currentUser?.userId || "").trim()) return;
             if (!res || res.status !== 'success' || !res.data) {
                 throw new Error(res?.message || "No fue posible consultar el boletín.");
             }
@@ -3249,7 +3254,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 ${official ? '' : '<p class="text-[11px] text-amber-700 mt-3">Este informe no es oficial: el período debe estar cerrado y todas las ponderaciones deben contar con calificaciones publicadas.</p>'}
             `;
         } catch (error) {
-            container.textContent = "Error al consultar resultados: " + error.message;
+            if (requestVersion === studentAcademicReportRequestVersion &&
+                requestedUserId === String(currentUser?.userId || "").trim()) {
+                container.textContent = "Error al consultar resultados: " + error.message;
+            }
         }
     }
 
