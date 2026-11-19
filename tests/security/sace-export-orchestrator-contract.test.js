@@ -154,6 +154,8 @@ for (const entry of manifest.templates) {
   assert.deepEqual(Array.from(templateBytes), originalTemplateBytes, "candidate generation must not mutate the source template bytes");
   assert(result.limitations.includes("synthetic source snapshot; no live service or official SACE mapping"));
   assert(result.limitations.some(item => item.includes("not been independently verified against an official SACE source")));
+  assert(result.limitations.some(item => item.includes("no verified mapping from the local SedeID source")));
+  assert(result.limitations.some(item => item.includes("no unambiguous JornadaID relationship")));
   const openSessionSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
   openSessionSnapshot.data.attendanceSessions[0].estado = "Abierta";
   assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({

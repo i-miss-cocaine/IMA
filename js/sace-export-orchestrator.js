@@ -98,7 +98,9 @@ function (provider, templates) {
       verifiedRowCount: mappedRows.length,
       limitations: candidate.limitations.concat([contextMappingVerified
         ? "Academic-to-SACE context mapping is explicit input and has not been independently verified against an official SACE source"
-        : "Academic-to-SACE context mapping was not supplied; institution, modality, grade/section, schedule and subject labels remain unverified"]),
+        : "Academic-to-SACE context mapping was not supplied; institution, modality, grade/section, schedule and subject labels remain unverified",
+      "Official SACE center code has no verified mapping from the local SedeID source",
+      "Academic schedule has no unambiguous JornadaID relationship to OfertaAcademica or HorariosClase"]),
       verification: {
         workbookSize: verified.workbookSize,
         workbookCapacity: verified.workbookCapacity,
