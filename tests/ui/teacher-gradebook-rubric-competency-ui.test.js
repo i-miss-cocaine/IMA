@@ -14,8 +14,10 @@ for (const contract of [
   "fetchApi('EXAM', 'getCompetencyEvaluations'",
   "fetchApi('EXAM', 'saveCompetencyEvaluation'",
   "renderGradebookAssessmentOptions()",
-  "gradebookCompetencyRequestVersion"
+  "gradebookCompetencyRequestVersion", "gradebookRubricRequestVersion"
 ]) assert.ok(js.includes(contract), "missing UI integration " + contract);
+assert.ok(js.includes("requestVersion !== gradebookRubricRequestVersion"),
+  "stale rubric responses must be discarded after context changes");
 assert.ok(js.includes("requestVersion !== gradebookCompetencyRequestVersion"),
   "stale competency responses must be discarded");
 process.stdout.write("teacher-gradebook-rubric-competency-ui: PASS (16 contracts)\\n");
