@@ -17492,105 +17492,14 @@ function auditAcademicGradesIntegrity(payload) {
 }
 
 // [F9-Task07] [P0] - Fortalecer la generación de boletines, certificados e historiales académicos
+// [F9-Task07] [P0] - El generador heredado no debe emitir boletines desde Calificaciones/Notas.
+// La fuente oficial es EXAM.getStudentAcademicReport, que aplica ContextKey, ponderaciones,
+// publicación, recuperaciones y cierre del período. Se conserva el nombre de acción por compatibilidad.
 function generateStudentReportCard(payload) {
-  const { userId, estudianteId, periodoId, incluirObservaciones, formatoOutput } = payload || {};
-  const studentId = userId || estudianteId;
-
-  if (!studentId) {
-    return {
-      status: "error",
-      message: "Se requiere un identificador de estudiante (userId o estudianteId) para generar el boletín."
-    };
-  }
-
-  const ss = getSpreadsheet();
-
-  // Resolve Student Info
-  let estudianteInfo = { userId: studentId, nombreCompleto: "Estudiante " + studentId, grado: "N/A", seccion: "N/A" };
-  const sheetEstud = ss.getSheetByName("Estudiantes") || ss.getSheetByName("Alumnos");
-  if (sheetEstud) {
-    const dataEst = sheetEstud.getDataRange().getValues();
-    if (dataEst.length > 1) {
-      const headers = dataEst[0].map(h => String(h).trim().toLowerCase());
-      const idxId = headers.indexOf("userid") >= 0 ? headers.indexOf("userid") : headers.indexOf("estudianteid");
-      const idxNombre = headers.indexOf("nombrecompleto") >= 0 ? headers.indexOf("nombrecompleto") : headers.indexOf("nombre");
-      const idxGrado = headers.indexOf("grado");
-      const idxSeccion = headers.indexOf("seccion");
-
-      for (let i = 1; i < dataEst.length; i++) {
-        if (String(dataEst[i][idxId]).trim() === String(studentId).trim()) {
-          estudianteInfo.nombreCompleto = idxNombre >= 0 ? dataEst[i][idxNombre] : estudianteInfo.nombreCompleto;
-          estudianteInfo.grado = idxGrado >= 0 ? dataEst[i][idxGrado] : estudianteInfo.grado;
-          estudianteInfo.seccion = idxSeccion >= 0 ? dataEst[i][idxSeccion] : estudianteInfo.seccion;
-          break;
-        }
-      }
-    }
-  }
-
-  // Fetch Grades for period
-  const asignaturasNotas = [];
-  const sheetNotas = ss.getSheetByName("Calificaciones") || ss.getSheetByName("Notas");
-  if (sheetNotas) {
-    const dataNotas = sheetNotas.getDataRange().getValues();
-    if (dataNotas.length > 1) {
-      const headers = dataNotas[0].map(h => String(h).trim().toLowerCase());
-      const idxId = headers.indexOf("userid") >= 0 ? headers.indexOf("userid") : headers.indexOf("estudianteid");
-      const idxAsig = headers.indexOf("asignatura") >= 0 ? headers.indexOf("asignatura") : headers.indexOf("asignaturaid");
-      const idxPer = headers.indexOf("periodo") >= 0 ? headers.indexOf("periodo") : headers.indexOf("periodoid");
-      const idxNota = headers.indexOf("nota") >= 0 ? headers.indexOf("nota") : headers.indexOf("notafinal");
-      const idxObs = headers.indexOf("observaciones") >= 0 ? headers.indexOf("observaciones") : headers.indexOf("observacion");
-      const idxEstado = headers.indexOf("estado") >= 0 ? headers.indexOf("estado") : headers.indexOf("estadoaprobacion");
-
-      for (let i = 1; i < dataNotas.length; i++) {
-        const rowStudent = String(dataNotas[i][idxId] || "").trim();
-        const rowPeriod = idxPer >= 0 ? String(dataNotas[i][idxPer] || "").trim() : "";
-
-        if (rowStudent === String(studentId).trim() && (!periodoId || rowPeriod === String(periodoId).trim())) {
-          const rawNota = idxNota >= 0 ? dataNotas[i][idxNota] : 0;
-          const notaNum = parseFloat(rawNota) || 0;
-          const estado = idxEstado >= 0 ? String(dataNotas[i][idxEstado]) : (notaNum >= 70 ? "APROBADO" : "REPROBADO");
-          const obs = idxObs >= 0 ? String(dataNotas[i][idxObs]) : "";
-
-          asignaturasNotas.push({
-            asignatura: idxAsig >= 0 ? dataNotas[i][idxAsig] : "Asignatura General",
-            periodo: rowPeriod || periodoId || "P1",
-            notaFinal: Math.round(notaNum * 100) / 100,
-            estadoAprobacion: estado,
-            observaciones: incluirObservaciones ? obs : undefined
-          });
-        }
-      }
-    }
-  }
-
-  // Calculate Academic Summary
-  const totalAsignaturas = asignaturasNotas.length;
-  const sumaNotas = asignaturasNotas.reduce((acc, curr) => acc + (curr.notaFinal || 0), 0);
-  const promedioGeneral = totalAsignaturas > 0 ? Math.round((sumaNotas / totalAsignaturas) * 100) / 100 : 0;
-  const asignaturasAprobadas = asignaturasNotas.filter(a => a.estadoAprobacion === "APROBADO").length;
-  const asignaturasReprobadas = totalAsignaturas - asignaturasAprobadas;
-
-  const esOficial = !!periodoId;
-
   return {
-    status: "success",
-    boletin: {
-      titulo: esOficial ? "Boletín Oficial de Calificaciones" : "Informe Provisorio de Rendimiento Académico",
-      estudiante: estudianteInfo,
-      periodo: periodoId || "Todos los Períodos",
-      fechaGeneracion: new Date().toISOString(),
-      esDocumentoOficial: esOficial,
-      resumenGeneral: {
-        totalAsignaturas,
-        promedioGeneral,
-        asignaturasAprobadas,
-        asignaturasReprobadas,
-        estadoPromocion: promedioGeneral >= 70 ? "PROMOVIDO" : "PENDIENTE"
-      },
-      detalleAsignaturas: asignaturasNotas
-    },
-    message: "Boletín de calificaciones generado exitosamente."
+    status: "error",
+    code: "CONSOLIDATED_GRADEBOOK_REQUIRED",
+    message: "El generador heredado fue retirado para evitar boletines con calificaciones sin contexto. Consulte EXAM.getStudentAcademicReport para obtener el informe consolidado."
   };
 }
 
