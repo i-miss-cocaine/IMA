@@ -1363,7 +1363,7 @@ Trabajo:
 - Se añadió tests/security/sace-data-provider-contract.test.js con fixtures sintéticos para dos periodos, matching de padrón, identidad, notas, conteo por sesión, faltantes, duplicados, estados provisionales, recuperación no resuelta y contexto incorrecto.
 - Se amplió .github/workflows/sace-template-compatibility-contract.yml para ejecutar sintaxis y contrato del proveedor además de las pruebas SACE existentes.
 - Se actualizó docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md con las reglas, el hallazgo de fuente y límites del proveedor.
-- La ejecución de GitHub Actions queda pendiente de resultado posterior al commit; no se registra PASS antes de recibirlo.
+- GitHub Actions 44536180884: SUCCESS. node --check de ambos módulos/contratos, contrato estructural SACE, parcheo binario y sace-data-provider-contract PASS.
 
 Estado AUD-NG-167: [~] En progreso. El proveedor es candidato local y aún no consume datos reales; falta el join server-side autenticado, identidad institucional verificada, regla oficial de ausencias justificadas/recuperación y mapeo PeriodoID-parcial.
 No se habilita exportación de producción ni UI. Manifiesto SACE permanece CANDIDATE/officialSourceVerified=false. BETA-EXAM-105 y BETA-EXAM-106 siguen pendientes; no iniciar AUD-NG-168/TAREA-13.
@@ -1372,4 +1372,31 @@ Siguiente acción elegible:
 1. Diseñar un lector server-side en Academic-Service que, reutilizando el contexto de sesión/permiso existente, entregue las sesiones de clase y sus registros de asistencia con Fecha de sesión y contexto exacto; no reutilizar getBatchAttendanceRecords sin corregir su semántica.
 2. Resolver el origen de Personas.Identificacion y tipo documental desde el esquema institucional verificado.
 3. Mantener el proveedor sin conexión de producción hasta probar la integración con Sheets desplegado y plantilla SACE autorizada.
+===============================================================================
+
+===============================================================================
+### C1.832 — AUD-NG-167: verificación del proveedor y mapeo al adaptador SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-DATA-PROVIDER-VERIFY-07
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.831
+HEAD final verificado: 3cb6eb8b0eb5253506bf525b200f4ab02df9aa19
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Verificación:
+- Commit inicial del proveedor: de04cbe3c49065222435c5bdffc9a03f54ea3dcb.
+- GitHub Actions 44536180884: SUCCESS. Pasaron el contrato estructural SACE, parcheo binario sobre los tres XLS candidatos, node --check de js/sace-data-provider.js y del contrato nuevo, y sace-data-provider-contract.
+- Commit de ampliación de contrato: 3cb6eb8b0eb5253506bf525b200f4ab02df9aa19. Se añadió una prueba de integración del contrato que pasa sourceStudents del proveedor directamente a mapRowsToTemplate y comprueba que se conservan la identidad, el tipo documental, las notas y las inasistencias en el orden del padrón.
+- GitHub Actions 44536395133: SUCCESS. Los diez pasos funcionales del job, incluidos los contratos estructurales/binarios SACE y el contrato proveedor→mapeo de plantilla, terminaron SUCCESS.
+- Se volvió a verificar la rama de trabajo en 3cb6eb8b0eb5253506bf525b200f4ab02df9aa19 y la rama base sin cambios en 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Resultado:
+- El proveedor produce filas compatibles con mapRowsToTemplate bajo fixtures sintéticos. No se ejecutó contra datos reales de Sheets, ni contra una plantilla oficial descargada de SACE.
+- AUD-NG-167 permanece [~] En progreso. No se habilitó backend, UI ni exportación de producción. BETA-EXAM-105/106 y las reglas oficiales de periodo/inasistencia/recuperación siguen pendientes.
+- No se ejecutó suite general Node.js ni CLI en este checkpoint. No existe package.json/directorio CLI declarado; los tres fallos externos de la suite general ya documentados permanecen sin atribuir a este cambio.
+
+Siguiente acción elegible: implementar el snapshot server-side de sesiones y asistencia usando la identidad/contexto autenticado existente, después conectar el proveedor sin crear otra capa de autorización redundante; verificar identidad desde Personas y mantener bloqueada la salida de producción hasta la prueba SACE real.
 ===============================================================================
