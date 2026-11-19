@@ -6087,3 +6087,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Se conserva el escaneo único de sesiones/registros y todas las validaciones de las sesiones seleccionadas, incluyendo errores diferenciados por parcial.
 - Commit detectado en HEAD de la rama: 509a666790d588e89d04710dfe9ebdfefc7a1234. Fue inspeccionado y se reejecutaron sobre ese HEAD los contratos del proveedor y orquestador: PASS en harness V8 compatible, tres plantillas, 22 filas cada una. No es Node.js ni GitHub Actions.
 - AUD-NG-167 sigue En progreso; este cambio no certifica las plantillas candidatas ni reemplaza las pruebas beta/SACE oficiales.
+
+### C1.866 — AUD-NG-167: corrección de validación por período/contexto y numeración
+- Se corrigió el registro de continuidad: el trabajo de validación del proveedor publicado en 509a666790d588e89d04710dfe9ebdfefc7a1234 corresponde a C1.866; C1.864 y C1.865 ya estaban asignados a la optimización de recorrido compartido y al filtrado de sesiones seleccionadas, respectivamente.
+- La evidencia técnica y Actions 44626673467/44626673436 SUCCESS permanecen válidas. La entrada duplicada histórica no se elimina; se conserva con una aclaración append-only en Checkpoints_Parte_0019.txt y el índice.
+- AUD-NG-167 sigue En progreso; siguiente: revisar si Academic-Service omite silenciosamente sesiones abiertas dentro de períodos cerrados.

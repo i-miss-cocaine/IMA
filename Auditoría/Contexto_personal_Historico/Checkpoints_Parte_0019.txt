@@ -1051,3 +1051,11 @@ Estado:
 Siguiente acción elegible:
 - Continuar auditoría local de la consistencia del snapshot Academic-Service: verificar que las sesiones abiertas o inconsistentes dentro de períodos académicos cerrados no se omitan silenciosamente; mantener los contratos de Exam-Service y el transporte autenticado.
 ===============================================================================
+
+===============================================================================
+### Aclaración de numeración de checkpoints — sesión SACE SESSION-SCOPE-VALIDATION-37
+===============================================================================
+El registro añadido en el commit 2d74abd9eea8cd672c00f603cfd83dc31ab788ec fue etiquetado C1.864 por una lectura desactualizada del índice durante cambios concurrentes. La secuencia canónica ya contenía C1.864 (conteo de asistencia compartido, documentado en commits 221df5f/543af3f/59ad410) y C1.865 (validación limitada a sesiones seleccionadas, documentado en commits 732818e/aca62ee/e5374fe). Para preservar el historial append-only, no se elimina ni reescribe el registro anterior: su contenido técnico corresponde a C1.866 y queda formalmente renumerado por esta aclaración.
+HEAD de implementación: 509a666790d588e89d04710dfe9ebdfefc7a1234.
+Verificación Node.js 22 / GitHub Actions: 44626673467 y 44626673436 SUCCESS.
+===============================================================================
