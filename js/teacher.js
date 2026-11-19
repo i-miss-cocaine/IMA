@@ -5888,6 +5888,16 @@ function toBase64(file) {
             if (!response || response.status !== 'success' || !Array.isArray(response.data)) {
                 throw new Error(response?.message || "No fue posible consultar el catálogo.");
             }
+            const departmentSelect = document.getElementById('gb-catalog-department');
+            if (departmentSelect) {
+                const departments = Array.isArray(response.departmentIds) ? response.departmentIds : [];
+                const preferred = String(context.departmentId || window.GLOBAL_SCOPE?.activeDepartmentId || currentUser?.departmentId || "");
+                departmentSelect.innerHTML = '<option value="">Seleccione un departamento asignado</option>' +
+                    departments.map(id => '<option value="' + escapeGradebookHtml(id) + '">' +
+                        escapeGradebookHtml(id) + '</option>').join('');
+                if (departments.length === 1) departmentSelect.value = departments[0];
+                else if (departments.includes(preferred)) departmentSelect.value = preferred;
+            }
             gradebookCompetencyCatalog = response.data;
             select.innerHTML = '<option value="">Seleccione competencia e indicador</option>' +
                 gradebookCompetencyCatalog.map((item, index) =>
@@ -5913,6 +5923,9 @@ function toBase64(file) {
         const item = Number.isInteger(index) && index >= 0 ? gradebookCompetencyCatalog[index] : null;
         document.getElementById('gb-competency-id').value = item ? item.competenciaId : "";
         document.getElementById('gb-indicator-id').value = item ? item.indicadorId : "";
+        document.getElementById('gb-competency-department-id').value = item ? item.departmentId : "";
+        const departmentSelect = document.getElementById('gb-catalog-department');
+        if (item && departmentSelect) departmentSelect.value = item.departmentId || "";
     }
 
     function renderGradebookAssessmentOptions() {
@@ -6036,7 +6049,8 @@ function toBase64(file) {
         button.disabled = true;
         try {
             const response = await fetchApi('EXAM', 'saveCompetencyCatalogItem', {
-                ...context, asignaturaId: context.asignatura, seccion: context.seccion, ...fields,
+                ...context, asignaturaId: context.asignatura, seccion: context.seccion,
+                departmentId: String(document.getElementById('gb-catalog-department')?.value || "").trim(), ...fields,
                 profesorId: currentUser.userId
             });
             if (!response || response.status !== 'success') throw new Error(response?.message || "No fue posible guardar el elemento.");
@@ -6070,7 +6084,8 @@ function toBase64(file) {
                 rubricaId: String(document.getElementById('gb-competency-rubric')?.value || "").trim(),
                 asignaturaId: context.asignatura, periodoId: context.periodoId,
                 profesorId: currentUser.userId,
-                programaCurricular: String(gradebookCompetencyCatalog[Number(document.getElementById('gb-competency-catalog')?.value)]?.programaCurricular || "").trim()
+                programaCurricular: String(gradebookCompetencyCatalog[Number(document.getElementById('gb-competency-catalog')?.value)]?.programaCurricular || "").trim(),
+                departmentId: String(document.getElementById('gb-competency-department-id')?.value || "").trim()
             });
             if (!response || response.status !== 'success') throw new Error(response?.message || "No fue posible registrar la evaluación.");
             document.getElementById('gb-competency-observations').value = "";
