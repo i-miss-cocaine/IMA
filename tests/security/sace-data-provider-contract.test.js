@@ -22,8 +22,8 @@ function gradebook(periodoId, options = {}) {
 const expectedContext = { anoId: "2026", grado: "11", seccion: "A",
   asignatura: "Informática", asignaturaId: "INF-01", institutionId: "INST-1", teacherUserId: "PROF-1" };
 const periods = {
-  partial1Period: { periodoId: "PER-1", fechaInicio: "2026-02-01", fechaFin: "2026-04-30" },
-  partial2Period: { periodoId: "PER-2", fechaInicio: "2026-05-01", fechaFin: "2026-07-31" }
+  partial1Period: { periodoId: "PER-1", anoId: "2026", fechaInicio: "2026-02-01", fechaFin: "2026-04-30" },
+  partial2Period: { periodoId: "PER-2", anoId: "2026", fechaInicio: "2026-05-01", fechaFin: "2026-07-31" }
 };
 const sessions = [
   { sesionId: "S-1", fecha: "2026-02-03", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1", estado: "Cerrada", fechaCierre: "2026-02-03T08:00:00.000Z" },
@@ -95,7 +95,10 @@ assert.throws(() => build({ attendanceSessions: sessions.concat(sessions[0]) }),
 assert.throws(() => build({ attendanceSessions: sessions.map(session => session.sesionId === "S-1" ? Object.assign({}, session, { estado: "Abierta" }) : session) }), /SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial1/);
 assert.throws(() => build({ attendanceSessions: sessions.map(session => session.sesionId === "S-1" ? Object.assign({}, session, { fechaCierre: "" }) : session) }), /SACE_ATTENDANCE_SESSION_CLOSE_TIMESTAMP_REQUIRED:partial1/);
 assert.throws(() => build({ identityRecords: identityRecords.concat(identityRecords[0]) }), /SACE_IDENTITY_RECORD_DUPLICATE/);
-assert.throws(() => build({ partial2Period: { periodoId: "PER-1", fechaInicio: "2026-05-01", fechaFin: "2026-07-31" } }), /SACE_PERIODS_MUST_BE_DISTINCT/);
+assert.throws(() => build({ partial2Period: { periodoId: "PER-1", anoId: "2026", fechaInicio: "2026-05-01", fechaFin: "2026-07-31" } }), /SACE_PERIODS_MUST_BE_DISTINCT/);
+assert.throws(() => build({ partial1Period: Object.assign({}, periods.partial1Period, { anoId: "2025" }) }), /SACE_PERIOD_YEAR_MISMATCH:partial1/);
+assert.throws(() => build({ partial1Period: Object.assign({}, periods.partial1Period, { anoId: "" }) }), /SACE_PERIOD_YEAR_REQUIRED:partial1/);
+assert.throws(() => build({ partial2Period: Object.assign({}, periods.partial2Period, { fechaInicio: "2026-04-15" }) }), /SACE_PERIOD_RANGE_OVERLAP_OR_ORDER_INVALID/);
 assert.throws(() => build({ expectedContext: Object.assign({}, expectedContext, { grado: "12" }) }), /SACE_GRADEBOOK_CONTEXT_MISMATCH:partial1:grado/);
 assert.throws(() => build({ attendanceRecords: attendance.concat({
   sesionId: "S-1", userId: "STU-OUT", estadoAsistencia: "Presente"

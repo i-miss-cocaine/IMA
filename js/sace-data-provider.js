@@ -48,11 +48,13 @@
     });
     return { data, students };
   }
-  function validatePeriod(period, label) {
+  function validatePeriod(period, label, expectedAnoId) {
     const id = required(period && period.periodoId, "SACE_PERIOD_ID_REQUIRED:" + label);
+    const anoId = required(period && period.anoId, "SACE_PERIOD_YEAR_REQUIRED:" + label);
+    if (text(anoId) !== text(expectedAnoId)) throw new Error("SACE_PERIOD_YEAR_MISMATCH:" + label);
     const start = dateKey(period && period.fechaInicio), end = dateKey(period && period.fechaFin);
     if (!start || !end || start > end) throw new Error("SACE_PERIOD_RANGE_INVALID:" + label);
-    return { periodoId: id, start, end };
+    return { periodoId: id, anoId, start, end };
   }
   function countAbsencesForPeriod(studentIds, sessions, records, expected, period, label, justifiedAbsenceMode) {
     if (!Array.isArray(sessions) || !Array.isArray(records)) throw new Error("SACE_ATTENDANCE_SNAPSHOT_REQUIRED");
@@ -124,9 +126,10 @@
     if (["COUNT", "EXCLUDE"].indexOf(justifiedAbsenceMode) === -1) {
       throw new Error("SACE_ABSENCE_POLICY_INVALID");
     }
-    const period1 = validatePeriod(value.partial1Period, "partial1");
-    const period2 = validatePeriod(value.partial2Period, "partial2");
+    const period1 = validatePeriod(value.partial1Period, "partial1", context.anoId);
+    const period2 = validatePeriod(value.partial2Period, "partial2", context.anoId);
     if (period1.periodoId === period2.periodoId) throw new Error("SACE_PERIODS_MUST_BE_DISTINCT");
+    if (period1.end >= period2.start) throw new Error("SACE_PERIOD_RANGE_OVERLAP_OR_ORDER_INVALID");
     const first = assertPeriodSnapshot(value.partial1Gradebook, context, period1, "partial1");
     const second = assertPeriodSnapshot(value.partial2Gradebook, context, period2, "partial2");
     if (first.students.size !== second.students.size) throw new Error("SACE_GRADEBOOK_ROSTER_MISMATCH");
