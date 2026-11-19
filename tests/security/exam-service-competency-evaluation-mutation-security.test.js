@@ -127,7 +127,7 @@ function fixture(options = {}) {
   const names = ["saveCompetencyEvaluation", "withAuthorizedCompetencyEvaluationMutation_",
     "getAuthorizedCompetencyEvaluationMutationContext_", "competencyCatalogContextKey_", "saveCompetencyEvaluationUnlocked_", "getExamStudentProfile_"];
   vm.runInNewContext(names.map(extract).join("\n") + "\nthis.saveCompetencyEvaluation = saveCompetencyEvaluation;", runtime);
-  const payload = Object.assign({ sessionToken: "synthetic", userId: "STU-1", competenciaId: "COMP-1",
+  const payload = Object.assign({ sessionToken: "synthetic", userId: "STU-1", departmentId: "DEPT-1", competenciaId: "COMP-1",
     indicadorId: "IND-1", anoId: "2026", programaCurricular: "PLAN-A", asignaturaId: "Math", periodoId: "P1", nivelDesempeno: "Alto", observaciones: "Observación", rubricaId: "RUB-1" },
     options.payload || {});
   return { call: p => runtime.saveCompetencyEvaluation(p || payload), state, sheets, payload };
