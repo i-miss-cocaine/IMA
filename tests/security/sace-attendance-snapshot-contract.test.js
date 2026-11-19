@@ -166,6 +166,8 @@ const candidateFromAcademicSnapshot = provider.buildCandidateStudentsFromSnapsho
   attendanceSnapshot: result,
   partial1PeriodId: "P1",
   partial2PeriodId: "P2",
+  partial1Gradebook: result.data.gradebookSnapshots.find(item => item.periodoId === "P1").snapshot,
+  partial2Gradebook: result.data.gradebookSnapshots.find(item => item.periodoId === "P2").snapshot,
   documentTypeMappings: [{ documentType: "DNI", documentMarker: "HND" }],
   absencePolicy: { justifiedAbsenceMode: "COUNT" }
 });
