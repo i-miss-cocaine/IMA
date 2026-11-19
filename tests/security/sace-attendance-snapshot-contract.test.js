@@ -2,6 +2,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
+const provider = require("../../js/sace-data-provider.js");
 const source = fs.readFileSync("backend/academic-service/Code.gs", "utf8");
 new vm.Script(source, { filename: "backend/academic-service/Code.gs" });
 
@@ -160,6 +161,20 @@ assert.equal(result.data.attendanceRecords.every(row => row.justificacionVerific
   "every attendance justification state must be verified against the canonical workflow");
 assert(result.limitations.some(item => item.includes("documentMarker remains empty")));
 assert.equal(result.data.attendanceRecords.some(row => row.registroId === "R-OTHER"), false);
+
+const candidateFromAcademicSnapshot = provider.buildCandidateStudentsFromSnapshot({
+  attendanceSnapshot: result,
+  partial1PeriodId: "P1",
+  partial2PeriodId: "P2",
+  documentTypeMappings: [{ documentType: "DNI", documentMarker: "HND" }],
+  absencePolicy: { justifiedAbsenceMode: "COUNT" }
+});
+assert.equal(candidateFromAcademicSnapshot.status, "candidate");
+assert.deepEqual(candidateFromAcademicSnapshot.sourceStudents.map(row => [
+  row.userId, row.partial1Absences, row.partial2Absences, row.documentMarker
+]), [
+  ["STU-1", 1, 0, "HND"], ["STU-2", 0, 1, "HND"]
+], "the real Academic-Service snapshot must feed the provider with closed-session counts and explicit document mapping");
 
 assert.equal(createContext("Estudiante").runSnapshot(payload).code, "SACE_TEACHER_CONTEXT_REQUIRED");
 const lockTimeoutContext = createContext("Profesor", "INST-1", true);
