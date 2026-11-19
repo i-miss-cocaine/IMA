@@ -47,6 +47,13 @@
     const flags = precision === 2 ? 3 : 2;
     return ((scaled << 2) | flags) >>> 0;
   }
+  function isBlankValue(value) {
+    return value === null || value === undefined || (typeof value === "string" && value.trim() === "");
+  }
+  function isNumericValue(value) {
+    return (typeof value === "number" && Number.isFinite(value)) ||
+      (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value)));
+  }
   function parseCompound(input) {
     const bytes = toBytes(input);
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -276,7 +283,7 @@
     return record;
   }
   function makeRecoveryRecord(row, style, value) {
-    if (value === null || value === undefined || value === "") {
+    if (isBlankValue(value)) {
       const payload = new Uint8Array(6), view = new DataView(payload.buffer);
       view.setUint16(0, row, true); view.setUint16(2, 7, true); view.setUint16(4, style, true);
       return makeRecord(0x0201, payload);
@@ -298,7 +305,7 @@
   }
   function fill(input, rows, options) {
     const settings = options || {}, scale = settings.scale || {};
-    if (!Number.isFinite(Number(scale.min)) || !Number.isFinite(Number(scale.max)) ||
+    if (!isNumericValue(scale.min) || !isNumericValue(scale.max) ||
         Number(scale.min) >= Number(scale.max)) throw new Error("SACE_SCALE_CONFIGURATION_REQUIRED");
     const precision = Number.isInteger(scale.precision) ? scale.precision : 2;
     if (precision !== 0 && precision !== 2) throw new Error("SACE_SCALE_PRECISION_UNSUPPORTED");
@@ -306,7 +313,7 @@
     rows.forEach((item, index) => {
       ["partial1", "partial2"].forEach(field => {
         const value = item && item[field];
-        if (value === null || value === undefined || value === "" || !Number.isFinite(Number(value))) {
+        if (!isNumericValue(value)) {
           throw new Error("SACE_GRADE_VALUE_REQUIRED:row-" + (STUDENT_FIRST_ROW + index) + ":" + field);
         }
         if (Number(value) < Number(scale.min) || Number(value) > Number(scale.max)) {
@@ -314,14 +321,14 @@
         }
         encodeRK(Number(value), precision);
       });
-      if (item.recovery !== null && item.recovery !== undefined && item.recovery !== "") {
-        if (!Number.isFinite(Number(item.recovery)) || Number(item.recovery) < Number(scale.min) ||
+      if (!isBlankValue(item.recovery)) {
+        if (!isNumericValue(item.recovery) || Number(item.recovery) < Number(scale.min) ||
             Number(item.recovery) > Number(scale.max)) throw new Error("SACE_RECOVERY_VALUE_OUT_OF_RANGE:row-" + (STUDENT_FIRST_ROW + index));
       }
       ["partial1Absences", "partial2Absences"].forEach(field => {
         const value = item && item[field];
-        if (value === null || value === undefined || value === "") return;
-        if (!Number.isInteger(Number(value)) || Number(value) < 0) {
+        if (isBlankValue(value)) return;
+        if (!isNumericValue(value) || !Number.isInteger(Number(value)) || Number(value) < 0) {
           throw new Error("SACE_ABSENCE_VALUE_INVALID:row-" + (STUDENT_FIRST_ROW + index) + ":" + field);
         }
         encodeRK(Number(value), 0);
@@ -462,7 +469,7 @@
         throw new Error("SACE_OUTPUT_GRADE_VERIFICATION_FAILED:" + row);
       }
       const actualRecovery = verified.get("H" + row);
-      if (expected.recovery === null || expected.recovery === undefined || expected.recovery === "") {
+      if (isBlankValue(expected.recovery)) {
         if (actualRecovery !== null) throw new Error("SACE_OUTPUT_RECOVERY_NOT_CLEARED:" + row);
       } else if (Number(actualRecovery) !== Number(expected.recovery)) {
         throw new Error("SACE_OUTPUT_RECOVERY_VERIFICATION_FAILED:" + row + ":actual=" + actualRecovery + ":expected=" + expected.recovery);

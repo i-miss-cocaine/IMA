@@ -58,6 +58,28 @@ for (const template of manifest.templates) {
     /SACE_GRADE_VALUE_REQUIRED/);
   assert.throws(() => tools.fill(original, rows.slice(1), { scale: { min: 0, max: 100, precision: 2 } }),
     /SACE_STUDENT_COUNT_MISMATCH/);
+
+  const whitespaceGrade = rows.map(row => Object.assign({}, row));
+  whitespaceGrade[0].partial1 = "   ";
+  assert.throws(() => tools.fill(original, whitespaceGrade, { scale: { min: 0, max: 100, precision: 2 } }),
+    /SACE_GRADE_VALUE_REQUIRED/);
+  const booleanGrade = rows.map(row => Object.assign({}, row));
+  booleanGrade[0].partial2 = false;
+  assert.throws(() => tools.fill(original, booleanGrade, { scale: { min: 0, max: 100, precision: 2 } }),
+    /SACE_GRADE_VALUE_REQUIRED/);
+  const blankRecovery = rows.map(row => Object.assign({}, row));
+  blankRecovery[0].recovery = "   ";
+  const blankRecoveryOutput = tools.inspect(tools.fill(original, blankRecovery,
+    { scale: { min: 0, max: 100, precision: 2 } }));
+  assert.equal(blankRecoveryOutput.get("H8"), null, "whitespace recovery remains blank, not numeric zero");
+  const blankAbsence = rows.map(row => Object.assign({}, row));
+  blankAbsence[0].partial1Absences = "   ";
+  const blankAbsenceOutput = tools.inspect(tools.fill(original, blankAbsence,
+    { scale: { min: 0, max: 100, precision: 2 } }));
+  assert.equal(blankAbsenceOutput.get("D8"), before.get("D8"), "blank absence input preserves the template cell");
+  assert.throws(() => tools.fill(original, rows, { scale: { min: "   ", max: 100, precision: 2 } }),
+    /SACE_SCALE_CONFIGURATION_REQUIRED/);
+
   assert.throws(() => tools.fill(original, rows, {}), /SACE_SCALE_CONFIGURATION_REQUIRED/);
   assert.throws(() => tools.fill(original, rows, { scale: { min: 0, max: 100, precision: 1 } }),
     /SACE_SCALE_PRECISION_UNSUPPORTED/);
