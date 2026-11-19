@@ -850,3 +850,40 @@ Límites:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: revisar si el snapshot puede distinguir una tardanza justificada de una ausencia justificada sin contar tardanzas como inasistencias; conservar ambas condiciones por separado.
 ===============================================================================
+
+
+===============================================================================
+### C1.858 — AUD-NG-167: tardanza justificada no se convierte en inasistencia
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-TARDINESS-33
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.857
+HEAD de prueba: 3315386c0882c5e4700f9e5350d8fe1c0ae0d08c
+HEAD final del checkpoint: se confirma después del commit documental.
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Revisión y prueba:
+- El flujo canónico permite justificar tanto una ausencia como una tardanza; el cómputo SACE debe mantenerlas diferenciadas.
+- Se añadió una regresión con estado Tardanza, Justificado=true y justificacionVerificada=true. El proveedor devuelve cero inasistencias en COUNT y EXCLUDE; una tardanza justificada nunca se convierte en ausencia.
+- La ausencia con estado Justificada sigue dependiendo de aprobación canónica y la política explícita COUNT/EXCLUDE.
+- No se cambió código productivo; la clasificación del proveedor implementada en C1.857 ya distingue TARDANZA de los estados de ausencia.
+
+Archivos modificados desde C1.857:
+- tests/security/sace-data-provider-contract.test.js
+
+Verificación:
+- GitHub Actions 44571606411 — SACE template structure compatibility contract: SUCCESS.
+- Node.js 22: sintaxis, estructura, parcheo, proveedor, orquestador, aislamiento y regresiones de tardanza justificada PASS.
+- Diff revisado: solo dos casos de prueba para COUNT/EXCLUDE; sin cambio de código.
+- Rama base consultada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+Límites:
+- La política oficial SACE de contar/excluir ausencias justificadas permanece pendiente de BETA-EXAM-112.
+- Las tardanzas se excluyen del campo de inasistencias conforme al contrato local probado; esto no decide la política oficial de SACE para otros campos.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar las justificaciones canónicas y su enlace a cada registro de asistencia (estado, estudiante, periodo, sesión, fecha y sincronización) para confirmar que no se exportan ausencias con vínculo parcial.
+===============================================================================

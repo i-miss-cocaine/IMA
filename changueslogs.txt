@@ -4303,3 +4303,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.856 — AUD-NG-167: pruebas de no mutación y determinismo byte a byte del XLS candidato; Action 44570887832 SUCCESS.
 
 [2026-11-19] C1.857 — AUD-NG-167: proveedor no omite el estado JUSTIFICADA ni acepta justificación no verificada; estados desconocidos fallan cerrado. SACE y Academic Actions 44571350626/44571350546 SUCCESS.
+
+[2026-11-19] C1.858 — AUD-NG-167: tardanza justificada no se cuenta como inasistencia; prueba COUNT/EXCLUDE PASS en Action 44571606411.

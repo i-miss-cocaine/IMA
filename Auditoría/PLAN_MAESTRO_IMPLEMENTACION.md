@@ -6028,3 +6028,8 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El proveedor incluye JUSTIFICADA como ausencia, exige justificación canónica verificada y rechaza estados desconocidos en vez de omitirlos. Pruebas cubren COUNT, EXCLUDE y estados inválidos.
 - SACE Action 44571350626 y Academic-Service Action 44571350546 SUCCESS; Node.js 22, snapshot y contratos de justificación PASS.
 - AUD-NG-167 sigue En progreso; siguiente: distinguir tardanza justificada de ausencia justificada sin contar tardanzas.
+
+### C1.858 — AUD-NG-167: tardanzas justificadas
+- Se verifica que una tardanza justificada y aprobada no se cuenta como inasistencia, tanto en COUNT como en EXCLUDE. No se altera código productivo.
+- SACE Action 44571606411 SUCCESS (Node.js 22; proveedor y orquestador PASS).
+- AUD-NG-167 sigue En progreso; siguiente: auditar vínculo canónico de justificación y sincronización.
