@@ -3107,3 +3107,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - Se añadió BETA-EXAM-106 para validar una plantilla real generada por SACE y su carga sin alterar el diseño. No se generará XLSX desde cero ni se declarará compatibilidad sin plantilla y carga de prueba autorizada.
 - El artículo 88 del Acuerdo 1178-SE-2015 exige que las certificaciones/calificaciones oficiales sean emitidas por dirección, con firmas y códigos de autenticidad SACE; IMA no puede etiquetar un informe propio como certificación oficial.
 - AUD-NG-167 sigue En progreso. El mapeo es preliminar; BETA-EXAM-105 y BETA-EXAM-106 siguen pendientes. AUD-NG-168 no se inicia.
+
+
+[2026-11-19] C1.827 — AUD-NG-167: revisión de continuidad de 67 commits; contratos específicos Exam-Service, UI y sintaxis PASS; adaptador SACE candidato BIFF8 con tres plantillas, mapeo por identidad y preservación de celdas PASS en Actions 44532045240. Se corrigieron normalizaciones de identidad/texto y entradas vacías para evitar ceros implícitos. La suite general Node.js mantiene tres fallos externos (ACCOUNTING x2 y USER/valid). No se declara compatibilidad oficial SACE; BETA-EXAM-105/106 siguen pendientes. HEAD de trabajo: d84592de324e7fa8fb1f9bf5843f42110b91abc1; rama base sin cambios.

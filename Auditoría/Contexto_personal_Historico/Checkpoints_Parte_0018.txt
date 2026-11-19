@@ -1197,3 +1197,59 @@ Siguiente acción elegible:
 2. Confirmar el código oficial del centro, jornada, tipo documental y mapeo de parciales.
 3. Implementar el adaptador que rellene exclusivamente celdas de entrada en la plantilla original y ejecutar BETA-EXAM-106.
 ===============================================================================
+
+===============================================================================
+### C1.827 — AUD-NG-167: integridad contextual, UI académica y adaptador SACE candidato
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-CONTEXT-SACE-VERIFY-02
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.826
+HEAD inicial recuperado de C1.826: 925237b88847af04ef469a739023ffd6c278acf2
+HEAD verificado al cierre: d84592de324e7fa8fb1f9bf5843f42110b91abc1
+HEAD de la rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+Continuidad: 67 commits posteriores al HEAD inicial de C1.826; se revisó el diff acumulado y los cambios se mantienen en los componentes de AUD-NG-167, sus contratos, UI y documentación SACE.
+
+Trabajo y revisión:
+- Se recuperó el estado real sin reiniciar el trabajo. AUD-NG-167 permanece [~] En progreso; no se marcó como completada.
+- EXAM: el esquema de EvaluacionesCompetencias utiliza 17 columnas, con año, grado, sección, institución, departamento, referencia del catálogo y ContextKey. La lectura valida el contexto institucional/departamental, año académico, asignación docente y clave contextual; las evaluaciones históricas de 10 columnas no se presentan como registros verificados.
+- EXAM: se revisaron los flujos de escritura/lectura de competencias, rúbricas, informes contextuales y las interfaces de docente/estudiante. Se corrigió la expresión regular de validación de año que impedía reconocer años de cuatro dígitos. Los contratos de prueba se ajustaron para utilizar el esquema contextual de 17 columnas y registros válidos durante las pruebas de concurrencia.
+- SACE: se incorporó un analizador/parcheador BIFF8 en js/sace-template.js y un manifest CANDIDATE para tres archivos XLS existentes. El parcheador conserva el contenedor OLE y limita las escrituras a las celdas mapeadas de inasistencias, notas y recuperación en las tres plantillas candidatas.
+- SACE: se incorporó el mapeo de filas por identidad verificada, comprobación de contexto y nombre/documento, sin depender del orden de filas. La revisión encontró y corrigió expresiones regulares mal escapadas que impedían normalizar separadores de identidad, tildes y espacios.
+- SACE: se corrigió el tratamiento de entradas vacías. Cadenas con espacios ya no se convierten silenciosamente en nota cero, inasistencia cero o recuperación cero; los valores booleanos no se aceptan como números. Las pruebas verifican notas faltantes, recuperación vacía e inasistencias vacías.
+- Se revisaron los diffs de backend/exam-service/Code.gs, js/teacher.js, js/student.js, teacher-dashboard.html, js/sace-template.js y los contratos asociados. Los cambios funcionales permanecen dentro del alcance de libro de calificaciones, competencias, rúbricas, boletín contextual y adaptador SACE.
+- Commits relevantes de esta iteración: 0b28f7f68d929dc7e1cfe00a8a6ba30853f3fe7c; 2e75aaf447453b9837b95296ff03671ce61f0e25; e223aa7feef8f05dc021517c0b6812bb7764ba78; d84592de324e7fa8fb1f9bf5843f42110b91abc1.
+
+Verificaciones:
+- GitHub Actions 44530985604 (HEAD abfc4e1e6a4cf94e8fbcc05ad0e41b560c5c29c8):
+  - Sintaxis de las interfaces de exámenes: PASS.
+  - Nueve modalidades, adjuntos, contratos de seguridad, recuperaciones, rectificaciones, cierre/reapertura y lectura: PASS.
+  - Suite completa de contratos Exam-Service: SUCCESS.
+  - Contrato UI docente de competencias: PASS.
+  - Sintaxis general JavaScript del repositorio: PASS.
+  - Suite general Node.js: FAILURE por tres pruebas fuera del alcance: tests/regression/phase22-document-management-suite-contract.test.js (configureSchoolDocumentTemplate ausente en ACCOUNTING), tests/security/accounting-school-document-binary-integrity.test.js (ensureSchoolDocumentIssuedSchema_ ausente en ACCOUNTING) y tests/security/session-token-expiry.test.js (USER/valid). No se modificaron ACCOUNTING ni USER para ocultar esos fallos.
+- GitHub Actions 44532045240 (HEAD d84592de324e7fa8fb1f9bf5843f42110b91abc1): SUCCESS.
+  - node --check de tests/security/sace-template-structure-contract.test.js: PASS.
+  - sace-template-structure-contract: PASS para tres plantillas BIFF8 candidatas.
+  - node --check js/sace-template.js: PASS.
+  - sace-template-binary-patch: PASS; conserva tamaño OLE, estructura y celdas no mapeadas; incluye mapeo de identidad/contexto y casos de valores vacíos.
+- CLI: no existe package.json, directorio CLI ni scripts CLI configurados; no hay suite CLI que ejecutar.
+- No se ejecutaron Apps Script desplegado, Sheets reales, navegador real ni carga en SACE. Las pruebas de Actions no sustituyen BETA-EXAM-105 ni BETA-EXAM-106.
+- El manifiesto mantiene officialSourceVerified=false y status=CANDIDATE. La ejecución satisfactoria de los contratos demuestra compatibilidad estructural con los tres XLS del repositorio, no procedencia oficial ni aceptación por SACE.
+
+Pendientes y límites:
+- El adaptador SACE no está integrado todavía en un flujo de exportación docente de producción ni obtiene por sí mismo las inasistencias desde SesionesAsistencia/RegistrosAsistencia.
+- Siguen sin acreditarse el código oficial SACE del centro, la jornada exacta, el tipo de documento, la correspondencia de periodos con los parciales de la plantilla vigente y la semántica oficial de recuperación.
+- No se ha recibido una plantilla descargada desde SACE para una clase de prueba autorizada ni evidencia de carga aceptada. No se debe presentar el adaptador candidato como compatibilidad oficial.
+- BETA-EXAM-105 (validación de catálogo/competencias en Sheets desplegado) y BETA-EXAM-106 (plantilla y carga SACE real) siguen pendientes de su entorno de prueba autorizado.
+- AUD-NG-167 permanece [~] En progreso. No cerrar el hallazgo ni iniciar AUD-NG-168 / TAREA-13 hasta satisfacer sus criterios funcionales y la evidencia beta/SACE requerida.
+- La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59; no se publicó ningún cambio en ella.
+
+Siguiente acción elegible:
+1. Continuar la integración del adaptador con el flujo docente usando únicamente una plantilla SACE real y verificada; no habilitar exportación de producción basada solo en archivos candidatos.
+2. Ejecutar BETA-EXAM-105 en Apps Script/Sheets desplegados y BETA-EXAM-106 con plantilla/carga SACE autorizada.
+3. Repetir la suite focalizada y la suite general; mantener separados los tres fallos externos de ACCOUNTING/USER.
+4. Cerrar AUD-NG-167 únicamente cuando se acrediten los criterios pendientes; después iniciar AUD-NG-168 / TAREA-13.
+===============================================================================

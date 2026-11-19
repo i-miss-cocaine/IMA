@@ -4240,3 +4240,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-19] C1.826 — Mapeo preliminar SACE documentado con manuales oficiales Docente (2019/2025), Director y normativa 1178-SE-2015 / CNE-002-2021. Se identificaron campos disponibles y faltantes del archivo Excel de calificaciones y salidas de Director. Se añadió BETA-EXAM-106 para validar una plantilla real descargada desde SACE; no se afirma compatibilidad ni se crea un XLSX desde cero sin plantilla autorizada.
+
+
+[2026-11-19] C1.827 — AUD-NG-167: parcheador BIFF8 candidato para tres XLS SACE; mapeo por identidad verificada, normalización correcta de tildes/separadores y preservación de valores vacíos; contratos SACE PASS. Contratos Exam-Service y UI de competencias PASS; suite general Node.js conserva tres fallos externos. No se declara compatibilidad SACE oficial; BETA-EXAM-105/106 pendientes.
