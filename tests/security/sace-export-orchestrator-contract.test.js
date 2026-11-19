@@ -107,29 +107,39 @@ for (const entry of manifest.templates) {
   const documentTypeMappings = Array.from(new Map(studentRows.map(student => [
     student.documentType, student.identity && templateInfo.students.find(row => row.identity === student.identity).documentMarker
   ])).entries()).map(([documentType, documentMarker]) => ({ documentType, documentMarker }));
+  const partial1Gradebook = gradebook("PER-1", 1);
+  const partial2Gradebook = gradebook("PER-2", 2);
   const attendanceSnapshot = {
     status: "success",
     data: {
       expectedContext,
       periods,
+      gradebookSnapshots: [
+        { periodoId: "PER-1", snapshot: partial1Gradebook },
+        { periodoId: "PER-2", snapshot: partial2Gradebook }
+      ],
       identityRecords,
       attendanceSessions,
       attendanceRecords
     },
     limitations: ["synthetic source snapshot; no live service or official SACE mapping"]
   };
-  const result = orchestrator.prepareCandidateExportFromSnapshot({
+  const spoofedGradebook = gradebook("PER-1", 1);
+  spoofedGradebook.data.resumenes[studentRows[0].userId].notaFinal = 0;
+  const result = orchestrator.prepareCandidateExportFromAcademicSnapshot({
     templateBytes,
     attendanceSnapshot,
     partial1PeriodId: "PER-1",
     partial2PeriodId: "PER-2",
-    partial1Gradebook: gradebook("PER-1", 1),
-    partial2Gradebook: gradebook("PER-2", 2),
+    partial1Gradebook: spoofedGradebook,
+    partial2Gradebook: spoofedGradebook,
     documentTypeMappings,
     expectedTemplateContext: templateInfo.metadata,
     options: { scale: { min: 0, max: 100, precision: 2 } }
   });
   assert.equal(result.status, "candidate");
+  assert.equal(templates.inspect(result.outputBytes).get("E8"), sourceRows[0].partial1,
+    "the wrapper must use the gradebook snapshots returned by Academic-Service, not caller-supplied overrides");
   assert.equal(result.sourceStudentCount, 22);
   assert.equal(result.verifiedRowCount, 22);
   assert.equal(result.outputBytes.length, templateBytes.length);
@@ -150,5 +160,24 @@ for (const entry of manifest.templates) {
     options: { scale: { min: 0, max: 100, precision: 2 } }
   }), /SACE_DOCUMENT_TYPE_MAPPING_REQUIRED/);
 }
+
+const incompleteAcademicSnapshot = { status: "success", data: { gradebookSnapshots: [] } };
+assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+  attendanceSnapshot: incompleteAcademicSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2"
+}), /SACE_GRADEBOOK_SNAPSHOTS_REQUIRED/);
+const duplicateAcademicSnapshot = { status: "success", data: { gradebookSnapshots: [
+  { periodoId: "PER-1", snapshot: { status: "success", data: { contexto: { periodoId: "PER-1" } } } },
+  { periodoId: "PER-1", snapshot: { status: "success", data: { contexto: { periodoId: "PER-1" } } } }
+] } };
+assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+  attendanceSnapshot: duplicateAcademicSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2"
+}), /SACE_GRADEBOOK_SNAPSHOT_PERIOD_DUPLICATE/);
+const mismatchedAcademicSnapshot = { status: "success", data: { gradebookSnapshots: [
+  { periodoId: "PER-1", snapshot: { status: "success", data: { contexto: { periodoId: "PER-2" } } } },
+  { periodoId: "PER-2", snapshot: { status: "success", data: { contexto: { periodoId: "PER-2" } } } }
+] } };
+assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+  attendanceSnapshot: mismatchedAcademicSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2"
+}), /SACE_GRADEBOOK_SNAPSHOT_PERIOD_MISMATCH/);
 assert.throws(() => orchestrator.prepareCandidateExportFromSnapshot({}), /SACE_TEMPLATE_BYTES_REQUIRED/);
-process.stdout.write("sace-export-orchestrator-contract: PASS (3 templates, snapshot-to-binary candidate export, 22 roster rows each)\n");
+process.stdout.write("sace-export-orchestrator-contract: PASS (3 templates, Academic gradebook snapshots to binary candidate, 22 roster rows each)\n");

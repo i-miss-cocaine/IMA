@@ -76,5 +76,44 @@ function (provider, templates) {
       }
     };
   }
-  return { prepareCandidateExportFromSnapshot };
+  function prepareCandidateExportFromAcademicSnapshot(input) {
+    const value = input || {};
+    const attendanceSnapshot = required(value.attendanceSnapshot, "SACE_ATTENDANCE_SNAPSHOT_REQUIRED");
+    if (attendanceSnapshot.status !== "success" || !attendanceSnapshot.data) {
+      throw new Error("SACE_ATTENDANCE_SNAPSHOT_INVALID");
+    }
+    const snapshots = attendanceSnapshot.data.gradebookSnapshots;
+    if (!Array.isArray(snapshots) || snapshots.length !== 2) {
+      throw new Error("SACE_GRADEBOOK_SNAPSHOTS_REQUIRED");
+    }
+    const partial1PeriodId = String(required(value.partial1PeriodId, "SACE_PARTIAL1_PERIOD_MAPPING_REQUIRED")).trim();
+    const partial2PeriodId = String(required(value.partial2PeriodId, "SACE_PARTIAL2_PERIOD_MAPPING_REQUIRED")).trim();
+    if (partial1PeriodId === partial2PeriodId) throw new Error("SACE_PERIODS_MUST_BE_DISTINCT");
+    const byPeriod = new Map();
+    snapshots.forEach(item => {
+      const periodId = String(required(item && item.periodoId, "SACE_GRADEBOOK_SNAPSHOT_PERIOD_REQUIRED")).trim();
+      if (byPeriod.has(periodId)) throw new Error("SACE_GRADEBOOK_SNAPSHOT_PERIOD_DUPLICATE");
+      if (!item.snapshot || item.snapshot.status !== "success" || !item.snapshot.data) {
+        throw new Error("SACE_GRADEBOOK_SNAPSHOT_INVALID");
+      }
+      const contextPeriodId = String(item.snapshot.data.contexto && item.snapshot.data.contexto.periodoId || "").trim();
+      if (contextPeriodId !== periodId) throw new Error("SACE_GRADEBOOK_SNAPSHOT_PERIOD_MISMATCH");
+      byPeriod.set(periodId, item.snapshot);
+    });
+    const partial1Gradebook = byPeriod.get(partial1PeriodId);
+    const partial2Gradebook = byPeriod.get(partial2PeriodId);
+    if (!partial1Gradebook || !partial2Gradebook) throw new Error("SACE_PARTIAL_PERIOD_NOT_IN_SNAPSHOT");
+    return prepareCandidateExportFromSnapshot({
+      templateBytes: value.templateBytes,
+      attendanceSnapshot,
+      partial1PeriodId,
+      partial2PeriodId,
+      partial1Gradebook,
+      partial2Gradebook,
+      documentTypeMappings: value.documentTypeMappings,
+      expectedTemplateContext: value.expectedTemplateContext,
+      options: value.options
+    });
+  }
+  return { prepareCandidateExportFromSnapshot, prepareCandidateExportFromAcademicSnapshot };
 });
