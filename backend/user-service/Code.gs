@@ -3217,7 +3217,7 @@ function createPerson(payload) {
   row[indexes.TipoIdentificacion] = documentType;
   sheet.appendRow(row);
 
-  logStructuredEvent("USER", "createPerson", "INFO", "PERSON_CREATED", \`Persona \${personaId} creada exitosamente\`, { personaId, nombres, apellidos }, payload && payload.authRole);
+  logStructuredEvent("USER", "createPerson", "INFO", "PERSON_CREATED", `Persona ${personaId} creada exitosamente`, { personaId, nombres, apellidos }, payload && payload.authRole);
   return { status: "success", personaId: personaId, message: "Registro central de Persona creado exitosamente." };
 }
 function linkPersonAccount(payload) {
