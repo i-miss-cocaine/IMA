@@ -156,6 +156,18 @@ for (const entry of manifest.templates) {
     absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
     options: { scale: { min: 0, max: 100, precision: 2 } }
   }), /SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial1/);
+  const mismatchedGradeContext = Object.assign({}, templateInfo.metadata, { gradeSection: "12 B" });
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2",
+    documentTypeMappings, absencePolicy: { justifiedAbsenceMode: "COUNT" },
+    expectedTemplateContext: mismatchedGradeContext, options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:gradeSection/);
+  const mismatchedSubjectContext = Object.assign({}, templateInfo.metadata, { subject: "Matemáticas" });
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot, partial1PeriodId: "PER-1", partial2PeriodId: "PER-2",
+    documentTypeMappings, absencePolicy: { justifiedAbsenceMode: "COUNT" },
+    expectedTemplateContext: mismatchedSubjectContext, options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:subject/);
   const missingCloseSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
   missingCloseSnapshot.data.attendanceSessions[0].fechaCierre = "";
   assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({

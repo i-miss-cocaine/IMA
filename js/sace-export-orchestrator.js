@@ -18,6 +18,24 @@ function (provider, templates) {
     if (typeof actual === "number" && typeof expected === "number") return actual === expected;
     return String(actual) === String(expected);
   }
+  function normalizeContextText(value) {
+    return String(value == null ? "" : value).normalize("NFD")
+      .replace(/[\\u0300-\\u036f]/g, "").replace(/\\s+/g, " ").trim().toUpperCase();
+  }
+  function assertTemplateMatchesAcademicSnapshot(snapshot, templateContext) {
+    const context = snapshot && snapshot.data && snapshot.data.expectedContext;
+    if (!context) throw new Error("SACE_ATTENDANCE_CONTEXT_REQUIRED");
+    const gradeSection = [context.grado, context.seccion].map(value => String(value == null ? "" : value).trim()).filter(Boolean).join(" ");
+    if (!normalizeContextText(gradeSection) || normalizeContextText(gradeSection) !== normalizeContextText(templateContext.gradeSection)) {
+      throw new Error("SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:gradeSection");
+    }
+    if (!normalizeContextText(context.asignatura) || normalizeContextText(context.asignatura) !== normalizeContextText(templateContext.subject)) {
+      throw new Error("SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:subject");
+    }
+    if (templateContext.institutionId && normalizeContextText(templateContext.institutionId) !== normalizeContextText(context.institutionId)) {
+      throw new Error("SACE_TEMPLATE_SNAPSHOT_CONTEXT_MISMATCH:institutionId");
+    }
+  }
   function prepareCandidateExportFromSnapshot(input) {
     const value = input || {};
     if (!provider || typeof provider.buildCandidateStudentsFromSnapshot !== "function" ||
@@ -28,6 +46,7 @@ function (provider, templates) {
     }
     const templateBytes = required(value.templateBytes, "SACE_TEMPLATE_BYTES_REQUIRED");
     const expectedTemplateContext = required(value.expectedTemplateContext, "SACE_TEMPLATE_CONTEXT_REQUIRED");
+    assertTemplateMatchesAcademicSnapshot(value.attendanceSnapshot, expectedTemplateContext);
     const options = required(value.options, "SACE_SCALE_CONFIGURATION_REQUIRED");
     const templateBefore = templates.inspect(templateBytes);
     const templateInfo = templates.inspectTemplate(templateBytes);
