@@ -26,6 +26,8 @@ for (const id of ["gb-catalog-program", "gb-catalog-competency-id", "gb-catalog-
 assert.ok(js.includes("fetchApi('EXAM', 'getCompetencyCatalog'"));
 assert.ok(js.includes("fetchApi('EXAM', 'saveCompetencyCatalogItem'"));
 assert.ok(js.includes("gradebookCatalogRequestVersion"));
+assert.ok(js.includes("gb-competency-department-id"));
+assert.ok(js.includes("gb-catalog-department"));
 assert.ok(js.includes("departmentId: String(document.getElementById('gb-catalog-department')?.value || \"\").trim()"),
   "rubric creation must persist the selected department");
 assert.ok(js.includes("departmentId: String(document.getElementById('gb-competency-department-id')?.value || \"\").trim()"),
