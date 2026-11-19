@@ -66,3 +66,19 @@ Una vez disponible esa plantilla, el adaptador deberá:
 7. probar la carga del archivo en un entorno SACE autorizado y comparar el resultado con el cuadro generado por SACE.
 
 **Criterio de aceptación pendiente:** el archivo exportado conserva la estructura de la plantilla SACE original, se carga sin alterar el formato, y los datos de prueba coinciden con el libro IMA para estudiantes, clase, parcial, nota, inasistencias y recuperación. Hasta entonces el estado es *mapeo preliminar*, no compatibilidad demostrada.
+
+
+## 6. Plantillas candidatas que ya existen en el repositorio
+
+El repositorio contiene tres libros .xls en docs/architecture/Plantillas/SACE/. Su estructura se inspeccionó y se registró en MAPEO_ESTRUCTURAL_BASELINE.md y manifest.json:
+
+- Contenedor OLE/BIFF8, una hoja visible, dimensión A1:I31 y 13 rangos combinados.
+- 22 filas de estudiantes (8–29), dos parciales, inasistencias en D/F, notas en E/G y recuperación en H.
+- Los tres libros comparten la misma firma estructural. Los datos de estudiantes que contienen son de muestra y no deben usarse como padrón de producción.
+- El manifiesto mantiene status CANDIDATE, officialSourceVerified=false y sin fechas de vigencia. La versión repo-baseline-2026-11-19 identifica solo una revisión interna de Git; no es versión normativa SACE.
+
+Se agregó js/sace-template.js, un parcheador de los libros BIFF8 existentes que modifica únicamente las celdas de nota de parciales E, G y recuperación H; conserva el contenedor OLE, tamaño del archivo, dimensión, combinaciones, fórmulas, validaciones, protección y demás celdas. Los contratos sace-template-structure-contract y sace-template-binary-patch pasan para los tres archivos candidatos.
+
+**Límites actuales del parcheador:** no llena D/F (inasistencias), no obtiene ni empareja la lista de estudiantes, no resuelve código SACE del centro/jornada/tipo documental, no determina el mapeo de PeriodoID a parciales y no está conectado a la consulta del libro consolidado ni a la UI de exportación. Tampoco se ha cargado ninguno de los tres libros en SACE para confirmar procedencia, vigencia o aceptación.
+
+Por tanto, el resultado automatizado demuestra que se puede parchear sin reconstruir ni alterar la estructura de esos tres archivos candidatos; **no demuestra que sean plantillas oficiales vigentes ni que un archivo resultante sea aceptado por SACE**. BETA-EXAM-106 sigue siendo obligatorio.
