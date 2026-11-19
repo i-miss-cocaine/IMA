@@ -22,4 +22,4 @@ assert.ok(js.includes('requestedUserId !== String(currentUser?.userId || "").tri
   "stale report responses must not leak between switched students");
 assert.ok(!js.includes("const califs = res.data.calificaciones || []"),
   "student report must not fall back to legacy uncontextualized grades");
-process.stdout.write("student-contextual-report-ui: PASS (9 contracts)\\n");
+process.stdout.write("student-contextual-report-ui: PASS (15 contracts)\n");
