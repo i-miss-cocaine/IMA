@@ -4345,3 +4345,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 [2026-11-19] C1.876 — AUD-NG-167: ampliados los contratos para límites de notas 0/100, rechazo de -0.01/100.01 y conteos de inasistencia no superiores a las sesiones seleccionadas. SACE template compatibility 44634708300 SUCCESS. No se modificó lógica productiva. Commit 60e6f6f7dcc6de1c4296767e9ba2447a1897b739.
 
 [2026-11-19] C1.877 — AUD-NG-167: Academic rechaza cierres de asistencia anteriores a la fecha local de sesión o posteriores al instante del snapshot; se prueban límites inclusivos de periodo y sesiones fuera del rango. Academic-Service 44635526817 SUCCESS; SACE provider boundary contract 44635261490 SUCCESS. Commit 4e4cddc6ea50feaad4d8bd1d667e3bf719fd23ae.
+
+[2026-11-19] C1.878 — AUD-NG-167: auditada atomicidad por servicio y ventana de consistencia cruzada matrícula/USER/Exam; no existe versión ni lock distribuido y no se extienden locks a llamadas interservicio. Identity mapping Action 44637713408 SUCCESS tras corregir fixture VM. Próximo: diseñar revalidación optimista. Commit de auditoría pendiente.

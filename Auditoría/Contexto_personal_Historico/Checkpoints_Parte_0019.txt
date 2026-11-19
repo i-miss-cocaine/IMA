@@ -1566,3 +1566,52 @@ Estado:
 Siguiente acción elegible:
 - Auditar atomicidad/consistencia temporal entre matrícula, USER identity y los dos gradebooks: identificar ventanas de carrera entre el snapshot de matrícula/identidad y la lectura conjunta de ambos parciales; determinar si el sistema ofrece una versión o bloqueo común verificable sin extender bloqueos a llamadas interservicio.
 ===============================================================================
+
+
+===============================================================================
+### C1.878 — AUD-NG-167: auditoría de atomicidad entre matrícula, identidad y gradebooks
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-CROSS-SERVICE-CONSISTENCY-49
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial de esta unidad: 4e4cddc6ea50feaad4d8bd1d667e3bf719fd23ae
+HEAD final: 433ca76de1ef4fa4482c9ebd8790a89da30b6947
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Auditoría y resultado:
+- Academic-Service captura matrícula, periodos, sesiones y asistencia bajo su ScriptLock y lo libera antes de las llamadas interservicio. La lectura conjunta de los dos gradebooks se realiza en una sola operación Exam-Service bajo su propio lock. USER-Service lee Usuarios y Personas bajo su ScriptLock.
+- Se comprobó que los principales escritores de matrícula (alta, cambio de sección, traslado, retiro, graduación, reconciliación y escritor interno) usan el lock de Academic-Service; el escritor de migración también serializa sus escrituras. USER-Service serializa createPerson, registerUser, el escritor de migración y los cambios de estado de cuenta con el lock compartido que usa el directorio de identidad.
+- La protección de USER no se extiende a una transacción distribuida: Academic, USER y Exam no comparten una versión de snapshot ni un lock coordinado. Como Academic libera su lock antes de consultar USER y Exam, una modificación posterior de matrícula puede ocurrir entre la lectura local y los snapshots remotos. Asimismo, los snapshots independientes no prueban por sí solos un instante global común.
+- No se extienden locks a llamadas interservicio, porque produciría contención y riesgo de bloqueo entre servicios. Se conserva la atomicidad local por servicio y se registra como limitación pendiente una garantía optimista de consistencia cruzada (versionado/revalidación) antes de cualquier aceptación productiva.
+- El endpoint permanece candidato; no se declara snapshot distribuido atómico ni se habilita exportación productiva.
+
+Corrección de prueba incluida en esta unidad:
+- La prueba de registro de cuenta contenía un separador VM escapado como texto literal, lo que provocaba SyntaxError antes de ejecutar el contrato. Se corrigió el fixture sin modificar el comportamiento del servicio.
+- La Identity mapping and transport security contract Action 44637713408 ejecutó y aprobó los contratos de identidad, escritor de Personas, registro serializado de cuentas y sintaxis pertinente.
+
+Archivos/cambios de código concurrentes auditados:
+- backend/user-service/Code.gs: lectura del directorio y escrituras de Persona/cuenta coordinadas por ScriptLock.
+- tests/security/user-sace-identity-directory.test.js: lock de lectura y timeout fail-closed.
+- tests/security/user-person-document-type.test.js: escritura de Persona y registro de cuenta bajo lock compartido.
+- tests/security/user-person-document-type.test.js: corrección del separador de fixture VM.
+
+Commits relevantes:
+- a1ca2979f6 — proteger lectura del directorio y escritura de Persona con lock compartido.
+- 4692ca4479 — contrato del escritor de Persona bajo lock.
+- 393d691373 — serializar el registro y actualización de cuenta estudiantil.
+- a7426db316 — pruebas de registro serializado.
+- 433ca76de1ef4fa4482c9ebd8790a89da30b6947 — corregir fixture VM y restablecer CI de identidad.
+
+Verificación:
+- Identity mapping and transport security contracts Action 44637713408 SUCCESS tras corregir el fixture.
+- No se declara prueba local ejecutada en el contenedor: el checkout local no pudo obtener GitHub por resolución DNS; Node/contratos fueron ejecutados en GitHub Actions.
+- No se ejecutó beta ni se validó concurrencia entre servicios desplegados.
+
+Estado:
+- Lecturas/escrituras locales de identidad USER y snapshots locales de cada servicio están protegidos por locks propios.
+- La consistencia temporal global entre matrícula, identidad y gradebooks no está garantizada por una versión/lock común; AUD-NG-167 continúa En progreso.
+- BETA-EXAM-110..113 y las fuentes oficiales SACE siguen pendientes; XLS permanece CANDIDATE.
+
+Siguiente acción elegible:
+- Diseñar y probar una revalidación optimista de la matrícula/contexto Academic y de las huellas de identidad/gradebooks, sin mantener locks durante UrlFetchApp; rechazar el snapshot si las fuentes cambian durante la ventana de composición. Comprobar también la compatibilidad de respuestas y el coste de lecturas repetidas antes de implementar.
+===============================================================================

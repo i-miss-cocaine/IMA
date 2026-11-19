@@ -3162,3 +3162,5 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 [2026-11-19 | AUD-NG-167 | C1.876] Los límites numéricos quedaron probados: notas 0 y 100 aceptadas, valores fuera del rango rechazados; conteos de ausencias acotados por sesiones únicas. SACE 44634708300 SUCCESS. Sin cambios de lógica productiva.
 
 [2026-11-19 | AUD-NG-167 | C1.877] Coherencia temporal: el snapshot usa fechas de calendario en zona horaria del servicio y exige cierre no futuro ni anterior a la fecha de sesión; los rangos de periodos son inclusivos y el proveedor rechaza solapamiento/inversión. Academic 44635526817 SUCCESS.
+
+[2026-11-19 | AUD-NG-167 | C1.878] Auditoría de consistencia cruzada: cada servicio protege su lectura/escritura local con ScriptLock, pero no hay versión/lock distribuido; Academic libera antes de llamar USER y Exam. Se registra ventana temporal no atómica y siguiente paso de revalidación optimista. Identity Action 44637713408 SUCCESS; XLS permanece CANDIDATE.
