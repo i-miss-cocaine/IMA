@@ -2915,12 +2915,54 @@ function getAuthorizedRubricMutationContext_(payload) {
     rubricRow: rubricMatches.length === 1 ? rubricMatches[0] : null };
 }
 
+function validateAnalyticalRubricCriteria_(criteria) {
+  if (!Array.isArray(criteria) || criteria.length < 1 || criteria.length > 30) {
+    throw new Error("RUBRIC_CRITERIA_INVALID");
+  }
+  const criterionNames = Object.create(null);
+  criteria.forEach(criterion => {
+    if (!criterion || typeof criterion !== "object" || Array.isArray(criterion)) {
+      throw new Error("RUBRIC_CRITERIA_INVALID");
+    }
+    const name = String(criterion.criterio || "").trim();
+    const levels = criterion.niveles;
+    if (!name || name.length > 160 || !Array.isArray(levels) || levels.length < 2 || levels.length > 5) {
+      throw new Error("RUBRIC_CRITERIA_INVALID");
+    }
+    const normalizedName = normalizeString(name);
+    if (criterionNames[normalizedName]) throw new Error("RUBRIC_CRITERIA_DUPLICATE");
+    criterionNames[normalizedName] = true;
+    const levelNames = Object.create(null);
+    levels.forEach(level => {
+      if (!level || typeof level !== "object" || Array.isArray(level)) {
+        throw new Error("RUBRIC_LEVEL_DESCRIPTOR_REQUIRED");
+      }
+      const levelName = String(level.nombre || "").trim();
+      const description = String(level.descripcion || "").trim();
+      if (!levelName || levelName.length > 80 || !description || description.length > 500) {
+        throw new Error("RUBRIC_LEVEL_DESCRIPTOR_REQUIRED");
+      }
+      const normalizedLevel = normalizeString(levelName);
+      if (levelNames[normalizedLevel]) throw new Error("RUBRIC_LEVEL_DUPLICATE");
+      levelNames[normalizedLevel] = true;
+      if (level.puntaje !== undefined && level.puntaje !== null && level.puntaje !== "") {
+        const score = Number(level.puntaje);
+        if (!Number.isFinite(score) || score < 0 || score > 100) {
+          throw new Error("RUBRIC_LEVEL_SCORE_INVALID");
+        }
+      }
+    });
+  });
+  return criteria;
+}
+
 function saveRubricUnlocked_(payload, context) {
   const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
   const titulo = String(p.titulo || "").trim();
   if (!titulo) throw new Error("RUBRIC_TITLE_REQUIRED");
+  const criterios = validateAnalyticalRubricCriteria_(p.criterios || []);
   let critJSON;
-  try { critJSON = JSON.stringify(p.criterios || []); }
+  try { critJSON = JSON.stringify(criterios); }
   catch (_) { throw new Error("RUBRIC_CRITERIA_INVALID"); }
   if (typeof critJSON !== "string") throw new Error("RUBRIC_CRITERIA_INVALID");
 
