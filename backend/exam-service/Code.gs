@@ -3392,11 +3392,12 @@ function getCompetencyEvaluations(payload) {
 }
 
 function getCompetencyEvaluationsUnlocked_(payload, context) {
-  const p = payload || {};
+  const p = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
   const actor = context && context.actor;
   const ss = context && context.ss;
   const scope = context && context.scope;
-  if (!actor || !String(actor.userId || "").trim() || !ss || !scope || scope.authorized !== true) {
+  if (!actor || !String(actor.userId || "").trim() || !ss || !scope || scope.authorized !== true ||
+      !String(scope.institutionId || "").trim()) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
 
@@ -3404,20 +3405,30 @@ function getCompetencyEvaluationsUnlocked_(payload, context) {
   const studentRoles = ["Estudiante", "Alumno"];
   const institutionRoles = ["Administrador", "Desarrollador", "Dirección", "Director", "Secretaría"];
   let targetUserId = "";
+  let targetProfile = null;
+  let departmentId = String(p.departmentId || "").trim();
 
   if (studentRoles.indexOf(role) !== -1) {
     targetUserId = String(actor.userId).trim();
     if (p.userId && String(p.userId).trim() !== targetUserId) throw new Error("RESOURCE_NOT_AVAILABLE");
-    const profile = getExamStudentProfile_(ss, targetUserId);
-    if (!profile || studentRoles.indexOf(String(profile.role || "").trim()) === -1) throw new Error("RESOURCE_NOT_AVAILABLE");
+    targetProfile = getExamStudentProfile_(ss, targetUserId);
+    if (!targetProfile || studentRoles.indexOf(String(targetProfile.role || "").trim()) === -1) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
   } else if (role === "Profesor") {
     targetUserId = String(p.userId || "").trim();
     const asignaturaId = String(p.asignaturaId || "").trim();
     const periodoId = String(p.periodoId || "").trim();
-    if (!targetUserId || !asignaturaId || !periodoId) throw new Error("RESOURCE_NOT_AVAILABLE");
-    const profile = getExamStudentProfile_(ss, targetUserId);
-    if (!profile || studentRoles.indexOf(String(profile.role || "").trim()) === -1 ||
-        !String(profile.grado || "").trim() || !String(profile.seccion || "").trim()) {
+    const anoId = String(p.anoId || "").trim();
+    const allowedDepartments = (scope.departmentIds || []).map(value => String(value || "").trim()).filter(Boolean);
+    if (!targetUserId || !asignaturaId || !periodoId || !/^20\\d{2}$/.test(anoId)) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+    if (!departmentId && allowedDepartments.length === 1) departmentId = allowedDepartments[0];
+    if (!departmentId || !allowedDepartments.includes(departmentId)) throw new Error("RESOURCE_NOT_AVAILABLE");
+    targetProfile = getExamStudentProfile_(ss, targetUserId);
+    if (!targetProfile || studentRoles.indexOf(String(targetProfile.role || "").trim()) === -1 ||
+        !String(targetProfile.grado || "").trim() || !String(targetProfile.seccion || "").trim()) {
       throw new Error("RESOURCE_NOT_AVAILABLE");
     }
     const configSheet = getSheetOrThrow(ss, "ConfiguracionAcademica");
@@ -3428,8 +3439,8 @@ function getCompetencyEvaluationsUnlocked_(payload, context) {
     }
     const matchingAssignments = configData.slice(1).filter(row =>
       normalizeString(row[2]) === normalizeString(periodoId) &&
-      normalizeString(row[3]) === normalizeString(profile.grado) &&
-      normalizeString(row[4]) === normalizeString(profile.seccion) &&
+      normalizeString(row[3]) === normalizeString(targetProfile.grado) &&
+      normalizeString(row[4]) === normalizeString(targetProfile.seccion) &&
       normalizeString(row[5]) === normalizeString(asignaturaId));
     if (!matchingAssignments.length || matchingAssignments.some(row =>
       String(row[8] || "").trim() !== String(actor.userId).trim())) throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -3437,8 +3448,10 @@ function getCompetencyEvaluationsUnlocked_(payload, context) {
     if (scope.institutionWide !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
     targetUserId = String(p.userId || "").trim();
     if (targetUserId) {
-      const profile = getExamStudentProfile_(ss, targetUserId);
-      if (!profile || studentRoles.indexOf(String(profile.role || "").trim()) === -1) throw new Error("RESOURCE_NOT_AVAILABLE");
+      targetProfile = getExamStudentProfile_(ss, targetUserId);
+      if (!targetProfile || studentRoles.indexOf(String(targetProfile.role || "").trim()) === -1) {
+        throw new Error("RESOURCE_NOT_AVAILABLE");
+      }
     }
   } else {
     throw new Error("RESOURCE_NOT_AVAILABLE");
@@ -3448,9 +3461,13 @@ function getCompetencyEvaluationsUnlocked_(payload, context) {
   if (!sheet) return { status: "success", total: 0, data: [] };
   const data = sheet.getDataRange().getValues();
   if (!data.length) return { status: "success", total: 0, data: [] };
-  const expectedHeaders = ["ID", "CompetenciaID", "IndicadorID", "UserID", "AsignaturaID",
-    "PeriodoID", "NivelDesempeno", "Observaciones", "RubricaID", "FechaRegistro"];
-  if (expectedHeaders.some((header, index) => String(data[0][index] || "").trim() !== header)) {
+  const legacyHeaders = COMPETENCY_EVALUATION_HEADERS_.slice(0, 10);
+  if (data[0].length === legacyHeaders.length &&
+      legacyHeaders.every((header, index) => String(data[0][index] || "").trim() === header)) {
+    return { status: "success", total: 0, data: [] };
+  }
+  if (data[0].length !== COMPETENCY_EVALUATION_HEADERS_.length ||
+      COMPETENCY_EVALUATION_HEADERS_.some((header, index) => String(data[0][index] || "").trim() !== header)) {
     throw new Error("COMPETENCY_EVALUATION_SCHEMA_INVALID");
   }
   if (data.length <= 1) return { status: "success", total: 0, data: [] };
@@ -3464,16 +3481,33 @@ function getCompetencyEvaluationsUnlocked_(payload, context) {
     const evaluationId = String(row[0] || "").trim();
     if (!evaluationId || idCounts[evaluationId] !== 1) return false;
     if (targetUserId && String(row[3] || "").trim() !== targetUserId) return false;
+    if (String(row[13] || "").trim() !== String(scope.institutionId).trim()) return false;
+    if (role === "Profesor" && String(row[14] || "").trim() !== departmentId) return false;
+    if (p.departmentId && String(row[14] || "").trim() !== String(p.departmentId).trim()) return false;
+    if (p.anoId && String(row[10] || "").trim() !== String(p.anoId).trim()) return false;
+    if (p.grado && normalizeString(row[11]) !== normalizeString(p.grado)) return false;
+    if (p.seccion && normalizeString(row[12]) !== normalizeString(p.seccion)) return false;
+    if (targetProfile && role === "Profesor" &&
+        (normalizeString(row[11]) !== normalizeString(targetProfile.grado) ||
+         normalizeString(row[12]) !== normalizeString(targetProfile.seccion))) return false;
     if (p.asignaturaId && normalizeString(row[4]) !== normalizeString(p.asignaturaId)) return false;
     if (p.periodoId && normalizeString(row[5]) !== normalizeString(p.periodoId)) return false;
     if (p.competenciaId && String(row[1] || "").trim() !== String(p.competenciaId).trim()) return false;
+    const expectedKey = competencyEvaluationContextKey_({
+      institutionId: row[13], departmentId: row[14], anoId: row[10], periodoId: row[5],
+      grado: row[11], seccion: row[12], asignaturaId: row[4], userId: row[3],
+      competenciaId: row[1], indicadorId: row[2], catalogItemId: row[15]
+    });
+    if (String(row[16] || "").trim() !== expectedKey) return false;
     return true;
   }).map(row => {
     const registeredAt = row[9] ? new Date(row[9]) : null;
     return {
       evaluacionCompetenciaId: row[0], competenciaId: row[1], indicadorId: row[2], userId: row[3],
       asignaturaId: row[4], periodoId: row[5], nivelDesempeno: row[6], observaciones: row[7],
-      rubricaId: row[8], fechaRegistro: registeredAt && !isNaN(registeredAt.getTime()) ? registeredAt.toISOString() : null
+      rubricaId: row[8], fechaRegistro: registeredAt && !isNaN(registeredAt.getTime()) ? registeredAt.toISOString() : null,
+      anoId: row[10], grado: row[11], seccion: row[12], institutionId: row[13],
+      departmentId: row[14], catalogItemId: row[15]
     };
   });
   return { status: "success", total: filtered.length, data: filtered };
