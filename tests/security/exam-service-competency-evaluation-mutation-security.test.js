@@ -395,11 +395,11 @@ test("append failure propagates and lock is always released", () => {
   const x = fixture({ failAppend: true }); assert.throws(() => x.call(), /synthetic append failure/);
   assert.equal(x.state.releases, 1); assert.equal(x.state.held, false);
 });
-test("legacy optional indicator and rubric fields retain their defaults", () => {
-  const x = fixture(); const result = x.call(Object.assign({}, x.payload, { indicadorId: "", rubricaId: "" }));
-  assert.equal(result.status, "success");
-  const row = x.sheets.EvaluacionesCompetencias.rows[1];
-  assert.equal(row[2], "IND-GENERIC"); assert.equal(row[8], "");
+test("indicator without a catalog reference is rejected", () => {
+  const x = fixture();
+  assert.throws(() => x.call(Object.assign({}, x.payload, { indicadorId: "" })),
+    /COMPETENCY_CATALOG_CONTEXT_REQUIRED/);
+  assert.equal(x.sheets.EvaluacionesCompetencias.rows.length, 1);
 });
 
 const failed = results.filter(item => !item.ok);
