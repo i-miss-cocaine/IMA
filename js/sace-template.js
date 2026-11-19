@@ -368,7 +368,7 @@
     parts.push(stream.subarray(cursor));
     const newWorkbookStream = concat(parts);
     if (newWorkbookStream.length > parsed.workbookCapacity) throw new Error("SACE_WORKBOOK_STREAM_CAPACITY_EXCEEDED");
-    const output = new Uint8Array(parseCompound(input).bytes);
+    const output = toBytes(input);
     const originalHeader = Array.from(output.subarray(0, 8));
     writeLogical(output, parsed.workbookChain, parsed.sectorSize, 0, newWorkbookStream);
     const sizeBytes = new Uint8Array(8), sizeView = new DataView(sizeBytes.buffer);
