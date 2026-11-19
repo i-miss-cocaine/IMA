@@ -134,7 +134,7 @@ test("legacy unscoped recovery rows are ignored", () => {
       "2026", "P1", "10", "A", "Matemáticas", "INST-A",
       key({ institutionId: "INST-A", anoId: "2026", periodoId: "P1", grado: "10", seccion: "A",
         asignatura: "Matemáticas", evaluacionId: "CAT-1", userId: "STU-1" })]])
-    : name === "RecuperacionesEstudiante" ? oldSheet : null; },
+    : name === "RecuperacionesEstudiante" ? oldSheet : null },
     { institutionId: "INST-A" }, "STU-1", { anoId: "2026", periodoId: "P1" });
   assert.equal(result.detalleAsignaturas[0].notaFinal, 80);
 });
