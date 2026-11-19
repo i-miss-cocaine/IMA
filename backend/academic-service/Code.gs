@@ -11087,6 +11087,8 @@ function getSaceAttendanceSnapshot(payload) {
     return ["ACTIVO", "ACTIVA", "ACTIVE", "VIGENTE", "MATRICULADO"].indexOf(String(value == null ? "" : value).trim().toUpperCase()) !== -1;
   };
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let attendanceSnapshotLock = null;
+  let attendanceSnapshotLockHeld = false;
   const read = function(name, headers) {
     const sheet = ss.getSheetByName(name);
     if (!sheet) throw new Error("SACE_SOURCE_SHEET_MISSING:" + name);
@@ -11181,6 +11183,13 @@ function getSaceAttendanceSnapshot(payload) {
     const normalizedIdentities = identityRecords.map(function(record) { return record.identity.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(); });
     if (new Set(normalizedIdentities).size !== normalizedIdentities.length) throw new Error("SACE_STUDENT_IDENTITY_DUPLICATE");
 
+    attendanceSnapshotLock = LockService.getScriptLock();
+    try {
+      attendanceSnapshotLock.waitLock(10000);
+      attendanceSnapshotLockHeld = true;
+    } catch (lockError) {
+      throw new Error("SACE_ATTENDANCE_SNAPSHOT_LOCK_TIMEOUT");
+    }
     const sessions = read("SesionesAsistencia", ["SesionID", "Fecha", "Grado", "Seccion", "AsignaturaID", "DocenteUserId", "Estado", "FechaCierre"]);
     const sessionMap = Object.create(null), attendanceSessions = [];
     sessions.rows.forEach(function(row) {
@@ -11242,6 +11251,8 @@ function getSaceAttendanceSnapshot(payload) {
         fechaRegistro:row[records.index.FechaRegistro] instanceof Date ? row[records.index.FechaRegistro].toISOString() : String(row[records.index.FechaRegistro] || "")
       };
     });
+    attendanceSnapshotLock.releaseLock();
+    attendanceSnapshotLockHeld = false;
     const expectedContext = {
       anoId: anoId, grado: grade, seccion: section, asignatura: subjectName,
       institutionId: institutionId, teacherUserId: String(actor.userId).trim()
@@ -11266,6 +11277,10 @@ function getSaceAttendanceSnapshot(payload) {
       "approved absence justification semantics for SACE require official confirmation"
     ]};
   } catch (error) {
+    if (attendanceSnapshotLockHeld && attendanceSnapshotLock) {
+      try { attendanceSnapshotLock.releaseLock(); } catch (releaseError) {}
+      attendanceSnapshotLockHeld = false;
+    }
     return { status:"error", code:String(error && error.message || "SACE_ATTENDANCE_SNAPSHOT_FAILED") };
   }
 }
