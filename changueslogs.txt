@@ -4237,3 +4237,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-19] C1.825 — AUD-NG-167: catálogo institucional configurable de competencias/indicadores con ContextKey de institución, departamento, año, grado, sección, asignatura, programa, competencia e indicador. Lectura filtrada por ámbito y estado; altas/actualizaciones por clave; evaluaciones vinculadas a referencia activa exacta; UI docente con selección departamental y soporte global. BETA-EXAM-105 añadido; pendiente beta real y evidencia SACE. Exam-Service específico PASS (24 contratos de catálogo y mutación de evaluación); suite general mantiene tres fallos externos en ACCOUNTING x2 y USER/valid.
+
+
+[2026-11-19] C1.826 — Mapeo preliminar SACE documentado con manuales oficiales Docente (2019/2025), Director y normativa 1178-SE-2015 / CNE-002-2021. Se identificaron campos disponibles y faltantes del archivo Excel de calificaciones y salidas de Director. Se añadió BETA-EXAM-106 para validar una plantilla real descargada desde SACE; no se afirma compatibilidad ni se crea un XLSX desde cero sin plantilla autorizada.
