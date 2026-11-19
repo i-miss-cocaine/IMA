@@ -3242,12 +3242,33 @@ document.addEventListener('DOMContentLoaded', function() {
                             <th class="p-3 text-center">Nota consolidada</th><th class="p-3 text-center">Estado</th>
                         </tr></thead>
                         <tbody class="divide-y divide-gray-100 text-xs">
-                            ${details.map(item => `<tr>
-                                <td class="p-3 font-semibold">${escapeHtml(item.asignatura)}</td>
-                                <td class="p-3">${escapeHtml(item.grado)} / ${escapeHtml(item.seccion)}</td>
-                                <td class="p-3 text-center font-bold">${item.notaFinal == null ? 'Pendiente' : escapeHtml(item.notaFinal + '%')}</td>
-                                <td class="p-3 text-center">${escapeHtml(item.estado)}</td>
-                            </tr>`).join('')}
+                            ${details.map(item => {
+                                const categories = Array.isArray(item.categorias) ? item.categorias : [];
+                                const categoryRows = categories.length ? categories.map(category => `
+                                    <tr class="border-t border-gray-100">
+                                        <td class="p-2">${escapeHtml(category.nombre || category.categoriaId)}</td>
+                                        <td class="p-2 text-center">${category.porcentajePonderacion == null ? 'Sin ponderar' : escapeHtml(category.porcentajePonderacion + '%')}</td>
+                                        <td class="p-2 text-center">${category.notaObtenida == null ? 'Pendiente' : escapeHtml(category.notaObtenida)}</td>
+                                        <td class="p-2 text-center">${category.notaFinalAplicada == null ? 'Pendiente' : escapeHtml(category.notaFinalAplicada)}</td>
+                                        <td class="p-2 text-center">${category.recuperacionAplicada === true ? 'Recuperación aplicada' : 'Sin recuperación'}</td>
+                                    </tr>`).join('') : '<tr><td colspan="5" class="p-2 text-gray-400">Sin desglose de categorías disponible.</td></tr>';
+                                return `<tr>
+                                    <td class="p-3 font-semibold">${escapeHtml(item.asignatura)}</td>
+                                    <td class="p-3">${escapeHtml(item.grado)} / ${escapeHtml(item.seccion)}</td>
+                                    <td class="p-3 text-center font-bold">${item.notaFinal == null ? 'Pendiente' : escapeHtml(item.notaFinal + '%')}</td>
+                                    <td class="p-3 text-center">${escapeHtml(item.estado)}</td>
+                                </tr>
+                                <tr class="bg-gray-50/70"><td colspan="4" class="px-3 pb-3 pt-1">
+                                    <details>
+                                        <summary class="cursor-pointer text-[10px] font-semibold text-gray-600">Ver desglose de evaluación (${categories.length} categorías · ponderación pendiente: ${escapeHtml(item.ponderacionPendiente == null ? 'No disponible' : item.ponderacionPendiente + '%')})</summary>
+                                        <div class="overflow-x-auto mt-2 rounded-lg border border-gray-100 bg-white">
+                                            <table class="w-full text-[10px]"><thead><tr class="text-gray-500 uppercase bg-gray-50">
+                                                <th class="p-2 text-left">Categoría</th><th class="p-2">Peso</th><th class="p-2">Nota</th><th class="p-2">Nota aplicada</th><th class="p-2">Recuperación</th>
+                                            </tr></thead><tbody>${categoryRows}</tbody></table>
+                                        </div>
+                                    </details>
+                                </td></tr>`;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
