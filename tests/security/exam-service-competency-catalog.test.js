@@ -61,6 +61,15 @@ let result = sandbox.read({ anoId: "2026", grado: "10", asignaturaId: "MAT" }, f
 assert.equal(result.total, 1);
 assert.equal(result.data[0].competenciaId, "COMP-1");
 assert.equal(result.data[0].indicadorId, "IND-1");
+const globalItem = { institutionId: "INST-A", departmentId: "", anoId: "2026", grado: "10",
+  seccion: "A", asignaturaId: "MAT", competenciaId: "COMP-G", indicadorId: "IND-G",
+  programaCurricular: "PLAN-A" };
+const globalRow = ["CG", "INST-A", "", "2026", "10", "A", "MAT", "COMP-G", "Competencia global",
+  "IND-G", "Indicador global", "PLAN-A", "ACTIVE", "ADMIN", "2026-01-01", "2026-01-01",
+  sandbox.competencyCatalogContextKey_(globalItem)];
+const globalResult = sandbox.read({ anoId: "2026", grado: "10", asignaturaId: "MAT" }, fixture([globalRow]));
+assert.equal(globalResult.total, 1, "institution-wide catalog entries must be visible inside an authorized department");
+assert.equal(globalResult.data[0].departmentId, "");
 assert.throws(() => sandbox.read({}, fixture([valid, valid])), /COMPETENCY_CATALOG_DUPLICATE_ENTRY/);
 const corruptKey = valid.slice();
 corruptKey[16] = "tampered-context-key";
