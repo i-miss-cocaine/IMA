@@ -141,7 +141,7 @@ test("legacy unscoped recovery rows are ignored", () => {
   const oldSheet = sheet(oldRows);
   const oldSandbox = { normalizeString: norm, buildGradebookContextKey_: key,
     getGradebookWeightConfigurationFromSheet_: () => [{ categoriaId: "CAT-1", porcentajePonderacion: 100 }] };
-  vm.runInNewContext(extract("calculateGradebookStudentSummary_") + "\\n" + extract("buildStudentAcademicReportGradebook_") +
+  vm.runInNewContext(extract("calculateGradebookStudentSummary_") + "\n" + extract("buildStudentAcademicReportGradebook_") +
     ";this.run=buildStudentAcademicReportGradebook_;", oldSandbox);
   const result = oldSandbox.run({ getSheetByName: name => name === "CalificacionesEstudiantes"
     ? sheet([gradeHeaders, ["G-1", "CAT-1", "STU-1", 80, 80, false, true, "", new Date(),
