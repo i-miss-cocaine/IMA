@@ -32,8 +32,11 @@ assert.deepEqual(saceActions, ["getSaceAttendanceSnapshot"],
   "Academic-Service may expose only the read-only SACE attendance snapshot action");
 assert.doesNotMatch(academic, /case\s+["'][^"']*Sace[^"']*["']\s*:\s*(?:result\s*=\s*)?(?:upload|download|export)/i,
   "Academic-Service must not expose a SACE upload, download or export action");
-assert.doesNotMatch(exam, /SACE|sace/i,
-  "Exam-Service must not be connected to the candidate XLS or SACE upload path");
+const examSaceActions = [...exam.matchAll(/case\s+["']([^"']*Sace[^"']*)["']\s*:/gi)].map(match => match[1]);
+assert.deepEqual(examSaceActions, ["getSaceGradebookSnapshot"],
+  "Exam-Service may expose only the read-only SACE gradebook snapshot action");
+assert.doesNotMatch(exam, /case\s+["'][^"']*Sace[^"']*["']\s*:\s*(?:result\s*=\s*)?(?:upload|download|export)/i,
+  "Exam-Service must not expose a SACE upload, download or export action");
 const orchestrator = fs.readFileSync(path.join(root, "js/sace-export-orchestrator.js"), "utf8");
 assert.match(orchestrator, /status:\s*"candidate"/);
 assert.doesNotMatch(orchestrator, /XMLHttpRequest|UrlFetchApp|DriveApp|SpreadsheetApp|fetch\s*\(|download|upload/i,
