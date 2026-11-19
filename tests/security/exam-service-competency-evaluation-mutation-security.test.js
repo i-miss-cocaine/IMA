@@ -148,8 +148,8 @@ test("missing catalog item is rejected before any competency evaluation write", 
 test("ambiguous catalog entries are rejected", () => {
   const x = fixture({ catalogRows: [
     catalogHeaders,
-    ["CAT-1", "INST-1", "DEPT-1", "2026", "10", "A", "Math", "COMP-1", "Competencia", "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN", "2026-01-01", "2026-01-01", "key-1"],
-    ["CAT-2", "INST-1", "DEPT-1", "2026", "10", "A", "Math", "COMP-1", "Competencia", "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN", "2026-01-01", "2026-01-01", "key-2"]
+    ["CAT-1", "INST-1", "DEPT-1", "2026", "10", "A", "Math", "COMP-1", "Competencia", "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN", "2026-01-01", "2026-01-01", catalogContextKey],
+    ["CAT-2", "INST-1", "DEPT-1", "2026", "10", "A", "Math", "COMP-1", "Competencia", "IND-1", "Indicador", "PLAN-A", "ACTIVE", "ADMIN", "2026-01-01", "2026-01-01", catalogContextKey]
   ] });
   denied(() => x.call(), /COMPETENCY_CATALOG_ENTRY_AMBIGUOUS/);
   assert.equal(x.sheets.EvaluacionesCompetencias.rows.length, 1);
