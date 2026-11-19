@@ -1311,3 +1311,34 @@ Pendientes:
 
 Siguiente acción elegible: diseñar y probar un ensamblador candidato que reciba el archivo original y la lista de estudiantes/notas ya autorizada por el contexto académico, utilizando inspectTemplate + mapRowsToTemplate + fill, sin exponer botón ni flujo de producción y manteniendo guard CANDIDATE. Solo activar después de BETA-EXAM-106 y evidencia oficial.
 ===============================================================================
+
+===============================================================================
+### C1.830 — AUD-NG-167: ensamblador candidato de exportación SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-CANDIDATE-PIPELINE-05
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.829
+HEAD de código verificado antes del registro C1.830: a6abbbfdeac43dc25315881bff8f2f3bfdc8a106
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Trabajo:
+- Se agregó prepareCandidateExport(input, sourceStudents, expectedContext, options) a js/sace-template.js. El ensamblador inspecciona el archivo original con inspectTemplate, valida contexto y empareja el padrón con mapRowsToTemplate, y solo después ejecuta fill para parchear las celdas permitidas.
+- El nombre Candidate deja explícito que es una ruta de preparación técnica, no una integración aprobada ni una función de exportación de producción. No se conectó a la UI docente, no se añadieron botones ni descargas y no se modificó el estado CANDIDATE del manifiesto.
+- El contrato tests/security/sace-template-binary-patch.test.js compara el resultado del ensamblador con el resultado equivalente de inspección + mapeo + parcheo; comprueba además que un contexto de asignatura distinto es rechazado.
+- Commit de código: a6abbbfdeac43dc25315881bff8f2f3bfdc8a106 (js/sace-template.js y tests/security/sace-template-binary-patch.test.js).
+- GitHub Actions 44533933243: SUCCESS. node --check del contrato estructural PASS; contrato estructural PASS; node --check js/sace-template.js PASS; contrato binario PASS en los tres XLS candidatos. La ruta completa inspectTemplate → mapRowsToTemplate → fill se ejecutó con datos sintéticos y roster de origen invertido.
+- Se actualizó Mapa_Compatibilidad_SACE.md para documentar el ensamblador candidato y sus límites.
+- No se ejecutó integración backend, exportación UI, Apps Script/Sheets desplegados ni carga real en SACE. La plantilla oficial sigue sin estar disponible en esta sesión; los tres XLS internos son candidatos.
+
+Pendientes:
+- Conectar sourceStudents y notas desde el libro consolidado docente mediante APIs/contexto y permisos existentes; no tomar el padrón de muestra como fuente de datos.
+- Obtener y agregar inasistencias por estudiante/clase/parcial desde SesionesAsistencia y RegistrosAsistencia.
+- Resolver código SACE de centro, jornada, tipo documental, equivalencia PeriodoID-parcial y semántica de recuperación con plantilla real y procedimiento vigente.
+- BETA-EXAM-105 (Apps Script/Sheets desplegados) y BETA-EXAM-106 (plantilla SACE autorizada y carga de prueba) siguen pendientes por falta de entornos/artefactos autorizados.
+- Mantener AUD-NG-167 [~] En progreso; no exponer ni habilitar el ensamblador en producción y no iniciar AUD-NG-168/TAREA-13.
+
+Siguiente acción elegible: diseñar el proveedor de datos candidato para recibir libro consolidado y asistencia agregada por contexto, con pruebas unitarias y sin conexión de producción hasta completar BETA-EXAM-105/106.
+===============================================================================
