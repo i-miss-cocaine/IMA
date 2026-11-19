@@ -3215,7 +3215,7 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
   const catalogMatches = catalogRows.slice(1).filter(row =>
-    String(row[2] || "").trim() === requestedDepartmentId &&
+    (!String(row[2] || "").trim() || String(row[2] || "").trim() === requestedDepartmentId) &&
     String(row[1] || "").trim() === String(scope.institutionId || "").trim() &&
     (!String(row[2] || "").trim() || scope.institutionWide === true || (scope.departmentIds || []).some(id => String(id || "").trim() === String(row[2]).trim())) &&
     String(row[3] || "").trim() === anoId &&
