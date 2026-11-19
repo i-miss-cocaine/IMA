@@ -76,6 +76,14 @@ assert.throws(() => build({ attendanceRecords: justifiedStateRecords.map(record 
   ? Object.assign({}, record, { justificado: false }) : record) }), /SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED/);
 assert.throws(() => build({ attendanceRecords: attendance.map(record => record.sesionId === "S-1" && record.userId === "STU-1"
   ? Object.assign({}, record, { estadoAsistencia: "EstadoDesconocido" }) : record) }), /SACE_ATTENDANCE_STATE_UNSUPPORTED/);
+const justifiedTardinessRecords = attendance.map(record => record.sesionId === "S-2" && record.userId === "STU-1"
+  ? Object.assign({}, record, { justificado: true, justificacionVerificada: true }) : record);
+assert.equal(build({ attendanceRecords: justifiedTardinessRecords }).sourceStudents[0].partial2Absences, 0,
+  "a canonically justified tardiness must not become an absence under COUNT");
+assert.equal(build({ attendanceRecords: justifiedTardinessRecords,
+  absencePolicy: { justifiedAbsenceMode: "EXCLUDE" } }).sourceStudents[0].partial2Absences, 0,
+  "a canonically justified tardiness must not become an absence under EXCLUDE");
+
 assert(result.limitations.some(item => item.includes("justified-absence treatment is explicit input")));
 const excludedJustified = build({ absencePolicy: { justifiedAbsenceMode: "EXCLUDE" } });
 assert.deepEqual(excludedJustified.sourceStudents.map(row => [row.partial1Absences, row.partial2Absences]), [
