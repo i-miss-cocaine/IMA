@@ -1145,3 +1145,53 @@ Estado:
 Siguiente acción elegible:
 - Continuar AUD-NG-167 con auditoría de contratos del directorio de identidad USER y su coherencia con roster/matrícula, sin inferir equivalencias documentales; después revisar la propagación segura de errores interservicio.
 ===============================================================================
+
+===============================================================================
+### C1.868 — AUD-NG-167: integridad de identidad documental USER y roster Academic
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-USER-IDENTITY-CONTRACT-39
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 781a60e75469fd0fe523b2ae88fa010ffd46dcf8
+HEAD de implementación: 2537af3b2429424691bcf706f006c8c951de7962
+HEAD de pruebas corregidas: 531d98b6759dc859c404b7c8886195e5d7c02d18
+HEAD final de checkpoint: pendiente al crear este registro
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Auditoría del límite de autoridad:
+- Academic-Service es propietario de Matriculas y verifica, bajo su ScriptLock, que cada UserId solicitado tenga exactamente una matrícula activa que coincida con año, grado y sección; también rechaza IDs duplicados y fuera de contexto.
+- USER-Service es autoridad de Usuarios/Personas y vuelve a verificar sesión vigente, Profesor, userId, institución y membresía; solo devuelve userId, identidad, tipo documental y nombre. No se trasladó a USER la autoridad de matrícula.
+- La llamada remota USER ocurre después de liberar el lock de Academic; el snapshot académico y su roster ya quedaron leídos/validados como unidad. El contrato de beta BETA-EXAM-110 sigue pendiente para confirmar credenciales, deployments y respuesta real.
+
+Defecto reproducible y corrección:
+- USER aceptaba un documento con valor no vacío pero compuesto únicamente por separadores (por ejemplo " --- "); su normalización alfanumérica era cadena vacía y, al tratarse de un solo estudiante, no activaba la detección de duplicados.
+- USER ahora rechaza normalización vacía con SACE_IDENTITY_DOCUMENT_INVALID.
+- Academic refuerza el transporte: valida IDs no vacíos y sin duplicados antes de enviar; exige el conjunto exacto de respuesta; rechaza identificadores documentales no normalizables y duplicados normalizados, incluso ante una versión USER antigua o respuesta defectuosa.
+- Los códigos de error de transporte existentes se conservan; fallos HTTP, de red y JSON continúan cerrando la operación sin recurrir a Personas local.
+
+Archivos modificados:
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- tests/security/user-sace-identity-directory.test.js
+- tests/security/sace-attendance-snapshot-contract.test.js
+
+Commits:
+- 2537af3b2429424691bcf706f006c8c951de7962 — correcciones y pruebas de contrato.
+- 531d98b6759dc859c404b7c8886195e5d7c02d18 — corrección de separadores de salto de línea en fixtures VM.
+
+Verificación:
+- Identity mapping and transport security contracts Action 44629634197: SUCCESS; incluye USER SACE identity directory, USER canonical document type, TASK-068 y TASK-030.
+- Academic-Service single authorization context Action 44629633982: SUCCESS; node --check backend/academic-service/Code.gs y toda la suite local Academic, incluido sace-attendance-snapshot-contract.
+- Department Reference Consumers 44629634130, Task-Service 44629634057, Hierarchical Configuration 44629633951, Accounting Import Preflight 44629634122 y UI Accessibility 44629634079: SUCCESS.
+- Department Scope Action 44629633989: FAILURE en Phase22 document management por configureSchoolDocumentTemplate ausente; los contratos ejecutados antes del paso fallido pasaron. Es el mismo hallazgo preexistente de la rama work documentado en C1.867; no se alteró Accounting.
+- Se corrigió antes de publicar un defecto del propio fixture de test: los tres VM.runInContext debían recibir un salto de línea escapado simple. La suite final pasó.
+- No fue posible ejecutar checkout/Node en el contenedor de esta sesión por DNS (github.com no resuelve). Los contratos aislados y node --check sí se ejecutaron en GitHub Actions con Node 22 y 24. No se realizó prueba desplegada.
+
+Estado:
+- Unidad local de identidad/roster completada.
+- AUD-NG-167 sigue En progreso; BETA-EXAM-110 permanece Pendiente beta para deployments/credential real.
+- No se consultó ni modificó ninguna otra rama.
+
+Siguiente acción elegible:
+- Continuar auditoría local de propagación de errores interservicio Academic↔USER↔Exam: distinguir timeout/red, HTTP no exitoso, JSON/envelope inválido y error de negocio; verificar que errores remotos no se conviertan en éxito ni filtren mensajes/PII y que no se produzca fallback a datos locales.
+===============================================================================
