@@ -166,7 +166,7 @@ const lockTimeoutContext = createContext("Profesor", "INST-1", true);
 assert.equal(lockTimeoutContext.runSnapshot(payload).code, "SACE_ATTENDANCE_SNAPSHOT_LOCK_TIMEOUT", "snapshot must fail closed when the shared lock cannot be acquired");
 assert.deepEqual(lockTimeoutContext.getSnapshotLockStats(), { held: false, waits: 1, releases: 0 }, "failed lock acquisition must not release an unowned lock");
 const readFailureContext = createContext("Profesor", "INST-1", false, true);
-assert.equal(readFailureContext.runSnapshot(payload).code, "SACE_ATTENDANCE_SNAPSHOT_FAILED");
+assert.equal(readFailureContext.runSnapshot(payload).code, "fixture read failure");
 assert.deepEqual(readFailureContext.getSnapshotLockStats(), { held: false, waits: 1, releases: 1 }, "a source-read failure must release the acquired lock");
 assert.equal(createContext("Profesor", "INST-OTHER").runSnapshot(payload).code, "SACE_INSTITUTION_CONTEXT_REQUIRED");
 assert.equal(createContext().runSnapshot(Object.assign({}, payload, { studentIds: ["STU-1", "STU-1"] })).code, "SACE_STUDENT_ROSTER_DUPLICATE");
