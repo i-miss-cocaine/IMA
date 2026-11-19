@@ -59,6 +59,8 @@ for (const template of manifest.templates) {
   assert.throws(() => tools.fill(original, rows.slice(1), { scale: { min: 0, max: 100, precision: 2 } }),
     /SACE_STUDENT_COUNT_MISMATCH/);
   assert.throws(() => tools.fill(original, rows, {}), /SACE_SCALE_CONFIGURATION_REQUIRED/);
+  assert.throws(() => tools.fill(original, rows, { scale: { min: 0, max: 100, precision: 1 } }),
+    /SACE_SCALE_PRECISION_UNSUPPORTED/);
 }
 assert.throws(() => tools.inspect(new Uint8Array([1, 2, 3, 4])), /SACE_OLE_SIGNATURE_INVALID/);
 process.stdout.write("sace-template-binary-patch: PASS (3 templates; mapped cells only; OLE size preserved)\\n");
