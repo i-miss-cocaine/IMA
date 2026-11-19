@@ -6064,3 +6064,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Publicación:** commits de documentación 9918e7525e76482df58125976154a7db66d561fe, 7c0773c678b2a0daa82f6e0826f0618fbb37e986 y d6415e7648ed19073f2886e1bb458e54f0823a34. HEAD verificado al iniciar este checkpoint: d6415e7648ed19073f2886e1bb458e54f0823a34.
 - **Verificación:** referencias AUD-NG-254 presentes en plan, backlog y changelog; conteo del inventario actualizado. No se ejecutaron pruebas de código porque este cambio solo registra una tarea documental.
 - **Estado:** tarea nueva Pendiente; no se afirma ejecutada la auditoría de módulos.
+
+
+### C1.863 — AUD-NG-167: pipeline SACE de plantilla en una pasada
+- El orquestador reutiliza el parse de inspect al extraer el contexto de plantilla; mapea el roster una sola vez y pasa las filas mapeadas a fill. Se elimina la repetición de prepareCandidateExport; se conserva la inspección del resultado y la verificación celda por celda.
+- Contrato nuevo: conteos esperados de operaciones (dos inspecciones totales, una inspección contextual, un mapeo, un fill, cero llamadas a prepareCandidateExport) y equivalencia byte a byte con la salida previa.
+- Verificación V8 compatible en este entorno: orquestador PASS con tres XLS del repositorio y 22 filas por plantilla; proveedor PASS; parcheo binario PASS en las tres plantillas; aislamiento candidato PASS; parsing de cuatro archivos JS PASS. No es ejecución Node.js ni GitHub Actions; no se declara CI nuevo.
+- Archivos de implementación/prueba: js/sace-template.js, js/sace-export-orchestrator.js, tests/security/sace-export-orchestrator-contract.test.js. Commits: d84797e5e7e89a012393bc14a6715694285e03b0, 6e7e655bb251ef561d64d4b0e59a59e1eac3681c, 24a810bcf1d5d212077d9c6caff80e8d4dbf9515.
+- No se midió benchmark; la mejora demostrada es la reducción de operaciones duplicadas. AUD-NG-167 permanece En progreso por validaciones beta y fuente oficial SACE; los XLS siguen CANDIDATE y no se habilita producción.
