@@ -36,14 +36,29 @@ function makeSheet(rows) {
 }
 
 function runtime(options = {}) {
+  const evaluationHeaders = ["ID", "CompetenciaID", "IndicadorID", "UserID", "AsignaturaID", "PeriodoID",
+    "NivelDesempeno", "Observaciones", "RubricaID", "FechaRegistro", "AnoID", "Grado",
+    "Seccion", "InstitutionID", "DepartmentID", "CatalogItemID", "ContextKey"];
+  const contextRow = (id, competenciaId, indicadorId, userId, asignaturaId, periodoId,
+    nivel, observaciones, rubricaId, fecha, patch = {}) => {
+    const item = Object.assign({ institutionId: "INST-1", departmentId: "DEPT-1", anoId: "2026",
+      grado: "10", seccion: "A", userId, competenciaId, indicadorId, asignaturaId,
+      periodoId, catalogItemId: "CAT-1" }, patch);
+    const contextKey = JSON.stringify([item.institutionId, item.departmentId, item.anoId, item.periodoId,
+      item.grado, item.seccion, item.asignaturaId, item.userId, item.competenciaId,
+      item.indicadorId, item.catalogItemId].map(normalizeString));
+    return [id, competenciaId, indicadorId, userId, asignaturaId, periodoId, nivel,
+      observaciones, rubricaId, fecha, item.anoId, item.grado, item.seccion,
+      item.institutionId, item.departmentId, item.catalogItemId, contextKey];
+  };
   const evaluations = [
-    ["EV-1", "COMP-1", "IND-1", "STU-1", "Math", "P1", "Alto", "ok", "R-1", new Date("2026-11-10T10:00:00Z")],
-    ["EV-2", "COMP-2", "IND-2", "STU-2", "Math", "P1", "Medio", "other", "R-1", new Date("2026-11-10T11:00:00Z")],
-    ["EV-3", "COMP-3", "IND-3", "STU-1", "Science", "P1", "Bajo", "science", "", new Date("2026-11-10T12:00:00Z")],
-    ["EV-DUP", "COMP-D", "IND-D", "STU-1", "Math", "P1", "Alto", "duplicate", "", null],
-    ["EV-DUP", "COMP-D2", "IND-D2", "STU-1", "Math", "P1", "Bajo", "duplicate 2", "", null],
-    ["", "COMP-X", "IND-X", "STU-1", "Math", "P1", "Alto", "blank ID", "", null],
-    ["EV-BAD-DATE", "COMP-4", "IND-4", "STU-1", "Math", "P1", "Alto", "bad date", "", "not-a-date"]
+    contextRow("EV-1", "COMP-1", "IND-1", "STU-1", "Math", "P1", "Alto", "ok", "R-1", new Date("2026-11-10T10:00:00Z")),
+    contextRow("EV-2", "COMP-2", "IND-2", "STU-2", "Math", "P1", "Medio", "other", "R-1", new Date("2026-11-10T11:00:00Z")),
+    contextRow("EV-3", "COMP-3", "IND-3", "STU-1", "Science", "P1", "Bajo", "science", "", new Date("2026-11-10T12:00:00Z")),
+    contextRow("EV-DUP", "COMP-D", "IND-D", "STU-1", "Math", "P1", "Alto", "duplicate", "", null),
+    contextRow("EV-DUP", "COMP-D2", "IND-D2", "STU-1", "Math", "P1", "Bajo", "duplicate 2", "", null),
+    contextRow("", "COMP-X", "IND-X", "STU-1", "Math", "P1", "Alto", "blank ID", "", null),
+    contextRow("EV-BAD-DATE", "COMP-4", "IND-4", "STU-1", "Math", "P1", "Alto", "bad date", "", "not-a-date")
   ];
   const configRows = [
     ["ID", "Fecha", "Parcial", "Grado", "Sección", "Asignatura", "Unidad", "Tema", "profesorId"],
@@ -68,7 +83,8 @@ function runtime(options = {}) {
   }
   const ss = { getSheetByName: name => sheets[name] || null };
   const actor = options.actor || { userId: "STU-1", role: "Estudiante" };
-  const scope = { authorized: options.authorized !== false, institutionWide: options.institutionWide !== false };
+  const scope = { authorized: options.authorized !== false, institutionId: "INST-1",
+    departmentIds: ["DEPT-1"], institutionWide: options.institutionWide !== false };
   let held = false, acquires = 0, releases = 0;
   const getSheetOrThrow = (spreadsheet, name) => {
     const sheet = spreadsheet.getSheetByName(name);
@@ -103,10 +119,11 @@ function runtime(options = {}) {
     }
   };
   const declarations = [
-    "getCompetencyEvaluations", "getCompetencyEvaluationsUnlocked_", "withAuthorizedExamRead_",
-    "getAuthorizedExamReadContext_", "getExamStudentProfile_"
+    "competencyEvaluationContextKey_", "getCompetencyEvaluations", "getCompetencyEvaluationsUnlocked_",
+    "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getExamStudentProfile_"
   ].map(extractFunction).join("\n");
   const context = {
+    COMPETENCY_EVALUATION_HEADERS_: evaluationHeaders,
     LockService, validateRolePermission, getExamReadContext_: getExamReadContext,
     getSheetOrThrow, normalizeString, SpreadsheetApp: { openById() { return ss; } }
   };
@@ -123,15 +140,16 @@ assert.deepEqual(student.stats(), { acquires: 1, releases: 1, held: false });
 assert.throws(() => runtime().call({ userId: "STU-2" }), /RESOURCE_NOT_AVAILABLE/);
 
 const teacher = runtime({ actor: { userId: "PROF-1", role: "Profesor" } });
-const teacherData = teacher.call({ userId: "STU-1", asignaturaId: "Math", periodoId: "P1" });
+const teacherData = teacher.call({ userId: "STU-1", asignaturaId: "Math", periodoId: "P1",
+  anoId: "2026", departmentId: "DEPT-1" });
 assert.equal(teacherData.total, 2, "teacher is restricted to the exact assigned subject and period");
 assert.ok(teacherData.data.every(row => row.asignaturaId === "Math"));
 assert.throws(() => runtime({ actor: { userId: "PROF-1", role: "Profesor" } })
-  .call({ userId: "STU-1", asignaturaId: "Math" }), /RESOURCE_NOT_AVAILABLE/);
+  .call({ userId: "STU-1", asignaturaId: "Math", anoId: "2026", departmentId: "DEPT-1" }), /RESOURCE_NOT_AVAILABLE/);
 assert.throws(() => runtime({ actor: { userId: "PROF-1", role: "Profesor" }, conflictingAssignment: true })
-  .call({ userId: "STU-1", asignaturaId: "Math", periodoId: "P1" }), /RESOURCE_NOT_AVAILABLE/);
+  .call({ userId: "STU-1", asignaturaId: "Math", periodoId: "P1", anoId: "2026", departmentId: "DEPT-1" }), /RESOURCE_NOT_AVAILABLE/);
 assert.throws(() => runtime({ actor: { userId: "PROF-1", role: "Profesor" } })
-  .call({ userId: "STU-1", asignaturaId: "Science", periodoId: "P1" }), /RESOURCE_NOT_AVAILABLE/);
+  .call({ userId: "STU-1", asignaturaId: "Science", periodoId: "P1", anoId: "2026", departmentId: "DEPT-1" }), /RESOURCE_NOT_AVAILABLE/);
 
 const admin = runtime({ actor: { userId: "ADMIN-1", role: "Administrador" } });
 assert.equal(admin.call({ userId: "STU-1" }).total, 3);
