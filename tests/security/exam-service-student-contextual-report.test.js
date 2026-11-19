@@ -65,6 +65,7 @@ function fixture() {
     recoveries.push(row);
   };
   addRecovery("R-1", "STU-1", "2026", "P1", "Matemáticas", "CAT-1", 85);
+  addRecovery("R-EMPTY", "STU-1", "2026", "P1", "Matemáticas", "CAT-2", null);
   addRecovery("R-OLD", "STU-1", "2025", "P1", "Matemáticas", "CAT-1", 99);
   addRecovery("R-OTHER-INST", "STU-1", "2026", "P1", "Matemáticas", "CAT-1", 99, "INST-B");
   const sheets = {
@@ -109,6 +110,14 @@ test("validates institutional ownership and contextual key", () => {
 test("recovery is applied only to matching year, institution and subject context", () => {
   const result = fixture().run({ anoId: "2026", periodoId: "P1" });
   const math = result.detalleAsignaturas.find(row => row.asignatura === "Matemáticas");
+  assert.equal(math.notaFinal, 87.5);
+});
+test("empty recovery result does not replace a published grade with zero", () => {
+  const result = fixture().run({ anoId: "2026", periodoId: "P1" });
+  const math = result.detalleAsignaturas.find(row => row.asignatura === "Matemáticas");
+  const category = math.categorias.find(row => row.categoriaId === "CAT-2");
+  assert.equal(category.notaFinalAplicada, 90);
+  assert.equal(category.recuperacionAplicada, false);
   assert.equal(math.notaFinal, 87.5);
 });
 test("provisional report is not marked official without explicit context", () => {
