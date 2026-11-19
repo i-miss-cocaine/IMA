@@ -2977,7 +2977,7 @@ function getCompetencyCatalogUnlocked_(payload, context) {
   const ss = context && context.ss, scope = context && context.scope;
   if (!ss || !scope || !scope.institutionId) throw new Error("RESOURCE_NOT_AVAILABLE");
   const sheet = ss.getSheetByName("CatalogoCompetencias");
-  if (!sheet) return { status: "success", total: 0, data: [] };
+  if (!sheet) return { status: "success", total: 0, data: [], departmentIds: scope.departmentIds || [], institutionWide: scope.institutionWide === true };
   const rows = sheet.getDataRange().getValues();
   if (!rows.length) return { status: "success", total: 0, data: [] };
   if (COMPETENCY_CATALOG_HEADERS_.length !== rows[0].length ||
@@ -3008,7 +3008,7 @@ function getCompetencyCatalogUnlocked_(payload, context) {
     pairs[key] = (pairs[key] || 0) + 1;
   });
   if (Object.keys(pairs).some(key => pairs[key] !== 1)) throw new Error("COMPETENCY_CATALOG_DUPLICATE_ENTRY");
-  return { status: "success", total: result.length, data: result };
+  return { status: "success", total: result.length, data: result, departmentIds: scope.departmentIds || [], institutionWide: scope.institutionWide === true };
 }
 
 function saveCompetencyCatalogItem(payload) {
@@ -3204,8 +3204,18 @@ function getAuthorizedCompetencyEvaluationMutationContext_(payload) {
     throw new Error("COMPETENCY_CATALOG_SCHEMA_INVALID");
   }
   const program = String(p.programaCurricular || "").trim();
+  const requestedDepartmentId = String(p.departmentId || "").trim();
   if (!program) throw new Error("COMPETENCY_CATALOG_CONTEXT_REQUIRED");
+  if (role === "Profesor" && (!requestedDepartmentId ||
+      !(scope.departmentIds || []).some(id => String(id || "").trim() === requestedDepartmentId))) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
+  if (requestedDepartmentId && !(scope.departmentIds || []).some(id =>
+      String(id || "").trim() === requestedDepartmentId) && scope.institutionWide !== true) {
+    throw new Error("RESOURCE_NOT_AVAILABLE");
+  }
   const catalogMatches = catalogRows.slice(1).filter(row =>
+    (!requestedDepartmentId || String(row[2] || "").trim() === requestedDepartmentId) &&
     String(row[1] || "").trim() === String(scope.institutionId || "").trim() &&
     (!String(row[2] || "").trim() || scope.institutionWide === true || (scope.departmentIds || []).some(id => String(id || "").trim() === String(row[2]).trim())) &&
     String(row[3] || "").trim() === anoId &&
