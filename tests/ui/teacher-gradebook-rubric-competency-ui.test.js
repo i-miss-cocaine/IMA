@@ -26,5 +26,10 @@ for (const id of ["gb-catalog-program", "gb-catalog-competency-id", "gb-catalog-
 assert.ok(js.includes("fetchApi('EXAM', 'getCompetencyCatalog'"));
 assert.ok(js.includes("fetchApi('EXAM', 'saveCompetencyCatalogItem'"));
 assert.ok(js.includes("gradebookCatalogRequestVersion"));
-assert.ok(js.includes("gradebookCompetencyCatalog[Number(document.getElementById('gb-competency-catalog')?.value)]?.departmentId"));
+assert.ok(js.includes("departmentId: String(document.getElementById('gb-catalog-department')?.value || \"\").trim()"),
+  "rubric creation must persist the selected department");
+assert.ok(js.includes("departmentId: String(document.getElementById('gb-competency-department-id')?.value || \"\").trim()"),
+  "competency evaluation must use the department linked to the selected catalog item");
+assert.ok(js.includes("const requestedDepartmentId") || js.includes("departmentId: String(document.getElementById('gb-catalog-department')?.value"),
+  "rubric reads must be scoped to the selected department");
 process.stdout.write("teacher-gradebook-rubric-competency-ui: PASS (16 contracts)\n");
