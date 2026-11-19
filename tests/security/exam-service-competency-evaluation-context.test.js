@@ -87,7 +87,7 @@ result = x.run(teacher, { userId: "STU-1", anoId: "2026", periodoId: "P1",
   asignaturaId: "Math", departmentId: "DEPT-A" }, { departmentIds: ["DEPT-A"] });
 assert.equal(result.total, 1);
 assert.throws(() => x.run(teacher, { userId: "STU-1", anoId: "2026", periodoId: "P1",
-  asignaturaId: "Math", departmentId: "DEPT-B" }, { departmentIds: ["DEPT-A", "DEPT-B"] }),
+  asignaturaId: "Math", departmentId: "DEPT-X" }, { departmentIds: ["DEPT-A", "DEPT-B"] }),
   /RESOURCE_NOT_AVAILABLE/);
 x = fixture();
 const legacy = headers.slice(0, 10);
