@@ -93,7 +93,8 @@ for (const entry of manifest.templates) {
         sesionId: session.sesionId,
         userId: student.userId,
         estadoAsistencia: sessionIndex < absenceLimit ? "Ausente" : "Presente",
-        justificado: false
+        justificado: false,
+        justificacionVerificada: true
       });
     });
   });

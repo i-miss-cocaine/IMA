@@ -10979,6 +10979,57 @@ function requestSaceGradebookSnapshotFromExam_(request, studentIds, teacherUserI
   return { status: "success", data: data };
 }
 
+function resolveSaceAttendanceJustification_(attendanceRow, attendanceIndex, session, period, source) {
+  const rawValue = attendanceRow[attendanceIndex.Justificado];
+  const rawText = String(rawValue == null ? "" : rawValue).trim().toLowerCase();
+  let rawJustified;
+  if (rawValue === true || rawText === "true") rawJustified = true;
+  else if (rawValue === false || rawText === "" || rawText === "false") rawJustified = false;
+  else throw new Error("SACE_ATTENDANCE_JUSTIFICATION_FLAG_INVALID");
+  const justificationId = String(attendanceRow[attendanceIndex.JustificacionID] || "").trim();
+  if (!rawJustified && !justificationId) {
+    if (source && Array.isArray(source.rows) && source.index) {
+      const requiredFields = ["UserId", "Periodo", "EstadoRevision", "SyncEstado", "SesionIDsJSON", "FechasAfectadasJSON"];
+      if (requiredFields.some(field => source.index[field] === undefined)) throw new Error("SACE_JUSTIFICATION_SOURCE_SCHEMA_INVALID");
+      source.rows.forEach(row => {
+        if (String(row[source.index.UserId] || "").trim() !== String(attendanceRow[attendanceIndex.UserId] || "").trim() ||
+            String(row[source.index.Periodo] || "").trim() !== String(period && period.periodoId || "").trim()) return;
+        let sessions, dates;
+        try { sessions = JSON.parse(String(row[source.index.SesionIDsJSON] || "[]")); dates = JSON.parse(String(row[source.index.FechasAfectadasJSON] || "[]")); }
+        catch (_) { throw new Error("SACE_JUSTIFICATION_SCOPE_CORRUPT"); }
+        if (!Array.isArray(sessions) || !Array.isArray(dates)) throw new Error("SACE_JUSTIFICATION_SCOPE_CORRUPT");
+        const affectsSession = sessions.indexOf(String(session && session.sesionId || "").trim()) !== -1 &&
+          dates.map(value => String(value || "").trim().slice(0, 10)).indexOf(String(session && session.fecha || "").trim()) !== -1;
+        if (!affectsSession) return;
+        const state = String(row[source.index.EstadoRevision] || "").trim();
+        const sync = String(row[source.index.SyncEstado] || "").trim();
+        if (state === "PendienteSincronizacion" || state === "RevocacionPendienteSincronizacion" ||
+            sync === "PENDIENTE" || sync === "PENDIENTE_REVOCACION" || state === "Aprobada" && sync !== "SINCRONIZADO") {
+          throw new Error("SACE_JUSTIFICATION_SYNC_PENDING");
+        }
+        if (state === "Aprobada" && sync === "SINCRONIZADO") throw new Error("SACE_ATTENDANCE_JUSTIFICATION_LINK_MISMATCH");
+      });
+    }
+    return { justificado: false, justificacionId: "", justificacionVerificada: true };
+  }
+  if (!justificacionId) throw new Error("SACE_ATTENDANCE_JUSTIFICATION_LINK_REQUIRED");
+  if (!source || !Array.isArray(source.rows) || !source.index) throw new Error("SACE_JUSTIFICATION_SOURCE_UNAVAILABLE");
+  const fields = ["JustificacionID", "UserId", "Periodo", "EstadoRevision", "SyncEstado", "SesionIDsJSON", "FechasAfectadasJSON"];
+  if (fields.some(field => source.index[field] === undefined)) throw new Error("SACE_JUSTIFICATION_SOURCE_SCHEMA_INVALID");
+  const matches = source.rows.filter(row => String(row[source.index.JustificacionID] || "").trim() === justificationId);
+  if (matches.length !== 1) throw new Error(matches.length > 1 ? "SACE_JUSTIFICATION_RECORD_AMBIGUOUS" : "SACE_JUSTIFICATION_RECORD_MISSING");
+  const row = matches[0];
+  if (String(row[source.index.UserId] || "").trim() !== String(attendanceRow[attendanceIndex.UserId] || "").trim()) throw new Error("SACE_JUSTIFICATION_STUDENT_MISMATCH");
+  if (String(row[source.index.Periodo] || "").trim() !== String(period && period.periodoId || "").trim()) throw new Error("SACE_JUSTIFICATION_PERIOD_MISMATCH");
+  if (String(row[source.index.EstadoRevision] || "").trim() !== "Aprobada" || String(row[source.index.SyncEstado] || "").trim() !== "SINCRONIZADO") throw new Error("SACE_JUSTIFICATION_NOT_APPROVED_AND_SYNCED");
+  let approvedSessions, affectedDates;
+  try { approvedSessions = JSON.parse(String(row[source.index.SesionIDsJSON] || "[]")); affectedDates = JSON.parse(String(row[source.index.FechasAfectadasJSON] || "[]")); }
+  catch (_) { throw new Error("SACE_JUSTIFICATION_SCOPE_CORRUPT"); }
+  if (!Array.isArray(approvedSessions) || !Array.isArray(affectedDates) || approvedSessions.indexOf(String(session && session.sesionId || "").trim()) === -1 ||
+      affectedDates.map(value => String(value || "").trim().slice(0, 10)).indexOf(String(session && session.fecha || "").trim()) === -1) throw new Error("SACE_JUSTIFICATION_SESSION_SCOPE_MISMATCH");
+  if (!rawJustified) throw new Error("SACE_ATTENDANCE_JUSTIFICATION_FLAG_MISMATCH");
+  return { justificado: true, justificacionId: justificationId, justificacionVerificada: true };
+}
 function getSaceAttendanceSnapshot(payload) {
   const request = payload || {};
   const actor = getVerifiedAcademicIdentity_(request);
@@ -11122,22 +11173,42 @@ function getSaceAttendanceSnapshot(payload) {
     });
     if (!attendanceSessions.length) throw new Error("SACE_ATTENDANCE_SESSIONS_EMPTY");
 
-    const records = read("RegistrosAsistencia", ["RegistroID", "SesionID", "UserId", "EstadoAsistencia", "Justificado", "FechaRegistro"]);
-    const selectedSessionIds = Object.create(null), selectedStudents = Object.create(null);
-    attendanceSessions.forEach(function(session) { selectedSessionIds[session.sesionId] = true; });
+    const records = read("RegistrosAsistencia", ["RegistroID", "SesionID", "UserId", "EstadoAsistencia", "Justificado", "FechaRegistro", "JustificacionID"]);
+    const selectedSessionIds = Object.create(null), selectedStudents = Object.create(null), selectedSessionMap = Object.create(null);
+    attendanceSessions.forEach(function(session) {
+      selectedSessionIds[session.sesionId] = true;
+      selectedSessionMap[session.sesionId] = session;
+    });
     studentIds.forEach(function(id) { selectedStudents[id] = true; });
+    const justificationSheet = ss.getSheetByName("JustificacionesAsistencia");
+    let justificationSource = null;
+    if (justificationSheet) {
+      const rows = justificationSheet.getDataRange().getValues();
+      if (rows.length) {
+        const headers = rows[0].map(function(value) { return String(value || "").trim(); });
+        const index = {};
+        headers.forEach(function(header, i) { if (header) index[header] = i; });
+        justificationSource = { rows: rows.slice(1), index: index };
+      }
+    }
     const attendanceRecords = records.rows.filter(function(row) {
       return !!selectedSessionIds[String(row[records.index.SesionID] || "").trim()] &&
         !!selectedStudents[String(row[records.index.UserId] || "").trim()];
     }).map(function(row) {
+      const sessionId = String(row[records.index.SesionID] || "").trim();
+      const session = selectedSessionMap[sessionId];
+      const period = selectedPeriods.find(function(item) { return session.fecha >= item.fechaInicio && session.fecha <= item.fechaFin; });
+      if (!period) throw new Error("SACE_ATTENDANCE_PERIOD_NOT_FOUND");
+      const justification = resolveSaceAttendanceJustification_(row, records.index, session, period, justificationSource);
       return {
         registroId:String(row[records.index.RegistroID] || "").trim(),
-        sesionId:String(row[records.index.SesionID] || "").trim(),
+        sesionId:sessionId,
         userId:String(row[records.index.UserId] || "").trim(),
         estadoAsistencia:String(row[records.index.EstadoAsistencia] || "").trim(),
-        justificado:row[records.index.Justificado] === true || String(row[records.index.Justificado] || "").toLowerCase() === "true",
-        fechaRegistro:row[records.index.FechaRegistro] instanceof Date ?
-          row[records.index.FechaRegistro].toISOString() : String(row[records.index.FechaRegistro] || "")
+        justificado:justification.justificado,
+        justificacionId:justification.justificacionId,
+        justificacionVerificada:justification.justificacionVerificada,
+        fechaRegistro:row[records.index.FechaRegistro] instanceof Date ? row[records.index.FechaRegistro].toISOString() : String(row[records.index.FechaRegistro] || "")
       };
     });
     const expectedContext = {

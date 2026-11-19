@@ -55,8 +55,12 @@ const tables = {
     ["R-1", "S-1", "STU-1", "Ausente", "", "", false, "", "2026-02-03", ""],
     ["R-2", "S-1", "STU-2", "Presente", "", "", false, "", "2026-02-03", ""],
     ["R-3", "S-2", "STU-1", "Tardanza", "", 5, false, "", "2026-05-03", ""],
-    ["R-4", "S-2", "STU-2", "Ausente", "", "", true, "", "2026-05-03", ""],
+    ["R-4", "S-2", "STU-2", "Ausente", "", "", true, "", "2026-05-03", "JUST-1"],
     ["R-OTHER", "S-WRONG-TEACHER", "STU-1", "Ausente", "", "", false, "", "2026-02-03", ""]
+  ],
+  JustificacionesAsistencia: [
+    ["JustificacionID", "UserId", "Periodo", "EstadoRevision", "SyncEstado", "SesionIDsJSON", "FechasAfectadasJSON"],
+    ["JUST-1", "STU-2", "P2", "Aprobada", "SINCRONIZADO", "[\"S-2\"]", "[\"2026-05-03\"]"]
   ]
 };
 
@@ -134,6 +138,9 @@ assert.equal(result.data.attendanceSessions.length, 2);
 assert.deepEqual(Array.from(result.data.attendanceSessions, row => row.sesionId), ["S-1", "S-2"]);
 assert.equal(result.data.attendanceRecords.length, 4);
 assert.equal(result.data.attendanceRecords.find(row => row.registroId === "R-4").justificado, true);
+assert.equal(result.data.attendanceRecords.find(row => row.registroId === "R-4").justificacionId, "JUST-1");
+assert.equal(result.data.attendanceRecords.every(row => row.justificacionVerificada === true), true,
+  "every attendance justification state must be verified against the canonical workflow");
 assert(result.limitations.some(item => item.includes("documentMarker remains empty")));
 assert.equal(result.data.attendanceRecords.some(row => row.registroId === "R-OTHER"), false);
 
@@ -246,5 +253,80 @@ assert.throws(() => misScopedExamContext.requestSnapshot(
   { anoId: "YEAR-2026", grado: "11", seccion: "A", asignatura: "Informática", institutionId: "INST-1" },
   { periodoId: "P1" }, "I Parcial"
 ), /SACE_GRADEBOOK_RESPONSE_CONTEXT_INVALID:institutionId/);
+
+
+const justificationHelperContext = { String, Array, JSON, Set, Error };
+vm.createContext(justificationHelperContext);
+vm.runInContext(extract("resolveSaceAttendanceJustification_") +
+  "\nthis.resolveJustification=resolveSaceAttendanceJustification_;", justificationHelperContext);
+const justificationIndex = {
+  RegistroID: 0, SesionID: 1, UserId: 2, EstadoAsistencia: 3,
+  Justificado: 6, JustificacionID: 9
+};
+const justificationSourceIndex = {
+  JustificacionID: 0, UserId: 1, Periodo: 2, EstadoRevision: 3,
+  SyncEstado: 4, SesionIDsJSON: 5, FechasAfectadasJSON: 6
+};
+const approvedJustification = ["JUST-1", "STU-2", "P2", "Aprobada", "SINCRONIZADO", '["S-2"]', '["2026-05-03"]'];
+const justificationSource = { rows: [approvedJustification], index: justificationSourceIndex };
+const attendanceRecord = ["R-4", "S-2", "STU-2", "Ausente", "", "", true, "", "", "JUST-1"];
+const attendanceSession = { sesionId: "S-2", fecha: "2026-05-03" };
+const attendancePeriod = { periodoId: "P2" };
+assert.deepEqual(JSON.parse(JSON.stringify(justificationHelperContext.resolveJustification(
+  attendanceRecord, justificationIndex, attendanceSession, attendancePeriod, justificationSource
+))), { justificado: true, justificacionId: "JUST-1", justificacionVerificada: true });
+assert.deepEqual(JSON.parse(JSON.stringify(justificationHelperContext.resolveJustification(
+  ["R-1", "S-1", "STU-1", "Ausente", "", "", false, "", "", ""],
+  justificationIndex, { sesionId: "S-1", fecha: "2026-02-03" }, { periodoId: "P1" }, null
+))), { justificado: false, justificacionId: "", justificacionVerificada: true });
+assert.throws(() => justificationHelperContext.resolveJustification(
+  ["R-X", "S-2", "STU-2", "Ausente", "", "", true, "", "", ""],
+  justificationIndex, attendanceSession, attendancePeriod, justificationSource
+), /SACE_ATTENDANCE_JUSTIFICATION_LINK_REQUIRED/);
+const pendingJustification = approvedJustification.slice(); pendingJustification[3] = "Pendiente";
+assert.throws(() => justificationHelperContext.resolveJustification(
+  attendanceRecord, justificationIndex, attendanceSession, attendancePeriod,
+  { rows: [pendingJustification], index: justificationSourceIndex }
+), /SACE_JUSTIFICATION_NOT_APPROVED_AND_SYNCED/);
+const wrongStudent = approvedJustification.slice(); wrongStudent[1] = "STU-1";
+assert.throws(() => justificationHelperContext.resolveJustification(
+  attendanceRecord, justificationIndex, attendanceSession, attendancePeriod,
+  { rows: [wrongStudent], index: justificationSourceIndex }
+), /SACE_JUSTIFICATION_STUDENT_MISMATCH/);
+const wrongPeriod = approvedJustification.slice(); wrongPeriod[2] = "P1";
+assert.throws(() => justificationHelperContext.resolveJustification(
+  attendanceRecord, justificationIndex, attendanceSession, attendancePeriod,
+  { rows: [wrongPeriod], index: justificationSourceIndex }
+), /SACE_JUSTIFICATION_PERIOD_MISMATCH/);
+const wrongSession = approvedJustification.slice(); wrongSession[5] = '["S-OTHER"]';
+assert.throws(() => justificationHelperContext.resolveJustification(
+  attendanceRecord, justificationIndex, attendanceSession, attendancePeriod,
+  { rows: [wrongSession], index: justificationSourceIndex }
+), /SACE_JUSTIFICATION_SESSION_SCOPE_MISMATCH/);
+const wrongDate = approvedJustification.slice(); wrongDate[6] = '["2026-05-04"]';
+assert.throws(() => justificationHelperContext.resolveJustification(
+  attendanceRecord, justificationIndex, attendanceSession, attendancePeriod,
+  { rows: [wrongDate], index: justificationSourceIndex }
+), /SACE_JUSTIFICATION_SESSION_SCOPE_MISMATCH/);
+assert.throws(() => justificationHelperContext.resolveJustification(
+  attendanceRecord, justificationIndex, attendanceSession, attendancePeriod,
+  { rows: [approvedJustification, approvedJustification], index: justificationSourceIndex }
+), /SACE_JUSTIFICATION_RECORD_AMBIGUOUS/);
+assert.throws(() => justificationHelperContext.resolveJustification(
+  attendanceRecord, justificationIndex, attendanceSession, attendancePeriod, null
+), /SACE_JUSTIFICATION_SOURCE_UNAVAILABLE/);
+assert.throws(() => justificationHelperContext.resolveJustification(
+  ["R-4", "S-2", "STU-2", "Ausente", "", "", false, "", "", "JUST-1"],
+  justificationIndex, attendanceSession, attendancePeriod, justificationSource
+), /SACE_ATTENDANCE_JUSTIFICATION_FLAG_MISMATCH/);
+const noLinkAttendance = ["R-4", "S-2", "STU-2", "Ausente", "", "", false, "", "", ""];
+const pendingSync = approvedJustification.slice(); pendingSync[3] = "PendienteSincronizacion"; pendingSync[4] = "PENDIENTE";
+assert.throws(() => justificationHelperContext.resolveJustification(
+  noLinkAttendance, justificationIndex, attendanceSession, attendancePeriod,
+  { rows: [pendingSync], index: justificationSourceIndex }
+), /SACE_JUSTIFICATION_SYNC_PENDING/);
+assert.throws(() => justificationHelperContext.resolveJustification(
+  noLinkAttendance, justificationIndex, attendanceSession, attendancePeriod, justificationSource
+), /SACE_ATTENDANCE_JUSTIFICATION_LINK_MISMATCH/);
 
 console.log("sace-attendance-snapshot-contract: PASS (verified teacher scope, institution, periods, enrollment, identity join and session attendance)");

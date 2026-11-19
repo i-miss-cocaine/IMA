@@ -33,10 +33,10 @@ const sessions = [
   { sesionId: "S-OUTSIDE", fecha: "2026-08-01", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1" }
 ];
 const attendance = [
-  { sesionId: "S-1", userId: "STU-1", estadoAsistencia: "Ausente", justificado: true },
-  { sesionId: "S-1", userId: "STU-2", estadoAsistencia: "Presente", justificado: false },
-  { sesionId: "S-2", userId: "STU-1", estadoAsistencia: "Tardanza", justificado: false },
-  { sesionId: "S-2", userId: "STU-2", estadoAsistencia: "Falta", justificado: true }
+  { sesionId: "S-1", userId: "STU-1", estadoAsistencia: "Ausente", justificado: true, justificacionVerificada: true },
+  { sesionId: "S-1", userId: "STU-2", estadoAsistencia: "Presente", justificado: false, justificacionVerificada: true },
+  { sesionId: "S-2", userId: "STU-1", estadoAsistencia: "Tardanza", justificado: false, justificacionVerificada: true },
+  { sesionId: "S-2", userId: "STU-2", estadoAsistencia: "Falta", justificado: true, justificacionVerificada: true }
 ];
 const identityRecords = [
   { userId: "STU-1", identity: "0801-2000-00001", documentType: "DNI", documentMarker: "HND", name: "Ana Perez" },
@@ -72,6 +72,9 @@ assert.deepEqual(excludedJustified.sourceStudents.map(row => [row.partial1Absenc
 ]);
 assert.throws(() => build({ absencePolicy: undefined }), /SACE_ABSENCE_POLICY_REQUIRED/);
 assert.throws(() => build({ absencePolicy: { justifiedAbsenceMode: "IGNORE" } }), /SACE_ABSENCE_POLICY_INVALID/);
+assert.throws(() => build({ attendanceRecords: attendance.map((record, index) =>
+  index === 0 ? Object.assign({}, record, { justificacionVerificada: false }) : record
+) }), /SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED:partial1/);
 const missingJustificationState = attendance.map((record, index) => {
   if (index !== 0) return record;
   const copy = Object.assign({}, record); delete copy.justificado; return copy;

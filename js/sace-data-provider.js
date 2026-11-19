@@ -91,6 +91,9 @@
       if (typeof record.justificado !== "boolean") {
         throw new Error("SACE_ATTENDANCE_JUSTIFICATION_STATE_REQUIRED:" + label);
       }
+      if (record.justificacionVerificada !== true) {
+        throw new Error("SACE_ATTENDANCE_JUSTIFICATION_UNVERIFIED:" + label);
+      }
       if (ABSENCE_STATES.has(text(record.estadoAsistencia))) {
         if (!(record.justificado && justifiedAbsenceMode === "EXCLUDE")) counts[userId]++;
       }
