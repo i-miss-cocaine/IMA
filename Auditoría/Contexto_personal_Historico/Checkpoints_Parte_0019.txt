@@ -1417,3 +1417,43 @@ Estado:
 Siguiente acción elegible:
 - Revisar las equivalencias y límites de la identidad documental hondureña, incluyendo tipo de documento y marcador de template, sin asumir que una equivalencia local es oficial; inspeccionar además el tratamiento de nombres y posibles colisiones por normalización.
 ===============================================================================
+
+===============================================================================
+### C1.874 — AUD-NG-167: auditoría del tipo documental y marcador SACE
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-DOCUMENT-TYPE-MARKER-AUDIT-45
+Rama: NG_beta_0.0.0.1_work
+HEAD verificado: 598b59a59d15710519ae034f8be56f7617a2212f
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Resultado de auditoría:
+- USER devuelve TipoIdentificacion desde Personas y no inventa tipos para registros históricos vacíos.
+- Academic conserva documentType separado de documentMarker; el directorio de identidad no asigna códigos SACE.
+- El proveedor exige documentTypeMappings explícito, normaliza tipo para detectar duplicados de escritura/acentos, exige marcador no vacío, rechaza tipos sin mapeo y conflictos con un marcador previamente presente.
+- El template valida que el marcador recibido coincida con el marcador de la fila original. La estructura y manifest.json no contienen un diccionario oficial TipoIdentificacion→marcador.
+- Mapa_Compatibilidad_SACE.md documenta que DOCUMENTO no tiene catálogo oficial verificado en el perfil institucional IMA. Los libros del repositorio son CANDIDATE y su procedencia/vigencia no está acreditada.
+- Nombres se comparan tras normalizar mayúsculas, espacios y diacríticos, pero la unión primaria se hace por identidad documental canónica; dos estudiantes con el mismo nombre no se confunden. No se crea una regla de unicidad de nombres.
+- No se encontró defecto reproducible que justifique agregar equivalencias predeterminadas. No se modifica código: inventar un marcador o equiparar TipoIdentificacion con el código SACE sería una falsa afirmación de compatibilidad.
+
+Archivos inspeccionados:
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- js/sace-data-provider.js
+- js/sace-template.js
+- docs/architecture/Plantillas/SACE/manifest.json
+- docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md
+- tests/security/sace-data-provider-contract.test.js
+- tests/security/sace-template-binary-patch.test.js
+
+Verificación vigente:
+- SACE template structure compatibility Action 44633789679 SUCCESS después de alinear normalizadores.
+- No se requiere nueva prueba por tratarse de auditoría sin cambios de código.
+
+Estado:
+- No hay mapeo oficial TipoIdentificacion→marcador acreditado. La exportación debe permanecer CANDIDATE y bloquearse si falta el mapping explícito.
+- AUD-NG-167 continúa En progreso; la confirmación institucional/plantilla oficial se mantiene como dependencia beta.
+
+Siguiente acción elegible:
+- Auditar la configuración de escala, precisión y rango de calificaciones: confirmar que el parcheador no redondea silenciosamente, rechaza valores fuera de escala y no supone una escala oficial no verificada.
+===============================================================================

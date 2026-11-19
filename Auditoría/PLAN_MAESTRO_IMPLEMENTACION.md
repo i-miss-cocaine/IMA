@@ -6142,3 +6142,9 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - SACE template compatibility Action 44633789679 SUCCESS; Academic-Service 44633412787 SUCCESS.
 - Commit 9127122fe8191dc9cc0b7c26f86b9cc9e717e5ce. Evidencia en Checkpoints_Parte_0019.txt — C1.873.
 - Siguiente: revisar tipos de documento y marcadores SACE; la regla oficial y equivalencias institucionales continúan sin certificación.
+
+### C1.874 — AUD-NG-167: auditoría de tipo documental y marcador SACE
+- USER mantiene TipoIdentificacion; Academic no lo confunde con documentMarker. El proveedor exige documentTypeMappings explícito y el template compara el marcador con la plantilla.
+- manifest.json y Mapa_Compatibilidad_SACE.md no aportan un catálogo oficial verificable. No se agrega mapping predeterminado ni se declara equivalencia; salida sigue CANDIDATE.
+- Auditoría sin cambios de código. SACE template compatibility Action 44633789679 SUCCESS con normalización canónica.
+- Siguiente: auditar escala, precisión y rango de notas para evitar redondeos silenciosos o supuestos normativos.
