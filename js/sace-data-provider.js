@@ -168,5 +168,42 @@
       ]
     };
   }
-  return { buildCandidateStudents, dateKey };
+
+  function buildCandidateStudentsFromSnapshot(input) {
+    const value = input || {}, snapshot = value.attendanceSnapshot;
+    if (!snapshot || snapshot.status !== "success" || !snapshot.data) {
+      throw new Error("SACE_ATTENDANCE_SNAPSHOT_INVALID");
+    }
+    const data = snapshot.data;
+    if (!Array.isArray(data.periods) || data.periods.length !== 2) {
+      throw new Error("SACE_ATTENDANCE_PERIODS_INVALID");
+    }
+    const firstId = required(value.partial1PeriodId, "SACE_PARTIAL1_PERIOD_MAPPING_REQUIRED");
+    const secondId = required(value.partial2PeriodId, "SACE_PARTIAL2_PERIOD_MAPPING_REQUIRED");
+    if (firstId === secondId) throw new Error("SACE_PERIODS_MUST_BE_DISTINCT");
+    const periods = new Map();
+    data.periods.forEach(period => {
+      const id = required(period && period.periodoId, "SACE_ATTENDANCE_PERIOD_ID_REQUIRED");
+      if (periods.has(id)) throw new Error("SACE_ATTENDANCE_PERIOD_DUPLICATE");
+      periods.set(id, period);
+    });
+    const partial1Period = periods.get(firstId), partial2Period = periods.get(secondId);
+    if (!partial1Period || !partial2Period) throw new Error("SACE_PARTIAL_PERIOD_NOT_IN_SNAPSHOT");
+    const candidate = buildCandidateStudents({
+      expectedContext: data.expectedContext,
+      partial1Period,
+      partial2Period,
+      partial1Gradebook: value.partial1Gradebook,
+      partial2Gradebook: value.partial2Gradebook,
+      identityRecords: data.identityRecords,
+      attendanceSessions: data.attendanceSessions,
+      attendanceRecords: data.attendanceRecords
+    });
+    const limitations = Array.isArray(snapshot.limitations) ? snapshot.limitations.slice() : [];
+    return Object.assign({}, candidate, {
+      limitations: candidate.limitations.concat(limitations)
+    });
+  }
+
+  return { buildCandidateStudents, buildCandidateStudentsFromSnapshot, dateKey };
 });

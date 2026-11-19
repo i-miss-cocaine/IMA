@@ -78,6 +78,57 @@ assert.throws(() => build({ attendanceRecords: attendance.concat({
   sesionId: "S-1", userId: "STU-OUT", estadoAsistencia: "Presente"
 }) }), /SACE_ATTENDANCE_STUDENT_OUTSIDE_ROSTER:partial1/);
 assert.throws(() => build({ attendanceSessions: sessions.filter(row => row.sesionId !== "S-1") }), /SACE_ATTENDANCE_SESSIONS_EMPTY:partial1/);
+
+const fromSnapshot = provider.buildCandidateStudentsFromSnapshot({
+  attendanceSnapshot: {
+    status: "success",
+    data: {
+      expectedContext,
+      periods: [periods.partial1Period, periods.partial2Period],
+      identityRecords,
+      attendanceSessions: sessions,
+      attendanceRecords: attendance
+    },
+    limitations: ["snapshot fixture"]
+  },
+  partial1PeriodId: "PER-1",
+  partial2PeriodId: "PER-2",
+  partial1Gradebook: gradebook("PER-1"),
+  partial2Gradebook: gradebook("PER-2")
+});
+assert.deepEqual(fromSnapshot.sourceStudents, result.sourceStudents);
+assert(fromSnapshot.limitations.includes("snapshot fixture"));
+assert.throws(() => provider.buildCandidateStudentsFromSnapshot({
+  attendanceSnapshot: {
+    status: "success",
+    data: {
+      expectedContext,
+      periods: [periods.partial1Period, periods.partial2Period],
+      identityRecords: identityRecords.map((row, index) => index === 0 ? Object.assign({}, row, { documentMarker: "" }) : row),
+      attendanceSessions: sessions,
+      attendanceRecords: attendance
+    }
+  },
+  partial1PeriodId: "PER-1",
+  partial2PeriodId: "PER-2",
+  partial1Gradebook: gradebook("PER-1"),
+  partial2Gradebook: gradebook("PER-2")
+}), /SACE_STUDENT_DOCUMENT_TYPE_REQUIRED/);
+assert.throws(() => provider.buildCandidateStudentsFromSnapshot({
+  attendanceSnapshot: { status: "success", data: { expectedContext, periods: [periods.partial1Period, periods.partial2Period] } },
+  partial1PeriodId: "PER-1",
+  partial2PeriodId: "PER-2",
+  partial1Gradebook: gradebook("PER-1"),
+  partial2Gradebook: gradebook("PER-2")
+}), /SACE_IDENTITY_DIRECTORY_REQUIRED/);
+assert.throws(() => provider.buildCandidateStudentsFromSnapshot({
+  attendanceSnapshot: { status: "success", data: { expectedContext, periods: [periods.partial1Period, periods.partial2Period], identityRecords, attendanceSessions: sessions, attendanceRecords: attendance } },
+  partial1PeriodId: "PER-2",
+  partial2PeriodId: "PER-2",
+  partial1Gradebook: gradebook("PER-1"),
+  partial2Gradebook: gradebook("PER-2")
+}), /SACE_PERIODS_MUST_BE_DISTINCT/);
+
 const mappedRows = templateTools.mapRowsToTemplate({
   metadata: {
     institution: "Centro de Prueba",
