@@ -5014,67 +5014,69 @@ function getTeachingHoursSummary(payload) {
 // ---------------------------------------------------------------------------
 
 function configureSchoolYear(payload) {
+  const lock = LockService.getScriptLock();
   try {
-    const verifiedRole = (payload && payload.authRole) || "Director";
-    if (["Administrador", "Director", "Subdirector", "Secretaría"].indexOf(verifiedRole) === -1) {
-      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Rol no autorizado para configurar el año escolar." };
-    }
+    lock.waitLock(10000);
+  } catch (lockError) {
+    return { status: "error", code: "LOCK_TIMEOUT", message: "El servicio está ocupado. Intente nuevamente." };
+  }
+  try {
+    try {
+      const verifiedRole = (payload && payload.authRole) || "Director";
+      if (["Administrador", "Director", "Subdirector", "Secretaría"].indexOf(verifiedRole) === -1) {
+        return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Rol no autorizado para configurar el año escolar." };
+      }
 
-    const { anoId, nombre, tipoCalendario, fechaInicio, fechaFin, inicioClases, finClases, finAdministrativo, limiteIngresoCalificaciones, estado } = payload || {};
-    if (!nombre || !fechaInicio || !fechaFin) {
-      return { status: "error", code: "VALIDATION_ERROR", message: "Nombre, Fecha de Inicio y Fecha de Fin son obligatorios." };
-    }
+      const { anoId, nombre, tipoCalendario, fechaInicio, fechaFin, inicioClases, finClases, finAdministrativo, limiteIngresoCalificaciones, estado } = payload || {};
+      if (!nombre || !fechaInicio || !fechaFin) {
+        return { status: "error", code: "VALIDATION_ERROR", message: "Nombre, Fecha de Inicio y Fecha de Fin son obligatorios." };
+      }
 
-    if (new Date(fechaFin) <= new Date(fechaInicio)) {
-      return { status: "error", code: "VALIDATION_ERROR", message: "La fecha de fin debe ser posterior a la fecha de inicio." };
-    }
+      if (new Date(fechaFin) <= new Date(fechaInicio)) {
+        return { status: "error", code: "VALIDATION_ERROR", message: "La fecha de fin debe ser posterior a la fecha de inicio." };
+      }
 
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "AnosLectivos");
-    const data = sheet.getDataRange().getValues();
+      const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      const sheet = getOrCreateSheet(ss, "AnosLectivos");
+      const data = sheet.getDataRange().getValues();
+      const targetAnoId = anoId || ("ANO-" + String(nombre).replace(/\s+/g, "_"));
+      const now = new Date().toISOString();
 
-    const targetAnoId = anoId || ("ANO-" + String(nombre).replace(/\s+/g, "_"));
-    const now = new Date().toISOString();
-
-    let foundIndex = -1;
-    if (data.length > 1) {
-      for (let i = 1; i < data.length; i++) {
-        if (String(data[i][0]).trim() === String(targetAnoId).trim()) {
-          foundIndex = i + 1;
-          break;
+      let foundIndex = -1;
+      if (data.length > 1) {
+        for (let i = 1; i < data.length; i++) {
+          if (String(data[i][0]).trim() === String(targetAnoId).trim()) {
+            foundIndex = i + 1;
+            break;
+          }
         }
       }
+
+      if (foundIndex > -1) {
+        sheet.getRange(foundIndex, 2).setValue(nombre);
+        sheet.getRange(foundIndex, 3).setValue(fechaInicio);
+        sheet.getRange(foundIndex, 4).setValue(fechaFin);
+        sheet.getRange(foundIndex, 5).setValue(inicioClases || fechaInicio);
+        sheet.getRange(foundIndex, 6).setValue(finClases || fechaFin);
+        sheet.getRange(foundIndex, 7).setValue(estado || "Activo");
+      } else {
+        sheet.appendRow([
+          targetAnoId, nombre, fechaInicio, fechaFin,
+          inicioClases || fechaInicio, finClases || fechaFin,
+          estado || "Activo", verifiedRole, now,
+          tipoCalendario || "Sistema Americano",
+          finAdministrativo || fechaFin, limiteIngresoCalificaciones || finClases
+        ]);
+      }
+
+      logStructuredEvent("ACADEMIC", "configureSchoolYear", "INFO", "YEAR_CONFIGURED",
+        `Año escolar ${nombre} configurado.`, { targetAnoId, tipoCalendario }, verifiedRole);
+      return { status: "success", anoId: targetAnoId, nombre: nombre, message: "Año escolar guardado exitosamente." };
+    } catch (error) {
+      return { status: "error", message: error.message };
     }
-
-    if (foundIndex > -1) {
-      sheet.getRange(foundIndex, 2).setValue(nombre);
-      sheet.getRange(foundIndex, 3).setValue(fechaInicio);
-      sheet.getRange(foundIndex, 4).setValue(fechaFin);
-      sheet.getRange(foundIndex, 5).setValue(inicioClases || fechaInicio);
-      sheet.getRange(foundIndex, 6).setValue(finClases || fechaFin);
-      sheet.getRange(foundIndex, 7).setValue(estado || "Activo");
-    } else {
-      sheet.appendRow([
-        targetAnoId,
-        nombre,
-        fechaInicio,
-        fechaFin,
-        inicioClases || fechaInicio,
-        finClases || fechaFin,
-        estado || "Activo",
-        verifiedRole,
-        now,
-        tipoCalendario || "Sistema Americano",
-        finAdministrativo || fechaFin,
-        limiteIngresoCalificaciones || finClases
-      ]);
-    }
-
-    logStructuredEvent("ACADEMIC", "configureSchoolYear", "INFO", "YEAR_CONFIGURED", `Año escolar ${nombre} configurado.`, { targetAnoId, tipoCalendario }, verifiedRole);
-
-    return { status: "success", anoId: targetAnoId, nombre: nombre, message: "Año escolar guardado exitosamente." };
-  } catch (error) {
-    return { status: "error", message: error.message };
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
   }
 }
 
@@ -8596,28 +8598,38 @@ function getAcademicPeriods(payload) {
 }
 
 function manageAcademicPeriod(payload) {
-  const { periodoId, anoId, nombre, tipo, fechaInicio, fechaFin, orden, estado } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "PeriodosAcademicos");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["PeriodoID", "AnoID", "Nombre", "Tipo", "FechaInicio", "FechaFin", "Orden", "Estado"]);
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+  } catch (lockError) {
+    throw new Error("LOCK_TIMEOUT");
   }
-
-  const data = sheet.getDataRange().getValues();
-  let pid = periodoId;
-
-  if (pid) {
-    const idx = data.findIndex(r => String(r[0]).trim() === String(pid).trim());
-    if (idx !== -1) {
-      if (nombre) sheet.getRange(idx + 1, 3).setValue(nombre);
-      if (estado) sheet.getRange(idx + 1, 8).setValue(estado);
-      return { status: "success", message: "Período académico actualizado." };
+  try {
+    const { periodoId, anoId, nombre, tipo, fechaInicio, fechaFin, orden, estado } = payload || {};
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "PeriodosAcademicos");
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["PeriodoID", "AnoID", "Nombre", "Tipo", "FechaInicio", "FechaFin", "Orden", "Estado"]);
     }
-  }
 
-  pid = "PER-" + Date.now();
-  sheet.appendRow([pid, anoId || "ANO-CURRENT", nombre || "I parcial", tipo || "Parcial", fechaInicio || "", fechaFin || "", orden || 1, estado || "Activo"]);
-  return { status: "success", message: "Período académico creado.", data: { periodoId: pid } };
+    const data = sheet.getDataRange().getValues();
+    let pid = periodoId;
+    if (pid) {
+      const idx = data.findIndex(r => String(r[0]).trim() === String(pid).trim());
+      if (idx !== -1) {
+        if (nombre) sheet.getRange(idx + 1, 3).setValue(nombre);
+        if (estado) sheet.getRange(idx + 1, 8).setValue(estado);
+        return { status: "success", message: "Período académico actualizado." };
+      }
+    }
+
+    pid = "PER-" + Date.now();
+    sheet.appendRow([pid, anoId || "ANO-CURRENT", nombre || "I parcial", tipo || "Parcial",
+      fechaInicio || "", fechaFin || "", orden || 1, estado || "Activo"]);
+    return { status: "success", message: "Período académico creado.", data: { periodoId: pid } };
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
 }
 
 function getSubjectCatalog(payload) {
