@@ -71,7 +71,7 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
   Object.keys(tables).forEach(name => {
     const rows = tables[name];
     sheets[name] = { getDataRange() {
-      if (["SesionesAsistencia", "RegistrosAsistencia", "JustificacionesAsistencia"].includes(name)) {
+      if (["AnosLectivos", "PeriodosAcademicos", "CatalogoAsignaturas", "Matriculas", "SesionesAsistencia", "RegistrosAsistencia", "JustificacionesAsistencia"].includes(name)) {
         assert.equal(snapshotLockHeld, true, name + " must be read under the shared attendance lock");
         if (readFails && name === "JustificacionesAsistencia") throw new Error("fixture read failure");
       }
@@ -93,7 +93,8 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
     },
     getVerifiedRequestSessionClaims_() { return { userId: "TEACHER-1", role: actorRole, institutionId }; },
     requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, requestedInstitution, teacherUserId) {
-      assert.equal(snapshotLockHeld, false, "remote USER-Service call must run before acquiring the attendance lock");
+      assert.equal(snapshotLockHeld, false, "remote USER-Service call must run after releasing the local snapshot lock");
+      assert.equal(snapshotLockReleases, 1, "USER-Service must not be called before all local snapshot reads release the lock");
       assert.equal(request.sessionToken, "SESSION-TEST");
       assert.equal(requestedInstitution, institutionId);
       assert.equal(teacherUserId, "TEACHER-1");
@@ -137,6 +138,9 @@ const payload = {
   ], studentIds: ["STU-1", "STU-2"],
   docenteUserId: "ATTACKER-SPOOF", sessionToken: "SESSION-TEST"
 };
+["createStudentEnrollment", "registerStudentEnrollment", "convertAdmissionToStudent", "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentGraduation", "reconcileStudentLifecycleState"].forEach(name => {
+  assert.ok(extract(name).includes("LockService.getScriptLock"), name + " must coordinate enrollment writes with the SACE snapshot lock");
+});
 const snapshotContext = createContext();
 const result = snapshotContext.runSnapshot(payload);
 assert.deepEqual(snapshotContext.getSnapshotLockStats(), { held: false, waits: 1, releases: 1 }, "snapshot must release its lock exactly once before remote gradebook reads");

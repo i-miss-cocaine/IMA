@@ -11110,6 +11110,13 @@ function getSaceAttendanceSnapshot(payload) {
     const studentIds = request.studentIds.map(function(value) { return required(value, "SACE_STUDENT_ID_REQUIRED"); });
     if (new Set(studentIds).size !== studentIds.length) throw new Error("SACE_STUDENT_ROSTER_DUPLICATE");
 
+    attendanceSnapshotLock = LockService.getScriptLock();
+    try {
+      attendanceSnapshotLock.waitLock(10000);
+      attendanceSnapshotLockHeld = true;
+    } catch (lockError) {
+      throw new Error("SACE_ATTENDANCE_SNAPSHOT_LOCK_TIMEOUT");
+    }
     const years = read("AnosLectivos", ["AnoID", "Nombre"]);
     const yearRows = years.rows.filter(function(row) { return String(row[years.index.AnoID] || "").trim() === anoId; });
     if (yearRows.length !== 1) throw new Error("SACE_YEAR_NOT_UNIQUE");
@@ -11179,17 +11186,6 @@ function getSaceAttendanceSnapshot(payload) {
       });
       if (matches.length !== 1) throw new Error("SACE_STUDENT_ENROLLMENT_CONTEXT_MISMATCH");
     });
-    const identityRecords = requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, institutionId, String(actor.userId).trim());
-    const normalizedIdentities = identityRecords.map(function(record) { return record.identity.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(); });
-    if (new Set(normalizedIdentities).size !== normalizedIdentities.length) throw new Error("SACE_STUDENT_IDENTITY_DUPLICATE");
-
-    attendanceSnapshotLock = LockService.getScriptLock();
-    try {
-      attendanceSnapshotLock.waitLock(10000);
-      attendanceSnapshotLockHeld = true;
-    } catch (lockError) {
-      throw new Error("SACE_ATTENDANCE_SNAPSHOT_LOCK_TIMEOUT");
-    }
     const sessions = read("SesionesAsistencia", ["SesionID", "Fecha", "Grado", "Seccion", "AsignaturaID", "DocenteUserId", "Estado", "FechaCierre"]);
     const sessionMap = Object.create(null), attendanceSessions = [];
     sessions.rows.forEach(function(row) {
@@ -11253,6 +11249,9 @@ function getSaceAttendanceSnapshot(payload) {
     });
     attendanceSnapshotLock.releaseLock();
     attendanceSnapshotLockHeld = false;
+    const identityRecords = requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, institutionId, String(actor.userId).trim());
+    const normalizedIdentities = identityRecords.map(function(record) { return record.identity.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(); });
+    if (new Set(normalizedIdentities).size !== normalizedIdentities.length) throw new Error("SACE_STUDENT_IDENTITY_DUPLICATE");
     const expectedContext = {
       anoId: anoId, grado: grade, seccion: section, asignatura: subjectName,
       institutionId: institutionId, teacherUserId: String(actor.userId).trim()
@@ -16751,53 +16750,52 @@ function updateStudentLifecycleStatus(payload) {
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Auditoría y conciliación de consistencia de estados entre Expedientes y Matrículas
 function reconcileStudentLifecycleState(payload) {
   const { autoFix } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
-  const expRows = expSheet.getDataRange().getValues().slice(1);
-  const matSheet = getOrCreateSheet(ss, "Matriculas");
-  const matRows = matSheet.getDataRange().getValues();
-
-  const inconsistencies = [];
-  let fixedCount = 0;
-
-  expRows.forEach((exp, i) => {
-    const expId = exp[0];
-    const userId = exp[1];
-    const estadoExp = String(exp[7] || "Activo").trim();
-
-    if (estadoExp === "Graduado" || estadoExp === "Retirado" || estadoExp === "Trasladado") {
-      // Verificar si existen matrículas 'Activa' o 'Confirmada'
-      matRows.slice(1).forEach((m, mIdx) => {
-        const mUserId = m[2];
-        const mEstado = m[8];
-        if (String(mUserId).trim() === String(userId).trim() && (mEstado === "Activa" || mEstado === "Confirmada")) {
-          const targetState = estadoExp === "Graduado" ? "Graduada" : (estadoExp === "Retirado" ? "Retirada" : "Trasladada");
-          inconsistencies.push({
-            expedienteId: expId,
-            userId: userId,
-            estadoExpediente: estadoExp,
-            matriculaId: m[0],
-            estadoMatriculaActual: mEstado,
-            estadoMatriculaSugerido: targetState
-          });
-
-          if (autoFix) {
-            matSheet.getRange(mIdx + 2, 9).setValue(targetState);
-            fixedCount++;
-          }
-        }
-      });
+  const lock = autoFix ? LockService.getScriptLock() : null;
+  let lockHeld = false;
+  try {
+    if (autoFix) {
+      lock.waitLock(10000);
+      lockHeld = true;
     }
-  });
-
-  return {
-    status: "success",
-    totalExpedientesAuditados: expRows.length,
-    inconsistenciasDetectadas: inconsistencies.length,
-    inconsistenciasCorregidas: fixedCount,
-    detallesInconsistencias: inconsistencies
-  };
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
+    const expRows = expSheet.getDataRange().getValues().slice(1);
+    const matSheet = getOrCreateSheet(ss, "Matriculas");
+    const matRows = matSheet.getDataRange().getValues();
+    const inconsistencies = [];
+    let fixedCount = 0;
+    expRows.forEach((exp, i) => {
+      const expId = exp[0];
+      const userId = exp[1];
+      const estadoExp = String(exp[7] || "Activo").trim();
+      if (estadoExp === "Graduado" || estadoExp === "Retirado" || estadoExp === "Trasladado") {
+        matRows.slice(1).forEach((m, mIdx) => {
+          const mUserId = m[2];
+          const mEstado = m[8];
+          if (String(mUserId).trim() === String(userId).trim() && (mEstado === "Activa" || mEstado === "Confirmada")) {
+            const targetState = estadoExp === "Graduado" ? "Graduada" : (estadoExp === "Retirado" ? "Retirada" : "Trasladada");
+            inconsistencies.push({
+              expedienteId: expId, userId: userId, estadoExpediente: estadoExp,
+              matriculaId: m[0], estadoMatriculaActual: mEstado, estadoMatriculaSugerido: targetState
+            });
+            if (autoFix) {
+              matSheet.getRange(mIdx + 2, 9).setValue(targetState);
+              fixedCount++;
+            }
+          }
+        });
+      }
+    });
+    return {
+      status: "success",
+      totalExpedientesAuditados: expRows.length,
+      inconsistenciasDetectadas: inconsistencies.length,
+      inconsistenciasCorregidas: fixedCount,
+      detallesInconsistencias: inconsistencies
+    };
+  } finally {
+    if (lockHeld) lock.releaseLock();
+  }
 }
 
 // ---------------------------------------------------------------------------
