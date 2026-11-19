@@ -5926,9 +5926,10 @@ function toBase64(file) {
         const item = Number.isInteger(index) && index >= 0 ? gradebookCompetencyCatalog[index] : null;
         document.getElementById('gb-competency-id').value = item ? item.competenciaId : "";
         document.getElementById('gb-indicator-id').value = item ? item.indicadorId : "";
-        document.getElementById('gb-competency-department-id').value = item ? item.departmentId : "";
         const departmentSelect = document.getElementById('gb-catalog-department');
-        if (item && departmentSelect) departmentSelect.value = item.departmentId || "";
+        if (item && item.departmentId && departmentSelect) departmentSelect.value = item.departmentId;
+        document.getElementById('gb-competency-department-id').value = item
+            ? (item.departmentId || String(departmentSelect?.value || "").trim()) : "";
     }
 
     function renderGradebookAssessmentOptions() {
@@ -5951,7 +5952,8 @@ function toBase64(file) {
         try {
             const context = getGradebookContextPayload();
             const response = await fetchApi('EXAM', 'getRubrics', {
-                ...context, profesorId: currentUser.userId, asignatura: context.asignatura
+                ...context, profesorId: currentUser.userId, asignatura: context.asignatura,
+                departmentId: String(document.getElementById('gb-catalog-department')?.value || "").trim()
             });
             if (requestVersion !== gradebookRubricRequestVersion) return;
             if (!response || response.status !== 'success' || !Array.isArray(response.data)) {
@@ -6007,6 +6009,18 @@ function toBase64(file) {
     });
     document.getElementById('gb-competency-catalog')?.addEventListener('change', applySelectedGradebookCompetencyCatalogItem);
     document.getElementById('gb-catalog-program')?.addEventListener('change', loadGradebookCompetencyCatalog);
+    document.getElementById('gb-catalog-department')?.addEventListener('change', () => {
+        const select = document.getElementById('gb-competency-catalog');
+        const selected = String(select?.value || "");
+        const index = selected === "" ? -1 : Number(selected);
+        const item = Number.isInteger(index) && index >= 0 ? gradebookCompetencyCatalog[index] : null;
+        const departmentSelect = document.getElementById('gb-catalog-department');
+        if (item && item.departmentId) departmentSelect.value = item.departmentId;
+        document.getElementById('gb-competency-department-id').value =
+            item && item.departmentId ? item.departmentId : String(departmentSelect?.value || "").trim();
+        loadGradebookRubrics();
+        if (item && !item.departmentId) loadGradebookCompetencyEvaluations();
+    });
     document.getElementById('gb-competency-student')?.addEventListener('change', loadGradebookCompetencyEvaluations);
 
     document.getElementById('btn-gb-save-rubric')?.addEventListener('click', async () => {
@@ -6024,7 +6038,8 @@ function toBase64(file) {
             const context = getGradebookContextPayload();
             const response = await fetchApi('EXAM', 'saveRubric', {
                 ...context, profesorId: currentUser.userId, titulo: title,
-                asignatura: context.asignatura, criterios: criteria
+                asignatura: context.asignatura, criterios: criteria,
+                departmentId: String(document.getElementById('gb-catalog-department')?.value || "").trim()
             });
             if (!response || response.status !== 'success') throw new Error(response?.message || "No fue posible guardar la rúbrica.");
             document.getElementById('gb-rubric-title').value = "";
@@ -6078,6 +6093,12 @@ function toBase64(file) {
             alert("Seleccione un estudiante e indique competencia, indicador y nivel de desempeño.");
             return;
         }
+        const rubricId = String(document.getElementById('gb-competency-rubric')?.value || "").trim();
+        const rubricDepartmentId = String(document.getElementById('gb-competency-department-id')?.value || "").trim();
+        if (rubricId && !rubricDepartmentId) {
+            alert("Seleccione el departamento de la rúbrica antes de registrar la evaluación.");
+            return;
+        }
         const button = document.getElementById('btn-gb-save-competency');
         button.disabled = true;
         try {
@@ -6088,7 +6109,7 @@ function toBase64(file) {
                 asignaturaId: context.asignatura, periodoId: context.periodoId,
                 profesorId: currentUser.userId,
                 programaCurricular: String(gradebookCompetencyCatalog[Number(document.getElementById('gb-competency-catalog')?.value)]?.programaCurricular || "").trim(),
-                departmentId: String(gradebookCompetencyCatalog[Number(document.getElementById('gb-competency-catalog')?.value)]?.departmentId || "").trim()
+                departmentId: String(document.getElementById('gb-competency-department-id')?.value || "").trim()
             });
             if (!response || response.status !== 'success') throw new Error(response?.message || "No fue posible registrar la evaluación.");
             document.getElementById('gb-competency-observations').value = "";
