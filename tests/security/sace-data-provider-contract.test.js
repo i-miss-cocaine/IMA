@@ -123,6 +123,22 @@ assert.throws(() => build({ partial1Gradebook: gradebook("PER-1", {
 assert.throws(() => build({ partial1Gradebook: gradebook("PER-1", {
   recuperaciones: [{ userId: "STU-1", notaFinalCalculada: 99 }]
 }) }), /SACE_RECOVERY_MAPPING_UNVERIFIED:partial1/);
+assert.throws(() => build({ partial2Gradebook: gradebook("PER-2", {
+  recuperaciones: [{ userId: "STU-1", evaluacionId: "CAT-1", notaFinalCalculada: 99 }]
+}) }), /SACE_RECOVERY_MAPPING_UNVERIFIED:partial2/);
+const missingRecoveryContract = gradebook("PER-1");
+delete missingRecoveryContract.data.recuperaciones;
+assert.throws(() => build({ partial1Gradebook: missingRecoveryContract }),
+  /SACE_GRADEBOOK_RECOVERY_DATA_INCOMPLETE:partial1/);
+const pendingSecondPartial = gradebook("PER-2", {
+  summaries: {
+    "STU-1": { status: "provisional", notaFinal: null },
+    "STU-2": { status: "calculated", notaFinal: 84 }
+  }
+});
+assert.throws(() => build({ partial2Gradebook: pendingSecondPartial }),
+  /SACE_GRADE_NOT_FINAL:partial2/);
+
 assert.throws(() => build({ identityRecords: identityRecords.slice(1) }), /SACE_IDENTITY_RECORD_MISSING/);
 assert.throws(() => build({ attendanceSessions: sessions.concat(sessions[0]) }), /SACE_ATTENDANCE_SESSION_DUPLICATE/);
 assert.throws(() => build({ attendanceSessions: sessions.map(session => session.sesionId === "S-1" ? Object.assign({}, session, { estado: "Abierta" }) : session) }), /SACE_ATTENDANCE_SESSION_NOT_CLOSED:partial1/);

@@ -38,7 +38,10 @@
     if (text(data.estadoPeriodo) !== "CERRADO") throw new Error("SACE_GRADEBOOK_PERIOD_NOT_CLOSED:" + label);
     if (!Array.isArray(data.alumnos) || !data.alumnos.length || !data.resumenes ||
         typeof data.resumenes !== "object") throw new Error("SACE_GRADEBOOK_DATA_INCOMPLETE:" + label);
-    if (Array.isArray(data.recuperaciones) && data.recuperaciones.length) {
+    if (!Array.isArray(data.recuperaciones)) {
+      throw new Error("SACE_GRADEBOOK_RECOVERY_DATA_INCOMPLETE:" + label);
+    }
+    if (data.recuperaciones.length) {
       throw new Error("SACE_RECOVERY_MAPPING_UNVERIFIED:" + label);
     }
     const students = new Map();
