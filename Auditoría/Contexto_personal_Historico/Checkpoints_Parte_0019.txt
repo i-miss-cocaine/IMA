@@ -1669,3 +1669,63 @@ Estado:
 Siguiente acción elegible:
 - Auditar y enumerar los escritores de Exam, USER y Academic que afectan los datos SACE; comprobar si existe un punto de escritura común por servicio para una revisión monotónica bajo el mismo lock. Después, diseñar contratos locales para cambios concurrentes y ausencia de incremento de revisión antes de tocar código.
 ===============================================================================
+
+
+===============================================================================
+### C1.880 — AUD-NG-167: inventario de escritores de matrícula, identidad y gradebooks
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SOURCE-WRITER-COVERAGE-51
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 26c450594aee10066fdcaaf9ee18349faacf5891
+HEAD de auditoría: 52a586befdd0f25289ec2825d05fa9c98ef7c64a
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Alcance:
+- Inventario estático de funciones que escriben en las hojas que alimentan el snapshot SACE: años, periodos, catálogo de asignaturas, matrícula, sesiones, asistencia, justificaciones, Usuarios/Personas, cierres, calificaciones y recuperaciones.
+- Se inspeccionaron las funciones escritoras y sus wrappers/callers para distinguir funciones *Unlocked_ de rutas públicas que adquieren el lock antes de invocarlas.
+
+Resultados Academic-Service:
+- Confirmado: createStudentEnrollment, changeStudentSection, recordStudentTransfer, recordStudentWithdrawal, processStudentGraduation, reconcileStudentLifecycleState, registerStudentEnrollment y convertAdmissionToStudent usan lock o delegan en una ruta que lo mantiene. Los escritores de asistencia saveClassAttendance, bulkApplyAttendanceStatus, saveDailyAttendance y closeAttendanceSession usan ScriptLock.
+- Confirmado: createCanonicalAbsenceJustificationUnlocked_ se invoca a través de createCanonicalAbsenceJustification_ con lock; reviewCanonicalAbsenceJustification_ y reconcilePendingAttendanceJustifications mantienen lock mientras actualizan la justificación y sincronizan asistencia.
+- Hallazgo alto para la consistencia: configureSchoolYear escribe AnosLectivos sin lock y puede modificar el nombre del año utilizado al resolver matrícula. manageAcademicPeriod escribe PeriodosAcademicos sin lock y puede cambiar fecha, contexto o estado de los periodos leídos por el snapshot.
+- Otros escritores sin lock que requieren revisar unicidad/alcance antes de versionar: createAcademicYear, prepareNewAcademicYear y updateAcademicYearStatus (AnosLectivos); createSubjectCatalogItem (CatalogoAsignaturas). Su efecto sobre el registro seleccionado es más limitado, pero impide asumir cobertura total del origen sin comprobar colisiones y semántica.
+- openAttendanceSession crea sesiones en estado Abierta sin lock; el snapshot filtra sesiones cerradas y closeAttendanceSession sí serializa el cierre. No se atribuye a la inserción abierta una mutación directa del conjunto exportado; debe conservarse la revisión de la transición a cerrada.
+
+Resultados USER-Service:
+- Los escritores relevantes de Usuarios/Personas para el directorio SACE — createPerson, registerUser, linkPersonAccount, manageAccountState y manageUserRoleMemberships — utilizan lock; los escritores de migración referidos en C1.878 también se serializan.
+- updateUserProfile, loginUser, resetPassword y la anonimización de retención no modifican los campos que getSaceStudentIdentityDirectory_ consume para construir la identidad (rol, PersonaID, EstadoCuenta y campos de Personas). auditAndReconcileIdentityInconsistencies escribe principalmente proyecciones/delegaciones; no se identificó en el bloque revisado una mutación de la identidad canónica consumida por SACE.
+
+Resultados Exam-Service:
+- Las mutaciones activas principales de CalificacionesEstudiantes, RecuperacionesEstudiante y CierresPeriodos se ejecutan mediante withAuthorizedGradebookSave_, withAuthorizedStudentRecoveryMutation_, withAuthorizedStudentGradeRectification_, withAuthorizedPeriodGradebookClosure_, withAuthorizedPeriodGradebookSubmission_ y withAuthorizedPeriodGradebookReopen_, todos con ScriptLock.
+- saveStudentRecoveryUnlocked_, closePeriodGradebookUnlocked_ y submitGradebookForReviewUnlocked_ son helpers internos sin lock propio, pero sus callers públicos revisados los invocan dentro de wrappers bloqueados.
+- publishGradebookForContext contiene escrituras a CalificacionesEstudiantes sin lock; no se encontró un caller activo en el archivo actual. Se clasifica como helper legacy no demostrado, no como ruta pública confirmada. Requiere confirmar referencias externas/indirectas antes de decidir su retiro o encapsulación.
+- saveCompetencyCatalogItem modifica ConfiguracionAcademica bajo lock; su helper de mutación se consume desde el flujo protegido.
+
+Conclusión para C1.879:
+- No se puede introducir todavía un contador de revisión fiable en Academic: configureSchoolYear y manageAcademicPeriod pueden cambiar fuentes del snapshot sin respetar el lock local. Los demás escritores de año/catálogo y el helper legacy Exam requieren cerrar la cobertura antes de declarar exhaustividad.
+- USER y las mutaciones principales Exam presentan cobertura de lock suficiente en las rutas revisadas; no se extiende lock entre servicios.
+- No se implementaron cambios de código ni se afirma atomicidad distribuida. Se mantiene XLS CANDIDATE.
+
+Verificación:
+- Análisis estático mediante lectura de las funciones, detección de llamadas de escritura y rastreo de wrappers/callers en las tres fuentes actuales.
+- No es un análisis AST formal ni demuestra ausencia de writers dinámicos/reflection o callers externos; las funciones candidatas se conservan como puntos de revisión.
+- Node.js, CLI y GitHub Actions: NOT RUN; unidad documental de auditoría, sin código modificado. El contenedor no puede resolver github.com para checkout local.
+
+Archivos modificados:
+- Auditoria.txt
+- changueslogs.txt
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+
+Commits:
+- 52a586befdd0f25289ec2825d05fa9c98ef7c64a — inventario y hallazgos.
+- El commit actual agrega C1.880 y su entrada al índice.
+
+Estado:
+- C1.880 completa como auditoría estática de escritores; la cobertura de locks no está completa para todos los escritores Academic.
+- AUD-NG-167 continúa En progreso. BETA-EXAM-110..113 y la fuente/plantilla oficial SACE siguen Pendiente beta. XLS permanece CANDIDATE.
+
+Siguiente acción elegible:
+- Corregir de forma localizada los writers Academic configureSchoolYear y manageAcademicPeriod para que serialicen sus lecturas/validaciones/escrituras con el mismo ScriptLock usado por el snapshot; revisar las rutas públicas, autorización y tests concurrentes antes de añadir cualquier revisión monotónica. Después verificar writers secundarios y el helper legacy Exam.
+===============================================================================
