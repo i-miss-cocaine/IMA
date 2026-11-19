@@ -62,6 +62,9 @@ assert.equal(result.total, 1);
 assert.equal(result.data[0].competenciaId, "COMP-1");
 assert.equal(result.data[0].indicadorId, "IND-1");
 assert.throws(() => sandbox.read({}, fixture([valid, valid])), /COMPETENCY_CATALOG_DUPLICATE_ENTRY/);
+const corruptKey = valid.slice();
+corruptKey[16] = "tampered-context-key";
+assert.throws(() => sandbox.read({}, fixture([corruptKey])), /COMPETENCY_CATALOG_CONTEXT_KEY_INVALID/);
 const bad = fixture([valid]);
 bad.ss.getSheetByName = () => ({ getDataRange: () => ({ getValues: () => [headers.slice(0, 8)] }) });
 assert.throws(() => sandbox.read({}, bad), /COMPETENCY_CATALOG_SCHEMA_INVALID/);
@@ -135,7 +138,7 @@ function mutationFixture(options = {}) {
     normalizeString: norm,
     Utilities: { getUuid() { state.uuid++; return "UUID-" + state.uuid; } }
   };
-  vm.runInNewContext(extract("saveCompetencyCatalogItem") + ";this.save=saveCompetencyCatalogItem;", runtime);
+  vm.runInNewContext(extract("competencyCatalogContextKey_") + "\n" + extract("saveCompetencyCatalogItem") + ";this.save=saveCompetencyCatalogItem;", runtime);
   const payload = { anoId: "2026", grado: "10", seccion: "A", asignaturaId: "MAT", periodoId: "P1",
     competenciaId: "COMP-1", competencia: "Resolver problemas", indicadorId: "IND-1",
     indicador: "Resuelve problemas contextualizados", programaCurricular: "PLAN-A" };
