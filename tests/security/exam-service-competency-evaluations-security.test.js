@@ -164,7 +164,7 @@ assert.deepEqual(timeout.stats(), { acquires: 1, releases: 0, held: false });
 
 let racing;
 racing = runtime({ beforeAcquire() {
-  racing.sheets.EvaluacionesCompetencias.rows.push(["EV-AFTER", "COMP-A", "IND-A", "STU-1", "Math", "P1", "Alto", "", "", null]);
+  racing.sheets.EvaluacionesCompetencias.rows.push(contextRow("EV-AFTER", "COMP-A", "IND-A", "STU-1", "Math", "P1", "Alto", "", "", null));
 } });
 assert.equal(racing.call({}).total, 4, "read uses the post-lock snapshot");
 
