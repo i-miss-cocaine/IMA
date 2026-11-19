@@ -20,7 +20,7 @@ function (provider, templates) {
   }
   function normalizeContextText(value) {
     return String(value == null ? "" : value).normalize("NFD")
-      .replace(/[\\u0300-\\u036f]/g, "").replace(/\\s+/g, " ").trim().toUpperCase();
+      .replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
   }
   function assertTemplateMatchesAcademicSnapshot(snapshot, templateContext) {
     const context = snapshot && snapshot.data && snapshot.data.expectedContext;
