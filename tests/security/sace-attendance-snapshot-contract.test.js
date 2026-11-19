@@ -264,7 +264,7 @@ const incompleteIdentityContext = Object.assign({}, helperContext, {
 });
 vm.createContext(incompleteIdentityContext);
 vm.runInContext(extract("requestSaceStudentIdentityDirectoryFromUser_") +
-  "\\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", incompleteIdentityContext);
+  "\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", incompleteIdentityContext);
 assert.throws(() => incompleteIdentityContext.requestDirectory(
   { sessionToken: "SESSION-TEST" }, ["STU-1", "STU-2"], "INST-1", "TEACHER-1"
 ), /SACE_IDENTITY_RESPONSE_INCOMPLETE/);
@@ -277,7 +277,7 @@ const invalidDocumentContext = Object.assign({}, helperContext, {
 });
 vm.createContext(invalidDocumentContext);
 vm.runInContext(extract("requestSaceStudentIdentityDirectoryFromUser_") +
-  "\\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", invalidDocumentContext);
+  "\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", invalidDocumentContext);
 assert.throws(() => invalidDocumentContext.requestDirectory(
   { sessionToken: "SESSION-TEST" }, ["STU-1"], "INST-1", "TEACHER-1"
 ), /SACE_IDENTITY_RESPONSE_SCOPE_INVALID/);
@@ -291,7 +291,7 @@ const duplicateDocumentContext = Object.assign({}, helperContext, {
 });
 vm.createContext(duplicateDocumentContext);
 vm.runInContext(extract("requestSaceStudentIdentityDirectoryFromUser_") +
-  "\\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", duplicateDocumentContext);
+  "\nthis.requestDirectory=requestSaceStudentIdentityDirectoryFromUser_;", duplicateDocumentContext);
 assert.throws(() => duplicateDocumentContext.requestDirectory(
   { sessionToken: "SESSION-TEST" }, ["STU-1", "STU-2"], "INST-1", "TEACHER-1"
 ), /SACE_IDENTITY_DUPLICATE_DOCUMENT/);
