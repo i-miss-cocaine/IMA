@@ -6113,3 +6113,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Identity mapping Action 44630231769 SUCCESS; Academic Action 44630231995 SUCCESS; Exam Action 44630231886 FAILURE únicamente en el agregado de todos los tests por Phase22 `configureSchoolDocumentTemplate` ausente, mientras sintaxis y suite completa Exam-Service pasaron. Department Scope 44630231856 tiene la misma falla ajena. Task-Service, Accounting Import Preflight, Hierarchical Configuration y UI Accessibility SUCCESS.
 - Commits: a439f9ca724545ba33efaacdd5fedd0970174a5d y 7ddb482be778da9b3864bc56c3c521c015257286. Evidencia en Checkpoints_Parte_0019.txt — C1.869.
 - Siguiente: auditoría del DTO de gradebook (alumnos, resúmenes, recuperaciones, claves y notas pendientes).
+
+### C1.870 — AUD-NG-167: integridad del DTO Exam→Academic
+- Exam valida estados y valores numéricos de resúmenes, y recuperaciones del roster solicitado con identificador estable, unicidad y nota calculada nula o válida. Los datos fuera del subset de alumnos no se filtran al DTO.
+- Academic valida de nuevo la correspondencia exacta del roster, nombres, claves y valores de resumen, además del alcance y unicidad de recuperaciones. Se conserva compatibilidad con el subset solicitado dentro de una clase mayor.
+- Contrato Exam, suite específica Exam, sintaxis Exam/repo y aislamiento candidato PASS. Academic batch transport PASS; SACE template structure compatibility PASS.
+- El agregado global registra tres fallos ajenos preexistentes: Phase22 configureSchoolDocumentTemplate, Accounting ensureSchoolDocumentIssuedSchema_ y session-token-expiry USER/valid. No se modificaron esos módulos por no pertenecer a AUD-NG-167.
+- Commits: 7b3e222133fb66200577abaa30c0a11f6e129999, c83a87d0bf45ce1219c903585c26f18b2ac3b9bb, 33b30505db3a164e581d4a9e4b5badb05189a5c2, 004fa941fe1819169c66a749fec6e5e934b45d6f, ace5a719a3a819e3d92cc7adb2e48c24f5dbf254 y 0193b1a08682896e8f69a252a911e30f14f1f540. Evidencia en Checkpoints_Parte_0019.txt — C1.870.
+- Siguiente: auditar prepareCandidateExportFromAcademicSnapshot y la transformación de recuperaciones/notas pendientes hacia columnas SACE; XLS sigue CANDIDATE y BETA-EXAM-110..113 pendientes.

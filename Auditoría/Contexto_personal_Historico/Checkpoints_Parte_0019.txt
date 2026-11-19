@@ -1245,3 +1245,58 @@ Estado:
 Siguiente acción elegible:
 - Revisar integridad del DTO de gradebook devuelto por Exam-Service: correspondencia exacta entre alumnos solicitados, resumenes, recuperaciones y claves, ausencia de datos extra, orden/duplicados y manejo de notas pendientes; corregir solo defectos reproducibles y probarlos localmente.
 ===============================================================================
+
+===============================================================================
+### C1.870 — AUD-NG-167: integridad del DTO de gradebook entre Exam y Academic
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-GRADEBOOK-DTO-INTEGRITY-41
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: fbdbbebc71b3b9e0d59276aabd517721b99ca875
+HEAD de implementación: 7b3e222133fb66200577abaa30c0a11f6e129999
+HEAD de integración y corrección: c83a87d0bf45ce1219c903585c26f18b2ac3b9bb
+HEAD de ajuste de fixtures: 33b30505db3a164e581d4a9e4b5badb05189a5c2
+HEAD de compatibilidad: 004fa941fe1819169c66a749fec6e5e934b45d6f
+HEAD de aislamiento candidato: ace5a719a3a819e3d92cc7adb2e48c24f5dbf254
+HEAD final de pruebas: 0193b1a08682896e8f69a252a911e30f14f1f540
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgos y correcciones:
+- Exam construía un DTO mínimo, pero convertía silenciosamente valores numéricos inválidos en NaN y podía omitir recuperaciones si el arreglo de origen no existía.
+- Se valida que cada resumen solicitado tenga estado permitido, calificaciones/progreso/ponderación pendientes numéricos finitos dentro de 0–100 y coherencia entre estado y nota final. Se ignoran resúmenes de estudiantes ajenos al subconjunto solicitado, pero nunca se exponen en el DTO.
+- Cada recuperación del subconjunto solicitado exige ID estable, alumno y evaluación; IDs duplicados se rechazan. La nota calculada puede ser nula (recuperación aún no calculada), o un número finito entre 0 y 100. El DTO conserva recuperacionId para que Academic pueda verificar unicidad.
+- Academic valida de nuevo el roster exacto, nombres, claves de resumen, estado/valores de cada resumen y pertenencia/identidad/rango de recuperaciones. No se confía ciegamente en el DTO recibido.
+- Se actualizó sace-candidate-production-isolation para permitir el endpoint batch de solo lectura además del endpoint singular, sin abrir acciones de carga/descarga/exportación ni activar la UI.
+- No se altera la matrícula ni la política de publicación/cierre; la fuente de los datos continúa siendo Exam-Service bajo su contexto y lock.
+
+Archivos modificados:
+- backend/exam-service/Code.gs
+- backend/academic-service/Code.gs
+- tests/security/exam-service-sace-gradebook-snapshot.test.js
+- tests/security/academic-sace-gradebook-batch-transport.test.js
+- tests/security/sace-candidate-production-isolation.test.js
+
+Commits:
+- 7b3e222133fb66200577abaa30c0a11f6e129999 — validación de resumen y recuperaciones en Exam DTO.
+- c83a87d0bf45ce1219c903585c26f18b2ac3b9bb — validación del DTO en Academic y propagación del ID estable de recuperación.
+- 33b30505db3a164e581d4a9e4b5badb05189a5c2 — fixtures de Academic completados.
+- 004fa941fe1819169c66a749fec6e5e934b45d6f — compatibilidad con subset de roster en fuente Exam.
+- ace5a719a3a819e3d92cc7adb2e48c24f5dbf254 — aislamiento de candidato acepta endpoint batch read-only.
+- 0193b1a08682896e8f69a252a911e30f14f1f540 — assertion de ID estable de recuperación.
+
+Verificación:
+- Exam-Service Action 44632470784: node --check de Exam y de interfaces; contrato exam-service-sace-gradebook-snapshot PASS; suite específica completa Exam-Service PASS; syntax-check del repositorio PASS; aislamiento de producción candidato ya no falla.
+- El agregado de todos los tests Node continúa con tres fallos preexistentes ajenos a este cambio: Phase22 document management (configureSchoolDocumentTemplate ausente), accounting school document binary integrity (ensureSchoolDocumentIssuedSchema_ ausente) y session-token-expiry (USER/valid). Los contratos y sintaxis pertinentes a este cambio pasan.
+- Academic-Service Action 44632158120: SUCCESS, incluidos node --check y academic-sace-gradebook-batch-transport.test.js después de completar los fixtures.
+- SACE template structure compatibility Action 44632402068: SUCCESS.
+- Department Scope y Exam globales heredan los fallos agregados ajenos indicados; no se alteran Accounting, Phase22 ni la gestión global de sesiones para ocultarlos.
+- No se realizó prueba con servicios desplegados, hojas reales ni credenciales beta. No se declara certificación SACE ni habilitación productiva.
+
+Estado:
+- Integridad del DTO local entre Exam y Academic reforzada y cubierta por contratos.
+- AUD-NG-167 sigue En progreso; BETA-EXAM-110..113 y equivalencias oficiales/documentación institucional siguen pendientes de validación beta.
+- XLS permanece CANDIDATE; no se activa UI ni carga SACE.
+
+Siguiente acción elegible:
+- Auditar el consumidor del snapshot dentro de prepareCandidateExportFromAcademicSnapshot y la transformación de recuperaciones/notas pendientes hacia las columnas SACE; verificar orden, última recuperación aplicable, ausencia de sobrescrituras y consistencia entre parciales sin inferir equivalencias oficiales.
+===============================================================================
