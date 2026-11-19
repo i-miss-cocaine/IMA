@@ -1264,7 +1264,8 @@ Rama: NG_beta_0.0.0.1_work
 Rama base: NG_beta_0.0.0.1 (solo lectura)
 Checkpoint anterior: C1.827
 HEAD inicial: 9939ac460e174996acb17e8e0200ba0f7907c14e
-HEAD verificado al cierre: PENDIENTE_COMMIT_CHECKPOINT
+HEAD de código verificado antes del registro C1.828: 9939ac460e174996acb17e8e0200ba0f7907c14e
+Commit que registra C1.828: de955c15096b5aecda984359e5109bc72201a63e
 HEAD de la rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
 
 Tarea: AUD-NG-167, continuidad del adaptador SACE candidato.
