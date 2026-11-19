@@ -63,6 +63,11 @@ const context = {
   SPREADSHEET_ID: "USER-SHEET",
   SpreadsheetApp: { openById(id) { assert.equal(id, "USER-SHEET"); return {}; } },
   getOrCreateSheet(_ss, name) { assert.equal(name, "Personas"); return sheet; },
+  LockService: { getScriptLock() { return {
+    waitLock(timeout) { assert.equal(timeout, 10000); context.lockWaits++; context.lockHeld = true; },
+    releaseLock() { assert.equal(context.lockHeld, true); context.lockHeld = false; context.lockReleases++; }
+  }; } },
+  lockWaits: 0, lockReleases: 0, lockHeld: false,
   logStructuredEvent() { eventCount++; },
   Date, String, Number, Array, Object, Error
 };
@@ -79,10 +84,14 @@ assert.equal(sheet.rows[2][10], "DNI", "new document type is persisted as an exp
 assert.equal(sheet.rows[2][1], "Mario");
 assert.equal(sheet.rows[2][4], "mario@example.test");
 assert.equal(eventCount, 1);
+assert.deepEqual({ waits: context.lockWaits, releases: context.lockReleases, held: context.lockHeld },
+  { waits: 1, releases: 1, held: false }, "Personas writes must use the same USER-Service lock as identity-directory reads");
 assert.throws(() => context.createPerson({ nombres: "Luz", apellidos: "Paz", tipoIdentificacion: "X".repeat(41) }), /PERSON_DOCUMENT_TYPE_INVALID/);
 const withoutType = context.createPerson({ nombres: "Luz", apellidos: "Paz" });
 assert.equal(withoutType.status, "success");
 assert.equal(sheet.rows[3][10], "", "document type may remain explicitly unclassified rather than being inferred");
+assert.deepEqual({ waits: context.lockWaits, releases: context.lockReleases, held: context.lockHeld },
+  { waits: 2, releases: 2, held: false }, "each successful person write acquires and releases the shared lock");
 assert(source.includes('"Observaciones", "TipoIdentificacion"'), "new Personas sheets expose the canonical type field");
 assert(source.includes('"Observaciones","TipoIdentificacion"'), "migration writer schema includes the canonical type field");
 process.stdout.write("user-person-document-type: PASS (additive schema, explicit value, legacy compatibility and no inference)\n");
