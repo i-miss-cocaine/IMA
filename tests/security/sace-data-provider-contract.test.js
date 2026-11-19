@@ -181,6 +181,19 @@ const shuffledInputs = build({
 });
 assert.deepEqual(shuffledInputs.sourceStudents, result.sourceStudents,
   "identity and attendance joins must be independent of source-row ordering");
+const inclusiveBoundaryCandidate = build({
+  partial1Period: { periodoId: "PER-1", anoId: "2026", fechaInicio: "2026-02-03", fechaFin: "2026-02-03" },
+  partial2Period: { periodoId: "PER-2", anoId: "2026", fechaInicio: "2026-05-03", fechaFin: "2026-05-03" }
+});
+assert.deepEqual(inclusiveBoundaryCandidate.sourceStudents, result.sourceStudents,
+  "sessions on period start/end dates are included at inclusive calendar-day boundaries");
+const outsideBoundarySessions = sessions.concat([
+  { sesionId: "S-BEFORE", fecha: "2026-01-31", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1", estado: "Abierta" },
+  { sesionId: "S-GAP", fecha: "2026-05-01", grado: "11", seccion: "A", asignaturaId: "INF-01", docenteUserId: "PROF-1", estado: "Abierta" }
+]);
+assert.deepEqual(build({ attendanceSessions: outsideBoundarySessions }).sourceStudents, result.sourceStudents,
+  "sessions outside both selected periods do not contribute, including the gap between them");
+
 
 assert.throws(() => build({ identityRecords: identityRecords.concat(identityRecords[0]) }), /SACE_IDENTITY_RECORD_DUPLICATE/);
 assert.throws(() => build({ identityRecords: identityRecords.concat({
