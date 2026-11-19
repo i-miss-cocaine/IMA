@@ -20,6 +20,7 @@ on:
       - 'tests/ui/student-contextual-report-ui.test.js'
       - 'tests/security/exam-service-*.test.js'
       - 'tests/security/exam-service-security-contract.test.js'
+      - 'tests/security/exam-service-sace-gradebook-snapshot.test.js'
       - 'tests/security/exam-service-departmental-access.test.js'
       - 'tests/security/exam-service-read-endpoints-security.test.js'
       - 'tests/security/exam-service-save-rubric-security.test.js'
@@ -136,6 +137,7 @@ jobs:
         run: node tests/security/exam-service-question-bank-security.test.js
       - name: Run question bank read security regression
         run: node tests/security/exam-service-question-bank-read-security.test.js
+      - run: node tests/security/exam-service-sace-gradebook-snapshot.test.js
       - run: node tests/security/exam-service-security-contract.test.js
       - run: node tests/security/exam-service-departmental-access.test.js
       - run: node tests/security/exam-service-read-endpoints-security.test.js

@@ -89,7 +89,7 @@ const ROLE_PERMISSIONS = {
   "Profesor": [
     "createExam", "updateExam", "updateExamStatus", "deleteExam", "gradeExamSubmission", "deleteExamSubmission",
     "getAllExams", "getTeacherExamActivity", "getExamQuestions", "getStudentExams", "getExamResult",
-    "getGradebookData", "saveGradebookGrades", "bulkApplyGradebookGrades", "getGradebookWeightConfiguration", "saveGradebookWeightConfiguration", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
+    "getGradebookData", "getSaceGradebookSnapshot", "saveGradebookGrades", "bulkApplyGradebookGrades", "getGradebookWeightConfiguration", "saveGradebookWeightConfiguration", "copyEvaluationSetupBetweenGroups", "getEvaluationCategories", "saveEvaluationCategory",
     "getRubrics", "saveRubric", "getCompetencyCatalog", "saveCompetencyCatalogItem", "saveCompetencyEvaluation", "getCompetencyEvaluations", "saveStudentRecovery", "closePeriodGradebook", "submitGradebookForReview",
     "manageQuestionBank", "getQuestionBank", "checkExamSchedulingConflict", "simulateExamReschedule",
     "getExamGradeDistributionAnalytics"
@@ -649,6 +649,7 @@ function doPost(e) {
       case "deleteExam": result = deleteExam(payload); break;
       case "deleteExamSubmission": result = deleteExamSubmission(payload); break;
       case "getGradebookData": result = getGradebookData(payload); break;
+      case "getSaceGradebookSnapshot": result = getSaceGradebookSnapshot(payload); break;
       case "saveGradebookGrades": result = saveGradebookGrades(payload); break;
       case "bulkApplyGradebookGrades": result = bulkApplyGradebookGrades(payload); break;
       case "copyEvaluationSetupBetweenGroups": result = copyEvaluationSetupBetweenGroups(payload); break;
@@ -3667,6 +3668,98 @@ function saveGradebookWeightConfigurationUnlocked_(payload, context) {
   return { status: "success", total: categories.length,
     totalWeight: categories.reduce((sum, item) => sum + item.porcentajePonderacion, 0),
     message: "Ponderaciones guardadas para el contexto académico seleccionado." };
+}
+
+function getSaceGradebookSnapshot(payload) {
+  return withAuthorizedExamRead_("getSaceGradebookSnapshot", payload, context => {
+    const request = payload || {};
+    const required = (value, code) => {
+      const result = String(value == null ? "" : value).trim();
+      if (!result) throw new Error(code);
+      return result;
+    };
+    const periodoId = required(request.periodoId, "SACE_GRADEBOOK_PERIOD_ID_REQUIRED");
+    const parcial = required(request.parcial, "SACE_GRADEBOOK_PARTIAL_MAPPING_REQUIRED");
+    const studentIds = request.studentIds;
+    if (!Array.isArray(studentIds) || !studentIds.length || studentIds.length > 500) {
+      throw new Error("SACE_GRADEBOOK_ROSTER_REQUIRED");
+    }
+    const requested = studentIds.map(id => required(id, "SACE_GRADEBOOK_STUDENT_ID_REQUIRED"));
+    if (new Set(requested).size !== requested.length) throw new Error("SACE_GRADEBOOK_ROSTER_DUPLICATE");
+    const snapshot = getGradebookDataUnlocked_(request, context);
+    if (!snapshot || snapshot.status !== "success" || !snapshot.data) {
+      throw new Error("SACE_GRADEBOOK_SOURCE_UNAVAILABLE");
+    }
+    const data = snapshot.data, sourceContext = data.contexto || {};
+    const expected = {
+      anoId: required(request.anoId || request.anoLectivo, "GRADEBOOK_CONTEXT_REQUIRED"),
+      grado: required(request.grado, "GRADEBOOK_CONTEXT_REQUIRED"),
+      seccion: required(request.seccion, "GRADEBOOK_CONTEXT_REQUIRED"),
+      asignatura: required(request.asignatura, "GRADEBOOK_CONTEXT_REQUIRED"),
+      institutionId: required(context && context.scope && context.scope.institutionId, "SACE_GRADEBOOK_INSTITUTION_REQUIRED")
+    };
+    Object.keys(expected).forEach(key => {
+      if (String(sourceContext[key] || "").trim() !== expected[key]) {
+        throw new Error("SACE_GRADEBOOK_CONTEXT_MISMATCH:" + key);
+      }
+    });
+    if (String(sourceContext.periodoId || "").trim() !== parcial) {
+      throw new Error("SACE_GRADEBOOK_PERIOD_MAPPING_MISMATCH");
+    }
+    if (String(data.estadoPeriodo || "").trim().toUpperCase() !== "CERRADO") {
+      throw new Error("SACE_GRADEBOOK_PERIOD_NOT_CLOSED");
+    }
+    if (!Array.isArray(data.alumnos) || !data.resumenes || typeof data.resumenes !== "object") {
+      throw new Error("SACE_GRADEBOOK_DATA_INCOMPLETE");
+    }
+    const roster = new Map();
+    data.alumnos.forEach(student => {
+      const userId = required(student && student.userId, "SACE_GRADEBOOK_STUDENT_ID_REQUIRED");
+      if (roster.has(userId)) throw new Error("SACE_GRADEBOOK_ROSTER_AMBIGUOUS");
+      roster.set(userId, student);
+    });
+    const alumnos = requested.map(userId => {
+      const student = roster.get(userId);
+      if (!student) throw new Error("SACE_GRADEBOOK_STUDENT_OUTSIDE_CLASS");
+      const nombreCompleto = required(student.nombreCompleto, "SACE_GRADEBOOK_STUDENT_NAME_REQUIRED");
+      return { userId, nombreCompleto, grado: expected.grado, seccion: expected.seccion };
+    });
+    const resumenes = Object.create(null);
+    requested.forEach(userId => {
+      const summary = data.resumenes[userId];
+      if (!summary || String(summary.userId || "").trim() !== userId) {
+        throw new Error("SACE_GRADEBOOK_SUMMARY_MISSING");
+      }
+      resumenes[userId] = {
+        userId,
+        status: String(summary.status || ""),
+        notaFinal: summary.notaFinal == null ? null : Number(summary.notaFinal),
+        avancePonderado: summary.avancePonderado == null ? null : Number(summary.avancePonderado),
+        ponderacionPendiente: summary.ponderacionPendiente == null ? null : Number(summary.ponderacionPendiente)
+      };
+    });
+    const recoveries = Array.isArray(data.recuperaciones) ? data.recuperaciones
+      .filter(row => requested.indexOf(String(row.userId || "").trim()) !== -1)
+      .map(row => ({
+        userId: String(row.userId || "").trim(),
+        evaluacionId: String(row.evaluacionId || "").trim(),
+        notaFinalCalculada: row.notaFinalCalculada == null ? null : Number(row.notaFinalCalculada)
+      })) : [];
+    return {
+      status: "success",
+      data: {
+        alumnos,
+        resumenes,
+        recuperaciones: recoveries,
+        estadoPeriodo: "Cerrado",
+        contexto: {
+          anoId: expected.anoId, periodoId, parcial,
+          grado: expected.grado, seccion: expected.seccion,
+          asignatura: expected.asignatura, institutionId: expected.institutionId
+        }
+      }
+    };
+  });
 }
 
 function getGradebookData(payload) {

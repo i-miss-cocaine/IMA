@@ -86,6 +86,24 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1") {
         documentType: "DNI", documentMarker: "", name: index === 0 ? "Ana Pérez" : "Luis Gómez"
       }));
     },
+    requestSaceGradebookSnapshotFromExam_(request, studentIds, teacherUserId, expected, period, examPartial) {
+      assert.equal(request.sessionToken, "SESSION-TEST");
+      assert.equal(teacherUserId, "TEACHER-1");
+      assert.deepEqual(Array.from(studentIds), ["STU-1", "STU-2"]);
+      assert.equal(expected.institutionId, institutionId);
+      assert.equal(examPartial, period.periodoId === "P1" ? "I Parcial" : "II Parcial");
+      return { status: "success", data: {
+        alumnos: [{ userId: "STU-1", nombreCompleto: "Ana Pérez" }, { userId: "STU-2", nombreCompleto: "Luis Gómez" }],
+        resumenes: {
+          "STU-1": { userId: "STU-1", status: "calculated", notaFinal: 91.25 },
+          "STU-2": { userId: "STU-2", status: "calculated", notaFinal: 84 }
+        },
+        recuperaciones: [], estadoPeriodo: "Cerrado",
+        contexto: { anoId: expected.anoId, periodoId: period.periodoId, parcial: examPartial,
+          grado: expected.grado, seccion: expected.seccion, asignatura: expected.asignatura,
+          institutionId: expected.institutionId }
+      } };
+    },
     Date, String, Number, Array, Object, Set, Error, Math, JSON
   };
   vm.createContext(context);
@@ -95,7 +113,9 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1") {
 
 const payload = {
   anoId: "YEAR-2026", grado: "11", seccion: "A", asignaturaId: "SUB-1",
-  periodoIds: ["P1", "P2"], studentIds: ["STU-1", "STU-2"],
+  periodoIds: ["P1", "P2"], examPeriodMappings: [
+    { periodoId: "P1", parcial: "I Parcial" }, { periodoId: "P2", parcial: "II Parcial" }
+  ], studentIds: ["STU-1", "STU-2"],
   docenteUserId: "ATTACKER-SPOOF", sessionToken: "SESSION-TEST"
 };
 const result = createContext().runSnapshot(payload);
@@ -104,6 +124,9 @@ assert.equal(result.data.expectedContext.teacherUserId, "TEACHER-1", "teacher id
 assert.equal(result.data.expectedContext.institutionId, "INST-1", "institution must come from verified claims and service configuration");
 assert.equal(result.data.expectedContext.asignatura, "Informática");
 assert.deepEqual(Array.from(result.data.periods, period => period.periodoId), ["P1", "P2"]);
+assert.deepEqual(Array.from(result.data.gradebookSnapshots, item => [item.periodoId, item.parcial, item.snapshot.data.contexto.periodoId]), [
+  ["P1", "I Parcial", "P1"], ["P2", "II Parcial", "P2"]
+]);
 assert.deepEqual(Array.from(result.data.identityRecords, row => [row.userId, row.identity, row.documentType, row.documentMarker]), [
   ["STU-1", "0801-2000-00001", "DNI", ""], ["STU-2", "0801-2000-00002", "DNI", ""]
 ], "identity and document type are fetched from USER service; no local Personas sheet is required");
@@ -118,6 +141,10 @@ assert.equal(createContext("Estudiante").runSnapshot(payload).code, "SACE_TEACHE
 assert.equal(createContext("Profesor", "INST-OTHER").runSnapshot(payload).code, "SACE_INSTITUTION_CONTEXT_REQUIRED");
 assert.equal(createContext().runSnapshot(Object.assign({}, payload, { studentIds: ["STU-1", "STU-1"] })).code, "SACE_STUDENT_ROSTER_DUPLICATE");
 assert.equal(createContext().runSnapshot(Object.assign({}, payload, { periodoIds: ["P1", "P1"] })).code, "SACE_PERIODS_MUST_BE_DISTINCT");
+assert.equal(createContext().runSnapshot(Object.assign({}, payload, { examPeriodMappings: undefined })).code, "SACE_EXAM_PERIOD_MAPPING_REQUIRED");
+assert.equal(createContext().runSnapshot(Object.assign({}, payload, { examPeriodMappings: [
+  { periodoId: "P1", parcial: "I Parcial" }, { periodoId: "P2", parcial: "I Parcial" }
+] })).code, "SACE_EXAM_PERIOD_MAPPING_DUPLICATE");
 assert.equal(createContext().runSnapshot(Object.assign({}, payload, { studentIds: ["STU-UNKNOWN"] })).code, "SACE_STUDENT_ENROLLMENT_CONTEXT_MISMATCH");
 assert.equal(createContext().runSnapshot(Object.assign({}, payload, { periodoIds: ["P1", "P-UNKNOWN"] })).code, "SACE_PERIOD_CONTEXT_MISMATCH");
 
@@ -165,5 +192,59 @@ assert.equal(directory[0].documentMarker, "");
 assert.throws(() => helperContext.requestDirectory(
   { sessionToken: "SESSION-TEST" }, ["STU-1"], "INST-1", "TEACHER-1"
 ), /SACE_IDENTITY_RESPONSE_SCOPE_INVALID/);
+
+
+const gradebookHelperContext = {
+  getRequestSessionToken_(request) { return request.sessionToken; },
+  PropertiesService: { getScriptProperties() { return { getProperty(name) {
+    return name === "IMA_EXAM_SERVICE_URL" ? "https://script.google.com/macros/s/EXAM_DEPLOYMENT/exec" : "";
+  } }; } },
+  UrlFetchApp: { fetch(url, options) {
+    assert.equal(url, "https://script.google.com/macros/s/EXAM_DEPLOYMENT/exec");
+    const sent = JSON.parse(options.payload);
+    assert.equal(sent.action, "getSaceGradebookSnapshot");
+    assert.equal(sent.payload.sessionToken, "SESSION-TEST");
+    assert.equal(sent.payload.profesorId, "TEACHER-1");
+    assert.equal(sent.payload.periodoId, "P1");
+    assert.equal(sent.payload.parcial, "I Parcial");
+    assert.deepEqual(sent.payload.studentIds, ["STU-1"]);
+    return {
+      getResponseCode() { return 200; },
+      getContentText() { return JSON.stringify({ status: "success", data: {
+        alumnos: [{ userId: "STU-1", nombreCompleto: "Ana Pérez" }],
+        resumenes: { "STU-1": { userId: "STU-1", status: "calculated", notaFinal: 90 } },
+        estadoPeriodo: "Cerrado",
+        contexto: { anoId: "YEAR-2026", periodoId: "P1", parcial: "I Parcial",
+          grado: "11", seccion: "A", asignatura: "Informática", institutionId: "INST-1" }
+      } }); }
+    };
+  } },
+  String, Array, Set, Object, JSON, Error
+};
+vm.createContext(gradebookHelperContext);
+vm.runInContext(extract("requestSaceGradebookSnapshotFromExam_") +
+  "\nthis.requestSnapshot=requestSaceGradebookSnapshotFromExam_;", gradebookHelperContext);
+const examSnapshot = gradebookHelperContext.requestSnapshot(
+  { sessionToken: "SESSION-TEST" }, ["STU-1"], "TEACHER-1",
+  { anoId: "YEAR-2026", grado: "11", seccion: "A", asignatura: "Informática", institutionId: "INST-1" },
+  { periodoId: "P1" }, "I Parcial"
+);
+assert.equal(examSnapshot.status, "success");
+assert.equal(examSnapshot.data.contexto.periodoId, "P1");
+const misScopedExamContext = Object.assign({}, gradebookHelperContext, {
+  UrlFetchApp: { fetch() { return { getResponseCode() { return 200; }, getContentText() {
+    return JSON.stringify({ status: "success", data: { alumnos: [{ userId: "STU-1" }], resumenes: {},
+      estadoPeriodo: "Cerrado", contexto: { anoId: "YEAR-2026", periodoId: "P1", parcial: "I Parcial",
+        grado: "11", seccion: "A", asignatura: "Informática", institutionId: "INST-OTHER" } } });
+  } }; } }
+});
+vm.createContext(misScopedExamContext);
+vm.runInContext(extract("requestSaceGradebookSnapshotFromExam_") +
+  "\nthis.requestSnapshot=requestSaceGradebookSnapshotFromExam_;", misScopedExamContext);
+assert.throws(() => misScopedExamContext.requestSnapshot(
+  { sessionToken: "SESSION-TEST" }, ["STU-1"], "TEACHER-1",
+  { anoId: "YEAR-2026", grado: "11", seccion: "A", asignatura: "Informática", institutionId: "INST-1" },
+  { periodoId: "P1" }, "I Parcial"
+), /SACE_GRADEBOOK_RESPONSE_CONTEXT_INVALID:institutionId/);
 
 console.log("sace-attendance-snapshot-contract: PASS (verified teacher scope, institution, periods, enrollment, identity join and session attendance)");

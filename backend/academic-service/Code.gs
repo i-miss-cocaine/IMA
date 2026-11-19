@@ -10910,6 +10910,75 @@ function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, insti
   return identityRecords;
 }
 
+function requestSaceGradebookSnapshotFromExam_(request, studentIds, teacherUserId, expectedContext, period, examPartial) {
+  const input = request || {};
+  const token = String(getRequestSessionToken_(input) || "");
+  if (!token || !Array.isArray(studentIds) || !studentIds.length) {
+    throw new Error("SACE_GRADEBOOK_TRANSPORT_CONTEXT_REQUIRED");
+  }
+  if (typeof UrlFetchApp === "undefined" || typeof PropertiesService === "undefined") {
+    throw new Error("SACE_GRADEBOOK_TRANSPORT_UNAVAILABLE");
+  }
+  const endpoint = String(PropertiesService.getScriptProperties().getProperty("IMA_EXAM_SERVICE_URL") || "").trim();
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) {
+    throw new Error("SACE_GRADEBOOK_TRANSPORT_NOT_CONFIGURED");
+  }
+  const requestPayload = {
+    sessionToken: token,
+    profesorId: String(teacherUserId).trim(),
+    anoId: String(expectedContext.anoId).trim(),
+    periodoId: String(period.periodoId).trim(),
+    parcial: String(examPartial).trim(),
+    grado: String(expectedContext.grado).trim(),
+    seccion: String(expectedContext.seccion).trim(),
+    asignatura: String(expectedContext.asignatura).trim(),
+    studentIds: studentIds.slice()
+  };
+  let response;
+  try {
+    response = UrlFetchApp.fetch(endpoint, {
+      method: "post", contentType: "application/json",
+      payload: JSON.stringify({ action: "getSaceGradebookSnapshot", payload: requestPayload }),
+      muteHttpExceptions: true
+    });
+  } catch (error) {
+    throw new Error("SACE_GRADEBOOK_AUTHORITY_UNAVAILABLE");
+  }
+  let body;
+  try { body = JSON.parse(response.getContentText() || "{}"); }
+  catch (error) { throw new Error("SACE_GRADEBOOK_RESPONSE_INVALID"); }
+  if (response.getResponseCode() < 200 || response.getResponseCode() >= 300 ||
+      !body || body.status !== "success" || !body.data) {
+    throw new Error(body && body.code || "SACE_GRADEBOOK_AUTHORITY_UNAVAILABLE");
+  }
+  const data = body.data, context = data.contexto || {};
+  const expected = {
+    anoId: requestPayload.anoId, periodoId: requestPayload.periodoId,
+    parcial: requestPayload.parcial, grado: requestPayload.grado,
+    seccion: requestPayload.seccion, asignatura: requestPayload.asignatura,
+    institutionId: String(expectedContext.institutionId).trim()
+  };
+  Object.keys(expected).forEach(function(key) {
+    if (String(context[key] || "").trim() !== expected[key]) {
+      throw new Error("SACE_GRADEBOOK_RESPONSE_CONTEXT_INVALID:" + key);
+    }
+  });
+  if (!Array.isArray(data.alumnos) || !data.resumenes || typeof data.resumenes !== "object" ||
+      String(data.estadoPeriodo || "").trim().toUpperCase() !== "CERRADO") {
+    throw new Error("SACE_GRADEBOOK_RESPONSE_INCOMPLETE");
+  }
+  const returned = new Set();
+  data.alumnos.forEach(function(student) {
+    const id = String(student && student.userId || "").trim();
+    if (!id || returned.has(id) || studentIds.indexOf(id) === -1) {
+      throw new Error("SACE_GRADEBOOK_RESPONSE_ROSTER_INVALID");
+    }
+    returned.add(id);
+  });
+  if (returned.size !== studentIds.length) throw new Error("SACE_GRADEBOOK_RESPONSE_ROSTER_INCOMPLETE");
+  return { status: "success", data: data };
+}
+
 function getSaceAttendanceSnapshot(payload) {
   const request = payload || {};
   const actor = getVerifiedAcademicIdentity_(request);
@@ -10982,6 +11051,24 @@ function getSaceAttendanceSnapshot(payload) {
         nombre:String(row[periods.index.Nombre] || ""), tipo:String(row[periods.index.TipoPeriodo] || row[periods.index.Tipo] || ""), orden:row[periods.index.Orden] };
     });
     if (selectedPeriods[0].periodoId === selectedPeriods[1].periodoId) throw new Error("SACE_PERIODS_MUST_BE_DISTINCT");
+    if (!Array.isArray(request.examPeriodMappings) || request.examPeriodMappings.length !== 2) {
+      throw new Error("SACE_EXAM_PERIOD_MAPPING_REQUIRED");
+    }
+    const examMappings = Object.create(null), examLabels = Object.create(null);
+    request.examPeriodMappings.forEach(function(mapping) {
+      const periodId = required(mapping && mapping.periodoId, "SACE_EXAM_PERIOD_MAPPING_ID_REQUIRED");
+      const parcial = required(mapping && mapping.parcial, "SACE_EXAM_PERIOD_MAPPING_VALUE_REQUIRED");
+      if (!selectedPeriods.some(function(period) { return period.periodoId === periodId; })) {
+        throw new Error("SACE_EXAM_PERIOD_MAPPING_OUTSIDE_SNAPSHOT");
+      }
+      if (examMappings[periodId] || examLabels[parcial]) throw new Error("SACE_EXAM_PERIOD_MAPPING_DUPLICATE");
+      examMappings[periodId] = parcial;
+      examLabels[parcial] = true;
+    });
+    if (selectedPeriods.some(function(period) { return !examMappings[period.periodoId]; })) {
+      throw new Error("SACE_EXAM_PERIOD_MAPPING_INCOMPLETE");
+    }
+
     if (selectedPeriods[0].fechaInicio <= selectedPeriods[1].fechaFin && selectedPeriods[1].fechaInicio <= selectedPeriods[0].fechaFin) {
       throw new Error("SACE_PERIODS_OVERLAP");
     }
@@ -11053,10 +11140,24 @@ function getSaceAttendanceSnapshot(payload) {
           row[records.index.FechaRegistro].toISOString() : String(row[records.index.FechaRegistro] || "")
       };
     });
+    const expectedContext = {
+      anoId: anoId, grado: grade, seccion: section, asignatura: subjectName,
+      institutionId: institutionId, teacherUserId: String(actor.userId).trim()
+    };
+    const gradebookSnapshots = selectedPeriods.map(function(period) {
+      return {
+        periodoId: period.periodoId,
+        parcial: examMappings[period.periodoId],
+        snapshot: requestSaceGradebookSnapshotFromExam_(
+          request, studentIds, String(actor.userId).trim(), expectedContext,
+          period, examMappings[period.periodoId]
+        )
+      };
+    });
     return { status:"success", data:{
       expectedContext:{ anoId:anoId, grado:grade, seccion:section, asignatura:subjectName,
         asignaturaId:subjectId, institutionId:institutionId, teacherUserId:String(actor.userId).trim() },
-      periods:selectedPeriods, identityRecords:identityRecords,
+      periods:selectedPeriods, gradebookSnapshots:gradebookSnapshots, identityRecords:identityRecords,
       attendanceSessions:attendanceSessions, attendanceRecords:attendanceRecords
     }, limitations:[
       "documentMarker remains empty until an explicit SACE marker mapping is available; Personas.TipoIdentificacion is returned separately",
