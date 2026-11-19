@@ -1,0 +1,68 @@
+# Mapa de compatibilidad IMA ↔ SACE (Honduras)
+
+**Estado:** análisis de mapeo; no es una declaración de compatibilidad certificada ni una especificación de importación validada.
+
+**Alcance:** identificar qué datos del libro consolidado de IMA pueden alimentar los archivos de calificaciones que SACE genera para el docente y qué datos/artefactos faltan para una integración verificable.
+
+## 1. Fuentes oficiales consultadas
+
+1. **Manual de Usuario Docente SACE, actualización junio de 2025.** Describe la descarga del archivo Excel de calificaciones por modalidad, curso, sección, jornada y clase; el archivo se completa con nota total e inasistencias por parcial y se vuelve a cargar en SACE. El manual cubre las páginas impresas 21–24.  
+   https://sace.se.gob.hn/media/documentos_sace/Manual_de___usuario_SACE_Docente_2.pdf
+2. **Manual de Usuario Docente SACE, actualización junio de 2019.** Incluye un ejemplo legible del archivo Excel: identificación del centro/modalidad/grado/sección/jornada/asignatura y columnas DOCUMENTO, IDENTIDAD, NOMBRE, PARCIAL I (INASISTENCIAS y NOTA TOTAL), PARCIAL II (INASISTENCIAS y NOTA TOTAL) y RECUPERACIÓN. Indica que el archivo se descarga para una clase seleccionada, que pueden cargarse notas de un parcial por vez y que no debe alterarse el formato generado por SACE. Páginas impresas 19–20. Esta es una referencia de ejemplo, no sustituye la plantilla actual generada por SACE.  
+   https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Docente.pdf
+3. **Manual de Usuario Director SACE.** Describe documentos distintos: calificaciones por parcial, resumen anual de calificaciones por área, acta final, acta final de recuperación, boleta interna, boleta externa y certificación. No son formatos intercambiables.  
+   https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Director.pdf
+4. **Reglamento del Sistema Nacional de Información Educativa, Acuerdo 1178-SE-2015, La Gaceta No. 33,817, 25-08-2015.** Artículos 78 y 84 establecen la evaluación/promoción mediante SACE; artículos 86–87 remiten la evaluación final al manual emitido/actualizado por USINIEH; el artículo 88 establece que las certificaciones y calificaciones oficiales las emite la dirección del centro y no son válidas sin las firmas correspondientes y los códigos de autenticidad generados por SACE.  
+   https://leyes.hn/gaceta/33817
+
+## 2. Flujo SACE documentado
+
+- El docente descarga un archivo Excel generado por SACE para una clase del centro educativo, modalidad, curso/grado, sección, jornada y asignatura.
+- El docente completa las celdas de notas totales e inasistencias por parcial y carga nuevamente ese mismo archivo.
+- El formato, diseño y celdas generadas por SACE no deben modificarse.
+- El manual de 2019 muestra dos parciales en su ejemplo; el manual de Director presenta calificaciones para parciales 1 a 4. Por tanto, IMA no debe fijar dos o cuatro parciales como regla universal: la plantilla generada por SACE para el centro/periodo de prueba es la autoridad para el número y orden de parciales.
+- Las boletas, resumen anual, actas y certificaciones del perfil Director son salidas diferentes. Una tabla de notas por periodo no demuestra por sí sola equivalencia con todas esas salidas.
+- Los manuales consultados documentan intercambio por archivos Excel; no documentan una API pública de integración. No se presume una API SACE.
+
+## 3. Mapeo preliminar de datos IMA
+
+| Campo/elemento SACE | Fuente IMA identificada | Estado y observación |
+|---|---|---|
+| Código del centro | No se identificó un campo SACE explícito. `OfertaAcademica.SedeID` es un ID interno. | **Falta** código oficial; no equiparar SedeID con código SACE. |
+| Nombre del centro/sede | `SedesAulas.NombreSede`, relacionado por `SedeID`. | **Parcial**; confirmar que la sede corresponda al centro SACE. |
+| Modalidad/carrera | `OfertaAcademica.Modalidad`. | **Disponible**; validar nomenclatura oficial y relación con carrera. |
+| Curso/grado | `OfertaAcademica.Grado`, `Usuarios.Grado` y matrícula. | **Disponible**; requiere normalizar nomenclaturas oficiales. |
+| Sección | `OfertaAcademica.Seccion`, `Usuarios.Seccion` y matrícula. | **Disponible**. |
+| Jornada | `JornadasAcademicas` tiene catálogo y horarios; `HorariosClase` relaciona OfertaID, día y horas, pero no contiene un JornadaID explícito. | **Parcial**; no inferir jornada por horario sin regla aprobada. |
+| Código de clase | `OfertaAcademica.CodigoClase`. | **Disponible**; confirmar equivalencia con el código que SACE imprime. |
+| Asignatura | `CatalogoAsignaturas.NombreOficial` y `AsignaturaID`. | **Disponible**; validar nombre/código oficial SACE. |
+| DOCUMENTO | No se identificó un tipo de documento SACE en el perfil del usuario. | **Falta** catálogo de tipo; no fijar HND sin validar la identidad del estudiante. |
+| IDENTIDAD | `Usuarios.PersonaID` → `Personas.Identificacion`. | **Disponible si existe y está verificada**; no usar el UserId como identidad. |
+| NOMBRE | `Usuarios.PersonaID` → `Personas.Nombres` + `Personas.Apellidos`. | **Disponible**. |
+| Parcial/periodo | `PeriodosAcademicos` contiene PeriodoID, AnoID, Nombre, TipoPeriodo, FechaInicio, FechaFin y Orden. | **Parcial**; requiere correspondencia aprobada entre Orden/Nombre y el parcial SACE de la plantilla real. |
+| NOTA TOTAL por parcial | Libro consolidado contextual y cálculo ponderado del periodo; requiere estado publicado/cerrado y cálculo completo. | **Disponible como dato calculado**; verificar escala, redondeo y regla SACE por nivel/modalidad. |
+| INASISTENCIAS por parcial/clase | `SesionesAsistencia` + `RegistrosAsistencia`; las sesiones guardan fecha, grado, sección y asignatura. | **Fuente disponible**, pero falta un contrato de agregación por fechas del parcial, estudiante y clase, que excluya sesiones fuera del periodo. |
+| RECUPERACIÓN | Registros de recuperación vinculados al contexto del libro. | **Parcial**; el manual consultado no especifica completamente la regla de presentación de la columna. Confirmar con plantilla y procedimiento vigente. |
+
+## 4. Diferencia entre el informe IMA y los documentos SACE
+
+El `libroConsolidado` de IMA presenta resultados por contexto/año/periodo/asignatura y aplica las ponderaciones y recuperaciones del libro. El archivo de carga SACE necesita además metadatos de centro, modalidad, jornada, clase, identidad del estudiante, inasistencias por parcial y una distribución de notas por los parciales que contenga la plantilla vigente.
+
+El resumen anual por área, acta final, acta final de recuperación, boletas interna/externa y certificación requieren reglas y estructuras adicionales. No deben generarse copiando la tabla de un solo periodo.
+
+El artículo 88 del Reglamento impide presentar un documento IMA como certificación/calificación oficial SACE: la emisión oficial corresponde a la dirección del centro y requiere firmas y códigos de autenticidad generados por SACE.
+
+## 5. Decisión técnica
+
+**No generar todavía un XLSX SACE desde cero ni modificar una plantilla genérica.** SACE indica que el archivo descargado debe conservar su formato y diseño. Para implementar un adaptador de archivo fiable se requiere una plantilla real descargada de SACE para un centro/clase de prueba autorizada, con datos ficticios o anonimizados.
+
+Una vez disponible esa plantilla, el adaptador deberá:
+1. conservar hojas, encabezados, estilos, celdas combinadas, fórmulas y validaciones;
+2. mapear los datos IMA a las celdas de entrada exactas, sin cambiar el diseño;
+3. obtener código oficial del centro, jornada y tipo de documento desde catálogos verificados;
+4. calcular inasistencias por estudiante/clase y rango de fechas del parcial;
+5. mapear los periodos IMA a los parciales SACE según el archivo real, sin asumir número fijo;
+6. llenar únicamente notas publicadas y contextos completos; tratar recuperación según regla SACE confirmada;
+7. probar la carga del archivo en un entorno SACE autorizado y comparar el resultado con el cuadro generado por SACE.
+
+**Criterio de aceptación pendiente:** el archivo exportado conserva la estructura de la plantilla SACE original, se carga sin alterar el formato, y los datos de prueba coinciden con el libro IMA para estudiantes, clase, parcial, nota, inasistencias y recuperación. Hasta entonces el estado es *mapeo preliminar*, no compatibilidad demostrada.
