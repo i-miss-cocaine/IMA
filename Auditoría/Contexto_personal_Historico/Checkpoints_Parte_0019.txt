@@ -42,3 +42,39 @@ Resultado:
 Estado AUD-NG-167: [~] En progreso.
 Siguiente acción: crear una composición de extremo a extremo local que reciba snapshot autenticado, libros contextuales, plantilla y equivalencia documental explícita, invoque prepareCandidateExport y valide el XLS binario de salida; conservar la condición CANDIDATE y no exponerla a UI/producción.
 ===============================================================================
+
+===============================================================================
+### C1.838 — AUD-NG-167: orquestación snapshot→plantilla→XLS candidato
+===============================================================================
+Fecha: 2026-11-19
+Sesión: IMA-EXEC-20261119-AUD-NG-167-SACE-END-TO-END-13
+Repositorio: i-miss-cocaine/IMA
+Rama: NG_beta_0.0.0.1_work
+Rama base: NG_beta_0.0.0.1 (solo lectura)
+Checkpoint anterior: C1.837
+HEAD inicial: e4a87838d8066d34def721dfd3cf459dfb2fe85c
+Commits de implementación:
+- dfaf9db9e834e06b70d6ad1aabf360357d6aa31f — orquestador y contrato inicial.
+- e8a9703568c49b635823cb5a1ef9b86b0ba5957b — fixture de recuperación alineado a la política actual.
+HEAD final de implementación: e8a9703568c49b635823cb5a1ef9b86b0ba5957b
+HEAD de rama base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Se creó js/sace-export-orchestrator.js con prepareCandidateExportFromSnapshot(input).
+- La función compone snapshot de asistencia autenticado, dos snapshots de calificaciones, mapeo documental explícito, bytes de plantilla, contexto de plantilla y escala.
+- Invoca buildCandidateStudentsFromSnapshot, luego prepareCandidateExport, inspecciona el XLS de salida y valida las 22 filas en D/E/F/G/H: inasistencias y notas de ambos parciales y recuperación.
+- Verifica tamaño del archivo OLE, capacidad del stream, cantidad de fórmulas, validaciones y merges frente al original. Devuelve bytes en memoria con estado CANDIDATE, limitaciones y resumen de verificación; no escribe archivos, no descarga, no invoca SACE ni toca UI.
+- Se añadió tests/security/sace-export-orchestrator-contract.test.js. El test corre sobre las tres plantillas XLS versionadas del repositorio, con libros, identidad, periodos y asistencia sintéticos; desordena el roster para verificar matching por identidad y mapeo de filas.
+- La prueba conserva RECUPERACIÓN en blanco porque el proveedor todavía no exporta recuperaciones sin regla oficial; un primer fixture esperaba notas de recuperación sintéticas y fue corregido para respetar la política fail-closed existente.
+- Workflow SACE ampliado con node --check y ejecución del contrato del orquestador.
+- GitHub Actions 44542962606 — SACE template structure compatibility contract: SUCCESS. Pasaron contrato estructural, parcheo binario, proveedor, orquestador y sus respectivos node --check.
+- Se actualizó Mapa_Compatibilidad_SACE.md y BETA-EXAM-109.
+
+Resultado:
+- Se verificó la composición local completa hasta un XLS candidato en memoria en tres plantillas.
+- Los snapshots, datos de identidad, calificaciones, asistencia y mapeos son sintéticos; no se ejecutó con servicios desplegados ni plantilla SACE descargada desde cuenta docente.
+- No se ejecutó carga real, no se habilitó descarga/UI/producción. BETA-EXAM-105/106/107/108/109 siguen pendientes de evidencias externas y reglas oficiales.
+
+Estado AUD-NG-167: [~] En progreso.
+Siguiente acción: revisar la conexión real de los snapshots de Exam-Service y Academic-Service y determinar el contrato de transporte/autorización interservicio existente; no crear credenciales ni llamadas ad hoc. Mantener el orquestador como módulo interno candidato.
+===============================================================================
