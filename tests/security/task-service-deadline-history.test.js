@@ -170,12 +170,10 @@ assert(teacherSource.includes("dataset.originalValue"));
     getVerifiedTaskIdentity_: payload => payload && payload.sessionToken === "valid"
       ? { authorized: true, userId: "PROF-1", role: "Profesor" }
       : { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" },
-    getTaskServiceClassroomById: classId => classId === "AULA-1"
-      ? ["AULA-1","OFFER-1","","","","","PROF-1","Activa"] : null,
-    normalizeString: value => String(value || "").trim().toLowerCase(),
-    assertTaskServiceTeacherAssignedToOffer: (userId, offerId) => {
-      assert.equal(userId, "PROF-1");
-      assert.equal(offerId, "OFFER-1");
+    assertTaskServiceClassroomAccess: (payload, classId, identity) => {
+      assert.equal(classId, "AULA-1");
+      assert.equal(identity.userId, "PROF-1");
+      assert.equal(identity.role, "Profesor");
       return true;
     },
     isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
