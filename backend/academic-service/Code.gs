@@ -9265,9 +9265,26 @@ function isAcademicOfferActive(state) {
 }
 
 // [TAREA-F5-020] [Fase 5: Optimización de Admisiones] - Caché selectiva de catálogos estáticos (10 min TTL) e invalidación
+function getAcademicOffersCacheRevision_() {
+  try {
+    const value = PropertiesService.getScriptProperties().getProperty("ACADEMIC_OFFERS_CACHE_REVISION");
+    const revision = Number(value || 0);
+    return Number.isSafeInteger(revision) && revision >= 0 ? revision : 0;
+  } catch (_) { return 0; }
+}
+
+function bumpAcademicOffersCacheRevision_() {
+  try {
+    const properties = PropertiesService.getScriptProperties();
+    const next = getAcademicOffersCacheRevision_() + 1;
+    properties.setProperty("ACADEMIC_OFFERS_CACHE_REVISION", String(next));
+    return next;
+  } catch (_) { return getAcademicOffersCacheRevision_(); }
+}
+
 function getAcademicOffers(payload) {
   const { anoId, periodoId, grado, seccion } = payload || {};
-  const cacheKey = `offers_v3_${anoId || "ALL"}_${periodoId || "ALL"}_${grado || "ALL"}_${seccion || "ALL"}`;
+  const cacheKey = `offers_v4_${getAcademicOffersCacheRevision_()}_${anoId || "ALL"}_${periodoId || "ALL"}_${grado || "ALL"}_${seccion || "ALL"}`;
   try { const cache=CacheService.getScriptCache(); const cached=cache.get(cacheKey); if(cached) return {status:"success",data:JSON.parse(cached),_cached:true}; } catch (_) {}
   const sheet=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"OfertaAcademica");
   const columns=getAcademicOfferColumnMap(sheet,false), rows=sheet.getDataRange().getValues();
@@ -9349,7 +9366,7 @@ function createAcademicOffer(payload) {
     row[columns.asignaturaId]=validated.asignaturaId;row[columns.planId]=validated.planId;row[columns.modalidad]=modalidad||"Presencial";
     row[columns.capacidadMax]=capacity;row[columns.estado]=offerState;row[columns.codigoClase]=codigoClase||"";
     sheet.appendRow(row);
-    try{const cache=CacheService.getScriptCache();cache.remove("offers_v3_ALL_ALL_ALL_ALL");cache.remove("offers_v2_ALL_ALL_ALL");cache.remove("offers_ALL_ALL_ALL");}catch(_){}
+    bumpAcademicOffersCacheRevision_();
     return {status:"success",message:"Oferta académica registrada.",data:{ofertaId,anoId:validated.anoId,periodoId:validated.periodoId,
       planId:validated.planId,asignaturaId:validated.asignaturaId,capacidadMax:capacity,estado:offerState}};
   } finally {lock.releaseLock();}
