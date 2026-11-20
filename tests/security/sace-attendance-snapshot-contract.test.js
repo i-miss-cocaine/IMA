@@ -67,6 +67,7 @@ const tables = {
 
 function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFails = false, readFails = false) {
   const sheets = {};
+  const revisionProperties = {};
   let snapshotLockHeld = false, snapshotLockWaits = 0, snapshotLockReleases = 0;
   Object.keys(tables).forEach(name => {
     const rows = tables[name];
@@ -80,33 +81,40 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
   });
   const context = {
     SPREADSHEET_ID: "TEST",
-    PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "INST-1" : ""; } }; } },
+    PropertiesService: { getScriptProperties() { return {
+      getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "INST-1" : (revisionProperties[name] || ""); },
+      setProperty(name,value) { revisionProperties[name]=value; }
+    }; } },
     SpreadsheetApp: { openById(id) { assert.equal(id, "TEST"); return { getSheetByName(name) { return sheets[name] || null; } }; } },
     LockService: { getScriptLock() { return {
       waitLock(timeout) { assert.equal(timeout, 10000); snapshotLockWaits++; if (lockFails) throw new Error("lock timeout"); snapshotLockHeld = true; },
       releaseLock() { assert.equal(snapshotLockHeld, true); snapshotLockHeld = false; snapshotLockReleases++; }
     }; } },
-    Utilities: { formatDate(value) { return value.toISOString().slice(0, 10); } },
+    Utilities: { formatDate(value) { return value.toISOString().slice(0, 10); }, getUuid() { return "ACADEMIC-EPOCH-123456"; } },
     Session: { getScriptTimeZone() { return "UTC"; } },
     getVerifiedAcademicIdentity_(payload) {
       return { authorized: true, userId: "TEACHER-1", role: actorRole };
     },
     getVerifiedRequestSessionClaims_() { return { userId: "TEACHER-1", role: actorRole, institutionId }; },
-    requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, requestedInstitution, teacherUserId) {
+    requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, requestedInstitution, teacherUserId, revisionOnly) {
       assert.equal(snapshotLockHeld, false, "remote USER-Service call must run after releasing the local snapshot lock");
-      assert.equal(snapshotLockReleases, 1, "USER-Service must not be called before all local snapshot reads release the lock");
+      assert.equal(snapshotLockReleases, revisionOnly ? 2 : 1, "USER calls must occur outside the local snapshot lock");
+      if (revisionOnly) return "USER-EPOCH-123456:0";
       assert.equal(request.sessionToken, "SESSION-TEST");
       assert.equal(requestedInstitution, institutionId);
       assert.equal(teacherUserId, "TEACHER-1");
       assert.deepEqual(Array.from(studentIds), ["STU-1", "STU-2"]);
-      return studentIds.map((userId, index) => ({
+      const records = studentIds.map((userId, index) => ({
         userId, identity: index === 0 ? "0801-2000-00001" : "0801-2000-00002",
         documentType: "DNI", documentMarker: "", name: index === 0 ? "Ana Pérez" : "Luis Gómez"
       }));
+      records.sourceRevision = "USER-EPOCH-123456:0";
+      return records;
     },
-    requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUserId, expected, periods) {
+    requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUserId, expected, periods, revisionOnly) {
       assert.equal(snapshotLockHeld, false, "remote Exam-Service batch call must run after releasing the attendance lock");
-      assert.equal(snapshotLockReleases, 1);
+      assert.equal(snapshotLockReleases, revisionOnly ? 2 : 1);
+      if (revisionOnly) return "EXAM-EPOCH-123456:0";
       assert.equal(request.sessionToken, "SESSION-TEST");
       assert.equal(teacherUserId, "TEACHER-1");
       assert.deepEqual(Array.from(studentIds), ["STU-1", "STU-2"]);
@@ -125,9 +133,9 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
           grado: expected.grado, seccion: expected.seccion, asignatura: expected.asignatura,
           institutionId: expected.institutionId }
       } });
-      return periods.map(period => ({
-        periodoId: period.periodoId, parcial: period.parcial, snapshot: makeSnapshot(period)
-      }));
+      const snapshots = periods.map(period => ({ periodoId: period.periodoId, parcial: period.parcial, snapshot: makeSnapshot(period) }));
+      snapshots.sourceRevision = "EXAM-EPOCH-123456:0";
+      return snapshots;
     },
     Date, String, Number, Array, Object, Set, Error, Math, JSON,
     getSnapshotLockStats() { return { held: snapshotLockHeld, waits: snapshotLockWaits, releases: snapshotLockReleases }; }
@@ -149,8 +157,9 @@ const payload = {
 });
 const snapshotContext = createContext();
 const result = snapshotContext.runSnapshot(payload);
-assert.deepEqual(snapshotContext.getSnapshotLockStats(), { held: false, waits: 1, releases: 1 }, "snapshot must release its lock exactly once before remote gradebook reads");
+assert.deepEqual(snapshotContext.getSnapshotLockStats(), { held: false, waits: 2, releases: 2 }, "snapshot must release its initial read lock and its final revision-check lock");
 assert.equal(result.status, "success", result.code || "snapshot did not succeed");
+assert.deepEqual(result.sourceRevisions,{academic:"ACADEMIC-EPOCH-123456:0",user:"USER-EPOCH-123456:0",exam:"EXAM-EPOCH-123456:0"});
 assert.equal(result.data.expectedContext.teacherUserId, "TEACHER-1", "teacher identity must come from the verified session");
 assert.equal(result.data.expectedContext.institutionId, "INST-1", "institution must come from verified claims and service configuration");
 assert.equal(result.data.expectedContext.asignatura, "Informática");

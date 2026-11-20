@@ -10943,7 +10943,7 @@ function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, insti
     throw new Error(body && body.code || "SACE_IDENTITY_AUTHORITY_UNAVAILABLE");
   }
   if(revisionOnly===true){if(typeof body.sourceRevision!=='string')throw Error('SACE_IDENTITY_REVISION_INVALID');return body.sourceRevision;}
-  if(!Array.isArray(body.data)||typeof body.sourceRevision!=='string')throw Error('SACE_IDENTITY_RESPONSE_INCOMPLETE');
+  if(!Array.isArray(body.data))throw Error('SACE_IDENTITY_RESPONSE_INCOMPLETE');
   const requested = new Set(requestedIds);
   const returned = new Set();
   const normalizedIdentities = new Set();
