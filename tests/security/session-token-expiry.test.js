@@ -36,6 +36,8 @@ function runVerifier(source, claims) {
     getAuthTokenSecret: () => "secret",
     computeHmacSignature: () => "SIG",
     isSessionRevoked_: () => false,
+    isSessionRevokedInSharedLedger_: () => false,
+    verifyUserRoleMembershipClaim_: () => null,
     Utilities: {
       base64Decode: () => [],
       newBlob: () => ({ getDataAsString: () => JSON.stringify(claims) })

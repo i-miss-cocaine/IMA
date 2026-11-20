@@ -33,6 +33,9 @@ function extractFunction(text, name) {
 const examReadWrapperContract = extractFunction(source, "withAuthorizedExamRead_");
 assert.ok(examReadWrapperContract.includes("getSaceExamSourceRevisionLocked_"),
   "every serialized Exam read must capture its source revision under the shared ScriptLock");
+assert.ok(examReadWrapperContract.includes("context.sourceRevision"),
+  "the source revision is captured in the authorized read context while its lock is held");
+
 const examBatchSnapshotContract = extractFunction(source, "getSaceGradebookSnapshots");
 assert.ok(examBatchSnapshotContract.includes("sourceRevision"),
   "the normal Exam snapshot response must carry its captured source revision");
