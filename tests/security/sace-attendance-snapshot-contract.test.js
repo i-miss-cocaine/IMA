@@ -90,7 +90,7 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
       waitLock(timeout) { assert.equal(timeout, 10000); snapshotLockWaits++; if (lockFails) throw new Error("lock timeout"); snapshotLockHeld = true; },
       releaseLock() { assert.equal(snapshotLockHeld, true); snapshotLockHeld = false; snapshotLockReleases++; }
     }; } },
-    Utilities: { formatDate(value) { return value.toISOString().slice(0, 10); }, getUuid() { return "ACADEMIC-EPOCH-123456"; } },
+    Utilities: { formatDate(value) { return value.toISOString().slice(0, 10); }, getUuid() { return "123e4567-e89b-12d3-a456-426614174000"; } },
     Session: { getScriptTimeZone() { return "UTC"; } },
     getVerifiedAcademicIdentity_(payload) {
       return { authorized: true, userId: "TEACHER-1", role: actorRole };
@@ -99,7 +99,7 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
     requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, requestedInstitution, teacherUserId, revisionOnly) {
       assert.equal(snapshotLockHeld, false, "remote USER-Service call must run after releasing the local snapshot lock");
       assert.equal(snapshotLockReleases, revisionOnly ? 2 : 1, "USER calls must occur outside the local snapshot lock");
-      if (revisionOnly) return revisionChanges.user ? "USER-EPOCH-123456:1" : "USER-EPOCH-123456:0";
+      if (revisionOnly) return revisionChanges.user ? "223e4567-e89b-12d3-a456-426614174000:1" : "223e4567-e89b-12d3-a456-426614174000:0";
       assert.equal(request.sessionToken, "SESSION-TEST");
       assert.equal(requestedInstitution, institutionId);
       assert.equal(teacherUserId, "TEACHER-1");
@@ -108,14 +108,14 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
         userId, identity: index === 0 ? "0801-2000-00001" : "0801-2000-00002",
         documentType: "DNI", documentMarker: "", name: index === 0 ? "Ana Pérez" : "Luis Gómez"
       }));
-      records.sourceRevision = "USER-EPOCH-123456:0";
-      if (revisionChanges.academic) revisionProperties["IMA_SACE_ACADEMIC_SOURCE_REVISION"] = "ACADEMIC-EPOCH-123456:1";
+      records.sourceRevision = "223e4567-e89b-12d3-a456-426614174000:0";
+      if (revisionChanges.academic) revisionProperties["IMA_SACE_ACADEMIC_SOURCE_REVISION"] = "123e4567-e89b-12d3-a456-426614174000:1";
       return records;
     },
     requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUserId, expected, periods, revisionOnly) {
       assert.equal(snapshotLockHeld, false, "remote Exam-Service batch call must run after releasing the attendance lock");
       assert.equal(snapshotLockReleases, revisionOnly ? 2 : 1);
-      if (revisionOnly) return revisionChanges.exam ? "EXAM-EPOCH-123456:1" : "EXAM-EPOCH-123456:0";
+      if (revisionOnly) return revisionChanges.exam ? "323e4567-e89b-12d3-a456-426614174000:1" : "323e4567-e89b-12d3-a456-426614174000:0";
       assert.equal(request.sessionToken, "SESSION-TEST");
       assert.equal(teacherUserId, "TEACHER-1");
       assert.deepEqual(Array.from(studentIds), ["STU-1", "STU-2"]);
@@ -135,7 +135,7 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
           institutionId: expected.institutionId }
       } });
       const snapshots = periods.map(period => ({ periodoId: period.periodoId, parcial: period.parcial, snapshot: makeSnapshot(period) }));
-      snapshots.sourceRevision = "EXAM-EPOCH-123456:0";
+      snapshots.sourceRevision = "323e4567-e89b-12d3-a456-426614174000:0";
       return snapshots;
     },
     Date, String, Number, Array, Object, Set, Error, Math, JSON,
@@ -161,7 +161,7 @@ const academicRevisionOnlyResult = academicRevisionOnlyContext.runSnapshot({
   sessionToken: "SESSION-TEST", revisionOnly: true
 });
 assert.equal(academicRevisionOnlyResult.status, "success");
-assert.equal(academicRevisionOnlyResult.sourceRevision, "ACADEMIC-EPOCH-123456:0");
+assert.equal(academicRevisionOnlyResult.sourceRevision, "123e4567-e89b-12d3-a456-426614174000:0");
 assert.equal(academicRevisionOnlyResult.data, undefined, "Academic revisionOnly returns no attendance data");
 assert.deepEqual(academicRevisionOnlyContext.getSnapshotLockStats(), { held: false, waits: 1, releases: 1 },
   "Academic revisionOnly reads its token under the local ScriptLock and releases it");
@@ -169,7 +169,7 @@ const snapshotContext = createContext();
 const result = snapshotContext.runSnapshot(payload);
 assert.deepEqual(snapshotContext.getSnapshotLockStats(), { held: false, waits: 2, releases: 2 }, "snapshot must release its initial read lock and its final revision-check lock");
 assert.equal(result.status, "success", result.code || "snapshot did not succeed");
-assert.deepEqual(JSON.parse(JSON.stringify(result.sourceRevisions)),{academic:"ACADEMIC-EPOCH-123456:0",user:"USER-EPOCH-123456:0",exam:"EXAM-EPOCH-123456:0"});
+assert.deepEqual(JSON.parse(JSON.stringify(result.sourceRevisions)),{academic:"123e4567-e89b-12d3-a456-426614174000:0",user:"223e4567-e89b-12d3-a456-426614174000:0",exam:"323e4567-e89b-12d3-a456-426614174000:0"});
 for (const changedSource of ["academic", "user", "exam"]) {
   const changedContext = createContext("Profesor", "INST-1", false, false, { [changedSource]: true });
   const changedResult = changedContext.runSnapshot(payload);
