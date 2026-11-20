@@ -141,7 +141,7 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
     getSnapshotLockStats() { return { held: snapshotLockHeld, waits: snapshotLockWaits, releases: snapshotLockReleases }; }
   };
   vm.createContext(context);
-  vm.runInContext(extract("resolveSaceAttendanceJustification_") + "\n" + extract("getSaceAttendanceSnapshot") + "\nthis.runSnapshot=getSaceAttendanceSnapshot;", context);
+  vm.runInContext(extract("resolveSaceAttendanceJustification_") + "\n" + extract("getSaceAcademicSourceRevisionLocked_") + "\n" + extract("readSaceAcademicSourceRevision_") + "\n" + extract("getSaceAttendanceSnapshot") + "\nthis.runSnapshot=getSaceAttendanceSnapshot;", context);
   return context;
 }
 
