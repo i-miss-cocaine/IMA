@@ -125,8 +125,8 @@ function createContext(overrides) {
   return context;
 }
 
-assert.equal((source.match(/^function getSubjectCatalog\\(/gm) || []).length, 1, "only one active subject catalog declaration");
-assert.equal((source.match(/^function createSubjectCatalogItem\\(/gm) || []).length, 1, "only one active subject creation declaration");
+assert.equal((source.match(/^function getSubjectCatalog\(/gm) || []).length, 1, "only one active subject catalog declaration");
+assert.equal((source.match(/^function createSubjectCatalogItem\(/gm) || []).length, 1, "only one active subject creation declaration");
 const ctx = createContext();
 const all = ctx.api.getInstitutionalCatalog({ catalogType: "ALL" });
 assert.equal(all.schemaVersion, "1.0.0");
