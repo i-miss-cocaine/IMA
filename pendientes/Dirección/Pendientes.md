@@ -888,6 +888,7 @@
 - **Correcciones de pruebas:** los contratos incorporados en 02382c4 tenían escapes de regex excesivos; corregidos en 72dc2e7. El contrato detectó un caso real de columnas opcionales ausentes en hojas heredadas; corregido en 277c8f8.
 - **Hallazgo externo:** Department Scope Contract run 44734267852 continúa fallando únicamente en Phase 22 por falta de configureSchoolDocumentTemplate; no forma parte de AUD-NG-164 ni fue modificado.
 - **Límites pendientes:** integración de formularios curriculares restantes y paneles de planificación heredados (requiere reconciliar ownership); E2E con datos/programas reales hondureños; coordinación AUD-NG-175/AUD-NG-226. No se ejecutó navegador real, Apps Script desplegado ni datos productivos.
+- **Pruebas adicionales C1.901:** el contrato de actualización cubre autorización denegada, departamento fuera de ámbito, lock ocupado, prerrequisito inactivo/duplicado y ciclo; Academic-Service run 44734763138 SUCCESS y Department Reference Consumers run 44734763152 SUCCESS.
 
 
 <!-- ID: AUD-NG-226 | Fuentes: Pendientes.md -->

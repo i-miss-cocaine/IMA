@@ -352,3 +352,32 @@ Estado:
 Siguiente paso:
 - Auditar el siguiente formulario curricular real y el panel de planificación para identificar consumidores concretos de catálogos/ofertas heredados. Mantener la fuente institucional canónica y evitar migraciones o cambios de datos sin evidencia/propietario.
 ===============================================================================
+
+===============================================================================
+### C1.901 — AUD-NG-164: cobertura negativa de seguridad en edición de asignaturas
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-SUBJECT-EDIT-GUARDS-72
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: ce9aea221e936d3df104b30b3104b75031bad00b
+HEAD final de pruebas: 80ebd2de527be54b6b961a89bf7e59e57dff2455
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+Checkpoint anterior: C1.900.
+
+Cobertura añadida:
+- updateSubjectCatalogItem rechaza identidad no autorizada y departamento fuera del ámbito.
+- La edición falla cerrada cuando ScriptLock no se obtiene.
+- Rechaza prerrequisitos inactivos y duplicados y ciclos de dependencias.
+- La prueba de ciclo utiliza una asignatura heredada sin columnas opcionales, confirmando la compatibilidad corregida en C1.900.
+
+Verificación:
+- Academic-Service run 44734763138 — SUCCESS (Node 22; contratos curriculares, integridad, filtros, SACE y regresiones).
+- Department Reference Consumers run 44734763152 — SUCCESS (Node 24; UI, docente, admisiones, analítica, sintaxis y regresiones).
+- No navegador real, Apps Script desplegado ni E2E productivo.
+
+Archivos:
+- tests/security/academic-institutional-catalog-contract.test.js
+
+Estado:
+- AUD-NG-164 sigue En progreso; se continúa con formularios/consumidores restantes y reconciliación de dependencias.
+===============================================================================
