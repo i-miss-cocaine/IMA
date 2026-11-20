@@ -21,4 +21,49 @@ const previewFn = extract("getSubmissionDocumentPreviewUrl");
 assert(previewFn.includes("getVerifiedTaskIdentity_(payload)"));
 assert(!previewFn.includes("getVerifiedRequestSessionClaims_(payload)"), "preview reuses the dispatcher-verified identity instead of validating the session twice");
 assert(previewFn.includes('getTaskServiceSubmissionAccess_(accessPayload,"READ_CONTENT",identity)'));
+
+{
+ const actor={authorized:true,userId:"PROF-1",role:"Profesor"};
+ const scope={authorized:true,userId:"PROF-1",role:"Profesor",institutionId:"INST-1",departmentIds:["D1"],institutionWide:false};
+ const classroomRows=[
+  ["AulaID","OfertaID","Nombre","Grado","Seccion","Asignatura","ProfesorID","Estado"],
+  ["CLASS-1","OFFER-1","Class 1","6","A","Matemáticas","PROF-1","Activa"]
+ ];
+ const assignmentRows=[
+  ["ID","OfertaID","ProfesorID","Rol","Inicio","Fin","Estado"],
+  ["AS-1","OFFER-1","PROF-1","Titular","2026-01-01","2099-12-31","Activo"]
+ ];
+ const classSheet={getDataRange:()=>({getValues:()=>classroomRows})};
+ const assignmentSheet={getDataRange:()=>({getValues:()=>assignmentRows})};
+ const ss={getSheetByName:name=>name==="AsignacionesDocentes"?assignmentSheet:null};
+ const state={identityCalls:0,scopeCalls:0,ownershipCalls:0,openCalls:0};
+ const context={
+  SPREADSHEET_ID:"LOCAL",
+  SpreadsheetApp:{openById:()=>{state.openCalls++;return ss;}},
+  getVerifiedTaskIdentity_:()=>{state.identityCalls++;return actor;},
+  getVerifiedTaskDepartmentScope_:(_payload,passedSS,passedActor)=>{state.scopeCalls++;assert.equal(passedSS,ss);assert.equal(passedActor,actor);return scope;},
+  getSheetOrThrow:(_ss,name)=>{assert.equal(name,"AulasVirtuales");return classSheet;},
+  assertTaskServiceResourceOwnership_:(_payload,type,id,_operation,passedSS,passedActor,passedScope)=>{
+   state.ownershipCalls++;assert.equal(passedSS,ss);assert.equal(passedActor,actor);assert.equal(passedScope,scope);
+   return {authorized:true,departmentId:type==="TAREA"?"D1":context.classDepartmentId||"D1"};
+  },
+  isTaskServiceAdministrativeRole:()=>false,
+  normalizeString:value=>String(value||"").trim().toLowerCase(),
+  isInTeacherList:(value,list)=>!list||String(list).split(",").map(x=>x.trim()).includes(String(value).trim()),
+  classDepartmentId:"D1",
+  Date,String,Error
+ };
+ const names=["getTaskServiceAuthorizedClassrooms","isTaskServiceTeacherTaskAuthorized_","assertTaskServiceTeacherCanManageTask"];
+ vm.runInNewContext(names.map(extract).join("\n")+"\nthis.guard=assertTaskServiceTeacherCanManageTask;",context);
+ const task=["TASK-1","Tarea","Math","","P1","Matemáticas","6","A","","","PROF-1"];
+ assert.equal(context.guard({sessionToken:"valid"},task,"UPDATE"),true);
+ assert.equal(state.identityCalls,1,"task guard resolves verified actor once");
+ assert.equal(state.scopeCalls,1,"task guard reuses one department-scope decision");
+ assert.equal(state.openCalls,1,"task guard reuses one Spreadsheet handle");
+ assert.equal(state.ownershipCalls,2,"task and classroom ownership remain distinct resource checks");
+ const mismatchContext={...context,classDepartmentId:"D2"};
+ vm.runInNewContext(names.map(extract).join("\n")+"\nthis.guard=assertTaskServiceTeacherCanManageTask;",mismatchContext);
+ assert.throws(()=>mismatchContext.guard({sessionToken:"valid"},task,"UPDATE"),/RESOURCE_NOT_FOUND/);
+}
+
 console.log("task-service-single-auth-context: PASS ("+n+"/5)");
