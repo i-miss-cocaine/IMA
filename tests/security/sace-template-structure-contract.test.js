@@ -12,6 +12,16 @@ assert.equal(manifest.status, "CANDIDATE");
 assert.equal(manifest.officialSourceVerified, false);
 assert.equal(manifest.layoutSignature, signature);
 assert.equal(manifest.templates.length, 3);
+assert.equal(manifest.officialSampleComparison.sourceUpdated, "2023-08");
+assert.equal(manifest.officialSampleComparison.printedPage, 21);
+assert.equal(manifest.officialSampleComparison.compatibility, "MISMATCH_WITH_DOCUMENTED_SAMPLE");
+assert.equal(manifest.officialSampleComparison.currentGeneratedTemplateVerified, false);
+assert.equal(manifest.officialSampleComparison.documentedSampleMapping.F, "NIVELACIÓN");
+assert.equal(manifest.officialSampleComparison.documentedSampleMapping.G, "PARCIAL II / INASISTENCIAS");
+assert.equal(manifest.officialSampleComparison.documentedSampleMapping.H, "PARCIAL II / NOTA TOTAL");
+assert.equal(manifest.officialSampleComparison.documentedSampleMapping.I, "RECUPERACIÓN");
+assert.equal(manifest.officialSampleComparison.candidateMapping.H, "RECUPERACIÓN");
+assert.equal(manifest.officialSampleComparison.candidateMapping.I, "UNUSED");
 
 function readWorkbook(filePath) {
   const bytes = fs.readFileSync(filePath);

@@ -2168,7 +2168,7 @@ Pasos:
 3. Comparar el layout signature con manifest.json y los tres archivos candidatos; no comparar ni copiar filas de estudiantes reales.
 4. Si el layout difiere, no adaptar silenciosamente el parche binario: documentar diferencias y crear un nuevo baseline/versionado solo con evidencia estructural saneada.
 5. Si coincide, ejecutar el parche binario únicamente sobre una copia sintética; verificar que solo se alteran celdas autorizadas y que el tamaño/estructura OLE se preservan.
-6. Confirmar el número real de parciales, el significado de la columna H y la regla de recuperación para ese formato; no mapear notaRecuperada/notaFinalCalculada por inferencia.
+6. Confirmar el número real de parciales y la posición/semántica de NIVELACIÓN, INASISTENCIAS, NOTA TOTAL y RECUPERACIÓN (inspeccionar F/G/H/I según la muestra oficial 2023); determinar la regla de recuperación para el archivo real y no mapear notaRecuperada/notaFinalCalculada por inferencia.
 7. Confirmar la vigencia del archivo para el periodo académico de prueba y registrar su procedencia; no inferir effectiveFrom/effectiveTo del nombre del archivo.
 8. Verificar que sourceRevisions se conserva solo en metadatos del candidato y no aparece en el binario XLS.
 Resultado esperado:

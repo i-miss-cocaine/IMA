@@ -84,8 +84,37 @@
   "constraints": [
     "El año lectivo no aparece en los metadatos visibles del libro; debe provenir del contexto académico y de una versión registrada.",
     "Las columnas D y F son inasistencias; no deben sobrescribirse con notas.",
-    "La columna H tiene una sola recuperación por estudiante, mientras que EXAM conserva recuperaciones por evaluación/categoría. No hay una equivalencia única demostrada.",
     "No usar la lista de estudiantes de los archivos del repositorio como padrón productivo; es información de muestra.",
-    "No habilitar exportación hasta verificar procedencia/vigencia y aprobar la semántica de recuperación para el formato correspondiente."
-  ]
+    "No habilitar exportación hasta verificar procedencia/vigencia y aprobar la semántica de recuperación para el formato correspondiente.",
+    "El mapeo de la candidata (F/G para parcial II y H para recuperación) difiere de la muestra del manual oficial docente actualizado en agosto de 2023 (F nivelación, G inasistencias P-II, H nota P-II, I recuperación). No usar la candidata sobre ese layout ni promoverla sin plantilla real validada.",
+    "La muestra del manual no define COUNT/EXCLUDE para ausencias justificadas; no seleccionar una política por inferencia."
+  ],
+  "officialSampleComparison": {
+    "sourceTitle": "Manual de Usuario Docente del Centro Educativo — Secretaría de Educación de Honduras",
+    "sourceUrl": "https://www.se.gob.hn/media/files/usinieh/documentos/Manual_de_usuario_SACE_Docente.pdf",
+    "sourceUpdated": "2023-08",
+    "printedPage": 21,
+    "documentedSampleMapping": {
+      "A": "DOCUMENTO",
+      "B": "IDENTIDAD",
+      "C": "NOMBRE",
+      "D": "PARCIAL I / INASISTENCIAS",
+      "E": "PARCIAL I / NOTA TOTAL",
+      "F": "NIVELACIÓN",
+      "G": "PARCIAL II / INASISTENCIAS",
+      "H": "PARCIAL II / NOTA TOTAL",
+      "I": "RECUPERACIÓN"
+    },
+    "candidateMapping": {
+      "D": "PARCIAL I / INASISTENCIAS",
+      "E": "PARCIAL I / NOTA TOTAL",
+      "F": "PARCIAL II / INASISTENCIAS",
+      "G": "PARCIAL II / NOTA TOTAL",
+      "H": "RECUPERACIÓN",
+      "I": "UNUSED"
+    },
+    "compatibility": "MISMATCH_WITH_DOCUMENTED_SAMPLE",
+    "currentGeneratedTemplateVerified": false,
+    "rationale": "La candidata ubica recuperación en H y no incluye nivelación; la muestra oficial ubica nivelación en F, inasistencias del parcial II en G, nota total del parcial II en H y recuperación en I. El inspector debe rechazar layouts distintos."
+  }
 }

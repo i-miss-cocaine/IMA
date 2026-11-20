@@ -6,10 +6,10 @@
 
 ## 1. Fuentes oficiales consultadas
 
-1. **Manual de Usuario Docente SACE, actualización junio de 2025.** Describe la descarga del archivo Excel de calificaciones por modalidad, curso, sección, jornada y clase; el archivo se completa con nota total e inasistencias por parcial y se vuelve a cargar en SACE. El manual cubre las páginas impresas 21–24.  
-   https://sace.se.gob.hn/media/documentos_sace/Manual_de___usuario_SACE_Docente_2.pdf
-2. **Manual de Usuario Docente SACE, actualización junio de 2019.** Incluye un ejemplo legible del archivo Excel: identificación del centro/modalidad/grado/sección/jornada/asignatura y columnas DOCUMENTO, IDENTIDAD, NOMBRE, PARCIAL I (INASISTENCIAS y NOTA TOTAL), PARCIAL II (INASISTENCIAS y NOTA TOTAL) y RECUPERACIÓN. Indica que el archivo se descarga para una clase seleccionada, que pueden cargarse notas de un parcial por vez y que no debe alterarse el formato generado por SACE. Páginas impresas 19–20. Esta es una referencia de ejemplo, no sustituye la plantilla actual generada por SACE.  
-   https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Docente.pdf
+1. **Manual de Usuario Docente SACE, actualización agosto de 2023.** Describe la descarga del archivo de calificaciones por modalidad, curso, sección, jornada y clase, su llenado y la carga del mismo archivo. En la página impresa 21 muestra un ejemplo de nueve columnas que incluye NIVELACIÓN y RECUPERACIÓN.  
+   https://www.se.gob.hn/media/files/usinieh/documentos/Manual_de_usuario_SACE_Docente.pdf
+2. **Manual de Usuario Docente SACE, actualización marzo de 2022.** La versión alojada en el portal SACE también muestra un ejemplo de dos parciales, NIVELACIÓN y RECUPERACIÓN en nueve columnas; su página impresa 22 no sustituye la plantilla que SACE genera actualmente para una clase/periodo.  
+   https://sace.se.gob.hn/media/documentos_sace/Manual_de___usuario_SACE_Docente.pdf
 3. **Manual de Usuario Director SACE.** Describe documentos distintos: calificaciones por parcial, resumen anual de calificaciones por área, acta final, acta final de recuperación, boleta interna, boleta externa y certificación. No son formatos intercambiables.  
    https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Director.pdf
 4. **Reglamento del Sistema Nacional de Información Educativa, Acuerdo 1178-SE-2015, La Gaceta No. 33,817, 25-08-2015.** Artículos 78 y 84 establecen la evaluación/promoción mediante SACE; artículos 86–87 remiten la evaluación final al manual emitido/actualizado por USINIEH; el artículo 88 establece que las certificaciones y calificaciones oficiales las emite la dirección del centro y no son válidas sin las firmas correspondientes y los códigos de autenticidad generados por SACE.  
@@ -20,7 +20,9 @@
 - El docente descarga un archivo Excel generado por SACE para una clase del centro educativo, modalidad, curso/grado, sección, jornada y asignatura.
 - El docente completa las celdas de notas totales e inasistencias por parcial y carga nuevamente ese mismo archivo.
 - El formato, diseño y celdas generadas por SACE no deben modificarse.
-- El manual de 2019 muestra dos parciales en su ejemplo; el manual de Director presenta calificaciones para parciales 1 a 4. Por tanto, IMA no debe fijar dos o cuatro parciales como regla universal: la plantilla generada por SACE para el centro/periodo de prueba es la autoridad para el número y orden de parciales.
+- El manual docente actualizado en agosto de 2023 muestra un ejemplo de nueve columnas: A DOCUMENTO, B IDENTIDAD, C NOMBRE, D INASISTENCIAS del parcial I, E NOTA TOTAL del parcial I, F NIVELACIÓN, G INASISTENCIAS del parcial II, H NOTA TOTAL del parcial II e I RECUPERACIÓN. La versión de marzo de 2022 muestra la misma distribución.
+- Esta distribución documentada no demuestra que todos los archivos generados actualmente tengan idéntico layout. IMA no debe fijar dos o cuatro parciales como regla universal: la plantilla descargada desde SACE para el centro/periodo de prueba sigue siendo la autoridad.
+- El manual de Director presenta documentos y cuadros distintos, incluidos parciales 1 a 4; no deben confundirse con el archivo docente descargable.
 - Las boletas, resumen anual, actas y certificaciones del perfil Director son salidas diferentes. Una tabla de notas por periodo no demuestra por sí sola equivalencia con todas esas salidas.
 - Los manuales consultados documentan intercambio por archivos Excel; no documentan una API pública de integración. No se presume una API SACE.
 
@@ -268,3 +270,14 @@ Estado AUD-NG-167: [~] En progreso.
 
 
 **Evidencia complementaria C1.886:** un harness V8 aislado ejecutó los helpers reales extraídos de Academic, USER y Exam. Los tres pasaron inicialización UUID:0, incrementos monotónicos, rechazo de UUID persistido malformado, overflow y fallo simulado de persistencia (el token permaneció sin avanzar). El normalizador del orquestador pasó UUID válido, epoch inválido y ausencia legacy. Este harness no se presenta como Node.js, GitHub Actions ni despliegue Apps Script.
+
+
+## 20. Discrepancia entre la muestra oficial 2023 y la plantilla candidata — C1.887
+
+La versión oficial del **Manual de Usuario Docente del Centro Educativo**, con actualización registrada en agosto de 2023, muestra en la página impresa 21 un cuadro de nueve columnas (A:I): DOCUMENTO, IDENTIDAD, NOMBRE, INASISTENCIAS P-I, NOTA TOTAL P-I, NIVELACIÓN, INASISTENCIAS P-II, NOTA TOTAL P-II y RECUPERACIÓN. El mismo orden aparece en la versión SACE actualizada en marzo de 2022 (página impresa 22). La instrucción del manual indica que solo deben ingresarse notas en las casillas generadas por el sistema y que no debe alterarse el formato.
+
+La plantilla candidata actualmente inventariada en `manifest.json` usa otro mapeo: D/E para parcial I, F/G para parcial II y H para recuperación, con I sin uso. Frente a la muestra oficial 2023, F sería NIVELACIÓN, G las inasistencias del parcial II, H la nota total del parcial II e I la recuperación. Por ello, F/G/H/I no son intercambiables: aplicar el mapeo candidato a esa muestra sobrescribiría campos distintos. El inspector binario actual exige encabezados y rangos combinados exactos y falla cerrado ante una estructura distinta; no se relaja esa comprobación.
+
+La discrepancia **no acredita por sí sola** que todo archivo actual de SACE tenga ese mismo diseño, porque el manual contiene un ejemplo y la plantilla efectiva debe descargarse desde una sesión docente autorizada. Se registra como incompatibilidad con la muestra publicada, no como especificación universal. `manifest.json` mantiene `status=CANDIDATE`, `officialSourceVerified=false` y sin vigencia; los tres XLS del repositorio no se promueven ni se usan para exportación productiva.
+
+El manual muestra campos de inasistencias, pero no establece si las ausencias justificadas se cuentan o excluyen; COUNT/EXCLUDE sigue sin decisión oficial. BETA-EXAM-115 debe inspeccionar específicamente F/G/H/I, nivelación, inasistencias, nota total y recuperación en el archivo real, además de la vigencia y la procedencia.
