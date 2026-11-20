@@ -77,5 +77,34 @@ function result(revision,data) { return {status:"success",schemaVersion:"1.0.0",
   assert.equal(window.INSTITUTIONAL_CATALOG_CACHE.departments["DEP-8"].name,"Departamento ocho");
   assert.equal(window.INSTITUTIONAL_CATALOG_STATE.catalogRevision,9);
   assert.equal(window.INSTITUTIONAL_CATALOG_STATE.authoritative,true);
-  console.log("Institutional catalog client race/authority contract PASS (14 assertions).");
+
+  const unavailableApi = harness(null);
+  const unavailable = await unavailableApi.fetchInstitutionalCatalog("ALL");
+  assert.equal(unavailable.status,"fallback");
+  assert.equal(unavailable.authoritative,false);
+  assert.equal(unavailable.source,"LOCAL_FALLBACK");
+  assert.equal(unavailable.error.code,"FETCH_API_UNAVAILABLE");
+
+  const malformedApi = harness(() => Promise.resolve({status:"success",schemaVersion:"0.0.0",catalogRevision:10,data:{}}));
+  const malformed = await malformedApi.fetchInstitutionalCatalog("SUBJECTS");
+  assert.equal(malformed.status,"fallback");
+  assert.equal(malformed.authoritative,false);
+  assert.equal(malformed.error.code,"INVALID_CATALOG_CONTRACT");
+
+  const offlineApi = harness(() => Promise.reject(new Error("offline")));
+  const offline = await offlineApi.fetchInstitutionalCatalog("CURRICULAR_AREAS");
+  assert.equal(offline.status,"fallback");
+  assert.equal(offline.authoritative,false);
+  assert.equal(offline.error.code,"CATALOG_SYNC_FAILED");
+
+  const emptyApi = harness(() => Promise.resolve(result(11,{
+    areasCurricularesMetadata:[],asignaturasMetadata:[],departamentosAcademicosMetadata:[]
+  })));
+  const empty = await emptyApi.fetchInstitutionalCatalog("ALL");
+  assert.equal(empty.status,"success","a valid empty institutional catalog is not a transport failure");
+  assert.equal(empty.authoritative,true);
+  assert.equal(empty.catalogRevision,11);
+  assert.equal(Object.keys(emptyApi.INSTITUTIONAL_CATALOG_CACHE.subjects).length,0);
+
+  console.log("Institutional catalog client contract PASS (race ordering, partial authority, malformed/empty/transport fallback).");
 })().catch(error => { console.error(error); process.exitCode = 1; });
