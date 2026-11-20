@@ -101,7 +101,7 @@ function makeHarness(membershipRows = [headers]) {
     logStructuredEvent:()=>true,
     locked:false
   };
-  vm.runInNewContext(membershipHelpers+"\n"+functions.join("\n")+
+  vm.runInNewContext("function advanceSaceUserSourceRevisionLocked_(){return \"TEST-REVISION:1\";}\n"+membershipHelpers+"\n"+functions.join("\n")+
     "\nthis.generateSessionToken=generateSessionToken;this.verifySessionToken=verifySessionToken;"+
     "this.getUserVerifiedRole=getUserVerifiedRole;this.getUserRoleMemberships=getUserRoleMemberships;"+
     "this.switchActiveRole=switchActiveRole;this.manageUserRoleMemberships=manageUserRoleMemberships;this.loginUser=loginUser;"+

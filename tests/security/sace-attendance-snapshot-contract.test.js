@@ -159,7 +159,7 @@ const snapshotContext = createContext();
 const result = snapshotContext.runSnapshot(payload);
 assert.deepEqual(snapshotContext.getSnapshotLockStats(), { held: false, waits: 2, releases: 2 }, "snapshot must release its initial read lock and its final revision-check lock");
 assert.equal(result.status, "success", result.code || "snapshot did not succeed");
-assert.deepEqual(result.sourceRevisions,{academic:"ACADEMIC-EPOCH-123456:0",user:"USER-EPOCH-123456:0",exam:"EXAM-EPOCH-123456:0"});
+assert.deepEqual(JSON.parse(JSON.stringify(result.sourceRevisions)),{academic:"ACADEMIC-EPOCH-123456:0",user:"USER-EPOCH-123456:0",exam:"EXAM-EPOCH-123456:0"});
 assert.equal(result.data.expectedContext.teacherUserId, "TEACHER-1", "teacher identity must come from the verified session");
 assert.equal(result.data.expectedContext.institutionId, "INST-1", "institution must come from verified claims and service configuration");
 assert.equal(result.data.expectedContext.asignatura, "Informática");
