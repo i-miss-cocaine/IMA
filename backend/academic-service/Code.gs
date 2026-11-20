@@ -5018,11 +5018,11 @@ function configureSchoolYear(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
-    advanceSaceAcademicSourceRevisionLocked_();
   } catch (lockError) {
     return { status: "error", code: "LOCK_TIMEOUT", message: "El servicio está ocupado. Intente nuevamente." };
   }
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     try {
       const verifiedRole = (payload && payload.authRole) || "Director";
       if (["Administrador", "Director", "Subdirector", "Secretaría"].indexOf(verifiedRole) === -1) {
@@ -8603,11 +8603,11 @@ function manageAcademicPeriod(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
-    advanceSaceAcademicSourceRevisionLocked_();
   } catch (lockError) {
     throw new Error("LOCK_TIMEOUT");
   }
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const { periodoId, anoId, nombre, tipo, fechaInicio, fechaFin, orden, estado } = payload || {};
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = getOrCreateSheet(ss, "PeriodosAcademicos");
@@ -11534,8 +11534,8 @@ function closeAttendanceSession(payload) {
   if (!sesionId) throw new Error("ATTENDANCE_SESSION_ID_REQUIRED");
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
-    advanceSaceAcademicSourceRevisionLocked_();
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheetByName("SesionesAsistencia");
     if (!sheet) throw new Error("ATTENDANCE_SESSION_NOT_FOUND");
@@ -11564,8 +11564,8 @@ function saveClassAttendance(payload) {
   if (registros.some(record => record && (record.justificado === true || String(record.justificado || "").toLowerCase() === "true"))) throw new Error("ATTENDANCE_JUSTIFICATION_REQUIRES_CANONICAL_REVIEW");
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
-    advanceSaceAcademicSourceRevisionLocked_();
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const session = getAttendanceSessionForTeacher_(ss, sesionId, actor.userId);
     if (session.state !== "ABIERTA") throw new Error("ATTENDANCE_SESSION_NOT_OPEN");
@@ -11618,12 +11618,12 @@ function bulkApplyAttendanceStatus(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
-    advanceSaceAcademicSourceRevisionLocked_();
   } catch (e) {
     return { status: "error", message: "El servidor está ocupado procesando otra actualización masiva de asistencia. Intente de nuevo." };
   }
 
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const actor = getVerifiedAcademicIdentity_(payload);
     if (!actor || actor.authorized !== true || actor.role !== "Profesor" || !actor.userId) {
       return { status: "error", code: "ATTENDANCE_TEACHER_CONTEXT_REQUIRED" };
@@ -11736,12 +11736,12 @@ function saveDailyAttendance(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
-    advanceSaceAcademicSourceRevisionLocked_();
   } catch (e) {
     return { status: "error", message: "El servidor está ocupado procesando otra actualización de asistencia diaria." };
   }
 
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const regSheet = getOrCreateSheet(ss, "RegistrosAsistencia");
     if (regSheet.getLastRow() === 0) {
@@ -12029,9 +12029,9 @@ function absenceTeacherConformityComplete_(ss, justId, sessionIds) {
 
 function createCanonicalAbsenceJustification_(payload) {
   var lock = LockService.getScriptLock();
-  try { lock.waitLock(10000);
-    advanceSaceAcademicSourceRevisionLocked_(); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
-  try { return createCanonicalAbsenceJustificationUnlocked_(payload); }
+  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try {
+    advanceSaceAcademicSourceRevisionLocked_(); return createCanonicalAbsenceJustificationUnlocked_(payload); }
   finally { lock.releaseLock(); }
 }
 
@@ -12232,9 +12232,9 @@ function reviewCanonicalAbsenceJustification_(payload) {
     requested === "requiereinformacion" ? "RequiereInformacion" : "";
   if (!target) return { status: "error", code: "ABSENCE_DECISION_INVALID" };
   var lock = LockService.getScriptLock();
-  try { lock.waitLock(10000);
-    advanceSaceAcademicSourceRevisionLocked_(); } catch (lockError) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try { lock.waitLock(10000); } catch (lockError) { return { status: "error", code: "LOCK_TIMEOUT" }; }
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = getOrCreateSheet(ss, "JustificacionesAsistencia");
     var map = absenceSheetMap_(sheet, ABSENCE_JUSTIFICATION_HEADERS_);
@@ -12369,9 +12369,9 @@ function reconcilePendingAttendanceJustifications(payload) {
   var actorRole = String(payload && payload._verifiedRole || "").trim();
   if (!actorId || !actorRole) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
   var lock = LockService.getScriptLock();
-  try { lock.waitLock(10000);
-    advanceSaceAcademicSourceRevisionLocked_(); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = getOrCreateSheet(ss, "JustificacionesAsistencia");
     var map = absenceSheetMap_(sheet, ABSENCE_JUSTIFICATION_HEADERS_);
@@ -15872,9 +15872,8 @@ function createStudentEnrollment(payload) {
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente la operación de matrícula.");
-  advanceSaceAcademicSourceRevisionLocked_();
-
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const targetAno = anolectivo || "2026";
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sUserId = String(userId).trim();
@@ -16156,9 +16155,8 @@ function changeStudentSection(payload) {
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente la reubicación de sección.");
-  advanceSaceAcademicSourceRevisionLocked_();
-
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const targetAno = anolectivo || "2026";
 
@@ -16578,9 +16576,8 @@ function recordStudentTransfer(payload) {
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente el registro del traslado.");
-  advanceSaceAcademicSourceRevisionLocked_();
-
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const targetAno = anolectivo || "2026";
 
@@ -16648,9 +16645,8 @@ function recordStudentWithdrawal(payload) {
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente el registro de retiro.");
-  advanceSaceAcademicSourceRevisionLocked_();
-
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const targetAno = anolectivo || "2026";
 
@@ -16846,9 +16842,8 @@ function processStudentGraduation(payload) {
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente el registro de graduación.");
-  advanceSaceAcademicSourceRevisionLocked_();
-
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const targetAno = anolectivo || "2026";
 

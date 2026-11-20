@@ -1942,8 +1942,8 @@ function manageUserRoleMemberships(payload) {
 
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
-    advanceSaceUserSourceRevisionLocked_();
   try {
+    advanceSaceUserSourceRevisionLocked_();
     var institutionId = String(getIdentityInstitutionId_()).trim();
     if (!institutionId) return { status: "error", code: "ROLE_MEMBERSHIP_INSTITUTION_REQUIRED", message: "La institución activa no está configurada." };
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -3308,12 +3308,12 @@ function createPerson(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
-    advanceSaceUserSourceRevisionLocked_();
   } catch (lockError) {
     throw new Error("PERSON_CREATE_LOCK_TIMEOUT");
   }
   let personaId;
   try {
+    advanceSaceUserSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = getOrCreateSheet(ss, "Personas");
     const lastColumn = Math.max(sheet.getLastColumn(), 1);

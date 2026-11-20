@@ -4171,7 +4171,7 @@ function withAuthorizedGradebookSave_(payload, mutation, permissionAction) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_SAVE_LOCK_TIMEOUT");
   try {
-    const context=getAuthorizedGradebookSaveContext_(payload,permissionAction);const result=mutation(context);if(action!=='getGradebookWeightConfiguration')advanceSaceExamSourceRevisionLocked_();return result;
+    const context=getAuthorizedGradebookSaveContext_(payload,permissionAction);if(action!=='getGradebookWeightConfiguration')advanceSaceExamSourceRevisionLocked_();return mutation(context);
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
@@ -4589,7 +4589,7 @@ function withAuthorizedStudentRecoveryMutation_(payload, mutation) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT");
   try {
-    const context=getAuthorizedStudentRecoveryMutationContext_(payload);const result=mutation(context);advanceSaceExamSourceRevisionLocked_();return result;
+    const context=getAuthorizedStudentRecoveryMutationContext_(payload);advanceSaceExamSourceRevisionLocked_();return mutation(context);
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
@@ -4908,7 +4908,7 @@ function withAuthorizedPeriodGradebookClosure_(payload, mutation) {
 
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_CLOSURE_LOCK_TIMEOUT");
-  try {const context=getAuthorizedPeriodGradebookClosureContext_(payload);const result=mutation(context);advanceSaceExamSourceRevisionLocked_();return result;}
+  try {const context=getAuthorizedPeriodGradebookClosureContext_(payload);advanceSaceExamSourceRevisionLocked_();return mutation(context);}
   finally { try { lock.releaseLock(); } catch (_) {} }
 }
 function getAuthorizedPeriodGradebookClosureContext_(payload) {
@@ -5122,7 +5122,7 @@ function withAuthorizedPeriodGradebookSubmission_(payload, mutation) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_SUBMISSION_LOCK_TIMEOUT");
   try {
-    const context=getAuthorizedPeriodGradebookSubmissionContext_(payload);const result=mutation(context);advanceSaceExamSourceRevisionLocked_();return result;
+    const context=getAuthorizedPeriodGradebookSubmissionContext_(payload);advanceSaceExamSourceRevisionLocked_();return mutation(context);
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
@@ -5363,7 +5363,7 @@ function withAuthorizedPeriodGradebookReopen_(payload, mutation) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("GRADEBOOK_REOPEN_LOCK_TIMEOUT");
   try {
-    const context=getAuthorizedPeriodGradebookReopenContext_(payload);const result=mutation(context);advanceSaceExamSourceRevisionLocked_();return result;
+    const context=getAuthorizedPeriodGradebookReopenContext_(payload);advanceSaceExamSourceRevisionLocked_();return mutation(context);
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
@@ -5493,7 +5493,7 @@ function withAuthorizedStudentGradeRectification_(payload, mutation) {
   if (!lock.tryLock(5000)) throw new Error("GRADE_RECTIFICATION_LOCK_TIMEOUT");
   try {
     // El contexto vuelve a validar permiso, identidad, rol, scope y registros bajo lock.
-    const context=getAuthorizedStudentGradeRectificationContext_(payload);const result=mutation(context);advanceSaceExamSourceRevisionLocked_();return result;
+    const context=getAuthorizedStudentGradeRectificationContext_(payload);advanceSaceExamSourceRevisionLocked_();return mutation(context);
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
