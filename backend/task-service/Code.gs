@@ -2678,8 +2678,17 @@ function deleteStudyMaterial(payload) {
   const index = rows.findIndex(row => String(row[0] || "").trim() === materialId);
   if (index < 1) throw new Error("Material no encontrado.");
   const row = rows[index];
-  if (!isTaskServiceAdministrativeRole(role) && (role !== "Profesor" || String(row[10] || "").trim() !== userId)) {
-    throw new Error("El material no pertenece al docente.");
+  if (!isTaskServiceAdministrativeRole(role)) {
+    if (role !== "Profesor" || String(row[10] || "").trim() !== userId) {
+      throw new Error("El material no pertenece al docente.");
+    }
+    const classId = String(row[1] || "").trim();
+    const classroom = getTaskServiceClassroomById(classId);
+    if (!classroom || normalizeString(classroom[7] || "Activa") === "desactivada" ||
+        String(classroom[6] || "").trim() !== userId) {
+      throw new Error("RESOURCE_NOT_FOUND");
+    }
+    assertTaskServiceTeacherAssignedToOffer(userId, classroom[1]);
   }
   sheet.getRange(index + 1,13).setValue("Eliminado");
   return {status:"success",message:"Material eliminado."};

@@ -186,8 +186,83 @@ console.log("TASK-153 staff/student department intersection contract passed.");
     "material publication validates its target classroom relationship");
   assert(extractFunction("createStudyMaterial").includes("assertTaskServiceTeacherAssignedToOffer"),
     "teacher publication requires an active assignment to the classroom offer");
-  assert(extractFunction("deleteStudyMaterial").includes('String(row[10] || "").trim() !== userId'),
+  const deleteMaterialFn = extractFunction("deleteStudyMaterial");
+  assert(deleteMaterialFn.includes('String(row[10] || "").trim() !== userId'),
     "teacher deletion is limited to materials authored by the verified actor");
+  assert(deleteMaterialFn.includes("getTaskServiceClassroomById(classId)") &&
+    deleteMaterialFn.includes("assertTaskServiceTeacherAssignedToOffer(userId, classroom[1])"),
+    "teacher deletion also requires the classroom to remain active and assigned to the verified teacher");
+
+  function materialDeleteFixture(options) {
+    const opts = options || {};
+    const materialRows = [
+      ["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"],
+      ["MAT-1",opts.classId || "AULA-1","Material","","Documento","I parcial","Unidad 1","Tema","https://example.invalid/file","","PROF-1",new Date(),"Activo"]
+    ];
+    const materialSheet = {
+      rows: materialRows,
+      getDataRange: () => ({ getValues: () => materialRows.map(row => row.slice()) }),
+      getRange: (row, col) => ({ setValue: value => { materialRows[row - 1][col - 1] = value; } })
+    };
+    const state = { assignmentChecks: 0 };
+    const classroom = opts.classroom === undefined
+      ? ["AULA-1","OFFER-1","Aula 1","6","A","Matemáticas","PROF-1","Activa"]
+      : opts.classroom;
+    const context = {
+      SPREADSHEET_ID: "LOCAL",
+      SpreadsheetApp: { openById: () => ({}) },
+      getOrCreateSheet: (_ss, name) => { assert.equal(name, "MaterialesEducativos"); return materialSheet; },
+      getVerifiedTaskIdentity_: () => opts.identity || { authorized: true, userId: "PROF-1", role: "Profesor" },
+      isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+      getTaskServiceClassroomById: id => id === "AULA-1" ? classroom : null,
+      assertTaskServiceTeacherAssignedToOffer: (userId, offerId) => {
+        state.assignmentChecks++;
+        if (opts.assignmentActive === false || userId !== "PROF-1" || offerId !== "OFFER-1") {
+          throw new Error("TEACHER_ASSIGNMENT_DENIED");
+        }
+        return true;
+      },
+      normalizeString: value => String(value || "").trim().toLowerCase(),
+      String, Error
+    };
+    vm.runInNewContext(deleteMaterialFn + "\nthis.remove = deleteStudyMaterial;", context);
+    return { context, materialRows, state, remove: payload => context.remove(payload || { materialId: "MAT-1" }) };
+  }
+  {
+    const f = materialDeleteFixture();
+    const result = f.remove();
+    assert.equal(result.status, "success");
+    assert.equal(f.materialRows[1][12], "Eliminado");
+    assert.equal(f.state.assignmentChecks, 1, "teacher deletion checks the current offer assignment once");
+  }
+  {
+    const f = materialDeleteFixture({ assignmentActive: false });
+    assert.throws(() => f.remove(), /TEACHER_ASSIGNMENT_DENIED/);
+    assert.equal(f.materialRows[1][12], "Activo", "revoked assignment cannot delete a previously authored material");
+  }
+  {
+    const f = materialDeleteFixture({ classroom: ["AULA-1","OFFER-1","Aula 1","6","A","Matemáticas","PROF-2","Activa"] });
+    assert.throws(() => f.remove(), /RESOURCE_NOT_FOUND/);
+    assert.equal(f.materialRows[1][12], "Activo", "a reassigned classroom cannot be deleted by its former teacher");
+  }
+  {
+    const f = materialDeleteFixture({ classroom: ["AULA-1","OFFER-1","Aula 1","6","A","Matemáticas","PROF-1","Desactivada"] });
+    assert.throws(() => f.remove(), /RESOURCE_NOT_FOUND/);
+    assert.equal(f.materialRows[1][12], "Activo", "inactive classroom cannot be managed by teacher");
+  }
+  {
+    const f = materialDeleteFixture({ identity: { authorized: true, userId: "PROF-2", role: "Profesor" } });
+    assert.throws(() => f.remove(), /El material no pertenece al docente/);
+    assert.equal(f.materialRows[1][12], "Activo");
+    assert.equal(f.state.assignmentChecks, 0);
+  }
+  {
+    const f = materialDeleteFixture({ identity: { authorized: true, userId: "ADMIN-1", role: "Administrador" }, classroom: null });
+    const result = f.remove();
+    assert.equal(result.status, "success", "authorized administrative role retains the existing material-management path");
+    assert.equal(f.materialRows[1][12], "Eliminado");
+    assert.equal(f.state.assignmentChecks, 0);
+  }
 
   const classroomRows = [
     ["AulaID","OfertaID","Nombre","Grado","Seccion","Asignatura","ProfesorID","Estado"],
