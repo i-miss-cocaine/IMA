@@ -903,6 +903,9 @@
 - **Estado:** [ ] Pendiente
 
 ---
+- **Dependencia resuelta C1.903:** TASK-171 implementa y prueba la prevención de ciclos de jerarquía departamental y consulta iterativa; el resto de AUD-NG-226 permanece pendiente (integridad de cargos/usuarios/adscripciones, atomicidad, concurrencia y consola HR).
+
+
 
 <!-- ID: F8-TASK10 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md ; completadas.md -->
 ### [ ] [F8-TASK10] / TAREA-AD-04 — Dashboard de coordinador académico (C1.270)
@@ -1518,11 +1521,17 @@
   - Se permiten estructuras jerárquicas válidas de múltiples niveles sin restricciones indebidas.
   - Las operaciones rechazadas no alteran los registros de departamentos ni causan estados huérfanos.
   - La consulta de líneas de mando maneja estructuras extensas sin generar desbordamiento de pila o bucles infinitos.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada en código; validación beta institucional pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7205-7238; clave TASK-172; asignación única: Dirección -->
 
 ---
+- **Cierre técnico C1.903:** CatalogoDepartamentos incorpora la relación opcional DepartamentoPadreID de forma aditiva y compatible con hojas heredadas. CREATE_DEPT y UPDATE_DEPT validan la cadena de superiores antes de persistir; rechazan ciclos directos/indirectos, referencias ausentes/inactivas y IDs ambiguos bajo ScriptLock. GET_DEPARTMENT_HIERARCHY expone snapshot plano con profundidad, raíces y número de subordinados; usa recorridos iterativos para evitar recursión y detecta corrupción preexistente antes de cualquier alta/edición.
+- **Cargos:** CREATE_CARGO rechaza niveles jerárquicos no enteros o menores que 1. El modelo actual no tiene relación padre-cargo; no se inventó una segunda jerarquía ni se mezcló con coordinación académica.
+- **Pruebas C1.903:** user-service-department-hierarchy-cycle contract PASS en Department Scope run 44736271430; incluye múltiples raíces, compatibilidad legacy, padre inexistente/inactivo, ciclo directo/indirecto, no mutación ante rechazo, lock, lectura de grafo profundo de 1,500 nodos y corrupción preexistente. node --check backend/user-service/Code.gs PASS en Academic-Service run 44736271416.
+- **Hallazgo ajeno:** Department Scope run 44736271430 termina FAILURE únicamente en Phase 22 por configureSchoolDocumentTemplate ausente; el contrato de jerarquías ya había pasado. No se modificó esa función.
+
+
 
 <!-- ID: TASK-172 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-172] Integrar alertas de vencimiento documental y contractual en el panel de Recursos Humanos

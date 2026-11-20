@@ -420,3 +420,40 @@ Reconciliación:
 - AUD-NG-226: permanece pendiente como propietaria de la relación CatalogoDepartamentos/DepartamentosAcademicos.
 - TASK-062: se reutiliza su política de versionado/cache; no se duplica.
 ===============================================================================
+
+===============================================================================
+### C1.903 — TASK-171: prevención de ciclos y consulta de jerarquía departamental
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-TASK-171-DEPARTMENT-GRAPH-74
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 4416ed6bda2f81abe7d9f8e279d5324b6d5ad17c
+HEAD de implementación: ac191bed82ecad80fb069ae34c0c52435e82a6b4
+HEAD de snapshot/consulta: 860491f8616dace9afd2ee0da07ec04c6e01dd12
+HEAD final: 89cb1a7544de7f9330c5040240e6fcd91cd5b9e3
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+Checkpoint anterior: C1.902.
+
+Implementación:
+- CatalogoDepartamentos agrega DepartamentoPadreID al final del esquema, sin desplazar columnas legacy.
+- CREATE_DEPT admite parentDeptId y comprueba ID único, raíz válida o padre activo.
+- UPDATE_DEPT permite actualizar nombre/parentDeptId, preserva otros campos y rechaza ciclos antes de escribir.
+- validateDepartmentHierarchy_ usa recorrido iterativo; detecta self-cycle, ciclos indirectos, referencias inexistentes/inactivas y IDs ambiguos. También valida el grafo existente completo antes de cualquier alta/edición, fallando cerrado ante corrupción previa.
+- GET_DEPARTMENT_HIERARCHY devuelve snapshot plano (deptId, parentDeptId, depth, childrenCount), raíces y total; detecta ciclos y referencias corruptas, evita recursión.
+- CREATE_CARGO valida nivelJerarquico entero positivo. El esquema actual no modela relación padre-cargo, por lo que no se inventa un grafo de cargos ni se mezcla con coordinación académica.
+
+Pruebas:
+- Department Scope run 44736271430: contrato nuevo de jerarquía PASS; el workflow general falla después en Phase 22 por ausencia de configureSchoolDocumentTemplate.
+- Academic-Service run 44736271416 SUCCESS; node --check backend/user-service/Code.gs PASS.
+- Contrato nuevo cubre raíces múltiples, columnas legacy, padre ausente/inactivo, ciclos directos/indirectos, rechazo sin mutación, lock, grafo de 1,500 nodos y detección de ciclo preexistente.
+- No se ejecutó despliegue Apps Script ni datos productivos/navegador.
+
+Archivos:
+- backend/user-service/Code.gs
+- tests/security/user-service-department-hierarchy-cycle.test.js
+- .github/workflows/department-scope-contract.yml
+
+Estado:
+- TASK-171 completada en código; beta institucional pendiente.
+- AUD-NG-226 continúa pendiente; TASK-171 queda resuelta como dependencia, pero restan integridad referencial/atomicidad de cargos y adscripciones, concurrencia y consola HR.
+===============================================================================
