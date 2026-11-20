@@ -23,13 +23,20 @@ function sheet(headers,rows){
 }
 const plans=[{planId:"P1",grado:"10",estado:"Vigente"},{planId:"P2",grado:"11",estado:"Vigente"}];
 const subjects=[{asignaturaId:"S1",grado:"10",isActive:true,idioma:"es"},{asignaturaId:"S2",grado:"10",isActive:false},{asignaturaId:"S3",grado:"11",isActive:true,idioma:"en"}];
-const rels=sheet(["RelID","PlanID","AsignaturaID","Grado","Caracter","HorasSemanales","Orden"],[]);
+const rels=sheet(["RelID","PlanID","AsignaturaID","Grado","Caracter","HorasSemanales","Orden"],[]);\nconst planSheet=sheet(["PlanID","Nombre","Version","Grado","VigenciaInicio","VigenciaFin","Estado"],[]);
 let locked=false,acquires=0,releases=0;
-const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({})},getOrCreateSheet:()=>rels,
+const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({})},getOrCreateSheet:(_ss,name)=>name==="PlanesEstudio"?planSheet:rels,
  getStudyPlans:()=>({data:plans}),getInstitutionalAreaRecords_:()=>[],getInstitutionalSubjectRecords_:()=>subjects,
  LockService:{getScriptLock:()=>({tryLock:()=>{assert.equal(locked,false,"lock must serialize mutations");locked=true;acquires++;return true;},releaseLock:()=>{assert.equal(locked,true);locked=false;releases++;}})},
  Utilities:{getUuid:(()=>{let next=1;return ()=> "00000000-0000-4000-8000-"+String(next++).padStart(12,"0");})()},normalizeStudyPlanValidity_:v=>String(v),Date,Number,String,Error,Array,Object,JSON,Math};
-vm.runInNewContext(["getStudyPlanSubjectColumnMap_","getStudyPlanSubjects","createStudyPlanSubject","setStudyPlanSubjectStatus"].map(extract).join("\n")+"\nthis.api={getStudyPlanSubjects,createStudyPlanSubject,setStudyPlanSubjectStatus};",ctx);
+vm.runInNewContext(["getStudyPlanColumnMap_","createStudyPlan","getStudyPlanSubjectColumnMap_","getStudyPlanSubjects","createStudyPlanSubject","setStudyPlanSubjectStatus"].map(extract).join("\n")+"\nthis.api={createStudyPlan,getStudyPlanSubjects,createStudyPlanSubject,setStudyPlanSubjectStatus};",ctx);
+const planV1=ctx.api.createStudyPlan({nombre:"BTP Informática",version:"1.0",grado:"10",vigenciaInicio:"2026-01-01",vigenciaFin:"2026-12-31"});
+assert.equal(planV1.data.estado,"Vigente");
+assert.equal(planV1.data.version,"1.0");
+assert.throws(()=>ctx.api.createStudyPlan({nombre:"BTP Informática",version:"1.0",grado:"10",vigenciaInicio:"2026-01-01",vigenciaFin:"2026-12-31"}),/Ya existe una versión del plan/);
+const planV2=ctx.api.createStudyPlan({nombre:"BTP Informática",version:"2.0",grado:"10",vigenciaInicio:"2027-01-01",vigenciaFin:"2027-12-31"});
+assert.equal(planV2.data.version,"2.0");
+assert.equal(planSheet._r.length,2,"new plan versions are appended without overwriting history");
 const created=ctx.api.createStudyPlanSubject({planId:"P1",asignaturaId:"S1",caracter:"Obligatoria",horasSemanales:5,orden:1});
 assert.equal(created.data.estado,"Activo");assert.equal(rels._r.length,1);
 assert.throws(()=>ctx.api.createStudyPlanSubject({planId:"P1",asignaturaId:"S1",caracter:"Obligatoria",horasSemanales:5}),/PLAN_SUBJECT_ALREADY_ACTIVE/);
