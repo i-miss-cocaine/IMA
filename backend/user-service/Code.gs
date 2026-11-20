@@ -4563,99 +4563,197 @@ function getEntityAuditHistory(payload) {
 }
 
 // [TAREA-F4-P1-07] [Fase 4: Gestión de Roles y Adscripciones] - Administración centralizada de departamentos, cargos e historial laboral/académico
-function manageDepartmentPositions(payload) {
-  const callerRole = getUserVerifiedRole(payload);
-  const callerId = payload._verifiedUserId;
-  const { subAction, deptId, deptNombre, jefaturaUserId, cargoId, cargoNombre, nivelJerarquico, userId, motivo } = payload || {};
+function getDepartmentHierarchyColumnMap_(sheet, ensureOptionalColumns) {
+  if (!sheet) throw new Error("DEPARTMENT_CATALOG_UNAVAILABLE");
+  const normalize = value => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  let lastColumn = sheet.getLastColumn();
+  if (lastColumn === 0) {
+    sheet.getRange(1, 1, 1, 6).setValues([["deptId","nombre","jefaturaUserId","estado","fechaCreacion","DepartamentoPadreID"]]);
+    lastColumn = 6;
+  }
+  let headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  const aliases = {
+    deptId:["deptid","departamentoid"],
+    nombre:["nombre","nombredeldepartamento"],
+    jefaturaUserId:["jefaturauserid","jefeuserid"],
+    estado:["estado","status"],
+    fechaCreacion:["fechacreacion"],
+    parentDeptId:["departamentopadreid","parentdeptid","departamentosuperiorid"],
+    updatedAt:["fechaactualizacion","updatedat"]
+  };
+  const resolve = () => {
+    const map = {};
+    Object.keys(aliases).forEach(key => { map[key] = headers.findIndex(value => aliases[key].indexOf(normalize(value)) !== -1); });
+    return map;
+  };
+  let map = resolve();
+  if (ensureOptionalColumns && map.parentDeptId < 0) {
+    const column = sheet.getLastColumn() + 1;
+    sheet.getRange(1, column).setValue("DepartamentoPadreID");
+    headers.push("DepartamentoPadreID");
+    map = resolve();
+  }
+  const missing = ["deptId","nombre","estado"].filter(key => map[key] < 0);
+  if (missing.length) throw new Error("DEPARTMENT_CATALOG_SCHEMA_INVALID:" + missing.join(","));
+  return map;
+}
 
+function validateDepartmentHierarchy_(sheet, deptId, parentDeptId) {
+  const candidateId = String(deptId || "").trim().toUpperCase();
+  const parentId = String(parentDeptId || "").trim().toUpperCase();
+  if (!candidateId) throw new Error("DEPARTMENT_ID_REQUIRED");
+  if (!parentId) return { valid:true, path:[candidateId], parentDeptId:"" };
+  if (candidateId === parentId) {
+    throw new Error("DEPARTMENT_HIERARCHY_CYCLE:" + candidateId + " -> " + parentId);
+  }
+  const map = getDepartmentHierarchyColumnMap_(sheet, true);
+  const rows = sheet.getDataRange().getValues().slice(1);
+  const byId = new Map();
+  rows.forEach((row,index) => {
+    const id = String(row[map.deptId] || "").trim().toUpperCase();
+    if (!id) return;
+    if (byId.has(id)) throw new Error("DEPARTMENT_ID_AMBIGUOUS:" + id);
+    byId.set(id, {
+      id,
+      parentId:map.parentDeptId >= 0 ? String(row[map.parentDeptId] || "").trim().toUpperCase() : "",
+      status:String(row[map.estado] || "").trim(),
+      rowNumber:index + 2
+    });
+  });
+  const path = [candidateId];
+  const visited = new Set([candidateId]);
+  let currentId = parentId;
+  while (currentId) {
+    if (visited.has(currentId)) {
+      path.push(currentId);
+      throw new Error("DEPARTMENT_HIERARCHY_CYCLE:" + path.join(" -> "));
+    }
+    const current = byId.get(currentId);
+    if (!current) throw new Error("DEPARTMENT_PARENT_NOT_FOUND:" + currentId);
+    const active = ["activo","active","enabled","vigente"].indexOf(current.status.toLowerCase()) !== -1;
+    if (!active) throw new Error("DEPARTMENT_PARENT_INACTIVE:" + currentId);
+    visited.add(currentId);
+    path.push(currentId);
+    currentId = current.parentId;
+  }
+  return { valid:true, path:path, parentDeptId:parentId };
+}
+
+// [TAREA-F4-P1-07] [Fase 4: Gestión de Roles y Adscripciones] - Administración centralizada de departamentos, cargos e historial laboral/académico
+function manageDepartmentPositions(payload) {
+  const input = payload && typeof payload === "object" ? payload : {};
+  const callerRole = getUserVerifiedRole(input);
+  const callerId = input._verifiedUserId;
+  const { subAction, deptId, deptNombre, jefaturaUserId, cargoId, cargoNombre, nivelJerarquico, userId, motivo, parentDeptId } = input;
   if (callerRole !== "Administrador" && callerRole !== "Desarrollador" && callerRole !== "RecursosHumanos") {
     throw new Error("Acceso denegado: Se requieren permisos administrativos o de Recursos Humanos.");
   }
-
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const act = String(subAction || "ASSIGN_USER").toUpperCase().trim();
 
   if (act === "CREATE_DEPT") {
-    if (!deptNombre) throw new Error("deptNombre es requerido.");
-    const deptSheet = getOrCreateSheet(ss, "CatalogoDepartamentos");
-    if (deptSheet.getLastRow() === 0) {
-      deptSheet.appendRow(["deptId", "nombre", "jefaturaUserId", "estado", "fechaCreacion"]);
-    }
-    const genRes = generateInstitutionalId({ entityType: "Departamento", prefix: "DEP-" });
-    const newDeptId = deptId || genRes.generatedId || ("DEP-" + Date.now());
-    deptSheet.appendRow([newDeptId, deptNombre.trim(), jefaturaUserId || "", "Activo", new Date()]);
-    logStructuredEvent("USER", "manageDepartmentPositions", "INFO", "DEPARTMENT_CREATED", `Departamento ${newDeptId} (${deptNombre}) creado por ${callerId}`, { deptId: newDeptId, deptNombre }, callerRole);
-    return { status: "success", deptId: newDeptId, message: "Departamento registrado exitosamente." };
+    if (!deptNombre || !String(deptNombre).trim()) throw new Error("deptNombre es requerido.");
+    const generated = deptId ? null : generateInstitutionalId({ entityType:"Departamento", prefix:"DEP-" });
+    const newDeptId = String(deptId || generated && generated.generatedId || "").trim().toUpperCase();
+    if (!newDeptId) throw new Error("No se pudo generar un identificador institucional único para el departamento.");
+    const lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
+    try {
+      const sheet = getOrCreateSheet(ss, "CatalogoDepartamentos");
+      if (sheet.getLastRow() === 0) sheet.appendRow(["deptId","nombre","jefaturaUserId","estado","fechaCreacion","DepartamentoPadreID"]);
+      const map = getDepartmentHierarchyColumnMap_(sheet, true);
+      const rows = sheet.getDataRange().getValues().slice(1);
+      if (rows.some(row => String(row[map.deptId] || "").trim().toUpperCase() === newDeptId)) {
+        throw new Error("DEPARTMENT_ID_ALREADY_EXISTS:" + newDeptId);
+      }
+      const parent = String(parentDeptId || "").trim().toUpperCase();
+      const hierarchy = validateDepartmentHierarchy_(sheet, newDeptId, parent);
+      const row = new Array(sheet.getLastColumn()).fill("");
+      row[map.deptId] = newDeptId;
+      row[map.nombre] = String(deptNombre).trim();
+      if (map.jefaturaUserId >= 0) row[map.jefaturaUserId] = jefaturaUserId || "";
+      row[map.estado] = "Activo";
+      if (map.fechaCreacion >= 0) row[map.fechaCreacion] = new Date();
+      if (map.parentDeptId >= 0) row[map.parentDeptId] = parent;
+      sheet.appendRow(row);
+      logStructuredEvent("USER","manageDepartmentPositions","INFO","DEPARTMENT_CREATED",`Departamento ${newDeptId} (${deptNombre}) creado por ${callerId}`,{deptId:newDeptId,deptNombre,parentDeptId:parent,hierarchyPath:hierarchy.path},callerRole);
+      return {status:"success",deptId:newDeptId,parentDeptId:parent,hierarchyPath:hierarchy.path,message:"Departamento registrado exitosamente."};
+    } finally { lock.releaseLock(); }
+  }
+
+  if (act === "UPDATE_DEPT") {
+    const targetId = String(deptId || "").trim().toUpperCase();
+    if (!targetId) throw new Error("DEPARTMENT_ID_REQUIRED");
+    const lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
+    try {
+      const sheet = getOrCreateSheet(ss, "CatalogoDepartamentos");
+      const map = getDepartmentHierarchyColumnMap_(sheet, true);
+      const data = sheet.getDataRange().getValues();
+      const matches = data.slice(1).map((row,index)=>({row,index:index+1}))
+        .filter(item=>String(item.row[map.deptId] || "").trim().toUpperCase()===targetId);
+      if (matches.length !== 1) throw new Error(matches.length ? "DEPARTMENT_ID_AMBIGUOUS:" + targetId : "DEPARTMENT_NOT_FOUND:" + targetId);
+      const target = matches[0], row = target.row.slice();
+      const nextParent = parentDeptId === undefined ? String(row[map.parentDeptId] || "").trim().toUpperCase() : String(parentDeptId || "").trim().toUpperCase();
+      const hierarchy = validateDepartmentHierarchy_(sheet,targetId,nextParent);
+      if (deptNombre !== undefined) {
+        const name = String(deptNombre || "").trim();
+        if (!name) throw new Error("DEPARTMENT_NAME_REQUIRED");
+        row[map.nombre] = name;
+      }
+      if (map.parentDeptId >= 0) row[map.parentDeptId] = nextParent;
+      if (map.updatedAt >= 0) row[map.updatedAt] = new Date();
+      sheet.getRange(target.index + 1,1,1,row.length).setValues([row]);
+      logStructuredEvent("USER","manageDepartmentPositions","INFO","DEPARTMENT_UPDATED",`Jerarquía del departamento ${targetId} actualizada por ${callerId}`,{deptId:targetId,parentDeptId:nextParent,hierarchyPath:hierarchy.path},callerRole);
+      return {status:"success",deptId:targetId,parentDeptId:nextParent,hierarchyPath:hierarchy.path,message:"Departamento actualizado; la jerarquía se conserva sin ciclos."};
+    } finally { lock.releaseLock(); }
   }
 
   if (act === "CREATE_CARGO") {
     if (!cargoNombre) throw new Error("cargoNombre es requerido.");
     const cargoSheet = getOrCreateSheet(ss, "CatalogoCargos");
-    if (cargoSheet.getLastRow() === 0) {
-      cargoSheet.appendRow(["cargoId", "deptId", "nombreCargo", "nivelJerarquico", "estado", "fechaCreacion"]);
-    }
-    const genRes = generateInstitutionalId({ entityType: "Cargo", prefix: "CRG-" });
-    const newCargoId = cargoId || genRes.generatedId || ("CRG-" + Date.now());
-    cargoSheet.appendRow([newCargoId, deptId || "DEP-GEN", cargoNombre.trim(), nivelJerarquico || 1, "Activo", new Date()]);
-    logStructuredEvent("USER", "manageDepartmentPositions", "INFO", "CARGO_CREATED", `Cargo ${newCargoId} (${cargoNombre}) creado por ${callerId}`, { cargoId: newCargoId, cargoNombre }, callerRole);
-    return { status: "success", cargoId: newCargoId, message: "Cargo registrado exitosamente." };
+    if (cargoSheet.getLastRow() === 0) cargoSheet.appendRow(["cargoId","deptId","nombreCargo","nivelJerarquico","estado","fechaCreacion"]);
+    const genRes = generateInstitutionalId({entityType:"Cargo",prefix:"CRG-"});
+    const newCargoId = cargoId || genRes && genRes.generatedId;
+    if (!newCargoId) throw new Error("No se pudo generar un identificador institucional único para el cargo.");
+    const cargoRows = cargoSheet.getDataRange().getValues().slice(1);
+    if (cargoRows.some(row=>String(row[0] || "").trim().toUpperCase()===String(newCargoId).trim().toUpperCase())) throw new Error("CARGO_ID_ALREADY_EXISTS");
+    const level = Number(nivelJerarquico === undefined ? 1 : nivelJerarquico);
+    if (!Number.isInteger(level) || level < 1) throw new Error("CARGO_HIERARCHY_LEVEL_INVALID");
+    cargoSheet.appendRow([newCargoId,deptId || "",String(cargoNombre).trim(),level,"Activo",new Date()]);
+    logStructuredEvent("USER","manageDepartmentPositions","INFO","POSITION_CREATED",`Cargo ${newCargoId} (${cargoNombre}) creado por ${callerId}`,{cargoId:newCargoId,deptId:deptId || "",nivelJerarquico:level},callerRole);
+    return {status:"success",cargoId:newCargoId,message:"Cargo registrado exitosamente."};
   }
 
   if (act === "ASSIGN_USER") {
     if (!userId || !deptId || !cargoId) throw new Error("userId, deptId y cargoId son requeridos para asignación.");
-
     const userSheet = ss.getSheetByName("Usuarios");
     if (!userSheet) throw new Error("Hoja Usuarios no encontrada.");
     const uRows = userSheet.getDataRange().getValues();
     const userRow = uRows.find(r => String(r[0]).trim() === String(userId).trim());
     if (!userRow) throw new Error("Usuario no encontrado.");
-
-    const adsSheet = getOrCreateSheet(ss, "HistorialAdscripciones");
-    if (adsSheet.getLastRow() === 0) {
-      adsSheet.appendRow(["adscripcionId", "userId", "deptId", "cargoId", "fechaInicio", "fechaFin", "estado", "motivo", "autorizadoPor", "fechaRegistro"]);
-    }
-
+    const adsSheet = getOrCreateSheet(ss,"HistorialAdscripciones");
+    if (adsSheet.getLastRow() === 0) adsSheet.appendRow(["adscripcionId","userId","deptId","cargoId","fechaInicio","fechaFin","estado","motivo","autorizadoPor","fechaRegistro"]);
     const adsData = adsSheet.getDataRange().getValues();
     const now = new Date();
-
-    for (let i = 1; i < adsData.length; i++) {
-      if (String(adsData[i][1]).trim() === String(userId).trim() && String(adsData[i][6]).trim() === "Activa") {
-        adsSheet.getRange(i + 1, 6).setValue(now);
-        adsSheet.getRange(i + 1, 7).setValue("Inactiva");
+    for (let i=1;i<adsData.length;i++) {
+      if (String(adsData[i][1]).trim()===String(userId).trim() && String(adsData[i][6]).trim()==="Activa") {
+        adsSheet.getRange(i+1,6).setValue(now);
+        adsSheet.getRange(i+1,7).setValue("Inactiva");
       }
     }
-
-    const genRes = generateInstitutionalId({ entityType: "Adscripcion", prefix: "ADS-" });
+    const genRes = generateInstitutionalId({entityType:"Adscripcion",prefix:"ADS-"});
     const adsId = genRes && genRes.generatedId ? genRes.generatedId : null;
-    if (!adsId) {
-      throw new Error("No se pudo generar un identificador institucional único para la adscripción.");
-    }
-
-    adsSheet.appendRow([
-      adsId,
-      String(userId).trim(),
-      String(deptId).trim(),
-      String(cargoId).trim(),
-      now,
-      "",
-      "Activa",
-      motivo || "Cambio de cargo/departamento institucional",
-      callerId,
-      now
-    ]);
-
+    if (!adsId) throw new Error("No se pudo generar un identificador institucional único para la adscripción.");
+    adsSheet.appendRow([adsId,String(userId).trim(),String(deptId).trim(),String(cargoId).trim(),now,"","Activa",motivo || "Cambio de cargo/departamento institucional",callerId,now]);
     invalidateUserRoleCache(userId);
-
-    recordEntityChangeLog("UsuarioAdscripcion", userId, {}, { deptId, cargoId, estado: "Activa" }, "AFFILIATION_UPDATED", callerId);
-    logStructuredEvent("USER", "manageDepartmentPositions", "INFO", "INSTITUTIONAL_AFFILIATION_UPDATED", `Adscripción ${adsId} asignada a ${userId}: Dept ${deptId}, Cargo ${cargoId}`, { adsId, userId, deptId, cargoId }, callerRole);
-
-    return { status: "success", adscripcionId: adsId, message: "Adscripción de departamento y cargo registrada exitosamente." };
+    recordEntityChangeLog("UsuarioAdscripcion",userId,{}, {deptId,cargoId,estado:"Activa"},"AFFILIATION_UPDATED",callerId);
+    logStructuredEvent("USER","manageDepartmentPositions","INFO","INSTITUTIONAL_AFFILIATION_UPDATED",`Adscripción ${adsId} asignada a ${userId}: Dept ${deptId}, Cargo ${cargoId}`,{adsId,userId,deptId,cargoId},callerRole);
+    return {status:"success",adscripcionId:adsId,message:"Adscripción de departamento y cargo registrada exitosamente."};
   }
-
   throw new Error("Acción de gestión de departamento/cargo no soportada.");
 }
 
-// [TAREA-F4-P1-07] [Fase 4: Gestión de Roles y Adscripciones] - Consulta de historial completo de adscripciones pasadas y vigentes
 function getUserInstitutionalAffiliations(payload) {
   const callerRole = getUserVerifiedRole(payload);
   const callerId = payload._verifiedUserId;
