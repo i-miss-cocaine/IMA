@@ -6018,94 +6018,324 @@ function auditInstitutionalIdentifierCollisions(payload) {
 }
 
 // [FASE2-T04] [Fase 2 - Fuente de Verdad Institucional de Catálogos] - Punto único de verdad para catálogos, configuraciones y referencias institucionales con validación en servidor.
-function getInstitutionalCatalog(payload) {
-  const { catalogType } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+function normalizeInstitutionalCatalogStatus_(value) {
+  const status = String(value || "").trim().toLowerCase();
+  return ["activo", "vigente", "active", "enabled"].indexOf(status) !== -1;
+}
 
-  if (catalogType === "CURRICULAR_AREAS") {
-    const sheet = getOrCreateSheet(ss, "AreasCurricularesExtensiones");
-    const rows = sheet.getDataRange().getValues().slice(1);
-    const areas = rows.map(r => ({
-      areaId: r[0],
-      name: r[1],
-      code: r[2],
-      serviceKey: r[3],
-      estado: r[7] || "Activo"
-    }));
-    return { status: "success", catalogType: "CURRICULAR_AREAS", data: areas };
+function getInstitutionalCatalogRevision_() {
+  const properties = PropertiesService.getScriptProperties();
+  const raw = properties.getProperty("INSTITUTIONAL_CATALOG_REVISION");
+  const revision = Number(raw);
+  if (!Number.isSafeInteger(revision) || revision < 1) {
+    properties.setProperty("INSTITUTIONAL_CATALOG_REVISION", "1");
+    return 1;
   }
+  return revision;
+}
 
-  if (catalogType === "SUBJECTS") {
-    const sheet = getOrCreateSheet(ss, "CatalogoAsignaturas");
-    const rows = sheet.getDataRange().getValues().slice(1);
-    const subjects = rows.map(r => ({
-      asignaturaId: r[0],
-      nombreOficial: r[1],
-      codigo: r[2],
-      areaAcademica: r[3],
-      estado: r[4] || "Activo"
-    }));
-    return { status: "success", catalogType: "SUBJECTS", data: subjects };
+function bumpInstitutionalCatalogRevision_() {
+  const properties = PropertiesService.getScriptProperties();
+  const current = getInstitutionalCatalogRevision_();
+  if (current >= Number.MAX_SAFE_INTEGER) throw new Error("CATALOG_REVISION_OVERFLOW");
+  const next = current + 1;
+  properties.setProperty("INSTITUTIONAL_CATALOG_REVISION", String(next));
+  return next;
+}
+
+function getInstitutionalCatalogHeaderMap_(sheet, canonicalHeaders, aliases, ensureHeaders) {
+  if (!sheet) throw new Error("CATALOG_SHEET_UNAVAILABLE");
+  let lastColumn = sheet.getLastColumn();
+  if (lastColumn === 0 && canonicalHeaders && canonicalHeaders.length) {
+    sheet.getRange(1, 1, 1, canonicalHeaders.length).setValues([canonicalHeaders]);
+    lastColumn = canonicalHeaders.length;
   }
+  let headers = lastColumn ? sheet.getRange(1, 1, 1, lastColumn).getValues()[0] : [];
+  const normalize = value => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const resolve = () => {
+    const map = {};
+    Object.keys(aliases).forEach(key => {
+      map[key] = headers.findIndex(header => aliases[key].indexOf(normalize(header)) !== -1);
+    });
+    return map;
+  };
+  let map = resolve();
+  (ensureHeaders || []).forEach(header => {
+    const key = normalize(header);
+    if (headers.every(existing => normalize(existing) !== key)) {
+      const nextColumn = sheet.getLastColumn() + 1;
+      sheet.getRange(1, nextColumn).setValue(header);
+      headers.push(header);
+      map = resolve();
+    }
+  });
+  return { headers, map };
+}
 
-  const sheetCat = getOrCreateSheet(ss, "CatalogoAsignaturas");
-  const subjRows = sheetCat.getDataRange().getValues().slice(1);
-  const subjectsList = subjRows.map(r => ({
-    asignaturaId: r[0],
-    nombreOficial: r[1],
-    codigo: r[2],
-    areaAcademica: r[3],
-    estado: r[4] || "Activo"
-  }));
+function getInstitutionalAreaColumnMap_(sheet, ensureOptionalColumns) {
+  const canonical = ["AreaID", "NombreArea", "Codigo", "ServiceKey", "ServiceUrl", "HerramientasJSON", "DepartamentoID", "Estado", "FechaRegistro"];
+  const aliases = {
+    areaId: ["areaid"], name: ["nombrearea", "nombre"], code: ["codigo", "code"],
+    serviceKey: ["servicekey"], serviceUrl: ["serviceurl"], tools: ["herramientasjson", "tools"],
+    departmentId: ["departamentoid"], estado: ["estado", "status"],
+    createdAt: ["fecharegistro"], updatedAt: ["fechaactualizacion"]
+  };
+  const optional = ensureOptionalColumns ? ["DepartamentoID", "Estado", "FechaRegistro", "FechaActualizacion"] : [];
+  const result = getInstitutionalCatalogHeaderMap_(sheet, canonical, aliases, optional);
+  const required = ["areaId", "name", "code", "departmentId", "estado"];
+  const missing = required.filter(key => result.map[key] < 0);
+  if (missing.length) throw new Error("AREA_CATALOG_SCHEMA_INVALID:" + missing.join(","));
+  return result.map;
+}
 
-  const sheetAreas = getOrCreateSheet(ss, "AreasCurricularesExtensiones");
-  const areaRows = sheetAreas.getDataRange().getValues().slice(1);
-  const areasList = areaRows.map(r => ({
-    areaId: r[0],
-    name: r[1],
-    code: r[2],
-    serviceKey: r[3],
-    estado: r[7] || "Activo"
+function getInstitutionalSubjectColumnMap_(sheet, ensureOptionalColumns) {
+  const canonical = ["AsignaturaID", "NombreOficial", "Codigo", "AreaAcademica", "CargaHorariaRef", "Estado"];
+  const aliases = {
+    asignaturaId: ["asignaturaid"], nombreOficial: ["nombreoficial", "nombre"],
+    codigo: ["codigo", "codigosignatura"], areaAcademica: ["areaacademica", "area"],
+    cargaHorariaRef: ["cargahorariaref", "horas"], estado: ["estado", "status"],
+    areaId: ["areaid"], departmentId: ["departamentoid"], programaId: ["programaid"],
+    nivelEducativo: ["niveleducativo"], grado: ["grado"], idioma: ["idioma"],
+    creditos: ["creditos"], version: ["version"], updatedAt: ["fechaactualizacion"]
+  };
+  const optional = ensureOptionalColumns
+    ? ["AreaID", "DepartamentoID", "ProgramaID", "NivelEducativo", "Grado", "Idioma", "Creditos", "Version", "FechaActualizacion"]
+    : [];
+  const result = getInstitutionalCatalogHeaderMap_(sheet, canonical, aliases, optional);
+  const required = ["asignaturaId", "nombreOficial", "codigo", "areaAcademica", "estado"];
+  const missing = required.filter(key => result.map[key] < 0);
+  if (missing.length) throw new Error("SUBJECT_CATALOG_SCHEMA_INVALID:" + missing.join(","));
+  return result.map;
+}
+
+function getInstitutionalDepartmentColumnMap_(sheet) {
+  const canonical = ["DepartamentoID", "Nombre", "JefeUserID", "Estado"];
+  const aliases = {
+    departmentId: ["departamentoid"], name: ["nombre", "nombredepartamento"],
+    headUserId: ["jefeuserid"], estado: ["estado", "status"]
+  };
+  const result = getInstitutionalCatalogHeaderMap_(sheet, canonical, aliases, []);
+  const missing = ["departmentId", "name", "estado"].filter(key => result.map[key] < 0);
+  if (missing.length) throw new Error("DEPARTMENT_CATALOG_SCHEMA_INVALID:" + missing.join(","));
+  return result.map;
+}
+
+function getInstitutionalAreaRecords_(ss) {
+  const sheet = getOrCreateSheet(ss, "AreasCurricularesExtensiones");
+  const map = getInstitutionalAreaColumnMap_(sheet, false);
+  const rows = sheet.getDataRange().getValues().slice(1);
+  return rows.filter(row => String(row[map.areaId] || "").trim()).map((row, index) => ({
+    areaId: String(row[map.areaId] || "").trim().toUpperCase(),
+    name: String(row[map.name] || "").trim(),
+    code: String(row[map.code] || "").trim().toUpperCase(),
+    serviceKey: String(row[map.serviceKey] || "").trim(),
+    serviceUrl: map.serviceUrl >= 0 ? String(row[map.serviceUrl] || "").trim() : "",
+    tools: map.tools >= 0 ? row[map.tools] : "[]",
+    departmentId: String(row[map.departmentId] || "").trim(),
+    estado: String(row[map.estado] || "Inactivo_PendientePruebas").trim(),
+    isActive: normalizeInstitutionalCatalogStatus_(row[map.estado]),
+    rowNumber: index + 2
   }));
+}
+
+function getInstitutionalDepartmentRecords_(ss) {
+  const sheet = getOrCreateSheet(ss, "DepartamentosAcademicos");
+  const map = getInstitutionalDepartmentColumnMap_(sheet);
+  return sheet.getDataRange().getValues().slice(1).filter(row => String(row[map.departmentId] || "").trim()).map(row => ({
+    departmentId: String(row[map.departmentId] || "").trim().toUpperCase(),
+    name: String(row[map.name] || "").trim(),
+    estado: String(row[map.estado] || "Inactivo").trim(),
+    isActive: normalizeInstitutionalCatalogStatus_(row[map.estado])
+  }));
+}
+
+function getInstitutionalSubjectRecords_(ss, areas) {
+  const sheet = getOrCreateSheet(ss, "CatalogoAsignaturas");
+  const map = getInstitutionalSubjectColumnMap_(sheet, false);
+  const areaById = {};
+  const areaByName = {};
+  (areas || []).forEach(area => {
+    areaById[area.areaId] = area;
+    areaByName[String(area.name || "").trim().toLowerCase()] = area;
+    areaByName[String(area.code || "").trim().toLowerCase()] = area;
+  });
+  return sheet.getDataRange().getValues().slice(1).filter(row => String(row[map.asignaturaId] || "").trim()).map(row => {
+    let estado = map.estado >= 0 ? String(row[map.estado] || "").trim() : "";
+    const workloadValue = map.cargaHorariaRef >= 0 ? String(row[map.cargaHorariaRef] || "").trim() : "";
+    if (!estado && /^(activo|inactivo)$/i.test(workloadValue)) estado = workloadValue;
+    const areaName = String(row[map.areaAcademica] || "").trim();
+    const areaId = map.areaId >= 0 && row[map.areaId]
+      ? String(row[map.areaId]).trim().toUpperCase()
+      : ((areaByName[areaName.toLowerCase()] || {}).areaId || "");
+    const area = areaById[areaId] || areaByName[areaName.toLowerCase()] || null;
+    const departmentId = map.departmentId >= 0 && row[map.departmentId]
+      ? String(row[map.departmentId]).trim().toUpperCase()
+      : (area ? area.departmentId : "");
+    return {
+      asignaturaId: String(row[map.asignaturaId] || "").trim().toUpperCase(),
+      nombreOficial: String(row[map.nombreOficial] || "").trim(),
+      codigo: String(row[map.codigo] || "").trim().toUpperCase(),
+      areaAcademica: areaName,
+      areaId: areaId,
+      departmentId: departmentId,
+      programaId: map.programaId >= 0 ? String(row[map.programaId] || "").trim() : "",
+      nivelEducativo: map.nivelEducativo >= 0 ? String(row[map.nivelEducativo] || "").trim() : "",
+      grado: map.grado >= 0 ? String(row[map.grado] || "").trim() : "",
+      idioma: map.idioma >= 0 ? String(row[map.idioma] || "").trim() : "",
+      cargaHorariaRef: map.cargaHorariaRef >= 0 ? row[map.cargaHorariaRef] : "",
+      creditos: map.creditos >= 0 ? row[map.creditos] : "",
+      version: map.version >= 0 ? String(row[map.version] || "").trim() : "",
+      estado: estado || "SinEstado",
+      isActive: normalizeInstitutionalCatalogStatus_(estado) && !!area && area.isActive,
+      areaFound: !!area
+    };
+  });
+}
+
+function getInstitutionalCatalog(payload, verifiedContext) {
+  const input = payload || {};
+  const requestedType = String(input.catalogType || "ALL_INSTITUTIONAL_CATALOGS").trim().toUpperCase();
+  const catalogType = requestedType === "ALL" ? "ALL_INSTITUTIONAL_CATALOGS" : requestedType;
+  const allowedTypes = ["CURRICULAR_AREAS", "SUBJECTS", "DEPARTMENTS", "ALL_INSTITUTIONAL_CATALOGS"];
+  if (allowedTypes.indexOf(catalogType) < 0) throw new Error("CATALOG_TYPE_INVALID");
+
+  const context = verifiedContext || {};
+  const identity = context.identity || getVerifiedAcademicIdentity_(input);
+  if (!identity || !identity.authorized) throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  const ss = context.ss || SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = context.scope || getVerifiedAcademicDepartmentScope_(input, ss, identity);
+  if (!scope || !scope.authorized) throw new Error(scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED");
+  const allowedDepartments = (scope.departmentIds || []).map(id => String(id).trim().toUpperCase());
+  const inScope = departmentId => scope.institutionWide === true ||
+    (!!departmentId && allowedDepartments.indexOf(String(departmentId).trim().toUpperCase()) !== -1);
+
+  const allAreas = getInstitutionalAreaRecords_(ss).filter(area => inScope(area.departmentId));
+  const allDepartments = getInstitutionalDepartmentRecords_(ss).filter(department => inScope(department.departmentId));
+  const allSubjects = getInstitutionalSubjectRecords_(ss, allAreas).filter(subject => inScope(subject.departmentId));
+  const selectedAreas = catalogType === "CURRICULAR_AREAS" || catalogType === "ALL_INSTITUTIONAL_CATALOGS" ? allAreas : [];
+  const selectedSubjects = catalogType === "SUBJECTS" || catalogType === "ALL_INSTITUTIONAL_CATALOGS" ? allSubjects : [];
+  const selectedDepartments = catalogType === "DEPARTMENTS" || catalogType === "ALL_INSTITUTIONAL_CATALOGS" ? allDepartments : [];
+  const activeAreas = selectedAreas.filter(area => area.isActive);
+  const activeDepartments = selectedDepartments.filter(department => department.isActive);
+  const activeSubjects = selectedSubjects.filter(subject => subject.isActive);
 
   return {
     status: "success",
-    catalogType: "ALL_INSTITUTIONAL_CATALOGS",
-    version: "2026.1",
+    catalogType: catalogType,
+    version: "2026.2",
+    schemaVersion: "1.0.0",
+    catalogRevision: getInstitutionalCatalogRevision_(),
     data: {
-      areasCurriculares: areasList,
-      asignaturas: subjectsList
+      areasCurriculares: activeAreas,
+      asignaturas: activeSubjects,
+      departamentosAcademicos: activeDepartments,
+      areasCurricularesMetadata: selectedAreas,
+      asignaturasMetadata: selectedSubjects,
+      departamentosAcademicosMetadata: selectedDepartments
     }
   };
 }
 
-function validateCatalogReference(payload) {
-  const { catalogType, referenceKey } = payload || {};
-  if (!catalogType || !referenceKey) {
-    throw new Error("Parámetros obligatorios ausentes: catalogType y referenceKey.");
-  }
+function validateCatalogReference(payload, verifiedContext) {
+  const input = payload || {};
+  const catalogType = String(input.catalogType || "").trim().toUpperCase();
+  const referenceKey = String(input.referenceKey || "").trim().toUpperCase();
+  const referenceType = String(input.referenceType || "").trim().toUpperCase();
+  if (!catalogType || !referenceKey) throw new Error("CATALOG_REFERENCE_PARAMETERS_REQUIRED");
 
-  const catalogRes = getInstitutionalCatalog({ catalogType });
-  const cleanKey = String(referenceKey).trim().toUpperCase();
-  let isValid = false;
+  const context = verifiedContext || {};
+  const catalog = getInstitutionalCatalog({ catalogType: "ALL_INSTITUTIONAL_CATALOGS" }, context);
+  const data = catalog.data || {};
+  const candidates = [];
+  const push = (type, records) => (records || []).forEach(record => candidates.push({ type, record }));
+  if (catalogType === "CURRICULAR_AREAS") push("CURRICULAR_AREAS", data.areasCurricularesMetadata);
+  else if (catalogType === "SUBJECTS") push("SUBJECTS", data.asignaturasMetadata);
+  else if (catalogType === "DEPARTMENTS") push("DEPARTMENTS", data.departamentosAcademicosMetadata);
+  else if (catalogType === "ALL" || catalogType === "ALL_INSTITUTIONAL_CATALOGS") {
+    push("CURRICULAR_AREAS", data.areasCurricularesMetadata);
+    push("SUBJECTS", data.asignaturasMetadata);
+    push("DEPARTMENTS", data.departamentosAcademicosMetadata);
+  } else throw new Error("CATALOG_TYPE_INVALID");
 
-  if (Array.isArray(catalogRes.data)) {
-    isValid = catalogRes.data.some(item => {
-      const idKey = item.areaId || item.asignaturaId || item.codigo;
-      return idKey && String(idKey).trim().toUpperCase() === cleanKey;
-    });
-  }
-
-  if (!isValid) {
-    throw new Error(`Referencia inválida de catálogo '${cleanKey}' para el tipo de catálogo '${catalogType}'.`);
-  }
-
+  const matches = candidates.filter(candidate => {
+    if (referenceType && referenceType !== candidate.type) return false;
+    const record = candidate.record;
+    const keys = candidate.type === "CURRICULAR_AREAS"
+      ? [record.areaId, record.code]
+      : candidate.type === "SUBJECTS"
+        ? [record.asignaturaId, record.codigo]
+        : [record.departmentId];
+    return keys.some(key => key && String(key).trim().toUpperCase() === referenceKey);
+  });
+  if (!matches.length) throw new Error("CATALOG_REFERENCE_NOT_FOUND_OR_OUT_OF_SCOPE");
+  if (matches.length > 1) throw new Error("CATALOG_REFERENCE_AMBIGUOUS");
+  const match = matches[0];
+  if (!match.record.isActive) throw new Error("CATALOG_REFERENCE_INACTIVE");
   return {
     status: "success",
-    catalogType,
-    referenceKey: cleanKey,
-    isValid: true
+    catalogType: match.type,
+    referenceKey: referenceKey,
+    isValid: true,
+    reference: match.record,
+    catalogRevision: catalog.catalogRevision
   };
+}
+
+function getSubjectCatalog(payload) {
+  const result = getInstitutionalCatalog(Object.assign({}, payload || {}, { catalogType: "SUBJECTS" }));
+  return result;
+}
+
+function createSubjectCatalogItem(payload) {
+  const input = payload || {};
+  const nombreOficial = String(input.nombreOficial || "").trim();
+  const codigo = String(input.codigo || "").trim().toUpperCase();
+  const areaKey = String(input.areaId || input.areaAcademica || "").trim();
+  if (!nombreOficial || !codigo || !areaKey) {
+    throw new Error("Nombre oficial, código y área curricular son obligatorios.");
+  }
+
+  const identity = getVerifiedAcademicIdentity_(input);
+  if (!identity || !identity.authorized) throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedAcademicDepartmentScope_(input, ss, identity);
+  if (!scope || !scope.authorized) throw new Error(scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED");
+  const areaValidation = validateCatalogReference({ catalogType: "CURRICULAR_AREAS", referenceKey: areaKey }, { identity, ss, scope });
+  const area = areaValidation.reference;
+  if (!area.departmentId) throw new Error("AREA_DEPARTMENT_REQUIRED");
+  if (input.departmentId && String(input.departmentId).trim().toUpperCase() !== area.departmentId) {
+    throw new Error("SUBJECT_AREA_DEPARTMENT_MISMATCH");
+  }
+
+  const sheet = getOrCreateSheet(ss, "CatalogoAsignaturas");
+  const map = getInstitutionalSubjectColumnMap_(sheet, true);
+  const rows = sheet.getDataRange().getValues().slice(1);
+  const duplicateCode = rows.some(row => String(row[map.codigo] || "").trim().toUpperCase() === codigo);
+  if (duplicateCode) throw new Error("SUBJECT_CODE_ALREADY_EXISTS");
+  const cargaHoraria = input.cargaHorariaRef === undefined || input.cargaHorariaRef === null || input.cargaHorariaRef === ""
+    ? "" : Number(input.cargaHorariaRef);
+  if (cargaHoraria !== "" && (!Number.isFinite(cargaHoraria) || cargaHoraria < 0)) throw new Error("SUBJECT_WORKLOAD_INVALID");
+
+  const asignaturaId = "ASIG-" + Utilities.getUuid();
+  const row = new Array(sheet.getLastColumn()).fill("");
+  row[map.asignaturaId] = asignaturaId;
+  row[map.nombreOficial] = nombreOficial;
+  row[map.codigo] = codigo;
+  row[map.areaAcademica] = area.name;
+  if (map.cargaHorariaRef >= 0) row[map.cargaHorariaRef] = cargaHoraria;
+  row[map.estado] = "Activo";
+  if (map.areaId >= 0) row[map.areaId] = area.areaId;
+  if (map.departmentId >= 0) row[map.departmentId] = area.departmentId;
+  if (map.programaId >= 0) row[map.programaId] = String(input.programaId || "").trim();
+  if (map.nivelEducativo >= 0) row[map.nivelEducativo] = String(input.nivelEducativo || "").trim();
+  if (map.grado >= 0) row[map.grado] = String(input.grado || "").trim();
+  if (map.idioma >= 0) row[map.idioma] = String(input.idioma || "").trim();
+  if (map.creditos >= 0) row[map.creditos] = input.creditos === undefined ? "" : Number(input.creditos);
+  if (map.version >= 0) row[map.version] = String(input.version || "1").trim();
+  if (map.updatedAt >= 0) row[map.updatedAt] = new Date().toISOString();
+  sheet.appendRow(row);
+  const catalogRevision = bumpInstitutionalCatalogRevision_();
+  return { status: "success", message: "Asignatura agregada al catálogo.", data: { asignaturaId, nombreOficial, codigo, areaId: area.areaId, departmentId: area.departmentId, estado: "Activo" }, catalogRevision };
 }
 
 // [FASE2-T03] [Fase 2 - Contratos API y Compatibilidad] - Suite automatizada de pruebas de contratos y compatibilidad API entre cliente y microservicios.
@@ -6254,164 +6484,144 @@ function runStudentLifecycleRegressionSuite(payload) {
 
 // [TAREA-20] [Fase 1 - Incorporación Curricular] - Plantilla técnica estandarizada para registro de nuevas áreas curriculares y servicios de Apps Script, protocolo de pruebas integradas previo a producción y desactivación segura preservando historiales.
 function registerCurricularAreaExtension(payload) {
-  const { areaId, name, code, serviceKey, serviceUrl, tools, departmentId } = payload || {};
-
-  if (!areaId || !name || !code) {
-    throw new Error("Parámetros obligatorios incompletos: areaId, name y code son requeridos.");
+  const input = payload || {};
+  const areaId = String(input.areaId || "").trim().toUpperCase();
+  const name = String(input.name || "").trim();
+  const code = String(input.code || "").trim().toUpperCase();
+  const serviceKey = String(input.serviceKey || "").trim();
+  const departmentId = String(input.departmentId || "").trim().toUpperCase();
+  if (!areaId || !name || !code || !serviceKey || !departmentId) {
+    throw new Error("AREA_ID_NAME_CODE_SERVICE_AND_DEPARTMENT_REQUIRED");
   }
-
+  const identity = getVerifiedAcademicIdentity_(input);
+  if (!identity || !identity.authorized) throw new Error("VERIFIED_IDENTITY_REQUIRED");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedAcademicDepartmentScope_(input, ss, identity);
+  if (!scope || !scope.authorized) throw new Error(scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED");
+  const department = validateCatalogReference({ catalogType: "DEPARTMENTS", referenceKey: departmentId }, { identity, ss, scope }).reference;
+  if (!scope.institutionWide && (scope.departmentIds || []).map(id => String(id).toUpperCase()).indexOf(departmentId) < 0) {
+    throw new Error("DEPARTMENT_SCOPE_DENIED");
+  }
+
   const sheet = getOrCreateSheet(ss, "AreasCurricularesExtensiones");
-
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["AreaID", "NombreArea", "Codigo", "ServiceKey", "ServiceUrl", "HerramientasJSON", "DepartamentoID", "Estado", "FechaRegistro"]);
-  }
-
+  const map = getInstitutionalAreaColumnMap_(sheet, true);
   const values = sheet.getDataRange().getValues();
-  let existingRow = -1;
-  const cleanAreaId = String(areaId).trim().toUpperCase();
+  const existingIndex = values.findIndex((row, index) => index > 0 &&
+    String(row[map.areaId] || "").trim().toUpperCase() === areaId);
+  const duplicateCode = values.some((row, index) => index > 0 && index !== existingIndex &&
+    String(row[map.code] || "").trim().toUpperCase() === code);
+  if (duplicateCode) throw new Error("AREA_CODE_ALREADY_EXISTS");
 
-  for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]).trim().toUpperCase() === cleanAreaId) {
-      existingRow = i + 1;
-      break;
-    }
+  const toolsValue = input.tools === undefined ? "[]" : JSON.stringify(input.tools);
+  let parsedTools;
+  try { parsedTools = JSON.parse(toolsValue); } catch (_) { throw new Error("AREA_TOOLS_JSON_INVALID"); }
+  if (!Array.isArray(parsedTools)) throw new Error("AREA_TOOLS_MUST_BE_ARRAY");
+
+  const isNew = existingIndex < 0;
+  const row = isNew ? new Array(sheet.getLastColumn()).fill("") : values[existingIndex].slice();
+  while (row.length < sheet.getLastColumn()) row.push("");
+  row[map.areaId] = areaId;
+  row[map.name] = name;
+  row[map.code] = code;
+  row[map.serviceKey] = serviceKey;
+  if (map.serviceUrl >= 0) row[map.serviceUrl] = String(input.serviceUrl || "").trim();
+  if (map.tools >= 0) row[map.tools] = JSON.stringify(parsedTools);
+  row[map.departmentId] = departmentId;
+  if (isNew) {
+    row[map.estado] = "Inactivo_PendientePruebas";
+    if (map.createdAt >= 0) row[map.createdAt] = new Date().toISOString();
   }
+  if (map.updatedAt >= 0) row[map.updatedAt] = new Date().toISOString();
+  if (isNew) sheet.appendRow(row);
+  else sheet.getRange(existingIndex + 1, 1, 1, row.length).setValues([row]);
 
-  const toolsStr = Array.isArray(tools) ? JSON.stringify(tools) : String(tools || "[]");
-  const rowData = [
-    cleanAreaId,
-    String(name).trim(),
-    String(code).trim().toUpperCase(),
-    serviceKey || `SERVICE_${cleanAreaId}`,
-    serviceUrl || "",
-    toolsStr,
-    departmentId || "DEPT-GENERAL",
-    "Inactivo_PendientePruebas",
-    new Date().toISOString()
-  ];
-
-  if (existingRow > 0) {
-    sheet.getRange(existingRow, 1, 1, rowData.length).setValues([rowData]);
-  } else {
-    sheet.appendRow(rowData);
-  }
-
-  logStructuredEvent("ACADEMIC", "registerCurricularAreaExtension", "INFO", "AREA_REGISTERED", `Área curricular ${cleanAreaId} - ${name} registrada en estado pendiente de pruebas.`, {
-    areaId: cleanAreaId,
-    name,
-    code
-  }, payload && payload.authRole);
+  const catalogRevision = bumpInstitutionalCatalogRevision_();
+  logStructuredEvent("ACADEMIC", "registerCurricularAreaExtension", "INFO", "AREA_METADATA_SAVED", "Metadatos de área curricular guardados; el estado previo se conserva.", {
+    areaId: areaId, departmentId: departmentId, preservedState: isNew ? "Inactivo_PendientePruebas" : values[existingIndex][map.estado]
+  }, identity.role);
 
   return {
     status: "success",
-    message: `Área curricular ${cleanAreaId} registrada exitosamente. Ejecute el protocolo de pruebas previo a su habilitación en producción.`,
-    area: {
-      areaId: cleanAreaId,
-      name,
-      code,
-      serviceKey: serviceKey || `SERVICE_${cleanAreaId}`,
-      estado: "Inactivo_PendientePruebas"
-    }
+    message: isNew ? "Área curricular registrada en estado pendiente de pruebas." : "Metadatos actualizados sin modificar el estado del área.",
+    catalogRevision: catalogRevision,
+    area: { areaId, name, code, serviceKey, departmentId, estado: isNew ? "Inactivo_PendientePruebas" : values[existingIndex][map.estado] }
   };
 }
 
 function runCurricularAreaServiceTests(payload) {
-  const { areaId } = payload || {};
-  if (!areaId) {
-    throw new Error("Parámetro obligatorio ausente: areaId.");
-  }
-
+  const input = payload || {};
+  const areaId = String(input.areaId || "").trim().toUpperCase();
+  if (!areaId) throw new Error("AREA_ID_REQUIRED");
+  const identity = getVerifiedAcademicIdentity_(input);
+  if (!identity || !identity.authorized) throw new Error("VERIFIED_IDENTITY_REQUIRED");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "AreasCurricularesExtensiones");
-  const values = sheet.getDataRange().getValues();
-  let areaFound = null;
-
-  for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]).trim().toUpperCase() === String(areaId).trim().toUpperCase()) {
-      areaFound = {
-        areaId: values[i][0],
-        name: values[i][1],
-        code: values[i][2],
-        serviceKey: values[i][3],
-        serviceUrl: values[i][4],
-        estado: values[i][7],
-        rowIndex: i + 1
-      };
-      break;
-    }
+  const scope = getVerifiedAcademicDepartmentScope_(input, ss, identity);
+  if (!scope || !scope.authorized) throw new Error(scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED");
+  const area = getInstitutionalAreaRecords_(ss).find(item => item.areaId === areaId);
+  if (!area) throw new Error("CURRICULAR_AREA_NOT_FOUND");
+  if (!scope.institutionWide && (scope.departmentIds || []).map(id => String(id).toUpperCase()).indexOf(area.departmentId) < 0) {
+    throw new Error("DEPARTMENT_SCOPE_DENIED");
   }
-
-  if (!areaFound) {
-    throw new Error(`Área curricular ${areaId} no encontrada en el catálogo de extensiones.`);
-  }
-
+  let tools = [];
+  try { tools = typeof area.tools === "string" ? JSON.parse(area.tools || "[]") : area.tools; } catch (_) {}
+  const department = getInstitutionalDepartmentRecords_(ss).find(item => item.departmentId === area.departmentId && item.isActive);
+  const allAreas = getInstitutionalAreaRecords_(ss);
+  const duplicateCode = allAreas.filter(item => item.code === area.code).length > 1;
   const testSuiteResults = {
-    testPingConnectivity: { status: "PASS", message: "Conectividad con microservicio verificada." },
-    testRBACIsolation: { status: "PASS", message: "Aislamiento de permisos y roles confirmado." },
-    testDataIntegrity: { status: "PASS", message: "Preservación inalterable de historiales comprobada." },
-    testToolsSchema: { status: "PASS", message: "Esquema de herramientas pedagógicas validado." }
+    testRequiredMetadata: { status: area.name && area.code && area.serviceKey && area.departmentId ? "PASS" : "FAIL" },
+    testActiveDepartmentReference: { status: department ? "PASS" : "FAIL" },
+    testUniqueAreaCode: { status: duplicateCode ? "FAIL" : "PASS" },
+    testToolsSchema: { status: Array.isArray(tools) ? "PASS" : "FAIL" },
+    testPingConnectivity: { status: "NOT_RUN", reason: "No existe un contrato de ping verificable para el serviceUrl configurado." },
+    testRBACIsolation: { status: "NOT_RUN", reason: "La prueba requiere identidades y despliegues aislados reales." }
   };
-
-  const allPassed = Object.values(testSuiteResults).every(t => t.status === "PASS");
-
-  if (allPassed && areaFound.estado === "Inactivo_PendientePruebas") {
-    sheet.getRange(areaFound.rowIndex, 8).setValue("Activo");
-    areaFound.estado = "Activo";
-  }
-
-  logStructuredEvent("ACADEMIC", "runCurricularAreaServiceTests", "INFO", "AREA_TESTS_EXECUTED", `Pruebas ejecutadas para el área ${areaId}. Resultado: ${allPassed ? "PASSED" : "FAILED"}.`, {
-    areaId,
-    allPassed,
-    testSuiteResults
-  }, payload && payload.authRole);
-
+  const allImplementedPassed = Object.keys(testSuiteResults).filter(key => testSuiteResults[key].status !== "NOT_RUN")
+    .every(key => testSuiteResults[key].status === "PASS");
+  logStructuredEvent("ACADEMIC", "runCurricularAreaServiceTests", "INFO", "AREA_TESTS_REPORTED", "Pruebas estructurales ejecutadas; no se cambia el estado del área.", {
+    areaId, allImplementedPassed, testSuiteResults
+  }, identity.role);
   return {
-    status: "success",
-    areaId: areaFound.areaId,
-    estadoActual: areaFound.estado,
-    todasPruebasExitosas: allPassed,
+    status: allImplementedPassed ? "partial" : "error",
+    areaId: area.areaId,
+    estadoActual: area.estado,
+    todasPruebasExitosas: false,
+    activationAllowed: false,
     resultadosPruebas: testSuiteResults
   };
 }
 
 function toggleCurricularAreaStatus(payload) {
-  const { areaId, nuevoEstado, motivo } = payload || {};
-  if (!areaId || !nuevoEstado) {
-    throw new Error("Parámetros obligatorios ausentes: areaId y nuevoEstado.");
+  const input = payload || {};
+  const areaId = String(input.areaId || "").trim().toUpperCase();
+  const nuevoEstado = String(input.nuevoEstado || "").trim();
+  const motivo = String(input.motivo || "").trim();
+  if (!areaId || ["Activo", "Inactivo"].indexOf(nuevoEstado) < 0 || !motivo) {
+    throw new Error("AREA_ID_EXPLICIT_STATUS_AND_REASON_REQUIRED");
   }
-
+  if (nuevoEstado === "Activo" && input.confirmReactivation !== true) {
+    throw new Error("EXPLICIT_REACTIVATION_CONFIRMATION_REQUIRED");
+  }
+  const identity = getVerifiedAcademicIdentity_(input);
+  if (!identity || !identity.authorized) throw new Error("VERIFIED_IDENTITY_REQUIRED");
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedAcademicDepartmentScope_(input, ss, identity);
+  if (!scope || !scope.authorized) throw new Error(scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED");
   const sheet = getOrCreateSheet(ss, "AreasCurricularesExtensiones");
+  const map = getInstitutionalAreaColumnMap_(sheet, false);
   const values = sheet.getDataRange().getValues();
-  let rowIndex = -1;
-
-  for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]).trim().toUpperCase() === String(areaId).trim().toUpperCase()) {
-      rowIndex = i + 1;
-      break;
-    }
+  const index = values.findIndex((row, i) => i > 0 && String(row[map.areaId] || "").trim().toUpperCase() === areaId);
+  if (index < 1) throw new Error("CURRICULAR_AREA_NOT_FOUND");
+  const departmentId = String(values[index][map.departmentId] || "").trim().toUpperCase();
+  if (!scope.institutionWide && (scope.departmentIds || []).map(id => String(id).toUpperCase()).indexOf(departmentId) < 0) {
+    throw new Error("DEPARTMENT_SCOPE_DENIED");
   }
-
-  if (rowIndex === -1) {
-    throw new Error(`Área curricular ${areaId} no se encuentra en el catálogo.`);
-  }
-
-  const estadoLimpio = String(nuevoEstado).trim() === "Activo" ? "Activo" : "Inactivo";
-  sheet.getRange(rowIndex, 8).setValue(estadoLimpio);
-
-  logStructuredEvent("ACADEMIC", "toggleCurricularAreaStatus", "WARN", "AREA_STATUS_CHANGED", `Estado del área ${areaId} cambiado a ${estadoLimpio}. Motivo: ${motivo || 'N/A'}. Se garantiza preservación inalterable de entregas e historiales pasados.`, {
-    areaId,
-    nuevoEstado: estadoLimpio,
-    motivo
-  }, payload && payload.authRole);
-
-  return {
-    status: "success",
-    message: `Estado del área ${areaId} actualizado a '${estadoLimpio}'. Los registros e historiales pasados permanecen inalterados.`,
-    areaId,
-    nuevoEstado: estadoLimpio
-  };
+  sheet.getRange(index + 1, map.estado + 1).setValue(nuevoEstado);
+  if (map.updatedAt >= 0) sheet.getRange(index + 1, map.updatedAt + 1).setValue(new Date().toISOString());
+  const catalogRevision = bumpInstitutionalCatalogRevision_();
+  logStructuredEvent("ACADEMIC", "toggleCurricularAreaStatus", "WARN", "AREA_STATUS_CHANGED", "Estado curricular actualizado con motivo explícito.", {
+    areaId, nuevoEstado, motivo, departmentId
+  }, identity.role);
+  return { status: "success", areaId, nuevoEstado, motivo, catalogRevision };
 }
 
 // [TAREA-F6-030] [Fase 6: Microservicios Administrativos y Financieros con separación por responsabilidades] - Inicializador de estructura jerárquica de carpetas de Drive para el microservicio compartido de Dirección y Secretaría
