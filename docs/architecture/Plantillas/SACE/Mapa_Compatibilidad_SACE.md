@@ -265,3 +265,6 @@ El orquestador candidato aplica el mismo formato antes de conservar `sourceRevis
 **Verificación:** parser V8 PASS en tres servicios, orquestador y dos contratos; matriz de formato/contador PASS. Los estados consultables de CI muestran Department Reference Consumers SUCCESS y Department Scope FAILURE sin logs accesibles; no se declara PASS de los workflows SACE hasta obtener sus resultados verificables. No se modifican manifest ni los tres templates CANDIDATE.
 
 Estado AUD-NG-167: [~] En progreso.
+
+
+**Evidencia complementaria C1.886:** un harness V8 aislado ejecutó los helpers reales extraídos de Academic, USER y Exam. Los tres pasaron inicialización UUID:0, incrementos monotónicos, rechazo de UUID persistido malformado, overflow y fallo simulado de persistencia (el token permaneció sin avanzar). El normalizador del orquestador pasó UUID válido, epoch inválido y ausencia legacy. Este harness no se presenta como Node.js, GitHub Actions ni despliegue Apps Script.

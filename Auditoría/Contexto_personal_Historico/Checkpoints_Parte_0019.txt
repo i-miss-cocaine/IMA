@@ -2040,3 +2040,9 @@ Estado:
 Siguiente acción elegible:
 - Obtener resultados/logs verificables de los workflows SACE para el commit de implementación; después ejecutar BETA-EXAM-114/115 cuando estén disponibles despliegues y archivo autorizado. Mantener la exportación en estado candidato hasta resolver procedencia, vigencia y semántica oficial.
 ===============================================================================
+
+
+[Addendum C1.886 — verificación V8 complementaria]
+- Se ejecutaron en harness V8 aislado los helpers reales extraídos de Academic, USER y Exam: inicialización UUID:0, incrementos monotónicos, rechazo de UUID persistido malformado, overflow y fallo simulado de setProperty. Los tres servicios PASS; en el fallo de persistencia el token permaneció UUID:0.
+- Se ejecutó el normalizador real de sourceRevisions del orquestador: UUID válido preservado; epoch inválido rechazado; metadata legacy ausente conserva null.
+- Esta evidencia es V8 directo, no Node.js/Actions ni despliegue real de Apps Script. La limitación de CI indicada en C1.886 permanece.

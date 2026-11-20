@@ -4370,3 +4370,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-20] C1.886 — AUD-NG-167: validación UUID estricta para sourceRevision en Academic/USER/Exam y orquestador; contratos agregan epoch malformado, fixtures UUID y casos de formato. V8 parser y matriz de regex PASS. Estado CI parcialmente observable: Department Reference Consumers SUCCESS, Department Scope FAILURE sin logs disponibles; no se afirma PASS de Actions SACE. XLS sigue CANDIDATE y BETA-EXAM-114/115 pendientes.
+
+
+[2026-11-20] Evidencia complementaria C1.886 — harness V8 ejecutó los helpers reales extraídos de Academic/USER/Exam: UUID initialization, monotonic increments, invalid epoch, overflow y fallo de persistencia PASS en los tres servicios; el token no avanzó cuando setProperty falló. Normalizador del orquestador PASS para UUID válido, inválido y legacy ausente. No sustituye Node.js/Actions ni beta real.
