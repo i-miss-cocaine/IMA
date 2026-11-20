@@ -9,6 +9,8 @@ on:
     paths:
       - backend/academic-service/Code.gs
       - js/teacher.js
+      - admision.html
+      - tests/security/academic-admission-offer-consumer-contract.test.js
       - tests/security/academic-teacher-offer-consumer-contract.test.js
       - backend/accounting-service/Code.gs
       - tests/security/academic-department-reference-consumer.test.js
@@ -44,6 +46,8 @@ jobs:
         run: node tests/security/academic-department-reference-consumer.test.js
       - name: Run academic teacher offer consumer contract
         run: node tests/security/academic-teacher-offer-consumer-contract.test.js
+      - name: Run academic admission offer consumer contract
+        run: node tests/security/academic-admission-offer-consumer-contract.test.js
       - name: Check academic teacher client syntax
         run: node --check js/teacher.js
       - name: Run ACCOUNTING reference consumer contract

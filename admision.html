@@ -763,27 +763,56 @@
             }
         }
 
+        let academicOffersRequestId = 0;
         async function fetchAcademicOffers() {
+            const requestId = ++academicOffersRequestId;
+            const yearSelect = document.getElementById('anolectivo');
+            const gradeSelect = document.getElementById('gradoSolicitado');
+            if (!gradeSelect) return;
+            const anoId = String(yearSelect && yearSelect.value || "").trim();
+            const previousGrade = String(gradeSelect.value || "").trim();
+            const renderPlaceholder = (label) => {
+                gradeSelect.innerHTML = "";
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = label;
+                gradeSelect.appendChild(option);
+            };
+            renderPlaceholder("Cargando grados disponibles...");
             try {
-                const res = await window.fetchApi('ACADEMIC', 'getAcademicOffers', { anoId: '2026' });
-                if (res && res.status === 'success' && Array.isArray(res.data)) {
-                    const gradeSelect = document.getElementById('gradoSolicitado');
-                    if (gradeSelect && res.data.length > 0) {
-                        const gradesMap = {};
-                        res.data.forEach(o => { if (o.grado) gradesMap[o.grado] = true; });
-                        const availableGrades = Object.keys(gradesMap);
-                        if (availableGrades.length > 0) {
-                            gradeSelect.innerHTML = '<option value="">-- Seleccionar Grado --</option>' + availableGrades.map(g => `<option value="${g}">${g}</option>`).join('');
-                        }
-                    }
+                const res = await window.fetchApi('ACADEMIC', 'getAcademicOffers', anoId ? { anoId } : {});
+                if (requestId !== academicOffersRequestId ||
+                    String(yearSelect && yearSelect.value || "").trim() !== anoId) return;
+                if (!res || res.status !== 'success' || !Array.isArray(res.data)) {
+                    throw new Error("La respuesta de ofertas académicas no cumple el contrato esperado.");
                 }
+                const availableGrades = Array.from(new Set(res.data.filter(offer => {
+                    if (!offer || !String(offer.ofertaId || "").trim() || !String(offer.grado || "").trim()) return false;
+                    const status = String(offer.estado || "Activa").trim().toLowerCase();
+                    return ["activa", "activo", "active", "enabled", "vigente"].includes(status);
+                }).map(offer => String(offer.grado).trim()))).sort((a, b) => a.localeCompare(b, "es"));
+                gradeSelect.innerHTML = "";
+                const placeholder = document.createElement("option");
+                placeholder.value = "";
+                placeholder.textContent = availableGrades.length ? "-- Seleccionar Grado --" : "No hay grados con oferta activa para este año";
+                gradeSelect.appendChild(placeholder);
+                availableGrades.forEach(grade => {
+                    const option = document.createElement("option");
+                    option.value = grade;
+                    option.textContent = grade;
+                    gradeSelect.appendChild(option);
+                });
+                gradeSelect.value = availableGrades.includes(previousGrade) ? previousGrade : "";
             } catch (err) {
-                console.warn("Consulta de oferta académica diferida:", err);
+                if (requestId !== academicOffersRequestId) return;
+                renderPlaceholder("No se pudo cargar el catálogo académico");
+                console.warn("No se pudo cargar la oferta académica para admisiones:", err);
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchAcademicOffers();
+            document.getElementById('anolectivo')?.addEventListener('change', fetchAcademicOffers);
             restoreAdmissionDraftOnLoad();
 
             const form = document.getElementById('admission-form');
