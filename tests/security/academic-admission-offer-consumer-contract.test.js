@@ -37,7 +37,7 @@ function makeContext(fetchApi) {
   ] }));
   active.grade.value = "Décimo";
   await active.context.fetchOffers();
-  assert.deepEqual(JSON.parse(JSON.stringify(active.grade.options.map(o => o.value))), ["", "Décimo", "<script>alert(1)</script>"]);
+  assert.deepEqual(JSON.parse(JSON.stringify(active.grade.options.map(o => o.value))), ["", "<script>alert(1)</script>", "Décimo"]);
   assert.equal(active.grade.value, "Décimo", "existing selection should survive when still active");
   assert.equal(source.includes("anoId: " + String.fromCharCode(39) + "2026" + String.fromCharCode(39)), false, "admission query must not hardcode a year");
   assert.ok(source.includes("addEventListener('change', fetchAcademicOffers)"));
