@@ -6,7 +6,7 @@ const backend = fs.readFileSync("backend/academic-service/Code.gs", "utf8");
 const source = fs.readFileSync("js/secretary.js", "utf8");
 
 function extractAsyncAssignment(name) {
-  const marker = "window." + name + " = async function() {";
+  const marker = "window." + name + " = async function(filters) {";
   const start = source.indexOf(marker);
   assert.notEqual(start, -1, "missing " + marker);
   const fnStart = source.indexOf("async function", start);
@@ -57,6 +57,22 @@ function element() {
   }]);
   const rendered = JSON.stringify(container.children);
   for (const expected of ["88.50%","17","3","2","Excelente (90–100)","5","Necesita mejora (<70)","2"]) assert.ok(rendered.includes(expected), "missing rendered metric " + expected);
+  const pending = [];
+  window.fetchApi = (...args) => { calls.push(args); return new Promise(resolve => pending.push(resolve)); };
+  const olderRequest = window.loadAcademicAnalyticsData({ grado:"10" });
+  const newerRequest = window.loadAcademicAnalyticsData({ grado:"11" });
+  const metricResponse = average => ({ status:"success", data:{ metrics:{
+    promedioConsolidado:average,totalEvaluaciones:1,evaluadasCount:1,notasPendientes:0,alertasAcompanamiento:0,
+    distribucion:{ excelente:1,bueno:0,satisfactorio:0,necesitaMejora:0 }
+  } } });
+  pending[1](metricResponse(77.25));
+  await newerRequest;
+  const newestRendered = JSON.stringify(container.children);
+  pending[0](metricResponse(12));
+  await olderRequest;
+  assert.equal(JSON.stringify(container.children), newestRendered, "late older analytics response must not replace the latest filter result");
+  assert.ok(newestRendered.includes("77.25%"));
+  assert.equal(newestRendered.includes("12.00%"), false);
 
   const roleStart = backend.indexOf('"Secretaría": [');
   const roleEnd = backend.indexOf('"Secretaria": [', roleStart);
