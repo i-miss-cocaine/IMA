@@ -116,6 +116,11 @@ for (const entry of manifest.templates) {
   const partial2Gradebook = gradebook("PER-2", 2);
   const attendanceSnapshot = {
     status: "success",
+    sourceRevisions: {
+      academic: "ACADEMIC-EPOCH-123456:7",
+      user: "USER-EPOCH-123456:4",
+      exam: "EXAM-EPOCH-123456:9"
+    },
     data: {
       expectedContext,
       periods,
@@ -150,10 +155,37 @@ for (const entry of manifest.templates) {
     options: { scale: { min: 0, max: 100, precision: 2 } }
   });
   assert.equal(result.status, "candidate");
+  assert.equal(result.sourceRevisionStatus, "present");
+  assert.deepEqual(result.sourceRevisions, attendanceSnapshot.sourceRevisions,
+    "candidate metadata retains the stable source revisions without writing them into the workbook");
+  assert.ok(result.limitations.some(item => item.includes("retained as candidate metadata only")));
+
   assert.equal(templates.inspect(result.outputBytes).get("E8"), sourceRows[0].partial1,
     "the wrapper must use the gradebook snapshots returned by Academic-Service, not caller-supplied overrides");
   assert.equal(result.sourceStudentCount, 22);
   assert.equal(result.verifiedRowCount, 22);
+  const legacySnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
+  delete legacySnapshot.sourceRevisions;
+  const legacyResult = orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: legacySnapshot,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  });
+  assert.equal(legacyResult.sourceRevisionStatus, "absent");
+  assert.equal(legacyResult.sourceRevisions, null);
+  assert.ok(legacyResult.limitations.some(item => item.includes("cross-service stability cannot be attested")));
+  const malformedRevisionSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
+  malformedRevisionSnapshot.sourceRevisions.user = "broken";
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: malformedRevisionSnapshot,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_SOURCE_REVISIONS_INVALID/);
+
   assert.equal(result.outputBytes.length, templateBytes.length);
   assert.notEqual(result.outputBytes, templateBytes, "candidate generation must return a separate byte buffer");
   assert.deepEqual(Array.from(templateBytes), originalTemplateBytes, "candidate generation must not mutate the source template bytes");

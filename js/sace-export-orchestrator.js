@@ -13,6 +13,23 @@ function (provider, templates) {
     if (value === null || value === undefined || value === "") throw new Error(code);
     return value;
   }
+  function normalizeSourceRevisions(snapshot) {
+    const raw = snapshot && snapshot.sourceRevisions;
+    if (raw === null || raw === undefined) return null;
+    if (typeof raw !== "object" || Array.isArray(raw)) throw new Error("SACE_SOURCE_REVISIONS_INVALID");
+    const result = {};
+    ["academic", "user", "exam"].forEach(service => {
+      const token = raw[service];
+      if (typeof token !== "string" || !/^[A-Za-z0-9-]{8,80}:[0-9]+$/.test(token)) {
+        throw new Error("SACE_SOURCE_REVISIONS_INVALID");
+      }
+      const counter = Number(token.slice(token.lastIndexOf(":") + 1));
+      if (!Number.isSafeInteger(counter) || counter < 0) throw new Error("SACE_SOURCE_REVISIONS_INVALID");
+      result[service] = token;
+    });
+    return result;
+  }
+
   function sameValue(actual, expected) {
     if (actual === null || actual === undefined || actual === "") return expected === null || expected === undefined || expected === "";
     if (typeof actual === "number" && typeof expected === "number") return actual === expected;
@@ -58,6 +75,7 @@ function (provider, templates) {
         typeof templates.mapRowsToTemplate !== "function") {
       throw new Error("SACE_EXPORT_DEPENDENCIES_UNAVAILABLE");
     }
+    const sourceRevisions = normalizeSourceRevisions(value.attendanceSnapshot);
     const templateBytes = required(value.templateBytes, "SACE_TEMPLATE_BYTES_REQUIRED");
     const expectedTemplateContext = required(value.expectedTemplateContext, "SACE_TEMPLATE_CONTEXT_REQUIRED");
     const contextMappingVerified = assertAcademicTemplateContextMapping(
@@ -100,12 +118,17 @@ function (provider, templates) {
       outputBytes,
       sourceStudentCount: candidate.sourceStudents.length,
       verifiedRowCount: mappedRows.length,
+      sourceRevisionStatus: sourceRevisions ? "present" : "absent",
+      sourceRevisions,
       limitations: candidate.limitations.concat([contextMappingVerified
         ? "Academic-to-SACE context mapping is explicit input and has not been independently verified against an official SACE source"
         : "Academic-to-SACE context mapping was not supplied; institution, modality, grade/section, schedule and subject labels remain unverified",
       "Official SACE center code has no verified mapping from the local SedeID source",
       "Academic schedule has no unambiguous JornadaID relationship to OfertaAcademica or HorariosClase",
-      "Template source, official status, effective dates and applicable academic year are not verified by the candidate manifest"]),
+      "Template source, official status, effective dates and applicable academic year are not verified by the candidate manifest",
+      sourceRevisions
+        ? "Academic/USER/Exam source revision tokens are retained as candidate metadata only; they are not written into the XLS workbook"
+        : "The source snapshot has no sourceRevisions metadata; cross-service stability cannot be attested by this legacy candidate"]),
       verification: {
         workbookSize: verified.workbookSize,
         workbookCapacity: verified.workbookCapacity,
