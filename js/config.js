@@ -852,33 +852,75 @@ window.fetchInstitutionalCatalog = function(catalogType) {
             Array.isArray(data.departamentosAcademicosMetadata);
         if (!valid) return fallback("INVALID_CATALOG_CONTRACT","La respuesta del servidor no cumple el contrato versionado del catálogo.");
         var normalizedType = String(requestedType).toUpperCase();
-        if (normalizedType === "ALL" || normalizedType === "ALL_INSTITUTIONAL_CATALOGS") {
+        var requestedCatalogTypes = normalizedType === "ALL" || normalizedType === "ALL_INSTITUTIONAL_CATALOGS"
+            ? ["areas", "subjects", "departments"]
+            : normalizedType === "CURRICULAR_AREAS" ? ["areas"]
+            : normalizedType === "SUBJECTS" ? ["subjects"]
+            : ["departments"];
+        var responseRevision = Number(res.catalogRevision);
+        var currentState = window.INSTITUTIONAL_CATALOG_STATE || {};
+        var catalogSources = Object.assign({}, currentState.catalogSources || {});
+        var catalogRevisions = Object.assign({areas:null,subjects:null,departments:null}, currentState.catalogRevisions || {});
+        var previousGlobalRevision = Number(currentState.catalogRevision);
+        ["areas","subjects","departments"].forEach(function(type) {
+            if ((catalogRevisions[type] === null || catalogRevisions[type] === undefined) &&
+                catalogSources[type] === "SERVER" && Number.isSafeInteger(previousGlobalRevision)) {
+                catalogRevisions[type] = previousGlobalRevision;
+            }
+        });
+        var applyCatalog = {};
+        var staleCatalogTypes = [];
+        requestedCatalogTypes.forEach(function(type) {
+            var appliedRevision = Number(catalogRevisions[type]);
+            var hasAppliedRevision = catalogRevisions[type] !== null && catalogRevisions[type] !== undefined && Number.isSafeInteger(appliedRevision);
+            applyCatalog[type] = !hasAppliedRevision || responseRevision >= appliedRevision;
+            if (!applyCatalog[type]) staleCatalogTypes.push(type);
+        });
+        if (applyCatalog.areas) {
             window.INSTITUTIONAL_CATALOG_CACHE.areas = {};
+            data.areasCurricularesMetadata.forEach(function(area){window.registerNewCurricularAreaServiceConfig(Object.assign({},area,{source:"SERVER",authoritative:true}));});
+            catalogSources.areas = "SERVER";
+            catalogRevisions.areas = responseRevision;
+        }
+        if (applyCatalog.subjects) {
             window.INSTITUTIONAL_CATALOG_CACHE.subjects = {};
+            data.asignaturasMetadata.forEach(function(subject){window.registerNewAcademicSubjectServiceConfig(Object.assign({},subject,{source:"SERVER",authoritative:true}));});
+            catalogSources.subjects = "SERVER";
+            catalogRevisions.subjects = responseRevision;
+        }
+        if (applyCatalog.departments) {
             window.INSTITUTIONAL_CATALOG_CACHE.departments = {};
-        } else if (normalizedType === "CURRICULAR_AREAS") window.INSTITUTIONAL_CATALOG_CACHE.areas = {};
-        else if (normalizedType === "SUBJECTS") window.INSTITUTIONAL_CATALOG_CACHE.subjects = {};
-        else if (normalizedType === "DEPARTMENTS") window.INSTITUTIONAL_CATALOG_CACHE.departments = {};
-        data.areasCurricularesMetadata.forEach(function(area){window.registerNewCurricularAreaServiceConfig(Object.assign({},area,{source:"SERVER",authoritative:true}));});
-        data.asignaturasMetadata.forEach(function(subject){window.registerNewAcademicSubjectServiceConfig(Object.assign({},subject,{source:"SERVER",authoritative:true}));});
-        data.departamentosAcademicosMetadata.forEach(function(department){window.registerNewAcademicDepartmentServiceConfig(Object.assign({},department,{source:"SERVER",authoritative:true}));});
-        var catalogSources = Object.assign({}, window.INSTITUTIONAL_CATALOG_STATE.catalogSources || {});
-        if (normalizedType === "ALL" || normalizedType === "ALL_INSTITUTIONAL_CATALOGS") {
-            catalogSources.areas = "SERVER"; catalogSources.subjects = "SERVER"; catalogSources.departments = "SERVER";
-        } else if (normalizedType === "CURRICULAR_AREAS") catalogSources.areas = "SERVER";
-        else if (normalizedType === "SUBJECTS") catalogSources.subjects = "SERVER";
-        else if (normalizedType === "DEPARTMENTS") catalogSources.departments = "SERVER";
+            data.departamentosAcademicosMetadata.forEach(function(department){window.registerNewAcademicDepartmentServiceConfig(Object.assign({},department,{source:"SERVER",authoritative:true}));});
+            catalogSources.departments = "SERVER";
+            catalogRevisions.departments = responseRevision;
+        }
         var allCatalogsServerAuthoritative = catalogSources.areas === "SERVER" && catalogSources.subjects === "SERVER" && catalogSources.departments === "SERVER";
+        if (staleCatalogTypes.length === requestedCatalogTypes.length) {
+            var knownGlobalRevision = Number(currentState.catalogRevision);
+            return Object.assign({},res,{
+                status:"stale", source:currentState.source || "PARTIAL_SERVER",
+                authoritative:currentState.authoritative === true,
+                catalogRevision:Number.isSafeInteger(knownGlobalRevision) ? knownGlobalRevision : responseRevision,
+                staleResponseIgnored:true, staleCatalogTypes:staleCatalogTypes,
+                cachePolicy:window.CACHE_POLICIES ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS : null
+            });
+        }
+        var nextRevision = Number.isSafeInteger(previousGlobalRevision) ? Math.max(previousGlobalRevision,responseRevision) : responseRevision;
         window.INSTITUTIONAL_CATALOG_STATE = {
             source:allCatalogsServerAuthoritative ? "SERVER" : "PARTIAL_SERVER",
             authoritative:allCatalogsServerAuthoritative, catalogSources:catalogSources,
+            catalogRevisions:catalogRevisions,
             schemaVersion:res.schemaVersion, version:res.version,
-            catalogRevision:Number(res.catalogRevision), sharedConfigVersion:payload.clientConfigVersion,
+            catalogRevision:nextRevision, sharedConfigVersion:payload.clientConfigVersion,
             serviceVersion:payload.clientServiceVersion,
             cacheTtlSeconds:window.CACHE_POLICIES && window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS.ttlSeconds : 43200,
             fetchedAt:new Date().toISOString()
         };
-        return Object.assign({},res,{source:"SERVER",authoritative:true,authoritativeCatalogType:normalizedType,cachePolicy:window.CACHE_POLICIES ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS : null});
+        return Object.assign({},res,{
+            source:"SERVER", authoritative:allCatalogsServerAuthoritative,
+            authoritativeCatalogType:normalizedType, staleCatalogTypes:staleCatalogTypes,
+            cachePolicy:window.CACHE_POLICIES ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS : null
+        });
     }).catch(function(error) {
         if (window.console && console.error) console.error("[CATALOG-SYNC] Error en sincronización institucional:",error);
         return fallback("CATALOG_SYNC_FAILED",String(error && error.message || error || "Error desconocido"));
