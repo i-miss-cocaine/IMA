@@ -75,6 +75,18 @@ const request = {
   studentIds: ["STU-1", "STU-2"]
 };
 const successfulDirectoryContext = contextFor();
+const revisionOnlyContext = contextFor();
+const revisionOnlyResult = revisionOnlyContext.readDirectory({
+  sessionToken: "SESSION-OK", teacherUserId: "TEACHER-1",
+  institutionId: "INST-1", revisionOnly: true
+});
+assert.equal(revisionOnlyResult.status, "success");
+assert.equal(revisionOnlyResult.sourceRevision, "USER-EPOCH-123456:0");
+assert.equal(Object.prototype.hasOwnProperty.call(revisionOnlyResult, "data"), false,
+  "revisionOnly returns no identity rows");
+assert.deepEqual({ waits: revisionOnlyContext.lockWaits, releases: revisionOnlyContext.lockReleases, held: revisionOnlyContext.lockHeld },
+  { waits: 1, releases: 1, held: false }, "revisionOnly reads the token under the USER source lock");
+
 const result = successfulDirectoryContext.readDirectory(request);
 assert.deepEqual({ waits: successfulDirectoryContext.lockWaits, releases: successfulDirectoryContext.lockReleases, held: successfulDirectoryContext.lockHeld },
   { waits: 1, releases: 1, held: false }, "identity and account reads must share one released USER-Service lock");

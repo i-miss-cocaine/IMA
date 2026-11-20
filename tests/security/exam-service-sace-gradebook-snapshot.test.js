@@ -82,7 +82,7 @@ function createContext(snapshot = fixture, closureRows = [
       assert.equal(payload.sessionToken, "SESSION-TEACHER");
       calls.lockActive = true;
       try {
-        return reader({ actor: { userId: "TEACHER-1", role: "Profesor" },
+        return reader({ sourceRevision: "EXAM-EPOCH-123456:0", actor: { userId: "TEACHER-1", role: "Profesor" },
           scope: { authorized: true, institutionId: "INST-1" },
           ss: { getSheetByName(name) {
             return name === "CierresPeriodos" ? {
@@ -191,6 +191,15 @@ assert(batchHandler.includes('withAuthorizedExamRead_("getSaceGradebookSnapshots
 assert(batchHandler.includes("buildSaceGradebookSnapshotUnlocked_"));
 assert(handler.includes('withAuthorizedExamRead_("getSaceGradebookSnapshot"'));
 assert(extract("buildSaceGradebookSnapshotUnlocked_").includes("getGradebookDataUnlocked_(snapshotRequest, context)"));
+
+const revisionOnlyContext = createContext();
+const revisionOnlyResult = revisionOnlyContext.context.runSnapshots({ sessionToken: "SESSION-TEACHER", revisionOnly: true });
+assert.equal(revisionOnlyResult.status, "success");
+assert.equal(revisionOnlyResult.sourceRevision, "EXAM-EPOCH-123456:0");
+assert.equal(Object.prototype.hasOwnProperty.call(revisionOnlyResult, "data"), false,
+  "revisionOnly returns only the Exam source revision");
+assert.equal(revisionOnlyContext.calls.authorization, 1, "revisionOnly still uses the authorized read boundary");
+assert.equal(revisionOnlyContext.calls.worker, 0, "revisionOnly does not scan gradebooks");
 
 const secondFixture = JSON.parse(JSON.stringify(fixture));
 secondFixture.data.contexto.periodoId = "II Parcial";
