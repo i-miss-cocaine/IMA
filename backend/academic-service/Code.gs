@@ -9200,7 +9200,8 @@ function getAcademicOfferColumnMap(sheet, ensureOptionalColumns) {
     sedeId: "SedeID",
     modalidad: "Modalidad",
     capacidadMax: "CapacidadMax",
-    codigoClase: "CodigoClase"
+    codigoClase: "CodigoClase",
+    periodoId: "PeriodoID"
   };
   if (sheet.getLastRow() === 0) sheet.appendRow(canonicalHeaders);
 
@@ -9223,7 +9224,8 @@ function getAcademicOfferColumnMap(sheet, ensureOptionalColumns) {
     modalidad: ["modalidad"],
     capacidadMax: ["capacidadmax", "capacidadmaxima", "cupomaximo"],
     estado: ["estado", "estadooferta"],
-    codigoClase: ["codigoclase", "codigoseccion"]
+    codigoClase: ["codigoclase", "codigoseccion"],
+    periodoId: ["periodoid", "periodoacademicoid"]
   };
   const map = {};
   Object.keys(aliases).forEach(key => {
@@ -9264,96 +9266,93 @@ function isAcademicOfferActive(state) {
 
 // [TAREA-F5-020] [Fase 5: Optimización de Admisiones] - Caché selectiva de catálogos estáticos (10 min TTL) e invalidación
 function getAcademicOffers(payload) {
-  const { anoId, grado, seccion } = payload || {};
-  const cacheKey = `offers_v2_${anoId || 'ALL'}_${grado || 'ALL'}_${seccion || 'ALL'}`;
-
-  try {
-    const cache = CacheService.getScriptCache();
-    const cachedData = cache.get(cacheKey);
-    if (cachedData) {
-      return { status: "success", data: JSON.parse(cachedData), _cached: true };
-    }
-  } catch (_) {}
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "OfertaAcademica");
-  const columns = getAcademicOfferColumnMap(sheet, false);
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return { status: "success", data: [] };
-
-  const offers = data.slice(1).filter(r => {
-    if (anoId && String(getAcademicOfferValue(r, columns, "anoId", "")).trim() !== String(anoId).trim()) return false;
-    if (grado && normalizeString(getAcademicOfferValue(r, columns, "grado", "")) !== normalizeString(grado)) return false;
-    if (seccion && String(getAcademicOfferValue(r, columns, "seccion", "")).trim() !== String(seccion).trim()) return false;
+  const { anoId, periodoId, grado, seccion } = payload || {};
+  const cacheKey = `offers_v3_${anoId || "ALL"}_${periodoId || "ALL"}_${grado || "ALL"}_${seccion || "ALL"}`;
+  try { const cache=CacheService.getScriptCache(); const cached=cache.get(cacheKey); if(cached) return {status:"success",data:JSON.parse(cached),_cached:true}; } catch (_) {}
+  const sheet=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"OfertaAcademica");
+  const columns=getAcademicOfferColumnMap(sheet,false), rows=sheet.getDataRange().getValues();
+  if(rows.length<=1)return {status:"success",data:[]};
+  const offers=rows.slice(1).filter(row=>{
+    if(anoId&&String(getAcademicOfferValue(row,columns,"anoId","")).trim()!==String(anoId).trim())return false;
+    if(periodoId&&String(getAcademicOfferValue(row,columns,"periodoId","")).trim()!==String(periodoId).trim())return false;
+    if(grado&&normalizeString(getAcademicOfferValue(row,columns,"grado",""))!==normalizeString(grado))return false;
+    if(seccion&&String(getAcademicOfferValue(row,columns,"seccion","")).trim()!==String(seccion).trim())return false;
     return true;
-  }).map(r => {
-    const rawCapacity = Number(getAcademicOfferValue(r, columns, "capacidadMax", 35));
-    return {
-      ofertaId: getAcademicOfferValue(r, columns, "ofertaId", ""),
-      anoId: getAcademicOfferValue(r, columns, "anoId", ""),
-      sedeId: getAcademicOfferValue(r, columns, "sedeId", ""),
-      grado: getAcademicOfferValue(r, columns, "grado", ""),
-      seccion: getAcademicOfferValue(r, columns, "seccion", ""),
-      asignaturaId: getAcademicOfferValue(r, columns, "asignaturaId", ""),
-      planId: getAcademicOfferValue(r, columns, "planId", ""),
-      modalidad: getAcademicOfferValue(r, columns, "modalidad", ""),
-      capacidadMax: Number.isInteger(rawCapacity) && rawCapacity >= 0 ? rawCapacity : 35,
-      estado: getAcademicOfferValue(r, columns, "estado", "Activa") || "Activa",
-      codigoClase: getAcademicOfferValue(r, columns, "codigoClase", "")
-    };
+  }).map(row=>{
+    const capacity=Number(getAcademicOfferValue(row,columns,"capacidadMax",35));
+    return {ofertaId:getAcademicOfferValue(row,columns,"ofertaId",""),anoId:getAcademicOfferValue(row,columns,"anoId",""),
+      periodoId:getAcademicOfferValue(row,columns,"periodoId",""),sedeId:getAcademicOfferValue(row,columns,"sedeId",""),
+      grado:getAcademicOfferValue(row,columns,"grado",""),seccion:getAcademicOfferValue(row,columns,"seccion",""),
+      asignaturaId:getAcademicOfferValue(row,columns,"asignaturaId",""),planId:getAcademicOfferValue(row,columns,"planId",""),
+      modalidad:getAcademicOfferValue(row,columns,"modalidad",""),capacidadMax:Number.isInteger(capacity)&&capacity>=0?capacity:35,
+      estado:getAcademicOfferValue(row,columns,"estado","Activa")||"Activa",codigoClase:getAcademicOfferValue(row,columns,"codigoClase","")};
   });
+  try{CacheService.getScriptCache().put(cacheKey,JSON.stringify(offers),600);}catch(_){}
+  return {status:"success",data:offers};
+}
 
-  try {
-    const cache = CacheService.getScriptCache();
-    cache.put(cacheKey, JSON.stringify(offers), 600); // 10 minutos TTL
-  } catch (_) {}
-
-  return { status: "success", data: offers };
+function validateAcademicOfferReferences_(input,references) {
+  const data=input||{},refs=references||{};
+  const activeYears=(refs.years||[]).filter(x=>normalizeInstitutionalCatalogStatus_(x.estado));
+  let anoId=String(data.anoId||"").trim();
+  if(!anoId){if(activeYears.length!==1)throw new Error("ACADEMIC_YEAR_REQUIRED");anoId=String(activeYears[0].anoId||"").trim();}
+  if(!activeYears.some(x=>String(x.anoId||"").trim()===anoId))throw new Error("ACADEMIC_YEAR_NOT_ACTIVE_OR_NOT_FOUND");
+  const activePeriods=(refs.periods||[]).filter(x=>String(x.anoId||"").trim()===anoId&&normalizeInstitutionalCatalogStatus_(x.estado));
+  let periodoId=String(data.periodoId||"").trim();
+  if(!periodoId){if(activePeriods.length!==1)throw new Error("ACADEMIC_PERIOD_REQUIRED");periodoId=String(activePeriods[0].periodoId||"").trim();}
+  if(!activePeriods.some(x=>String(x.periodoId||"").trim()===periodoId))throw new Error("ACADEMIC_PERIOD_NOT_ACTIVE_OR_OUTSIDE_YEAR");
+  const planId=String(data.planId||"").trim(),plan=(refs.plans||[]).find(x=>String(x.planId||"").trim()===planId);
+  if(!plan||!normalizeInstitutionalCatalogStatus_(plan.estado||"Vigente"))throw new Error("STUDY_PLAN_NOT_ACTIVE_OR_NOT_FOUND");
+  const grado=String(data.grado||"").trim();
+  if(!grado||grado.toLowerCase()!==String(plan.grado||"").trim().toLowerCase())throw new Error("OFFER_PLAN_GRADE_MISMATCH");
+  const asignaturaId=String(data.asignaturaId||"").trim().toUpperCase();
+  const subject=(refs.subjects||[]).find(x=>String(x.asignaturaId||"").trim().toUpperCase()===asignaturaId);
+  if(!subject||subject.isActive!==true)throw new Error("OFFER_SUBJECT_NOT_ACTIVE_OR_NOT_FOUND");
+  if(subject.grado&&String(subject.grado).trim().toLowerCase()!==grado.toLowerCase())throw new Error("OFFER_SUBJECT_GRADE_MISMATCH");
+  const relation=(refs.planSubjects||[]).find(x=>String(x.planId||"").trim()===planId&&String(x.asignaturaId||"").trim().toUpperCase()===asignaturaId&&(!x.estado||String(x.estado).trim()==="Activo"));
+  if(!relation)throw new Error("PLAN_SUBJECT_RELATION_REQUIRED");
+  if(relation.grado&&String(relation.grado).trim().toLowerCase()!==grado.toLowerCase())throw new Error("PLAN_SUBJECT_GRADE_MISMATCH");
+  return {anoId,periodoId,planId,asignaturaId,grado};
 }
 
 function createAcademicOffer(payload) {
-  const { anoId, sedeId, grado, seccion, asignaturaId, planId, modalidad, capacidadMax, estado, codigoClase } = payload || {};
-  if (!grado || !asignaturaId) throw new Error("Grado y Asignatura son requeridos.");
-
-  const parsedCapacity = capacidadMax === undefined || capacidadMax === null || capacidadMax === "" ? 35 : Number(capacidadMax);
-  if (!Number.isInteger(parsedCapacity) || parsedCapacity < 1) {
-    throw new Error("La capacidad máxima debe ser un número entero mayor que cero.");
-  }
-
-  const offerState = String(estado || "Activa").trim();
-  if (["Activa", "Inactiva", "Cerrada"].indexOf(offerState) === -1) {
-    throw new Error("El estado de la oferta debe ser Activa, Inactiva o Cerrada.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "OfertaAcademica");
-  const columns = getAcademicOfferColumnMap(sheet, true);
-  const newRow = new Array(sheet.getLastColumn()).fill("");
-  const ofertaId = "OFE-" + Date.now();
-
-  newRow[columns.ofertaId] = ofertaId;
-  newRow[columns.anoId] = anoId || "ANO-CURRENT";
-  newRow[columns.sedeId] = sedeId || "";
-  newRow[columns.grado] = String(grado).trim();
-  newRow[columns.seccion] = String(seccion || "A").trim();
-  newRow[columns.asignaturaId] = String(asignaturaId).trim();
-  newRow[columns.planId] = planId || "PLAN-DEFAULT";
-  newRow[columns.modalidad] = modalidad || "Presencial";
-  newRow[columns.capacidadMax] = parsedCapacity;
-  newRow[columns.estado] = offerState;
-  newRow[columns.codigoClase] = codigoClase || "";
-
-  sheet.appendRow(newRow);
-
+  const input=payload||{}, {sedeId,seccion,modalidad,capacidadMax,estado,codigoClase}=input;
+  if(!input.grado||!input.asignaturaId)throw new Error("Grado y Asignatura son requeridos.");
+  const capacity=capacidadMax===undefined||capacidadMax===null||capacidadMax===""?35:Number(capacidadMax);
+  if(!Number.isInteger(capacity)||capacity<1)throw new Error("La capacidad máxima debe ser un número entero mayor que cero.");
+  const offerState=String(estado||"Activa").trim();
+  if(["Activa","Inactiva","Cerrada"].indexOf(offerState)<0)throw new Error("El estado de la oferta debe ser Activa, Inactiva o Cerrada.");
+  const lock=LockService.getScriptLock();if(!lock.tryLock(10000))throw new Error("ACADEMIC_OFFER_LOCK_TIMEOUT");
   try {
-    const cache = CacheService.getScriptCache();
-    cache.remove(`offers_v2_${anoId || 'ALL'}_${grado || 'ALL'}_${seccion || 'ALL'}`);
-    cache.remove("offers_v2_ALL_ALL_ALL");
-    cache.remove(`offers_${anoId || 'ALL'}_${grado || 'ALL'}_${seccion || 'ALL'}`);
-    cache.remove("offers_ALL_ALL_ALL");
-  } catch (_) {}
-
-  return { status: "success", message: "Oferta académica registrada.", data: { ofertaId, capacidadMax: parsedCapacity, estado: offerState } };
+    const ss=SpreadsheetApp.openById(SPREADSHEET_ID),areas=getInstitutionalAreaRecords_(ss);
+    const relationSheet=getOrCreateSheet(ss,"PlanAsignaturas"),relationMap=getStudyPlanSubjectColumnMap_(relationSheet,false);
+    const planSubjects=relationSheet.getDataRange().getValues().slice(1).map(row=>({planId:String(row[relationMap.planId]||"").trim(),
+      asignaturaId:String(row[relationMap.asignaturaId]||"").trim().toUpperCase(),grado:String(row[relationMap.grado]||"").trim(),
+      estado:relationMap.estado>=0?String(row[relationMap.estado]||"Activo").trim():"Activo"}));
+    const validated=validateAcademicOfferReferences_(input,{
+      years:getAcademicYears({}).data||[],periods:getAcademicPeriods({}).data||[],plans:getStudyPlans({}).data||[],
+      subjects:getInstitutionalSubjectRecords_(ss,areas),planSubjects
+    });
+    const sheet=getOrCreateSheet(ss,"OfertaAcademica"),columns=getAcademicOfferColumnMap(sheet,true),rows=sheet.getDataRange().getValues();
+    const duplicate=rows.slice(1).some(row=>String(getAcademicOfferValue(row,columns,"anoId","")).trim()===validated.anoId&&
+      String(getAcademicOfferValue(row,columns,"periodoId","")).trim()===validated.periodoId&&
+      String(getAcademicOfferValue(row,columns,"sedeId","")).trim()===String(sedeId||"").trim()&&
+      String(getAcademicOfferValue(row,columns,"grado","")).trim().toLowerCase()===validated.grado.toLowerCase()&&
+      String(getAcademicOfferValue(row,columns,"seccion","")).trim().toLowerCase()===String(seccion||"A").trim().toLowerCase()&&
+      String(getAcademicOfferValue(row,columns,"asignaturaId","")).trim().toUpperCase()===validated.asignaturaId&&
+      String(getAcademicOfferValue(row,columns,"planId","")).trim()===validated.planId&&
+      String(getAcademicOfferValue(row,columns,"estado","Activa")).trim()==="Activa");
+    if(duplicate)throw new Error("ACADEMIC_OFFER_ALREADY_ACTIVE");
+    const row=new Array(sheet.getLastColumn()).fill(""),ofertaId="OFE-"+Utilities.getUuid();
+    row[columns.ofertaId]=ofertaId;row[columns.anoId]=validated.anoId;row[columns.periodoId]=validated.periodoId;
+    row[columns.sedeId]=sedeId||"";row[columns.grado]=validated.grado;row[columns.seccion]=String(seccion||"A").trim();
+    row[columns.asignaturaId]=validated.asignaturaId;row[columns.planId]=validated.planId;row[columns.modalidad]=modalidad||"Presencial";
+    row[columns.capacidadMax]=capacity;row[columns.estado]=offerState;row[columns.codigoClase]=codigoClase||"";
+    sheet.appendRow(row);
+    try{const cache=CacheService.getScriptCache();cache.remove("offers_v3_ALL_ALL_ALL_ALL");cache.remove("offers_v2_ALL_ALL_ALL");cache.remove("offers_ALL_ALL_ALL");}catch(_){}
+    return {status:"success",message:"Oferta académica registrada.",data:{ofertaId,anoId:validated.anoId,periodoId:validated.periodoId,
+      planId:validated.planId,asignaturaId:validated.asignaturaId,capacidadMax:capacity,estado:offerState}};
+  } finally {lock.releaseLock();}
 }
 
 function getTeacherAssignments(payload) {
