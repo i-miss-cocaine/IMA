@@ -52,6 +52,7 @@ function contextFor(claims = { userId: "TEACHER-1", role: "Profesor", institutio
   const context = Object.assign({
     SPREADSHEET_ID: "USER-SHEET",
     verifySessionToken(token) { return token === "SESSION-OK" ? claims : null; },
+    getSaceUserSourceRevisionLocked_() { return "USER-EPOCH-123456:0"; },
     SpreadsheetApp: { openById(id) {
       assert.equal(id, "USER-SHEET");
       return { getSheetByName(name) { return sheets[name] || null; } };
