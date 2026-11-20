@@ -120,7 +120,7 @@ function fixture(options = {}) {
     "getAuthorizedPeriodGradebookSubmissionContext_",
     "submitGradebookForReviewUnlocked_"
   ];
-  vm.runInNewContext(names.map(extractFunction).join("\n") +
+  vm.runInNewContext("function advanceSaceExamSourceRevisionLocked_(){return \"TEST-REVISION:1\";}\n" + names.map(extractFunction).join("\n") +
     "\nthis.submitGradebookForReview = submitGradebookForReview;", runtime);
   return {
     runtime, sheets, stats,
