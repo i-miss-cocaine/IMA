@@ -859,34 +859,45 @@ window.openAcademicAnalyticsModal = function() {
 window.loadAcademicAnalyticsData = async function() {
     const container = document.getElementById('academic-analytics-content');
     if (!container) return;
-    container.innerHTML = '<div class="p-6 text-center text-slate-400 font-bold text-xs uppercase"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Cargando analíticas de rendimiento...</div>';
-
+    container.textContent = "Cargando analíticas de rendimiento...";
     try {
         const res = await window.fetchApi('ACADEMIC', 'getCurricularAnalyticsReport', {});
-        if (res && res.status === 'success' && res.data) {
-            const d = res.data;
-            container.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                    <div class="bg-blue-50 p-4 rounded-xl text-center border border-blue-100">
-                        <span class="text-[10px] font-bold text-blue-600 uppercase block">Promedio Institucional</span>
-                        <span class="text-2xl font-black text-blue-900">${d.promedioGeneral || '0.0'}%</span>
-                    </div>
-                    <div class="bg-emerald-50 p-4 rounded-xl text-center border border-emerald-100">
-                        <span class="text-[10px] font-bold text-emerald-600 uppercase block">Aprobación Ponderada</span>
-                        <span class="text-2xl font-black text-emerald-900">${d.porcentajeAprobados || '0'}%</span>
-                    </div>
-                    <div class="bg-amber-50 p-4 rounded-xl text-center border border-amber-100">
-                        <span class="text-[10px] font-bold text-amber-600 uppercase block">Alertas Acompañamiento</span>
-                        <span class="text-2xl font-black text-amber-900">${d.alertasConde || 0}</span>
-                    </div>
-                </div>
-            `;
-        } else {
-            container.innerHTML = '<div class="p-6 text-center text-slate-500 font-bold text-xs uppercase">No hay datos analíticos disponibles.</div>';
+        if (!res || res.status !== 'success' || !res.data || !res.data.metrics) {
+            throw new Error(res && res.message ? res.message : "Contrato de analíticas no válido.");
         }
+        const metrics = res.data.metrics;
+        const distribution = metrics.distribucion || {};
+        container.innerHTML = "";
+        const grid = document.createElement("div");
+        grid.className = "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3";
+        const cards = [
+            ["Promedio institucional", String(Number(metrics.promedioConsolidado || 0).toFixed(2)) + "%"],
+            ["Evaluaciones totales", String(metrics.totalEvaluaciones || 0)],
+            ["Evaluaciones publicadas", String(metrics.evaluadasCount || 0)],
+            ["Notas pendientes", String(metrics.notasPendientes || 0)],
+            ["Alertas de acompañamiento", String(metrics.alertasAcompanamiento || 0)],
+            ["Excelente (90–100)", String(distribution.excelente || 0)],
+            ["Bueno (80–89)", String(distribution.bueno || 0)],
+            ["Satisfactorio (70–79)", String(distribution.satisfactorio || 0)],
+            ["Necesita mejora (<70)", String(distribution.necesitaMejora || 0)]
+        ];
+        cards.forEach(([label, value]) => {
+            const card = document.createElement("div");
+            card.className = "bg-slate-50 p-4 rounded-xl text-center border border-slate-200";
+            const title = document.createElement("span");
+            title.className = "text-[10px] font-bold text-slate-500 uppercase block";
+            title.textContent = label;
+            const number = document.createElement("span");
+            number.className = "text-2xl font-black text-slate-900";
+            number.textContent = value;
+            card.appendChild(title);
+            card.appendChild(number);
+            grid.appendChild(card);
+        });
+        container.appendChild(grid);
     } catch (err) {
         console.error("Error al cargar analíticas:", err);
-        container.innerHTML = '<div class="p-6 text-center text-red-500 font-bold text-xs uppercase">Error de comunicación con el servidor.</div>';
+        container.textContent = "No fue posible cargar las analíticas académicas.";
     }
 };
 

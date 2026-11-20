@@ -9,6 +9,8 @@ on:
     paths:
       - backend/academic-service/Code.gs
       - js/teacher.js
+      - js/secretary.js
+      - tests/security/academic-curricular-analytics-report-consumer-contract.test.js
       - admision.html
       - dashboard-direccion.html
       - js/curriculum-admin.js
@@ -53,6 +55,10 @@ jobs:
         run: node tests/security/academic-admission-offer-consumer-contract.test.js
       - name: Run academic curriculum administration UI contract
         run: node tests/security/academic-curriculum-admin-ui-contract.test.js
+      - name: Run academic curricular analytics report consumer contract
+        run: node tests/security/academic-curricular-analytics-report-consumer-contract.test.js
+      - name: Check academic secretary client syntax
+        run: node --check js/secretary.js
       - name: Check academic curriculum administration UI syntax
         run: node --check js/curriculum-admin.js
       - name: Check academic teacher client syntax
