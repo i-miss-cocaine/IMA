@@ -2119,3 +2119,33 @@ Resultado esperado:
 Estado: Pendiente beta.
 Evidencia requerida: trazas anonimizadas de los estados canónicos, filas de asistencia y snapshot; evidencia de casos positivos/negativos y versión de los despliegues.
 ===============================================================================
+
+
+===============================================================================
+BETA-EXAM-114 — Consistencia del snapshot SACE mediante revisiones monotónicas
+===============================================================================
+Módulo/rol: Academic-Service / USER-Service / Exam-Service; Profesor autorizado y escritores institucionales de prueba
+Tarea/requisito: AUD-NG-167 — C1.884
+Objetivo: validar en despliegue real que el snapshot SACE corresponde a un intervalo común de estabilidad entre Academic, USER y Exam, y que una mutación intercalada invalida el resultado sin exponer datos parciales.
+Precondiciones:
+- Los tres servicios desplegados con la misma versión de contrato epoch:counter.
+- ScriptProperties habilitado en los tres proyectos y sesiones interservicio válidas.
+- Conjunto de estudiantes, matrículas, asistencia y gradebooks sintético o anonimizado, con acceso autorizado.
+- Entorno de staging para cualquier inyección de fallo de persistencia; nunca alterar ScriptProperties de producción para esta prueba.
+Pasos:
+1. Consultar el snapshot normal de Academic y comprobar sourceRevisions.academic, sourceRevisions.user y sourceRevisions.exam con formato epoch:counter.
+2. Consultar USER con revisionOnly=true y Exam con revisionOnly=true usando sesión autorizada; confirmar que cada respuesta contiene solo sourceRevision, sin filas de identidad ni gradebook.
+3. Ejecutar un snapshot estable sin mutaciones; comprobar status=success y que las revisiones devueltas coinciden con las lecturas ligeras de control dentro de la ventana de prueba.
+4. Repetir el snapshot mientras se modifica un registro seleccionado de asistencia en Academic; si el cambio cae entre captura y revalidación, exigir SACE_SOURCE_CHANGED_DURING_SNAPSHOT y ausencia de data.
+5. Repetir de forma independiente mientras se modifica PersonaID/EstadoCuenta o identidad canónica de un estudiante en USER; exigir invalidación si cambia sourceRevision.
+6. Repetir mientras se modifica una nota, recuperación o estado de cierre del periodo en Exam; exigir invalidación si cambia sourceRevision.
+7. Simular contención de ScriptLock en cada servicio y comprobar timeout acotado, ausencia de snapshot parcial y liberación del lock tras cada operación.
+8. En staging, provocar fallo de setProperty/readback de ScriptProperties durante un writer; comprobar que la fila fuente no cambia y que el lock se libera. Restaurar después el entorno de prueba.
+9. Ejecutar una lectura normal con clientes anteriores que ignoran sourceRevision; confirmar que conservan el consumo de data y que el campo adicional no altera el contrato principal.
+Resultado esperado:
+- Un snapshot exitoso corresponde a un intervalo común de estabilidad; cualquier divergencia detectada falla cerrado con error y sin datos parciales.
+- revisionOnly respeta autorización y lock, devuelve solo el token y no vuelve a escanear datos.
+- Ningún writer realiza una mutación si el incremento de revisión no queda persistido.
+Estado: PENDIENTE DE BETA — requiere despliegue real de Academic, USER y Exam.
+Evidencia requerida: SHA de cada despliegue, request IDs, revisiones anonimizadas, resultados de las tres mutaciones intercaladas, métricas de lock/timeout y comparación de filas antes/después de la inyección de fallo.
+===============================================================================

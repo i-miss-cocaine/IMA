@@ -1880,3 +1880,64 @@ Estado:
 Siguiente acción elegible:
 - Implementar primero helpers de revisión en Academic, USER y Exam y pruebas unitarias de token/PropertiesService. Después instrumentar cada writer relevante dentro de su lock, añadir sourceRevision/revisionOnly a los dos endpoints remotos, revalidar Academic al final y probar intercalados, ABA, fallos de red, timeout, compatibilidad y coste con las suites de los tres servicios.
 ===============================================================================
+
+
+===============================================================================
+### C1.884 — AUD-NG-167: implementación de revisión monotónica y revalidación cruzada
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-167-MONOTONIC-REVISION-IMPLEMENTATION-55
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: c41cb4ab8c4da96b5c32fa8d35c670ccf763ddd7
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+HEAD de código verificado antes del registro documental: 1e8c1bff5b09532ca62adea792b8acb68bd3bd0b
+
+Implementación:
+- Se incorporó un token epoch:counter independiente en ScriptProperties para Academic, USER y Exam. El epoch se inicializa con UUID; se valida formato, contador entero seguro, corrupción y agotamiento.
+- Los incrementos verifican la persistencia antes de permitir la mutación. Si PropertiesService falla o no confirma el nuevo valor, el writer aborta. La revisión se avanza ANTES de la primera escritura y bajo el mismo ScriptLock de la mutación.
+- Se ajustó el alcance de los try/finally para que un error al persistir la revisión no deje locks retenidos.
+- Academic instrumenta los writers que pueden alterar las filas consumidas por SACE: configuración de año/periodo, cierre y registros de asistencia, justificaciones canónicas, reconciliación y ciclo de matrícula (incluido registerStudentEnrollment).
+- USER instrumenta cambios de roles, alta de persona, vínculo PersonaID, estado de cuenta y registro/actualización de usuario.
+- Exam captura la revisión bajo el límite de lectura autorizado y la incrementa antes de guardar gradebook, recuperaciones, rectificaciones y cierres/envíos/reaperturas de periodo.
+- Academic adjunta sourceRevisions al snapshot normal; USER y Exam adjuntan sourceRevision a sus respuestas normales y ofrecen revisionOnly autorizado, que devuelve únicamente el token.
+- Después de leer los tres servicios, Academic revalida A2/U2/E2 tras las lecturas A1/U1/E1. Cualquier divergencia devuelve SACE_SOURCE_CHANGED_DURING_SNAPSHOT y no entrega datos parciales. No se declara transacción distribuida ni atomicidad física de Google Sheets.
+
+Pruebas y verificaciones:
+- SACE monotonic source revision contracts — GitHub Actions run 44646856630: SUCCESS. Tres helpers, monotonicidad, fallo de persistencia, token corrupto, overflow y 28 contratos de writer/endpoint con orden pre-write.
+- Academic-Service single authorization context — run 44647044769: SUCCESS. Snapshot normal/revisionOnly, tres escenarios de mutación intercalada (Academic, USER, Exam), rechazo de snapshot y liberación de ambos locks.
+- Identity mapping and transport security contracts — run 44645970057: SUCCESS. USER revisionOnly, respuesta sin filas y lock liberado.
+- Exam-Service security local contracts — run 44646981783: suite específica Exam SUCCESS y sintaxis JavaScript del repositorio SUCCESS. El paso adicional de todos los tests Node del repositorio falla en dos contratos ajenos a esta unidad: tests/regression/phase22-document-management-suite-contract.test.js y tests/security/accounting-school-document-binary-integrity.test.js. Los archivos de esos módulos no fueron modificados en esta unidad.
+- Department Scope run 44645227796: el único fallo reportado es el contrato Phase22 anterior; los contratos académicos relevantes de esta unidad completan.
+- La prueba session-token-expiry también se actualizó para aislar correctamente los verificadores locales y no tratar el placeholder Accounting vacío como un servicio con verifier propio.
+- No hay package.json ni rutas cli/bin en el árbol; no existe una suite CLI declarada que ejecutar.
+- No se desplegaron Apps Script ni hojas reales. La validación integrada de despliegue queda registrada en BETA-EXAM-114.
+
+Archivos de implementación:
+- backend/academic-service/Code.gs
+- backend/user-service/Code.gs
+- backend/exam-service/Code.gs
+- .github/workflows/sace-source-revision-contract.yml
+- tests/security/sace-source-revision-contract.test.js
+- tests/security/sace-attendance-snapshot-contract.test.js
+- tests/security/user-sace-identity-directory.test.js
+- tests/security/exam-service-sace-gradebook-snapshot.test.js
+- tests/security/exam-service-security-contract.test.js
+- Harnesses de contratos aislados de Academic, USER, Exam y expiración de sesión para reflejar las nuevas dependencias verificadas.
+- Registros: Auditoria.txt, changueslogs.txt, beta_test.txt, este checkpoint e índice.
+
+Commits representativos:
+- 37154effcb6c8309e5ce71e496004406af8a6e2c — implementación inicial de source revisions y revalidación.
+- ac374ca6d9fff1f0a3fd7fb329c54b1b7529d5b9 — corrección fail-closed y liberación de locks.
+- 013bf71e93fcc3fd815caea21770a49311b19b10 — cobertura del writer registerStudentEnrollment.
+- dbf7b7bf812b671b76c09eed7bd68e3684691223 — pruebas de intercalado por cada servicio.
+- c69c58656d8b95b5d9adc756735fcafb916e624b — persistencia fallida, corrupción y overflow.
+- 1e8c1bff5b09532ca62adea792b8acb68bd3bd0b — HEAD de código verificado antes del registro documental.
+
+Estado:
+- C1.884 completa como implementación y verificación local/CI del contrato de revisión monotónica.
+- AUD-NG-167 continúa En progreso: XLS sigue CANDIDATE y la comprobación integrada requiere despliegue real. No se convierte la ausencia de despliegue en un bloqueo para el código ya verificable.
+- El Plan Maestro de Implementación está vacío en la rama; la continuidad de esta unidad se recuperó del checkpoint C1.883 y Auditoria.txt.
+
+Siguiente acción elegible:
+- Mantener BETA-EXAM-114 pendiente hasta disponer del despliegue de los tres servicios; continuar la auditoría del candidato XLS y su compatibilidad con la plantilla SACE, sin afirmar que existe una plantilla oficial confirmada.
+===============================================================================

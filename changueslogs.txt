@@ -4361,3 +4361,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-19] C1.883 — AUD-NG-167: diseñado contrato epoch:counter por servicio. Incrementar antes de mutar bajo ScriptLock; si falla persistencia, no escribir; una escritura fallida posterior invalida snapshots conservadoramente. Snapshot devuelve sourceRevision y revalidación usa revisionOnly en acciones existentes USER/Exam más lectura local Academic. Secuencia doble colecta con revisión, coste 2 llamadas remotas pequeñas + 1 lectura local, sin doble escaneo. Modelo V8 8/8 PASS. No se implementa todavía; faltan instrumentación exhaustiva y contratos de integración.
+
+
+[2026-11-20] C1.884 — Implementación de sourceRevision epoch:counter en Academic/USER/Exam, revalidación cruzada del snapshot SACE, endpoints revisionOnly, incremento fail-closed pre-write y pruebas de carreras/persistencia. Suites específicas de SACE, Academic, Identity y Exam pasan; la suite Node global conserva dos fallos ajenos (Phase22 y Accounting school-document). BETA-EXAM-114 pendiente de despliegue. XLS continúa CANDIDATE.
