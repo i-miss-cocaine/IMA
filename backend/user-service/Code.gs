@@ -4639,6 +4639,84 @@ function validateDepartmentHierarchy_(sheet, deptId, parentDeptId) {
   return { valid:true, path:path, parentDeptId:parentId };
 }
 
+
+function getDepartmentHierarchySnapshot_(sheet) {
+  const map = getDepartmentHierarchyColumnMap_(sheet, true);
+  const rows = sheet.getDataRange().getValues().slice(1);
+  const records = new Map();
+  rows.forEach((row,index) => {
+    const id = String(row[map.deptId] || "").trim().toUpperCase();
+    if (!id) return;
+    if (records.has(id)) throw new Error("DEPARTMENT_ID_AMBIGUOUS:" + id);
+    records.set(id, {
+      deptId:id,
+      nombre:String(row[map.nombre] || "").trim(),
+      jefaturaUserId:map.jefaturaUserId >= 0 ? String(row[map.jefaturaUserId] || "").trim() : "",
+      estado:String(row[map.estado] || "").trim(),
+      parentDeptId:map.parentDeptId >= 0 ? String(row[map.parentDeptId] || "").trim().toUpperCase() : "",
+      rowNumber:index + 2
+    });
+  });
+  records.forEach(record => {
+    if (!record.parentDeptId) return;
+    const parent = records.get(record.parentDeptId);
+    if (!parent) throw new Error("DEPARTMENT_PARENT_NOT_FOUND:" + record.parentDeptId);
+    if (["activo","active","enabled","vigente"].indexOf(parent.estado.toLowerCase()) === -1) {
+      throw new Error("DEPARTMENT_PARENT_INACTIVE:" + record.parentDeptId);
+    }
+  });
+  const completed = new Set();
+  records.forEach((record,id) => {
+    if (completed.has(id)) return;
+    const path = [], positions = new Map();
+    let currentId = id;
+    while (currentId && !completed.has(currentId)) {
+      if (positions.has(currentId)) {
+        const cycle = path.slice(positions.get(currentId)).concat(currentId);
+        throw new Error("DEPARTMENT_HIERARCHY_CYCLE:" + cycle.join(" -> "));
+      }
+      positions.set(currentId,path.length);
+      path.push(currentId);
+      currentId = records.get(currentId).parentDeptId;
+    }
+    path.forEach(value => completed.add(value));
+  });
+  const depths = new Map();
+  const getDepth = id => {
+    if (depths.has(id)) return depths.get(id);
+    const chain = [];
+    let currentId = id;
+    while (currentId && !depths.has(currentId)) {
+      chain.push(currentId);
+      currentId = records.get(currentId).parentDeptId;
+    }
+    let depth = currentId ? depths.get(currentId) : -1;
+    for (let index = chain.length - 1; index >= 0; index--) {
+      depth++;
+      depths.set(chain[index],depth);
+    }
+    return depths.get(id);
+  };
+  const childrenCount = new Map();
+  records.forEach(record => {
+    if (record.parentDeptId) childrenCount.set(record.parentDeptId,(childrenCount.get(record.parentDeptId) || 0) + 1);
+  });
+  const departments = Array.from(records.values()).map(record => ({
+    deptId:record.deptId,
+    nombre:record.nombre,
+    jefaturaUserId:record.jefaturaUserId,
+    estado:record.estado,
+    parentDeptId:record.parentDeptId,
+    depth:getDepth(record.deptId),
+    childrenCount:childrenCount.get(record.deptId) || 0
+  })).sort((a,b)=>a.depth-b.depth || a.nombre.localeCompare(b.nombre));
+  return {
+    departments:departments,
+    roots:departments.filter(item=>!item.parentDeptId).map(item=>item.deptId),
+    total:departments.length
+  };
+}
+
 // [TAREA-F4-P1-07] [Fase 4: Gestión de Roles y Adscripciones] - Administración centralizada de departamentos, cargos e historial laboral/académico
 function manageDepartmentPositions(payload) {
   const input = payload && typeof payload === "object" ? payload : {};
@@ -4650,6 +4728,15 @@ function manageDepartmentPositions(payload) {
   }
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const act = String(subAction || "ASSIGN_USER").toUpperCase().trim();
+
+  if (act === "GET_DEPARTMENT_HIERARCHY") {
+    const lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
+    try {
+      const sheet = getOrCreateSheet(ss,"CatalogoDepartamentos");
+      return {status:"success",data:getDepartmentHierarchySnapshot_(sheet)};
+    } finally { lock.releaseLock(); }
+  }
 
   if (act === "CREATE_DEPT") {
     if (!deptNombre || !String(deptNombre).trim()) throw new Error("deptNombre es requerido.");
