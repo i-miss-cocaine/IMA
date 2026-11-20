@@ -164,3 +164,33 @@ Estado:
 Siguiente paso:
 - Integrar metadatos curriculares en reportes y formularios académicos restantes; auditar la lectura de ofertas del panel de planificación (su fuente heredada se rastrea bajo la tarea separada de consolidación de ofertas); después continuar reconciliación de catálogos sin duplicar AUD-NG-175/AUD-NG-226.
 ===============================================================================
+
+
+===============================================================================
+### C1.896 — AUD-NG-164: consumidor de reporte curricular de Secretaría
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-REPORT-67
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 609a93d62661bf0326a051df69fe41ef56756250
+HEAD final: f8a805156d9f0f291e23403d30309f704eb6d250
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgos y corrección:
+- El panel de Secretaría consumía propiedades que no existen en el contrato de getCurricularAnalyticsReport (promedioGeneral, porcentajeAprobados, alertasConde), por lo que mostraba valores incorrectos/indefinidos.
+- Se alinea el consumidor con res.data.metrics: promedioConsolidado, totalEvaluaciones, evaluadasCount, notasPendientes, alertasAcompanamiento y distribución por rangos.
+- Los valores del reporte se renderizan mediante createElement/textContent, evitando interpolación HTML.
+- Se habilita getCurricularAnalyticsReport como permiso de lectura agregada para roles Secretaría y Secretaria, coherente con el reporte visible en sus dashboards. No se otorga acceso a docentes ni a roles sin alcance institucional.
+
+Pruebas:
+- Academic-Service single authorization context run 44707854006 — SUCCESS.
+- Department Reference Consumers Local Contract run 44707853980 — SUCCESS, incluido academic-curricular-analytics-report-consumer-contract y node --check js/secretary.js.
+- UI Accessibility and Metadata Contract run 44707854078 — SUCCESS.
+- Accounting Import Preflight Contract run 44707854194 — SUCCESS.
+- Department Scope Contract run 44707854120 — FAILURE preexistente únicamente en Phase22 por configureSchoolDocumentTemplate ausente; no está relacionado con los archivos modificados.
+- No se ejecutó navegador real, despliegue Apps Script ni datos productivos.
+
+Límites:
+- El reporte sigue siendo un agregado institucional; getCurricularAnalyticsReport no implementa filtros por asignatura, área, programa o grado ni distribución basada en las relaciones nuevas. No se afirma integración curricular analítica completa.
+- AUD-NG-164 continúa En progreso; quedan otros formularios/reportes, pruebas funcionales multi-grado/bilingües y reconciliación de fuentes bajo tareas propietarias.
+===============================================================================

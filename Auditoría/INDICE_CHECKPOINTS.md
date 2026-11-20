@@ -293,3 +293,5 @@ Los checkpoints posteriores se registran aquí.
 
 | C1.894 | IMA-EXEC-20261120-AUD-NG-164-DISPATCH-65 | Se exponen por doPost las tres operaciones PlanAsignaturas ya autorizadas; contrato de despacho/RBAC y Academic-Service CI SUCCESS | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0020.txt — C1.894 | C1.893 | Consumir relaciones desde UI; integrar catálogo en formularios/reportes |
 | C1.895 | IMA-EXEC-20261120-AUD-NG-164-ADMIN-UI-66 | Panel Dirección con CRUD de asignaturas/planes/relaciones/ofertas, consulta y estado histórico; UI contract y consumer workflow SUCCESS | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0020.txt — C1.895 | C1.894 | Integrar reportes/formularios restantes y reconciliar tareas propietarias |
+
+| C1.896 | IMA-EXEC-20261120-AUD-NG-164-REPORT-67 | Consumidor de analíticas de Secretaría alineado al contrato metrics y RBAC de lectura; render seguro; Academic-Service y consumer workflows SUCCESS | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0020.txt — C1.896 | C1.895 | Completar reportes con filtros curriculares y revisar formularios restantes; pruebas multi-grado/bilingües |
