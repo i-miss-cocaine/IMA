@@ -122,6 +122,7 @@ function runtime(options = {}) {
     "withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getExamStudentProfile_"
   ].map(extractFunction).join("\n");
   const context = {
+    getSaceExamSourceRevisionLocked_() { return "EXAM-EPOCH-123456:0"; },
     COMPETENCY_EVALUATION_HEADERS_: evaluationHeaders,
     LockService, validateRolePermission, getExamReadContext_: getExamReadContext,
     getSheetOrThrow, normalizeString, SpreadsheetApp: { openById() { return ss; } }
