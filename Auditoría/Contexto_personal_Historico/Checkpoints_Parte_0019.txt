@@ -2124,3 +2124,34 @@ Estado:
 - AUD-NG-158 queda Completado y marcado [x] en `pendientes/Docente/Pendientes.md`.
 - La dependencia de ABAC docente para AUD-NG-168 queda satisfecha; AUD-NG-164 (catálogo/ofertas canónicas) permanece Pendiente y sigue siendo su dependencia técnica pendiente.
 ===============================================================================
+
+
+===============================================================================
+### C1.889 — AUD-NG-164: alineación inicial del esquema de PlanesEstudio
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-STUDY-PLAN-SCHEMA-60
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: a34ae9a01bd739f3d218a9ad9e3408ea07d17bd1
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Se incorpora `getStudyPlanColumnMap_` para resolver columnas por encabezado y soportar alias del esquema heredado.
+- `getStudyPlans` deja de leer posiciones fijas; separa `VigenciaInicio`, `VigenciaFin` y `Estado`, conservando `Vigencia` heredada como dato histórico.
+- `createStudyPlan` escribe usando el mapa real, valida vigencia y orden cronológico, evita duplicados lógicos por nombre/versión/grado/rango y genera PlanID UUID.
+- En una hoja heredada, se anexan columnas canónicas sin mover ni reinterpretar las columnas existentes.
+
+Pruebas:
+- Nuevo `tests/security/academic-curriculum-catalog-contract.test.js`: esquema canónico, esquema heredado, lectura correcta de estado/vigencia, creación, ID, duplicado y rango inválido.
+- Academic-Service single authorization context run 44656530850 SUCCESS.
+- Department Reference Consumers 44656530863 SUCCESS.
+- Task-Service security 44656530843 SUCCESS.
+- Hierarchical Configuration 44656530893 SUCCESS.
+- Accounting Import Preflight 44656530859 SUCCESS.
+- SACE monotonic source revision 44656530954 SUCCESS.
+- Department Scope 44656530860: contrato de ámbito y pasos 4–80 SUCCESS; falla solo el paso 81 `phase22-document-management-suite-contract.test.js` (ausencia de `configureSchoolDocumentTemplate`), defecto global fuera del alcance AUD-NG-164.
+
+Estado:
+- AUD-NG-164 continúa En progreso.
+- Pendiente: PlanAsignaturas y sus relaciones versionadas; validación de ofertas contra año/período/plan/asignatura; unicidad y relaciones del catálogo de asignaturas; coordinación con AUD-NG-175 y AUD-NG-226 para evitar catálogos paralelos.
+===============================================================================

@@ -839,6 +839,10 @@
 - Relacionadas: TASK-005, AUD-NG-011, AUD-NG-018, AUD-NG-093, AUD-NG-108, AUD-NG-111, AUD-NG-113, AUD-NG-115, AUD-NG-117 y TASK-153.
 - Estado: [ ] Pendiente
 
+- **Avance C1.889:** se corrige la discrepancia del esquema `PlanesEstudio`: `getStudyPlans` lee por encabezados y distingue `VigenciaInicio`, `VigenciaFin` y `Estado`; `createStudyPlan` escribe por mapa de columnas, valida rango, evita duplicados lógicos y genera ID UUID. Las hojas heredadas `Estado/Vigencia` se leen sin desplazar columnas y reciben las columnas canónicas al crear nuevos planes, conservando los valores históricos.
+- **Pruebas:** `tests/security/academic-curriculum-catalog-contract.test.js` incorporado al workflow Academic-Service; prueba esquema canónico, compatibilidad heredada, vigencia inválida, duplicado e ID estable. Academic-Service run 44656530850 SUCCESS.
+- **Límites pendientes:** aún faltan relaciones PlanAsignaturas con ciclo de vida, validación referencial de ofertas (año/período/asignatura/plan), unicidad del catálogo de asignaturas y reconciliación de departamentos. No se duplican los alcances de AUD-NG-175 (sincronización/estado de catálogos) ni AUD-NG-226 (relación CatalogoDepartamentos/DepartamentosAcademicos); se mantendrán como dependencias de integración.
+
 ---
 
 <!-- ID: AUD-NG-226 | Fuentes: Pendientes.md -->

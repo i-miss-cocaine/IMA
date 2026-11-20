@@ -4379,3 +4379,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-20] C1.888 — AUD-NG-158 completada. Se centraliza ABAC de aula para crear/eliminar materiales, se restringe General a ámbito institucional, se exige asignación vigente al eliminar y se alinea departamento del aula/tarea. Se reutilizan actor/scope/Spreadsheet en las mutaciones para evitar verificaciones duplicadas. Task-Service security contracts y backup/restore PASS.
+
+
+[2026-11-20] C1.889 — AUD-NG-164: corrección de esquema PlanesEstudio, compatibilidad heredada, vigencia, duplicados e ID UUID. Se añade contrato Academic-Service y CI PASS.
