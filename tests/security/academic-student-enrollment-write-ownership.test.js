@@ -87,6 +87,7 @@ assert.ok(registerFn.indexOf("lock.tryLock") < registerFn.indexOf("assertAcademi
 const events = [];
 let shouldFail = false, undone = false, internalPayload = null, wrapperLockAvailable = true;
 const wrapperContext = {
+  advanceSaceAcademicSourceRevisionLocked_: () => "TEST-REVISION:1",
   LockService: { getScriptLock: () => ({ tryLock: ms => { events.push("lock:" + ms); return wrapperLockAvailable; }, releaseLock: () => events.push("release") }) },
   assertAcademicEnrollmentMutationAccess_: (payload,id) => { events.push("authorize:" + id); return { authorized: true }; },
   registerStudentEnrollmentInternal_: payload => {
