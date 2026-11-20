@@ -758,20 +758,38 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   assert.equal(adminContext.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",aulaId:"General",titulo:"Institutional",archivoUrl:"https://example.test/general"}).status,"success");
   assert.equal(adminRow[1],"General");assert.equal(adminRow[10],"ADMIN-1","administrative authorship is derived from the verified actor");
 
+  let materialAssignmentActive=true, materialAssignmentChecks=0;
   const materialRows=[["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"],
     ["MAT-OWN","CLASS-1","Own","","Documento","I","U1","T1","","","TEACHER-1",new Date(),"Activo"],
-    ["MAT-OTHER","CLASS-1","Other","","Documento","I","U1","T1","","","TEACHER-2",new Date(),"Activo"]];
+    ["MAT-OTHER","CLASS-1","Other","","Documento","I","U1","T1","","","TEACHER-2",new Date(),"Activo"],
+    ["MAT-REVOKED","CLASS-1","Revoked","","Documento","I","U1","T1","","","TEACHER-1",new Date(),"Activo"],
+    ["MAT-REASSIGNED","CLASS-OTHER","Reassigned","","Documento","I","U1","T1","","","TEACHER-1",new Date(),"Activo"],
+    ["MAT-INACTIVE","CLASS-INACTIVE","Inactive","","Documento","I","U1","T1","","","TEACHER-1",new Date(),"Activo"]];
   const materialDeleteContext={
     SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>({})},
     getVerifiedTaskIdentity_:()=>({authorized:true,userId:"TEACHER-1",role:"Profesor"}),
     isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+    getTaskServiceClassroomById:id=>id==="CLASS-1"?["CLASS-1","OFFER-1","","","","","TEACHER-1","Activa"]:
+      id==="CLASS-OTHER"?["CLASS-OTHER","OFFER-2","","","","","TEACHER-2","Activa"]:
+      id==="CLASS-INACTIVE"?["CLASS-INACTIVE","OFFER-1","","","","","TEACHER-1","Desactivada"]:null,
+    normalizeString:value=>String(value||"").trim().toLowerCase(),
+    assertTaskServiceTeacherAssignedToOffer:(userId,offerId)=>{materialAssignmentChecks++;assert.equal(userId,"TEACHER-1");assert.equal(offerId,"OFFER-1");if(!materialAssignmentActive)throw new Error("TEACHER_ASSIGNMENT_DENIED");},
     getOrCreateSheet:()=>({getDataRange:()=>({getValues:()=>materialRows}),getRange:(row,col)=>({setValue:value=>{materialRows[row-1][col-1]=value;}})})
   };
   vm.runInNewContext(extractFunction("deleteStudyMaterial")+"\nthis.run=deleteStudyMaterial;",materialDeleteContext);
   assert.equal(materialDeleteContext.run({materialId:"MAT-OWN"}).status,"success");
-  assert.equal(materialRows[1][12],"Eliminado","teacher can soft-delete their own material");
+  assert.equal(materialRows[1][12],"Eliminado","teacher can soft-delete their own material while assignment is active");
   assert.throws(()=>materialDeleteContext.run({materialId:"MAT-OTHER"}),/no pertenece al docente/);
   assert.equal(materialRows[2][12],"Activo","teacher cannot delete another author's material");
+  materialAssignmentActive=false;
+  assert.throws(()=>materialDeleteContext.run({materialId:"MAT-REVOKED"}),/TEACHER_ASSIGNMENT_DENIED/);
+  assert.equal(materialRows[3][12],"Activo","revoked assignment cannot delete a previously authored material");
+  materialAssignmentActive=true;
+  assert.throws(()=>materialDeleteContext.run({materialId:"MAT-REASSIGNED"}),/RESOURCE_NOT_FOUND/);
+  assert.equal(materialRows[4][12],"Activo","former teacher cannot delete material after classroom reassignment");
+  assert.throws(()=>materialDeleteContext.run({materialId:"MAT-INACTIVE"}),/RESOURCE_NOT_FOUND/);
+  assert.equal(materialRows[5][12],"Activo","teacher cannot delete material from an inactive classroom");
+  assert.equal(materialAssignmentChecks,2,"only active, owner-matched classroom records reach the offer assignment check");
   assert.equal(materialDeleteContext.run({materialId:"MAT-OWN"}).status,"success","repeated soft-delete is idempotent");
   assert.equal(materialRows[1][12],"Eliminado");
 }
