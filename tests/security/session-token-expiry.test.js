@@ -35,6 +35,7 @@ function runVerifier(source, claims) {
   const context = {
     getAuthTokenSecret: () => "secret",
     computeHmacSignature: () => "SIG",
+    isSessionRevoked_: () => false,
     Utilities: {
       base64Decode: () => [],
       newBlob: () => ({ getDataAsString: () => JSON.stringify(claims) })
