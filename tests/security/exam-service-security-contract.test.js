@@ -33,6 +33,12 @@ function extractFunction(text, name) {
 const examReadWrapperContract = extractFunction(source, "withAuthorizedExamRead_");
 assert.ok(examReadWrapperContract.includes("getSaceExamSourceRevisionLocked_"),
   "every serialized Exam read must capture its source revision under the shared ScriptLock");
+const examBatchSnapshotContract = extractFunction(source, "getSaceGradebookSnapshots");
+assert.ok(examBatchSnapshotContract.includes("sourceRevision"),
+  "the normal Exam snapshot response must carry its captured source revision");
+assert.ok(examBatchSnapshotContract.includes("revisionOnly"),
+  "the authorized batch endpoint must expose its lightweight revision-only mode");
+
 const examMutationLockWrapperContract = extractFunction(source, "withAuthorizedExamMutation_");
 assert.ok(examMutationLockWrapperContract.indexOf("validateRolePermission(action, payload)") < examMutationLockWrapperContract.indexOf("LockService.getScriptLock()"),
   "exam metadata mutation wrapper must validate RBAC before requesting the shared lock");
