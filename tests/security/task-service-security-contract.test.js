@@ -538,7 +538,7 @@ vm.runInNewContext(invalidateRoleCache + String.fromCharCode(10) + "this.invalid
 assert.equal(cacheInvalidationContext.invalidate("USER-1"), true);
 assert.deepEqual(removedCacheKeys.sort(), ["acct_role_USER-1","acct_state_USER-1","user_role_USER-1"].sort(), "role and account state cache entries are all invalidated");
 assert(extractFunctionFrom(userSource, "manageAccountState").includes("invalidateUserRoleCache(userId)"), "account state changes invalidate session claim caches immediately");
-assert(extractFunctionFrom(userSource, "registerUser").includes("invalidateUserRoleCache(userId)"), "forced account role reset invalidates session claim caches immediately");
+assert(extractFunctionFrom(userSource, "registerUser").includes("if (updatedUserId) invalidateUserRoleCache(updatedUserId)"), "forced account role reset invalidates session claim caches immediately after the protected update");
 console.log("TASK-636 role cache invalidation local contract: role/state cache keys are cleared after account and role changes.");
 
 
