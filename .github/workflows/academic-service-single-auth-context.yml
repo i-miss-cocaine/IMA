@@ -21,6 +21,7 @@ on:
       - 'tests/security/academic-multilevel-file-validation.test.js'
       - 'tests/security/academic-student-document-private-storage.test.js'
       - 'backend/user-service/Code.gs'
+      - 'tests/security/spreadsheet-source-registry-contract.test.js'
       - 'teacher-dashboard.html'
       - 'js/teacher.js'
       - 'tests/security/academic-teacher-justification-abac.test.js'
@@ -51,6 +52,8 @@ jobs:
         with:
           node-version: '22'
       - run: node --check < backend/academic-service/Code.gs
+      - run: node --check < backend/user-service/Code.gs
+      - run: node tests/security/spreadsheet-source-registry-contract.test.js
       - run: node tests/security/academic-curriculum-catalog-contract.test.js
       - run: node tests/security/academic-study-plan-subjects-contract.test.js
       - run: node tests/security/academic-offer-reference-contract.test.js
