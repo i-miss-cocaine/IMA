@@ -654,7 +654,7 @@ console.log("ACADEMIC admission charge attribution contract passed.");
     LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
     registerStudentEnrollmentInternal_:payload=>{forwarded=payload;return {status:"success"};}
   };
-  vm.runInNewContext(extractFunction("registerStudentEnrollment")+"\nthis.run=registerStudentEnrollment;",context);
+  vm.runInNewContext("function advanceSaceAcademicSourceRevisionLocked_(){return \"TEST-REVISION:1\";}\n"+extractFunction("registerStudentEnrollment")+"\nthis.run=registerStudentEnrollment;",context);
   const untrustedRollback=[()=>{throw Error("untrusted callback executed");}];
   const result=context.run({
     userId:"STU-1",grado:"1",periodo:"2026",

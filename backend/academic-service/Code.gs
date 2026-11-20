@@ -17559,6 +17559,7 @@ function registerStudentEnrollment(payload) {
   if (!lock.tryLock(10000)) throw new Error("Servicio ocupado. Por favor, reintente la operación de matrícula.");
   const rollbackActions = [];
   try {
+    advanceSaceAcademicSourceRevisionLocked_();
     const access = assertAcademicEnrollmentMutationAccess_(publicPayload, studentId);
     if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
     return registerStudentEnrollmentInternal_(Object.assign({}, publicPayload, { _rollbackActions: rollbackActions }));
