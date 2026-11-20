@@ -810,6 +810,10 @@ window.fetchInstitutionalCatalog = function(catalogType) {
         var areas = Object.keys(cache.areas).map(function(key) { return cache.areas[key]; });
         var subjects = Object.keys(cache.subjects).map(function(key) { return cache.subjects[key]; });
         var departments = Object.keys(cache.departments).map(function(key) { return cache.departments[key]; });
+        window.INSTITUTIONAL_CATALOG_STATE = Object.assign({}, window.INSTITUTIONAL_CATALOG_STATE, {
+            source:"LOCAL_FALLBACK", authoritative:false, error:{code:code,message:message},
+            fallbackAt:new Date().toISOString()
+        });
         return { status:"fallback", source:"LOCAL_FALLBACK", authoritative:false, schemaVersion:null, catalogRevision:null,
             error:{code:code,message:message},
             data:{

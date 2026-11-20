@@ -6124,18 +6124,26 @@ function getInstitutionalAreaRecords_(ss) {
   const sheet = getOrCreateSheet(ss, "AreasCurricularesExtensiones");
   const map = getInstitutionalAreaColumnMap_(sheet, false);
   const rows = sheet.getDataRange().getValues().slice(1);
-  return rows.filter(row => String(row[map.areaId] || "").trim()).map((row, index) => ({
-    areaId: String(row[map.areaId] || "").trim().toUpperCase(),
-    name: String(row[map.name] || "").trim(),
-    code: String(row[map.code] || "").trim().toUpperCase(),
-    serviceKey: String(row[map.serviceKey] || "").trim(),
-    serviceUrl: map.serviceUrl >= 0 ? String(row[map.serviceUrl] || "").trim() : "",
-    tools: map.tools >= 0 ? row[map.tools] : "[]",
-    departmentId: String(row[map.departmentId] || "").trim(),
-    estado: String(row[map.estado] || "Inactivo_PendientePruebas").trim(),
-    isActive: normalizeInstitutionalCatalogStatus_(row[map.estado]),
-    rowNumber: index + 2
-  }));
+  return rows.filter(row => String(row[map.areaId] || "").trim()).map((row, index) => {
+    let tools = [];
+    try {
+      const rawTools = map.tools >= 0 ? row[map.tools] : "[]";
+      tools = typeof rawTools === "string" ? JSON.parse(rawTools || "[]") : rawTools;
+      if (!Array.isArray(tools)) tools = [];
+    } catch (_) { tools = []; }
+    return {
+      areaId: String(row[map.areaId] || "").trim().toUpperCase(),
+      name: String(row[map.name] || "").trim(),
+      code: String(row[map.code] || "").trim().toUpperCase(),
+      serviceKey: String(row[map.serviceKey] || "").trim(),
+      serviceUrl: map.serviceUrl >= 0 ? String(row[map.serviceUrl] || "").trim() : "",
+      tools: tools,
+      departmentId: String(row[map.departmentId] || "").trim(),
+      estado: String(row[map.estado] || "Inactivo_PendientePruebas").trim(),
+      isActive: normalizeInstitutionalCatalogStatus_(row[map.estado]),
+      rowNumber: index + 2
+    };
+  });
 }
 
 function getInstitutionalDepartmentRecords_(ss) {
