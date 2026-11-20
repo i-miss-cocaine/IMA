@@ -42,4 +42,29 @@ assert.equal(history.data.length,1);assert.equal(history.data[0].estado,"Inactiv
 const active=ctx.api.createStudyPlanSubject({planId:"P1",asignaturaId:"S1",caracter:"Obligatoria",horasSemanales:5});
 assert.equal(active.data.estado,"Activo");assert.equal(rels._r.length,2,"deactivation preserves history and permits a new active relation");
 assert.equal(acquires,releases);assert.equal(locked,false);
-console.log("academic-study-plan-subjects-contract: PASS (references, uniqueness, lifecycle, history, locking)");
+
+const routed = [];
+ctx.apiResponseCorrelationId_ = () => "CORR-TEST";
+ctx.textResponse = value => value;
+ctx.clearRequestAuthorizationContext_ = () => {};
+ctx.validateRolePermission = action => ({ authorized: true, role: "Director", action });
+ctx.logStructuredEvent = () => {};
+ctx.getStudyPlanSubjects = payload => { routed.push(["getStudyPlanSubjects", payload]); return { status: "success", data: [] }; };
+ctx.createStudyPlanSubject = payload => { routed.push(["createStudyPlanSubject", payload]); return { status: "success", data: { relId: "REL-1" } }; };
+ctx.setStudyPlanSubjectStatus = payload => { routed.push(["setStudyPlanSubjectStatus", payload]); return { status: "success", data: { relId: payload.relId, estado: payload.estado } }; };
+vm.runInNewContext(extract("doPost") + "\nthis.dispatch=doPost;", ctx);
+const dispatchCases = [
+  ["getStudyPlanSubjects", { planId: "P1" }],
+  ["createStudyPlanSubject", { planId: "P1", asignaturaId: "S1" }],
+  ["setStudyPlanSubjectStatus", { relId: "REL-1", estado: "Inactivo" }]
+];
+dispatchCases.forEach(([action, payload]) => {
+  const response = ctx.dispatch({ postData: { contents: JSON.stringify({ action, payload }) } });
+  assert.equal(response.status, "success", action + " must be routed by doPost");
+});
+assert.deepEqual(JSON.parse(JSON.stringify(routed)), dispatchCases);
+const directorStart = source.indexOf('"Director": [');
+const subdirectorStart = source.indexOf('"Subdirector":', directorStart);
+const directorPermissions = source.slice(directorStart, subdirectorStart);
+dispatchCases.forEach(([action]) => assert.ok(directorPermissions.includes('"' + action + '"'), "Director role must allow " + action));
+console.log("academic-study-plan-subjects-contract: PASS (references, uniqueness, lifecycle, history, locking, dispatch/RBAC)");

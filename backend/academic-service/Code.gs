@@ -1612,6 +1612,9 @@ function doPost(e) {
       case "createSubjectCatalogItem": result = createSubjectCatalogItem(payload); break;
       case "getStudyPlans": result = getStudyPlans(payload); break;
       case "createStudyPlan": result = createStudyPlan(payload); break;
+      case "getStudyPlanSubjects": result = getStudyPlanSubjects(payload); break;
+      case "createStudyPlanSubject": result = createStudyPlanSubject(payload); break;
+      case "setStudyPlanSubjectStatus": result = setStudyPlanSubjectStatus(payload); break;
       case "getAcademicOffers": result = getAcademicOffers(payload); break;
       case "createAcademicOffer": result = createAcademicOffer(payload); break;
       case "getCoordinatorOverview": result = getCoordinatorOverview(payload); break;
