@@ -150,7 +150,7 @@
         const offersBody = byId("curriculum-offers-body");
         if (offersBody) {
             offersBody.innerHTML = "";
-            if (!state.offers.length) clearBody("curriculum-offers-body", 5, "No hay ofertas académicas registradas.");
+            if (!state.offers.length) clearBody("curriculum-offers-body", 6, "No hay ofertas académicas registradas.");
             state.offers.forEach(offer => {
                 const subject = subjectById(offer.asignaturaId), plan = planById(offer.planId);
                 const row = doc.createElement("tr");
@@ -192,7 +192,7 @@
     function renderFormOptions() {
         populate("curriculum-subject-area", state.areas, "areaId", area => area.name + " (" + area.code + ")", "Seleccione área", isActive);
         populate("curriculum-subject-prerequisites", state.subjects, "asignaturaId", subject => subject.codigo + " — " + subject.nombreOficial, "Sin prerrequisitos", isActive);
-        populate("curriculum-relation-plan", state.plans, "planId", plan => plan.nombre + " · " + plan.grado + " · v" + plan.version, "Seleccione plan vigente", plan => String(plan.estado || "Vigente") === "Vigente");
+        populate("curriculum-relation-plan", state.plans, "planId", plan => plan.nombre + " · " + plan.grado + " · v" + plan.version, "Seleccione plan vigente", isActive(plan));
         populate("curriculum-relation-subject", state.subjects, "asignaturaId", subject => subject.codigo + " — " + subject.nombreOficial, "Seleccione asignatura activa", isActive);
         populate("curriculum-offer-year", state.years, "anoId", year => year.nombre || year.anoId, "Seleccione año lectivo", isActive);
         populate("curriculum-offer-plan", state.plans, "planId", plan => plan.nombre + " · " + plan.grado, "Seleccione plan vigente", plan => String(plan.estado || "Vigente") === "Vigente");

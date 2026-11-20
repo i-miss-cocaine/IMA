@@ -454,11 +454,11 @@
                             <input id="curriculum-subject-program" name="programaId" placeholder="Programa (opcional)" class="w-full p-2.5 border rounded-lg text-sm">
                             <input id="curriculum-subject-level" name="nivelEducativo" placeholder="Nivel educativo" class="w-full p-2.5 border rounded-lg text-sm">
                             <input id="curriculum-subject-grade" name="grado" placeholder="Grado (opcional)" class="w-full p-2.5 border rounded-lg text-sm">
-                            <input id="curriculum-subject-language" name="idioma" placeholder="Idioma (ej. es, en)" class="w-full p-2.5 border rounded-lg text-sm">
-                            <input id="curriculum-subject-hours" name="cargaHorariaRef" type="number" min="0" step="0.5" placeholder="Carga horaria" class="w-full p-2.5 border rounded-lg text-sm">
-                            <input id="curriculum-subject-credits" name="creditos" type="number" min="0" step="0.5" placeholder="Créditos" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-subject-language" name="idioma" required placeholder="Idioma (ej. es, en)" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-subject-hours" name="cargaHorariaRef" type="number" min="0" step="0.5" required placeholder="Carga horaria" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-subject-credits" name="creditos" type="number" min="0" step="0.5" required placeholder="Créditos" class="w-full p-2.5 border rounded-lg text-sm">
                         </div>
-                        <label class="block text-[11px] font-bold text-slate-600">Prerrequisitos existentes (opcional)</label>
+                        <p class="text-[10px] text-slate-500">El departamento se deriva del área curricular y se valida en el servidor.</p><label class="block text-[11px] font-bold text-slate-600">Prerrequisitos existentes (opcional)</label>
                         <select id="curriculum-subject-prerequisites" name="prerrequisitos" multiple size="3" class="w-full p-2 border rounded-lg text-sm"></select>
                         <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase">Guardar asignatura</button>
                     </form>

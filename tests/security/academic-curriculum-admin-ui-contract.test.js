@@ -49,5 +49,5 @@ assert.match(dashboard, /id="modal-curriculum-admin"/);
 assert.match(dashboard, /id="form-curriculum-subject"/);
 assert.match(dashboard, /id="form-curriculum-plan"/);
 assert.match(dashboard, /id="form-curriculum-relation"/);
-assert.match(dashboard, /id="form-curriculum-offer"/);
+assert.match(dashboard, /id="form-curriculum-offer"/);\nassert.match(dashboard, /name="idioma" required/);\nassert.match(dashboard, /name="cargaHorariaRef"[^>]*required/);\nassert.match(dashboard, /name="creditos"[^>]*required/);
 console.log("Academic curriculum admin UI contract: payloads, active states, plan links and safe rendering PASS.");
