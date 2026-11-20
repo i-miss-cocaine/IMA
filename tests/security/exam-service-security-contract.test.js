@@ -38,6 +38,9 @@ assert.ok(examBatchSnapshotContract.includes("sourceRevision"),
   "the normal Exam snapshot response must carry its captured source revision");
 assert.ok(examBatchSnapshotContract.includes("revisionOnly"),
   "the authorized batch endpoint must expose its lightweight revision-only mode");
+assert.ok(examBatchSnapshotContract.indexOf("revisionOnly") < examBatchSnapshotContract.indexOf("getGradebookDataUnlocked_"),
+  "revision-only reads must return before scanning or serializing gradebook data");
+
 
 const examMutationLockWrapperContract = extractFunction(source, "withAuthorizedExamMutation_");
 assert.ok(examMutationLockWrapperContract.indexOf("validateRolePermission(action, payload)") < examMutationLockWrapperContract.indexOf("LockService.getScriptLock()"),
