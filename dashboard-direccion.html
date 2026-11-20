@@ -64,6 +64,9 @@
                 <h2 class="text-2xl md:text-3xl font-black text-gray-900 uppercase tracking-tighter mt-1">Aprobación de Becas & Descuentos</h2>
             </div>
             <div id="direccion-metrics-summary" class="flex items-center gap-4">
+                <button type="button" id="btn-open-curriculum-admin" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm">
+                    <i class="fa-solid fa-book-open mr-1"></i> Gestión curricular
+                </button>
                 <div class="text-right">
                     <p class="text-[9px] font-black text-gray-400 uppercase">Solicitudes Pendientes</p>
                     <p class="text-xl font-black text-purple-600" id="pending-approvals-count">0</p>
@@ -175,6 +178,7 @@
 
     <script src="js/secretary.js?v=26"></script>
     <script src="js/teacher.js?v=26"></script>
+    <script src="js/curriculum-admin.js?v=1"></script>
     <script src="js/department-reference-admin.js?v=26"></script>
     <script src="js/transport-analytics.js?v=1"></script>
     <script>
@@ -418,6 +422,98 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- [AUD-NG-164] Gestión del catálogo curricular maestro -->
+    <div id="modal-curriculum-admin" class="fixed inset-0 z-[135] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 hidden">
+        <div class="bg-white w-full max-w-7xl max-h-[96vh] rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between gap-3">
+                <div>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-indigo-600">Fuente institucional</span>
+                    <h3 class="text-lg md:text-xl font-black uppercase tracking-tight text-slate-900">Gestión del catálogo curricular</h3>
+                    <p class="text-xs text-slate-500">Asignaturas, planes, relaciones curriculares y ofertas académicas</p>
+                </div>
+                <button type="button" id="btn-close-curriculum-admin" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600" aria-label="Cerrar gestión curricular"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 md:p-5 overflow-y-auto space-y-5">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <p id="curriculum-admin-status" role="status" aria-live="polite" class="text-xs font-semibold text-slate-600">La información se consulta desde los servicios académicos institucionales.</p>
+                    <button type="button" id="btn-refresh-curriculum-admin" class="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"><i class="fa-solid fa-rotate mr-1"></i>Actualizar</button>
+                </div>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <form id="form-curriculum-subject" class="p-4 rounded-2xl border border-slate-200 space-y-3">
+                        <h4 class="text-xs font-black uppercase text-slate-800">Registrar asignatura</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input id="curriculum-subject-name" name="nombreOficial" required maxlength="160" placeholder="Nombre oficial" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-subject-code" name="codigo" required maxlength="32" placeholder="Código único" class="w-full p-2.5 border rounded-lg text-sm uppercase">
+                            <select id="curriculum-subject-area" name="areaId" required class="w-full p-2.5 border rounded-lg text-sm"><option value="">Seleccione área curricular</option></select>
+                            <input id="curriculum-subject-program" name="programaId" placeholder="Programa (opcional)" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-subject-level" name="nivelEducativo" placeholder="Nivel educativo" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-subject-grade" name="grado" placeholder="Grado (opcional)" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-subject-language" name="idioma" placeholder="Idioma (ej. es, en)" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-subject-hours" name="cargaHorariaRef" type="number" min="0" step="0.5" placeholder="Carga horaria" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-subject-credits" name="creditos" type="number" min="0" step="0.5" placeholder="Créditos" class="w-full p-2.5 border rounded-lg text-sm">
+                        </div>
+                        <label class="block text-[11px] font-bold text-slate-600">Prerrequisitos existentes (opcional)</label>
+                        <select id="curriculum-subject-prerequisites" name="prerrequisitos" multiple size="3" class="w-full p-2 border rounded-lg text-sm"></select>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase">Guardar asignatura</button>
+                    </form>
+                    <form id="form-curriculum-plan" class="p-4 rounded-2xl border border-slate-200 space-y-3">
+                        <h4 class="text-xs font-black uppercase text-slate-800">Registrar plan de estudio</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <input id="curriculum-plan-name" name="nombre" required maxlength="160" placeholder="Nombre del plan" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-plan-version" name="version" required value="1.0" placeholder="Versión" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-plan-grade" name="grado" required placeholder="Grado" class="w-full p-2.5 border rounded-lg text-sm">
+                            <label class="text-xs text-slate-600">Vigencia inicial<input id="curriculum-plan-start" name="vigenciaInicio" type="date" required class="mt-1 w-full p-2.5 border rounded-lg text-sm"></label>
+                            <label class="text-xs text-slate-600">Vigencia final<input id="curriculum-plan-end" name="vigenciaFin" type="date" required class="mt-1 w-full p-2.5 border rounded-lg text-sm"></label>
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase">Guardar plan</button>
+                    </form>
+                    <form id="form-curriculum-relation" class="p-4 rounded-2xl border border-slate-200 space-y-3">
+                        <h4 class="text-xs font-black uppercase text-slate-800">Vincular asignatura al plan</h4>
+                        <select id="curriculum-relation-plan" required class="w-full p-2.5 border rounded-lg text-sm"><option value="">Seleccione plan vigente</option></select>
+                        <select id="curriculum-relation-subject" required class="w-full p-2.5 border rounded-lg text-sm"><option value="">Seleccione asignatura activa</option></select>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <select id="curriculum-relation-character" required class="w-full p-2.5 border rounded-lg text-sm"><option value="Obligatoria">Obligatoria</option><option value="Optativa">Optativa</option></select>
+                            <input id="curriculum-relation-hours" type="number" min="0.5" step="0.5" required placeholder="Horas semanales" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-relation-order" type="number" min="0" step="1" value="0" placeholder="Orden" class="w-full p-2.5 border rounded-lg text-sm">
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase">Vincular asignatura</button>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs"><thead><tr class="text-slate-500 border-b"><th class="p-2">Asignatura</th><th class="p-2">Carácter</th><th class="p-2">Horas</th><th class="p-2">Estado</th><th class="p-2">Acción</th></tr></thead><tbody id="curriculum-relations-body"><tr><td colspan="5" class="p-3 text-slate-400">Seleccione un plan.</td></tr></tbody></table>
+                        </div>
+                    </form>
+                    <form id="form-curriculum-offer" class="p-4 rounded-2xl border border-slate-200 space-y-3">
+                        <h4 class="text-xs font-black uppercase text-slate-800">Registrar oferta académica</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <select id="curriculum-offer-year" required class="w-full p-2.5 border rounded-lg text-sm"><option value="">Año lectivo activo</option></select>
+                            <select id="curriculum-offer-period" required class="w-full p-2.5 border rounded-lg text-sm"><option value="">Período activo</option></select>
+                            <select id="curriculum-offer-plan" required class="w-full p-2.5 border rounded-lg text-sm"><option value="">Plan vigente</option></select>
+                            <select id="curriculum-offer-subject" required class="w-full p-2.5 border rounded-lg text-sm"><option value="">Asignatura vinculada al plan</option></select>
+                            <input id="curriculum-offer-section" required maxlength="20" value="A" placeholder="Sección" class="w-full p-2.5 border rounded-lg text-sm">
+                            <input id="curriculum-offer-capacity" type="number" min="1" step="1" value="35" required placeholder="Capacidad" class="w-full p-2.5 border rounded-lg text-sm">
+                        </div>
+                        <p id="curriculum-offer-grade" class="text-xs text-slate-500">El grado se toma del plan seleccionado.</p>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase">Registrar oferta</button>
+                    </form>
+                </div>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <section class="p-4 rounded-2xl border border-slate-200">
+                        <h4 class="text-xs font-black uppercase text-slate-800 mb-2">Asignaturas institucionales</h4>
+                        <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr class="text-slate-500 border-b"><th class="p-2">Código</th><th class="p-2">Asignatura</th><th class="p-2">Área</th><th class="p-2">Grado / Idioma</th><th class="p-2">Estado</th></tr></thead><tbody id="curriculum-subjects-body"></tbody></table></div>
+                    </section>
+                    <section class="p-4 rounded-2xl border border-slate-200">
+                        <h4 class="text-xs font-black uppercase text-slate-800 mb-2">Planes de estudio</h4>
+                        <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr class="text-slate-500 border-b"><th class="p-2">Plan</th><th class="p-2">Versión</th><th class="p-2">Grado</th><th class="p-2">Vigencia</th><th class="p-2">Estado</th></tr></thead><tbody id="curriculum-plans-body"></tbody></table></div>
+                    </section>
+                    <section class="p-4 rounded-2xl border border-slate-200 xl:col-span-2">
+                        <h4 class="text-xs font-black uppercase text-slate-800 mb-2">Ofertas académicas</h4>
+                        <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr class="text-slate-500 border-b"><th class="p-2">Año / Período</th><th class="p-2">Grado / Sección</th><th class="p-2">Asignatura</th><th class="p-2">Plan</th><th class="p-2">Estado</th></tr></thead><tbody id="curriculum-offers-body"></tbody></table></div>
+                    </section>
                 </div>
             </div>
         </div>
