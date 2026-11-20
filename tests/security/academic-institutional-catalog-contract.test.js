@@ -154,6 +154,14 @@ assert.equal(subjectRow[subjectHeaders.indexOf("CargaHorariaRef")], 4);
 assert.equal(subjectRow[subjectHeaders.indexOf("AreaID")], "AREA-A");
 assert.equal(subjectRow[subjectHeaders.indexOf("DepartamentoID")], "D1");
 assert.deepEqual(JSON.parse(subjectRow[subjectHeaders.indexOf("PrerrequisitosJSON")]), ["ASIG-1"]);
+const syncedSubjects = ctx.api.getInstitutionalCatalog({ catalogType: "SUBJECTS" });
+const syncedPrerequisiteSubject = syncedSubjects.data.asignaturasMetadata.find(item => item.codigo === "QUI-01");
+assert.deepEqual(syncedPrerequisiteSubject.prerrequisitos, ["ASIG-1"]);
+subjectRow[subjectHeaders.indexOf("PrerrequisitosJSON")] = "not-json";
+const invalidPrerequisiteCatalog = ctx.api.getInstitutionalCatalog({ catalogType: "SUBJECTS" });
+const invalidPrerequisiteMetadata = invalidPrerequisiteCatalog.data.asignaturasMetadata.find(item => item.codigo === "QUI-01");
+assert.equal(invalidPrerequisiteMetadata.prerequisitesSchemaValid, false);
+assert.equal(invalidPrerequisiteCatalog.data.asignaturas.some(item => item.codigo === "QUI-01"), false, "invalid prerequisite schema must fail closed");
 assert.throws(() => ctx.api.createSubjectCatalogItem({
   nombreOficial: "Duplicada", codigo: "MAT-01", areaId: "AREA-A"
 }), /SUBJECT_CODE_ALREADY_EXISTS/);
