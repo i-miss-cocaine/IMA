@@ -20,6 +20,8 @@ const create=extractFunction("createTask"),guard=extractFunction("assertTaskServ
 assert(create.includes('registerTaskServiceResourceOwnership_(scope,"TAREA",id,department.departmentId,ss)'));assert(create.includes("resolveTaskServiceOwnershipDepartment_(payload,scope)"));
 assert.doesNotMatch(create,/getDynamicPermissionsForRole\([^)]*registerResourceOwnership/,"createTask relies on its dispatcher RBAC permission, not a second internal privilege");
 assert.doesNotMatch(extractFunction("registerTaskServiceResourceOwnership_"),/getDynamicPermissionsForRole\([^)]*registerResourceOwnership/,"internal ownership registration does not repeat action RBAC");assert(extractFunction("registerTaskServiceResourceOwnership_").includes("ensureTaskServiceResourceOwnershipSheet_"),"registry initialization occurs inside locked registration");assert(guard.includes('assertTaskServiceResourceOwnership_(payload,"TAREA",row[0]'));
+assert(guard.includes("getTaskServiceAuthorizedClassrooms(payload,{identity:identity,ss:ss,scope:scope,departmentId:ownership.departmentId})"),
+  "task guard reuses verified actor/scope and requires the classroom ownership department to match the task");
 for(const [name,fn] of [["getStudentTasks",list],["getAllTasks",all],["getTeacherActivity",activity]])assert(fn.includes('assertTaskServiceResourceOwnership_(payload, "TAREA"'),name+" filters departmental ownership");
 for(const name of ["gradeSubmission","gradeSubmissionWithRubric"])assert(extractFunction(name).includes("withAuthorizedTaskSubmissionMutation_"),name+" executes the locked, verified grade mutation wrapper");
 assert(extractFunction("withAuthorizedTaskSubmissionMutation_").includes("getTaskServiceSubmissionAccess_"),"grade mutation uses task submission access");
@@ -182,16 +184,14 @@ console.log("TASK-153 staff/student department intersection contract passed.");
   for (const name of ["createPost","updatePost","deletePost"]) {
     assert(extractFunction(name).includes("assertTaskServiceClassroomAccess(payload"), name + " retains post classroom ownership");
   }
-  assert(extractFunction("createStudyMaterial").includes("getTaskServiceClassroomById(classId)"),
-    "material publication validates its target classroom relationship");
-  assert(extractFunction("createStudyMaterial").includes("assertTaskServiceTeacherAssignedToOffer"),
-    "teacher publication requires an active assignment to the classroom offer");
+  const createMaterialFn = extractFunction("createStudyMaterial");
+  assert(createMaterialFn.includes("assertTaskServiceClassroomAccess(request,classId,identity)"),
+    "material publication inherits the classroom's verified department scope and active assignment");
   const deleteMaterialFn = extractFunction("deleteStudyMaterial");
   assert(deleteMaterialFn.includes('String(row[10] || "").trim() !== userId'),
     "teacher deletion is limited to materials authored by the verified actor");
-  assert(deleteMaterialFn.includes("getTaskServiceClassroomById(classId)") &&
-    deleteMaterialFn.includes("assertTaskServiceTeacherAssignedToOffer(userId, classroom[1])"),
-    "teacher deletion also requires the classroom to remain active and assigned to the verified teacher");
+  assert(deleteMaterialFn.includes('assertTaskServiceClassroomAccess(request,String(row[1] || "").trim(),identity)'),
+    "material deletion reuses the classroom's verified scope and active assignment guard");
 
   function materialDeleteFixture(options) {
     const opts = options || {};
@@ -204,22 +204,27 @@ console.log("TASK-153 staff/student department intersection contract passed.");
       getDataRange: () => ({ getValues: () => materialRows.map(row => row.slice()) }),
       getRange: (row, col) => ({ setValue: value => { materialRows[row - 1][col - 1] = value; } })
     };
-    const state = { assignmentChecks: 0 };
+    const state = { classroomScopeChecks: 0 };
     const classroom = opts.classroom === undefined
       ? ["AULA-1","OFFER-1","Aula 1","6","A","Matemáticas","PROF-1","Activa"]
       : opts.classroom;
+    const identity = opts.identity || { authorized: true, userId: "PROF-1", role: "Profesor" };
     const context = {
       SPREADSHEET_ID: "LOCAL",
       SpreadsheetApp: { openById: () => ({}) },
       getOrCreateSheet: (_ss, name) => { assert.equal(name, "MaterialesEducativos"); return materialSheet; },
-      getVerifiedTaskIdentity_: () => opts.identity || { authorized: true, userId: "PROF-1", role: "Profesor" },
+      getVerifiedTaskIdentity_: () => identity,
       isTaskServiceAdministrativeRole: role => ["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
-      getTaskServiceClassroomById: id => id === "AULA-1" ? classroom : null,
-      assertTaskServiceTeacherAssignedToOffer: (userId, offerId) => {
-        state.assignmentChecks++;
-        if (opts.assignmentActive === false || userId !== "PROF-1" || offerId !== "OFFER-1") {
-          throw new Error("TEACHER_ASSIGNMENT_DENIED");
+      assertTaskServiceClassroomAccess: (_payload, classId, actor) => {
+        state.classroomScopeChecks++;
+        assert.equal(actor, identity, "material deletion passes the already verified actor");
+        if (actor.role === "Administrador") return true;
+        if (classId !== "AULA-1" || !classroom ||
+            normalizeString(classroom[7] || "Activa") === "desactivada" ||
+            String(classroom[6] || "").trim() !== actor.userId) {
+          throw new Error("RESOURCE_NOT_FOUND");
         }
+        if (opts.assignmentActive === false) throw new Error("TEACHER_ASSIGNMENT_DENIED");
         return true;
       },
       normalizeString: value => String(value || "").trim().toLowerCase(),
@@ -233,7 +238,7 @@ console.log("TASK-153 staff/student department intersection contract passed.");
     const result = f.remove();
     assert.equal(result.status, "success");
     assert.equal(f.materialRows[1][12], "Eliminado");
-    assert.equal(f.state.assignmentChecks, 1, "teacher deletion checks the current offer assignment once");
+    assert.equal(f.state.classroomScopeChecks, 1, "teacher deletion checks classroom scope once");
   }
   {
     const f = materialDeleteFixture({ assignmentActive: false });
@@ -243,25 +248,25 @@ console.log("TASK-153 staff/student department intersection contract passed.");
   {
     const f = materialDeleteFixture({ classroom: ["AULA-1","OFFER-1","Aula 1","6","A","Matemáticas","PROF-2","Activa"] });
     assert.throws(() => f.remove(), /RESOURCE_NOT_FOUND/);
-    assert.equal(f.materialRows[1][12], "Activo", "a reassigned classroom cannot be deleted by its former teacher");
+    assert.equal(f.materialRows[1][12], "Activo", "former teacher cannot delete material after classroom reassignment");
   }
   {
     const f = materialDeleteFixture({ classroom: ["AULA-1","OFFER-1","Aula 1","6","A","Matemáticas","PROF-1","Desactivada"] });
     assert.throws(() => f.remove(), /RESOURCE_NOT_FOUND/);
-    assert.equal(f.materialRows[1][12], "Activo", "inactive classroom cannot be managed by teacher");
+    assert.equal(f.materialRows[1][12], "Activo", "teacher cannot delete material from an inactive classroom");
   }
   {
     const f = materialDeleteFixture({ identity: { authorized: true, userId: "PROF-2", role: "Profesor" } });
     assert.throws(() => f.remove(), /El material no pertenece al docente/);
     assert.equal(f.materialRows[1][12], "Activo");
-    assert.equal(f.state.assignmentChecks, 0);
+    assert.equal(f.state.classroomScopeChecks, 0);
   }
   {
-    const f = materialDeleteFixture({ identity: { authorized: true, userId: "ADMIN-1", role: "Administrador" }, classroom: null });
+    const f = materialDeleteFixture({ identity: { authorized: true, userId: "ADMIN-1", role: "Administrador" } });
     const result = f.remove();
-    assert.equal(result.status, "success", "authorized administrative role retains the existing material-management path");
+    assert.equal(result.status, "success", "administrative deletion delegates to the centralized classroom scope guard");
     assert.equal(f.materialRows[1][12], "Eliminado");
-    assert.equal(f.state.assignmentChecks, 0);
+    assert.equal(f.state.classroomScopeChecks, 1);
   }
 
   const classroomRows = [
@@ -326,7 +331,11 @@ console.log("TASK-153 staff/student department intersection contract passed.");
       :payload&&payload.sessionToken==="T2"
         ?{authorized:true,userId:"TEACHER-2",role:"Profesor"}:{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"},
     getVerifiedTaskDepartmentScope_:(_payload,_ss,identity)=>({authorized:true,userId:identity.userId,role:identity.role,
-      institutionId:"INST-1",departmentIds:[identity.userId==="TEACHER-1"?"D1":"D2"],institutionWide:false}),
+      institutionId:"INST-1",departmentIds:identity.userId==="TEACHER-1"?["D1","D2"]:["D2"],institutionWide:false}),
+    assertTaskServiceResourceOwnership_:(_payload,type,id,_operation,_ss,_identity)=>({
+      authorized:type==="AULA_VIRTUAL"&&(id==="AULA-T1"||id==="AULA-T2"),
+      departmentId:id==="AULA-T1"?"D1":"D2"
+    }),
     assertTaskServiceTeacherAssignedToOffer:(userId,offerId)=>{assignmentCalls++;if(!((userId==="TEACHER-1"&&offerId==="OFFER-T1")||(userId==="TEACHER-2"&&offerId==="OFFER-T2")))throw new Error("TEACHER_ASSIGNMENT_DENIED");},
     isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador"].includes(role),
     registerTaskServiceResourceOwnership_:(scope,type,id,departmentId,_ss)=>{registered.push({userId:scope.userId,type,id,departmentId});return {authorized:true};},
@@ -340,6 +349,9 @@ console.log("TASK-153 staff/student department intersection contract passed.");
   assert.equal(first.status,"success");
   assert.equal(taskRows[1][10],"TEACHER-1","task owner comes from the verified actor, not forged teacherId fields");
   assert.equal(registered[0].departmentId,"D1");
+  assert.throws(()=>context.create({sessionToken:"T1",titulo:"Wrong department",asignatura:"Math",gradoAsignado:"6",seccionAsignada:"A",departmentId:"D2"}),
+    /RESOURCE_DEPARTMENT_MISMATCH/);
+  assert.equal(taskRows.length,2,"teacher cannot register a task in a department different from the assigned classroom");
   assert.throws(()=>context.create({sessionToken:"T1",titulo:"Foreign section",asignatura:"Math",gradoAsignado:"6",seccionAsignada:"B",departmentId:"D2"}),
     /No existe aula asignada/);
   assert.equal(taskRows.length,2,"a teacher cannot create a task in another teacher's section");

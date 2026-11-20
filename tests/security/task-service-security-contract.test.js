@@ -338,7 +338,7 @@ const previewFunction = extractFunction("getSubmissionDocumentPreviewUrl");
 assert(previewFunction.includes("getTaskServiceSubmissionAccess_"), "document preview must delegate to the shared submission ownership guard");
 assert(previewFunction.includes('"READ_CONTENT"'), "document preview must request content-level authorization");
 assert(extractFunction("getTaskServiceSubmissionAccess_").includes("assertTaskServiceTeacherCanManageTask(payload, task"), "staff preview must validate active assignment through the shared guard");
-assert(extractFunction("assertTaskServiceTeacherCanManageTask").includes("getTaskServiceAuthorizedClassrooms(payload)"), "teacher mutation/preview guard must use active offer assignments");
+assert(extractFunction("assertTaskServiceTeacherCanManageTask").includes("getTaskServiceAuthorizedClassrooms(payload,{identity:identity,ss:ss,scope:scope,departmentId:ownership.departmentId})"), "teacher mutation/preview guard reuses its scope and matches the task/class department");
 
 const assignmentRows = [
   ["ID","OfertaID","ProfesorID","Asignatura","Inicio","Fin","Estado"],
@@ -730,9 +730,13 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
     SPREADSHEET_ID:"LOCAL",
     SpreadsheetApp:{openById:()=>({})},
     getVerifiedTaskIdentity_:()=>({authorized:true,userId:"TEACHER-1",role:"Profesor"}),
-    getTaskServiceClassroomById:id=>id==="CLASS-1"?["CLASS-1","OFFER-1","","","","","TEACHER-1","Activa"]:id==="CLASS-OTHER"?["CLASS-OTHER","OFFER-2","","","","","TEACHER-2","Activa"]:id==="CLASS-INACTIVE"?["CLASS-INACTIVE","OFFER-1","","","","","TEACHER-1","Desactivada"]:null,
-    normalizeString:value=>String(value||"").trim().toLowerCase(),
-    assertTaskServiceTeacherAssignedToOffer:(userId,offerId)=>{assert.equal(userId,"TEACHER-1");assert.equal(offerId,"OFFER-1");assignedOfferCalls++;},
+    assertTaskServiceClassroomAccess:(payload,classId,identity)=>{
+      assert.equal(identity.userId,"TEACHER-1");assert.equal(identity.role,"Profesor");
+      if(classId==="General")throw new Error("Solo administración puede publicar materiales generales.");
+      if(classId==="CLASS-OTHER")throw new Error("El aula no está asignada al docente autenticado.");
+      if(classId==="CLASS-INACTIVE")throw new Error("Aula no válida o inactiva.");
+      assert.equal(classId,"CLASS-1");assignedOfferCalls++;return true;
+    },
     isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
     getOrCreateSheet:()=>{materialSheetAccess=true;return {getLastRow:()=>0,appendRow:row=>{savedMaterial=row;}};},
     Utilities:{getUuid:()=>"MAT-1"}
@@ -753,6 +757,7 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   const adminContext={SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>({})},
     getVerifiedTaskIdentity_:()=>({authorized:true,userId:"ADMIN-1",role:"Administrador"}),
     isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+    assertTaskServiceClassroomAccess:(payload,classId,identity)=>{assert.equal(classId,"General");assert.equal(identity.userId,"ADMIN-1");return null;},
     getOrCreateSheet:()=>({getLastRow:()=>0,appendRow:row=>{adminRow=row;}}),Utilities:{getUuid:()=>"MAT-ADMIN"}};
   vm.runInNewContext(extractFunction("createStudyMaterial")+"\nthis.run=createStudyMaterial;",adminContext);
   assert.equal(adminContext.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",aulaId:"General",titulo:"Institutional",archivoUrl:"https://example.test/general"}).status,"success");
@@ -769,11 +774,12 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
     SPREADSHEET_ID:"LOCAL",SpreadsheetApp:{openById:()=>({})},
     getVerifiedTaskIdentity_:()=>({authorized:true,userId:"TEACHER-1",role:"Profesor"}),
     isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
-    getTaskServiceClassroomById:id=>id==="CLASS-1"?["CLASS-1","OFFER-1","","","","","TEACHER-1","Activa"]:
-      id==="CLASS-OTHER"?["CLASS-OTHER","OFFER-2","","","","","TEACHER-2","Activa"]:
-      id==="CLASS-INACTIVE"?["CLASS-INACTIVE","OFFER-1","","","","","TEACHER-1","Desactivada"]:null,
-    normalizeString:value=>String(value||"").trim().toLowerCase(),
-    assertTaskServiceTeacherAssignedToOffer:(userId,offerId)=>{materialAssignmentChecks++;assert.equal(userId,"TEACHER-1");assert.equal(offerId,"OFFER-1");if(!materialAssignmentActive)throw new Error("TEACHER_ASSIGNMENT_DENIED");},
+    assertTaskServiceClassroomAccess:(payload,classId,identity)=>{
+      materialAssignmentChecks++;assert.equal(identity.userId,"TEACHER-1");
+      if(classId==="CLASS-OTHER"||classId==="CLASS-INACTIVE")throw new Error("RESOURCE_NOT_FOUND");
+      if(!materialAssignmentActive)throw new Error("TEACHER_ASSIGNMENT_DENIED");
+      assert.equal(classId,"CLASS-1");return true;
+    },
     getOrCreateSheet:()=>({getDataRange:()=>({getValues:()=>materialRows}),getRange:(row,col)=>({setValue:value=>{materialRows[row-1][col-1]=value;}})})
   };
   vm.runInNewContext(extractFunction("deleteStudyMaterial")+"\nthis.run=deleteStudyMaterial;",materialDeleteContext);
@@ -789,7 +795,7 @@ console.log("TASK-153 legacy document and folder-IDOR contracts passed.");
   assert.equal(materialRows[4][12],"Activo","former teacher cannot delete material after classroom reassignment");
   assert.throws(()=>materialDeleteContext.run({materialId:"MAT-INACTIVE"}),/RESOURCE_NOT_FOUND/);
   assert.equal(materialRows[5][12],"Activo","teacher cannot delete material from an inactive classroom");
-  assert.equal(materialAssignmentChecks,2,"only active, owner-matched classroom records reach the offer assignment check");
+  assert.equal(materialAssignmentChecks,4,"all owner-matched deletions pass through the centralized classroom scope guard");
   assert.equal(materialDeleteContext.run({materialId:"MAT-OWN"}).status,"success","repeated soft-delete is idempotent");
   assert.equal(materialRows[1][12],"Eliminado");
 }
