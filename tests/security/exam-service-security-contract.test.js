@@ -30,6 +30,9 @@ function extractFunction(text, name) {
   throw new Error("unbalanced function " + name);
 }
 
+const examReadWrapperContract = extractFunction(source, "withAuthorizedExamRead_");
+assert.ok(examReadWrapperContract.includes("getSaceExamSourceRevisionLocked_"),
+  "every serialized Exam read must capture its source revision under the shared ScriptLock");
 const examMutationLockWrapperContract = extractFunction(source, "withAuthorizedExamMutation_");
 assert.ok(examMutationLockWrapperContract.indexOf("validateRolePermission(action, payload)") < examMutationLockWrapperContract.indexOf("LockService.getScriptLock()"),
   "exam metadata mutation wrapper must validate RBAC before requesting the shared lock");
