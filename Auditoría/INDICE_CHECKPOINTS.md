@@ -276,3 +276,5 @@ Los checkpoints posteriores se registran aquí.
 
 
 | C1.886 | IMA-EXEC-20261120-AUD-NG-167-UUID-EPOCH-VALIDATION-57 | UUID estricto para sourceRevision en Academic/USER/Exam/orquestador; contratos agregan epoch inválido; parser V8 y matriz regex PASS; CI parcial sin logs verificables | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt — C1.886 | C1.885 | Verificar Actions SACE y ejecutar BETA-EXAM-114/115 cuando existan despliegues y archivo autorizado |
+
+| C1.887 | IMA-EXEC-20261120-AUD-NG-167-SACE-2023-MANUAL-LAYOUT-58 | Manual oficial SACE 2023 muestra NIVELACIÓN F, inasistencias P-II G, nota P-II H y RECUPERACIÓN I; candidata usa recuperación H, queda CANDIDATE; contrato SACE PASS; COUNT/EXCLUDE sigue sin fuente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt — C1.887 | C1.886 | Obtener XLS real saneado desde SACE Notas y confirmar vigencia/semántica sin inferir reglas |

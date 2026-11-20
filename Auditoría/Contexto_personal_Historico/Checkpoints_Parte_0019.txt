@@ -2046,3 +2046,50 @@ Siguiente acción elegible:
 - Se ejecutaron en harness V8 aislado los helpers reales extraídos de Academic, USER y Exam: inicialización UUID:0, incrementos monotónicos, rechazo de UUID persistido malformado, overflow y fallo simulado de setProperty. Los tres servicios PASS; en el fallo de persistencia el token permaneció UUID:0.
 - Se ejecutó el normalizador real de sourceRevisions del orquestador: UUID válido preservado; epoch inválido rechazado; metadata legacy ausente conserva null.
 - Esta evidencia es V8 directo, no Node.js/Actions ni despliegue real de Apps Script. La limitación de CI indicada en C1.886 permanece.
+
+
+===============================================================================
+### C1.887 — AUD-NG-167: discrepancia de la muestra oficial SACE 2023 con la candidata
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-167-SACE-2023-MANUAL-LAYOUT-58
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 105ea49d95d7cf83b986ca6e9c35e2abd5a9a3ea
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+HEAD de implementación/documentación: 105ea49d95d7cf83b986ca6e9c35e2abd5a9a3ea
+
+Evidencia oficial:
+- Se verificó el Manual de Usuario Docente del Centro Educativo publicado por la Secretaría de Educación, con actualización registrada en agosto de 2023:
+  https://www.se.gob.hn/media/files/usinieh/documentos/Manual_de_usuario_SACE_Docente.pdf
+- La página impresa 21 muestra el ejemplo del cuadro docente con nueve columnas: A DOCUMENTO, B IDENTIDAD, C NOMBRE, D INASISTENCIAS P-I, E NOTA TOTAL P-I, F NIVELACIÓN, G INASISTENCIAS P-II, H NOTA TOTAL P-II e I RECUPERACIÓN.
+- La versión SACE alojada en sace.se.gob.hn, actualizada en marzo de 2022, muestra el mismo orden en su página impresa 22.
+- El enlace citado anteriormente como manual de junio de 2025 (Manual_de___usuario_SACE_Docente_2.pdf) responde 404; el mapa se corrigió para usar la fuente oficial accesible de agosto de 2023 y describir correctamente la versión de marzo de 2022.
+
+Discrepancia detectada:
+- La candidata del repositorio usa D/E para parcial I, F/G para parcial II y H para recuperación; I queda sin uso.
+- Frente a la muestra oficial 2023, F corresponde a NIVELACIÓN, G a inasistencias P-II, H a nota total P-II e I a RECUPERACIÓN.
+- Aplicar el mapeo candidato sobre esa muestra dirigiría valores a campos distintos. El inspector binario actual valida encabezados/rangos combinados exactos y falla cerrado ante una estructura distinta; no se relajó esa protección.
+- La muestra del manual no prueba que todos los XLS generados actualmente tengan ese mismo layout; el archivo real descargado desde SACE Notas sigue siendo la autoridad para el periodo/centro de prueba.
+- El manual no determina si una inasistencia justificada se cuenta o excluye; COUNT/EXCLUDE continúa sin fuente oficial confirmada.
+
+Archivos actualizados en el commit 105ea49d95d7cf83b986ca6e9c35e2abd5a9a3ea:
+- docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md
+- docs/architecture/Plantillas/SACE/manifest.json
+- beta_test.txt (BETA-EXAM-115 ahora inspecciona NIVELACIÓN y F/G/H/I)
+- tests/security/sace-template-structure-contract.test.js (assertions del mapeo documentado y su discrepancia)
+
+Verificación:
+- GitHub Actions 44654877695 — SACE template structure compatibility contract: SUCCESS.
+- En ese workflow: node --check y node tests/security/sace-template-structure-contract.test.js PASS; parche binario, proveedor de datos, orquestador y aislamiento de producción PASS.
+- Academic-Service single authorization context run 44654383716: SUCCESS.
+- Exam-Service security local contracts run 44654538621: los contratos específicos de Exam, incluida la regresión de recuperación UUID, pasaron; el paso de suite global Node falló únicamente en dos pruebas preexistentes ajenas a este cambio: tests/regression/phase22-document-management-suite-contract.test.js (configureSchoolDocumentTemplate ausente) y tests/security/accounting-school-document-binary-integrity.test.js. No se modificaron esas pruebas ni sus módulos.
+- La ejecución Node local en un checkout sigue NOT RUN porque el entorno no pudo resolver github.com; las pruebas de Node anteriores se ejecutaron en el runner de GitHub Actions y no dependieron de servicios desplegados.
+- No se ejecutó Apps Script desplegado ni se usaron datos personales reales.
+
+Estado:
+- AUD-NG-167 continúa En progreso: la candidata no coincide con la muestra oficial publicada y aún falta un XLS real saneado descargado desde SACE Notas, la vigencia de la plantilla y la política oficial COUNT/EXCLUDE. No se habilita exportación productiva; manifest permanece CANDIDATE y officialSourceVerified=false.
+- El antiguo bloqueo de AUD-NG-168 basado únicamente en que AUD-NG-167 siga abierto no constituye una dependencia técnica bajo NDASC 1.5 §9. AUD-NG-168 conserva sus dependencias técnicas propias: AUD-NG-164 (catálogo/ofertas canónicas, Pendiente) y AUD-NG-158 (ABAC docente, Revisión requerida). No se inicia una escritura de planificación que dependa de ellas.
+
+Siguiente acción:
+- Mantener fail-closed hasta recibir un archivo real saneado desde SACE Notas; comparar el layout completo y, si difiere, crear un baseline versionado solo con evidencia estructural autorizada. Mantener COUNT/EXCLUDE sin valor por defecto hasta fuente oficial.
+===============================================================================

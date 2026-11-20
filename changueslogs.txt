@@ -4373,3 +4373,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-20] Evidencia complementaria C1.886 — harness V8 ejecutó los helpers reales extraídos de Academic/USER/Exam: UUID initialization, monotonic increments, invalid epoch, overflow y fallo de persistencia PASS en los tres servicios; el token no avanzó cuando setProperty falló. Normalizador del orquestador PASS para UUID válido, inválido y legacy ausente. No sustituye Node.js/Actions ni beta real.
+
+
+[2026-11-20] C1.887 — AUD-NG-167: se incorpora evidencia del manual docente SACE actualizado en agosto de 2023. Su muestra ubica NIVELACIÓN en F, inasistencias P-II en G, nota P-II en H y RECUPERACIÓN en I, en discrepancia con la plantilla candidata (recuperación H). Se corrige la fuente documental anterior con enlace 404, se actualizan manifest/mapa y BETA-EXAM-115, y se agrega contrato para conservar la discrepancia explícita. SACE template compatibility Action 44654877695 SUCCESS; no se promueve plantilla.
