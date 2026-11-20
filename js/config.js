@@ -1036,8 +1036,8 @@ window.registerNewCurricularAreaServiceConfig = function(areaConfig) {
     var existing = window.INSTITUTIONAL_CATALOG_CACHE.areas[key];
     var next = Object.assign({}, existing || {}, areaConfig, {
         areaId:key, name:String(areaConfig.name).trim(), code:String(areaConfig.code).trim().toUpperCase(),
-        source:areaConfig.source || window.INSTITUTIONAL_CATALOG_STATE.source || "LOCAL_FALLBACK",
-        authoritative:areaConfig.authoritative === true
+        source:areaConfig.source === "SERVER" && areaConfig.authoritative === true ? "SERVER" : "LOCAL_FALLBACK",
+        authoritative:areaConfig.source === "SERVER" && areaConfig.authoritative === true
     });
     next.isActive = institutionalCatalogIsActive_(areaConfig, existing);
     if (!Object.prototype.hasOwnProperty.call(areaConfig,"estado") && !Object.prototype.hasOwnProperty.call(areaConfig,"isActive") && existing) next.estado = existing.estado;
@@ -1055,8 +1055,8 @@ window.registerNewAcademicSubjectServiceConfig = function(subjectConfig) {
     var existing = window.INSTITUTIONAL_CATALOG_CACHE.subjects[key];
     var next = Object.assign({}, existing || {}, subjectConfig, {
         asignaturaId:key, codigo:String(subjectConfig.codigo).trim().toUpperCase(),
-        source:subjectConfig.source || window.INSTITUTIONAL_CATALOG_STATE.source || "LOCAL_FALLBACK",
-        authoritative:subjectConfig.authoritative === true
+        source:subjectConfig.source === "SERVER" && subjectConfig.authoritative === true ? "SERVER" : "LOCAL_FALLBACK",
+        authoritative:subjectConfig.source === "SERVER" && subjectConfig.authoritative === true
     });
     next.isActive = institutionalCatalogIsActive_(subjectConfig, existing);
     if (!Object.prototype.hasOwnProperty.call(subjectConfig,"estado") && !Object.prototype.hasOwnProperty.call(subjectConfig,"isActive") && existing) next.estado = existing.estado;
@@ -1071,8 +1071,8 @@ window.registerNewAcademicDepartmentServiceConfig = function(departmentConfig) {
     var existing = window.INSTITUTIONAL_CATALOG_CACHE.departments[key];
     var next = Object.assign({}, existing || {}, departmentConfig, {
         departmentId:key, deptId:key,
-        source:departmentConfig.source || window.INSTITUTIONAL_CATALOG_STATE.source || "LOCAL_FALLBACK",
-        authoritative:departmentConfig.authoritative === true
+        source:departmentConfig.source === "SERVER" && departmentConfig.authoritative === true ? "SERVER" : "LOCAL_FALLBACK",
+        authoritative:departmentConfig.source === "SERVER" && departmentConfig.authoritative === true
     });
     next.isActive = institutionalCatalogIsActive_(departmentConfig, existing);
     if (!Object.prototype.hasOwnProperty.call(departmentConfig,"estado") && !Object.prototype.hasOwnProperty.call(departmentConfig,"isActive") && existing) next.estado = existing.estado;
