@@ -41,7 +41,7 @@ function createContext(response, answer) {
     { ofertaId: "OFE-ACTIVE", estado: "Activa", asignaturaId: "ASIG-01", planId: "PLAN-01", anoId: "2026", periodoId: "P1" }
   ] });
   assert.equal(await one.context.resolve("Décimo", "A"), "OFE-ACTIVE");
-  assert.deepEqual(one.calls[0], ["ACADEMIC", "getAcademicOffers", { grado: "Décimo", seccion: "A" }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(one.calls[0])), ["ACADEMIC", "getAcademicOffers", { grado: "Décimo", seccion: "A" }]);
   assert.equal(one.prompts.length, 0, "single active offer must not prompt");
 
   const multiple = createContext({ status: "success", data: [
