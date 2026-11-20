@@ -104,6 +104,7 @@ function createContext(overrides) {
   const properties = new Map([["INSTITUTIONAL_CATALOG_REVISION", "7"]]);
   const context = Object.assign({
     SPREADSHEET_ID: "TEST",
+    LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
     SpreadsheetApp: { openById: () => ({}) },
     getOrCreateSheet: (_ss, name) => sheets[name] || (sheets[name] = makeSheet([], [])),
     getVerifiedAcademicIdentity_: () => ({ authorized: true, userId: "U1", role: "Director" }),

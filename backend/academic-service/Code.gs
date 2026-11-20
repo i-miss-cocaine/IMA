@@ -6318,6 +6318,9 @@ function createSubjectCatalogItem(payload) {
     throw new Error("SUBJECT_AREA_DEPARTMENT_MISMATCH");
   }
 
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("SUBJECT_CATALOG_LOCK_TIMEOUT");
+  try {
   const sheet = getOrCreateSheet(ss, "CatalogoAsignaturas");
   const map = getInstitutionalSubjectColumnMap_(sheet, true);
   const rows = sheet.getDataRange().getValues().slice(1);
@@ -6350,6 +6353,9 @@ function createSubjectCatalogItem(payload) {
   sheet.appendRow(row);
   const catalogRevision = bumpInstitutionalCatalogRevision_();
   return { status: "success", message: "Asignatura agregada al catálogo.", data: { asignaturaId, nombreOficial, codigo, areaId: area.areaId, departmentId: area.departmentId, estado: "Activo" }, catalogRevision };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // [FASE2-T03] [Fase 2 - Contratos API y Compatibilidad] - Suite automatizada de pruebas de contratos y compatibilidad API entre cliente y microservicios.
@@ -8990,39 +8996,45 @@ function createStudyPlan(payload) {
   const estado = String(input.estado || "Vigente").trim();
   if (["Vigente", "Inactivo"].indexOf(estado) < 0) throw new Error("Estado de plan no permitido.");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "PlanesEstudio");
-  const map = getStudyPlanColumnMap_(sheet, true);
-  const data = sheet.getDataRange().getValues();
-  const duplicate = data.slice(1).some(row => {
-    const existingStart = map.vigenciaInicio >= 0 ? row[map.vigenciaInicio] : "";
-    const existingEnd = map.vigenciaFin >= 0 ? row[map.vigenciaFin] : "";
-    const legacy = map.vigenciaLegacy >= 0 ? row[map.vigenciaLegacy] : "";
-    const start = existingStart || legacy;
-    const end = existingEnd || legacy;
-    return String(row[map.nombre] || "").trim().toLowerCase() === nombre.toLowerCase() &&
-      String(row[map.version] || "").trim().toLowerCase() === version.toLowerCase() &&
-      String(row[map.grado] || "").trim().toLowerCase() === grado.toLowerCase() &&
-      String(start || "").trim() === vigenciaInicio &&
-      String(end || "").trim() === vigenciaFin;
-  });
-  if (duplicate) throw new Error("Ya existe una versión del plan con el mismo grado y vigencia.");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("STUDY_PLAN_LOCK_TIMEOUT");
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "PlanesEstudio");
+    const map = getStudyPlanColumnMap_(sheet, true);
+    const data = sheet.getDataRange().getValues();
+    const duplicate = data.slice(1).some(row => {
+      const existingStart = map.vigenciaInicio >= 0 ? row[map.vigenciaInicio] : "";
+      const existingEnd = map.vigenciaFin >= 0 ? row[map.vigenciaFin] : "";
+      const legacy = map.vigenciaLegacy >= 0 ? row[map.vigenciaLegacy] : "";
+      const start = existingStart || legacy;
+      const end = existingEnd || legacy;
+      return String(row[map.nombre] || "").trim().toLowerCase() === nombre.toLowerCase() &&
+        String(row[map.version] || "").trim().toLowerCase() === version.toLowerCase() &&
+        String(row[map.grado] || "").trim().toLowerCase() === grado.toLowerCase() &&
+        String(start || "").trim() === vigenciaInicio &&
+        String(end || "").trim() === vigenciaFin;
+    });
+    if (duplicate) throw new Error("Ya existe una versión del plan con el mismo grado y vigencia.");
 
-  const planId = "PLAN-" + Utilities.getUuid();
-  const row = new Array(sheet.getLastColumn()).fill("");
-  row[map.planId] = planId;
-  row[map.nombre] = nombre;
-  row[map.version] = version;
-  row[map.grado] = grado;
-  row[map.vigenciaInicio] = vigenciaInicio;
-  row[map.vigenciaFin] = vigenciaFin;
-  row[map.estado] = estado;
-  sheet.appendRow(row);
-  return {
-    status: "success",
-    message: "Plan de estudio registrado.",
-    data: { planId, nombre, version, grado, vigenciaInicio, vigenciaFin, estado }
-  };
+    const planId = "PLAN-" + Utilities.getUuid();
+    const row = new Array(sheet.getLastColumn()).fill("");
+    row[map.planId] = planId;
+    row[map.nombre] = nombre;
+    row[map.version] = version;
+    row[map.grado] = grado;
+    row[map.vigenciaInicio] = vigenciaInicio;
+    row[map.vigenciaFin] = vigenciaFin;
+    row[map.estado] = estado;
+    sheet.appendRow(row);
+    return {
+      status: "success",
+      message: "Plan de estudio registrado.",
+      data: { planId, nombre, version, grado, vigenciaInicio, vigenciaFin, estado }
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 

@@ -58,6 +58,7 @@ const functions = [
 function contextFor(sheet) {
   const context = {
     SPREADSHEET_ID: "TEST",
+    LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
     SpreadsheetApp: { openById: () => ({}) },
     getOrCreateSheet: (_ss, name) => { assert.equal(name, "PlanesEstudio"); return sheet; },
     Utilities: { getUuid: () => "00000000-0000-4000-8000-000000000001" },
