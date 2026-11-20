@@ -69,6 +69,7 @@ function runtime(options = {}) {
   let held = false, acquires = 0, releases = 0;
   const events = [];
   const context = {
+    getSaceExamSourceRevisionLocked_() { return "EXAM-EPOCH-123456:0"; },
     LockService: { getScriptLock() { return {
       tryLock() {
         acquires++;
