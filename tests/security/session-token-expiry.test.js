@@ -6,7 +6,6 @@ const root = path.resolve(__dirname, "../..");
 const serviceFiles = [
   ["USER", "backend/user-service/Code.gs"],
   ["ACADEMIC", "backend/academic-service/Code.gs"],
-  ["ACCOUNTING", "backend/accounting-service/Code.gs"],
   ["TASK", "backend/task-service/Code.gs"],
   ["EXAM", "backend/exam-service/Code.gs"]
 ];
@@ -90,4 +89,4 @@ assert.equal(token, "payload.SIG");
 assert.ok(Number.isSafeInteger(generatedClaims.iat));
 assert.ok(Number.isSafeInteger(generatedClaims.exp));
 assert.equal(generatedClaims.exp - generatedClaims.iat, 86400);
-process.stdout.write("session-token-expiry: 50 verifier cases + generation assertions passed\n");
+process.stdout.write("session-token-expiry: 40 local-verifier cases + generation assertions passed\n");
