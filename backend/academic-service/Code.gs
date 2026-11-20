@@ -293,7 +293,7 @@ const ROLE_PERMISSIONS = {
   "Director": [
     "getAcademicConfig", "updateAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "saveWhatsAppLink", "getQuestionBank", "saveQuestion", "generateMigrationReport", "registerStudentEnrollment", "getStudentEnrollmentHistory",
     "getHierarchicalConfigurationCatalog", "resolveHierarchicalConfiguration", "getInstitutionParams", "saveInstitutionParam", "saveTeacherJustificationEvidencePolicy", "saveAbsenceJustificationPolicies", "getAcademicYears", "createAcademicYear", "updateAcademicYearStatus", "prepareNewAcademicYear",
-    "getAcademicPeriods", "manageAcademicPeriod", "getSubjectCatalog", "createSubjectCatalogItem", "getStudyPlans", "createStudyPlan",
+    "getAcademicPeriods", "manageAcademicPeriod", "getSubjectCatalog", "createSubjectCatalogItem", "getStudyPlans", "createStudyPlan", "getStudyPlanSubjects", "createStudyPlanSubject", "setStudyPlanSubjectStatus",
     "getAcademicOffers", "createAcademicOffer", "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution",
     "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getAcademicRules", "saveAcademicRule", "getDepartmentAcademicPlanning", "assignDepartmentHead", "getCurricularAnalyticsReport", "getReusableResourceCatalog", "manageReusableResource", "getCurricularEquivalences", "executeCurricularMigration", "registerCurricularAreaExtension", "runCurricularAreaServiceTests", "toggleCurricularAreaStatus", "validateApiContractsTestSuite", "getInstitutionalCatalog", "validateCatalogReference", "generateInstitutionalUUID", "validateInstitutionalIdentifier", "auditInstitutionalIdentifierCollisions", "runConcurrencyAndConsistencySuite", "getPaginatedAcademicHistory", "reconcileRestoredDataIntegrity", "evaluateTransactionalStorageMigrationNeed",
     "getClassroomResources", "saveClassroomResource", "saveClassroomMaintenance", "getStudentSchedule", "getScheduleConflictResolutionAlternatives", "saveScheduleScenario", "getScheduleScenarios", "saveTeacherWorkLoadPreferences", "createSessionException", "getScheduleVersions", "compareScheduleVersions", "restoreScheduleVersion", "getPlanningQualityAndOccupancyReport", "exportBulkClassSchedules", "importBulkClassSchedules", "previewPublishImpact",
@@ -9023,6 +9023,160 @@ function createStudyPlan(payload) {
     message: "Plan de estudio registrado.",
     data: { planId, nombre, version, grado, vigenciaInicio, vigenciaFin, estado }
   };
+}
+
+
+// [AUD-NG-164] Relaciones versionadas entre planes y asignaturas; se conserva historial sin borrado físico.
+function getStudyPlanSubjectColumnMap_(sheet, ensureOptionalColumns) {
+  if (!sheet) throw new Error("La hoja PlanAsignaturas no está disponible.");
+  const canonical = ["RelID", "PlanID", "AsignaturaID", "Grado", "Caracter", "HorasSemanales", "Orden"];
+  if (sheet.getLastColumn() === 0) {
+    sheet.getRange(1, 1, 1, canonical.length).setValues([canonical]);
+  }
+  let headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const normalize = value => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const aliases = {
+    relId:["relid","relacionid"], planId:["planid"], asignaturaId:["asignaturaid"],
+    grado:["grado"], caracter:["caracter","tipoasignatura"], horasSemanales:["horassemanales","horas"],
+    orden:["orden"], estado:["estado"], vigenciaInicio:["vigenciainicio"], vigenciaFin:["vigenciafin"], updatedAt:["fechaactualizacion"]
+  };
+  const mapHeaders = () => {
+    const map = {};
+    Object.keys(aliases).forEach(key => { map[key] = headers.findIndex(h => aliases[key].includes(normalize(h))); });
+    return map;
+  };
+  let map = mapHeaders();
+  if (ensureOptionalColumns) {
+    ["estado","vigenciaInicio","vigenciaFin","updatedAt"].forEach(key => {
+      if (map[key] < 0) {
+        const names = {estado:"Estado",vigenciaInicio:"VigenciaInicio",vigenciaFin:"VigenciaFin",updatedAt:"FechaActualizacion"};
+        const col = sheet.getLastColumn() + 1;
+        sheet.getRange(1, col).setValue(names[key]);
+        headers.push(names[key]);
+        map = mapHeaders();
+      }
+    });
+  }
+  const missing = ["relId","planId","asignaturaId","grado","caracter","horasSemanales","orden"].filter(key => map[key] < 0);
+  if (missing.length) throw new Error("Esquema PlanAsignaturas incompatible. Faltan columnas: " + missing.join(", "));
+  return map;
+}
+
+function getStudyPlanSubjects(payload) {
+  const input = payload || {};
+  const planId = String(input.planId || "").trim();
+  if (!planId) throw new Error("PLAN_ID_REQUIRED");
+  const plans = getStudyPlans({}).data || [];
+  if (!plans.some(plan => String(plan.planId) === planId)) throw new Error("STUDY_PLAN_NOT_FOUND");
+  const sheet = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID), "PlanAsignaturas");
+  const map = getStudyPlanSubjectColumnMap_(sheet, false);
+  const rows = sheet.getDataRange().getValues();
+  const includeInactive = input.includeInactive === true;
+  const data = rows.slice(1).filter(row => String(row[map.planId] || "").trim() === planId).map(row => ({
+    relId:String(row[map.relId] || "").trim(),
+    planId:String(row[map.planId] || "").trim(),
+    asignaturaId:String(row[map.asignaturaId] || "").trim(),
+    grado:String(row[map.grado] || "").trim(),
+    caracter:String(row[map.caracter] || "").trim(),
+    horasSemanales:Number(row[map.horasSemanales]),
+    orden:Number(row[map.orden]),
+    estado:map.estado >= 0 ? String(row[map.estado] || "Activo").trim() : "Activo",
+    vigenciaInicio:map.vigenciaInicio >= 0 ? row[map.vigenciaInicio] || null : null,
+    vigenciaFin:map.vigenciaFin >= 0 ? row[map.vigenciaFin] || null : null
+  })).filter(item => includeInactive || item.estado === "Activo");
+  return {status:"success",data};
+}
+
+function createStudyPlanSubject(payload) {
+  const input = payload || {};
+  const planId = String(input.planId || "").trim();
+  const asignaturaId = String(input.asignaturaId || "").trim().toUpperCase();
+  const caracter = String(input.caracter || "").trim();
+  const horasSemanales = Number(input.horasSemanales);
+  const orden = input.orden === undefined || input.orden === null || input.orden === "" ? 0 : Number(input.orden);
+  if (!planId || !asignaturaId || !caracter) throw new Error("PLAN_SUBJECT_REQUIRED_FIELDS");
+  if (!Number.isFinite(horasSemanales) || horasSemanales <= 0) throw new Error("PLAN_SUBJECT_HOURS_INVALID");
+  if (!Number.isInteger(orden) || orden < 0) throw new Error("PLAN_SUBJECT_ORDER_INVALID");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("PLAN_SUBJECT_LOCK_TIMEOUT");
+  try {
+    const plans = getStudyPlans({}).data || [];
+    const plan = plans.find(item => String(item.planId) === planId);
+    if (!plan) throw new Error("STUDY_PLAN_NOT_FOUND");
+    if (String(plan.estado || "Vigente") !== "Vigente") throw new Error("STUDY_PLAN_NOT_ACTIVE");
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const areas = getInstitutionalAreaRecords_(ss);
+    const subjects = getInstitutionalSubjectRecords_(ss, areas);
+    const subject = subjects.find(item => String(item.asignaturaId).toUpperCase() === asignaturaId);
+    if (!subject) throw new Error("SUBJECT_NOT_FOUND");
+    if (subject.isActive !== true) throw new Error("SUBJECT_NOT_ACTIVE");
+    const grade = String(input.grado || plan.grado || "").trim();
+    if (!grade || grade.toLowerCase() !== String(plan.grado || "").trim().toLowerCase()) throw new Error("PLAN_SUBJECT_GRADE_MISMATCH");
+    if (subject.grado && String(subject.grado).trim().toLowerCase() !== grade.toLowerCase()) throw new Error("SUBJECT_GRADE_MISMATCH");
+    const sheet = getOrCreateSheet(ss, "PlanAsignaturas");
+    const map = getStudyPlanSubjectColumnMap_(sheet, true);
+    const rows = sheet.getDataRange().getValues();
+    const duplicate = rows.slice(1).some(row =>
+      String(row[map.planId] || "").trim() === planId &&
+      String(row[map.asignaturaId] || "").trim().toUpperCase() === asignaturaId &&
+      (map.estado < 0 || !String(row[map.estado] || "Activo").trim() || String(row[map.estado]).trim() === "Activo")
+    );
+    if (duplicate) throw new Error("PLAN_SUBJECT_ALREADY_ACTIVE");
+    const relId = "REL-" + Utilities.getUuid();
+    const row = new Array(sheet.getLastColumn()).fill("");
+    row[map.relId] = relId;
+    row[map.planId] = planId;
+    row[map.asignaturaId] = asignaturaId;
+    row[map.grado] = grade;
+    row[map.caracter] = caracter;
+    row[map.horasSemanales] = horasSemanales;
+    row[map.orden] = orden;
+    row[map.estado] = "Activo";
+    if (map.vigenciaInicio >= 0 && input.vigenciaInicio) row[map.vigenciaInicio] = normalizeStudyPlanValidity_(input.vigenciaInicio, "inicio");
+    if (map.vigenciaFin >= 0 && input.vigenciaFin) row[map.vigenciaFin] = normalizeStudyPlanValidity_(input.vigenciaFin, "fin");
+    if (map.vigenciaInicio >= 0 && map.vigenciaFin >= 0 && row[map.vigenciaInicio] && row[map.vigenciaFin] && Date.parse(row[map.vigenciaInicio]) > Date.parse(row[map.vigenciaFin])) throw new Error("PLAN_SUBJECT_VALIDITY_RANGE_INVALID");
+    if (map.updatedAt >= 0) row[map.updatedAt] = new Date().toISOString();
+    sheet.appendRow(row);
+    return {status:"success",data:{relId,planId,asignaturaId,grado:grade,caracter,horasSemanales,orden,estado:"Activo"}};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function setStudyPlanSubjectStatus(payload) {
+  const input = payload || {};
+  const relId = String(input.relId || "").trim();
+  const estado = String(input.estado || "").trim();
+  if (!relId || ["Activo","Inactivo"].indexOf(estado) < 0) throw new Error("PLAN_SUBJECT_STATUS_INVALID");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("PLAN_SUBJECT_LOCK_TIMEOUT");
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "PlanAsignaturas");
+    const map = getStudyPlanSubjectColumnMap_(sheet, true);
+    const rows = sheet.getDataRange().getValues();
+    const index = rows.findIndex((row, i) => i > 0 && String(row[map.relId] || "").trim() === relId);
+    if (index < 1) throw new Error("PLAN_SUBJECT_NOT_FOUND");
+    const row = rows[index];
+    if (estado === "Activo") {
+      const plan = (getStudyPlans({}).data || []).find(item => String(item.planId) === String(row[map.planId]));
+      if (!plan || String(plan.estado || "Vigente") !== "Vigente") throw new Error("STUDY_PLAN_NOT_ACTIVE");
+      const areas = getInstitutionalAreaRecords_(ss);
+      const subject = getInstitutionalSubjectRecords_(ss, areas).find(item => String(item.asignaturaId).toUpperCase() === String(row[map.asignaturaId]).toUpperCase());
+      if (!subject || subject.isActive !== true) throw new Error("SUBJECT_NOT_ACTIVE");
+      const duplicate = rows.slice(1).some((other, i) => i !== index - 1 &&
+        String(other[map.planId] || "").trim() === String(row[map.planId] || "").trim() &&
+        String(other[map.asignaturaId] || "").trim().toUpperCase() === String(row[map.asignaturaId] || "").trim().toUpperCase() &&
+        (map.estado < 0 || !String(other[map.estado] || "Activo").trim() || String(other[map.estado]).trim() === "Activo")
+      );
+      if (duplicate) throw new Error("PLAN_SUBJECT_ALREADY_ACTIVE");
+    }
+    sheet.getRange(index + 1, map.estado + 1).setValue(estado);
+    if (map.updatedAt >= 0) sheet.getRange(index + 1, map.updatedAt + 1).setValue(new Date().toISOString());
+    return {status:"success",data:{relId,estado}};
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // [TAREA-F5-010-A01] Adaptador de esquema para OfertaAcademica (mantiene compatibilidad con encabezados legacy).

@@ -48,6 +48,7 @@ jobs:
           node-version: '22'
       - run: node --check < backend/academic-service/Code.gs
       - run: node tests/security/academic-curriculum-catalog-contract.test.js
+      - run: node tests/security/academic-study-plan-subjects-contract.test.js
       - run: node tests/security/academic-institutional-catalog-contract.test.js
       - run: node tests/security/academic-service-single-auth-context.test.js
       - run: node tests/security/sace-attendance-snapshot-contract.test.js
