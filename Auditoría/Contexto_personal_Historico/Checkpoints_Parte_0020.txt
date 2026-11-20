@@ -381,3 +381,42 @@ Archivos:
 Estado:
 - AUD-NG-164 sigue En progreso; se continúa con formularios/consumidores restantes y reconciliación de dependencias.
 ===============================================================================
+
+===============================================================================
+### C1.902 — AUD-NG-175: contrato y sincronización de catálogos institucionales cerrados
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-175-CATALOG-SYNC-73
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: d27e50220d666f3e2c56b7e136cf9a61132875ef
+HEAD final de código/pruebas: 57729f679a0f77092ff3db0e00044038fe0a257e
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+Checkpoint anterior: C1.901.
+
+Cierre técnico:
+- getInstitutionalCatalog expone contrato schemaVersion 1.0.0 con tipos CURRICULAR_AREAS, SUBJECTS, DEPARTMENTS y ALL; metadatos incluyen registros inactivos para sincronización de estado y vistas activas filtran referencias no operativas.
+- Mapeo por encabezados, estado correcto, departmentId y ámbito verificado; validateCatalogReference resuelve por tipo/ID/código, rechaza ambigüedad, inactivos y registros fuera de ámbito y se integra a operaciones de escritura.
+- js/config.js sincroniza las tres categorías y marca explícitamente SERVER/LOCAL_FALLBACK/STALE_SERVER_CACHE; fallos de API ausente, contrato inválido y transporte no se presentan como éxito autoritativo.
+- Revisiones monotónicas por tipo impiden regresión por respuestas fuera de orden; respuesta ALL permite aplicar áreas/departamentos frescos aunque su sección de asignaturas sea obsoleta. Autoridad completa solo cuando las tres categorías están en SERVER.
+- Actualizar metadatos de área conserva estado existente; altas nuevas quedan pendientes de pruebas, sin activación automática.
+
+Pruebas:
+- Academic-Service run 44735019357 — SUCCESS; Node 22, sintaxis Apps Script, contratos curriculares, catálogo institucional, fallback/race client, SACE y regresiones.
+- Department Reference Consumers run 44734763152 — SUCCESS; UI, docentes, admisiones, analítica, sintaxis y regresiones.
+- Contratos C1.891/C1.900/C1.901 prueban referencias activas, desactivadas, ámbito, estado preservado, actualización y fallos seguros.
+- No se ejecutó validación beta real, navegador, despliegue Apps Script ni datos productivos.
+
+Archivos principales verificados:
+- backend/academic-service/Code.gs
+- js/config.js
+- tests/security/academic-institutional-catalog-contract.test.js
+- tests/security/academic-institutional-catalog-client-contract.test.js
+- js/curriculum-admin.js (consumidor)
+- dashboard-direccion.html (consumidor)
+
+Reconciliación:
+- AUD-NG-175: completada en código; beta institucional pendiente.
+- AUD-NG-164: continúa en progreso; el catálogo institucional es su fuente de verdad.
+- AUD-NG-226: permanece pendiente como propietaria de la relación CatalogoDepartamentos/DepartamentosAcademicos.
+- TASK-062: se reutiliza su política de versionado/cache; no se duplica.
+===============================================================================

@@ -889,6 +889,7 @@
 - **Hallazgo externo:** Department Scope Contract run 44734267852 continúa fallando únicamente en Phase 22 por falta de configureSchoolDocumentTemplate; no forma parte de AUD-NG-164 ni fue modificado.
 - **Límites pendientes:** integración de formularios curriculares restantes y paneles de planificación heredados (requiere reconciliar ownership); E2E con datos/programas reales hondureños; coordinación AUD-NG-175/AUD-NG-226. No se ejecutó navegador real, Apps Script desplegado ni datos productivos.
 - **Pruebas adicionales C1.901:** el contrato de actualización cubre autorización denegada, departamento fuera de ámbito, lock ocupado, prerrequisito inactivo/duplicado y ciclo; Academic-Service run 44734763138 SUCCESS y Department Reference Consumers run 44734763152 SUCCESS.
+- **Reconciliación C1.902:** AUD-NG-175 queda completada en código (contrato versionado, sincronización cliente/backend, validación de referencias activas, fallback explícito y protección de respuestas fuera de orden). La relación CatalogoDepartamentos/DepartamentosAcademicos permanece bajo AUD-NG-226; no se duplicó ni se marcó cerrada. TASK-062 conserva la política de versionado/cache.
 
 
 <!-- ID: AUD-NG-226 | Fuentes: Pendientes.md -->
