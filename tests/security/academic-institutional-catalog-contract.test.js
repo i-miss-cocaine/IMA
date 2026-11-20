@@ -171,6 +171,30 @@ assert.equal(subjectSheet._rows[subjectSheet._rows.length - 1][subjectHeaders.in
 assert.throws(() => ctx.api.updateSubjectCatalogItem({
   asignaturaId: "ASIG-1", prerrequisitos: [created.data.asignaturaId]
 }), /SUBJECT_PREREQUISITE_CYCLE/);
+assert.throws(() => ctx.api.updateSubjectCatalogItem({
+  asignaturaId: "ASIG-1", prerrequisitos: ["ASIG-2"]
+}), /SUBJECT_PREREQUISITE_NOT_ACTIVE/);
+assert.throws(() => ctx.api.updateSubjectCatalogItem({
+  asignaturaId: "ASIG-1", prerrequisitos: ["ASIG-1", "ASIG-1"]
+}), /SUBJECT_PREREQUISITES_INVALID/);
+const outOfScopeContext = createContext({
+  getVerifiedAcademicDepartmentScope_: () => ({ authorized:true, institutionWide:false, departmentIds:["D2"] })
+});
+assert.throws(() => outOfScopeContext.api.updateSubjectCatalogItem({
+  asignaturaId:"ASIG-1", creditos:2
+}), /SUBJECT_OUT_OF_DEPARTMENT_SCOPE/);
+const unauthorizedContext = createContext({
+  getVerifiedAcademicIdentity_: () => ({ authorized:false, userId:"U2", role:"Docente" })
+});
+assert.throws(() => unauthorizedContext.api.updateSubjectCatalogItem({
+  asignaturaId:"ASIG-1", creditos:2
+}), /VERIFIED_IDENTITY_REQUIRED/);
+const lockedContext = createContext({
+  LockService: { getScriptLock: () => ({ tryLock: () => false, releaseLock: () => {} }) }
+});
+assert.throws(() => lockedContext.api.updateSubjectCatalogItem({
+  asignaturaId:"ASIG-1", creditos:2
+}), /SUBJECT_CATALOG_LOCK_TIMEOUT/);
 ctx._sheets.PlanAsignaturas = makeSheet(
   ["RelID","PlanID","AsignaturaID","Grado","Caracter","HorasSemanales","Orden"],
   [["REL-1","PLAN-1",created.data.asignaturaId,"10","Obligatoria",4,1]]
