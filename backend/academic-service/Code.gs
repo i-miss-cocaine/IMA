@@ -8667,37 +8667,138 @@ function createSubjectCatalogItem(payload) {
   return { status: "success", message: "Asignatura agregada al catálogo.", data: { asignaturaId: asigId } };
 }
 
+function getStudyPlanColumnMap_(sheet, ensureOptionalColumns) {
+  if (!sheet) throw new Error("La hoja PlanesEstudio no está disponible.");
+  const canonicalHeaders = ["PlanID", "Nombre", "Version", "Grado", "VigenciaInicio", "VigenciaFin", "Estado"];
+  let lastColumn = sheet.getLastColumn();
+  if (lastColumn === 0) {
+    sheet.getRange(1, 1, 1, canonicalHeaders.length).setValues([canonicalHeaders]);
+    lastColumn = canonicalHeaders.length;
+  }
+  let headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  const normalizeHeader = value => String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const aliases = {
+    planId: ["planid"],
+    nombre: ["nombre", "nombreplan"],
+    version: ["version", "versionplan"],
+    grado: ["grado", "gradoacademico"],
+    vigenciaInicio: ["vigenciainicio", "fechainiciovigencia"],
+    vigenciaFin: ["vigenciafin", "fechafinvigencia"],
+    estado: ["estado", "estadoplan"],
+    vigenciaLegacy: ["vigencia", "anovigencia"]
+  };
+  const mapHeaders = () => {
+    const map = {};
+    Object.keys(aliases).forEach(key => {
+      map[key] = headers.findIndex(header => aliases[key].indexOf(normalizeHeader(header)) !== -1);
+    });
+    return map;
+  };
+  let map = mapHeaders();
+  if (ensureOptionalColumns) {
+    ["vigenciaInicio", "vigenciaFin", "estado"].forEach(key => {
+      if (map[key] < 0) {
+        const header = key === "vigenciaInicio" ? "VigenciaInicio" : key === "vigenciaFin" ? "VigenciaFin" : "Estado";
+        const nextColumn = sheet.getLastColumn() + 1;
+        sheet.getRange(1, nextColumn).setValue(header);
+        headers.push(header);
+        map = mapHeaders();
+      }
+    });
+  }
+  const missing = ["planId", "nombre", "version", "grado", "estado"].filter(key => map[key] < 0);
+  if (missing.length) throw new Error("Esquema PlanesEstudio incompatible. Faltan columnas: " + missing.join(", "));
+  return map;
+}
+
+function normalizeStudyPlanValidity_(value, fieldName) {
+  const normalized = String(value === undefined || value === null ? "" : value).trim();
+  if (!normalized || !Number.isFinite(Date.parse(normalized))) {
+    throw new Error("Vigencia inválida: " + fieldName + ".");
+  }
+  return normalized;
+}
+
 function getStudyPlans(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "PlanesEstudio");
+  const map = getStudyPlanColumnMap_(sheet, false);
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status: "success", data: [] };
-
-  const plans = data.slice(1).map(r => ({
-    planId: r[0],
-    nombre: r[1],
-    version: r[2],
-    grado: r[3],
-    estado: r[4] || "Vigente",
-    vigencia: r[5]
-  }));
+  const read = (row, key) => map[key] >= 0 ? row[map[key]] : "";
+  const plans = data.slice(1).filter(row => String(read(row, "planId") || "").trim()).map(row => {
+    const vigenciaInicio = read(row, "vigenciaInicio") || null;
+    const vigenciaFin = read(row, "vigenciaFin") || null;
+    const vigenciaLegacy = read(row, "vigenciaLegacy") || null;
+    const vigencia = vigenciaInicio && vigenciaFin
+      ? (String(vigenciaInicio) === String(vigenciaFin) ? vigenciaInicio : String(vigenciaInicio) + " - " + String(vigenciaFin))
+      : (vigenciaLegacy || vigenciaInicio || vigenciaFin || null);
+    return {
+      planId: read(row, "planId"),
+      nombre: read(row, "nombre"),
+      version: read(row, "version"),
+      grado: read(row, "grado"),
+      estado: read(row, "estado") || "Vigente",
+      vigencia: vigencia,
+      vigenciaInicio: vigenciaInicio,
+      vigenciaFin: vigenciaFin,
+      vigenciaLegacy: vigenciaLegacy,
+      vigenciaLegacyOnly: !vigenciaInicio && !vigenciaFin && !!vigenciaLegacy
+    };
+  });
   return { status: "success", data: plans };
 }
 
 function createStudyPlan(payload) {
-  const { nombre, version, grado, vigencia } = payload || {};
+  const input = payload || {};
+  const nombre = String(input.nombre || "").trim();
+  const grado = String(input.grado || "").trim();
+  const version = String(input.version || "1.0").trim();
   if (!nombre || !grado) throw new Error("Nombre y Grado son requeridos.");
+  if (!version) throw new Error("La versión del plan es requerida.");
+  const startInput = input.vigenciaInicio || input.vigencia;
+  const endInput = input.vigenciaFin || input.vigencia;
+  const vigenciaInicio = normalizeStudyPlanValidity_(startInput, "inicio");
+  const vigenciaFin = normalizeStudyPlanValidity_(endInput, "fin");
+  if (Date.parse(vigenciaInicio) > Date.parse(vigenciaFin)) {
+    throw new Error("VigenciaInicio no puede ser posterior a VigenciaFin.");
+  }
+  const estado = String(input.estado || "Vigente").trim();
+  if (["Vigente", "Inactivo"].indexOf(estado) < 0) throw new Error("Estado de plan no permitido.");
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "PlanesEstudio");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["PlanID", "Nombre", "Version", "Grado", "Estado", "Vigencia"]);
-  }
+  const map = getStudyPlanColumnMap_(sheet, true);
+  const data = sheet.getDataRange().getValues();
+  const duplicate = data.slice(1).some(row => {
+    const existingStart = map.vigenciaInicio >= 0 ? row[map.vigenciaInicio] : "";
+    const existingEnd = map.vigenciaFin >= 0 ? row[map.vigenciaFin] : "";
+    const legacy = map.vigenciaLegacy >= 0 ? row[map.vigenciaLegacy] : "";
+    const start = existingStart || legacy;
+    const end = existingEnd || legacy;
+    return String(row[map.nombre] || "").trim().toLowerCase() === nombre.toLowerCase() &&
+      String(row[map.version] || "").trim().toLowerCase() === version.toLowerCase() &&
+      String(row[map.grado] || "").trim().toLowerCase() === grado.toLowerCase() &&
+      String(start || "").trim() === vigenciaInicio &&
+      String(end || "").trim() === vigenciaFin;
+  });
+  if (duplicate) throw new Error("Ya existe una versión del plan con el mismo grado y vigencia.");
 
-  const planId = "PLAN-" + Date.now();
-  sheet.appendRow([planId, nombre, version || "1.0", grado, "Vigente", vigencia || new Date().getFullYear()]);
-
-  return { status: "success", message: "Plan de estudio registrado.", data: { planId } };
+  const planId = "PLAN-" + Utilities.getUuid();
+  const row = new Array(sheet.getLastColumn()).fill("");
+  row[map.planId] = planId;
+  row[map.nombre] = nombre;
+  row[map.version] = version;
+  row[map.grado] = grado;
+  row[map.vigenciaInicio] = vigenciaInicio;
+  row[map.vigenciaFin] = vigenciaFin;
+  row[map.estado] = estado;
+  sheet.appendRow(row);
+  return {
+    status: "success",
+    message: "Plan de estudio registrado.",
+    data: { planId, nombre, version, grado, vigenciaInicio, vigenciaFin, estado }
+  };
 }
 
 // [TAREA-F5-010-A01] Adaptador de esquema para OfertaAcademica (mantiene compatibilidad con encabezados legacy).
