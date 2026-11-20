@@ -261,3 +261,50 @@ Límites:
 - La sincronización de formularios administrativos de Dirección ya está cubierta por js/curriculum-admin.js y su contrato de UI; no se reimplementó.
 - AUD-NG-164 continúa En progreso. Siguen pendientes filtros curriculares en reportes, formularios restantes, edición de asignaturas y validación de ciclos de prerrequisitos, además de reconciliación con las tareas propietarias AUD-NG-175/AUD-NG-226.
 ===============================================================================
+
+
+===============================================================================
+### C1.899 — AUD-NG-164: filtros curriculares en analítica académica
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-ANALYTICS-FILTERS-70
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: a89d98e7e6cc2fb803f7908dde6eb1af51beeed3
+HEAD final verificado: c8707c684afe48e8f4a20a21b8a330a9e740eb5f
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+Checkpoint anterior: C1.898 — mismo archivo, bloque anterior.
+
+Implementación:
+- getCurricularAnalyticsReport aplica filtros por área, asignatura, grado, programa, período, año lectivo y sección.
+- Los filtros de área/asignatura/programa relacionan el contexto de calificaciones con CatalogoAsignaturas y AreasCurricularesExtensiones. Las coincidencias ambiguas o sin referencia no se atribuyen a un área/programa.
+- Las calificaciones históricas de esquema base (9 columnas) siguen formando parte del agregado sin filtros. Si se solicita un filtro que requiere contexto curricular, las filas históricas sin contexto se excluyen explícitamente y se informa legacyRowsExcluded; no se inventan relaciones.
+- Se valida el esquema contextual de 16 columnas antes de filtrar; encabezados contextuales inválidos producen error cerrado.
+- El panel de analítica de Secretaría agrega controles de filtro y limpieza. Las solicitudes llevan token monotónico para que respuestas antiguas no reemplacen los resultados de filtros más recientes.
+
+Pruebas:
+- tests/security/academic-curricular-analytics-filter-contract.test.js — PASS: agregado sin filtros, grado/período, asignatura, área, programa, año/sección, esquema legacy fail-closed y esquema contextual inválido.
+- tests/security/academic-curricular-analytics-report-consumer-contract.test.js — PASS: propagación de filtros, render seguro y permisos de Secretaría/Secretaria; prueba de respuestas fuera de orden.
+- Academic-Service single authorization context run 44732559564 — SUCCESS, incluido el contrato backend de filtros y las suites curriculares/SACE.
+- Department Reference Consumers Local Contract run 44732705738 — SUCCESS, incluido consumidor de analítica, sintaxis js/secretary.js, parseo ACADEMIC/ACCOUNTING y regresiones de consumidores.
+- Department Scope Contract run 44732559562 — FAILURE en la suite ajena Phase22 por configureSchoolDocumentTemplate ausente; no es causado por este cambio.
+- El primer run de consumidores 44732559744 falló porque el extractor de prueba esperaba una función sin parámetros; corregido en c8707c6 y el run 44732705738 pasó.
+- No se ejecutó navegador real, despliegue Apps Script ni E2E con datos productivos.
+
+Archivos:
+- backend/academic-service/Code.gs
+- js/secretary.js
+- dashboard-secretaria.html
+- tests/security/academic-curricular-analytics-filter-contract.test.js
+- tests/security/academic-curricular-analytics-report-consumer-contract.test.js
+- .github/workflows/academic-service-single-auth-context.yml
+- .github/workflows/academic-reference-consumer.yml
+
+Commits:
+- eeb092bbe68cbe1390feef7b2ce447f9c8c699a8 — filtros backend/UI y contrato de filtros.
+- c8707c684afe48e8f4a20a21b8a330a9e740eb5f — contrato de filtros y carrera del consumidor.
+
+Límites:
+- La UI usa entradas de texto para IDs/códigos/nombres; no se añadieron selectores dinámicos dependientes de catálogos.
+- El informe conserva el agregado histórico sin filtros, pero no convierte filas legacy sin contexto en relaciones curriculares.
+- AUD-NG-164 continúa En progreso. Siguen pendientes edición de asignaturas, validación de ciclos de prerrequisitos, formularios restantes, E2E con modelos reales y reconciliación de las tareas propietarias AUD-NG-175/AUD-NG-226.
+===============================================================================
