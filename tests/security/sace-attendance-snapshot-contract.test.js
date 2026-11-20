@@ -156,6 +156,15 @@ const payload = {
 ["createStudentEnrollment", "registerStudentEnrollment", "convertAdmissionToStudent", "changeStudentSection", "recordStudentTransfer", "recordStudentWithdrawal", "processStudentGraduation", "reconcileStudentLifecycleState"].forEach(name => {
   assert.ok(extract(name).includes("LockService.getScriptLock"), name + " must coordinate enrollment writes with the SACE snapshot lock");
 });
+const academicRevisionOnlyContext = createContext();
+const academicRevisionOnlyResult = academicRevisionOnlyContext.runSnapshot({
+  sessionToken: "SESSION-TEST", revisionOnly: true
+});
+assert.equal(academicRevisionOnlyResult.status, "success");
+assert.equal(academicRevisionOnlyResult.sourceRevision, "ACADEMIC-EPOCH-123456:0");
+assert.equal(academicRevisionOnlyResult.data, undefined, "Academic revisionOnly returns no attendance data");
+assert.deepEqual(academicRevisionOnlyContext.getSnapshotLockStats(), { held: false, waits: 1, releases: 1 },
+  "Academic revisionOnly reads its token under the local ScriptLock and releases it");
 const snapshotContext = createContext();
 const result = snapshotContext.runSnapshot(payload);
 assert.deepEqual(snapshotContext.getSnapshotLockStats(), { held: false, waits: 2, releases: 2 }, "snapshot must release its initial read lock and its final revision-check lock");
