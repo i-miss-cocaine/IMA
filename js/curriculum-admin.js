@@ -120,13 +120,15 @@
         const subjectsBody = byId("curriculum-subjects-body");
         if (subjectsBody) {
             subjectsBody.innerHTML = "";
-            if (!state.subjects.length) clearBody("curriculum-subjects-body", 5, "No hay asignaturas en el ámbito autorizado.");
+            if (!state.subjects.length) clearBody("curriculum-subjects-body", 7, "No hay asignaturas en el ámbito autorizado.");
             state.subjects.forEach(subject => {
                 const row = doc.createElement("tr");
                 appendCell(row, subject.codigo);
                 appendCell(row, subject.nombreOficial);
-                appendCell(row, subject.areaAcademica || subject.areaId);
+                appendCell(row, [subject.areaAcademica || subject.areaId, subject.departmentId].filter(Boolean).join(" / "));
+                appendCell(row, subject.programaId);
                 appendCell(row, [subject.grado, subject.idioma].filter(Boolean).join(" / "));
+                appendCell(row, [subject.creditos, Array.isArray(subject.prerrequisitos) ? subject.prerrequisitos.length : 0].join(" / "));
                 appendCell(row, subject.estado);
                 subjectsBody.appendChild(row);
             });
@@ -156,6 +158,7 @@
                 appendCell(row, [offer.grado, offer.seccion].filter(Boolean).join(" / "));
                 appendCell(row, subject ? subject.nombreOficial : offer.asignaturaId);
                 appendCell(row, plan ? plan.nombre : offer.planId);
+                appendCell(row, offer.capacidadMax);
                 appendCell(row, offer.estado);
                 offersBody.appendChild(row);
             });
@@ -165,13 +168,14 @@
         const body = byId("curriculum-relations-body");
         if (!body) return;
         body.innerHTML = "";
-        if (!state.relations.length) { clearBody("curriculum-relations-body", 5, "El plan no tiene relaciones registradas."); return; }
+        if (!state.relations.length) { clearBody("curriculum-relations-body", 6, "El plan no tiene relaciones registradas."); return; }
         state.relations.forEach(relation => {
             const subject = subjectById(relation.asignaturaId);
             const row = doc.createElement("tr");
             appendCell(row, subject ? subject.nombreOficial : relation.asignaturaId);
             appendCell(row, relation.caracter);
             appendCell(row, relation.horasSemanales);
+            appendCell(row, relation.orden);
             appendCell(row, relation.estado);
             const actionCell = doc.createElement("td");
             actionCell.className = "p-2 border-b border-slate-100";
