@@ -104,7 +104,7 @@ function makeHarness(source, initialRows) {
   ];
   const snippets = [source.slice(constantStart, constantEnd), ...names.map(name => extractFunction(source, name))];
   vm.runInNewContext(snippets.join("\n"), context);
-  return { context, registry, sheet:registrySheet || registry._created, stats };
+  return { context, registry, get sheet() { return registrySheet || registry._created; }, stats };
 }
 
 function baseContext(overrides) {
