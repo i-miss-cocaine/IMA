@@ -297,7 +297,7 @@ console.log("TASK-153 staff/student department intersection contract passed.");
         assert.equal(actor, identity, "material deletion passes the already verified actor");
         if (actor.role === "Administrador") return true;
         if (classId !== "AULA-1" || !classroom ||
-            normalizeString(classroom[7] || "Activa") === "desactivada" ||
+            String(classroom[7] || "Activa").trim().toLowerCase() === "desactivada" ||
             String(classroom[6] || "").trim() !== actor.userId) {
           throw new Error("RESOURCE_NOT_FOUND");
         }
