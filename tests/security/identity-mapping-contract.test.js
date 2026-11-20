@@ -355,6 +355,7 @@ const linkContext={
  requireIdentityManager_:function(){return{actorId:"ADMIN-1",role:"Administrador"};},
  getIdentityInstitutionId_:function(){return"INST-1";},
  LockService:{getScriptLock:function(){return{waitLock:function(){},releaseLock:function(){}};}},
+ advanceSaceUserSourceRevisionLocked_:function(){return "TEST-REVISION:1";},
  SpreadsheetApp:{openById:function(){return linkSS;}},
  getSheetOrThrow:function(_ss,name){if(name==="Usuarios")return linkUserSheet;if(name==="Personas")return linkPeopleSheet;throw new Error("unexpected sheet "+name);},
  ensureIdentityDecisionSheet_:function(){return decisionSheet;},
