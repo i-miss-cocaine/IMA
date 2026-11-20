@@ -158,6 +158,10 @@ for (const entry of manifest.templates) {
   assert.equal(result.sourceRevisionStatus, "present");
   assert.deepEqual(result.sourceRevisions, attendanceSnapshot.sourceRevisions,
     "candidate metadata retains the stable source revisions without writing them into the workbook");
+  const outputBinaryText = Buffer.from(result.outputBytes).toString("latin1");
+  assert.equal(outputBinaryText.includes("ACADEMIC-EPOCH-123456:7"), false,
+    "source revision tokens stay in candidate metadata and never enter the XLS binary");
+
   assert.ok(result.limitations.some(item => item.includes("retained as candidate metadata only")));
 
   assert.equal(templates.inspect(result.outputBytes).get("E8"), sourceRows[0].partial1,
