@@ -568,13 +568,17 @@ function createTask(payload) {
  const {tipo,titulo,descripcion,parcial,asignatura,gradoAsignado,seccionAsignada,fechaLimite,tareaOriginalId,puntaje,archivoUrl,fechaDisponible,tipoRecurso}=payload||{};
  if(!titulo||!gradoAsignado||!asignatura)throw new Error("Título, grado y asignatura obligatorios.");
  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),taskSheet=getSheetOrThrow(ss,"Tareas");let owner=String(uid).trim();
+ let assignedClassroom=null;
  if(role==="Profesor"){const classes=getSheetOrThrow(ss,"AulasVirtuales").getDataRange().getValues().slice(1);
-  const c=classes.find(r=>String(r[7]||"Activa")!=="Desactivada"&&normalizeString(r[3])===normalizeString(gradoAsignado)&&(!r[4]||normalizeString(r[4])===normalizeString(seccionAsignada||""))&&normalizeString(r[5])===normalizeString(asignatura)&&String(r[6]||"").trim()===owner);
-  if(!c)throw new Error("No existe aula asignada para el ámbito de la tarea.");assertTaskServiceTeacherAssignedToOffer(owner,c[1]);
+  assignedClassroom=classes.find(r=>normalizeString(r[7]||"Activa")!=="desactivada"&&normalizeString(r[3])===normalizeString(gradoAsignado)&&(!r[4]||normalizeString(r[4])===normalizeString(seccionAsignada||""))&&normalizeString(r[5])===normalizeString(asignatura)&&String(r[6]||"").trim()===owner);
+  if(!assignedClassroom)throw new Error("No existe aula asignada para el ámbito de la tarea.");assertTaskServiceTeacherAssignedToOffer(owner,assignedClassroom[1]);
  }else if(payload.profesorId)owner=String(payload.profesorId).trim();
  if(tareaOriginalId){const orig=taskSheet.getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===String(tareaOriginalId).trim());if(!orig)throw new Error("Tarea original no encontrada.");assertTaskServiceTeacherCanManageTask(payload,orig,"CREATE_DERIVED");}
  const scope=getVerifiedTaskDepartmentScope_(payload,ss,identity);if(!scope.authorized)throw new Error(scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");
+ let classroomOwnership=null;
+ if(assignedClassroom){classroomOwnership=assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL",assignedClassroom[0],"CREATE_TASK",ss,identity,scope);if(!classroomOwnership.authorized)throw new Error(classroomOwnership.code||"RESOURCE_SCOPE_DENIED");}
  const department=resolveTaskServiceOwnershipDepartment_(payload,scope);if(!department.authorized)throw new Error(department.code);
+ if(classroomOwnership&&String(classroomOwnership.departmentId||"").trim()!==String(department.departmentId||"").trim())throw new Error("RESOURCE_DEPARTMENT_MISMATCH");
  const id="TSK-"+Utilities.getUuid();taskSheet.appendRow([id,tipo||"Tarea",titulo,descripcion||"",parcial||"",asignatura,gradoAsignado,seccionAsignada||"",fechaLimite||"",tareaOriginalId||"",owner,"Activa",puntaje===undefined?100:puntaje,archivoUrl||"",fechaDisponible||"",tipoRecurso||"Tarea"]);
  const registered=registerTaskServiceResourceOwnership_(scope,"TAREA",id,department.departmentId,ss);
  if(!registered.authorized){try{const rows=taskSheet.getDataRange().getValues(),idx=rows.findIndex((r,n)=>n>0&&String(r[0]||"").trim()===id);if(idx>0)taskSheet.deleteRow(idx+1);}catch(_){throw new Error("RESOURCE_OWNERSHIP_ROLLBACK_FAILED");}throw new Error(registered.code||"RESOURCE_OWNERSHIP_WRITE_FAILED");}
@@ -1402,8 +1406,8 @@ function getTaskServiceClassroomById(id) {
  if(!id||String(id).trim()==="General")return null;
  return getSheetOrThrow(SpreadsheetApp.openById(SPREADSHEET_ID),"AulasVirtuales").getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===String(id).trim())||null;
 }
-function assertTaskServiceClassroomAccess(payload,id) {
- const actor=getVerifiedTaskIdentity_(payload);
+function assertTaskServiceClassroomAccess(payload,id,verifiedIdentity) {
+ const actor=verifiedIdentity||getVerifiedTaskIdentity_(payload);
  if(!actor||!actor.authorized)throw new Error("Identidad verificada requerida.");
  const role=actor.role,ss=SpreadsheetApp.openById(SPREADSHEET_ID);
  const scope=getVerifiedTaskDepartmentScope_(payload,ss,actor);
@@ -1413,7 +1417,8 @@ function assertTaskServiceClassroomAccess(payload,id) {
   if(!isTaskServiceAdministrativeRole(role)||scope.institutionWide!==true)throw new Error("AUTH_PERMISSION_DENIED");
   return null;
  }
- const row=getTaskServiceClassroomById(id);
+ const rows=getSheetOrThrow(ss,"AulasVirtuales").getDataRange().getValues().slice(1);
+ const row=rows.find(r=>String(r[0]||"").trim()===String(id||"").trim());
  if(!row||normalizeString(row[7]||"Activa")==="desactivada")throw new Error("Aula no válida o inactiva.");
  const ownership=assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL",id,"WRITE",ss,actor,scope);
  if(!ownership||!ownership.authorized)throw new Error(ownership&&ownership.code||"RESOURCE_SCOPE_DENIED");
@@ -1430,20 +1435,22 @@ function assertTaskServiceTeacherCanManageTask(payload,row,operation) {
  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedTaskDepartmentScope_(payload,ss,identity);
  const ownership=assertTaskServiceResourceOwnership_(payload,"TAREA",row[0],operation||"MANAGE",ss,identity,scope);if(!ownership.authorized)throw new Error("RESOURCE_NOT_FOUND");
  if(isTaskServiceAdministrativeRole(role))return true;if(role!=="Profesor")throw new Error("Acceso denegado: solo el docente asignado puede gestionar la tarea.");
- const classrooms=getTaskServiceAuthorizedClassrooms(payload);if(!isTaskServiceTeacherTaskAuthorized_(row,classrooms,uid))throw new Error("RESOURCE_NOT_FOUND");return true;
+ const classrooms=getTaskServiceAuthorizedClassrooms(payload,{identity:identity,ss:ss,scope:scope,departmentId:ownership.departmentId});
+ if(!isTaskServiceTeacherTaskAuthorized_(row,classrooms,uid))throw new Error("RESOURCE_NOT_FOUND");return true;
 }
 
-function getTaskServiceAuthorizedClassrooms(payload) {
- const actor=getVerifiedTaskIdentity_(payload);
+function getTaskServiceAuthorizedClassrooms(payload,verifiedContext) {
+ const context=verifiedContext||{};
+ const actor=context.identity||getVerifiedTaskIdentity_(payload);
  if(!actor||!actor.authorized)throw new Error("Identidad verificada requerida.");
  const role=actor.role,uid=String(actor.userId||"").trim();
- const ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+ const ss=context.ss||SpreadsheetApp.openById(SPREADSHEET_ID);
  const rows=getSheetOrThrow(ss,"AulasVirtuales").getDataRange().getValues().slice(1)
   .filter(r=>normalizeString(r[7]||"Activa")!=="desactivada");
  const isAdmin=isTaskServiceAdministrativeRole(role);
 
  if(isAdmin||role==="Profesor"){
-  const scope=getVerifiedTaskDepartmentScope_(payload,ss,actor);
+  const scope=context.scope||getVerifiedTaskDepartmentScope_(payload,ss,actor);
   if(!scope||!scope.authorized)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");
   let candidates=rows;
   if(role==="Profesor"){
@@ -1458,7 +1465,8 @@ function getTaskServiceAuthorizedClassrooms(payload) {
   }
   return candidates.filter(row=>{
    const ownership=assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL",row[0],"READ",ss,actor,scope);
-   return !!(ownership&&ownership.authorized);
+   if(!ownership||!ownership.authorized)return false;
+   return !context.departmentId||String(ownership.departmentId||"").trim()===String(context.departmentId).trim();
   });
  }
 
@@ -1476,10 +1484,10 @@ function getTaskServiceAuthorizedClassrooms(payload) {
  if(!studentContexts.length)
   throw new Error("Acceso denegado: ámbito departamental del estudiante no verificado.");
 
- return rows.filter(row=>studentContexts.some(context=>{
-  if(normalizeString(row[3])!==normalizeString(context.profile.grado))return false;
-  if(row[4]&&normalizeString(row[4])!==normalizeString(context.profile.seccion))return false;
-  const ownership=assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL",row[0],"READ",ss,context.identity,context.scope);
+ return rows.filter(row=>studentContexts.some(studentContext=>{
+  if(normalizeString(row[3])!==normalizeString(studentContext.profile.grado))return false;
+  if(row[4]&&normalizeString(row[4])!==normalizeString(studentContext.profile.seccion))return false;
+  const ownership=assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL",row[0],"READ",ss,studentContext.identity,studentContext.scope);
   return !!(ownership&&ownership.authorized);
  }));
 }
@@ -2644,16 +2652,7 @@ function createStudyMaterial(payload) {
   }
   if (role !== "Profesor" && !isTaskServiceAdministrativeRole(role)) throw new Error("Acceso denegado.");
   const classId = String(aulaId || "General").trim();
-  if (classId === "General") {
-    if (!isTaskServiceAdministrativeRole(role)) throw new Error("Solo administración puede publicar materiales generales.");
-  } else {
-    const classroom = getTaskServiceClassroomById(classId);
-    if (!classroom || normalizeString(classroom[7] || "Activa") === "desactivada") throw new Error("Aula no válida o inactiva.");
-    if (role === "Profesor") {
-      if (String(classroom[6] || "").trim() !== userId) throw new Error("El aula no está asignada al docente autenticado.");
-      assertTaskServiceTeacherAssignedToOffer(userId,classroom[1]);
-    }
-  }
+  assertTaskServiceClassroomAccess(request,classId,identity);
   const sheet = getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"MaterialesEducativos");
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(["ID","AulaID","Titulo","Descripcion","TipoRecurso","Parcial","Unidad","Tema","ArchivoUrl","DriveId","AutorID","FechaPublicacion","Estado"]);
@@ -2678,18 +2677,11 @@ function deleteStudyMaterial(payload) {
   const index = rows.findIndex(row => String(row[0] || "").trim() === materialId);
   if (index < 1) throw new Error("Material no encontrado.");
   const row = rows[index];
-  if (!isTaskServiceAdministrativeRole(role)) {
-    if (role !== "Profesor" || String(row[10] || "").trim() !== userId) {
-      throw new Error("El material no pertenece al docente.");
-    }
-    const classId = String(row[1] || "").trim();
-    const classroom = getTaskServiceClassroomById(classId);
-    if (!classroom || normalizeString(classroom[7] || "Activa") === "desactivada" ||
-        String(classroom[6] || "").trim() !== userId) {
-      throw new Error("RESOURCE_NOT_FOUND");
-    }
-    assertTaskServiceTeacherAssignedToOffer(userId, classroom[1]);
+  if (!isTaskServiceAdministrativeRole(role) &&
+      (role !== "Profesor" || String(row[10] || "").trim() !== userId)) {
+    throw new Error("El material no pertenece al docente.");
   }
+  assertTaskServiceClassroomAccess(request,String(row[1] || "").trim(),identity);
   sheet.getRange(index + 1,13).setValue("Eliminado");
   return {status:"success",message:"Material eliminado."};
 }
