@@ -8,6 +8,8 @@ on:
       - NG_beta_0.0.0.1_work
     paths:
       - backend/academic-service/Code.gs
+      - js/teacher.js
+      - tests/security/academic-teacher-offer-consumer-contract.test.js
       - backend/accounting-service/Code.gs
       - tests/security/academic-department-reference-consumer.test.js
       - tests/security/accounting-department-reference-consumer.test.js
@@ -40,6 +42,10 @@ jobs:
           git log -1 --format='%H'
       - name: Run ACADEMIC reference consumer contract
         run: node tests/security/academic-department-reference-consumer.test.js
+      - name: Run academic teacher offer consumer contract
+        run: node tests/security/academic-teacher-offer-consumer-contract.test.js
+      - name: Check academic teacher client syntax
+        run: node --check js/teacher.js
       - name: Run ACCOUNTING reference consumer contract
         run: node tests/security/accounting-department-reference-consumer.test.js
       - name: Run ACADEMIC departmental resource access regression contract
