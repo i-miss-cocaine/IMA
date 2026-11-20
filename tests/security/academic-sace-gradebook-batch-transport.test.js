@@ -48,6 +48,7 @@ function snapshot(periodoId, parcial, institutionId = "INST-1") {
 }
 const successResponse = {
   status: "success",
+  sourceRevision: "EXAM-EPOCH-123456:0",
   data: { snapshots: [
     { periodoId: "PER-1", parcial: "I Parcial", snapshot: snapshot("PER-1", "I Parcial") },
     { periodoId: "PER-2", parcial: "II Parcial", snapshot: snapshot("PER-2", "II Parcial") }

@@ -340,7 +340,7 @@ console.log("ACADEMIC admission queue and institution-wide intake ownership cont
     getStudentIdentityForPerson_:()=>{studentIdentityLookups++;return {userId:"STU-FOREIGN"};},
     registerAcademicResourceOwnership_:()=>{ownershipWrites++;return {authorized:true,created:true,ownershipId:"OWN-NEW"};}
   };
-  vm.runInNewContext(extractFunction("convertAdmissionToStudent")+"\nthis.run=convertAdmissionToStudent;",context);
+  vm.runInNewContext("function advanceSaceAcademicSourceRevisionLocked_(){return \"TEST-REVISION:1\";}"+"\n"+extractFunction("convertAdmissionToStudent")+"\nthis.run=convertAdmissionToStudent;",context);
   assert.throws(()=>context.run({solicitudId:"ADM-FOREIGN"}),/RESOURCE_NOT_FOUND/);
   assert.equal(ownershipChecks,1,"the existing expediente must be checked against active department ownership");
   assert.equal(studentIdentityLookups,0,"foreign student identity must not be resolved");
@@ -407,7 +407,7 @@ console.log("ACADEMIC admission conversion duplicate expediente ownership contra
     "convertAdmissionToStudent",
     "registerStudentEnrollmentInternal_"
   ].map(extractFunction).join("\n");
-  vm.runInNewContext(functions+"\nthis.run=convertAdmissionToStudent;",context);
+  vm.runInNewContext("function advanceSaceAcademicSourceRevisionLocked_(){return \"TEST-REVISION:1\";}"+"\n"+functions+"\nthis.run=convertAdmissionToStudent;",context);
   assert.throws(()=>context.run({solicitudId:"ADM-ROLLBACK"}),/INJECTED_MOVEMENT_FAILURE/);
   assert.equal(sheets.SolicitudesAdmision.rows[1][11],"Admitida","admission state must remain unchanged after rollback");
   assert.equal(sheets.SolicitudesAdmision.rows[1][14],"","admission expediente link must be restored");
@@ -528,7 +528,7 @@ console.log("ACADEMIC admission conversion idempotency contract passed.");
       "assertAdmissionConversionArtifactsComplete_",
       "convertAdmissionToStudent"
     ].map(extractFunction).join("\n");
-    vm.runInNewContext(functions+"\nthis.run=convertAdmissionToStudent;",context);
+    vm.runInNewContext("function advanceSaceAcademicSourceRevisionLocked_(){return \"TEST-REVISION:1\";}"+"\n"+functions+"\nthis.run=convertAdmissionToStudent;",context);
     return context.run({solicitudId:"ADM-RETRY"});
   }
   const complete=runAlreadyConverted();
@@ -694,7 +694,7 @@ console.log("ACADEMIC public enrollment internal-metadata isolation contract pas
       })},
       getOrCreateSheet:()=>{sheetReads++;assert.equal(lockHeld,true,"admission persistence must only be accessed while the script lock is held");throw Error("INJECTED_LOCKED_READ");}
     };
-    vm.runInNewContext(extractFunction("convertAdmissionToStudent")+"\nthis.run=convertAdmissionToStudent;",context);
+    vm.runInNewContext("function advanceSaceAcademicSourceRevisionLocked_(){return \"TEST-REVISION:1\";}"+"\n"+extractFunction("convertAdmissionToStudent")+"\nthis.run=convertAdmissionToStudent;",context);
     return {
       execute:()=>context.run({solicitudId:"ADM-LOCK"}),
       getState:()=>({lockHeld,lockAttempts,releaseCount,sheetReads})
