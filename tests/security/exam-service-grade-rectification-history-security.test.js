@@ -49,7 +49,7 @@ function fixture(options = {}) {
   let held=false, acquires=0, releases=0;
   const LockService={getScriptLock(){return {tryLock(){acquires++; if(options.beforeAcquire){const cb=options.beforeAcquire;options.beforeAcquire=null;cb();} if(options.lockAvailable===false||held)return false;held=true;return true;},releaseLock(){releases++;held=false;}};}};
   const helpers=["getGradeRectificationHistory","getGradeRectificationHistoryUnlocked_","withAuthorizedExamRead_"].map(extractFunction).join("\n");
-  const vmContext={LockService,getAuthorizedExamReadContext_(action){
+  const vmContext={getSaceExamSourceRevisionLocked_(){return "EXAM-EPOCH-123456:0";},LockService,getAuthorizedExamReadContext_(action){
     if(action!=="getGradeRectificationHistory"||options.permissionDenied||context.scope.authorized!==true)throw new Error("RESOURCE_NOT_AVAILABLE");
     return context;
   },getExamStudentProfile_(spreadsheet,id){

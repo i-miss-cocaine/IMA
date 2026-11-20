@@ -81,6 +81,7 @@ function runtime(options = {}) {
   const actor = options.actor || { userId: "PROF-1", role: "Profesor" };
   const scope = options.scope || { authorized: true, institutionId: "INST-1", institutionWide: false, departmentIds: ["DEP-1"] };
   const context = {
+    getSaceExamSourceRevisionLocked_() { return "EXAM-EPOCH-123456:0"; },
     LockService: { getScriptLock() { return {
       tryLock() {
         acquires++;
