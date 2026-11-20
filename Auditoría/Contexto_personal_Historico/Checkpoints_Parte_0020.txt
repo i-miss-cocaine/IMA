@@ -107,3 +107,60 @@ Commits:
 Siguiente paso:
 - Implementar y verificar un consumidor administrativo del catálogo maestro (asignaturas, planes, relaciones y ofertas) sin asumir permisos de escritura ni crear APIs no existentes; después integrar reportes y reconciliar tareas relacionadas.
 ===============================================================================
+
+
+===============================================================================
+### C1.894 — AUD-NG-164: despacho de relaciones PlanAsignaturas
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-DISPATCH-65
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 3dace51a21b9dfdee4ce9c149c56c4743cb9af3d
+HEAD final: ebce277abd168dceb88f792963a97fccdb9b6b7e
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Hallazgo:
+- getStudyPlanSubjects, createStudyPlanSubject y setStudyPlanSubjectStatus estaban declarados en permisos y allowlist, pero no tenían casos en el switch de doPost. La API respondía acción no reconocida y hacía inoperantes los métodos de relaciones desde cliente.
+
+Corrección:
+- Se agregan los tres casos de despacho en doPost sin alterar las validaciones RBAC existentes.
+- Se amplía academic-study-plan-subjects-contract para ejecutar doPost con mocks de servicio, verificar que cada acción llega a su función y confirmar permisos Director.
+
+Pruebas:
+- Academic-Service single authorization context run 44707015092 — SUCCESS.
+- node --check < backend/academic-service/Code.gs — SUCCESS.
+- Contratos de catálogo curricular, PlanAsignaturas (incluye dispatch/RBAC), ofertas, catálogo institucional, autorización y regresiones académicas/SACE — PASS.
+- No se ejecutó Apps Script desplegado ni hojas productivas.
+
+===============================================================================
+### C1.895 — AUD-NG-164: interfaz de administración del catálogo curricular
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-ADMIN-UI-66
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: ebce277abd168dceb88f792963a97fccdb9b6b7e
+HEAD final: aa3c2dedb019d35461a7311e13342a7c01950725
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Se agrega Gestión curricular al panel de Dirección con un modal que consulta el catálogo institucional, planes, años, períodos y ofertas desde ACADEMIC.
+- Se habilita el registro de asignaturas con código único, área/departamento derivado, programa, grado, nivel educativo, idioma, carga horaria, créditos y prerrequisitos.
+- Se habilita el registro de planes con versión y vigencia; el vínculo de asignaturas con carácter obligatorio/optativo, horas y orden; y la creación de ofertas usando año/período activos y materias vinculadas al plan.
+- Se permite consultar tablas de asignaturas, planes, relaciones y ofertas; activar/desactivar relaciones conserva su historial.
+- La vista exige contrato de catálogo y revisión institucional válida antes de permitir escrituras; no sustituye validación del servidor.
+- Se usan textContent y nodos DOM para renderizar valores no confiables. Los selects de planes respetan estado Vigente y las asignaturas se filtran por grado del plan.
+
+Pruebas:
+- Department Reference Consumers Local Contract run 44707543717 — SUCCESS en HEAD aa3c2de.
+- Contrato académico de UI: payloads de asignatura/plan/relación/oferta, estados, compatibilidad año-período, metadatos y presencia de formularios — PASS.
+- node --check js/curriculum-admin.js y js/teacher.js — PASS; parseo de ACADEMIC/ACCOUNTING — PASS.
+- No se ejecutó navegador real, Apps Script desplegado, ni datos productivos/E2E.
+- Department Scope sigue mostrando fallo preexistente Phase22 por configureSchoolDocumentTemplate ausente; no se modificó ni se atribuyó a AUD-NG-164.
+
+Estado:
+- AUD-NG-164 sigue En progreso: aún faltan formularios/reportes consumidores adicionales, edición de asignaturas y validación de ciclos de prerrequisitos, pruebas con modelos hondureños/bilingües y múltiples grados, y reconciliación con tareas propietarias AUD-NG-175/AUD-NG-226.
+- La UI se limita al panel de Dirección; el servidor conserva RBAC y validaciones de referencias.
+
+Siguiente paso:
+- Integrar metadatos curriculares en reportes y formularios académicos restantes; auditar la lectura de ofertas del panel de planificación (su fuente heredada se rastrea bajo la tarea separada de consolidación de ofertas); después continuar reconciliación de catálogos sin duplicar AUD-NG-175/AUD-NG-226.
+===============================================================================
