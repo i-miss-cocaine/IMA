@@ -70,7 +70,7 @@ function result(revision,data) { return {status:"success",schemaVersion:"1.0.0",
   }));
   const mixed=await oldAll;
   assert.equal(mixed.status,"success");
-  assert.deepEqual(mixed.staleCatalogTypes,["subjects"]);
+  assert.deepEqual(Array.from(mixed.staleCatalogTypes),["subjects"]);
   assert.equal(window.INSTITUTIONAL_CATALOG_CACHE.subjects["SUB-9"].nombreOficial,"Asignatura nueve");
   assert.equal(window.INSTITUTIONAL_CATALOG_CACHE.subjects["SUB-8"],undefined);
   assert.equal(window.INSTITUTIONAL_CATALOG_CACHE.areas["AREA-8"].name,"Área ocho");
