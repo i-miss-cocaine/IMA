@@ -69,3 +69,41 @@ Commits:
 Siguiente paso:
 - Continuar auditoría de consumidores de admisión, formularios y reportes. Después abordar la administración curricular como flujo end-to-end y reconciliar por separado AUD-NG-175/AUD-NG-226.
 ===============================================================================
+
+
+===============================================================================
+### C1.893 — AUD-NG-164: oferta activa y año lectivo en admisiones
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-ADMISSION-CONSUMER-64
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 7d3a3d37477f77f819af9849de67f6a577b2c6a2
+HEAD final verificado: 3dace51a21b9dfdee4ce9c149c56c4743cb9af3d
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+Checkpoint anterior: C1.892 — Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0020.txt
+
+Implementación:
+- El formulario de admisión consulta getAcademicOffers usando el valor actual de anolectivo, no un año literal.
+- Solo habilita grados que tengan al menos una oferta activa y un ofertaId persistido; excluye ofertas inactivas/cerradas.
+- Durante carga, respuesta inválida, fallo de red o ausencia de ofertas, el selector queda con opción vacía requerida; no conserva opciones estáticas como fallback operativo y la validación nativa impide enviar sin grado autorizado por oferta.
+- La consulta se actualiza al cambiar el año lectivo. Un contador monotónico de solicitud y comparación del año vigente impiden que una respuesta tardía reemplace opciones de un año más reciente.
+- Los grados se insertan mediante createElement/textContent, no interpolación HTML. Se restaura el borrador antes de refrescar el catálogo y se conserva la selección si sigue vigente.
+
+Pruebas:
+- Node local contract: 4 escenarios PASS (ofertas activas, estados cerrados/inactivos, contrato inválido/fallo y respuestas fuera de orden).
+- GitHub Actions Department Reference Consumers Local Contract run 44706711095 — SUCCESS en HEAD 3dace51; nuevo contrato de admisiones y contrato de ofertas docentes, consumidores ACADEMIC/ACCOUNTING, regresiones de acceso departamental, UI y sintaxis docente PASS.
+- No se ejecutó navegador real, Apps Script desplegado ni datos productivos.
+
+Estado:
+- AUD-NG-164 continúa En progreso. La integración cubre dos consumidores de ofertas (docente y admisión), no administración curricular ni todos los formularios/reportes.
+- Pendiente: UI administrativa para catálogo/planes/relaciones/ofertas; propagación de metadatos curriculares a reportes y formularios; reconciliación de catálogo departamental con AUD-NG-175/AUD-NG-226 y sus tareas propietarias; validación de varios grados, programas e idiomas.
+- No se alteran alcances ni estados de AUD-NG-175/AUD-NG-226.
+
+Commits:
+- e248b6b86be080a8062aab741fb1c02f1ad9376d — cargar grados activos del año seleccionado.
+- 9e7cc7a3663bb17404b7b6e1c178594a2ab89a81 — restaurar borrador antes de refrescar el catálogo.
+- 3dace51a21b9dfdee4ce9c149c56c4743cb9af3d — alinear orden de opciones en contrato.
+
+Siguiente paso:
+- Implementar y verificar un consumidor administrativo del catálogo maestro (asignaturas, planes, relaciones y ofertas) sin asumir permisos de escritura ni crear APIs no existentes; después integrar reportes y reconciliar tareas relacionadas.
+===============================================================================
