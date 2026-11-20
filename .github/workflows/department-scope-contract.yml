@@ -27,6 +27,7 @@ on:
       - js/hr-payroll-pdf.js
       - tests/security/student-payment-voucher-client.test.js
       - tests/security/department-scope-contract.test.js
+      - tests/security/user-service-department-hierarchy-cycle.test.js
       - tests/security/internal-responsibility-rbac-contract.test.js
       - tests/security/user-role-membership-contract.test.js
       - login.html
@@ -135,6 +136,8 @@ jobs:
           node-version: 24
       - name: Run department scope contract
         run: node tests/security/department-scope-contract.test.js
+      - name: Run organizational department hierarchy cycle contract
+        run: node tests/security/user-service-department-hierarchy-cycle.test.js
       - name: Run internal responsibility RBAC contract
         run: node tests/security/internal-responsibility-rbac-contract.test.js
       - name: Run accounting departmental import scope contract
