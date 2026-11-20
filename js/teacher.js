@@ -800,6 +800,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function resolveActiveAcademicOfferId_(grado, seccion) {
+        const response = await fetchApi("ACADEMIC", "getAcademicOffers", { grado, seccion });
+        if (!response || response.status !== "success" || !Array.isArray(response.data)) {
+            throw new Error("No se pudo consultar el catálogo de ofertas académicas.");
+        }
+        const activeOffers = response.data.filter(offer => {
+            if (!offer || !String(offer.ofertaId || "").trim()) return false;
+            const status = String(offer.estado || "Activa").trim().toLowerCase();
+            return ["activa", "activo", "active", "enabled", "vigente"].includes(status);
+        });
+        if (!activeOffers.length) {
+            throw new Error("No existe una oferta académica activa para el grado y sección seleccionados. Registre primero la oferta con un plan y una asignatura válidos.");
+        }
+        if (activeOffers.length === 1) return String(activeOffers[0].ofertaId).trim();
+
+        const options = activeOffers.map((offer, index) => {
+            const subject = offer.asignaturaId || "Asignatura no identificada";
+            const plan = offer.planId || "Plan no identificado";
+            const period = [offer.anoId, offer.periodoId].filter(Boolean).join(" / ");
+            return (index + 1) + ". " + subject + " — " + plan + (period ? " (" + period + ")" : "");
+        });
+        const ask = typeof window.prompt === "function" ? window.prompt.bind(window) : null;
+        if (!ask) throw new Error("Hay varias ofertas activas; no está disponible el selector de ofertas.");
+        const answer = ask("Seleccione la oferta académica para esta operación:\n" + options.join("\n"), "1");
+        if (answer === null) throw new Error("Selección de oferta académica cancelada.");
+        const selected = Number(String(answer).trim());
+        if (!Number.isInteger(selected) || selected < 1 || selected > activeOffers.length) {
+            throw new Error("La selección de oferta académica no es válida.");
+        }
+        return String(activeOffers[selected - 1].ofertaId).trim();
+    }
+
     window.deleteScheduleBlock = async function(horarioId) {
         const confirmed = window.confirmCriticalOperation
             ? window.confirmCriticalOperation({
@@ -836,29 +868,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Verificando colisiones...';
 
+        let ofertaId = "";
         try {
-            let ofertaId = "";
-            try {
-                const offerRes = await fetchApi('ACADEMIC', 'getAcademicOffers', { grado, seccion });
-                if (offerRes && offerRes.status === 'success' && Array.isArray(offerRes.data) && offerRes.data.length > 0) {
-                    ofertaId = offerRes.data[0].ofertaId;
-                }
-            } catch (_) {}
-
-            if (!ofertaId) {
-                const createOfferRes = await fetchApi('ACADEMIC', 'createAcademicOffer', {
-                    grado: grado,
-                    seccion: seccion,
-                    asignaturaId: "ASIG-GENERAL",
-                    planId: "PLAN-2026"
-                });
-                if (createOfferRes && createOfferRes.status === 'success' && createOfferRes.data?.ofertaId) {
-                    ofertaId = createOfferRes.data.ofertaId;
-                } else {
-                    const cleanGrado = (grado || "DEC").normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 3).toUpperCase();
-                    ofertaId = `OFE-${cleanGrado}-${seccion}`;
-                }
-            }
+            ofertaId = await resolveActiveAcademicOfferId_(grado, seccion);
 
             // [TAREA-F7-IMP-01] Soporte de excepciones justificadas al asignar horarios
             let res = await fetchApi('ACADEMIC', 'createClassSchedule', {
@@ -2044,25 +2056,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let ofertaId = "";
         try {
-            const offerRes = await fetchApi('ACADEMIC', 'getAcademicOffers', { grado: gradoInput, seccion: seccionInput });
-            if (offerRes && offerRes.status === 'success' && Array.isArray(offerRes.data) && offerRes.data.length > 0) {
-                ofertaId = offerRes.data[0].ofertaId;
-            }
-        } catch (_) {}
-
-        if (!ofertaId) {
-            const createOfferRes = await fetchApi('ACADEMIC', 'createAcademicOffer', {
-                grado: gradoInput,
-                seccion: seccionInput,
-                asignaturaId: "ASIG-GENERAL",
-                planId: "PLAN-2026"
-            });
-            if (createOfferRes && createOfferRes.status === 'success' && createOfferRes.data?.ofertaId) {
-                ofertaId = createOfferRes.data.ofertaId;
-            } else {
-                const cleanGradoInput = (gradoInput || "DEC").normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 3).toUpperCase();
-                ofertaId = `OFE-${cleanGradoInput}-${seccionInput}`;
-            }
+            ofertaId = await resolveActiveAcademicOfferId_(gradoInput, seccionInput);
+        } catch (error) {
+            alert("No se puede continuar con la sustitución: " + error.message);
+            return;
         }
 
         const motivo = prompt("Motivo de la sustitución temporal:", "Licencia Médica / Permiso");
