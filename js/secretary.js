@@ -849,19 +849,49 @@ window.refreshAcademicPlanningData = async function() {
 /*
  * [TAREA-F6-019] Analítica y Reportes de Rendimiento y Cobertura Académica.
  */
+function readAcademicAnalyticsFilters_() {
+    const form = document.getElementById("academic-analytics-filters");
+    if (!form) return {};
+    const filters = {};
+    Array.from(new FormData(form).entries()).forEach(([key, value]) => {
+        const normalized = String(value || "").trim();
+        if (normalized) filters[key] = normalized;
+    });
+    return filters;
+}
+
+function bindAcademicAnalyticsFilters_() {
+    const form = document.getElementById("academic-analytics-filters");
+    if (!form || form.dataset.imaBound === "true") return;
+    form.dataset.imaBound = "true";
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        window.loadAcademicAnalyticsData(readAcademicAnalyticsFilters_());
+    });
+    const reset = document.getElementById("btn-reset-academic-analytics-filters");
+    if (reset) reset.addEventListener("click", () => {
+        form.reset();
+        window.loadAcademicAnalyticsData({});
+    });
+}
+
 window.openAcademicAnalyticsModal = function() {
     const modal = document.getElementById('modal-academic-analytics');
     if (!modal) return;
     modal.classList.remove('hidden');
-    window.loadAcademicAnalyticsData();
+    bindAcademicAnalyticsFilters_();
+    window.loadAcademicAnalyticsData(readAcademicAnalyticsFilters_());
 };
 
-window.loadAcademicAnalyticsData = async function() {
+window.loadAcademicAnalyticsData = async function(filters) {
+    const requestToken = Number(window.__academicAnalyticsLoadToken || 0) + 1;
+    window.__academicAnalyticsLoadToken = requestToken;
     const container = document.getElementById('academic-analytics-content');
     if (!container) return;
     container.textContent = "Cargando analíticas de rendimiento...";
     try {
-        const res = await window.fetchApi('ACADEMIC', 'getCurricularAnalyticsReport', {});
+        const res = await window.fetchApi('ACADEMIC', 'getCurricularAnalyticsReport', filters || {});
+        if (requestToken !== window.__academicAnalyticsLoadToken) return;
         if (!res || res.status !== 'success' || !res.data || !res.data.metrics) {
             throw new Error(res && res.message ? res.message : "Contrato de analíticas no válido.");
         }
@@ -896,6 +926,7 @@ window.loadAcademicAnalyticsData = async function() {
         });
         container.appendChild(grid);
     } catch (err) {
+        if (requestToken !== window.__academicAnalyticsLoadToken) return;
         console.error("Error al cargar analíticas:", err);
         container.textContent = "No fue posible cargar las analíticas académicas.";
     }

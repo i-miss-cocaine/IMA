@@ -51,6 +51,10 @@ function element() {
   vm.runInNewContext("window.loadAcademicAnalyticsData = " + fn + ";", { window, document, console:{error(){}}, String, Number, Array, Promise, Error });
   await window.loadAcademicAnalyticsData();
   assert.deepEqual(JSON.parse(JSON.stringify(calls[0])), ["ACADEMIC","getCurricularAnalyticsReport",{}]);
+  await window.loadAcademicAnalyticsData({ area:"AREA-MAT", asignatura:"ASIG-MAT", grado:"10", periodo:"PER-1", programa:"PROG-COMUN", anoId:"ANO-2026", seccion:"A" });
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[1])), ["ACADEMIC","getCurricularAnalyticsReport",{
+    area:"AREA-MAT",asignatura:"ASIG-MAT",grado:"10",periodo:"PER-1",programa:"PROG-COMUN",anoId:"ANO-2026",seccion:"A"
+  }]);
   const rendered = JSON.stringify(container.children);
   for (const expected of ["88.50%","17","3","2","Excelente (90–100)","5","Necesita mejora (<70)","2"]) assert.ok(rendered.includes(expected), "missing rendered metric " + expected);
 

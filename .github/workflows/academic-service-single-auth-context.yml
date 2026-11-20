@@ -9,6 +9,7 @@ on:
       - 'tests/security/academic-study-plan-subjects-contract.test.js'
       - 'tests/security/academic-offer-reference-contract.test.js'
       - 'tests/security/academic-institutional-catalog-contract.test.js'
+      - 'tests/security/academic-curricular-analytics-filter-contract.test.js'
       - 'tests/security/academic-institutional-catalog-client-contract.test.js'
       - 'tests/security/sace-attendance-snapshot-contract.test.js'
       - 'tests/security/academic-sace-source-writer-locks.test.js'
@@ -59,6 +60,7 @@ jobs:
       - run: node tests/security/academic-study-plan-subjects-contract.test.js
       - run: node tests/security/academic-offer-reference-contract.test.js
       - run: node tests/security/academic-institutional-catalog-contract.test.js
+      - run: node tests/security/academic-curricular-analytics-filter-contract.test.js
       - run: node --check js/config.js
       - run: node tests/security/academic-institutional-catalog-client-contract.test.js
       - run: node tests/security/academic-service-single-auth-context.test.js

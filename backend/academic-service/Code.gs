@@ -5087,60 +5087,120 @@ function configureSchoolYear(payload) {
 
 // [TAREA-17] [Fase 1 - Analítica Académica] - Módulo de indicadores analíticos y métricas por área, asignatura y programa.
 function getCurricularAnalyticsReport(payload) {
-  const { area, asignatura, grado, programa, periodo } = payload || {};
+  const input = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const filters = {
+    area: String(input.area || "").trim(),
+    asignatura: String(input.asignatura || "").trim(),
+    grado: String(input.grado || "").trim(),
+    programa: String(input.programa || "").trim(),
+    periodo: String(input.periodo || "").trim(),
+    anoId: String(input.anoId || input.anoLectivo || "").trim(),
+    seccion: String(input.seccion || "").trim()
+  };
+  const normalize = value => String(value == null ? "" : value).normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  const hasFilters = Object.keys(filters).some(key => !!filters[key]);
+  const needsCatalogJoin = !!(filters.area || filters.asignatura || filters.programa);
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
   const califSheet = getOrCreateSheet(ss, "CalificacionesEstudiantes");
   const califData = califSheet.getDataRange().getValues();
+  const baseHeaders = ["ID","EvaluacionID","UserID","NotaObtenida","PuntajePonderado","EsBorrador","EsPublicada","Observaciones","FechaRegistro"];
+  const contextHeaders = ["AnoID","PeriodoID","Grado","Seccion","Asignatura","InstitutionID","ContextKey"];
+  const hasHeader = califData.length > 0;
+  const hasContext = hasHeader && contextHeaders.every((header,index) => String(califData[0][9 + index] || "").trim() === header);
+  if (hasHeader && baseHeaders.some((header,index) => String(califData[0][index] || "").trim() !== header)) {
+    throw new Error("CURRICULAR_ANALYTICS_GRADEBOOK_SCHEMA_INVALID");
+  }
+  if (hasHeader && califData[0].length > 9 && !hasContext) {
+    throw new Error("CURRICULAR_ANALYTICS_CONTEXT_SCHEMA_INVALID");
+  }
+  if (hasContext && califData[0].length !== 16) throw new Error("CURRICULAR_ANALYTICS_CONTEXT_SCHEMA_INVALID");
 
-  let validScores = [];
-  let totalEvaluations = 0;
-  let pendingCount = 0;
-
-  if (califData.length > 1) {
-    califData.slice(1).forEach(r => {
-      const nota = parseFloat(r[3]);
-      const esBorrador = r[5] === true || String(r[5]).toLowerCase() === "true";
-      const esPublicada = r[6] === true || String(r[6]).toLowerCase() === "true";
-
-      totalEvaluations++;
-      if (esBorrador || !esPublicada || isNaN(nota)) {
-        pendingCount++;
-      } else {
-        validScores.push(nota);
-      }
-    });
+  let subjects = [], areas = [];
+  if (needsCatalogJoin) {
+    areas = getInstitutionalAreaRecords_(ss);
+    subjects = getInstitutionalSubjectRecords_(ss, areas);
+  }
+  const areaById = Object.create(null);
+  areas.forEach(item => { areaById[normalize(item.areaId)] = item; });
+  function resolveSubject(contextValue) {
+    const key = normalize(contextValue);
+    if (!key) return null;
+    const matches = subjects.filter(subject =>
+      [subject.asignaturaId, subject.codigo, subject.nombreOficial].some(value => normalize(value) === key));
+    return matches.length === 1 ? matches[0] : null;
+  }
+  function matchesSubjectFilter(subject, contextValue) {
+    if (!filters.asignatura) return true;
+    if (!subject) return false;
+    const requested = normalize(filters.asignatura);
+    return [subject.asignaturaId, subject.codigo, subject.nombreOficial].some(value => normalize(value) === requested) ||
+      normalize(contextValue) === requested;
+  }
+  function matchesAreaFilter(subject) {
+    if (!filters.area) return true;
+    if (!subject) return false;
+    const area = areaById[normalize(subject.areaId)] || null;
+    const requested = normalize(filters.area);
+    return [subject.areaId, subject.areaAcademica, area && area.name, area && area.code]
+      .some(value => normalize(value) === requested);
   }
 
-  // Cálculo de promedio excluyendo notas pendientes
-  const sum = validScores.reduce((acc, curr) => acc + curr, 0);
-  const average = validScores.length > 0 ? Math.round((sum / validScores.length) * 100) / 100 : 0;
+  const validScores = [];
+  let totalEvaluations = 0, pendingCount = 0, legacyRowsExcluded = 0, unmatchedCatalogRows = 0;
+  const rows = califData.length > 1 ? califData.slice(1) : [];
+  rows.forEach(row => {
+    if (hasFilters && !hasContext) { legacyRowsExcluded++; return; }
+    if (hasContext) {
+      if (filters.anoId && normalize(row[9]) !== normalize(filters.anoId)) return;
+      if (filters.periodo && normalize(row[10]) !== normalize(filters.periodo)) return;
+      if (filters.grado && normalize(row[11]) !== normalize(filters.grado)) return;
+      if (filters.seccion && normalize(row[12]) !== normalize(filters.seccion)) return;
+      if (needsCatalogJoin) {
+        const subject = resolveSubject(row[13]);
+        if (!subject) { unmatchedCatalogRows++; return; }
+        if (!matchesSubjectFilter(subject, row[13]) || !matchesAreaFilter(subject)) return;
+        if (filters.programa && normalize(subject.programaId) !== normalize(filters.programa)) return;
+      }
+    } else if (needsCatalogJoin) {
+      legacyRowsExcluded++;
+      return;
+    }
+    const score = row[3] === "" || row[3] === null || row[3] === undefined ? NaN : Number(row[3]);
+    const isDraft = row[5] === true || String(row[5]).toLowerCase() === "true";
+    const isPublished = row[6] === true || String(row[6]).toLowerCase() === "true";
+    totalEvaluations++;
+    if (isDraft || !isPublished || !Number.isFinite(score)) pendingCount++;
+    else validScores.push(score);
+  });
 
-  // Distribución de calificaciones
+  const sum = validScores.reduce((acc, value) => acc + value, 0);
+  const average = validScores.length ? Math.round((sum / validScores.length) * 100) / 100 : 0;
   const distribution = {
-    excelente: validScores.filter(s => s >= 90).length,
-    bueno: validScores.filter(s => s >= 80 && s < 90).length,
-    satisfactorio: validScores.filter(s => s >= 70 && s < 80).length,
-    necesitaMejora: validScores.filter(s => s < 70).length
+    excelente: validScores.filter(score => score >= 90).length,
+    bueno: validScores.filter(score => score >= 80 && score < 90).length,
+    satisfactorio: validScores.filter(score => score >= 70 && score < 80).length,
+    necesitaMejora: validScores.filter(score => score < 70).length
   };
-
-  // Alertas de acompañamiento pedagógico
-  const lowPerformanceAlerts = validScores.filter(s => s < 70).length;
-
   return {
     status: "success",
     data: {
-      periodo: periodo || "I Parcial",
-      area: area || "Todas",
-      asignatura: asignatura || "Todas",
-      grado: grado || "Todos",
-      programa: programa || "General",
+      periodo: filters.periodo || "Todos",
+      area: filters.area || "Todas",
+      asignatura: filters.asignatura || "Todas",
+      grado: filters.grado || "Todos",
+      programa: filters.programa || "Todos",
+      anoId: filters.anoId || "Todos",
+      seccion: filters.seccion || "Todas",
+      filtersApplied: filters,
+      legacyRowsExcluded: legacyRowsExcluded,
+      unmatchedCatalogRows: unmatchedCatalogRows,
       metrics: {
         totalEvaluaciones: totalEvaluations,
         notasPendientes: pendingCount,
         evaluadasCount: validScores.length,
         promedioConsolidado: average,
-        alertasAcompanamiento: lowPerformanceAlerts,
+        alertasAcompanamiento: distribution.necesitaMejora,
         distribucion: distribution
       }
     }

@@ -11,8 +11,10 @@ on:
       - js/teacher.js
       - js/secretary.js
       - tests/security/academic-curricular-analytics-report-consumer-contract.test.js
+      - tests/security/academic-curricular-analytics-filter-contract.test.js
       - admision.html
       - dashboard-direccion.html
+      - dashboard-secretaria.html
       - js/curriculum-admin.js
       - tests/security/academic-curriculum-admin-ui-contract.test.js
       - tests/security/academic-admission-offer-consumer-contract.test.js
