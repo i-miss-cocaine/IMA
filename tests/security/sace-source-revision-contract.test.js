@@ -2,7 +2,7 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
 const paths={Academic:"backend/academic-service/Code.gs",User:"backend/user-service/Code.gs",Exam:"backend/exam-service/Code.gs"};
 function extract(source,name){const start=source.indexOf("function "+name+"(");assert.notEqual(start,-1,"missing "+name);const open=source.indexOf("{",start);let depth=0,quote="",escaped=false,line=false,block=false;for(let i=open;i<source.length;i++){const c=source[i],n=source[i+1];if(line){if(c==="\n")line=false;continue;}if(block){if(c==="*"&&n==="/"){block=false;i++;}continue;}if(quote){if(escaped)escaped=false;else if(c==="\\")escaped=true;else if(c===quote)quote="";continue;}if(c==="/"&&n==="/"){line=true;i++;continue;}if(c==="/"&&n==="*"){block=true;i++;continue;}if(c==="'"||c==='"'||c==="`"){quote=c;continue;}if(c==="{")depth++;else if(c==="}"&&--depth===0)return source.slice(start,i+1);}throw Error("unbalanced "+name);}
-for(const [service,path] of Object.entries(paths)){const source=fs.readFileSync(path,"utf8");new vm.Script(source,{filename:path});const helper=extract(source,"getSace"+service+"SourceRevisionLocked_")+"\n"+extract(source,"advanceSace"+service+"SourceRevisionLocked_")+"\nthis.read=getSace"+service+"SourceRevisionLocked_;this.advance=advanceSace"+service+"SourceRevisionLocked_;";const props={};const ctx={PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k]||null,setProperty:(k,v)=>{props[k]=v;}})},Utilities:{getUuid:()=>"epoch-12345678"},Number,Error};vm.runInNewContext(helper,ctx);assert.equal(ctx.read(),"epoch-12345678:0");assert.equal(ctx.advance(),"epoch-12345678:1");assert.equal(ctx.advance(),"epoch-12345678:2");assert.equal(props["IMA_SACE_"+service.toUpperCase()+"_SOURCE_REVISION"],"epoch-12345678:2");
+for(const [service,path] of Object.entries(paths)){const source=fs.readFileSync(path,"utf8");new vm.Script(source,{filename:path});const helper=extract(source,"getSace"+service+"SourceRevisionLocked_")+"\n"+extract(source,"advanceSace"+service+"SourceRevisionLocked_")+"\nthis.read=getSace"+service+"SourceRevisionLocked_;this.advance=advanceSace"+service+"SourceRevisionLocked_;";const props={};const ctx={PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k]||null,setProperty:(k,v)=>{props[k]=v;}})},Utilities:{getUuid:()=>"123e4567-e89b-12d3-a456-426614174000"},Number,Error};vm.runInNewContext(helper,ctx);assert.equal(ctx.read(),"123e4567-e89b-12d3-a456-426614174000:0");assert.equal(ctx.advance(),"123e4567-e89b-12d3-a456-426614174000:1");assert.equal(ctx.advance(),"123e4567-e89b-12d3-a456-426614174000:2");assert.equal(props["IMA_SACE_"+service.toUpperCase()+"_SOURCE_REVISION"],"123e4567-e89b-12d3-a456-426614174000:2");
 const failingProperties = {};
 let propertyWrites = 0;
 const failingContext = {
@@ -10,25 +10,33 @@ const failingContext = {
     getProperty: key => failingProperties[key] || null,
     setProperty: (key,value) => { propertyWrites++; if (propertyWrites === 2) throw new Error("TEST_PERSISTENCE_FAILURE"); failingProperties[key] = value; }
   }) },
-  Utilities: { getUuid: () => "epoch-12345678" }, Number, Error
+  Utilities: { getUuid: () => "123e4567-e89b-12d3-a456-426614174000" }, Number, Error
 };
 vm.runInNewContext(helper, failingContext);
-assert.equal(failingContext.read(), "epoch-12345678:0");
+assert.equal(failingContext.read(), "123e4567-e89b-12d3-a456-426614174000:0");
 assert.throws(() => failingContext.advance(), /TEST_PERSISTENCE_FAILURE/,
   service + " must abort a revision increment when ScriptProperties persistence fails");
-assert.equal(failingProperties["IMA_SACE_"+service.toUpperCase()+"_SOURCE_REVISION"], "epoch-12345678:0",
+assert.equal(failingProperties["IMA_SACE_"+service.toUpperCase()+"_SOURCE_REVISION"], "123e4567-e89b-12d3-a456-426614174000:0",
   service + " must not advance the token when persistence fails");
 const corruptProperties = { ["IMA_SACE_"+service.toUpperCase()+"_SOURCE_REVISION"]: "corrupt" };
 const corruptContext = {
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => corruptProperties[key] || null, setProperty: (key,value) => { corruptProperties[key] = value; } }) },
-  Utilities: { getUuid: () => "epoch-12345678" }, Number, Error
+  Utilities: { getUuid: () => "123e4567-e89b-12d3-a456-426614174000" }, Number, Error
 };
 vm.runInNewContext(helper, corruptContext);
 assert.throws(() => corruptContext.read(), /SACE_SOURCE_REVISION_INVALID/, service + " rejects corrupted epochs");
-const exhaustedProperties = { ["IMA_SACE_"+service.toUpperCase()+"_SOURCE_REVISION"]: "epoch-12345678:"+Number.MAX_SAFE_INTEGER };
+const invalidEpochProperties = { ["IMA_SACE_"+service.toUpperCase()+"_SOURCE_REVISION"]: "--------:0" };
+const invalidEpochContext = {
+  PropertiesService: { getScriptProperties: () => ({ getProperty: key => invalidEpochProperties[key] || null, setProperty: (key,value) => { invalidEpochProperties[key] = value; } }) },
+  Utilities: { getUuid: () => "123e4567-e89b-12d3-a456-426614174000" }, Number, Error
+};
+vm.runInNewContext(helper, invalidEpochContext);
+assert.throws(() => invalidEpochContext.read(), /SACE_SOURCE_REVISION_INVALID/,
+  service + " rejects epochs that are not UUID-shaped");
+const exhaustedProperties = { ["IMA_SACE_"+service.toUpperCase()+"_SOURCE_REVISION"]: "123e4567-e89b-12d3-a456-426614174000:"+Number.MAX_SAFE_INTEGER };
 const exhaustedContext = {
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => exhaustedProperties[key] || null, setProperty: (key,value) => { exhaustedProperties[key] = value; } }) },
-  Utilities: { getUuid: () => "epoch-12345678" }, Number, Error
+  Utilities: { getUuid: () => "123e4567-e89b-12d3-a456-426614174000" }, Number, Error
 };
 vm.runInNewContext(helper, exhaustedContext);
 assert.throws(() => exhaustedContext.advance(), /SACE_SOURCE_REVISION_EXHAUSTED/, service + " rejects counter overflow");

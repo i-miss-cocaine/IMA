@@ -117,9 +117,9 @@ for (const entry of manifest.templates) {
   const attendanceSnapshot = {
     status: "success",
     sourceRevisions: {
-      academic: "ACADEMIC-EPOCH-123456:7",
-      user: "USER-EPOCH-123456:4",
-      exam: "EXAM-EPOCH-123456:9"
+      academic: "123e4567-e89b-12d3-a456-426614174000:7",
+      user: "123e4567-e89b-12d3-a456-426614174000:4",
+      exam: "123e4567-e89b-12d3-a456-426614174000:9"
     },
     data: {
       expectedContext,
@@ -159,7 +159,7 @@ for (const entry of manifest.templates) {
   assert.deepEqual(result.sourceRevisions, attendanceSnapshot.sourceRevisions,
     "candidate metadata retains the stable source revisions without writing them into the workbook");
   const outputBinaryText = Buffer.from(result.outputBytes).toString("latin1");
-  assert.equal(outputBinaryText.includes("ACADEMIC-EPOCH-123456:7"), false,
+  assert.equal(outputBinaryText.includes("123e4567-e89b-12d3-a456-426614174000:7"), false,
     "source revision tokens stay in candidate metadata and never enter the XLS binary");
 
   assert.ok(result.limitations.some(item => item.includes("retained as candidate metadata only")));
@@ -184,6 +184,15 @@ for (const entry of manifest.templates) {
   malformedRevisionSnapshot.sourceRevisions.user = "broken";
   assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
     templateBytes, attendanceSnapshot: malformedRevisionSnapshot,
+    partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
+    absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
+    academicTemplateContextMapping: contextMapping,
+    options: { scale: { min: 0, max: 100, precision: 2 } }
+  }), /SACE_SOURCE_REVISIONS_INVALID/);
+  const malformedEpochSnapshot = JSON.parse(JSON.stringify(attendanceSnapshot));
+  malformedEpochSnapshot.sourceRevisions.user = "--------:0";
+  assert.throws(() => orchestrator.prepareCandidateExportFromAcademicSnapshot({
+    templateBytes, attendanceSnapshot: malformedEpochSnapshot,
     partial1PeriodId: "PER-1", partial2PeriodId: "PER-2", documentTypeMappings,
     absencePolicy: { justifiedAbsenceMode: "COUNT" }, expectedTemplateContext: templateInfo.metadata,
     academicTemplateContextMapping: contextMapping,

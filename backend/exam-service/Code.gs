@@ -1556,8 +1556,8 @@ function getAllExamsUnlocked_(payload, context) {
 function getSaceExamSourceRevisionLocked_() {
   const p=PropertiesService.getScriptProperties(), k="IMA_SACE_EXAM_SOURCE_REVISION";
   let t=p.getProperty(k);
-  if(!t){t=String(Utilities.getUuid()||"").trim()+":0";if(!/^[A-Za-z0-9-]{8,80}:0$/.test(t))throw Error("SACE_SOURCE_REVISION_EPOCH_INVALID");p.setProperty(k,t);}
-  const m=/^([A-Za-z0-9-]{8,80}):([0-9]+)$/.exec(String(t));
+  if(!t){t=String(Utilities.getUuid()||"").trim()+":0";if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:0$/i.test(t))throw Error("SACE_SOURCE_REVISION_EPOCH_INVALID");p.setProperty(k,t);}
+  const m=/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}):([0-9]+)$/i.exec(String(t));
   if(!m||!Number.isSafeInteger(Number(m[2]))||Number(m[2])<0)throw Error("SACE_SOURCE_REVISION_INVALID");
   return t;
 }

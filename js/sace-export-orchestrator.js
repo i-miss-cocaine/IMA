@@ -20,7 +20,7 @@ function (provider, templates) {
     const result = {};
     ["academic", "user", "exam"].forEach(service => {
       const token = raw[service];
-      if (typeof token !== "string" || !/^[A-Za-z0-9-]{8,80}:[0-9]+$/.test(token)) {
+      if (typeof token !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:[0-9]+$/i.test(token)) {
         throw new Error("SACE_SOURCE_REVISIONS_INVALID");
       }
       const counter = Number(token.slice(token.lastIndexOf(":") + 1));
