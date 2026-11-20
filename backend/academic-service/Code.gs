@@ -3602,6 +3602,7 @@ function convertAdmissionToStudent(payload) {
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado procesando solicitudes de admisiones en paralelo. Por favor reintente en unos segundos.");
+    advanceSaceAcademicSourceRevisionLocked_();
 
     const ss = ctx.ss;
     const admSheet = getOrCreateSheet(ss, "SolicitudesAdmision");
@@ -5017,6 +5018,7 @@ function configureSchoolYear(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
+    advanceSaceAcademicSourceRevisionLocked_();
   } catch (lockError) {
     return { status: "error", code: "LOCK_TIMEOUT", message: "El servicio está ocupado. Intente nuevamente." };
   }
@@ -8601,6 +8603,7 @@ function manageAcademicPeriod(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
+    advanceSaceAcademicSourceRevisionLocked_();
   } catch (lockError) {
     throw new Error("LOCK_TIMEOUT");
   }
@@ -10898,10 +10901,10 @@ function openAttendanceSession(payload) {
 }
 
 // [F10-Task14] [P1] - Optimizar las consultas batch de asistencia y resiliencia de servicios
-function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, institutionId, teacherUserId) {
+function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, institutionId, teacherUserId, revisionOnly) {
   const input = request || {};
   const token = String(getRequestSessionToken_(input) || "");
-  if (!token || !Array.isArray(studentIds) || !studentIds.length) throw new Error("SACE_IDENTITY_TRANSPORT_CONTEXT_REQUIRED");
+  if (!token || (!revisionOnly && (!Array.isArray(studentIds) || !studentIds.length))) throw new Error("SACE_IDENTITY_TRANSPORT_CONTEXT_REQUIRED");
   const requestedIds = studentIds.map(function(value) {
     const id = String(value == null ? "" : value).trim();
     if (!id) throw new Error("SACE_IDENTITY_STUDENT_ID_REQUIRED");
@@ -10921,7 +10924,7 @@ function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, insti
     sessionToken: token,
     institutionId: institutionId,
     teacherUserId: teacherUserId,
-    studentIds: requestedIds.slice()
+    studentIds: requestedIds.slice(), revisionOnly:revisionOnly===true
   }, "IMA_MIGRATION_HMAC_SECRET");
   let response;
   try {
@@ -10936,9 +10939,11 @@ function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, insti
   let body;
   try { body = JSON.parse(response.getContentText() || "{}"); }
   catch (error) { throw new Error("SACE_IDENTITY_RESPONSE_INVALID"); }
-  if (status < 200 || status >= 300 || !body || body.status !== "success" || !Array.isArray(body.data)) {
+  if (status < 200 || status >= 300 || !body || body.status !== "success") {
     throw new Error(body && body.code || "SACE_IDENTITY_AUTHORITY_UNAVAILABLE");
   }
+  if(revisionOnly===true){if(typeof body.sourceRevision!=='string')throw Error('SACE_IDENTITY_REVISION_INVALID');return body.sourceRevision;}
+  if(!Array.isArray(body.data)||typeof body.sourceRevision!=='string')throw Error('SACE_IDENTITY_RESPONSE_INCOMPLETE');
   const requested = new Set(requestedIds);
   const returned = new Set();
   const normalizedIdentities = new Set();
@@ -10962,7 +10967,7 @@ function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, insti
     };
   });
   if (returned.size !== requested.size) throw new Error("SACE_IDENTITY_RESPONSE_INCOMPLETE");
-  return identityRecords;
+  identityRecords.sourceRevision=body.sourceRevision;return identityRecords;
 }
 
 function requestSaceGradebookSnapshotFromExam_(request, studentIds, teacherUserId, expectedContext, period, examPartial) {
@@ -11035,11 +11040,10 @@ function requestSaceGradebookSnapshotFromExam_(request, studentIds, teacherUserI
 }
 
  
-function requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUserId, expectedContext, periods) {
+function requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUserId, expectedContext, periods, revisionOnly) {
   const input = request || {};
   const token = String(getRequestSessionToken_(input) || "");
-  if (!token || !Array.isArray(studentIds) || !studentIds.length ||
-      !Array.isArray(periods) || periods.length !== 2) {
+  if (!token || (!revisionOnly && (!Array.isArray(studentIds) || !studentIds.length || !Array.isArray(periods) || periods.length !== 2))) {
     throw new Error("SACE_GRADEBOOK_TRANSPORT_CONTEXT_REQUIRED");
   }
   if (typeof UrlFetchApp === "undefined" || typeof PropertiesService === "undefined") {
@@ -11049,7 +11053,7 @@ function requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUser
   if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) {
     throw new Error("SACE_GRADEBOOK_TRANSPORT_NOT_CONFIGURED");
   }
-  const requestPayload = {
+  const requestPayload = revisionOnly?{sessionToken:token,revisionOnly:true}:{
     sessionToken: token,
     profesorId: String(teacherUserId).trim(),
     anoId: String(expectedContext.anoId).trim(),
@@ -11061,6 +11065,7 @@ function requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUser
       return { periodoId: String(period.periodoId).trim(), parcial: String(period.parcial).trim() };
     })
   };
+  if(revisionOnly){let rr;try{rr=UrlFetchApp.fetch(endpoint,{method:'post',contentType:'application/json',payload:JSON.stringify({action:'getSaceGradebookSnapshots',payload:requestPayload}),muteHttpExceptions:true});}catch(_){throw Error('SACE_GRADEBOOK_AUTHORITY_UNAVAILABLE');}let rb;try{rb=JSON.parse(rr.getContentText()||'{}');}catch(_){throw Error('SACE_GRADEBOOK_RESPONSE_INVALID');}if(rr.getResponseCode()<200||rr.getResponseCode()>=300||!rb||rb.status!=='success'||typeof rb.sourceRevision!=='string')throw Error(rb&&rb.code||'SACE_GRADEBOOK_REVISION_INVALID');return rb.sourceRevision;}
   if (requestPayload.periods.some(function(period) { return !period.periodoId || !period.parcial; }) ||
       new Set(requestPayload.periods.map(function(period) { return period.periodoId; })).size !== 2 ||
       new Set(requestPayload.periods.map(function(period) { return period.parcial; })).size !== 2) {
@@ -11091,7 +11096,7 @@ function requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUser
     if (!periodoId || returned.has(periodoId)) throw new Error("SACE_GRADEBOOK_RESPONSE_PERIOD_INVALID");
     returned.set(periodoId, { parcial: parcial, snapshot: item.snapshot });
   });
-  return requestPayload.periods.map(function(period) {
+  const snapshots=requestPayload.periods.map(function(period) {
     const item = returned.get(period.periodoId);
     if (!item || item.parcial !== period.parcial || !item.snapshot ||
         item.snapshot.status !== "success" || !item.snapshot.data) {
@@ -11168,7 +11173,7 @@ function requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUser
       recoveryIds.add(recoveryId);
     });
     return { periodoId: period.periodoId, parcial: period.parcial, snapshot: item.snapshot };
-  });
+  });snapshots.sourceRevision=body.sourceRevision;if(typeof snapshots.sourceRevision!=='string')throw Error('SACE_GRADEBOOK_REVISION_INVALID');return snapshots;
 }
 
 function resolveSaceAttendanceJustification_(attendanceRow, attendanceIndex, session, period, source) {
@@ -11223,6 +11228,21 @@ function resolveSaceAttendanceJustification_(attendanceRow, attendanceIndex, ses
   if (!rawJustified) throw new Error("SACE_ATTENDANCE_JUSTIFICATION_FLAG_MISMATCH");
   return { justificado: true, justificacionId: justificationId, justificacionVerificada: true };
 }
+function getSaceAcademicSourceRevisionLocked_() {
+  const p=PropertiesService.getScriptProperties(), k="IMA_SACE_ACADEMIC_SOURCE_REVISION";
+  let t=p.getProperty(k);
+  if(!t){t=String(Utilities.getUuid()||"").trim()+":0";if(!/^[A-Za-z0-9-]{8,80}:0$/.test(t))throw Error("SACE_SOURCE_REVISION_EPOCH_INVALID");p.setProperty(k,t);}
+  const m=/^([A-Za-z0-9-]{8,80}):([0-9]+)$/.exec(String(t));
+  if(!m||!Number.isSafeInteger(Number(m[2]))||Number(m[2])<0)throw Error("SACE_SOURCE_REVISION_INVALID");
+  return t;
+}
+function advanceSaceAcademicSourceRevisionLocked_() {
+  const p=PropertiesService.getScriptProperties(),k="IMA_SACE_ACADEMIC_SOURCE_REVISION",v=getSaceAcademicSourceRevisionLocked_().split(":"),n=Number(v[1]);
+  if(n>=Number.MAX_SAFE_INTEGER)throw Error("SACE_SOURCE_REVISION_EXHAUSTED");
+  const next=v[0]+":"+(n+1);p.setProperty(k,next);
+  if(p.getProperty(k)!==next)throw Error("SACE_SOURCE_REVISION_WRITE_FAILED");return next;
+}
+function readSaceAcademicSourceRevision_(){const l=LockService.getScriptLock();try{l.waitLock(10000);}catch(_){throw Error('SACE_SOURCE_REVISION_LOCK_TIMEOUT');}try{return getSaceAcademicSourceRevisionLocked_();}finally{try{l.releaseLock();}catch(_){}}}
 function getSaceAttendanceSnapshot(payload) {
   const request = payload || {};
   const actor = getVerifiedAcademicIdentity_(request);
@@ -11252,6 +11272,8 @@ function getSaceAttendanceSnapshot(payload) {
   };
   const snapshotNow = new Date();
   const snapshotToday = dateKey(snapshotNow);
+  let sourceRevision='';
+  if(request.revisionOnly===true){try{return {status:'success',sourceRevision:readSaceAcademicSourceRevision_()};}catch(err){return {status:'error',code:String(err.message||'SACE_SOURCE_REVISION_UNAVAILABLE')};}}
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   let attendanceSnapshotLock = null;
   let attendanceSnapshotLockHeld = false;
@@ -11280,6 +11302,7 @@ function getSaceAttendanceSnapshot(payload) {
     try {
       attendanceSnapshotLock.waitLock(10000);
       attendanceSnapshotLockHeld = true;
+      sourceRevision=getSaceAcademicSourceRevisionLocked_();
     } catch (lockError) {
       throw new Error("SACE_ATTENDANCE_SNAPSHOT_LOCK_TIMEOUT");
     }
@@ -11433,7 +11456,11 @@ function getSaceAttendanceSnapshot(payload) {
         return { periodoId: period.periodoId, parcial: examMappings[period.periodoId] };
       })
     );
-    return { status:"success", data:{
+    const academicRevisionAfter=readSaceAcademicSourceRevision_();
+    const userRevisionAfter=requestSaceStudentIdentityDirectoryFromUser_(request,[],institutionId,String(actor.userId).trim(),true);
+    const examRevisionAfter=requestSaceGradebookSnapshotsFromExam_(request,[],String(actor.userId).trim(),{},[],true);
+    if(sourceRevision!==academicRevisionAfter||identityRecords.sourceRevision!==userRevisionAfter||gradebookSnapshots.sourceRevision!==examRevisionAfter)throw Error('SACE_SOURCE_CHANGED_DURING_SNAPSHOT');
+    return { status:"success", sourceRevisions:{academic:sourceRevision,user:identityRecords.sourceRevision,exam:gradebookSnapshots.sourceRevision}, data:{
       expectedContext:{ anoId:anoId, grado:grade, seccion:section, asignatura:subjectName,
         asignaturaId:subjectId, institutionId:institutionId, teacherUserId:String(actor.userId).trim() },
       periods:selectedPeriods, gradebookSnapshots:gradebookSnapshots, identityRecords:identityRecords,
@@ -11507,6 +11534,7 @@ function closeAttendanceSession(payload) {
   if (!sesionId) throw new Error("ATTENDANCE_SESSION_ID_REQUIRED");
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
+    advanceSaceAcademicSourceRevisionLocked_();
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = ss.getSheetByName("SesionesAsistencia");
@@ -11536,6 +11564,7 @@ function saveClassAttendance(payload) {
   if (registros.some(record => record && (record.justificado === true || String(record.justificado || "").toLowerCase() === "true"))) throw new Error("ATTENDANCE_JUSTIFICATION_REQUIRES_CANONICAL_REVIEW");
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
+    advanceSaceAcademicSourceRevisionLocked_();
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const session = getAttendanceSessionForTeacher_(ss, sesionId, actor.userId);
@@ -11589,6 +11618,7 @@ function bulkApplyAttendanceStatus(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
+    advanceSaceAcademicSourceRevisionLocked_();
   } catch (e) {
     return { status: "error", message: "El servidor está ocupado procesando otra actualización masiva de asistencia. Intente de nuevo." };
   }
@@ -11706,6 +11736,7 @@ function saveDailyAttendance(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
+    advanceSaceAcademicSourceRevisionLocked_();
   } catch (e) {
     return { status: "error", message: "El servidor está ocupado procesando otra actualización de asistencia diaria." };
   }
@@ -11998,7 +12029,8 @@ function absenceTeacherConformityComplete_(ss, justId, sessionIds) {
 
 function createCanonicalAbsenceJustification_(payload) {
   var lock = LockService.getScriptLock();
-  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try { lock.waitLock(10000);
+    advanceSaceAcademicSourceRevisionLocked_(); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
   try { return createCanonicalAbsenceJustificationUnlocked_(payload); }
   finally { lock.releaseLock(); }
 }
@@ -12200,7 +12232,8 @@ function reviewCanonicalAbsenceJustification_(payload) {
     requested === "requiereinformacion" ? "RequiereInformacion" : "";
   if (!target) return { status: "error", code: "ABSENCE_DECISION_INVALID" };
   var lock = LockService.getScriptLock();
-  try { lock.waitLock(10000); } catch (lockError) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try { lock.waitLock(10000);
+    advanceSaceAcademicSourceRevisionLocked_(); } catch (lockError) { return { status: "error", code: "LOCK_TIMEOUT" }; }
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = getOrCreateSheet(ss, "JustificacionesAsistencia");
@@ -12336,7 +12369,8 @@ function reconcilePendingAttendanceJustifications(payload) {
   var actorRole = String(payload && payload._verifiedRole || "").trim();
   if (!actorId || !actorRole) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
   var lock = LockService.getScriptLock();
-  try { lock.waitLock(10000); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
+  try { lock.waitLock(10000);
+    advanceSaceAcademicSourceRevisionLocked_(); } catch (_) { return { status: "error", code: "LOCK_TIMEOUT" }; }
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = getOrCreateSheet(ss, "JustificacionesAsistencia");
@@ -15838,6 +15872,7 @@ function createStudentEnrollment(payload) {
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente la operación de matrícula.");
+  advanceSaceAcademicSourceRevisionLocked_();
 
   try {
     const targetAno = anolectivo || "2026";
@@ -16121,6 +16156,7 @@ function changeStudentSection(payload) {
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente la reubicación de sección.");
+  advanceSaceAcademicSourceRevisionLocked_();
 
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -16542,6 +16578,7 @@ function recordStudentTransfer(payload) {
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente el registro del traslado.");
+  advanceSaceAcademicSourceRevisionLocked_();
 
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -16611,6 +16648,7 @@ function recordStudentWithdrawal(payload) {
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente el registro de retiro.");
+  advanceSaceAcademicSourceRevisionLocked_();
 
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -16808,6 +16846,7 @@ function processStudentGraduation(payload) {
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente el registro de graduación.");
+  advanceSaceAcademicSourceRevisionLocked_();
 
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -16922,6 +16961,7 @@ function reconcileStudentLifecycleState(payload) {
   try {
     lock.waitLock(10000);
     lockHeld = true;
+    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
     const expRows = expSheet.getDataRange().getValues().slice(1);

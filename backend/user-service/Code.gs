@@ -1942,6 +1942,7 @@ function manageUserRoleMemberships(payload) {
 
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
+    advanceSaceUserSourceRevisionLocked_();
   try {
     var institutionId = String(getIdentityInstitutionId_()).trim();
     if (!institutionId) return { status: "error", code: "ROLE_MEMBERSHIP_INSTITUTION_REQUIRED", message: "La institución activa no está configurada." };
@@ -2470,6 +2471,20 @@ function getTrustedMigrationTargetExistenceSnapshot_(payload) {
     idField: "PersonaID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: [],
     duplicateMatches: duplicateMatches };
 }
+function getSaceUserSourceRevisionLocked_() {
+  const p=PropertiesService.getScriptProperties(), k="IMA_SACE_USER_SOURCE_REVISION";
+  let t=p.getProperty(k);
+  if(!t){t=String(Utilities.getUuid()||"").trim()+":0";if(!/^[A-Za-z0-9-]{8,80}:0$/.test(t))throw Error("SACE_SOURCE_REVISION_EPOCH_INVALID");p.setProperty(k,t);}
+  const m=/^([A-Za-z0-9-]{8,80}):([0-9]+)$/.exec(String(t));
+  if(!m||!Number.isSafeInteger(Number(m[2]))||Number(m[2])<0)throw Error("SACE_SOURCE_REVISION_INVALID");
+  return t;
+}
+function advanceSaceUserSourceRevisionLocked_() {
+  const p=PropertiesService.getScriptProperties(),k="IMA_SACE_USER_SOURCE_REVISION",v=getSaceUserSourceRevisionLocked_().split(":"),n=Number(v[1]);
+  if(n>=Number.MAX_SAFE_INTEGER)throw Error("SACE_SOURCE_REVISION_EXHAUSTED");
+  const next=v[0]+":"+(n+1);p.setProperty(k,next);
+  if(p.getProperty(k)!==next)throw Error("SACE_SOURCE_REVISION_WRITE_FAILED");return next;
+}
 function getSaceStudentIdentityDirectory_(payload) {
   const request = payload || {};
   const claims = verifySessionToken(String(request.sessionToken || ""));
@@ -2480,6 +2495,7 @@ function getSaceStudentIdentityDirectory_(payload) {
       String(claims.institutionId).trim() !== institutionId) {
     throw new Error("SACE_IDENTITY_CALLER_INVALID");
   }
+  if(request.revisionOnly===true){const l=LockService.getScriptLock();try{l.waitLock(10000);}catch(_){throw Error('SACE_IDENTITY_SOURCE_LOCK_TIMEOUT');}try{return {status:'success',sourceRevision:getSaceUserSourceRevisionLocked_()};}finally{try{l.releaseLock();}catch(_){}}}
   if (!Array.isArray(request.studentIds) || !request.studentIds.length || request.studentIds.length > 500) {
     throw new Error("SACE_IDENTITY_ROSTER_REQUIRED");
   }
@@ -2529,6 +2545,7 @@ function getSaceStudentIdentityDirectory_(payload) {
     if (personMap[id]) throw new Error("SACE_IDENTITY_PERSON_DUPLICATE");
     personMap[id] = row;
   });
+  const sourceRevision=getSaceUserSourceRevisionLocked_();
   const records = studentIds.map(function(userId) {
     const user = userMap[userId];
     if (!user || !["ESTUDIANTE", "ALUMNO"].includes(String(user[users.index.Rol] || "").trim().toUpperCase()) ||
@@ -2554,7 +2571,7 @@ function getSaceStudentIdentityDirectory_(payload) {
     throw new Error("SACE_IDENTITY_DOCUMENT_INVALID");
   }
   if (new Set(normalized).size !== normalized.length) throw new Error("SACE_IDENTITY_DUPLICATE_DOCUMENT");
-  return { status: "success", data: records };
+  return { status: "success", sourceRevision:sourceRevision, data: records };
   } finally {
     try { lock.releaseLock(); } catch (releaseError) {}
   }
@@ -3291,6 +3308,7 @@ function createPerson(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
+    advanceSaceUserSourceRevisionLocked_();
   } catch (lockError) {
     throw new Error("PERSON_CREATE_LOCK_TIMEOUT");
   }
@@ -3346,6 +3364,7 @@ function linkPersonAccount(payload) {
     const index=rows.findIndex((r,i)=>i>0&&String(r[0]).trim()===String(userId).trim()); if(index<1) throw new Error("Cuenta de usuario no encontrada.");
     const people=getSheetOrThrow(ss,"Personas").getDataRange().getValues(); if(!people.some((r,i)=>i>0&&String(r[0]).trim()===String(personaId).trim())) throw new Error("IDENTITY_TARGET_NOT_FOUND: Persona inexistente.");
     const previous=String(rows[index][9]||"").trim(); if(previous===String(personaId).trim()) return {status:"success",idempotent:true};
+    advanceSaceUserSourceRevisionLocked_();
     sheet.getRange(index+1,10).setValue(identityTextCell_(personaId));
     try { appendIdentityDecisionAudit_(ensureIdentityDecisionSheet_(),{idMapeo:"",sistemaOrigen:"IMA",tipoEntidad:"usuario",idOriginalLegado:userId,idNuevoPlataformaAnterior:previous,idNuevoPlataformaNuevo:personaId,decision:"VINCULACION_CUENTA_PERSONA",motivo:reason,actorId:actor.actorId,actorRole:actor.role,institucionId:institution}); }
     catch(err) { sheet.getRange(index+1,10).setValue(previous); throw err; }
@@ -4029,6 +4048,7 @@ function manageAccountState(payload) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
+    advanceSaceUserSourceRevisionLocked_();
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sheet = getSheetOrThrow(ss, "Usuarios");
@@ -4096,6 +4116,7 @@ function registerUser(payload) {
     }
     if (existingIndex !== -1) {
       if (forceUpdate) {
+        advanceSaceUserSourceRevisionLocked_();
         const userId = data[existingIndex][0];
         const passBytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, password);
         const passArr = Array.from ? Array.from(passBytes) : [].slice.call(passBytes);
@@ -4162,6 +4183,7 @@ function registerUser(payload) {
         }
       };
     }
+    advanceSaceUserSourceRevisionLocked_();
     sheet.appendRow([
       userId, nombre, grado || "", seccion || "", email, hashedPassword,
       "Estudiante", telefono || "", numeroLista || "", personaId || "",
