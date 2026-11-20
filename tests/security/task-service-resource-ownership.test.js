@@ -215,7 +215,7 @@ console.log("TASK-153 staff/student department intersection contract passed.");
       normalizeString:value=>String(value||"").trim().toLowerCase(),
       String,Error
     };
-    vm.runInNewContext(accessFn+"\\nthis.access=assertTaskServiceClassroomAccess;",context);
+    vm.runInNewContext(accessFn+"\nthis.access=assertTaskServiceClassroomAccess;",context);
     return {context,state,access:(id)=>context.access({request:"valid"},id)};
   }
   {

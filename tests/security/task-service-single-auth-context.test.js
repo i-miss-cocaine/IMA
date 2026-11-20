@@ -61,9 +61,8 @@ assert(previewFn.includes('getTaskServiceSubmissionAccess_(accessPayload,"READ_C
  assert.equal(state.scopeCalls,1,"task guard reuses one department-scope decision");
  assert.equal(state.openCalls,1,"task guard reuses one Spreadsheet handle");
  assert.equal(state.ownershipCalls,2,"task and classroom ownership remain distinct resource checks");
- const mismatchContext={...context,classDepartmentId:"D2"};
- vm.runInNewContext(names.map(extract).join("\n")+"\nthis.guard=assertTaskServiceTeacherCanManageTask;",mismatchContext);
- assert.throws(()=>mismatchContext.guard({sessionToken:"valid"},task,"UPDATE"),/RESOURCE_NOT_FOUND/);
+ context.classDepartmentId="D2";
+ assert.throws(()=>context.guard({sessionToken:"valid"},task,"UPDATE"),/RESOURCE_NOT_FOUND/);
 }
 
 console.log("task-service-single-auth-context: PASS ("+n+"/5)");
