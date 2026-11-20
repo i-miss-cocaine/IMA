@@ -11343,42 +11343,48 @@ function getSpreadsheetSourceKey_(record) {
 
 function ensureSpreadsheetSourceSchema_(ss) {
   if (!ss) throw new Error("SOURCE_REGISTRY_SPREADSHEET_REQUIRED");
-  let sheet = ss.getSheetByName("CatalogoSpreadsheets");
-  if (!sheet) sheet = ss.insertSheet("CatalogoSpreadsheets");
-  let lastRow = sheet.getLastRow();
-  let lastColumn = sheet.getLastColumn();
-  if (!lastRow || !lastColumn) {
-    sheet.getRange(1, 1, 1, SOURCE_REGISTRY_HEADERS_.length).setValues([SOURCE_REGISTRY_HEADERS_.slice()]);
-  } else {
-    let firstRow = sheet.getRange(1, 1, 1, lastColumn).getValues()[0] || [];
-    const normalized = firstRow.map(normalizeSpreadsheetSourceHeader_);
-    const hasLegacyHeader = normalized.includes("fuenteid") && normalized.includes("dominioarea") &&
-      normalized.includes("anolectivo") && normalized.includes("spreadsheetid");
-    if (!firstRow.some(value => String(value || "").trim())) {
-      sheet.getRange(1, 1, 1, SOURCE_REGISTRY_HEADERS_.length).setValues([SOURCE_REGISTRY_HEADERS_.slice()]);
-    } else if (!hasLegacyHeader) {
-      const looksLikeLegacyRecord = String(firstRow[0] || "").trim().indexOf("SRC-") === 0 &&
-        String(firstRow[1] || "").trim() && String(firstRow[2] || "").trim() && String(firstRow[3] || "").trim();
-      if (!looksLikeLegacyRecord) throw new Error("SOURCE_CATALOG_SCHEMA_MISMATCH");
-      sheet.insertRowBefore(1);
-      sheet.getRange(1, 1, 1, SOURCE_REGISTRY_HEADERS_.length).setValues([SOURCE_REGISTRY_HEADERS_.slice()]);
-    } else {
-      const requiredLegacy = ["fuenteid", "dominioarea", "anolectivo", "spreadsheetid", "estado", "schemaversion"];
-      if (requiredLegacy.some(key => !normalized.includes(key))) throw new Error("SOURCE_CATALOG_SCHEMA_MISMATCH");
-      const missing = SOURCE_REGISTRY_HEADERS_.filter(header => !normalized.includes(normalizeSpreadsheetSourceHeader_(header)));
-      if (missing.length) sheet.getRange(1, lastColumn + 1, 1, missing.length).setValues([missing]);
-    }
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    if (!ss) throw new Error("SOURCE_REGISTRY_SPREADSHEET_REQUIRED");
+      let sheet = ss.getSheetByName("CatalogoSpreadsheets");
+      if (!sheet) sheet = ss.insertSheet("CatalogoSpreadsheets");
+      let lastRow = sheet.getLastRow();
+      let lastColumn = sheet.getLastColumn();
+      if (!lastRow || !lastColumn) {
+        sheet.getRange(1, 1, 1, SOURCE_REGISTRY_HEADERS_.length).setValues([SOURCE_REGISTRY_HEADERS_.slice()]);
+      } else {
+        let firstRow = sheet.getRange(1, 1, 1, lastColumn).getValues()[0] || [];
+        const normalized = firstRow.map(normalizeSpreadsheetSourceHeader_);
+        const hasLegacyHeader = normalized.includes("fuenteid") && normalized.includes("dominioarea") &&
+          normalized.includes("anolectivo") && normalized.includes("spreadsheetid");
+        if (!firstRow.some(value => String(value || "").trim())) {
+          sheet.getRange(1, 1, 1, SOURCE_REGISTRY_HEADERS_.length).setValues([SOURCE_REGISTRY_HEADERS_.slice()]);
+        } else if (!hasLegacyHeader) {
+          const looksLikeLegacyRecord = String(firstRow[0] || "").trim().indexOf("SRC-") === 0 &&
+            String(firstRow[1] || "").trim() && String(firstRow[2] || "").trim() && String(firstRow[3] || "").trim();
+          if (!looksLikeLegacyRecord) throw new Error("SOURCE_CATALOG_SCHEMA_MISMATCH");
+          sheet.insertRowBefore(1);
+          sheet.getRange(1, 1, 1, SOURCE_REGISTRY_HEADERS_.length).setValues([SOURCE_REGISTRY_HEADERS_.slice()]);
+        } else {
+          const requiredLegacy = ["fuenteid", "dominioarea", "anolectivo", "spreadsheetid", "estado", "schemaversion"];
+          if (requiredLegacy.some(key => !normalized.includes(key))) throw new Error("SOURCE_CATALOG_SCHEMA_MISMATCH");
+          const missing = SOURCE_REGISTRY_HEADERS_.filter(header => !normalized.includes(normalizeSpreadsheetSourceHeader_(header)));
+          if (missing.length) sheet.getRange(1, lastColumn + 1, 1, missing.length).setValues([missing]);
+        }
+      }
+      lastColumn = sheet.getLastColumn();
+      const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0] || [];
+      const map = Object.create(null);
+      headers.forEach((header, index) => { map[normalizeSpreadsheetSourceHeader_(header)] = index; });
+      SOURCE_REGISTRY_HEADERS_.forEach(header => {
+        if (map[normalizeSpreadsheetSourceHeader_(header)] === undefined) throw new Error("SOURCE_CATALOG_SCHEMA_MISMATCH");
+      });
+      return { sheet:sheet, headers:headers, map:map, width:headers.length };
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
   }
-  lastColumn = sheet.getLastColumn();
-  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0] || [];
-  const map = Object.create(null);
-  headers.forEach((header, index) => { map[normalizeSpreadsheetSourceHeader_(header)] = index; });
-  SOURCE_REGISTRY_HEADERS_.forEach(header => {
-    if (map[normalizeSpreadsheetSourceHeader_(header)] === undefined) throw new Error("SOURCE_CATALOG_SCHEMA_MISMATCH");
-  });
-  return { sheet:sheet, headers:headers, map:map, width:headers.length };
 }
-
 function getSpreadsheetSourceRecords_(schema) {
   const values = schema.sheet.getDataRange().getValues();
   if (!values || values.length <= 1) return [];
