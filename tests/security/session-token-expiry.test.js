@@ -42,7 +42,7 @@ function runVerifier(source, claims) {
     },
     CacheService: { getScriptCache: () => ({ get: () => null, put: () => {} }) },
     SpreadsheetApp: {
-      openById: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [[], userRow] }) }) })
+      openById: () => ({ getSheetByName: name => name === "Usuarios" ? ({ getDataRange: () => ({ getValues: () => [[], userRow] }) }) : null })
     },
     SPREADSHEET_ID: "LOCAL"
   };
