@@ -837,7 +837,7 @@
 - Alcance: consolidar áreas y departamentos; definir asignaturas con ID/código único, área, departamento, programa, grado, idioma, carga horaria, créditos, prerrequisitos y obligatoriedad; versionar planes y validar ofertas; conservar historia y propagar cambios a formularios/reportes.
 - Criterios: fuente única sincronizada cliente/backend; departamentos sin catálogos paralelos; referencias válidas; soporte de modelos hondureños/bilingües; desactivación sin pérdida histórica; pruebas de integridad y múltiples grados.
 - Relacionadas: TASK-005, AUD-NG-011, AUD-NG-018, AUD-NG-093, AUD-NG-108, AUD-NG-111, AUD-NG-113, AUD-NG-115, AUD-NG-117 y TASK-153.
-- Estado: En progreso (C1.896, 2026-11-20).
+- Estado: En progreso (C1.897, 2026-11-20).
 
 - **Avance C1.889:** se corrige la discrepancia del esquema `PlanesEstudio`: `getStudyPlans` lee por encabezados y distingue `VigenciaInicio`, `VigenciaFin` y `Estado`; `createStudyPlan` escribe por mapa de columnas, valida rango, evita duplicados lógicos y genera ID UUID. Las hojas heredadas `Estado/Vigencia` se leen sin desplazar columnas y reciben las columnas canónicas al crear nuevos planes, conservando los valores históricos.
 - **Pruebas:** `tests/security/academic-curriculum-catalog-contract.test.js` incorporado al workflow Academic-Service; prueba esquema canónico, compatibilidad heredada, vigencia inválida, duplicado e ID estable. Academic-Service run 44656530850 SUCCESS.
@@ -872,6 +872,10 @@
 - **Avance C1.896:** el consumidor de analíticas de Secretaría ahora usa el contrato real de getCurricularAnalyticsReport (metrics.promedioConsolidado, evaluadasCount, notasPendientes, alertasAcompanamiento y distribución). Se habilita el permiso de lectura agregada para Secretaría/Secretaria y se renderizan métricas con textContent.
 - **Pruebas C1.896:** Academic-Service run 44707854006 SUCCESS; Department Reference Consumers run 44707853980 SUCCESS; UI Accessibility run 44707854078 SUCCESS; node --check js/secretary.js PASS. Department Scope conserva fallo independiente Phase22 por configureSchoolDocumentTemplate ausente.
 - **Límite:** el reporte continúa agregado y no filtra por asignatura/área/programa/grado ni se une a relaciones curriculares; no se considera completa la propagación analítica.
+
+- **Avance C1.897:** los contratos ahora prueban planes versionados sin sobrescritura, asignaturas con programa/nivel/grado/idioma/carga/créditos/prerrequisitos, asignaturas bilingües y relaciones válidas entre planes de grados distintos. Se rechaza la relación de asignatura incompatible con el grado del plan.
+- **Pruebas C1.897:** Academic-Service runs 44708197991 y 44708336347 SUCCESS; el segundo valida HEAD 45bbfc6 e incluye las suites académicas y regresiones.
+- **Pendiente:** filtros curriculares reales en reportes; integración de otros formularios; edición y validación de ciclos de prerrequisitos; E2E con programas/productos educativos reales.
 
 
 <!-- ID: AUD-NG-226 | Fuentes: Pendientes.md -->

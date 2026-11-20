@@ -295,3 +295,5 @@ Los checkpoints posteriores se registran aquí.
 | C1.895 | IMA-EXEC-20261120-AUD-NG-164-ADMIN-UI-66 | Panel Dirección con CRUD de asignaturas/planes/relaciones/ofertas, consulta y estado histórico; UI contract y consumer workflow SUCCESS | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0020.txt — C1.895 | C1.894 | Integrar reportes/formularios restantes y reconciliar tareas propietarias |
 
 | C1.896 | IMA-EXEC-20261120-AUD-NG-164-REPORT-67 | Consumidor de analíticas de Secretaría alineado al contrato metrics y RBAC de lectura; render seguro; Academic-Service y consumer workflows SUCCESS | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0020.txt — C1.896 | C1.895 | Completar reportes con filtros curriculares y revisar formularios restantes; pruebas multi-grado/bilingües |
+
+| C1.897 | IMA-EXEC-20261120-AUD-NG-164-MULTIGRADE-68 | Contratos cubren planes versionados, asignaturas bilingües y varios grados; rechazan relaciones incompatibles; Academic-Service CI SUCCESS | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0020.txt — C1.897 | C1.896 | Integrar filtros curriculares en reportes y formularios restantes; E2E con programas reales |

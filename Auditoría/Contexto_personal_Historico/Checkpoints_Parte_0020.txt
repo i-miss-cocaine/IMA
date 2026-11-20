@@ -194,3 +194,30 @@ Límites:
 - El reporte sigue siendo un agregado institucional; getCurricularAnalyticsReport no implementa filtros por asignatura, área, programa o grado ni distribución basada en las relaciones nuevas. No se afirma integración curricular analítica completa.
 - AUD-NG-164 continúa En progreso; quedan otros formularios/reportes, pruebas funcionales multi-grado/bilingües y reconciliación de fuentes bajo tareas propietarias.
 ===============================================================================
+
+
+===============================================================================
+### C1.897 — AUD-NG-164: cobertura de versiones, multi-grado e idioma
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-MULTIGRADE-68
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 4df45da2e5fabb10364290f3bd7dca45394f0751
+HEAD final: 45bbfc68b4068ca5fa3c002f59bd095fec3d2919
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Cobertura añadida:
+- Catálogo institucional: se prueba alta y lectura de asignaturas con programa, nivel educativo, grado, idioma, carga horaria, créditos y prerrequisitos; incluye una asignatura bilingüe en inglés para grado 11 y otra en español para grado 10.
+- Relaciones PlanAsignaturas: se prueba un plan de grado 10 y otro de grado 11; se acepta la relación compatible y se rechaza vincular una asignatura de grado 11 al plan de grado 10.
+- Planes: se prueba versionado append-only; misma versión/grado/vigencia duplicada se rechaza y nueva versión/vigencia se agrega sin sobrescribir la anterior.
+- Se mantiene cobertura de unicidad, lock, ciclo de vida, historial y despacho/RBAC.
+
+Pruebas:
+- Academic-Service single authorization context run 44708197991 — SUCCESS para los contratos de multi-grado/idioma.
+- Academic-Service single authorization context run 44708336347 — SUCCESS en HEAD final 45bbfc6; incluye contrato de versionado de planes, dispatch/RBAC, catálogo, ofertas y regresiones académicas/SACE.
+- Hubo un fallo transitorio de sintaxis del fixture en commit d740ea4 por un separador de línea literal; corregido en 45bbfc6 y verificado en el workflow final. No se dejó fallo pendiente por esta prueba.
+
+Límites:
+- La cobertura es contractual Node con hojas simuladas; no equivale a validación con modelos productivos hondureños ni despliegue Apps Script.
+- AUD-NG-164 sigue En progreso: falta integración de filtros curriculares en reportes, otros formularios, edición de asignaturas/ciclos de prerrequisitos y validación E2E de programas reales.
+===============================================================================
