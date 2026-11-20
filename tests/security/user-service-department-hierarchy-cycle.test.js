@@ -59,6 +59,7 @@ function makeSheet(headers, initialRows) {
 const functions = [
   "getDepartmentHierarchyColumnMap_",
   "validateDepartmentHierarchy_",
+  "getDepartmentHierarchySnapshot_",
   "manageDepartmentPositions"
 ].map(extractFunction).join("\n");
 
@@ -152,5 +153,17 @@ const deepResult = deep.api.validateDepartmentHierarchy_(deepSheet,"D-NEW","D149
 assert.equal(deepResult.path.length,1501,"iterative traversal handles deep trees without recursive stack growth");
 assert.equal(deepResult.path[0],"D-NEW");
 assert.equal(deepResult.path[1500],"D0");
+const deepSnapshot = deep.api.manageDepartmentPositions({subAction:"GET_DEPARTMENT_HIERARCHY",_verifiedUserId:"HR-1"});
+assert.equal(deepSnapshot.data.total,1500);
+assert.equal(deepSnapshot.data.departments.find(item=>item.deptId==="D1499").depth,1499);
+assert.deepEqual(Array.from(deepSnapshot.data.roots),["D0"]);
 
-console.log("user-service department hierarchy contract PASS (roots, legacy schema, parent validation, direct/indirect cycles, atomic rejection, lock and deep traversal).");
+const corruptCycle = makeSheet(
+  ["deptId","nombre","estado","DepartamentoPadreID"],
+  [["A","A","Activo","B"],["B","B","Activo","A"]]
+);
+assert.throws(() => createContext(corruptCycle).api.manageDepartmentPositions({
+  subAction:"GET_DEPARTMENT_HIERARCHY",_verifiedUserId:"HR-1"
+}), /DEPARTMENT_HIERARCHY_CYCLE/);
+
+console.log("user-service department hierarchy contract PASS (roots, legacy schema, parent validation, direct/indirect cycles, atomic rejection, lock, snapshot and deep traversal).");
