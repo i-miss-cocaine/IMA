@@ -6527,9 +6527,9 @@ function updateSubjectCatalogItem(payload) {
     const duplicateCode = data.slice(1).some((row,index) => index + 1 !== target.index &&
       String(row[map.codigo] || "").trim().toUpperCase() === codigo);
     if (duplicateCode) throw new Error("SUBJECT_CODE_ALREADY_EXISTS");
-    const workload = input.cargaHorariaRef === undefined ? current.cargaHorariaRef
+    const workload = input.cargaHorariaRef === undefined ? (current.cargaHorariaRef == null ? "" : current.cargaHorariaRef)
       : input.cargaHorariaRef === null || input.cargaHorariaRef === "" ? "" : Number(input.cargaHorariaRef);
-    const credits = input.creditos === undefined ? current.creditos
+    const credits = input.creditos === undefined ? (current.creditos == null ? "" : current.creditos)
       : input.creditos === null || input.creditos === "" ? "" : Number(input.creditos);
     if (workload !== "" && (!Number.isFinite(Number(workload)) || Number(workload) < 0)) throw new Error("SUBJECT_WORKLOAD_INVALID");
     if (credits !== "" && (!Number.isFinite(Number(credits)) || Number(credits) < 0)) throw new Error("SUBJECT_CREDITS_INVALID");
