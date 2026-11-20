@@ -837,7 +837,7 @@
 - Alcance: consolidar áreas y departamentos; definir asignaturas con ID/código único, área, departamento, programa, grado, idioma, carga horaria, créditos, prerrequisitos y obligatoriedad; versionar planes y validar ofertas; conservar historia y propagar cambios a formularios/reportes.
 - Criterios: fuente única sincronizada cliente/backend; departamentos sin catálogos paralelos; referencias válidas; soporte de modelos hondureños/bilingües; desactivación sin pérdida histórica; pruebas de integridad y múltiples grados.
 - Relacionadas: TASK-005, AUD-NG-011, AUD-NG-018, AUD-NG-093, AUD-NG-108, AUD-NG-111, AUD-NG-113, AUD-NG-115, AUD-NG-117 y TASK-153.
-- Estado: [ ] Pendiente
+- Estado: En progreso (C1.889, 2026-11-20).
 
 - **Avance C1.889:** se corrige la discrepancia del esquema `PlanesEstudio`: `getStudyPlans` lee por encabezados y distingue `VigenciaInicio`, `VigenciaFin` y `Estado`; `createStudyPlan` escribe por mapa de columnas, valida rango, evita duplicados lógicos y genera ID UUID. Las hojas heredadas `Estado/Vigencia` se leen sin desplazar columnas y reciben las columnas canónicas al crear nuevos planes, conservando los valores históricos.
 - **Pruebas:** `tests/security/academic-curriculum-catalog-contract.test.js` incorporado al workflow Academic-Service; prueba esquema canónico, compatibilidad heredada, vigencia inválida, duplicado e ID estable. Academic-Service run 44656530850 SUCCESS.
