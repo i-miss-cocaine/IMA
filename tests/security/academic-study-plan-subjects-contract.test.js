@@ -23,7 +23,8 @@ function sheet(headers,rows){
 }
 const plans=[{planId:"P1",grado:"10",estado:"Vigente"},{planId:"P2",grado:"11",estado:"Vigente"}];
 const subjects=[{asignaturaId:"S1",grado:"10",isActive:true,idioma:"es"},{asignaturaId:"S2",grado:"10",isActive:false},{asignaturaId:"S3",grado:"11",isActive:true,idioma:"en"}];
-const rels=sheet(["RelID","PlanID","AsignaturaID","Grado","Caracter","HorasSemanales","Orden"],[]);\nconst planSheet=sheet(["PlanID","Nombre","Version","Grado","VigenciaInicio","VigenciaFin","Estado"],[]);
+const rels=sheet(["RelID","PlanID","AsignaturaID","Grado","Caracter","HorasSemanales","Orden"],[]);
+const planSheet=sheet(["PlanID","Nombre","Version","Grado","VigenciaInicio","VigenciaFin","Estado"],[]);
 let locked=false,acquires=0,releases=0;
 const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({})},getOrCreateSheet:(_ss,name)=>name==="PlanesEstudio"?planSheet:rels,
  getStudyPlans:()=>({data:plans}),getInstitutionalAreaRecords_:()=>[],getInstitutionalSubjectRecords_:()=>subjects,
