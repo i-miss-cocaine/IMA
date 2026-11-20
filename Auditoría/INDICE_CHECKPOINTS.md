@@ -273,3 +273,6 @@ Los checkpoints posteriores se registran aquí.
 | C1.884 | IMA-EXEC-20261120-AUD-NG-167-MONOTONIC-REVISION-IMPLEMENTATION-55 | Implementación epoch:counter en Academic/USER/Exam; revisionOnly y revalidación A1-U1-E1-A2-U2-E2; pruebas de fallos/carreras PASS; 2 fallos Node globales ajenos al alcance | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt — C1.884 | C1.883 | Ejecutar BETA-EXAM-114 al desplegar y continuar auditoría del XLS CANDIDATE |
 
 | C1.885 | IMA-EXEC-20261120-AUD-NG-167-XLS-REVISION-PROVENANCE-56 | Orquestador conserva sourceRevisions solo en metadatos del XLS candidato; tokens inválidos fallan, legacy queda sin atestación; catálogo público no publica plantilla .xls genérica; manifest sigue CANDIDATE | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt — C1.885 | C1.884 | Ejecutar BETA-EXAM-114/115 y verificar plantilla real desde SACE Notas |
+
+
+| C1.886 | IMA-EXEC-20261120-AUD-NG-167-UUID-EPOCH-VALIDATION-57 | UUID estricto para sourceRevision en Academic/USER/Exam/orquestador; contratos agregan epoch inválido; parser V8 y matriz regex PASS; CI parcial sin logs verificables | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt — C1.886 | C1.885 | Verificar Actions SACE y ejecutar BETA-EXAM-114/115 cuando existan despliegues y archivo autorizado |

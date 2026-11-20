@@ -254,3 +254,14 @@ Por tanto, los tres libros del repositorio siguen siendo ejemplos estructurales 
 **Límite:** el orquestador continúa devolviendo un candidato local; no se expone a UI, descarga, almacenamiento ni carga a SACE. BETA-EXAM-115 documenta la comparación futura contra un libro descargado desde una sesión docente autorizada. La semántica de recuperación H y la política oficial COUNT/EXCLUDE siguen pendientes; no se promueve el candidato.
 
 Estado AUD-NG-167: [~] En progreso.
+
+
+## 19. Formato de sourceRevision — C1.886
+
+Los tokens de revisión reportados por Academic, USER y Exam usan el formato `UUID:counter`. Cada servicio genera el epoch con `Utilities.getUuid()` y ahora valida el UUID hexadecimal canónico de cinco grupos (8-4-4-4-12) tanto al inicializar como al leer Script Properties. El contador sigue limitado a entero seguro no negativo y el incremento permanece fail-closed antes de mutar.
+
+El orquestador candidato aplica el mismo formato antes de conservar `sourceRevisions` en metadatos. Snapshots legacy sin tokens mantienen el estado `absent`; objetos presentes con UUID o contador inválido se rechazan. Los tokens continúan fuera del binario XLS. Los contratos cubren UUID válido y epoch malformado para los tres servicios y el cliente.
+
+**Verificación:** parser V8 PASS en tres servicios, orquestador y dos contratos; matriz de formato/contador PASS. Los estados consultables de CI muestran Department Reference Consumers SUCCESS y Department Scope FAILURE sin logs accesibles; no se declara PASS de los workflows SACE hasta obtener sus resultados verificables. No se modifican manifest ni los tres templates CANDIDATE.
+
+Estado AUD-NG-167: [~] En progreso.

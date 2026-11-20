@@ -1993,3 +1993,50 @@ Estado:
 Siguiente acción elegible:
 - Ejecutar BETA-EXAM-114 y BETA-EXAM-115 cuando estén disponibles los tres servicios desplegados y un libro descargado desde SACE Notas con datos sintéticos/anonimizados. Antes de cualquier promoción, comparar el layout/metadata real con los tres baselines y resolver la semántica de recuperación y ausencias con evidencia válida.
 ===============================================================================
+
+
+
+===============================================================================
+### C1.886 — AUD-NG-167: validación estricta del epoch UUID de sourceRevision
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-167-UUID-EPOCH-VALIDATION-57
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: b920800594bb3ab798c087e3f865e953737cd939
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+HEAD de implementación: dfd6f09aa974cd6ac5046c0397cad07c518c0ee6
+
+Hallazgo y corrección:
+- La validación anterior aceptaba cualquier cadena alfanumérica/hífenes de longitud 8–80 como epoch, aunque los servicios generan UUID mediante Utilities.getUuid().
+- Academic, USER y Exam ahora validan el formato UUID hexadecimal 8-4-4-4-12 al inicializar y leer el token persistido.
+- El orquestador aplica el mismo formato al validar sourceRevisions del snapshot.
+- Se conserva el contador decimal como entero seguro no negativo; el incremento continúa fallando cerrado antes de la mutación cuando la persistencia no se confirma.
+- Los tokens permanecen en metadatos del candidato y no se escriben en el XLS.
+
+Pruebas y revisión:
+- Parser V8: PASS en los tres Code.gs, orquestador y ambos contratos modificados.
+- Matriz de regex: UUID válido y mayúsculas aceptados; epoch solo con guiones, formato heredado no UUID, contador negativo y decimal rechazados.
+- Se agregaron casos de epoch malformado a los contratos de los tres servicios y del orquestador; fixtures de revisión actualizados a UUID válido.
+- Node --check y ejecución Node de contratos: no verificados localmente en esta sesión.
+- Checks consultables del commit: ima/department-reference-consumers SUCCESS; ima/department-scope-contract FAILURE. El conector no expuso IDs/logs de jobs para atribuir la falla ni confirmó los workflows SACE dedicados; no se declara CI PASS.
+- No hay package.json ni CLI en el árbol. No se ejecutó Apps Script real ni se alteraron despliegues.
+
+Archivos de implementación/prueba:
+- backend/academic-service/Code.gs
+- backend/user-service/Code.gs
+- backend/exam-service/Code.gs
+- js/sace-export-orchestrator.js
+- tests/security/sace-source-revision-contract.test.js
+- tests/security/sace-export-orchestrator-contract.test.js
+
+Commit de implementación:
+- dfd6f09aa974cd6ac5046c0397cad07c518c0ee6 — fix(sace): validate UUID source revision epochs.
+
+Estado:
+- C1.886 completa como corrección de validación de formato y ampliación de contratos.
+- AUD-NG-167 continúa En progreso. BETA-EXAM-114 requiere los tres servicios desplegados; BETA-EXAM-115 requiere archivo de calificaciones obtenido de SACE Notas. Semántica de recuperación H y política COUNT/EXCLUDE siguen sin fuente oficial confirmada. XLS permanece CANDIDATE.
+- AUD-NG-168/TAREA-13 no se inicia: el Plan Maestro establece que no es elegible mientras AUD-NG-167 siga abierto.
+
+Siguiente acción elegible:
+- Obtener resultados/logs verificables de los workflows SACE para el commit de implementación; después ejecutar BETA-EXAM-114/115 cuando estén disponibles despliegues y archivo autorizado. Mantener la exportación en estado candidato hasta resolver procedencia, vigencia y semántica oficial.
+===============================================================================
