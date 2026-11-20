@@ -436,7 +436,7 @@ console.log("TASK-153 staff/student department intersection contract passed.");
   assert.equal(second.status,"success");
   assert.equal(taskRows[2][10],"TEACHER-2");
   assert.equal(registered[1].departmentId,"D2");
-  assert.equal(assignmentCalls,2,"each accepted task uses the teacher's current offer assignment");
+  assert.equal(assignmentCalls,3,"each teacher task attempt validates its current offer assignment before department ownership is finalized");
   assert.equal(dynamicPermissionCalls,0,"createTask relies on its one dispatcher RBAC grant; registry persistence adds no extra role privilege");
 }
 
