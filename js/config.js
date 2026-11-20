@@ -810,11 +810,20 @@ window.fetchInstitutionalCatalog = function(catalogType) {
         var areas = Object.keys(cache.areas).map(function(key) { return cache.areas[key]; });
         var subjects = Object.keys(cache.subjects).map(function(key) { return cache.subjects[key]; });
         var departments = Object.keys(cache.departments).map(function(key) { return cache.departments[key]; });
+        var hasServerCache = areas.concat(subjects, departments).some(function(item) { return item.source === "SERVER"; });
+        var fallbackSource = hasServerCache ? "STALE_SERVER_CACHE" : "LOCAL_FALLBACK";
+        var sources = Object.assign({}, window.INSTITUTIONAL_CATALOG_STATE.catalogSources || {});
+        var normalizedType = String(requestedType).toUpperCase();
+        if (normalizedType === "ALL" || normalizedType === "ALL_INSTITUTIONAL_CATALOGS") {
+            sources.areas = fallbackSource; sources.subjects = fallbackSource; sources.departments = fallbackSource;
+        } else if (normalizedType === "CURRICULAR_AREAS") sources.areas = fallbackSource;
+        else if (normalizedType === "SUBJECTS") sources.subjects = fallbackSource;
+        else if (normalizedType === "DEPARTMENTS") sources.departments = fallbackSource;
         window.INSTITUTIONAL_CATALOG_STATE = Object.assign({}, window.INSTITUTIONAL_CATALOG_STATE, {
-            source:"LOCAL_FALLBACK", authoritative:false, error:{code:code,message:message},
-            fallbackAt:new Date().toISOString()
+            source:fallbackSource, authoritative:false, catalogSources:sources,
+            error:{code:code,message:message}, fallbackAt:new Date().toISOString()
         });
-        return { status:"fallback", source:"LOCAL_FALLBACK", authoritative:false, schemaVersion:null, catalogRevision:null,
+        return { status:"fallback", source:fallbackSource, authoritative:false, schemaVersion:null, catalogRevision:null,
             error:{code:code,message:message},
             data:{
                 areasCurriculares:areas.filter(function(item){return item.isActive===true;}),
@@ -842,17 +851,34 @@ window.fetchInstitutionalCatalog = function(catalogType) {
             Array.isArray(data.areasCurricularesMetadata) && Array.isArray(data.asignaturasMetadata) &&
             Array.isArray(data.departamentosAcademicosMetadata);
         if (!valid) return fallback("INVALID_CATALOG_CONTRACT","La respuesta del servidor no cumple el contrato versionado del catálogo.");
+        var normalizedType = String(requestedType).toUpperCase();
+        if (normalizedType === "ALL" || normalizedType === "ALL_INSTITUTIONAL_CATALOGS") {
+            window.INSTITUTIONAL_CATALOG_CACHE.areas = {};
+            window.INSTITUTIONAL_CATALOG_CACHE.subjects = {};
+            window.INSTITUTIONAL_CATALOG_CACHE.departments = {};
+        } else if (normalizedType === "CURRICULAR_AREAS") window.INSTITUTIONAL_CATALOG_CACHE.areas = {};
+        else if (normalizedType === "SUBJECTS") window.INSTITUTIONAL_CATALOG_CACHE.subjects = {};
+        else if (normalizedType === "DEPARTMENTS") window.INSTITUTIONAL_CATALOG_CACHE.departments = {};
         data.areasCurricularesMetadata.forEach(function(area){window.registerNewCurricularAreaServiceConfig(Object.assign({},area,{source:"SERVER",authoritative:true}));});
         data.asignaturasMetadata.forEach(function(subject){window.registerNewAcademicSubjectServiceConfig(Object.assign({},subject,{source:"SERVER",authoritative:true}));});
         data.departamentosAcademicosMetadata.forEach(function(department){window.registerNewAcademicDepartmentServiceConfig(Object.assign({},department,{source:"SERVER",authoritative:true}));});
+        var catalogSources = Object.assign({}, window.INSTITUTIONAL_CATALOG_STATE.catalogSources || {});
+        if (normalizedType === "ALL" || normalizedType === "ALL_INSTITUTIONAL_CATALOGS") {
+            catalogSources.areas = "SERVER"; catalogSources.subjects = "SERVER"; catalogSources.departments = "SERVER";
+        } else if (normalizedType === "CURRICULAR_AREAS") catalogSources.areas = "SERVER";
+        else if (normalizedType === "SUBJECTS") catalogSources.subjects = "SERVER";
+        else if (normalizedType === "DEPARTMENTS") catalogSources.departments = "SERVER";
+        var allCatalogsServerAuthoritative = catalogSources.areas === "SERVER" && catalogSources.subjects === "SERVER" && catalogSources.departments === "SERVER";
         window.INSTITUTIONAL_CATALOG_STATE = {
-            source:"SERVER", authoritative:true, schemaVersion:res.schemaVersion, version:res.version,
+            source:allCatalogsServerAuthoritative ? "SERVER" : "PARTIAL_SERVER",
+            authoritative:allCatalogsServerAuthoritative, catalogSources:catalogSources,
+            schemaVersion:res.schemaVersion, version:res.version,
             catalogRevision:Number(res.catalogRevision), sharedConfigVersion:payload.clientConfigVersion,
             serviceVersion:payload.clientServiceVersion,
             cacheTtlSeconds:window.CACHE_POLICIES && window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS.ttlSeconds : 43200,
             fetchedAt:new Date().toISOString()
         };
-        return Object.assign({},res,{source:"SERVER",authoritative:true,cachePolicy:window.CACHE_POLICIES ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS : null});
+        return Object.assign({},res,{source:"SERVER",authoritative:true,authoritativeCatalogType:normalizedType,cachePolicy:window.CACHE_POLICIES ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS : null});
     }).catch(function(error) {
         if (window.console && console.error) console.error("[CATALOG-SYNC] Error en sincronización institucional:",error);
         return fallback("CATALOG_SYNC_FAILED",String(error && error.message || error || "Error desconocido"));
@@ -977,12 +1003,13 @@ window.ACADEMIC_SUBJECTS_CATALOG = window.ACADEMIC_SUBJECTS_CATALOG || [];
 window.INSTITUTIONAL_CATALOG_CACHE = window.INSTITUTIONAL_CATALOG_CACHE || { areas: {}, subjects: {}, departments: {} };
 window.INSTITUTIONAL_CATALOG_STATE = window.INSTITUTIONAL_CATALOG_STATE || {
     source: "LOCAL_FALLBACK", authoritative: false, schemaVersion: null,
-    catalogRevision: null, sharedConfigVersion: window.getSharedConfigVersion ? window.getSharedConfigVersion() : null
+    catalogRevision: null, sharedConfigVersion: window.getSharedConfigVersion ? window.getSharedConfigVersion() : null,
+    catalogSources: { areas:"LOCAL_FALLBACK", subjects:"LOCAL_FALLBACK", departments:"LOCAL_FALLBACK" }
 };
 function institutionalCatalogIsActive_(record, existing) {
     if (Object.prototype.hasOwnProperty.call(record, "isActive")) return record.isActive === true;
     if (Object.prototype.hasOwnProperty.call(record, "estado")) return ["activo","vigente","active","enabled"].indexOf(String(record.estado || "").trim().toLowerCase()) !== -1;
-    return existing ? existing.isActive === true : true;
+    return existing ? existing.isActive === true : false;
 }
 function rebuildInstitutionalCatalogViews_() {
     var cache = window.INSTITUTIONAL_CATALOG_CACHE;
