@@ -4602,6 +4602,7 @@ function validateDepartmentHierarchy_(sheet, deptId, parentDeptId) {
   const candidateId = String(deptId || "").trim().toUpperCase();
   const parentId = String(parentDeptId || "").trim().toUpperCase();
   if (!candidateId) throw new Error("DEPARTMENT_ID_REQUIRED");
+  getDepartmentHierarchySnapshot_(sheet);
   if (!parentId) return { valid:true, path:[candidateId], parentDeptId:"" };
   if (candidateId === parentId) {
     throw new Error("DEPARTMENT_HIERARCHY_CYCLE:" + candidateId + " -> " + parentId);

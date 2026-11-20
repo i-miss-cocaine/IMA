@@ -165,5 +165,11 @@ const corruptCycle = makeSheet(
 assert.throws(() => createContext(corruptCycle).api.manageDepartmentPositions({
   subAction:"GET_DEPARTMENT_HIERARCHY",_verifiedUserId:"HR-1"
 }), /DEPARTMENT_HIERARCHY_CYCLE/);
+assert.throws(() => createContext(makeSheet(
+  ["deptId","nombre","estado","DepartamentoPadreID"],
+  [["A","A","Activo","B"],["B","B","Activo","A"]]
+)).api.manageDepartmentPositions({
+  subAction:"CREATE_DEPT",deptId:"C",deptNombre:"No debe persistir",_verifiedUserId:"HR-1"
+}), /DEPARTMENT_HIERARCHY_CYCLE/);
 
 console.log("user-service department hierarchy contract PASS (roots, legacy schema, parent validation, direct/indirect cycles, atomic rejection, lock, snapshot and deep traversal).");
