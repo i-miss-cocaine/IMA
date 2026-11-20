@@ -850,7 +850,9 @@
 - Se corrige el reporte de pruebas de áreas para no ocultar herramientas JSON inválidas.
 - **Pruebas C1.890:** Academic-Service single authorization context run 44662036645 SUCCESS; Node syntax check y contratos curriculares, PlanAsignaturas, ofertas, catálogo institucional y regresiones incluidas PASS. Department Scope mantiene fallo ajeno en Phase22 por configureSchoolDocumentTemplate ausente.
 - **Límites pendientes:** prerrequisitos y campos curriculares adicionales; reconciliación de departamentos con AUD-NG-175/AUD-NG-226; sincronización autoritativa cliente/backend y propagación a formularios/reportes; verificación funcional de modelos hondureños/bilingües y múltiples grados. No se ejecutó despliegue Apps Script ni E2E productivo.
-
+- **Avance C1.891:** CatalogoAsignaturas agrega PrerrequisitosJSON sin desplazar columnas existentes. La creación valida referencias activas y únicas; la lectura normaliza los IDs y falla cerrado cuando el JSON está corrupto, conservando la fila y sus metadatos.
+- **Pruebas C1.891:** Academic-Service single authorization context run 44662412795 SUCCESS; el contrato institucional cubre prerequisito válido, inexistente, inactivo, propagación y JSON corrupto.
+- **Pendiente:** integrar/validar consumidores cliente, formularios y reportes; resolver edición y validación de ciclos de prerrequisitos; verificar modelos hondureños/bilingües y múltiples grados; reconciliar AUD-NG-175/AUD-NG-226 sin duplicar su alcance.
 
 <!-- ID: AUD-NG-226 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-226] [P1] Integridad referencial y atomicidad en departamentos, cargos y adscripciones

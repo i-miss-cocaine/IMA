@@ -1,0 +1,32 @@
+===============================================================================
+### C1.891 — AUD-NG-164: prerrequisitos curriculares validados
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-PREREQUISITES-62
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 111bb92597528fc9c241dcef43f71d779a0cf33f
+HEAD de código verificado: 70caf30d5bde7e280bd1170a4ace3044daf0ed2b
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+Checkpoint anterior: C1.890 — Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0019.txt
+
+Implementación:
+- Se amplía CatalogoAsignaturas con PrerrequisitosJSON como columna opcional añadida al final, manteniendo encabezados y datos heredados.
+- createSubjectCatalogItem acepta prerrequisitos como arreglo o JSON-array; normaliza IDs, rechaza entradas vacías/duplicadas y exige que cada referencia exista y esté activa antes de guardar.
+- getInstitutionalSubjectRecords_ devuelve prerrequisitos normalizados y marca prerequisitesSchemaValid. Un JSON inválido deja el registro inactivo para el catálogo operativo, pero conserva metadatos y no borra la fila histórica.
+- La sincronización del catálogo institucional devuelve el campo de prerrequisitos dentro de asignaturasMetadata/asignaturas; no se afirma integración de formularios/reportes, que sigue pendiente.
+
+Pruebas:
+- Academic-Service single authorization context run 44662412795 — SUCCESS.
+- node --check < backend/academic-service/Code.gs — SUCCESS.
+- academic-institutional-catalog-contract: alta con prerequisito activo, rechazo de referencia inexistente/inactiva, propagación de metadata y fail-closed para JSON corrupto — SUCCESS.
+- También pasan los contratos curriculares, PlanAsignaturas, ofertas, autorización académica, SACE y regresiones incluidas en el workflow.
+- No se ejecutó despliegue Apps Script, navegador, datos productivos ni E2E real.
+
+Estado:
+- AUD-NG-164 continúa En progreso; no se marca completada.
+- Pendiente: comprobar ciclo de dependencias/prerrequisitos en una operación de edición (aún no existe endpoint de edición); integración verificada de frontend, formularios y reportes; consolidación de departamentos con AUD-NG-175/AUD-NG-226; cobertura funcional de modelos hondureños/bilingües y varios grados.
+- AUD-NG-175 y AUD-NG-226 no se modifican ni se duplican.
+
+Siguiente paso:
+- Auditar los consumidores cliente de catálogo y los formularios/reportes curriculares; después completar la reconciliación con las tareas relacionadas, preservando la autoridad de datos y el historial.
+===============================================================================
