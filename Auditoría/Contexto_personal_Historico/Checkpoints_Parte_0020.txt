@@ -221,3 +221,43 @@ Límites:
 - La cobertura es contractual Node con hojas simuladas; no equivale a validación con modelos productivos hondureños ni despliegue Apps Script.
 - AUD-NG-164 sigue En progreso: falta integración de filtros curriculares en reportes, otros formularios, edición de asignaturas/ciclos de prerrequisitos y validación E2E de programas reales.
 ===============================================================================
+
+
+===============================================================================
+### C1.898 — AUD-NG-164: sincronización cliente resistente a respuestas fuera de orden
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-CLIENT-SYNC-RACE-69
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: de64b141b519868c277a83aef396822689f82545
+HEAD final verificado: 072f6d2273c8701ad6023de201f7674b414fe6d9
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+Checkpoint anterior: C1.897 — mismo archivo, bloque anterior.
+
+Implementación:
+- fetchInstitutionalCatalog conserva una revisión aplicada por tipo de catálogo (áreas, asignaturas y departamentos). Una respuesta antigua de un tipo no reemplaza una revisión más nueva ya aplicada a ese tipo.
+- Las respuestas ALL se aplican por catálogo: una sección obsoleta se omite sin descartar secciones de otras áreas que todavía pueden actualizarse.
+- Se conserva el máximo de catalogRevision global y se inicializan revisiones por tipo desde el estado previo para no perder protección al actualizar clientes con caché ya autoritativa.
+- El indicador authoritative de la respuesta refleja si los tres catálogos están sincronizados; una consulta parcial ya no afirma autoridad completa.
+
+Pruebas:
+- Se añade tests/security/academic-institutional-catalog-client-contract.test.js con carreras de dos consultas SUBJECTS, respuesta ALL antigua frente a SUBJECTS reciente, aplicación independiente de catálogos y bandera de autoridad parcial/completa.
+- node --check js/config.js — PASS.
+- Academic-Service single authorization context run 44731176886 — SUCCESS; contratos de catálogo, planes, relaciones, ofertas, despacho/RBAC y regresiones académicas/SACE — PASS.
+- Regional Formatting Contract run 44731001731 — SUCCESS.
+- El primer run 44731001721 detectó únicamente una aserción deepStrictEqual entre arrays de contextos VM distintos; corregida con Array.from en commit 072f6d2 y verificada por el run SUCCESS posterior.
+
+Archivos:
+- js/config.js
+- tests/security/academic-institutional-catalog-client-contract.test.js
+- .github/workflows/academic-service-single-auth-context.yml
+
+Commits:
+- f297425e1ceb6eedea4a96aab7aca655b5c20635 — protección de carreras y autoridad parcial.
+- 072f6d2273c8701ad6023de201f7674b414fe6d9 — corrección de aserción del contrato Node.
+
+Límites:
+- No se ejecutó navegador real, despliegue Apps Script ni E2E productivo.
+- La sincronización de formularios administrativos de Dirección ya está cubierta por js/curriculum-admin.js y su contrato de UI; no se reimplementó.
+- AUD-NG-164 continúa En progreso. Siguen pendientes filtros curriculares en reportes, formularios restantes, edición de asignaturas y validación de ciclos de prerrequisitos, además de reconciliación con las tareas propietarias AUD-NG-175/AUD-NG-226.
+===============================================================================

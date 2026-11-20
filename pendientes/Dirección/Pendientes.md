@@ -837,7 +837,7 @@
 - Alcance: consolidar áreas y departamentos; definir asignaturas con ID/código único, área, departamento, programa, grado, idioma, carga horaria, créditos, prerrequisitos y obligatoriedad; versionar planes y validar ofertas; conservar historia y propagar cambios a formularios/reportes.
 - Criterios: fuente única sincronizada cliente/backend; departamentos sin catálogos paralelos; referencias válidas; soporte de modelos hondureños/bilingües; desactivación sin pérdida histórica; pruebas de integridad y múltiples grados.
 - Relacionadas: TASK-005, AUD-NG-011, AUD-NG-018, AUD-NG-093, AUD-NG-108, AUD-NG-111, AUD-NG-113, AUD-NG-115, AUD-NG-117 y TASK-153.
-- Estado: En progreso (C1.897, 2026-11-20).
+- Estado: En progreso (C1.898, 2026-11-20).
 
 - **Avance C1.889:** se corrige la discrepancia del esquema `PlanesEstudio`: `getStudyPlans` lee por encabezados y distingue `VigenciaInicio`, `VigenciaFin` y `Estado`; `createStudyPlan` escribe por mapa de columnas, valida rango, evita duplicados lógicos y genera ID UUID. Las hojas heredadas `Estado/Vigencia` se leen sin desplazar columnas y reciben las columnas canónicas al crear nuevos planes, conservando los valores históricos.
 - **Pruebas:** `tests/security/academic-curriculum-catalog-contract.test.js` incorporado al workflow Academic-Service; prueba esquema canónico, compatibilidad heredada, vigencia inválida, duplicado e ID estable. Academic-Service run 44656530850 SUCCESS.
@@ -876,7 +876,9 @@
 - **Avance C1.897:** los contratos ahora prueban planes versionados sin sobrescritura, asignaturas con programa/nivel/grado/idioma/carga/créditos/prerrequisitos, asignaturas bilingües y relaciones válidas entre planes de grados distintos. Se rechaza la relación de asignatura incompatible con el grado del plan.
 - **Pruebas C1.897:** Academic-Service runs 44708197991 y 44708336347 SUCCESS; el segundo valida HEAD 45bbfc6 e incluye las suites académicas y regresiones.
 - **Pendiente:** filtros curriculares reales en reportes; integración de otros formularios; edición y validación de ciclos de prerrequisitos; E2E con programas/productos educativos reales.
-
+- **Avance C1.898:** el cliente mantiene revisiones aplicadas por tipo de catálogo y descarta respuestas antiguas fuera de orden sin bloquear la actualización independiente de otras categorías. El resultado ya no declara autoridad completa al sincronizar una sola categoría; la declara únicamente cuando áreas, asignaturas y departamentos están sincronizados.
+- **Pruebas C1.898:** contrato de carreras cliente (consultas concurrentes SUBJECTS, respuesta ALL antigua, actualización parcial/completa) y `node --check js/config.js` PASS. Academic-Service run 44731176886 y Regional Formatting Contract run 44731001731 SUCCESS.
+- **Pendiente:** filtros curriculares en reportes y formularios restantes; edición de asignaturas y validación de ciclos de prerrequisitos; E2E con modelos reales; reconciliar AUD-NG-175/AUD-NG-226 sin duplicar sus tareas propietarias.
 
 <!-- ID: AUD-NG-226 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-226] [P1] Integridad referencial y atomicidad en departamentos, cargos y adscripciones
