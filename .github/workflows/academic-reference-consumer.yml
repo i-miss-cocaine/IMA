@@ -17,6 +17,7 @@ on:
       - dashboard-secretaria.html
       - js/curriculum-admin.js
       - tests/security/academic-curriculum-admin-ui-contract.test.js
+      - tests/security/academic-institutional-catalog-contract.test.js
       - tests/security/academic-admission-offer-consumer-contract.test.js
       - tests/security/academic-teacher-offer-consumer-contract.test.js
       - backend/accounting-service/Code.gs

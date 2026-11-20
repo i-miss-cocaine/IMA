@@ -73,6 +73,7 @@ const names = [
   "validateCatalogReference",
   "getSubjectCatalog",
   "createSubjectCatalogItem",
+  "updateSubjectCatalogItem",
   "registerCurricularAreaExtension",
   "toggleCurricularAreaStatus",
   "runCurricularAreaServiceTests"
@@ -102,10 +103,11 @@ function createContext(overrides) {
     )
   };
   const properties = new Map([["INSTITUTIONAL_CATALOG_REVISION", "7"]]);
+  const spreadsheet = { getSheetByName: name => sheets[name] || null };
   const context = Object.assign({
     SPREADSHEET_ID: "TEST",
     LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
-    SpreadsheetApp: { openById: () => ({}) },
+    SpreadsheetApp: { openById: () => spreadsheet },
     getOrCreateSheet: (_ss, name) => sheets[name] || (sheets[name] = makeSheet([], [])),
     getVerifiedAcademicIdentity_: () => ({ authorized: true, userId: "U1", role: "Director" }),
     getVerifiedAcademicDepartmentScope_: () => ({ authorized: true, institutionWide: false, departmentIds: ["D1"] }),
@@ -119,10 +121,12 @@ function createContext(overrides) {
     _sheets: sheets,
     _properties: properties
   }, overrides || {});
-  vm.runInNewContext(functions + "\nthis.api={getInstitutionalCatalog,validateCatalogReference,getSubjectCatalog,createSubjectCatalogItem,registerCurricularAreaExtension,toggleCurricularAreaStatus,runCurricularAreaServiceTests};", context);
+  vm.runInNewContext(functions + "\nthis.api={getInstitutionalCatalog,validateCatalogReference,getSubjectCatalog,createSubjectCatalogItem,updateSubjectCatalogItem,registerCurricularAreaExtension,toggleCurricularAreaStatus,runCurricularAreaServiceTests};", context);
   return context;
 }
 
+assert.equal((source.match(/^function getSubjectCatalog\\(/gm) || []).length, 1, "only one active subject catalog declaration");
+assert.equal((source.match(/^function createSubjectCatalogItem\\(/gm) || []).length, 1, "only one active subject creation declaration");
 const ctx = createContext();
 const all = ctx.api.getInstitutionalCatalog({ catalogType: "ALL" });
 assert.equal(all.schemaVersion, "1.0.0");
@@ -158,6 +162,22 @@ assert.equal(subjectRow[subjectHeaders.indexOf("NivelEducativo")], "Media");
 assert.equal(subjectRow[subjectHeaders.indexOf("Grado")], "10");
 assert.equal(subjectRow[subjectHeaders.indexOf("Idioma")], "es");
 assert.equal(subjectRow[subjectHeaders.indexOf("Creditos")], 3);
+const subjectUpdate = ctx.api.updateSubjectCatalogItem({
+  asignaturaId: created.data.asignaturaId, nombreOficial: "Química Aplicada", creditos: 4, prerrequisitos: ["ASIG-1"]
+});
+assert.equal(subjectUpdate.data.nombreOficial, "Química Aplicada");
+assert.equal(subjectUpdate.data.creditos, 4);
+assert.equal(subjectSheet._rows[subjectSheet._rows.length - 1][subjectHeaders.indexOf("NombreOficial")], "Química Aplicada");
+assert.throws(() => ctx.api.updateSubjectCatalogItem({
+  asignaturaId: "ASIG-1", prerrequisitos: [created.data.asignaturaId]
+}), /SUBJECT_PREREQUISITE_CYCLE/);
+ctx._sheets.PlanAsignaturas = makeSheet(
+  ["RelID","PlanID","AsignaturaID","Grado","Caracter","HorasSemanales","Orden"],
+  [["REL-1","PLAN-1",created.data.asignaturaId,"10","Obligatoria",4,1]]
+);
+assert.throws(() => ctx.api.updateSubjectCatalogItem({
+  asignaturaId: created.data.asignaturaId, nombreOficial: "Química Aplicada II"
+}), /SUBJECT_REFERENCED_IDENTITY_FIELDS_IMMUTABLE/);
 const bilingualCreated = ctx.api.createSubjectCatalogItem({
   nombreOficial: "English for Technology", codigo: "ENG-BTP-11", areaId: "AREA-A",
   programaId: "BTP-INFO", nivelEducativo: "Media", grado: "11", idioma: "en",

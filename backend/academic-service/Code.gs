@@ -293,7 +293,7 @@ const ROLE_PERMISSIONS = {
   "Director": [
     "getAcademicConfig", "updateAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "saveWhatsAppLink", "getQuestionBank", "saveQuestion", "generateMigrationReport", "registerStudentEnrollment", "getStudentEnrollmentHistory",
     "getHierarchicalConfigurationCatalog", "resolveHierarchicalConfiguration", "getInstitutionParams", "saveInstitutionParam", "saveTeacherJustificationEvidencePolicy", "saveAbsenceJustificationPolicies", "getAcademicYears", "createAcademicYear", "updateAcademicYearStatus", "prepareNewAcademicYear",
-    "getAcademicPeriods", "manageAcademicPeriod", "getSubjectCatalog", "createSubjectCatalogItem", "getStudyPlans", "createStudyPlan", "getStudyPlanSubjects", "createStudyPlanSubject", "setStudyPlanSubjectStatus",
+    "getAcademicPeriods", "manageAcademicPeriod", "getSubjectCatalog", "createSubjectCatalogItem", "updateSubjectCatalogItem", "getStudyPlans", "createStudyPlan", "getStudyPlanSubjects", "createStudyPlanSubject", "setStudyPlanSubjectStatus",
     "getAcademicOffers", "createAcademicOffer", "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution",
     "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getAcademicRules", "saveAcademicRule", "getDepartmentAcademicPlanning", "assignDepartmentHead", "getCurricularAnalyticsReport", "getReusableResourceCatalog", "manageReusableResource", "getCurricularEquivalences", "executeCurricularMigration", "registerCurricularAreaExtension", "runCurricularAreaServiceTests", "toggleCurricularAreaStatus", "validateApiContractsTestSuite", "getInstitutionalCatalog", "validateCatalogReference", "generateInstitutionalUUID", "validateInstitutionalIdentifier", "auditInstitutionalIdentifierCollisions", "runConcurrencyAndConsistencySuite", "getPaginatedAcademicHistory", "reconcileRestoredDataIntegrity", "evaluateTransactionalStorageMigrationNeed",
     "getClassroomResources", "saveClassroomResource", "saveClassroomMaintenance", "getStudentSchedule", "getScheduleConflictResolutionAlternatives", "saveScheduleScenario", "getScheduleScenarios", "saveTeacherWorkLoadPreferences", "createSessionException", "getScheduleVersions", "compareScheduleVersions", "restoreScheduleVersion", "getPlanningQualityAndOccupancyReport", "exportBulkClassSchedules", "importBulkClassSchedules", "previewPublishImpact",
@@ -1610,6 +1610,7 @@ function doPost(e) {
       case "manageAcademicPeriod": result = manageAcademicPeriod(payload); break;
       case "getSubjectCatalog": result = getSubjectCatalog(payload); break;
       case "createSubjectCatalogItem": result = createSubjectCatalogItem(payload); break;
+      case "updateSubjectCatalogItem": result = updateSubjectCatalogItem(payload); break;
       case "getStudyPlans": result = getStudyPlans(payload); break;
       case "createStudyPlan": result = createStudyPlan(payload); break;
       case "getStudyPlanSubjects": result = getStudyPlanSubjects(payload); break;
@@ -6446,6 +6447,136 @@ function createSubjectCatalogItem(payload) {
   }
 }
 
+function updateSubjectCatalogItem(payload) {
+  const input = payload && typeof payload === "object" ? payload : {};
+  const asignaturaId = String(input.asignaturaId || "").trim().toUpperCase();
+  if (!asignaturaId) throw new Error("SUBJECT_ID_REQUIRED");
+  const identity = getVerifiedAcademicIdentity_(input);
+  if (!identity || identity.authorized !== true) throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const scope = getVerifiedAcademicDepartmentScope_(input, ss, identity);
+  if (!scope || scope.authorized !== true) throw new Error(scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("SUBJECT_CATALOG_LOCK_TIMEOUT");
+  try {
+    const sheet = getOrCreateSheet(ss, "CatalogoAsignaturas");
+    const map = getInstitutionalSubjectColumnMap_(sheet, true);
+    const data = sheet.getDataRange().getValues();
+    const matches = data.slice(1).map((row,index) => ({row,index:index+1}))
+      .filter(item => String(item.row[map.asignaturaId] || "").trim().toUpperCase() === asignaturaId);
+    if (matches.length !== 1) throw new Error(matches.length ? "SUBJECT_ID_AMBIGUOUS" : "SUBJECT_NOT_FOUND");
+    const target = matches[0], currentRow = target.row.slice();
+    const areas = getInstitutionalAreaRecords_(ss);
+    const subjects = getInstitutionalSubjectRecords_(ss, areas);
+    const currentMatches = subjects.filter(item => item.asignaturaId === asignaturaId);
+    if (currentMatches.length !== 1) throw new Error("SUBJECT_METADATA_AMBIGUOUS");
+    const current = currentMatches[0];
+    if (scope.institutionWide !== true &&
+        !(scope.departmentIds || []).some(id => String(id).trim().toUpperCase() === String(current.departmentId || "").trim().toUpperCase())) {
+      throw new Error("SUBJECT_OUT_OF_DEPARTMENT_SCOPE");
+    }
+    const norm = value => String(value == null ? "" : value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+    const valueOrCurrent = (key, currentValue) => input[key] === undefined ? currentValue : String(input[key] || "").trim();
+    const nombreOficial = valueOrCurrent("nombreOficial", current.nombreOficial);
+    const codigo = valueOrCurrent("codigo", current.codigo).toUpperCase();
+    if (!nombreOficial || !codigo) throw new Error("SUBJECT_NAME_AND_CODE_REQUIRED");
+    const areaKey = input.areaId !== undefined ? String(input.areaId || "").trim()
+      : input.areaAcademica !== undefined ? String(input.areaAcademica || "").trim() : current.areaId;
+    let area = areas.find(item => item.areaId === current.areaId) || {
+      areaId:current.areaId, name:current.areaAcademica, departmentId:current.departmentId, isActive:true
+    };
+    if (String(areaKey || "").trim().toUpperCase() !== String(current.areaId || "").trim().toUpperCase()) {
+      area = validateCatalogReference({catalogType:"CURRICULAR_AREAS",referenceKey:areaKey},{identity,ss,scope}).reference;
+    }
+    if (!area || !area.departmentId) throw new Error("AREA_DEPARTMENT_REQUIRED");
+    if (input.departmentId && String(input.departmentId).trim().toUpperCase() !== String(area.departmentId).trim().toUpperCase()) {
+      throw new Error("SUBJECT_AREA_DEPARTMENT_MISMATCH");
+    }
+    const nextFields = {
+      programaId:valueOrCurrent("programaId", current.programaId),
+      nivelEducativo:valueOrCurrent("nivelEducativo", current.nivelEducativo),
+      grado:valueOrCurrent("grado", current.grado),
+      idioma:valueOrCurrent("idioma", current.idioma)
+    };
+    const identityChanged = norm(nombreOficial) !== norm(current.nombreOficial) ||
+      codigo !== String(current.codigo || "").trim().toUpperCase() ||
+      String(area.areaId || "").trim().toUpperCase() !== String(current.areaId || "").trim().toUpperCase() ||
+      norm(nextFields.programaId) !== norm(current.programaId) ||
+      norm(nextFields.nivelEducativo) !== norm(current.nivelEducativo) ||
+      norm(nextFields.grado) !== norm(current.grado) ||
+      norm(nextFields.idioma) !== norm(current.idioma);
+    function hasReference(sheetName, headerName, acceptedValues) {
+      const referenceSheet = ss.getSheetByName(sheetName);
+      if (!referenceSheet || referenceSheet.getLastRow() < 2) return false;
+      const referenceData = referenceSheet.getDataRange().getValues();
+      if (!referenceData.length) return false;
+      const headers = referenceData[0].map(value => String(value || "").trim().toLowerCase());
+      const column = headers.indexOf(String(headerName).toLowerCase());
+      if (column < 0) return false;
+      const accepted = acceptedValues.map(value => norm(value)).filter(Boolean);
+      return referenceData.slice(1).some(row => accepted.indexOf(norm(row[column])) !== -1);
+    }
+    const referenceValues = [asignaturaId,current.codigo,current.nombreOficial];
+    const isReferenced =
+      hasReference("PlanAsignaturas","AsignaturaID",referenceValues) ||
+      hasReference("OfertaAcademica","AsignaturaID",referenceValues) ||
+      hasReference("MallaCurricularDist","AsignaturaID",referenceValues) ||
+      hasReference("ConfiguracionAcademica","Asignatura",referenceValues) ||
+      hasReference("CalificacionesEstudiantes","Asignatura",referenceValues);
+    if (identityChanged && isReferenced) throw new Error("SUBJECT_REFERENCED_IDENTITY_FIELDS_IMMUTABLE");
+    const duplicateCode = data.slice(1).some((row,index) => index + 1 !== target.index &&
+      String(row[map.codigo] || "").trim().toUpperCase() === codigo);
+    if (duplicateCode) throw new Error("SUBJECT_CODE_ALREADY_EXISTS");
+    const workload = input.cargaHorariaRef === undefined ? current.cargaHorariaRef
+      : input.cargaHorariaRef === null || input.cargaHorariaRef === "" ? "" : Number(input.cargaHorariaRef);
+    const credits = input.creditos === undefined ? current.creditos
+      : input.creditos === null || input.creditos === "" ? "" : Number(input.creditos);
+    if (workload !== "" && (!Number.isFinite(Number(workload)) || Number(workload) < 0)) throw new Error("SUBJECT_WORKLOAD_INVALID");
+    if (credits !== "" && (!Number.isFinite(Number(credits)) || Number(credits) < 0)) throw new Error("SUBJECT_CREDITS_INVALID");
+    let prerequisites = input.prerrequisitos === undefined ? current.prerrequisitos : input.prerrequisitos;
+    if (typeof prerequisites === "string") {
+      try { prerequisites = JSON.parse(prerequisites); } catch (_) { throw new Error("SUBJECT_PREREQUISITES_JSON_INVALID"); }
+    }
+    if (!Array.isArray(prerequisites)) throw new Error("SUBJECT_PREREQUISITES_MUST_BE_ARRAY");
+    prerequisites = prerequisites.map(value => String(value || "").trim().toUpperCase());
+    if (prerequisites.some(value => !value) || new Set(prerequisites).size !== prerequisites.length) throw new Error("SUBJECT_PREREQUISITES_INVALID");
+    const subjectsById = Object.create(null);
+    subjects.forEach(item => { subjectsById[item.asignaturaId] = item; });
+    prerequisites.forEach(prerequisiteId => {
+      const prerequisite = subjectsById[prerequisiteId];
+      if (!prerequisite || prerequisite.isActive !== true) throw new Error("SUBJECT_PREREQUISITE_NOT_ACTIVE:" + prerequisiteId);
+    });
+    function reachesTarget(subjectId, visited) {
+      if (subjectId === asignaturaId) return true;
+      if (visited[subjectId]) return false;
+      visited[subjectId] = true;
+      const subject = subjectsById[subjectId];
+      return !!subject && (subject.prerrequisitos || []).some(id => reachesTarget(id, visited));
+    }
+    if (prerequisites.some(id => reachesTarget(id, Object.create(null)))) throw new Error("SUBJECT_PREREQUISITE_CYCLE");
+    currentRow[map.nombreOficial] = nombreOficial;
+    currentRow[map.codigo] = codigo;
+    currentRow[map.areaAcademica] = area.name;
+    currentRow[map.estado] = current.estado;
+    if (map.areaId >= 0) currentRow[map.areaId] = area.areaId;
+    if (map.departmentId >= 0) currentRow[map.departmentId] = area.departmentId;
+    if (map.programaId >= 0) currentRow[map.programaId] = nextFields.programaId;
+    if (map.nivelEducativo >= 0) currentRow[map.nivelEducativo] = nextFields.nivelEducativo;
+    if (map.grado >= 0) currentRow[map.grado] = nextFields.grado;
+    if (map.idioma >= 0) currentRow[map.idioma] = nextFields.idioma;
+    if (map.cargaHorariaRef >= 0) currentRow[map.cargaHorariaRef] = workload;
+    if (map.creditos >= 0) currentRow[map.creditos] = credits;
+    if (map.prerrequisitosJSON >= 0) currentRow[map.prerrequisitosJSON] = JSON.stringify(prerequisites);
+    if (map.updatedAt >= 0) currentRow[map.updatedAt] = new Date().toISOString();
+    sheet.getRange(target.index + 1, 1, 1, currentRow.length).setValues([currentRow]);
+    const catalogRevision = bumpInstitutionalCatalogRevision_();
+    return {status:"success",asignaturaId:asignaturaId,catalogRevision:catalogRevision,
+      data:{asignaturaId:asignaturaId,nombreOficial:nombreOficial,codigo:codigo,areaId:area.areaId,
+        departmentId:area.departmentId,programaId:nextFields.programaId,grado:nextFields.grado,
+        idioma:nextFields.idioma,cargaHorariaRef:workload,creditos:credits,prerrequisitos:prerequisites,estado:current.estado}};
+  } finally { lock.releaseLock(); }
+}
+
 // [FASE2-T03] [Fase 2 - Contratos API y Compatibilidad] - Suite automatizada de pruebas de contratos y compatibilidad API entre cliente y microservicios.
 function validateApiContractsTestSuite() {
   const success = buildApiResponseEnvelope_({ status: "success", data: [] }, "CONTRACT-SUCCESS-001", "SERVICE");
@@ -8953,7 +9084,7 @@ function manageAcademicPeriod(payload) {
   }
 }
 
-function getSubjectCatalog(payload) {
+function getSubjectCatalogLegacy_(payload) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "CatalogoAsignaturas");
   const data = sheet.getDataRange().getValues();
@@ -8969,7 +9100,7 @@ function getSubjectCatalog(payload) {
   return { status: "success", data: subjects };
 }
 
-function createSubjectCatalogItem(payload) {
+function createSubjectCatalogItemLegacy_(payload) {
   const { nombreOficial, codigo, areaAcademica } = payload || {};
   if (!nombreOficial) throw new Error("Nombre oficial de la asignatura es requerido.");
 

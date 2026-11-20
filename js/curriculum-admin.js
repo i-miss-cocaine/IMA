@@ -1,7 +1,7 @@
 (function (global) {
     "use strict";
     const doc = global.document;
-    const state = { ready:false, areas:[], subjects:[], plans:[], years:[], periods:[], offers:[], relations:[], catalogRevision:null, loadToken:0, relationToken:0, offerRelationToken:0 };
+    const state = { ready:false, areas:[], subjects:[], plans:[], years:[], periods:[], offers:[], relations:[], catalogRevision:null, loadToken:0, relationToken:0, offerRelationToken:0, editingSubjectId:null };
 
     function isActive(record) {
         if (!record) return false;
@@ -121,7 +121,7 @@
         const subjectsBody = byId("curriculum-subjects-body");
         if (subjectsBody) {
             subjectsBody.innerHTML = "";
-            if (!state.subjects.length) clearBody("curriculum-subjects-body", 7, "No hay asignaturas en el ámbito autorizado.");
+            if (!state.subjects.length) clearBody("curriculum-subjects-body", 8, "No hay asignaturas en el ámbito autorizado.");
             state.subjects.forEach(subject => {
                 const row = doc.createElement("tr");
                 appendCell(row, subject.codigo);
@@ -131,6 +131,15 @@
                 appendCell(row, [subject.grado, subject.idioma].filter(Boolean).join(" / "));
                 appendCell(row, [subject.creditos, Array.isArray(subject.prerrequisitos) ? subject.prerrequisitos.length : 0].join(" / "));
                 appendCell(row, subject.estado);
+                const actionCell = doc.createElement("td");
+                actionCell.className = "p-2 border-b border-slate-100";
+                const editButton = doc.createElement("button");
+                editButton.type = "button";
+                editButton.textContent = "Editar";
+                editButton.className = "px-2 py-1 rounded-lg border border-slate-300 text-xs font-bold text-slate-700";
+                editButton.addEventListener("click", () => editSubject(subject));
+                actionCell.appendChild(editButton);
+                row.appendChild(actionCell);
                 subjectsBody.appendChild(row);
             });
         }
@@ -299,6 +308,41 @@
             setStatus("Estado de relación actualizado; el historial se conserva.", false);
         } catch (error) { setStatus(error.message, true); }
     }
+    function editSubject(subject) {
+        const form = byId("form-curriculum-subject");
+        if (!form || !subject || !subject.asignaturaId) return;
+        const area = state.areas.find(item => String(item.areaId).toUpperCase() === String(subject.areaId || "").toUpperCase());
+        if (!area || !isActive(area)) { setStatus("No se puede editar esta asignatura hasta que su área curricular esté activa.", true); return; }
+        state.editingSubjectId = String(subject.asignaturaId);
+        byId("curriculum-subject-name").value = subject.nombreOficial || "";
+        byId("curriculum-subject-code").value = subject.codigo || "";
+        byId("curriculum-subject-area").value = subject.areaId || "";
+        byId("curriculum-subject-program").value = subject.programaId || "";
+        byId("curriculum-subject-level").value = subject.nivelEducativo || "";
+        byId("curriculum-subject-grade").value = subject.grado || "";
+        byId("curriculum-subject-language").value = subject.idioma || "";
+        byId("curriculum-subject-hours").value = subject.cargaHorariaRef == null ? "" : subject.cargaHorariaRef;
+        byId("curriculum-subject-credits").value = subject.creditos == null ? "" : subject.creditos;
+        const selected = new Set(Array.isArray(subject.prerrequisitos) ? subject.prerrequisitos.map(value => String(value).toUpperCase()) : []);
+        Array.from(byId("curriculum-subject-prerequisites").options).forEach(item => { item.selected = selected.has(String(item.value).toUpperCase()); });
+        const heading = form.querySelector("h4");
+        if (heading) heading.textContent = "Editar asignatura";
+        const submit = form.querySelector('button[type="submit"]');
+        if (submit) submit.textContent = "Actualizar asignatura";
+        const cancel = byId("btn-cancel-curriculum-subject-edit");
+        if (cancel) cancel.classList.remove("hidden");
+        setStatus("Editando " + subject.codigo + ". Los campos identificadores no se pueden cambiar si ya existen relaciones académicas.", false);
+    }
+    function resetSubjectEditor(form) {
+        state.editingSubjectId = null;
+        if (form) form.reset();
+        const heading = form && form.querySelector("h4");
+        if (heading) heading.textContent = "Registrar asignatura";
+        const submit = form && form.querySelector('button[type="submit"]');
+        if (submit) submit.textContent = "Guardar asignatura";
+        const cancel = byId("btn-cancel-curriculum-subject-edit");
+        if (cancel) cancel.classList.add("hidden");
+    }
     function valuesFromForm(form) {
         const data = {};
         Array.from(new FormData(form).entries()).forEach(([key, value]) => { data[key] = value; });
@@ -326,11 +370,17 @@
         bindSubmit("form-curriculum-subject", async form => {
             const values = valuesFromForm(form);
             values.prerrequisitos = Array.from(byId("curriculum-subject-prerequisites").selectedOptions).map(item => item.value);
-            await call("createSubjectCatalogItem", buildSubjectPayload(values));
-            form.reset();
+            const payload = buildSubjectPayload(values);
+            const editingId = state.editingSubjectId;
+            const action = editingId ? "updateSubjectCatalogItem" : "createSubjectCatalogItem";
+            if (editingId) payload.asignaturaId = editingId;
+            await call(action, payload);
+            resetSubjectEditor(form);
             const refreshed = await loadAll();
-            setStatus(refreshed ? "Asignatura registrada y catálogo actualizado." : "Asignatura registrada; no se pudo actualizar la vista.", !refreshed);
+            setStatus(refreshed ? (editingId ? "Asignatura actualizada y catálogo sincronizado." : "Asignatura registrada y catálogo actualizado.") : "Cambios guardados; no se pudo actualizar la vista.", !refreshed);
         });
+        const cancelSubjectEdit = byId("btn-cancel-curriculum-subject-edit");
+        if (cancelSubjectEdit) cancelSubjectEdit.addEventListener("click", () => resetSubjectEditor(byId("form-curriculum-subject")));
         bindSubmit("form-curriculum-plan", async form => {
             await call("createStudyPlan", buildPlanPayload(valuesFromForm(form)));
             form.reset();
@@ -394,6 +444,7 @@
     global.IMACurriculumAdmin = {
         isActive:isActive,
         buildSubjectPayload:buildSubjectPayload,
+        updateSubjectCatalogItemAction:"updateSubjectCatalogItem",
         buildPlanPayload:buildPlanPayload,
         buildRelationPayload:buildRelationPayload,
         buildOfferPayload:buildOfferPayload,
