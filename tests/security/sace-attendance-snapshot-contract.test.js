@@ -65,7 +65,7 @@ const tables = {
   ]
 };
 
-function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFails = false, readFails = false) {
+function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFails = false, readFails = false, revisionChanges = {}) {
   const sheets = {};
   const revisionProperties = {};
   let snapshotLockHeld = false, snapshotLockWaits = 0, snapshotLockReleases = 0;
@@ -99,7 +99,7 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
     requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, requestedInstitution, teacherUserId, revisionOnly) {
       assert.equal(snapshotLockHeld, false, "remote USER-Service call must run after releasing the local snapshot lock");
       assert.equal(snapshotLockReleases, revisionOnly ? 2 : 1, "USER calls must occur outside the local snapshot lock");
-      if (revisionOnly) return "USER-EPOCH-123456:0";
+      if (revisionOnly) return revisionChanges.user ? "USER-EPOCH-123456:1" : "USER-EPOCH-123456:0";
       assert.equal(request.sessionToken, "SESSION-TEST");
       assert.equal(requestedInstitution, institutionId);
       assert.equal(teacherUserId, "TEACHER-1");
@@ -109,12 +109,13 @@ function createContext(actorRole = "Profesor", institutionId = "INST-1", lockFai
         documentType: "DNI", documentMarker: "", name: index === 0 ? "Ana Pérez" : "Luis Gómez"
       }));
       records.sourceRevision = "USER-EPOCH-123456:0";
+      if (revisionChanges.academic) revisionProperties["IMA_SACE_ACADEMIC_SOURCE_REVISION"] = "ACADEMIC-EPOCH-123456:1";
       return records;
     },
     requestSaceGradebookSnapshotsFromExam_(request, studentIds, teacherUserId, expected, periods, revisionOnly) {
       assert.equal(snapshotLockHeld, false, "remote Exam-Service batch call must run after releasing the attendance lock");
       assert.equal(snapshotLockReleases, revisionOnly ? 2 : 1);
-      if (revisionOnly) return "EXAM-EPOCH-123456:0";
+      if (revisionOnly) return revisionChanges.exam ? "EXAM-EPOCH-123456:1" : "EXAM-EPOCH-123456:0";
       assert.equal(request.sessionToken, "SESSION-TEST");
       assert.equal(teacherUserId, "TEACHER-1");
       assert.deepEqual(Array.from(studentIds), ["STU-1", "STU-2"]);
@@ -160,6 +161,15 @@ const result = snapshotContext.runSnapshot(payload);
 assert.deepEqual(snapshotContext.getSnapshotLockStats(), { held: false, waits: 2, releases: 2 }, "snapshot must release its initial read lock and its final revision-check lock");
 assert.equal(result.status, "success", result.code || "snapshot did not succeed");
 assert.deepEqual(JSON.parse(JSON.stringify(result.sourceRevisions)),{academic:"ACADEMIC-EPOCH-123456:0",user:"USER-EPOCH-123456:0",exam:"EXAM-EPOCH-123456:0"});
+for (const changedSource of ["academic", "user", "exam"]) {
+  const changedContext = createContext("Profesor", "INST-1", false, false, { [changedSource]: true });
+  const changedResult = changedContext.runSnapshot(payload);
+  assert.equal(changedResult.status, "error", changedSource + " mutation during the read interval must invalidate the snapshot");
+  assert.equal(changedResult.code, "SACE_SOURCE_CHANGED_DURING_SNAPSHOT", changedSource + " revision mismatch must fail closed");
+  assert.equal(changedResult.data, undefined, "an invalidated snapshot must not expose partial data");
+  assert.deepEqual(changedContext.getSnapshotLockStats(), { held: false, waits: 2, releases: 2 }, changedSource + " mismatch must release both locally owned lock acquisitions");
+}
+
 assert.equal(result.data.expectedContext.teacherUserId, "TEACHER-1", "teacher identity must come from the verified session");
 assert.equal(result.data.expectedContext.institutionId, "INST-1", "institution must come from verified claims and service configuration");
 assert.equal(result.data.expectedContext.asignatura, "Informática");
