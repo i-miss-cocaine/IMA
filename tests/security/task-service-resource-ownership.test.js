@@ -176,6 +176,83 @@ console.log("TASK-153 staff/student department intersection contract passed.");
   assert(createFn.includes("sh.deleteRow(rowIndex)"), "classroom creation must compensate failed ownership registration");
   assert(accessFn.includes('assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL"'), "classroom writes must enforce owner scope");
   assert(accessFn.includes("scope.institutionWide!==true"), "General content requires institution-wide authorization");
+
+  function classroomAccessFixture(options) {
+    const opts = options || {};
+    const actor = opts.actor || { authorized:true,userId:"PROF-1",role:"Profesor" };
+    const scope = opts.scope || { authorized:true,userId:actor.userId,role:actor.role,institutionId:"INST-1",
+      departmentIds:["D1"],institutionWide:false };
+    const rows = [
+      ["AulaID","OfertaID","Nombre","Grado","Seccion","Asignatura","ProfesorID","Estado"],
+      ["AULA-D1","OFFER-1","Aula D1","6","A","Matemáticas","PROF-1","Activa"],
+      ["AULA-D2","OFFER-2","Aula D2","6","B","Matemáticas","PROF-1","Activa"],
+      ["AULA-INACTIVE","OFFER-1","Aula inactiva","6","C","Matemáticas","PROF-1","Desactivada"],
+      ["AULA-OTHER","OFFER-1","Aula ajena","6","D","Matemáticas","PROF-2","Activa"]
+    ];
+    const classSheet = { getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())}) };
+    const ss = { getSheetByName:name=>name==="AulasVirtuales"?classSheet:null };
+    const state = { identityCalls:0,scopeCalls:0,ownershipCalls:0,assignmentCalls:0,opens:0 };
+    const context = {
+      SPREADSHEET_ID:"LOCAL",
+      SpreadsheetApp:{openById:()=>{state.opens++;return ss;}},
+      getVerifiedTaskIdentity_:()=>{state.identityCalls++;return actor;},
+      getVerifiedTaskDepartmentScope_:(_payload,passedSS,passedActor)=>{
+        state.scopeCalls++;assert.equal(passedSS,ss);assert.equal(passedActor,actor);return scope;
+      },
+      getSheetOrThrow:(_ss,name)=>{assert.equal(name,"AulasVirtuales");return classSheet;},
+      assertTaskServiceResourceOwnership_:(_payload,type,id,_operation,passedSS,passedActor,passedScope)=>{
+        state.ownershipCalls++;assert.equal(passedSS,ss);assert.equal(passedActor,actor);assert.equal(passedScope,scope);
+        const dept=id==="AULA-D2"?"D2":"D1";
+        const allowed=opts.ownershipAllowed!==false&&(scope.institutionWide===true||(scope.departmentIds||[]).includes(dept));
+        return {authorized:allowed,departmentId:dept,code:allowed?"RESOURCE_SCOPE_ALLOWED":"RESOURCE_SCOPE_DENIED"};
+      },
+      assertTaskServiceTeacherAssignedToOffer:(userId,offerId)=>{
+        state.assignmentCalls++;
+        if(opts.assignmentAllowed===false||userId!=="PROF-1"||offerId!=="OFFER-1")throw new Error("TEACHER_ASSIGNMENT_DENIED");
+        return true;
+      },
+      isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
+      normalizeString:value=>String(value||"").trim().toLowerCase(),
+      String,Error
+    };
+    vm.runInNewContext(accessFn+"\\nthis.access=assertTaskServiceClassroomAccess;",context);
+    return {context,state,access:(id)=>context.access({request:"valid"},id)};
+  }
+  {
+    const f=classroomAccessFixture();
+    const row=f.access("AULA-D1");
+    assert.equal(row[0],"AULA-D1");
+    assert.equal(f.state.identityCalls,1);assert.equal(f.state.scopeCalls,1);
+    assert.equal(f.state.opens,1,"classroom guard reuses one Spreadsheet handle");
+    assert.equal(f.state.ownershipCalls,1);assert.equal(f.state.assignmentCalls,1);
+  }
+  {
+    const f=classroomAccessFixture();
+    assert.throws(()=>f.access("AULA-D2"),/RESOURCE_SCOPE_DENIED/);
+    assert.equal(f.state.assignmentCalls,0,"out-of-department class is rejected before teacher assignment");
+  }
+  {
+    const f=classroomAccessFixture({assignmentAllowed:false});
+    assert.throws(()=>f.access("AULA-D1"),/TEACHER_ASSIGNMENT_DENIED/);
+  }
+  {
+    const f=classroomAccessFixture();
+    assert.throws(()=>f.access("AULA-INACTIVE"),/Aula no válida o inactiva/);
+  }
+  {
+    const f=classroomAccessFixture();
+    assert.throws(()=>f.access("AULA-OTHER"),/El aula no está asignada al docente autenticado/);
+  }
+  {
+    const f=classroomAccessFixture({actor:{authorized:true,userId:"ADMIN-1",role:"Administrador"},
+      scope:{authorized:true,userId:"ADMIN-1",role:"Administrador",institutionId:"INST-1",departmentIds:["D1"],institutionWide:false}});
+    assert.throws(()=>f.access("General"),/AUTH_PERMISSION_DENIED/);
+  }
+  {
+    const f=classroomAccessFixture({actor:{authorized:true,userId:"ADMIN-1",role:"Administrador"},
+      scope:{authorized:true,userId:"ADMIN-1",role:"Administrador",institutionId:"INST-1",departmentIds:[],institutionWide:true}});
+    assert.equal(f.access("General"),null,"institution-wide administrator may publish General content");
+  }
   for (const name of ["getVirtualClassrooms","getPosts"]) {
     assert(extractFunction(name).includes("getTaskServiceAuthorizedClassrooms(payload)"), name + " retains parent classroom filtering");
   }
