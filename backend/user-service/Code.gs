@@ -11299,114 +11299,225 @@ function checkAdvancedSignatureStatus(payload) {
     }
   }
 }
-function registerSpreadsheetSource(payload) {
-  const { dominioArea, anoLectivo, spreadsheetId, urlAcceso, estado, schemaVersion, departamento, servicio, observaciones } = payload || {};
-  if (!dominioArea || !anoLectivo || !spreadsheetId) throw new Error("dominioArea, anoLectivo y spreadsheetId son requeridos.");
+const SOURCE_REGISTRY_HEADERS_ = [
+  "FuenteID", "DominioArea", "AnoLectivo", "SpreadsheetID", "UrlAcceso", "Estado",
+  "SchemaVersion", "Observaciones", "DepartamentoID", "Servicio", "TipoInformacion",
+  "OwnerUserID", "CreatedAt", "UpdatedAt"
+];
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CatalogoSpreadsheets");
-  const data = sheet.getDataRange().getValues();
-  const now = new Date();
+function normalizeSpreadsheetSourceHeader_(value) {
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+}
 
-  const existingIdx = data.findIndex(r => String(r[1]).toLowerCase().trim() === String(dominioArea).toLowerCase().trim() && String(r[2]).trim() === String(anoLectivo).trim());
+function normalizeSpreadsheetSourceText_(value) {
+  return String(value == null ? "" : value).trim().toLowerCase();
+}
 
-  let fId = "";
-  if (existingIdx !== -1) {
-    fId = data[existingIdx][0];
-    sheet.getRange(existingIdx + 1, 1, 1, 8).setValues([[
-      fId,
-      String(dominioArea).trim(),
-      String(anoLectivo).trim(),
-      String(spreadsheetId).trim(),
-      urlAcceso || `https://docs.google.com/spreadsheets/d/${spreadsheetId}`,
-      estado || "active",
-      schemaVersion || "1.0",
-      observaciones || ""
-    ]]);
-  } else {
-    fId = "SRC-" + now.getTime();
-    sheet.appendRow([
-      fId,
-      String(dominioArea).trim(),
-      String(anoLectivo).trim(),
-      String(spreadsheetId).trim(),
-      urlAcceso || `https://docs.google.com/spreadsheets/d/${spreadsheetId}`,
-      estado || "active",
-      schemaVersion || "1.0",
-      observaciones || ""
-    ]);
-  }
-
-  return {
-    status: "success",
-    fuenteId: fId,
-    spreadsheetId: spreadsheetId,
-    message: "Fuente de datos distribuida registrada exitosamente en catálogo central."
+function normalizeSpreadsheetSourceContext_(payload, requireSpreadsheetId) {
+  const input = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
+  const context = {
+    dominioArea: String(input.dominioArea || "").trim().toUpperCase(),
+    anoLectivo: String(input.anoLectivo || "").trim(),
+    departamentoId: String(input.departamentoId || input.departamento || "").trim().toUpperCase(),
+    servicio: String(input.servicio || "").trim().toUpperCase(),
+    tipoInformacion: String(input.tipoInformacion || input.tipoDato || input.tipo || "").trim().toUpperCase(),
+    schemaVersion: String(input.schemaVersion || "").trim(),
+    spreadsheetId: String(input.spreadsheetId || "").trim()
   };
+  const required = ["dominioArea", "anoLectivo", "departamentoId", "servicio", "tipoInformacion", "schemaVersion"];
+  if (requireSpreadsheetId) required.push("spreadsheetId");
+  if (required.some(key => !context[key])) throw new Error("SOURCE_CONTEXT_REQUIRED:" + required.filter(key => !context[key]).join(","));
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$/.test(context.schemaVersion)) throw new Error("SOURCE_SCHEMA_VERSION_INVALID");
+  return context;
+}
+
+function getSpreadsheetSourceKey_(record) {
+  return [
+    normalizeSpreadsheetSourceText_(record.dominioArea),
+    normalizeSpreadsheetSourceText_(record.anoLectivo),
+    normalizeSpreadsheetSourceText_(record.departamentoId),
+    normalizeSpreadsheetSourceText_(record.servicio),
+    normalizeSpreadsheetSourceText_(record.tipoInformacion)
+  ].join("\u001f");
+}
+
+function ensureSpreadsheetSourceSchema_(ss) {
+  if (!ss) throw new Error("SOURCE_REGISTRY_SPREADSHEET_REQUIRED");
+  let sheet = ss.getSheetByName("CatalogoSpreadsheets");
+  if (!sheet) sheet = ss.insertSheet("CatalogoSpreadsheets");
+  let lastRow = sheet.getLastRow();
+  let lastColumn = sheet.getLastColumn();
+  if (!lastRow || !lastColumn) {
+    sheet.getRange(1, 1, 1, SOURCE_REGISTRY_HEADERS_.length).setValues([SOURCE_REGISTRY_HEADERS_.slice()]);
+  } else {
+    let firstRow = sheet.getRange(1, 1, 1, lastColumn).getValues()[0] || [];
+    const normalized = firstRow.map(normalizeSpreadsheetSourceHeader_);
+    const hasLegacyHeader = normalized.includes("fuenteid") && normalized.includes("dominioarea") &&
+      normalized.includes("anolectivo") && normalized.includes("spreadsheetid");
+    if (!firstRow.some(value => String(value || "").trim())) {
+      sheet.getRange(1, 1, 1, SOURCE_REGISTRY_HEADERS_.length).setValues([SOURCE_REGISTRY_HEADERS_.slice()]);
+    } else if (!hasLegacyHeader) {
+      const looksLikeLegacyRecord = String(firstRow[0] || "").trim().indexOf("SRC-") === 0 &&
+        String(firstRow[1] || "").trim() && String(firstRow[2] || "").trim() && String(firstRow[3] || "").trim();
+      if (!looksLikeLegacyRecord) throw new Error("SOURCE_CATALOG_SCHEMA_MISMATCH");
+      sheet.insertRowBefore(1);
+      sheet.getRange(1, 1, 1, SOURCE_REGISTRY_HEADERS_.length).setValues([SOURCE_REGISTRY_HEADERS_.slice()]);
+    } else {
+      const requiredLegacy = ["fuenteid", "dominioarea", "anolectivo", "spreadsheetid", "estado", "schemaversion"];
+      if (requiredLegacy.some(key => !normalized.includes(key))) throw new Error("SOURCE_CATALOG_SCHEMA_MISMATCH");
+      const missing = SOURCE_REGISTRY_HEADERS_.filter(header => !normalized.includes(normalizeSpreadsheetSourceHeader_(header)));
+      if (missing.length) sheet.getRange(1, lastColumn + 1, 1, missing.length).setValues([missing]);
+    }
+  }
+  lastColumn = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0] || [];
+  const map = Object.create(null);
+  headers.forEach((header, index) => { map[normalizeSpreadsheetSourceHeader_(header)] = index; });
+  SOURCE_REGISTRY_HEADERS_.forEach(header => {
+    if (map[normalizeSpreadsheetSourceHeader_(header)] === undefined) throw new Error("SOURCE_CATALOG_SCHEMA_MISMATCH");
+  });
+  return { sheet:sheet, headers:headers, map:map, width:headers.length };
+}
+
+function getSpreadsheetSourceRecords_(schema) {
+  const values = schema.sheet.getDataRange().getValues();
+  if (!values || values.length <= 1) return [];
+  const m = schema.map;
+  return values.slice(1).map((row, index) => ({
+    rowNumber:index + 2,
+    row:row,
+    fuenteId:row[m.fuenteid] || "",
+    dominioArea:row[m.dominioarea] || "",
+    anoLectivo:row[m.anolectivo] || "",
+    spreadsheetId:row[m.spreadsheetid] || "",
+    urlAcceso:row[m.urlacceso] || "",
+    estado:row[m.estado] || "",
+    schemaVersion:row[m.schemaversion] || "",
+    observaciones:row[m.observaciones] || "",
+    departamentoId:row[m.departamentoid] || "",
+    servicio:row[m.servicio] || "",
+    tipoInformacion:row[m.tipoinformacion] || "",
+    ownerUserId:row[m.owneruserid] || "",
+    createdAt:row[m.createdat] || "",
+    updatedAt:row[m.updatedat] || ""
+  })).filter(record => String(record.fuenteId || record.spreadsheetId || "").trim());
+}
+
+function isSpreadsheetSourceActive_(record) {
+  return ["activo", "active", "enabled", "vigente"].includes(String(record && record.estado || "").trim().toLowerCase());
+}
+
+function normalizeSpreadsheetSourceStatus_(value, fallback) {
+  const status = String(value === undefined || value === null || value === "" ? (fallback || "Activo") : value).trim().toLowerCase();
+  if (["activo", "active", "enabled", "vigente"].includes(status)) return "Activo";
+  if (["inactivo", "inactive", "disabled", "suspendido"].includes(status)) return "Inactivo";
+  throw new Error("SOURCE_STATUS_INVALID");
+}
+
+function validateSpreadsheetSourceTarget_(spreadsheetId) {
+  try {
+    const target = SpreadsheetApp.openById(String(spreadsheetId || "").trim());
+    if (!target || typeof target.getId !== "function" || target.getId() !== String(spreadsheetId).trim() ||
+        typeof target.getSheets !== "function" || !target.getSheets().length) {
+      throw new Error("SOURCE_SPREADSHEET_UNAVAILABLE");
+    }
+    return { spreadsheetId:target.getId(), name:typeof target.getName === "function" ? target.getName() : "" };
+  } catch (_) {
+    throw new Error("SOURCE_SPREADSHEET_UNAVAILABLE");
+  }
+}
+
+function registerSpreadsheetSource(payload) {
+  const input = payload || {};
+  const context = normalizeSpreadsheetSourceContext_(input, true);
+  const target = validateSpreadsheetSourceTarget_(context.spreadsheetId);
+  const registry = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const schema = ensureSpreadsheetSourceSchema_(registry);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const key = getSpreadsheetSourceKey_(context);
+    const matches = getSpreadsheetSourceRecords_(schema).filter(record => getSpreadsheetSourceKey_(record) === key);
+    if (matches.length > 1) throw new Error("SOURCE_SPREADSHEET_AMBIGUOUS");
+    const existing = matches[0] || null;
+    const now = new Date();
+    const row = existing ? existing.row.slice(0, schema.width) : Array(schema.width).fill("");
+    const m = schema.map;
+    const fuenteId = existing ? String(existing.fuenteId) : "SRC-" + Utilities.getUuid();
+    const estado = normalizeSpreadsheetSourceStatus_(input.estado, existing ? existing.estado : "Activo");
+    row[m.fuenteid] = fuenteId;
+    row[m.dominioarea] = context.dominioArea;
+    row[m.anolectivo] = context.anoLectivo;
+    row[m.spreadsheetid] = context.spreadsheetId;
+    row[m.urlacceso] = String(input.urlAcceso || ("https://docs.google.com/spreadsheets/d/" + context.spreadsheetId)).trim();
+    row[m.estado] = estado;
+    row[m.schemaversion] = context.schemaVersion;
+    row[m.observaciones] = String(input.observaciones || "");
+    row[m.departamentoid] = context.departamentoId;
+    row[m.servicio] = context.servicio;
+    row[m.tipoinformacion] = context.tipoInformacion;
+    row[m.owneruserid] = String(input._verifiedUserId || (existing && existing.ownerUserId) || "").trim();
+    row[m.createdat] = existing ? existing.createdAt : now;
+    row[m.updatedat] = now;
+    if (existing) schema.sheet.getRange(existing.rowNumber, 1, 1, schema.width).setValues([row]);
+    else schema.sheet.appendRow(row);
+    const data = {
+      fuenteId:fuenteId, dominioArea:context.dominioArea, anoLectivo:context.anoLectivo,
+      departamentoId:context.departamentoId, servicio:context.servicio, tipoInformacion:context.tipoInformacion,
+      spreadsheetId:context.spreadsheetId, urlAcceso:row[m.urlacceso], estado:estado,
+      schemaVersion:context.schemaVersion, ownerUserId:row[m.owneruserid], createdAt:row[m.createdat], updatedAt:now,
+      usable:true
+    };
+    return { status:"success", fuenteId:fuenteId, data:data, message:"Fuente registrada con clave institucional compuesta." };
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
 }
 
 function resolveSpreadsheetSource(payload) {
-  const { dominioArea, anoLectivo, departamento, servicio } = payload || {};
-  if (!dominioArea || !anoLectivo) throw new Error("dominioArea y anoLectivo requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "CatalogoSpreadsheets").getDataRange().getValues().slice(1);
-
-  // Buscar coincidencia exacta por dominio y año lectivo
-  const candidate = rows.find(r => String(r[1]).toLowerCase().trim() === String(dominioArea).toLowerCase().trim() && String(r[2]).trim() === String(anoLectivo).trim());
-
-  if (candidate) {
-    const estadoFuente = String(candidate[5] || "active").toLowerCase().trim();
-    if (estadoFuente === "disabled" || estadoFuente === "inactivo" || estadoFuente === "suspendido") {
-      throw new Error(`SOURCE_SPREADSHEET_DISABLED: La fuente de datos '${candidate[0]}' para dominio '${dominioArea}' y año '${anoLectivo}' se encuentra deshabilitada.`);
-    }
-
-    return {
-      status: "success",
-      resolved: true,
-      fuenteId: candidate[0],
-      dominioArea: candidate[1],
-      anoLectivo: candidate[2],
-      spreadsheetId: candidate[3],
-      urlAcceso: candidate[4],
-      estado: candidate[5],
-      schemaVersion: candidate[6] || "1.0",
-      message: `Fuente de datos distribuida resuelta para ${dominioArea} (${anoLectivo}).`
-    };
-  }
-
-  // Retornar ID por defecto si no existe una partición específica registrada
+  const context = normalizeSpreadsheetSourceContext_(payload || {}, false);
+  const registry = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const schema = ensureSpreadsheetSourceSchema_(registry);
+  const key = getSpreadsheetSourceKey_(context);
+  const matches = getSpreadsheetSourceRecords_(schema).filter(record => getSpreadsheetSourceKey_(record) === key);
+  if (!matches.length) throw new Error("SOURCE_SPREADSHEET_NOT_FOUND");
+  if (matches.length > 1) throw new Error("SOURCE_SPREADSHEET_AMBIGUOUS");
+  const candidate = matches[0];
+  if (!isSpreadsheetSourceActive_(candidate)) throw new Error("SOURCE_SPREADSHEET_DISABLED");
+  if (String(candidate.schemaVersion || "").trim() !== context.schemaVersion) throw new Error("SOURCE_SCHEMA_VERSION_MISMATCH");
+  const target = validateSpreadsheetSourceTarget_(candidate.spreadsheetId);
   return {
-    status: "success",
-    resolved: false,
-    spreadsheetId: SPREADSHEET_ID,
-    dominioArea: dominioArea,
-    anoLectivo: anoLectivo,
-    schemaVersion: "1.0",
-    message: "Utilizando Spreadsheet Principal predeterminada."
+    status:"success", resolved:true, fuenteId:candidate.fuenteId,
+    dominioArea:candidate.dominioArea, anoLectivo:candidate.anoLectivo,
+    departamentoId:candidate.departamentoId, servicio:candidate.servicio, tipoInformacion:candidate.tipoInformacion,
+    spreadsheetId:target.spreadsheetId, urlAcceso:candidate.urlAcceso, estado:candidate.estado,
+    schemaVersion:candidate.schemaVersion, spreadsheetName:target.name,
+    message:"Fuente resuelta por departamento, servicio, tipo, dominio, año y versión."
   };
 }
 
 function getSpreadsheetCatalog(payload) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "CatalogoSpreadsheets").getDataRange().getValues().slice(1);
-
-  const mapped = rows.map(r => ({
-    fuenteId: r[0],
-    dominioArea: r[1],
-    anoLectivo: r[2],
-    spreadsheetId: r[3],
-    urlAcceso: r[4],
-    estado: r[5],
-    schemaVersion: r[6],
-    observaciones: r[7]
+  const input = payload || {};
+  const schema = ensureSpreadsheetSourceSchema_(SpreadsheetApp.openById(SPREADSHEET_ID));
+  const includeInactive = input.includeInactive === true;
+  const mapped = getSpreadsheetSourceRecords_(schema).filter(record => {
+    if (!includeInactive && (!isSpreadsheetSourceActive_(record) || !record.departamentoId || !record.servicio || !record.tipoInformacion || !record.schemaVersion)) return false;
+    if (input.departamentoId || input.departamento) {
+      if (normalizeSpreadsheetSourceText_(record.departamentoId) !== normalizeSpreadsheetSourceText_(input.departamentoId || input.departamento)) return false;
+    }
+    if (input.servicio && normalizeSpreadsheetSourceText_(record.servicio) !== normalizeSpreadsheetSourceText_(input.servicio)) return false;
+    if (input.tipoInformacion && normalizeSpreadsheetSourceText_(record.tipoInformacion) !== normalizeSpreadsheetSourceText_(input.tipoInformacion)) return false;
+    if (input.dominioArea && normalizeSpreadsheetSourceText_(record.dominioArea) !== normalizeSpreadsheetSourceText_(input.dominioArea)) return false;
+    if (input.anoLectivo && String(record.anoLectivo).trim() !== String(input.anoLectivo).trim()) return false;
+    return true;
+  }).map(record => Object.assign({}, record, {
+    row:undefined,
+    usable:!!(record.departamentoId && record.servicio && record.tipoInformacion && record.schemaVersion && record.spreadsheetId),
+    migrationRequired:!(record.departamentoId && record.servicio && record.tipoInformacion)
   }));
-
-  return {
-    status: "success",
-    catalogo: mapped
-  };
+  return { status:"success", catalogo:mapped, data:mapped, total:mapped.length };
 }
+
 
 // [TASK-049] [F23-Task06] [P0] Auditoría Criptográfica: Verificación de Cadena de Decisiones y Registro de Correcciones
 function verifyWorkflowDecisionAuditChain(payload) {
