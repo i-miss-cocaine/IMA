@@ -21,26 +21,31 @@ function sheet(headers,rows){
  setValues(vs){vs.forEach((line,i)=>line.forEach((v,j)=>{if(row+i===1)h[col-1+j]=v;else (r[row+i-2]||(r[row+i-2]=[]))[col-1+j]=v;}));}};},
  getDataRange:()=>({getValues:()=>[h.slice(),...r.map(x=>x.slice())]}),appendRow:x=>r.push(x.slice()),_h:h,_r:r};
 }
-const plans=[{planId:"P1",grado:"10",estado:"Vigente"}];
-const subjects=[{asignaturaId:"S1",grado:"10",isActive:true},{asignaturaId:"S2",grado:"10",isActive:false}];
+const plans=[{planId:"P1",grado:"10",estado:"Vigente"},{planId:"P2",grado:"11",estado:"Vigente"}];
+const subjects=[{asignaturaId:"S1",grado:"10",isActive:true,idioma:"es"},{asignaturaId:"S2",grado:"10",isActive:false},{asignaturaId:"S3",grado:"11",isActive:true,idioma:"en"}];
 const rels=sheet(["RelID","PlanID","AsignaturaID","Grado","Caracter","HorasSemanales","Orden"],[]);
 let locked=false,acquires=0,releases=0;
 const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({})},getOrCreateSheet:()=>rels,
  getStudyPlans:()=>({data:plans}),getInstitutionalAreaRecords_:()=>[],getInstitutionalSubjectRecords_:()=>subjects,
  LockService:{getScriptLock:()=>({tryLock:()=>{assert.equal(locked,false,"lock must serialize mutations");locked=true;acquires++;return true;},releaseLock:()=>{assert.equal(locked,true);locked=false;releases++;}})},
- Utilities:{getUuid:()=> "00000000-0000-4000-8000-000000000001"},normalizeStudyPlanValidity_:v=>String(v),Date,Number,String,Error,Array,Object,JSON,Math};
+ Utilities:{getUuid:(()=>{let next=1;return ()=> "00000000-0000-4000-8000-"+String(next++).padStart(12,"0");})()},normalizeStudyPlanValidity_:v=>String(v),Date,Number,String,Error,Array,Object,JSON,Math};
 vm.runInNewContext(["getStudyPlanSubjectColumnMap_","getStudyPlanSubjects","createStudyPlanSubject","setStudyPlanSubjectStatus"].map(extract).join("\n")+"\nthis.api={getStudyPlanSubjects,createStudyPlanSubject,setStudyPlanSubjectStatus};",ctx);
 const created=ctx.api.createStudyPlanSubject({planId:"P1",asignaturaId:"S1",caracter:"Obligatoria",horasSemanales:5,orden:1});
 assert.equal(created.data.estado,"Activo");assert.equal(rels._r.length,1);
 assert.throws(()=>ctx.api.createStudyPlanSubject({planId:"P1",asignaturaId:"S1",caracter:"Obligatoria",horasSemanales:5}),/PLAN_SUBJECT_ALREADY_ACTIVE/);
 assert.throws(()=>ctx.api.createStudyPlanSubject({planId:"P1",asignaturaId:"S2",caracter:"Optativa",horasSemanales:3}),/SUBJECT_NOT_ACTIVE/);
 assert.throws(()=>ctx.api.createStudyPlanSubject({planId:"P1",asignaturaId:"S1",caracter:"Optativa",horasSemanales:0}),/PLAN_SUBJECT_HOURS_INVALID/);
+assert.throws(()=>ctx.api.createStudyPlanSubject({planId:"P1",asignaturaId:"S3",caracter:"Obligatoria",horasSemanales:4}),/SUBJECT_GRADE_MISMATCH/);
+const gradeEleven=ctx.api.createStudyPlanSubject({planId:"P2",asignaturaId:"S3",grado:"11",caracter:"Obligatoria",horasSemanales:4});
+assert.equal(gradeEleven.data.grado,"11");
+assert.equal(rels._r.length,2,"different grades may have independent active plan-subject relations");
+
 const inactive=ctx.api.setStudyPlanSubjectStatus({relId:created.data.relId,estado:"Inactivo"});
 assert.equal(inactive.data.estado,"Inactivo");assert.equal(rels._r[0][7],"Inactivo");
 const history=ctx.api.getStudyPlanSubjects({planId:"P1",includeInactive:true});
 assert.equal(history.data.length,1);assert.equal(history.data[0].estado,"Inactivo");
 const active=ctx.api.createStudyPlanSubject({planId:"P1",asignaturaId:"S1",caracter:"Obligatoria",horasSemanales:5});
-assert.equal(active.data.estado,"Activo");assert.equal(rels._r.length,2,"deactivation preserves history and permits a new active relation");
+assert.equal(active.data.estado,"Activo");assert.equal(rels._r.length,3,"deactivation preserves history and permits a new active relation");
 assert.equal(acquires,releases);assert.equal(locked,false);
 
 const routed = [];

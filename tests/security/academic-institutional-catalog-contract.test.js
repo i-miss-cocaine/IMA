@@ -113,7 +113,7 @@ function createContext(overrides) {
       getProperty: key => properties.has(key) ? properties.get(key) : null,
       setProperty: (key, value) => properties.set(key, String(value))
     }) },
-    Utilities: { getUuid: () => "00000000-0000-4000-8000-000000000001" },
+    Utilities: { getUuid: (() => { let next = 1; return () => "00000000-0000-4000-8000-" + String(next++).padStart(12, "0"); })() },
     logStructuredEvent: () => {},
     Date, Number, String, Error, JSON, Array, Object, Math,
     _sheets: sheets,
@@ -143,7 +143,7 @@ assert.throws(() => ctx.api.validateCatalogReference({ catalogType: "ALL", refer
 
 const created = ctx.api.createSubjectCatalogItem({
   nombreOficial: "Química", codigo: "QUI-01", areaId: "AREA-A",
-  cargaHorariaRef: 4, creditos: 3, grado: "10", idioma: "es", prerrequisitos: ["ASIG-1"]
+  cargaHorariaRef: 4, creditos: 3, programaId: "BTP-INFO", nivelEducativo: "Media", grado: "10", idioma: "es", prerrequisitos: ["ASIG-1"]
 });
 assert.equal(created.data.estado, "Activo");
 const subjectSheet = ctx._sheets.CatalogoAsignaturas;
@@ -153,6 +153,23 @@ assert.equal(subjectRow[subjectHeaders.indexOf("Estado")], "Activo");
 assert.equal(subjectRow[subjectHeaders.indexOf("CargaHorariaRef")], 4);
 assert.equal(subjectRow[subjectHeaders.indexOf("AreaID")], "AREA-A");
 assert.equal(subjectRow[subjectHeaders.indexOf("DepartamentoID")], "D1");
+assert.equal(subjectRow[subjectHeaders.indexOf("ProgramaID")], "BTP-INFO");
+assert.equal(subjectRow[subjectHeaders.indexOf("NivelEducativo")], "Media");
+assert.equal(subjectRow[subjectHeaders.indexOf("Grado")], "10");
+assert.equal(subjectRow[subjectHeaders.indexOf("Idioma")], "es");
+assert.equal(subjectRow[subjectHeaders.indexOf("Creditos")], 3);
+const bilingualCreated = ctx.api.createSubjectCatalogItem({
+  nombreOficial: "English for Technology", codigo: "ENG-BTP-11", areaId: "AREA-A",
+  programaId: "BTP-INFO", nivelEducativo: "Media", grado: "11", idioma: "en",
+  cargaHorariaRef: 5, creditos: 4, prerrequisitos: ["ASIG-1"]
+});
+assert.equal(bilingualCreated.data.estado, "Activo");
+const bilingualMetadata = ctx.api.getInstitutionalCatalog({ catalogType: "SUBJECTS" }).data.asignaturasMetadata.find(item => item.codigo === "ENG-BTP-11");
+assert.equal(bilingualMetadata.grado, "11");
+assert.equal(bilingualMetadata.idioma, "en");
+assert.equal(bilingualMetadata.programaId, "BTP-INFO");
+assert.equal(bilingualMetadata.cargaHorariaRef, 5);
+assert.equal(bilingualMetadata.creditos, 4);
 assert.deepEqual(JSON.parse(subjectRow[subjectHeaders.indexOf("PrerrequisitosJSON")]), ["ASIG-1"]);
 const syncedSubjects = ctx.api.getInstitutionalCatalog({ catalogType: "SUBJECTS" });
 const syncedPrerequisiteSubject = syncedSubjects.data.asignaturasMetadata.find(item => item.codigo === "QUI-01");
