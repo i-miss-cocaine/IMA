@@ -837,7 +837,7 @@
 - Alcance: consolidar áreas y departamentos; definir asignaturas con ID/código único, área, departamento, programa, grado, idioma, carga horaria, créditos, prerrequisitos y obligatoriedad; versionar planes y validar ofertas; conservar historia y propagar cambios a formularios/reportes.
 - Criterios: fuente única sincronizada cliente/backend; departamentos sin catálogos paralelos; referencias válidas; soporte de modelos hondureños/bilingües; desactivación sin pérdida histórica; pruebas de integridad y múltiples grados.
 - Relacionadas: TASK-005, AUD-NG-011, AUD-NG-018, AUD-NG-093, AUD-NG-108, AUD-NG-111, AUD-NG-113, AUD-NG-115, AUD-NG-117 y TASK-153.
-- Estado: En progreso (C1.899, 2026-11-20).
+- Estado: En progreso (C1.900, 2026-11-20).
 
 - **Avance C1.889:** se corrige la discrepancia del esquema `PlanesEstudio`: `getStudyPlans` lee por encabezados y distingue `VigenciaInicio`, `VigenciaFin` y `Estado`; `createStudyPlan` escribe por mapa de columnas, valida rango, evita duplicados lógicos y genera ID UUID. Las hojas heredadas `Estado/Vigencia` se leen sin desplazar columnas y reciben las columnas canónicas al crear nuevos planes, conservando los valores históricos.
 - **Pruebas:** `tests/security/academic-curriculum-catalog-contract.test.js` incorporado al workflow Academic-Service; prueba esquema canónico, compatibilidad heredada, vigencia inválida, duplicado e ID estable. Academic-Service run 44656530850 SUCCESS.
@@ -882,6 +882,13 @@
 - **Avance C1.899:** el reporte curricular acepta filtros por área, asignatura, grado, programa, período, año lectivo y sección. Los filtros curriculares se resuelven mediante el catálogo institucional; los registros legacy sin contexto no se atribuyen a áreas/programas y se excluyen de consultas filtradas.
 - **Pruebas C1.899:** contrato backend de filtros y esquema legacy fail-closed PASS; consumidor de Secretaría prueba propagación de filtros y descarta respuestas fuera de orden. Academic-Service run 44732559564 y Department Reference Consumers run 44732705738 SUCCESS.
 - **Pendiente:** edición de asignaturas y ciclos de prerrequisitos; completar formularios restantes y pruebas E2E con modelos reales; reconciliar AUD-NG-175/AUD-NG-226 sin duplicar tareas propietarias.
+- **Avance C1.900:** se incorpora edición controlada de asignaturas por ID, protegida por identidad verificada, ámbito departamental y ScriptLock. Se preserva el estado histórico; los códigos duplicados, referencias inactivas, prerrequisitos duplicados/inválidos y ciclos se rechazan. Los campos identificadores no pueden cambiar cuando existen relaciones académicas, evitando romper referencias históricas.
+- **Compatibilidad heredada:** la edición normaliza columnas opcionales ausentes (carga horaria/créditos) a valores vacíos, sin impedir editar registros creados antes de la ampliación del esquema. Este defecto fue detectado por CI y corregido en 277c8f8.
+- **Pruebas C1.900:** Academic-Service single authorization context run 44734267865 SUCCESS (Node 22; parseo Apps Script, contratos curriculares, referencias, ciclos, filtros, SACE y regresiones). Department Reference Consumers Local Contract run 44734267872 SUCCESS (Node 24; UI admin, docentes, admisiones, analítica, sintaxis y regresiones).
+- **Correcciones de pruebas:** los contratos incorporados en 02382c4 tenían escapes de regex excesivos; corregidos en 72dc2e7. El contrato detectó un caso real de columnas opcionales ausentes en hojas heredadas; corregido en 277c8f8.
+- **Hallazgo externo:** Department Scope Contract run 44734267852 continúa fallando únicamente en Phase 22 por falta de configureSchoolDocumentTemplate; no forma parte de AUD-NG-164 ni fue modificado.
+- **Límites pendientes:** integración de formularios curriculares restantes y paneles de planificación heredados (requiere reconciliar ownership); E2E con datos/programas reales hondureños; coordinación AUD-NG-175/AUD-NG-226. No se ejecutó navegador real, Apps Script desplegado ni datos productivos.
+
 
 <!-- ID: AUD-NG-226 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-226] [P1] Integridad referencial y atomicidad en departamentos, cargos y adscripciones

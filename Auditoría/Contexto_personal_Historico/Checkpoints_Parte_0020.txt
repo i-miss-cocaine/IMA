@@ -308,3 +308,47 @@ Límites:
 - El informe conserva el agregado histórico sin filtros, pero no convierte filas legacy sin contexto en relaciones curriculares.
 - AUD-NG-164 continúa En progreso. Siguen pendientes edición de asignaturas, validación de ciclos de prerrequisitos, formularios restantes, E2E con modelos reales y reconciliación de las tareas propietarias AUD-NG-175/AUD-NG-226.
 ===============================================================================
+
+===============================================================================
+### C1.900 — AUD-NG-164: edición segura de asignaturas y validación de ciclos
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-SUBJECT-EDIT-71
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 495703562049d9c57f9ecde283bf60daf052f2eb
+HEAD de implementación: 02382c4508d2967ed1df132abe60e9547ac91d0e
+HEAD de corrección de contratos: 72dc2e748f228bfef269ee4f188bec6d78e7cc5c
+HEAD final de código: 277c8f8609b7f184965e93684d0d5100285d4311
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+Checkpoint anterior: C1.899 — mismo archivo, bloque anterior.
+
+Implementación:
+- Se agrega updateSubjectCatalogItem al RBAC Director y al despacho doPost.
+- La actualización requiere identidad verificada y ámbito departamental autorizado; usa ScriptLock y rechaza ID ambiguo/inexistente, código duplicado, referencias no activas, prerrequisitos repetidos o mal formados y ciclos.
+- Si una asignatura ya está referenciada por planes, ofertas, malla, configuración académica o calificaciones, los campos identificadores se vuelven inmutables; se permiten cambios de campos no identificadores compatibles con referencias existentes.
+- El panel de Dirección añade edición explícita, cancelación y payload de actualización. Renderizado mantiene textContent/nodos seguros.
+- Compatibilidad: columnas opcionales vacías/ausentes de hojas antiguas se normalizan al editar para que la ausencia de carga/créditos no cause un falso error.
+
+Pruebas:
+- Academic-Service run 44734267865 — SUCCESS; Node 22.23.5; sintaxis Apps Script, catálogo, relaciones, ofertas, prerrequisitos/ciclos, filtros, cliente, SACE y regresiones PASS.
+- Department Reference Consumers run 44734267872 — SUCCESS; Node 24.22.3; contratos UI, docente, admisiones, analítica, sintaxis y regresiones PASS.
+- Primeros intentos: 44733792047/44733792293 fallaron por expresiones regulares sobre-escapadas; corregidas en 72dc2e7. Run 44734068373 detectó créditos ausentes en fila heredada; corregido en 277c8f8 y el run 44734267865 pasó.
+- Department Scope run 44734267852 — FAILURE en Phase 22 por configureSchoolDocumentTemplate ausente, fallo preexistente/ajeno al alcance de esta tarea.
+- No se ejecutó navegador real, despliegue Apps Script ni E2E con datos productivos.
+
+Archivos de código/pruebas:
+- backend/academic-service/Code.gs
+- js/curriculum-admin.js
+- dashboard-direccion.html
+- tests/security/academic-institutional-catalog-contract.test.js
+- tests/security/academic-curriculum-admin-ui-contract.test.js
+- .github/workflows/academic-reference-consumer.yml
+
+Estado:
+- AUD-NG-164 continúa En progreso.
+- Pendiente: revisar formularios restantes y panel de planificación que conserva fuente heredada de ofertas; validar con programas/datos reales hondureños; reconciliar AUD-NG-175/AUD-NG-226 sin duplicar sus propietarios.
+- El error Phase22 de Department Scope se mantiene separado y no se atribuye a esta tarea.
+
+Siguiente paso:
+- Auditar el siguiente formulario curricular real y el panel de planificación para identificar consumidores concretos de catálogos/ofertas heredados. Mantener la fuente institucional canónica y evitar migraciones o cambios de datos sin evidencia/propietario.
+===============================================================================
