@@ -4382,3 +4382,5 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-20] C1.889 — AUD-NG-164: corrección de esquema PlanesEstudio, compatibilidad heredada, vigencia, duplicados e ID UUID. Se añade contrato Academic-Service y CI PASS.
+
+[2026-11-20] C1.890 — AUD-NG-164: se añade ciclo de vida versionado de PlanAsignaturas con validación referencial, unicidad activa, preservación histórica y ScriptLock; se serializan las altas de planes/asignaturas. createAcademicOffer valida año, período, plan, asignatura y relación curricular; PeriodoID queda agregado de forma compatible y la caché se invalida por revisión. Se corrige detección de JSON inválido en herramientas de áreas. Academic-Service single authorization context run 44662036645 SUCCESS, con node --check y contratos curriculares/ofertas PASS. Department Scope conserva fallo ajeno en Phase22 por configureSchoolDocumentTemplate ausente. AUD-NG-164 continúa En progreso: faltan prerrequisitos, reconciliación de departamentos, sincronización cliente/backend y propagación a formularios/reportes.

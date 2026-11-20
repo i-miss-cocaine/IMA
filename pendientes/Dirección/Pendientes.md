@@ -845,6 +845,13 @@
 
 ---
 
+- **Avance C1.890:** se implementan relaciones PlanAsignaturas con consulta, alta y desactivación/reactivación sin borrado físico; se validan plan/asignatura activos, grado, horas, orden y unicidad activa bajo ScriptLock. Las altas de planes/asignaturas también serializan la comprobación de unicidad.
+- Se refuerza la validación de createAcademicOffer contra año y período activos, plan y asignatura vigentes y relación PlanAsignaturas; se añade PeriodoID compatible con hojas heredadas, ID UUID, detección de duplicados y revisión de caché.
+- Se corrige el reporte de pruebas de áreas para no ocultar herramientas JSON inválidas.
+- **Pruebas C1.890:** Academic-Service single authorization context run 44662036645 SUCCESS; Node syntax check y contratos curriculares, PlanAsignaturas, ofertas, catálogo institucional y regresiones incluidas PASS. Department Scope mantiene fallo ajeno en Phase22 por configureSchoolDocumentTemplate ausente.
+- **Límites pendientes:** prerrequisitos y campos curriculares adicionales; reconciliación de departamentos con AUD-NG-175/AUD-NG-226; sincronización autoritativa cliente/backend y propagación a formularios/reportes; verificación funcional de modelos hondureños/bilingües y múltiples grados. No se ejecutó despliegue Apps Script ni E2E productivo.
+
+
 <!-- ID: AUD-NG-226 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-226] [P1] Integridad referencial y atomicidad en departamentos, cargos y adscripciones
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-226; auditoría TAREA-F4-P1-07 (C1.82).

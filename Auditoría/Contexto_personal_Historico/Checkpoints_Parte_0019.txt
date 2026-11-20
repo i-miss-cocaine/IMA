@@ -2155,3 +2155,50 @@ Estado:
 - AUD-NG-164 continúa En progreso.
 - Pendiente: PlanAsignaturas y sus relaciones versionadas; validación de ofertas contra año/período/plan/asignatura; unicidad y relaciones del catálogo de asignaturas; coordinación con AUD-NG-175 y AUD-NG-226 para evitar catálogos paralelos.
 ===============================================================================
+
+
+===============================================================================
+### C1.890 — AUD-NG-164: relaciones curriculares y validación de ofertas
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-CURRICULUM-61
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial de esta iteración: e6a51dadff55637aa79ce718a2b853d8cdd763f1
+HEAD final verificado: c399eae86848cc219ad5e533a420ee0f17178ba4
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Implementación:
+- Se corrige la validación de herramientas de áreas curriculares: el parser conserva el indicador de esquema JSON inválido y runCurricularAreaServiceTests ya no informa el caso como parcial/satisfactorio.
+- Se agregan getStudyPlanSubjects, createStudyPlanSubject y setStudyPlanSubjectStatus. Las relaciones PlanAsignaturas validan plan/asignatura activos, grado, horas y orden; impiden duplicados activos, serializan escrituras con ScriptLock y conservan relaciones inactivas sin borrado físico.
+- Se serializan también las escrituras de creación de planes y asignaturas para evitar carreras en las comprobaciones de unicidad. Los IDs de asignaturas y ofertas usan UUID; los códigos de asignatura se verifican bajo lock.
+- createAcademicOffer valida año y período activos, plan y asignatura activos, coherencia de grado y relación vigente PlanAsignaturas; rechaza duplicados activos y registra PeriodoID. getAcademicOffers filtra por período y usa revisión monotónica de caché para evitar lecturas obsoletas tras escrituras.
+- El adaptador OfertaAcademica agrega PeriodoID al final cuando el esquema heredado no lo contiene; no desplaza columnas existentes.
+
+Pruebas:
+- Academic-Service single authorization context run 44662036645 — SUCCESS en HEAD c399eae.
+- node --check < backend/academic-service/Code.gs — SUCCESS.
+- Contratos academic-curriculum-catalog, academic-study-plan-subjects, academic-offer-reference, academic-institutional-catalog, academic-service-single-auth-context, SACE snapshot/source locks/gradebook/session closure, legacy report card, unified grading, teacher/absence ABAC, replay guard, migration writer, multilevel file validation y private student documents — SUCCESS en el workflow.
+- Department Scope Contract run 44661563577 — FAILURE únicamente en phase22-document-management-suite-contract.test.js: falta configureSchoolDocumentTemplate; los contratos de ámbito y adjuntos anteriores pasaron. Hallazgo preexistente, fuera del alcance AUD-NG-164.
+- No existe package.json ni script npm/CLI de proyecto en la raíz. No se ejecutó despliegue Apps Script, navegador, hojas productivas ni E2E con datos reales.
+
+Límites:
+- AUD-NG-164 continúa En progreso. No se declara completada.
+- Pendiente completar prerrequisitos del catálogo, reconciliación de departamentos y sincronización autoritativa cliente/backend; integrar el nuevo contrato de ofertas/relaciones en formularios y reportes; verificar modelos hondureños/bilingües y múltiples grados.
+- AUD-NG-175 y AUD-NG-226 permanecen tareas relacionadas independientes; no se modificaron ni se sustituyeron sus alcances.
+
+Commits de esta iteración:
+- f01c3e7a174f6b5db66de48b4c18c01d2a3f2564 — preservar invalidez del esquema tools.
+- 92f4b8a64930e3df0d004e6d96f48e2224036e46 — relaciones versionadas PlanAsignaturas.
+- 107e0ff6045a6e890caa0241a4ba3df298e0ed2a — locks de unicidad en planes/asignaturas.
+- e0c548785c9eeddb4b10315568710fddc12e0718 — rutas de ejecución CI del contrato PlanAsignaturas.
+- 7e6fecb33d68dbcedff098c9cb35340835bf4509 — validación referencial de ofertas.
+- 0f0943d44f9999e0c772ddd7407136cdd5c22c99 — invalidación de caché por revisión.
+- c399eae86848cc219ad5e533a420ee0f17178ba4 — corrección del contrato de pruebas de ofertas.
+
+Estado de ramas:
+- NG_beta_0.0.0.1_work HEAD = c399eae86848cc219ad5e533a420ee0f17178ba4.
+- NG_beta_0.0.0.1 HEAD = 44d9891132332e692dbe2ba8602b41f50a508a59 (sin cambios).
+
+Siguiente paso:
+- Continuar AUD-NG-164 con prerrequisitos, campos curriculares faltantes, sincronización cliente/backend y propagación a formularios/reportes; luego reconciliar sus referencias con AUD-NG-175 y AUD-NG-226 sin duplicarlas.
+===============================================================================
