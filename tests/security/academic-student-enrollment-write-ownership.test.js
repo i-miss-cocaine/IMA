@@ -96,7 +96,7 @@ const wrapperContext = {
     return { status: "success", matriculaId: "MAT-1" };
   }
 };
-vm.runInNewContext(registerFn + "\nthis.register=registerStudentEnrollment;", wrapperContext);
+vm.runInNewContext("function advanceSaceAcademicSourceRevisionLocked_(){return \"TEST-REVISION:1\";}\n" + registerFn + "\nthis.register=registerStudentEnrollment;", wrapperContext);
 const success = wrapperContext.register({userId:"STU-1",skipLock:true,_chargeReference:"spoof",_rollbackActions:[]});
 assert.equal(success.status,"success");
 assert.deepEqual(events.slice(0,2),["lock:10000","authorize:STU-1"],"lock is acquired before ownership validation");
