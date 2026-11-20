@@ -8,6 +8,7 @@
         if (Object.prototype.hasOwnProperty.call(record, "isActive")) return record.isActive === true;
         return ["activo", "vigente", "active", "enabled"].includes(String(record.estado || "").trim().toLowerCase());
     }
+    function isPlanCurrent(plan) { return !!plan && String(plan.estado || "Vigente").trim() === "Vigente"; }
     function numberOrEmpty(value) {
         return value === "" || value === null || value === undefined ? "" : Number(value);
     }
@@ -189,11 +190,18 @@
             body.appendChild(row);
         });
     }
+    function populateRelationSubjects() {
+        const planSelect = byId("curriculum-relation-plan");
+        const plan = planById(planSelect && planSelect.value);
+        const subjects = state.subjects.filter(subject => isActive(subject) &&
+            (!String(subject.grado || "").trim() || (plan && String(subject.grado).trim().toLowerCase() === String(plan.grado || "").trim().toLowerCase())));
+        populate("curriculum-relation-subject", subjects, "asignaturaId", subject => subject.codigo + " — " + subject.nombreOficial, "Seleccione asignatura compatible");
+    }
     function renderFormOptions() {
         populate("curriculum-subject-area", state.areas, "areaId", area => area.name + " (" + area.code + ")", "Seleccione área", isActive);
         populate("curriculum-subject-prerequisites", state.subjects, "asignaturaId", subject => subject.codigo + " — " + subject.nombreOficial, "Sin prerrequisitos", isActive);
         populate("curriculum-relation-plan", state.plans, "planId", plan => plan.nombre + " · " + plan.grado + " · v" + plan.version, "Seleccione plan vigente", isActive(plan));
-        populate("curriculum-relation-subject", state.subjects, "asignaturaId", subject => subject.codigo + " — " + subject.nombreOficial, "Seleccione asignatura activa", isActive);
+        populateRelationSubjects();
         populate("curriculum-offer-year", state.years, "anoId", year => year.nombre || year.anoId, "Seleccione año lectivo", isActive);
         populate("curriculum-offer-plan", state.plans, "planId", plan => plan.nombre + " · " + plan.grado, "Seleccione plan vigente", plan => String(plan.estado || "Vigente") === "Vigente");
         updatePeriods();
@@ -376,7 +384,7 @@
         const refresh = byId("btn-refresh-curriculum-admin");
         if (refresh) refresh.addEventListener("click", loadAll);
         const relationPlan = byId("curriculum-relation-plan");
-        if (relationPlan) relationPlan.addEventListener("change", () => loadPlanRelations(relationPlan.value));
+        if (relationPlan) relationPlan.addEventListener("change", () => { populateRelationSubjects(); loadPlanRelations(relationPlan.value); });
         const offerPlan = byId("curriculum-offer-plan");
         if (offerPlan) offerPlan.addEventListener("change", () => loadOfferPlanSubjects(offerPlan.value));
         const offerYear = byId("curriculum-offer-year");

@@ -41,6 +41,8 @@ assert.throws(() => api.buildOfferPayload({ anoId:"2026" }, { periodoId:"P2", an
 assert.match(source, /textContent\s*=/, "rendering must use textContent for untrusted catalog values");
 assert.match(source, /getStudyPlanSubjects/);
 assert.match(source, /setStudyPlanSubjectStatus/);
+assert.match(source, /function isPlanCurrent/);
+assert.match(source, /subject\.grado.*plan\.grado/);
 assert.match(source, /createSubjectCatalogItem/);
 assert.match(source, /createStudyPlanSubject/);
 assert.match(source, /createAcademicOffer/);
