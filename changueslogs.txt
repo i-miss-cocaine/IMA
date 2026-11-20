@@ -4364,3 +4364,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-20] C1.884 — Implementación de sourceRevision epoch:counter en Academic/USER/Exam, revalidación cruzada del snapshot SACE, endpoints revisionOnly, incremento fail-closed pre-write y pruebas de carreras/persistencia. Suites específicas de SACE, Academic, Identity y Exam pasan; la suite Node global conserva dos fallos ajenos (Phase22 y Accounting school-document). BETA-EXAM-114 pendiente de despliegue. XLS continúa CANDIDATE.
+
+
+[2026-11-20] C1.885 — El orquestador SACE conserva sourceRevisions reportados en metadatos del candidato XLS, sin escribirlos en el binario; rechaza tokens inválidos y marca snapshots legacy sin atestación. Auditoría del catálogo público confirma que no ofrece plantilla de notas .xls genérica; los tres libros del repo siguen CANDIDATE. BETA-EXAM-115 pendiente de comparación con archivo generado desde SACE Notas.

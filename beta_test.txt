@@ -2149,3 +2149,32 @@ Resultado esperado:
 Estado: PENDIENTE DE BETA — requiere despliegue real de Academic, USER y Exam.
 Evidencia requerida: SHA de cada despliegue, request IDs, revisiones anonimizadas, resultados de las tres mutaciones intercaladas, métricas de lock/timeout y comparación de filas antes/después de la inyección de fallo.
 ===============================================================================
+
+
+===============================================================================
+BETA-EXAM-115 — Procedencia y compatibilidad de la plantilla de calificaciones generada por SACE
+===============================================================================
+Módulo/rol: SACE / Docente autorizado; orquestador de exportación candidato IMA
+Tarea/requisito: AUD-NG-167 — validar la plantilla real antes de promover un XLS candidato
+Objetivo: comparar una plantilla descargada por un docente desde el módulo Notas de SACE con los tres baselines del repositorio, sin asumir que las muestras actuales son oficiales ni almacenar datos personales.
+Precondiciones:
+- Acceso autorizado a un centro, modalidad, grado/curso, sección, jornada, asignatura y periodo de prueba en SACE.
+- Archivo de calificaciones descargado directamente desde el módulo Notas para esa clase.
+- Datos sintéticos o copia saneada; no subir ni incorporar al repositorio nombres, identidades, notas ni otros datos personales reales.
+- Registrar de forma segura fecha/hora, contexto de clase y SHA-256 del archivo original; conservarlo fuera del repositorio si contiene datos personales.
+Pasos:
+1. Descargar el archivo original desde Notas con una sesión docente autorizada y registrar su contexto sin guardar credenciales.
+2. Inspeccionar el contenedor OLE/BIFF8, hojas, dimensiones, rangos combinados, encabezados, columnas de inasistencias/notas/recuperación, fórmulas, validaciones, protección y configuración de impresión.
+3. Comparar el layout signature con manifest.json y los tres archivos candidatos; no comparar ni copiar filas de estudiantes reales.
+4. Si el layout difiere, no adaptar silenciosamente el parche binario: documentar diferencias y crear un nuevo baseline/versionado solo con evidencia estructural saneada.
+5. Si coincide, ejecutar el parche binario únicamente sobre una copia sintética; verificar que solo se alteran celdas autorizadas y que el tamaño/estructura OLE se preservan.
+6. Confirmar el número real de parciales, el significado de la columna H y la regla de recuperación para ese formato; no mapear notaRecuperada/notaFinalCalculada por inferencia.
+7. Confirmar la vigencia del archivo para el periodo académico de prueba y registrar su procedencia; no inferir effectiveFrom/effectiveTo del nombre del archivo.
+8. Verificar que sourceRevisions se conserva solo en metadatos del candidato y no aparece en el binario XLS.
+Resultado esperado:
+- Solo se promueve un baseline cuando procedencia, vigencia, estructura y semántica de recuperación están acreditadas.
+- Cualquier diferencia no explicada mantiene status=CANDIDATE y aborta la exportación productiva.
+- Ningún dato personal del libro real queda en Git ni en logs.
+Estado: PENDIENTE — requiere acceso autorizado a SACE Notas y un archivo sintético/saneado.
+Evidencia requerida: SHA-256, contexto no personal, layout signature, diff estructural, prueba binaria sobre copia sintética, decisión de vigencia y semántica de recuperación.
+===============================================================================

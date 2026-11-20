@@ -1941,3 +1941,55 @@ Estado:
 Siguiente acción elegible:
 - Mantener BETA-EXAM-114 pendiente hasta disponer del despliegue de los tres servicios; continuar la auditoría del candidato XLS y su compatibilidad con la plantilla SACE, sin afirmar que existe una plantilla oficial confirmada.
 ===============================================================================
+
+
+===============================================================================
+### C1.885 — AUD-NG-167: trazabilidad de revisiones en el XLS candidato y auditoría de procedencia
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-167-XLS-REVISION-PROVENANCE-56
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 246bc310c6da389c562367c502fb4d81f1cfa7b1
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+HEAD de código verificado antes del registro documental: 47f02c128542d8da5d1d2012b47b9a864ecc15ed
+
+Trabajo realizado:
+- El orquestador SACE conserva sourceRevisions reportados por el snapshot en los metadatos del resultado candidato, separados de outputBytes.
+- Se valida que existan los tres tokens Academic/USER/Exam, con epoch válido, contador numérico seguro y no negativo. Un objeto presente pero inválido falla con SACE_SOURCE_REVISIONS_INVALID.
+- Un snapshot legacy sin sourceRevisions conserva compatibilidad de composición, pero el resultado queda sourceRevisionStatus=absent y declara que no puede acreditarse estabilidad cruzada.
+- Con metadatos válidos, sourceRevisionStatus=present y el objeto sourceRevisions se conservan en el resultado. No se escriben en el libro XLS ni alteran sus bytes/estructura.
+- El contrato de orquestación cubre las tres plantillas, metadatos presentes/ausentes/malformados y ausencia de tokens dentro del binario.
+
+Auditoría de plantillas:
+- El catálogo público de descargas SACE consultado no muestra una plantilla de calificaciones .xls genérica; enumera fichas, nomenclaturas y manuales: https://sace.se.gob.hn/descargas/descargar/archivos
+- El manual docente describe que el archivo de calificaciones se descarga desde el módulo Notas para las clases asignadas: https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Docente.pdf
+- No se obtuvo un archivo descargado desde una sesión SACE docente autorizada. Los tres libros del repositorio siguen siendo muestras estructurales, no evidencia de plantilla oficial vigente.
+- manifest.json permanece sin cambios: officialSourceVerified=false, effectiveFrom/effectiveTo=null y status=CANDIDATE para las tres plantillas.
+
+Verificación:
+- SACE template structure compatibility contract — GitHub Actions run 44647806731: SUCCESS.
+- Node --check del orquestador y contratos de proveedor, plantilla, parche binario, composición y aislamiento de producción: SUCCESS.
+- No se ejecutó Apps Script real ni se descargó/subió un archivo a SACE.
+- BETA-EXAM-114 permanece pendiente para consistencia de revisiones en despliegue; BETA-EXAM-115 queda pendiente para comparar un archivo real generado desde el módulo Notas.
+- No se modifican bytes de las plantillas originales ni se promueve ningún candidato.
+
+Archivos modificados:
+- js/sace-export-orchestrator.js
+- tests/security/sace-export-orchestrator-contract.test.js
+- docs/architecture/Plantillas/SACE/Mapa_Compatibilidad_SACE.md
+- Auditoria.txt
+- changueslogs.txt
+- beta_test.txt
+- este checkpoint e índice.
+
+Commits:
+- 36d3ecfe692ed09f10cb9051b2b573a0e3aa2f7f — preservar sourceRevisions en metadatos del candidato.
+- 47f02c128542d8da5d1d2012b47b9a864ecc15ed — aclarar que los tokens son reportados por el snapshot, no verificados por el cliente.
+
+Estado:
+- C1.885 completa como mejora de trazabilidad y auditoría documental del candidato.
+- AUD-NG-167 continúa En progreso. Las plantillas siguen CANDIDATE, no hay fuente oficial/fecha de vigencia confirmada, la semántica de recuperación H y la política COUNT/EXCLUDE no están resueltas y los dos BETA tests requieren despliegue/archivo real.
+
+Siguiente acción elegible:
+- Ejecutar BETA-EXAM-114 y BETA-EXAM-115 cuando estén disponibles los tres servicios desplegados y un libro descargado desde SACE Notas con datos sintéticos/anonimizados. Antes de cualquier promoción, comparar el layout/metadata real con los tres baselines y resolver la semántica de recuperación y ausencias con evidencia válida.
+===============================================================================

@@ -231,3 +231,26 @@ Academic-Service devuelve justificacionVerificada=true solo después de comproba
 **Verificación:** Actions 44552470318 — Academic-Service single authorization context: SUCCESS; 44551873276 — SACE template structure compatibility contract: SUCCESS. Pasaron los contratos del snapshot, proveedor y orquestador.
 
 **Límite:** el snapshot real y las transiciones de justificación en Apps Script desplegado se validan en BETA-EXAM-113. La política COUNT/EXCLUDE sigue sin fuente oficial confirmada (BETA-EXAM-112); la plantilla oficial y recuperación también pendientes.
+
+
+## 18. Trazabilidad de revisiones en el XLS candidato y verificación de procedencia — C1.885
+
+El snapshot Academic ahora expone sourceRevisions para Academic, USER y Exam después de completar la revalidación A1→U1→E1→A2→U2→E2. El orquestador candidato conserva esos tokens reportados en el objeto de resultado como metadatos separados del libro:
+- sourceRevisionStatus="present" y sourceRevisions con los tres tokens cuando el snapshot los incluye y su formato/contador es válido.
+- sourceRevisionStatus="absent" y una limitación explícita cuando se recibe un snapshot legacy sin sourceRevisions; se mantiene la compatibilidad de la composición candidata, pero no se afirma que su estabilidad entre servicios esté acreditada.
+- Un objeto presente con token incompleto, malformado o con contador no seguro se rechaza con SACE_SOURCE_REVISIONS_INVALID.
+- Los tokens no se escriben en celdas ni en el contenedor OLE/BIFF. Solo se conservan en metadatos del resultado candidato; el contrato automatizado comprueba que no aparecen en los bytes XLS.
+
+### Verificación de procedencia oficial
+
+El catálogo público de descargas SACE consultado el 2026-11-20 enumera nomenclaturas, fichas y manuales, pero no publica una plantilla de calificaciones .xls genérica: https://sace.se.gob.hn/descargas/descargar/archivos
+
+El manual público de usuario docente describe la descarga del archivo de calificaciones desde el módulo Notas para las clases asignadas al docente: https://sace.se.gob.hn/media/documentos_sace/Manual_de_usuario_SACE_Docente.pdf
+
+Por tanto, los tres libros del repositorio siguen siendo ejemplos estructurales candidatos; no se ha demostrado que sean los archivos que SACE genera actualmente para una clase y periodo reales. No se cambia manifest.json: officialSourceVerified permanece false, effectiveFrom/effectiveTo permanecen null y los tres templates permanecen CANDIDATE.
+
+**Verificación local:** GitHub Actions 44647806731 — SACE template structure compatibility contract: SUCCESS. Pasaron sintaxis del orquestador, parche binario, proveedor, contrato de composición y aislamiento de producción. El contrato prueba metadatos presentes, ausencia legacy, tokens inválidos y que el token no se escribe en el XLS.
+
+**Límite:** el orquestador continúa devolviendo un candidato local; no se expone a UI, descarga, almacenamiento ni carga a SACE. BETA-EXAM-115 documenta la comparación futura contra un libro descargado desde una sesión docente autorizada. La semántica de recuperación H y la política oficial COUNT/EXCLUDE siguen pendientes; no se promueve el candidato.
+
+Estado AUD-NG-167: [~] En progreso.
