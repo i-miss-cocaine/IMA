@@ -63,6 +63,7 @@ const context = {
   SPREADSHEET_ID: "USER-SHEET",
   SpreadsheetApp: { openById(id) { assert.equal(id, "USER-SHEET"); return {}; } },
   getOrCreateSheet(_ss, name) { assert.equal(name, "Personas"); return sheet; },
+  advanceSaceUserSourceRevisionLocked_() { return "TEST-REVISION:1"; },
   LockService: { getScriptLock() { return {
     waitLock(timeout) { assert.equal(timeout, 10000); context.lockWaits++; context.lockHeld = true; },
     releaseLock() { assert.equal(context.lockHeld, true); context.lockHeld = false; context.lockReleases++; }
