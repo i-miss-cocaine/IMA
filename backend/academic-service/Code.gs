@@ -6099,7 +6099,7 @@ function getInstitutionalSubjectColumnMap_(sheet, ensureOptionalColumns) {
     creditos: ["creditos"], version: ["version"], updatedAt: ["fechaactualizacion"]
   };
   const optional = ensureOptionalColumns
-    ? ["AreaID", "DepartamentoID", "ProgramaID", "NivelEducativo", "Grado", "Idioma", "Creditos", "Version", "FechaActualizacion"]
+    ? ["CargaHorariaRef", "AreaID", "DepartamentoID", "ProgramaID", "NivelEducativo", "Grado", "Idioma", "Creditos", "Version", "FechaActualizacion"]
     : [];
   const result = getInstitutionalCatalogHeaderMap_(sheet, canonical, aliases, optional);
   const required = ["asignaturaId", "nombreOficial", "codigo", "areaAcademica", "estado"];
@@ -6314,7 +6314,10 @@ function createSubjectCatalogItem(payload) {
   if (duplicateCode) throw new Error("SUBJECT_CODE_ALREADY_EXISTS");
   const cargaHoraria = input.cargaHorariaRef === undefined || input.cargaHorariaRef === null || input.cargaHorariaRef === ""
     ? "" : Number(input.cargaHorariaRef);
+  const creditos = input.creditos === undefined || input.creditos === null || input.creditos === ""
+    ? "" : Number(input.creditos);
   if (cargaHoraria !== "" && (!Number.isFinite(cargaHoraria) || cargaHoraria < 0)) throw new Error("SUBJECT_WORKLOAD_INVALID");
+  if (creditos !== "" && (!Number.isFinite(creditos) || creditos < 0)) throw new Error("SUBJECT_CREDITS_INVALID");
 
   const asignaturaId = "ASIG-" + Utilities.getUuid();
   const row = new Array(sheet.getLastColumn()).fill("");
@@ -6330,7 +6333,7 @@ function createSubjectCatalogItem(payload) {
   if (map.nivelEducativo >= 0) row[map.nivelEducativo] = String(input.nivelEducativo || "").trim();
   if (map.grado >= 0) row[map.grado] = String(input.grado || "").trim();
   if (map.idioma >= 0) row[map.idioma] = String(input.idioma || "").trim();
-  if (map.creditos >= 0) row[map.creditos] = input.creditos === undefined ? "" : Number(input.creditos);
+  if (map.creditos >= 0) row[map.creditos] = creditos;
   if (map.version >= 0) row[map.version] = String(input.version || "1").trim();
   if (map.updatedAt >= 0) row[map.updatedAt] = new Date().toISOString();
   sheet.appendRow(row);
@@ -6512,7 +6515,7 @@ function registerCurricularAreaExtension(payload) {
     String(row[map.code] || "").trim().toUpperCase() === code);
   if (duplicateCode) throw new Error("AREA_CODE_ALREADY_EXISTS");
 
-  const toolsValue = input.tools === undefined ? "[]" : JSON.stringify(input.tools);
+  const toolsValue = Array.isArray(input.tools) ? JSON.stringify(input.tools) : String(input.tools === undefined ? "[]" : input.tools);
   let parsedTools;
   try { parsedTools = JSON.parse(toolsValue); } catch (_) { throw new Error("AREA_TOOLS_JSON_INVALID"); }
   if (!Array.isArray(parsedTools)) throw new Error("AREA_TOOLS_MUST_BE_ARRAY");
@@ -6563,7 +6566,8 @@ function runCurricularAreaServiceTests(payload) {
     throw new Error("DEPARTMENT_SCOPE_DENIED");
   }
   let tools = [];
-  try { tools = typeof area.tools === "string" ? JSON.parse(area.tools || "[]") : area.tools; } catch (_) {}
+  let toolsParseValid = true;
+  try { tools = typeof area.tools === "string" ? JSON.parse(area.tools || "[]") : area.tools; } catch (_) { toolsParseValid = false; }
   const department = getInstitutionalDepartmentRecords_(ss).find(item => item.departmentId === area.departmentId && item.isActive);
   const allAreas = getInstitutionalAreaRecords_(ss);
   const duplicateCode = allAreas.filter(item => item.code === area.code).length > 1;
@@ -6571,7 +6575,7 @@ function runCurricularAreaServiceTests(payload) {
     testRequiredMetadata: { status: area.name && area.code && area.serviceKey && area.departmentId ? "PASS" : "FAIL" },
     testActiveDepartmentReference: { status: department ? "PASS" : "FAIL" },
     testUniqueAreaCode: { status: duplicateCode ? "FAIL" : "PASS" },
-    testToolsSchema: { status: Array.isArray(tools) ? "PASS" : "FAIL" },
+    testToolsSchema: { status: toolsParseValid && Array.isArray(tools) ? "PASS" : "FAIL" },
     testPingConnectivity: { status: "NOT_RUN", reason: "No existe un contrato de ping verificable para el serviceUrl configurado." },
     testRBACIsolation: { status: "NOT_RUN", reason: "La prueba requiere identidades y despliegues aislados reales." }
   };
