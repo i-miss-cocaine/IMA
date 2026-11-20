@@ -804,26 +804,55 @@ window.DYNAMIC_DASHBOARD_MODULE_CONTRACTS = {
 
 // [FASE2-T04] [Fase 2 - Fuente de Verdad Institucional de Catálogos] - Sincronización del cliente con el catálogo centralizado de la institución.
 window.fetchInstitutionalCatalog = function(catalogType) {
-    if (typeof fetchApi !== 'function') {
-        console.warn("[CATALOG-SYNC] fetchApi no disponible para consulta de catálogos.");
-        return Promise.resolve({ status: "success", data: window.CURRICULAR_AREAS_CATALOG });
-    }
-    return fetchApi('ACADEMIC', 'getInstitutionalCatalog', { catalogType: catalogType || 'ALL_INSTITUTIONAL_CATALOGS' })
-        .then(function(res) {
-            if (res && res.status === 'success' && res.data) {
-                if (Array.isArray(res.data.areasCurriculares)) {
-                    res.data.areasCurriculares.forEach(function(area) {
-                        window.registerNewCurricularAreaServiceConfig(area);
-                    });
-                }
-                return res;
+    var requestedType = catalogType || "ALL_INSTITUTIONAL_CATALOGS";
+    function fallback(code, message) {
+        var cache = window.INSTITUTIONAL_CATALOG_CACHE;
+        var areas = Object.keys(cache.areas).map(function(key) { return cache.areas[key]; });
+        var subjects = Object.keys(cache.subjects).map(function(key) { return cache.subjects[key]; });
+        var departments = Object.keys(cache.departments).map(function(key) { return cache.departments[key]; });
+        return { status:"fallback", source:"LOCAL_FALLBACK", authoritative:false, schemaVersion:null, catalogRevision:null,
+            error:{code:code,message:message},
+            data:{
+                areasCurriculares:areas.filter(function(item){return item.isActive===true;}),
+                asignaturas:subjects.filter(function(item){return item.isActive===true;}),
+                departamentosAcademicos:departments.filter(function(item){return item.isActive===true;}),
+                areasCurricularesMetadata:areas, asignaturasMetadata:subjects, departamentosAcademicosMetadata:departments
             }
-            return { status: "success", data: window.CURRICULAR_AREAS_CATALOG };
-        })
-        .catch(function(e) {
-            console.error("[CATALOG-SYNC] Error en sincronización de catálogos:", e);
-            return { status: "success", data: window.CURRICULAR_AREAS_CATALOG };
-        });
+        };
+    }
+    var api = typeof window.fetchApi === "function" ? window.fetchApi : (typeof fetchApi === "function" ? fetchApi : null);
+    if (!api) {
+        if (window.console && console.warn) console.warn("[CATALOG-SYNC] fetchApi no disponible; se conserva catálogo local no autoritativo.");
+        return Promise.resolve(fallback("FETCH_API_UNAVAILABLE","No existe conexión disponible con el catálogo institucional."));
+    }
+    var payload = {
+        catalogType:requestedType,
+        clientConfigVersion:window.getSharedConfigVersion ? window.getSharedConfigVersion() : null,
+        clientServiceVersion:window.SERVICE_VERSIONS ? window.SERVICE_VERSIONS.ACADEMIC : null,
+        knownCatalogRevision:window.INSTITUTIONAL_CATALOG_STATE.catalogRevision
+    };
+    return api("ACADEMIC","getInstitutionalCatalog",payload).then(function(res) {
+        var data = res && res.data;
+        var valid = res && res.status==="success" && res.schemaVersion==="1.0.0" &&
+            Number.isSafeInteger(Number(res.catalogRevision)) && data && typeof data==="object" &&
+            Array.isArray(data.areasCurricularesMetadata) && Array.isArray(data.asignaturasMetadata) &&
+            Array.isArray(data.departamentosAcademicosMetadata);
+        if (!valid) return fallback("INVALID_CATALOG_CONTRACT","La respuesta del servidor no cumple el contrato versionado del catálogo.");
+        data.areasCurricularesMetadata.forEach(function(area){window.registerNewCurricularAreaServiceConfig(Object.assign({},area,{source:"SERVER",authoritative:true}));});
+        data.asignaturasMetadata.forEach(function(subject){window.registerNewAcademicSubjectServiceConfig(Object.assign({},subject,{source:"SERVER",authoritative:true}));});
+        data.departamentosAcademicosMetadata.forEach(function(department){window.registerNewAcademicDepartmentServiceConfig(Object.assign({},department,{source:"SERVER",authoritative:true}));});
+        window.INSTITUTIONAL_CATALOG_STATE = {
+            source:"SERVER", authoritative:true, schemaVersion:res.schemaVersion, version:res.version,
+            catalogRevision:Number(res.catalogRevision), sharedConfigVersion:payload.clientConfigVersion,
+            serviceVersion:payload.clientServiceVersion,
+            cacheTtlSeconds:window.CACHE_POLICIES && window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS.ttlSeconds : 43200,
+            fetchedAt:new Date().toISOString()
+        };
+        return Object.assign({},res,{source:"SERVER",authoritative:true,cachePolicy:window.CACHE_POLICIES ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS : null});
+    }).catch(function(error) {
+        if (window.console && console.error) console.error("[CATALOG-SYNC] Error en sincronización institucional:",error);
+        return fallback("CATALOG_SYNC_FAILED",String(error && error.message || error || "Error desconocido"));
+    });
 };
 
 window.validateQuestion = function(q) {
@@ -940,28 +969,89 @@ window.normalizeQuestion = function(q) {
 };
 
 // [TAREA-20] [Fase 1 - Incorporación Curricular] - Plantilla técnica estandarizada para registro e incorporación de nuevas áreas y servicios curriculares en la configuración global.
+window.ACADEMIC_SUBJECTS_CATALOG = window.ACADEMIC_SUBJECTS_CATALOG || [];
+window.INSTITUTIONAL_CATALOG_CACHE = window.INSTITUTIONAL_CATALOG_CACHE || { areas: {}, subjects: {}, departments: {} };
+window.INSTITUTIONAL_CATALOG_STATE = window.INSTITUTIONAL_CATALOG_STATE || {
+    source: "LOCAL_FALLBACK", authoritative: false, schemaVersion: null,
+    catalogRevision: null, sharedConfigVersion: window.getSharedConfigVersion ? window.getSharedConfigVersion() : null
+};
+function institutionalCatalogIsActive_(record, existing) {
+    if (Object.prototype.hasOwnProperty.call(record, "isActive")) return record.isActive === true;
+    if (Object.prototype.hasOwnProperty.call(record, "estado")) return ["activo","vigente","active","enabled"].indexOf(String(record.estado || "").trim().toLowerCase()) !== -1;
+    return existing ? existing.isActive === true : true;
+}
+function rebuildInstitutionalCatalogViews_() {
+    var cache = window.INSTITUTIONAL_CATALOG_CACHE;
+    window.CURRICULAR_AREAS_CATALOG = Object.keys(cache.areas).map(function(key) { return cache.areas[key]; }).filter(function(item) { return item.isActive === true; });
+    window.ACADEMIC_SUBJECTS_CATALOG = Object.keys(cache.subjects).map(function(key) { return cache.subjects[key]; }).filter(function(item) { return item.isActive === true; });
+    window.ACADEMIC_DEPARTMENTS_CATALOG = Object.keys(cache.departments).map(function(key) { return cache.departments[key]; }).filter(function(item) { return item.isActive === true; });
+    return true;
+}
+if (!window.INSTITUTIONAL_CATALOG_CACHE_SEEDED) {
+    (window.CURRICULAR_AREAS_CATALOG || []).forEach(function(area) {
+        window.INSTITUTIONAL_CATALOG_CACHE.areas[area.areaId] = Object.assign({}, area, { estado:"Activo", isActive:true, source:"LOCAL_FALLBACK", authoritative:false });
+    });
+    (window.ACADEMIC_DEPARTMENTS_CATALOG || []).forEach(function(department) {
+        var id = department.departmentId || department.deptId;
+        if (!id) return;
+        window.INSTITUTIONAL_CATALOG_CACHE.departments[id] = Object.assign({}, department, { departmentId:id, estado:"Activo", isActive:true, source:"LOCAL_FALLBACK", authoritative:false });
+    });
+    window.INSTITUTIONAL_CATALOG_CACHE_SEEDED = true;
+    rebuildInstitutionalCatalogViews_();
+}
 window.registerNewCurricularAreaServiceConfig = function(areaConfig) {
-    if (!areaConfig || !areaConfig.areaId || !areaConfig.name) return false;
-    if (!Array.isArray(window.CURRICULAR_AREAS_CATALOG)) {
-        window.CURRICULAR_AREAS_CATALOG = [];
-    }
-    if (!window.CURRICULAR_AREAS_CATALOG.some(function(a) { return a.areaId === areaConfig.areaId; })) {
-        window.CURRICULAR_AREAS_CATALOG.push({
-            areaId: areaConfig.areaId,
-            name: areaConfig.name,
-            code: areaConfig.code || areaConfig.areaId
-        });
-    }
-    if (areaConfig.serviceKey) {
-        if (!window.CURRICULAR_SPECIALIZED_SERVICES) window.CURRICULAR_SPECIALIZED_SERVICES = {};
-        window.CURRICULAR_SPECIALIZED_SERVICES[areaConfig.areaId] = {
-            serviceKey: areaConfig.serviceKey,
-            name: areaConfig.name,
-            tools: areaConfig.tools || []
-        };
-    }
+    if (!areaConfig || !areaConfig.areaId || !areaConfig.name || !areaConfig.code) return false;
+    var key = String(areaConfig.areaId).trim().toUpperCase();
+    var existing = window.INSTITUTIONAL_CATALOG_CACHE.areas[key];
+    var next = Object.assign({}, existing || {}, areaConfig, {
+        areaId:key, name:String(areaConfig.name).trim(), code:String(areaConfig.code).trim().toUpperCase(),
+        source:areaConfig.source || window.INSTITUTIONAL_CATALOG_STATE.source || "LOCAL_FALLBACK",
+        authoritative:areaConfig.authoritative === true
+    });
+    next.isActive = institutionalCatalogIsActive_(areaConfig, existing);
+    if (!Object.prototype.hasOwnProperty.call(areaConfig,"estado") && !Object.prototype.hasOwnProperty.call(areaConfig,"isActive") && existing) next.estado = existing.estado;
+    else if (!next.estado) next.estado = next.isActive ? "Activo" : "Inactivo";
+    window.INSTITUTIONAL_CATALOG_CACHE.areas[key] = next;
+    if (!window.CURRICULAR_SPECIALIZED_SERVICES) window.CURRICULAR_SPECIALIZED_SERVICES = {};
+    if (next.isActive && next.serviceKey) window.CURRICULAR_SPECIALIZED_SERVICES[key] = { serviceKey:next.serviceKey, name:next.name, tools:Array.isArray(next.tools) ? next.tools : [] };
+    else delete window.CURRICULAR_SPECIALIZED_SERVICES[key];
+    rebuildInstitutionalCatalogViews_();
     return true;
 };
+window.registerNewAcademicSubjectServiceConfig = function(subjectConfig) {
+    if (!subjectConfig || !subjectConfig.asignaturaId || !subjectConfig.nombreOficial || !subjectConfig.codigo) return false;
+    var key = String(subjectConfig.asignaturaId).trim().toUpperCase();
+    var existing = window.INSTITUTIONAL_CATALOG_CACHE.subjects[key];
+    var next = Object.assign({}, existing || {}, subjectConfig, {
+        asignaturaId:key, codigo:String(subjectConfig.codigo).trim().toUpperCase(),
+        source:subjectConfig.source || window.INSTITUTIONAL_CATALOG_STATE.source || "LOCAL_FALLBACK",
+        authoritative:subjectConfig.authoritative === true
+    });
+    next.isActive = institutionalCatalogIsActive_(subjectConfig, existing);
+    if (!Object.prototype.hasOwnProperty.call(subjectConfig,"estado") && !Object.prototype.hasOwnProperty.call(subjectConfig,"isActive") && existing) next.estado = existing.estado;
+    else if (!next.estado) next.estado = next.isActive ? "Activo" : "Inactivo";
+    window.INSTITUTIONAL_CATALOG_CACHE.subjects[key] = next;
+    rebuildInstitutionalCatalogViews_();
+    return true;
+};
+window.registerNewAcademicDepartmentServiceConfig = function(departmentConfig) {
+    if (!departmentConfig || !(departmentConfig.departmentId || departmentConfig.deptId) || !departmentConfig.name) return false;
+    var key = String(departmentConfig.departmentId || departmentConfig.deptId).trim().toUpperCase();
+    var existing = window.INSTITUTIONAL_CATALOG_CACHE.departments[key];
+    var next = Object.assign({}, existing || {}, departmentConfig, {
+        departmentId:key, deptId:key,
+        source:departmentConfig.source || window.INSTITUTIONAL_CATALOG_STATE.source || "LOCAL_FALLBACK",
+        authoritative:departmentConfig.authoritative === true
+    });
+    next.isActive = institutionalCatalogIsActive_(departmentConfig, existing);
+    if (!Object.prototype.hasOwnProperty.call(departmentConfig,"estado") && !Object.prototype.hasOwnProperty.call(departmentConfig,"isActive") && existing) next.estado = existing.estado;
+    else if (!next.estado) next.estado = next.isActive ? "Activo" : "Inactivo";
+    window.INSTITUTIONAL_CATALOG_CACHE.departments[key] = next;
+    rebuildInstitutionalCatalogViews_();
+    return true;
+};
+window.getInstitutionalCatalogState = function() { return Object.assign({}, window.INSTITUTIONAL_CATALOG_STATE); };
+
 
 
 /**
