@@ -99,6 +99,7 @@ const userSheet = new Sheet([userHeaders]);
 let userLockHeld = false, userLockWaits = 0, userLockReleases = 0, cacheInvalidations = 0;
 const registrationContext = {
   SPREADSHEET_ID: "USER-SHEET",
+  advanceSaceUserSourceRevisionLocked_() { return "TEST-REVISION:1"; },
   SpreadsheetApp: { openById(id) { assert.equal(id, "USER-SHEET"); return {}; } },
   getSheetOrThrow(_ss, name) { assert.equal(name, "Usuarios"); return userSheet; },
   LockService: { getScriptLock() { return {
