@@ -30,3 +30,42 @@ Estado:
 Siguiente paso:
 - Auditar los consumidores cliente de catálogo y los formularios/reportes curriculares; después completar la reconciliación con las tareas relacionadas, preservando la autoridad de datos y el historial.
 ===============================================================================
+
+
+===============================================================================
+### C1.892 — AUD-NG-164: consumo docente de ofertas académicas reales
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-164-OFFER-CONSUMER-63
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 495703562049d9c57f9ecde283bf60daf052f2eb
+HEAD final verificado: aa51fac17ff6f13936c6a6ef85281505a9041071
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+Checkpoint anterior: C1.891 — Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0020.txt
+
+Implementación:
+- Se incorpora resolveActiveAcademicOfferId_ en el cliente docente. Consulta getAcademicOffers por grado/sección, conserva únicamente ofertas activas y exige un ofertaId persistido.
+- Cuando existe una sola oferta activa se utiliza directamente; cuando hay varias, solicita una selección explícita e identifica asignatura, plan y año/período. Respuestas inválidas/canceladas fallan sin mutar datos.
+- Se eliminan de los flujos de creación de horarios y sustituciones los IDs sintéticos ASIG-GENERAL, PLAN-2026 y OFE-{grado}-{sección}, así como el intento de crear ofertas con referencias ficticias.
+- Se mueve ofertaId fuera del bloque try para que el manejador de conflictos pueda reutilizar el ID seleccionado; corrige también un error de alcance léxico preexistente en ese catch.
+- Se agrega contrato de consumidor docente y se conecta a academic-reference-consumer.yml, incluyendo node --check de js/teacher.js.
+
+Pruebas:
+- Ejecución Node local aislada del contrato del helper: 7 escenarios PASS (oferta única, filtro de inactiva, selección múltiple, ninguna activa, contrato inválido, cancelación/selección inválida y fallo de transporte).
+- GitHub Actions Department Reference Consumers Local Contract run 44706288674 — SUCCESS en HEAD aa51fac. Pasan el nuevo contrato, ACADEMIC/ACCOUNTING reference consumers, departmental resource access, administración UI y sintaxis de servicios.
+- En el mismo push, suites independientes preexistentes: Exam-Service global Node suite FAILURE en accounting-school-document-binary-integrity.test.js por helper ensureSchoolDocumentIssuedSchema_ ausente; Department Scope FAILURE en phase22-document-management-suite-contract.test.js por configureSchoolDocumentTemplate ausente. No están relacionadas con los archivos de esta tarea y no se modificaron.
+- No se ejecutó navegador, Apps Script desplegado, hojas productivas ni prueba E2E remota.
+
+Estado:
+- AUD-NG-164 continúa En progreso; este avance corrige un consumidor de ofertas, no acredita la integración completa de formularios/reportes ni la administración curricular.
+- Pendiente: interfaz de administración de asignaturas/planes/relaciones/ofertas; propagación de metadatos curriculares a formularios y reportes; sincronización cliente/backend y estado/caché conforme a AUD-NG-175/TASK-062; reconciliación de departamentos con AUD-NG-226/AUD-NG-158/TASK-046; pruebas de múltiples grados/modelos hondureños y bilingües.
+- No se cambian los alcances ni estados de AUD-NG-175 o AUD-NG-226.
+
+Commits:
+- dc7bc7aebc1b11930a2179b122b1431d56cba722 — exigir ofertas activas y reales para horarios/sustituciones.
+- 3dc00651136ddce9afd4295cb09055e0159baf7d — contrato de selección de ofertas y workflow.
+- aa51fac17ff6f13936c6a6ef85281505a9041071 — corregir comparación cross-realm del contrato.
+
+Siguiente paso:
+- Continuar auditoría de consumidores de admisión, formularios y reportes. Después abordar la administración curricular como flujo end-to-end y reconciliar por separado AUD-NG-175/AUD-NG-226.
+===============================================================================

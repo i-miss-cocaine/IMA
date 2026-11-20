@@ -837,7 +837,7 @@
 - Alcance: consolidar áreas y departamentos; definir asignaturas con ID/código único, área, departamento, programa, grado, idioma, carga horaria, créditos, prerrequisitos y obligatoriedad; versionar planes y validar ofertas; conservar historia y propagar cambios a formularios/reportes.
 - Criterios: fuente única sincronizada cliente/backend; departamentos sin catálogos paralelos; referencias válidas; soporte de modelos hondureños/bilingües; desactivación sin pérdida histórica; pruebas de integridad y múltiples grados.
 - Relacionadas: TASK-005, AUD-NG-011, AUD-NG-018, AUD-NG-093, AUD-NG-108, AUD-NG-111, AUD-NG-113, AUD-NG-115, AUD-NG-117 y TASK-153.
-- Estado: En progreso (C1.889, 2026-11-20).
+- Estado: En progreso (C1.892, 2026-11-20).
 
 - **Avance C1.889:** se corrige la discrepancia del esquema `PlanesEstudio`: `getStudyPlans` lee por encabezados y distingue `VigenciaInicio`, `VigenciaFin` y `Estado`; `createStudyPlan` escribe por mapa de columnas, valida rango, evita duplicados lógicos y genera ID UUID. Las hojas heredadas `Estado/Vigencia` se leen sin desplazar columnas y reciben las columnas canónicas al crear nuevos planes, conservando los valores históricos.
 - **Pruebas:** `tests/security/academic-curriculum-catalog-contract.test.js` incorporado al workflow Academic-Service; prueba esquema canónico, compatibilidad heredada, vigencia inválida, duplicado e ID estable. Academic-Service run 44656530850 SUCCESS.
@@ -853,6 +853,12 @@
 - **Avance C1.891:** CatalogoAsignaturas agrega PrerrequisitosJSON sin desplazar columnas existentes. La creación valida referencias activas y únicas; la lectura normaliza los IDs y falla cerrado cuando el JSON está corrupto, conservando la fila y sus metadatos.
 - **Pruebas C1.891:** Academic-Service single authorization context run 44662412795 SUCCESS; el contrato institucional cubre prerequisito válido, inexistente, inactivo, propagación y JSON corrupto.
 - **Pendiente:** integrar/validar consumidores cliente, formularios y reportes; resolver edición y validación de ciclos de prerrequisitos; verificar modelos hondureños/bilingües y múltiples grados; reconciliar AUD-NG-175/AUD-NG-226 sin duplicar su alcance.
+
+- **Avance C1.892:** el cliente docente resuelve horarios y sustituciones contra ofertas persistidas activas. Se eliminan referencias sintéticas y creación automática con asignatura/plan ficticios. Si existen varias ofertas, la persona selecciona explícitamente una; cancelación, error de consulta o ausencia de oferta detienen la operación.
+- **Pruebas C1.892:** contrato local Node de consumidor (7 escenarios) PASS; Department Reference Consumers Local Contract run 44706288674 SUCCESS, con sintaxis de js/teacher.js y contratos ACADEMIC/ACCOUNTING PASS.
+- **Hallazgos de otras suites:** Exam-Service global conserva fallo ajeno por ensureSchoolDocumentIssuedSchema_ ausente; Department Scope conserva fallo Phase22 por configureSchoolDocumentTemplate ausente. Ninguno afecta los archivos modificados.
+- **Pendiente:** administración curricular end-to-end; integrar asignaturas/planes/ofertas/prerrequisitos en formularios y reportes; cerrar sincronización cliente/backend (AUD-NG-175/TASK-062) y reconciliar catálogos departamentales (AUD-NG-226/AUD-NG-158/TASK-046); probar modelos hondureños/bilingües y múltiples grados.
+
 
 <!-- ID: AUD-NG-226 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-226] [P1] Integridad referencial y atomicidad en departamentos, cargos y adscripciones
