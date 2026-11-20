@@ -143,7 +143,7 @@ assert.throws(() => ctx.api.validateCatalogReference({ catalogType: "ALL", refer
 
 const created = ctx.api.createSubjectCatalogItem({
   nombreOficial: "Química", codigo: "QUI-01", areaId: "AREA-A",
-  cargaHorariaRef: 4, creditos: 3, grado: "10", idioma: "es"
+  cargaHorariaRef: 4, creditos: 3, grado: "10", idioma: "es", prerrequisitos: ["ASIG-1"]
 });
 assert.equal(created.data.estado, "Activo");
 const subjectSheet = ctx._sheets.CatalogoAsignaturas;
@@ -153,12 +153,19 @@ assert.equal(subjectRow[subjectHeaders.indexOf("Estado")], "Activo");
 assert.equal(subjectRow[subjectHeaders.indexOf("CargaHorariaRef")], 4);
 assert.equal(subjectRow[subjectHeaders.indexOf("AreaID")], "AREA-A");
 assert.equal(subjectRow[subjectHeaders.indexOf("DepartamentoID")], "D1");
+assert.deepEqual(JSON.parse(subjectRow[subjectHeaders.indexOf("PrerrequisitosJSON")]), ["ASIG-1"]);
 assert.throws(() => ctx.api.createSubjectCatalogItem({
   nombreOficial: "Duplicada", codigo: "MAT-01", areaId: "AREA-A"
 }), /SUBJECT_CODE_ALREADY_EXISTS/);
 assert.throws(() => ctx.api.createSubjectCatalogItem({
   nombreOficial: "Créditos inválidos", codigo: "QUI-02", areaId: "AREA-A", creditos: "abc"
 }), /SUBJECT_CREDITS_INVALID/);
+assert.throws(() => ctx.api.createSubjectCatalogItem({
+  nombreOficial: "Prerrequisito inexistente", codigo: "QUI-03", areaId: "AREA-A", prerrequisitos: ["NO-EXISTE"]
+}), /SUBJECT_PREREQUISITE_NOT_ACTIVE/);
+assert.throws(() => ctx.api.createSubjectCatalogItem({
+  nombreOficial: "Prerrequisito inactivo", codigo: "QUI-04", areaId: "AREA-A", prerrequisitos: ["ASIG-2"]
+}), /SUBJECT_PREREQUISITE_NOT_ACTIVE/);
 
 const areaSheet = ctx._sheets.AreasCurricularesExtensiones;
 const oldAreaRow = areaSheet._rows[0].slice();

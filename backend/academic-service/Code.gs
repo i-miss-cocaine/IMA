@@ -6096,10 +6096,10 @@ function getInstitutionalSubjectColumnMap_(sheet, ensureOptionalColumns) {
     cargaHorariaRef: ["cargahorariaref", "horas"], estado: ["estado", "status"],
     areaId: ["areaid"], departmentId: ["departamentoid"], programaId: ["programaid"],
     nivelEducativo: ["niveleducativo"], grado: ["grado"], idioma: ["idioma"],
-    creditos: ["creditos"], version: ["version"], updatedAt: ["fechaactualizacion"]
+    creditos: ["creditos"], version: ["version"], prerrequisitosJSON: ["prerrequisitosjson", "prerequisitesjson"], updatedAt: ["fechaactualizacion"]
   };
   const optional = ensureOptionalColumns
-    ? ["CargaHorariaRef", "AreaID", "DepartamentoID", "ProgramaID", "NivelEducativo", "Grado", "Idioma", "Creditos", "Version", "FechaActualizacion"]
+    ? ["CargaHorariaRef", "AreaID", "DepartamentoID", "ProgramaID", "NivelEducativo", "Grado", "Idioma", "Creditos", "Version", "PrerrequisitosJSON", "FechaActualizacion"]
     : [];
   const result = getInstitutionalCatalogHeaderMap_(sheet, canonical, aliases, optional);
   const required = ["asignaturaId", "nombreOficial", "codigo", "areaAcademica", "estado"];
@@ -6182,6 +6182,16 @@ function getInstitutionalSubjectRecords_(ss, areas) {
     const departmentId = map.departmentId >= 0 && row[map.departmentId]
       ? String(row[map.departmentId]).trim().toUpperCase()
       : (area ? area.departmentId : "");
+    const rawPrerequisites = map.prerrequisitosJSON >= 0 ? String(row[map.prerrequisitosJSON] || "").trim() : "";
+    let prerrequisitos = [];
+    let prerequisitesSchemaValid = true;
+    if (rawPrerequisites) {
+      try {
+        prerrequisitos = JSON.parse(rawPrerequisites);
+        if (!Array.isArray(prerrequisitos) || prerrequisitos.some(value => typeof value !== "string" || !value.trim())) prerequisitesSchemaValid = false;
+      } catch (_) { prerequisitesSchemaValid = false; }
+    }
+    if (!prerequisitesSchemaValid) prerrequisitos = [];
     return {
       asignaturaId: String(row[map.asignaturaId] || "").trim().toUpperCase(),
       nombreOficial: String(row[map.nombreOficial] || "").trim(),
@@ -6195,9 +6205,11 @@ function getInstitutionalSubjectRecords_(ss, areas) {
       idioma: map.idioma >= 0 ? String(row[map.idioma] || "").trim() : "",
       cargaHorariaRef: map.cargaHorariaRef >= 0 ? row[map.cargaHorariaRef] : "",
       creditos: map.creditos >= 0 ? row[map.creditos] : "",
+      prerrequisitos: prerrequisitos.map(value => String(value).trim().toUpperCase()),
+      prerequisitesSchemaValid: prerequisitesSchemaValid,
       version: map.version >= 0 ? String(row[map.version] || "").trim() : "",
       estado: estado || "SinEstado",
-      isActive: normalizeInstitutionalCatalogStatus_(estado) && !!area && area.isActive,
+      isActive: normalizeInstitutionalCatalogStatus_(estado) && !!area && area.isActive && prerequisitesSchemaValid,
       areaFound: !!area
     };
   });
@@ -6332,6 +6344,18 @@ function createSubjectCatalogItem(payload) {
     ? "" : Number(input.creditos);
   if (cargaHoraria !== "" && (!Number.isFinite(cargaHoraria) || cargaHoraria < 0)) throw new Error("SUBJECT_WORKLOAD_INVALID");
   if (creditos !== "" && (!Number.isFinite(creditos) || creditos < 0)) throw new Error("SUBJECT_CREDITS_INVALID");
+  let prerrequisitos = input.prerrequisitos === undefined || input.prerrequisitos === null ? [] : input.prerrequisitos;
+  if (typeof prerrequisitos === "string") {
+    try { prerrequisitos = JSON.parse(prerrequisitos); } catch (_) { throw new Error("SUBJECT_PREREQUISITES_JSON_INVALID"); }
+  }
+  if (!Array.isArray(prerrequisitos)) throw new Error("SUBJECT_PREREQUISITES_MUST_BE_ARRAY");
+  prerrequisitos = prerrequisitos.map(value => String(value || "").trim().toUpperCase());
+  if (prerrequisitos.some(value => !value) || new Set(prerrequisitos).size !== prerrequisitos.length) throw new Error("SUBJECT_PREREQUISITES_INVALID");
+  const existingSubjects = getInstitutionalSubjectRecords_(ss, getInstitutionalAreaRecords_(ss));
+  prerrequisitos.forEach(prerequisiteId => {
+    const prerequisite = existingSubjects.find(subject => subject.asignaturaId === prerequisiteId);
+    if (!prerequisite || prerequisite.isActive !== true) throw new Error("SUBJECT_PREREQUISITE_NOT_ACTIVE:" + prerequisiteId);
+  });
 
   const asignaturaId = "ASIG-" + Utilities.getUuid();
   const row = new Array(sheet.getLastColumn()).fill("");
@@ -6348,11 +6372,12 @@ function createSubjectCatalogItem(payload) {
   if (map.grado >= 0) row[map.grado] = String(input.grado || "").trim();
   if (map.idioma >= 0) row[map.idioma] = String(input.idioma || "").trim();
   if (map.creditos >= 0) row[map.creditos] = creditos;
+  if (map.prerrequisitosJSON >= 0) row[map.prerrequisitosJSON] = JSON.stringify(prerrequisitos);
   if (map.version >= 0) row[map.version] = String(input.version || "1").trim();
   if (map.updatedAt >= 0) row[map.updatedAt] = new Date().toISOString();
   sheet.appendRow(row);
   const catalogRevision = bumpInstitutionalCatalogRevision_();
-  return { status: "success", message: "Asignatura agregada al catálogo.", data: { asignaturaId, nombreOficial, codigo, areaId: area.areaId, departmentId: area.departmentId, estado: "Activo" }, catalogRevision };
+  return { status: "success", message: "Asignatura agregada al catálogo.", data: { asignaturaId, nombreOficial, codigo, areaId: area.areaId, departmentId: area.departmentId, prerrequisitos, estado: "Activo" }, catalogRevision };
   } finally {
     lock.releaseLock();
   }
