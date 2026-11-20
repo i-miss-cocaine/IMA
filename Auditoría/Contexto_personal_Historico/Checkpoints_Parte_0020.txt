@@ -457,3 +457,25 @@ Estado:
 - TASK-171 completada en código; beta institucional pendiente.
 - AUD-NG-226 continúa pendiente; TASK-171 queda resuelta como dependencia, pero restan integridad referencial/atomicidad de cargos y adscripciones, concurrencia y consola HR.
 ===============================================================================
+
+===============================================================================
+### C1.904 — Auditoría de baseline: offboarding pendiente sin símbolos propietarios vigentes
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-OFFBOARDING-BASELINE-RECONCILIATION-75
+Rama: NG_beta_0.0.0.1_work
+HEAD verificado: 1111c7595ae5de1cd3797f630021d3970676bb9d
+HEAD base: 44d9891132332e692dbe2ba8602b41f50a508a59
+Checkpoint anterior: C1.903.
+
+Auditoría:
+- Se revisaron los ocho archivos backend/*.gs de la rama actual.
+- No existe updateEmployeeLaborStatus, processEmployeeOffboarding ni EMPLOYEE_OFFBOARDED_CASCADED en los servicios actuales.
+- La única aparición de motivoBaja en accounting-service corresponde a la columna MotivoBaja de BajasBienes (baja de activos fijos); en academic-service corresponde a la baja de una asignación docente-área. Ninguna es el proceso laboral descrito por AUD-NG-017.
+- El informe Fase 16 y los pendientes conservan referencias a símbolos que no están presentes en el código actual.
+- TASK-006 y AUD-NG-017 se mantienen Pendientes; no se inventa un coordinador distribuido ni se modifican datos/servicios sin identificar el flujo de offboarding actual y sus contratos de identidad/seguridad.
+- F16-Task01/TASK-365 se mantienen sin iniciar: la propia auditoría declara solapamiento con AUD-NG-225/TASK-505 y el registro activo no contiene esos IDs como tareas operativas con alcance reconciliado.
+
+Siguiente paso elegible:
+- Recuperar/identificar el flujo vigente de ciclo de vida laboral y sus contratos de identidad, sesión, adscripción, coordinación y asignación docente. Después diseñar una saga idempotente con checkpoints por etapa y pruebas de fallo/reanudación, sin duplicar propietarios.
+===============================================================================

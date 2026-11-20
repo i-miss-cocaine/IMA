@@ -4369,6 +4369,9 @@
 - **Estado:** [ ] Pendiente
 
 ---
+- **Revisión de baseline C1.904:** no se encuentra processEmployeeOffboarding ni updateEmployeeLaborStatus en los ocho servicios backend actuales. La única coincidencia literal de motivoBaja en accounting-service corresponde al campo MotivoBaja de la baja de activos fijos; no es una variable de offboarding. La coincidencia motivoBaja en academic-service corresponde a la baja de asignación docente-área. Por tanto, no se sustituye ninguna variable a ciegas ni se marca la tarea completada; requiere reconciliar el endpoint/proceso vigente y definir el alcance de reanudación idempotente sobre el código real.
+
+
 
 <!-- ID: AUD-NG-021 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-021] Completar el cálculo anualizado del ISR con saldo pendiente y parámetros por ejercicio

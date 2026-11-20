@@ -303,6 +303,9 @@
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 2284-2318; clave TASK-044; asignación única: Dirección -->
 
 ---
+- **Revisión de baseline C1.904:** la tarea referencia updateEmployeeLaborStatus, pero el símbolo no existe en los ocho servicios backend actuales. Tampoco existen processEmployeeOffboarding ni EMPLOYEE_OFFBOARDED_CASCADED en el árbol backend actual. Se conserva Pendiente: antes de diseñar el coordinador saga hay que reconciliar el flujo laboral vigente, sus endpoints, identidad, tokens/sesiones y responsables de cada hoja; no se inserta una implementación paralela basada en funciones obsoletas.
+
+
 
 <!-- ID: TASK-068 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [X] [TASK-068] [P0] Sistema Centralizado de Correspondencia de Identificadores y Resolución de Identidades
