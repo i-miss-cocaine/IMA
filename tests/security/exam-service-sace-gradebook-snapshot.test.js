@@ -211,6 +211,7 @@ const batchResult = batchContext.context.runSnapshots(Object.assign({}, basePayl
   ]
 }));
 assert.equal(batchResult.status, "success");
+assert.equal(batchResult.sourceRevision, "EXAM-EPOCH-123456:0", "normal batch snapshot returns its captured source revision");
 assert.equal(batchContext.calls.authorization, 1, "both period reads must share one authorization/lock boundary");
 assert.equal(batchContext.calls.worker, 2, "the batch reads both gradebooks inside the same lock");
 assert.deepEqual(JSON.parse(JSON.stringify(batchResult.data.snapshots.map(item => [
