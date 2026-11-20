@@ -101,7 +101,7 @@ const names = [
 ];
 vm.createContext(context);
 const constants = source.split("\n").filter(line => /^const ABSENCE_(JUSTIFICATION_HEADERS_|ATTENDANCE_HEADERS_|REQUEST_EXTRA_HEADERS_)/.test(line)).join("\n");
-vm.runInContext(constants + "\n" + names.map(name => extractFunction(name)).join("\n"), context);
+vm.runInContext("function advanceSaceAcademicSourceRevisionLocked_(){return \"TEST-REVISION:1\";}\n" + constants + "\n" + names.map(name => extractFunction(name)).join("\n"), context);
 
 const period = sheet("PeriodosAcademicos");
 period.appendRow(["PeriodoID","AnoID","Nombre","Tipo","FechaInicio","FechaFin","Orden","Estado"]);

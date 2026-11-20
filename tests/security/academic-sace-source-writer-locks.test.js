@@ -73,7 +73,7 @@ function harness(options = {}) {
     Date, String, Object, Array, Error, Math
   };
   vm.createContext(context);
-  vm.runInContext(extract("configureSchoolYear") + "\n" + extract("manageAcademicPeriod") +
+  vm.runInContext("function advanceSaceAcademicSourceRevisionLocked_(){return \"TEST-REVISION:1\";}\n" + extract("configureSchoolYear") + "\n" + extract("manageAcademicPeriod") +
     "\nthis.configure = configureSchoolYear; this.manage = manageAcademicPeriod;", context);
   return { state, tables, context };
 }
