@@ -6126,11 +6126,13 @@ function getInstitutionalAreaRecords_(ss) {
   const rows = sheet.getDataRange().getValues().slice(1);
   return rows.filter(row => String(row[map.areaId] || "").trim()).map((row, index) => {
     let tools = [];
+    let toolsSchemaValid = true;
     try {
       const rawTools = map.tools >= 0 ? row[map.tools] : "[]";
       tools = typeof rawTools === "string" ? JSON.parse(rawTools || "[]") : rawTools;
-      if (!Array.isArray(tools)) tools = [];
-    } catch (_) { tools = []; }
+      if (!Array.isArray(tools)) toolsSchemaValid = false;
+    } catch (_) { toolsSchemaValid = false; }
+    if (!toolsSchemaValid) tools = [];
     return {
       areaId: String(row[map.areaId] || "").trim().toUpperCase(),
       name: String(row[map.name] || "").trim(),
@@ -6138,6 +6140,7 @@ function getInstitutionalAreaRecords_(ss) {
       serviceKey: String(row[map.serviceKey] || "").trim(),
       serviceUrl: map.serviceUrl >= 0 ? String(row[map.serviceUrl] || "").trim() : "",
       tools: tools,
+      toolsSchemaValid: toolsSchemaValid,
       departmentId: String(row[map.departmentId] || "").trim(),
       estado: String(row[map.estado] || "Inactivo_PendientePruebas").trim(),
       isActive: normalizeInstitutionalCatalogStatus_(row[map.estado]),
@@ -6573,9 +6576,8 @@ function runCurricularAreaServiceTests(payload) {
   if (!scope.institutionWide && (scope.departmentIds || []).map(id => String(id).toUpperCase()).indexOf(area.departmentId) < 0) {
     throw new Error("DEPARTMENT_SCOPE_DENIED");
   }
-  let tools = [];
-  let toolsParseValid = true;
-  try { tools = typeof area.tools === "string" ? JSON.parse(area.tools || "[]") : area.tools; } catch (_) { toolsParseValid = false; }
+  let tools = Array.isArray(area.tools) ? area.tools : [];
+  let toolsParseValid = area.toolsSchemaValid !== false && Array.isArray(tools);
   const department = getInstitutionalDepartmentRecords_(ss).find(item => item.departmentId === area.departmentId && item.isActive);
   const allAreas = getInstitutionalAreaRecords_(ss);
   const duplicateCode = allAreas.filter(item => item.code === area.code).length > 1;
