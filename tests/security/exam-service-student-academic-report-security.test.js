@@ -34,7 +34,7 @@ function fixture(o={}){
  const actor=o.actor||{userId:"STU-1",role:"Estudiante"};
  const context={actor,ss,scope:{authorized:o.authorized!==false,institutionWide:o.institutionWide!==false},guardianActor:o.guardian===true,profile:o.guardian?{userId:"STU-1",role:"Estudiante"}:null};
  let held=false,locks=0,releases=0;
- const ctx={LockService:{getScriptLock(){return {tryLock(){locks++;if(o.lockAvailable===false||held)return false;held=true;return true;},releaseLock(){releases++;held=false;}};}},
+ const ctx={getSaceExamSourceRevisionLocked_(){return "EXAM-EPOCH-123456:0";},LockService:{getScriptLock(){return {tryLock(){locks++;if(o.lockAvailable===false||held)return false;held=true;return true;},releaseLock(){releases++;held=false;}};}},
  getAuthorizedExamReadContext_(action,p){if(action!=="getStudentAcademicReport"||o.permissionDenied||!context.scope.authorized)throw Error("RESOURCE_NOT_AVAILABLE");if(o.duringContext){const callback=o.duringContext;o.duringContext=null;callback();}return context;}};
  const names=["buildStudentAcademicReportGradebook_","getStudentAcademicReport","getStudentAcademicReportUnlocked_","withAuthorizedExamRead_","getExamStudentProfile_","getSheetOrThrow"];
  const code=names.map(extract).join("\n")+";this.report=getStudentAcademicReport;";

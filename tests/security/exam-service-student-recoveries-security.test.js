@@ -71,6 +71,7 @@ function fixture(options = {}) {
     "getStudentRecoveries", "getStudentRecoveriesUnlocked_", "withAuthorizedExamRead_"
   ].map(extractFunction).join("\n");
   const vmContext = {
+    getSaceExamSourceRevisionLocked_() { return "EXAM-EPOCH-123456:0"; },
     LockService,
     getAuthorizedExamReadContext_(action, payload) {
       if (action !== "getStudentRecoveries" || options.permissionDenied || context.scope.authorized !== true) {
