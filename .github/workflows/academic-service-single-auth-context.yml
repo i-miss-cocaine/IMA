@@ -6,6 +6,7 @@ on:
       - 'backend/academic-service/Code.gs'
       - 'tests/security/academic-service-single-auth-context.test.js'
       - 'tests/security/academic-curriculum-catalog-contract.test.js'
+      - 'tests/security/academic-study-plan-subjects-contract.test.js'
       - 'tests/security/academic-institutional-catalog-contract.test.js'
       - 'tests/security/sace-attendance-snapshot-contract.test.js'
       - 'tests/security/academic-sace-source-writer-locks.test.js'
@@ -27,6 +28,7 @@ on:
   pull_request:
     branches: [NG_beta_0.0.0.1_work]
     paths:
+      - 'tests/security/academic-study-plan-subjects-contract.test.js'
       - 'backend/academic-service/Code.gs'
       - 'tests/security/academic-service-single-auth-context.test.js'
       - 'tests/security/sace-attendance-snapshot-contract.test.js'
