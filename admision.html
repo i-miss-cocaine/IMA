@@ -811,9 +811,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            restoreAdmissionDraftOnLoad();
             fetchAcademicOffers();
             document.getElementById('anolectivo')?.addEventListener('change', fetchAcademicOffers);
-            restoreAdmissionDraftOnLoad();
 
             const form = document.getElementById('admission-form');
             if (form) {
