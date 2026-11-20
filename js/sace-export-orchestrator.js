@@ -127,7 +127,7 @@ function (provider, templates) {
       "Academic schedule has no unambiguous JornadaID relationship to OfertaAcademica or HorariosClase",
       "Template source, official status, effective dates and applicable academic year are not verified by the candidate manifest",
       sourceRevisions
-        ? "Academic/USER/Exam source revision tokens are retained as candidate metadata only; they are not written into the XLS workbook"
+        ? "Source revision tokens reported by the Academic snapshot are retained as candidate metadata only; this client does not independently verify them and they are not written into the XLS workbook"
         : "The source snapshot has no sourceRevisions metadata; cross-service stability cannot be attested by this legacy candidate"]),
       verification: {
         workbookSize: verified.workbookSize,
