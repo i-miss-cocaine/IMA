@@ -8,6 +8,24 @@ for(const name of ["configureSchoolYear","manageAcademicPeriod","closeAttendance
 for(const name of ["manageUserRoleMemberships","createPerson","linkPersonAccount","manageAccountState","registerUser"])assert(extract(user,name).includes("advanceSaceUserSourceRevisionLocked_"),"USER writer missing revision "+name);
 for(const name of ["withAuthorizedGradebookSave_","withAuthorizedStudentRecoveryMutation_","withAuthorizedStudentGradeRectification_","withAuthorizedPeriodGradebookClosure_","withAuthorizedPeriodGradebookSubmission_","withAuthorizedPeriodGradebookReopen_"])assert(extract(exam,name).includes("advanceSaceExamSourceRevisionLocked_"),"Exam writer missing revision "+name);
 assert(extract(academic,"getSaceAttendanceSnapshot").includes("SACE_SOURCE_CHANGED_DURING_SNAPSHOT"));
+assert(extract(academic,"getSaceAttendanceSnapshot").includes("sourceRevisions:"), "Academic normal snapshot must return all captured source revisions");
+assert(extract(user,"getSaceStudentIdentityDirectory_").includes("sourceRevision"), "USER normal identity response must return its source revision");
+assert(extract(exam,"withAuthorizedExamRead_").includes("getSaceExamSourceRevisionLocked_"), "Exam reads capture revision inside the authorized ScriptLock");
+assert(extract(exam,"getSaceGradebookSnapshots").includes("sourceRevision"), "Exam normal batch snapshot must return its source revision");
+function assertRevisionPrecedesWrite(source,name,revisionFn){
+ const body=extract(source,name), revision=body.indexOf(revisionFn);
+ assert.notEqual(revision,-1,name+" has a revision guard");
+ const calls=["appendRow(",".setValue(",".setValues(",".deleteRow(",".deleteRows(",".clearContent("].map(x=>body.indexOf(x)).filter(x=>x>=0);
+ const internal=body.indexOf("registerStudentEnrollmentInternal_(");
+ const firstWrite=calls.length?Math.min(...calls):internal;
+ if(firstWrite>=0)assert.ok(revision<firstWrite,name+" advances its revision before the first mutation");
+}
+for(const name of ["configureSchoolYear","manageAcademicPeriod","closeAttendanceSession","saveClassAttendance","bulkApplyAttendanceStatus","saveDailyAttendance","createCanonicalAbsenceJustification_","reviewCanonicalAbsenceJustification_","reconcilePendingAttendanceJustifications","convertAdmissionToStudent","createStudentEnrollment","registerStudentEnrollment","changeStudentSection","recordStudentTransfer","recordStudentWithdrawal","processStudentGraduation","reconcileStudentLifecycleState"])assertRevisionPrecedesWrite(academic,name,"advanceSaceAcademicSourceRevisionLocked_");
+for(const name of ["manageUserRoleMemberships","createPerson","linkPersonAccount","manageAccountState","registerUser"])assertRevisionPrecedesWrite(user,name,"advanceSaceUserSourceRevisionLocked_");
+for(const name of ["withAuthorizedGradebookSave_","withAuthorizedStudentRecoveryMutation_","withAuthorizedStudentGradeRectification_","withAuthorizedPeriodGradebookClosure_","withAuthorizedPeriodGradebookSubmission_","withAuthorizedPeriodGradebookReopen_"]){
+ const body=extract(exam,name);assert.ok(body.indexOf("advanceSaceExamSourceRevisionLocked_")<body.indexOf("return mutation(context)"),name+" increments before its mutation callback");
+}
+
 assert(extract(user,"getSaceStudentIdentityDirectory_").includes("revisionOnly"));
 assert(extract(exam,"getSaceGradebookSnapshots").includes("revisionOnly"));
-console.log("PASS: 3 revision helpers, monotonic counters, snapshot revalidation, and 28 writer/endpoint contracts");
+console.log("PASS: 3 revision helpers, monotonic counters, snapshot revalidation, and 28 writer/endpoint contracts and pre-write ordering");
