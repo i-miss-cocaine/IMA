@@ -2093,3 +2093,34 @@ Estado:
 Siguiente acción:
 - Mantener fail-closed hasta recibir un archivo real saneado desde SACE Notas; comparar el layout completo y, si difiere, crear un baseline versionado solo con evidencia estructural autorizada. Mantener COUNT/EXCLUDE sin valor por defecto hasta fuente oficial.
 ===============================================================================
+
+
+===============================================================================
+### C1.888 — AUD-NG-158: cierre de ABAC docente, propiedad y contexto de autorización
+===============================================================================
+Fecha: 2026-11-20
+Sesión: IMA-EXEC-20261120-AUD-NG-158-ABAC-MATERIAL-SCOPE-59
+Rama: NG_beta_0.0.0.1_work
+HEAD inicial: 06ac4dd8c056c39e1fb098f62326417b596199f2
+HEAD base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59
+
+Cambios de seguridad:
+- `createStudyMaterial` y `deleteStudyMaterial` reutilizan `assertTaskServiceClassroomAccess`: actor de sesión verificada, scope departamental, ResourceOwnership del aula, estado activo y asignación vigente.
+- Material `General` requiere administración con `institutionWide=true`; el administrador de departamento no obtiene privilegio institucional por defecto.
+- El docente solo elimina material propio y si sigue asignado al aula. Se rechazan revocación, reasignación, aula inactiva y scope externo sin mutación.
+- `createTask` verifica que el departamento del aula asignada coincide con el departamento registrado para la tarea.
+- `assertTaskServiceTeacherCanManageTask` reutiliza el actor, scope y Spreadsheet ya resueltos; las aulas se filtran por el mismo departamento del recurso TAREA. Las comprobaciones TAREA y AULA_VIRTUAL permanecen separadas por tratarse de recursos distintos.
+- `getTaskServiceAuthorizedClassrooms` acepta contexto verificado interno opcional; los lectores habituales conservan la resolución normal.
+- `assertTaskServiceClassroomAccess` consulta el aula con el mismo Spreadsheet ya abierto y acepta actor verificado para evitar abrir/validar contexto repetido.
+- `updateTask` reutiliza el actor verificado de la petición dentro del ScriptLock; el lock protege escritura e historial. No se reautentica la misma petición tras el lock, conforme a C1.808/NDASC; el scope/propiedad del recurso se valida en el límite de la mutación.
+
+Pruebas y CI:
+- Task-Service security local contracts run 44655975233: SUCCESS. Pasaron security contract, resource ownership, grade/submission history, submission mutation/access/resubmit, deadline history, upload contract, single auth context y syntax check.
+- Task-Service backup and restore run 44655612329: SUCCESS.
+- Department Scope run 44655612319: el contrato principal de ámbito y los pasos 4–80 pasaron; el workflow global falla en el paso Phase 22 por el defecto preexistente `configureSchoolDocumentTemplate` ausente. No es una falla de AUD-NG-158.
+- No se ejecutaron despliegues Apps Script ni se usaron datos reales.
+
+Estado:
+- AUD-NG-158 queda Completado y marcado [x] en `pendientes/Docente/Pendientes.md`.
+- La dependencia de ABAC docente para AUD-NG-168 queda satisfecha; AUD-NG-164 (catálogo/ofertas canónicas) permanece Pendiente y sigue siendo su dependencia técnica pendiente.
+===============================================================================

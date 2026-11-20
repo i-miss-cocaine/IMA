@@ -4376,3 +4376,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-20] C1.887 — AUD-NG-167: se incorpora evidencia del manual docente SACE actualizado en agosto de 2023. Su muestra ubica NIVELACIÓN en F, inasistencias P-II en G, nota P-II en H y RECUPERACIÓN en I, en discrepancia con la plantilla candidata (recuperación H). Se corrige la fuente documental anterior con enlace 404, se actualizan manifest/mapa y BETA-EXAM-115, y se agrega contrato para conservar la discrepancia explícita. SACE template compatibility Action 44654877695 SUCCESS; no se promueve plantilla.
+
+
+[2026-11-20] C1.888 — AUD-NG-158 completada. Se centraliza ABAC de aula para crear/eliminar materiales, se restringe General a ámbito institucional, se exige asignación vigente al eliminar y se alinea departamento del aula/tarea. Se reutilizan actor/scope/Spreadsheet en las mutaciones para evitar verificaciones duplicadas. Task-Service security contracts y backup/restore PASS.
