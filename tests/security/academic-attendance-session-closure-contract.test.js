@@ -65,7 +65,7 @@ const context = {
   String, Number, Array, Object, Math, Date, Error, Set
 };
 vm.createContext(context);
-const sourceFunctions = [
+const sourceFunctions = "function advanceSaceAcademicSourceRevisionLocked_(){return \"TEST-REVISION:1\";}\n" + [
   extract("ensureAttendanceSessionClosureHeader_"),
   extract("getAttendanceSessionForTeacher_"),
   extract("openAttendanceSession"),

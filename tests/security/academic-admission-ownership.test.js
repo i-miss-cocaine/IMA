@@ -12,7 +12,7 @@ function extractFunction(name) {
   let close = block.indexOf("\n}\n");
   if (close === -1) close = block.lastIndexOf("\n}");
   assert.notEqual(close, -1, "unterminated function " + name);
-  return block.slice(0, close + 2);
+  return block.slice(0, close + 2) + (name === "convertAdmissionToStudent" ? "\nfunction advanceSaceAcademicSourceRevisionLocked_(){return \"TEST-REVISION:1\";}" : "");
 }
 function hasGuard(name, guard) {
   assert.ok(extractFunction(name).includes(guard), name + " must enforce " + guard);
