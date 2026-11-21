@@ -12074,47 +12074,33 @@ function transportBillingActor_(p, action) {
   return actor;
 }
 
-function assertTransportStudentWriteAccess_(ss, payload, actor, studentUserId, operation) {
-  var input = payload || {}, studentId = String(studentUserId || "").trim();
-  if (!ss || !actor || actor.authorized !== true || !studentId) throw new Error("VERIFIED_IDENTITY_REQUIRED");
-  var scope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
+
+
+function transportAssertStudentOwnershipForMutation_(ss, payload, actor, studentUserId, operation) {
+  const studentId = String(studentUserId || "").trim();
+  if (!studentId) throw new Error("TRANSPORT_STUDENT_REQUIRED");
+  const scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
   if (!scope || scope.valid !== true || scope.authorized === false) {
     throw new Error(scope && scope.code || "RESOURCE_SCOPE_DENIED");
   }
-  var sheet = ss.getSheetByName("ExpedientesEstudiantes");
-  if (!sheet) throw new Error("STUDENT_RESOURCE_NOT_FOUND");
-  var values = sheet.getDataRange().getValues();
-  if (!values || !values.length) throw new Error("STUDENT_RESOURCE_SCHEMA_INVALID");
-  var headers = values[0].map(function(value) { return String(value || "").trim(); });
-  var idIndexes = [], userIndexes = [];
-  headers.forEach(function(value, index) {
+  const sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesEstudiantes") : null;
+  if (!sheet) return { authorized: false, code: "TRANSPORT_STUDENT_NOT_FOUND" };
+  const values = sheet.getDataRange().getValues();
+  if (!values || !values.length) return { authorized: false, code: "TRANSPORT_STUDENT_NOT_FOUND" };
+  const headers = values[0].map(value => String(value || "").trim());
+  const idIndexes = [], userIndexes = [];
+  headers.forEach((value, index) => {
     if (value === "ExpedienteID") idIndexes.push(index);
     if (value === "UserId") userIndexes.push(index);
   });
-  if (idIndexes.length !== 1 || userIndexes.length !== 1) throw new Error("STUDENT_RESOURCE_SCHEMA_INVALID");
-  var matches = values.slice(1).filter(function(row) {
-    return String(row[userIndexes[0]] || "").trim() === studentId;
-  });
-  if (!matches.length) throw new Error("STUDENT_RESOURCE_NOT_FOUND");
-  if (matches.length !== 1) throw new Error("STUDENT_RESOURCE_AMBIGUOUS");
-  var expedienteId = String(matches[0][idIndexes[0]] || "").trim();
-  if (!expedienteId) throw new Error("STUDENT_RESOURCE_SCHEMA_INVALID");
-  if (typeof assertResourceOwnershipForScope_ === "function") {
-    var ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", expedienteId, operation || "WRITE");
-    if (!ownership || ownership.authorized !== true) throw new Error(ownership && ownership.code || "RESOURCE_SCOPE_DENIED");
-  } else if (typeof assertMonthlyChargeStudentOwnership_ === "function") {
-    assertMonthlyChargeStudentOwnership_(ss, scope, [studentId], operation || "WRITE");
-  } else {
-    throw new Error("RESOURCE_OWNERSHIP_UNVERIFIED");
-  }
-  return { scope: scope, expedienteId: expedienteId, studentUserId: studentId };
-}
-
-function transportAssertStudentOwnershipForMutation_(ss, payload, actor, studentUserId, operation) {
-  const scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
-  if (!scope || scope.valid !== true) throw new Error(scope && scope.code || "RESOURCE_SCOPE_DENIED");
-  assertMonthlyChargeStudentOwnership_(ss, scope, [studentUserId], operation || "WRITE");
-  return scope;
+  if (idIndexes.length !== 1 || userIndexes.length !== 1) throw new Error("TRANSPORT_STUDENT_SCHEMA_INVALID");
+  const matches = values.slice(1).filter(row => String(row[userIndexes[0]] || "").trim() === studentId);
+  if (!matches.length) return { authorized: false, code: "TRANSPORT_STUDENT_NOT_FOUND" };
+  if (matches.length !== 1) return { authorized: false, code: "TRANSPORT_STUDENT_AMBIGUOUS" };
+  const expedienteId = String(matches[0][idIndexes[0]] || "").trim();
+  if (!expedienteId) throw new Error("TRANSPORT_STUDENT_SCHEMA_INVALID");
+  assertMonthlyChargeStudentOwnership_(ss, scope, [studentId], operation || "WRITE");
+  return { authorized: true, scope: scope, expedienteId: expedienteId, studentUserId: studentId };
 }
 
 function transportNormalizeMode_(v){const s=String(v||"COMPLETA").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z]/g,"");if(["COMPLETA","IDAIVUELTA","FULL","FULLROUNDTRIP"].indexOf(s)!==-1)return "COMPLETA";if(["MEDIA","MEDIATARIFA","HALF","IDA","VUELTA"].indexOf(s)!==-1)return "MEDIA";throw new Error("TRANSPORT_BILLING_MODE_INVALID");}
@@ -12396,7 +12382,8 @@ function cancelStudentTransportAssignment(payload) {
     if (!matches.length) throw new Error("TRANSPORT_ASSIGNMENT_NOT_FOUND");
     if (matches.length !== 1) throw new Error("TRANSPORT_ASSIGNMENT_AMBIGUOUS");
     const idx = matches[0].index, original = matches[0].row.slice();
-    assertTransportStudentWriteAccess_(ss, p, actor, String(original[2] || "").trim(), "WRITE");
+    const studentAccess = transportAssertStudentOwnershipForMutation_(ss, p, actor, String(original[2] || "").trim(), "WRITE");
+    if (!studentAccess || studentAccess.authorized !== true) throw new Error(studentAccess && studentAccess.code || "RESOURCE_SCOPE_DENIED");
     const routeSheet = ss.getSheetByName("TransporteRutas");
     if (!routeSheet) throw new Error("TRANSPORT_ROUTE_NOT_FOUND");
     const routeMatches = routeSheet.getDataRange().getValues().slice(1).filter(row =>
@@ -12449,7 +12436,8 @@ function assignStudentTransport(payload) {
 
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    assertTransportStudentWriteAccess_(ss, payload, actor, String(estudianteUserId).trim(), "WRITE");
+    const studentAccess = transportAssertStudentOwnershipForMutation_(ss, payload, actor, String(estudianteUserId).trim(), "WRITE");
+    if (!studentAccess || studentAccess.authorized !== true) return { status: "error", code: studentAccess && studentAccess.code || "RESOURCE_SCOPE_DENIED" };
     const rutaSheet = ss.getSheetByName("TransporteRutas");
     if (!rutaSheet) return { status: "error", code: "TRANSPORT_RESOURCE_NOT_FOUND" };
     const routeValues = rutaSheet.getDataRange().getValues();
@@ -12462,6 +12450,8 @@ function assignStudentTransport(payload) {
     if (["active", "activa"].indexOf(String(targetRuta[6] || "").trim().toLowerCase()) === -1) {
       return { status: "error", code: "ROUTE_NOT_ACTIVE" };
     }
+    getOrCreateTransportVehiclesCatalog(ss);
+    const billingSchema = transportEnsureBillingSchema_(ss);
     const asgnSheet = getOrCreateSheet(ss, "TransporteAsignaciones");
     const vehSheet = getOrCreateSheet(ss, "TransporteVehiculos");
     const unidadCod = String(targetRuta[2] || "").trim();
@@ -12562,7 +12552,7 @@ function assignStudentTransport(payload) {
       "TRANSPORT_ASSIGNMENT_CREATED",
       `Asignación de transporte creada para estudiante ${estudianteUserId} en ruta ${rutaId}`,
       { asignacionTranspId: asgnId, rutaId, estudianteUserId, capAutorizada, cuposOcupadosDespues: cuposOcupados + 1 },
-      (payload && payload.authUserId) || "System"
+      actor.userId
     );
 
     return {
