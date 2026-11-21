@@ -8949,6 +8949,38 @@ function getStudentAbsenceJustifications(payload) {
   return { status: "success", justificantes: justs };
 }
 
+function resolveAbsenceReviewExpedienteId_(ss, studentUserId) {
+  const userId = String(studentUserId || "").trim();
+  if (!userId) return { status: "error", code: "STUDENT_IDENTITY_UNVERIFIED" };
+  const usersSheet = ss.getSheetByName("Usuarios");
+  if (!usersSheet) return { status: "error", code: "STUDENT_IDENTITY_UNVERIFIED" };
+  const userData = usersSheet.getDataRange().getValues();
+  const headers = userData.length ? userData[0].map(value => String(value || "").trim().toUpperCase()) : [];
+  const userIdIndex = headers.indexOf("USERID"), personIdIndex = headers.indexOf("PERSONAID");
+  const roleIndex = headers.indexOf("ROL"), stateIndex = headers.indexOf("ESTADOCUENTA") >= 0 ? headers.indexOf("ESTADOCUENTA") : headers.indexOf("ESTADO");
+  if ([userIdIndex, personIdIndex, roleIndex, stateIndex].some(index => index < 0)) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  const users = userData.slice(1).filter(row => String(row[userIdIndex] || "").trim() === userId);
+  if (users.length !== 1 || !["ESTUDIANTE", "ALUMNO"].includes(String(users[0][roleIndex] || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "")) ||
+      !["ACTIVO", "ACTIVA", "ACTIVE"].includes(String(users[0][stateIndex] || "").trim().toUpperCase())) {
+    return { status: "error", code: "STUDENT_IDENTITY_UNVERIFIED" };
+  }
+  const personId = String(users[0][personIdIndex] || "").trim();
+  if (!personId) return { status: "error", code: "STUDENT_IDENTITY_UNVERIFIED" };
+  const samePersonStudents = userData.slice(1).filter(row =>
+    String(row[personIdIndex] || "").trim() === personId &&
+    ["ESTUDIANTE", "ALUMNO"].includes(String(row[roleIndex] || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "")) &&
+    ["ACTIVO", "ACTIVA", "ACTIVE"].includes(String(row[stateIndex] || "").trim().toUpperCase()));
+  if (samePersonStudents.length !== 1) return { status: "error", code: "STUDENT_IDENTITY_AMBIGUOUS" };
+  const expedienteSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!expedienteSheet) return { status: "error", code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+  const expedienteData = expedienteSheet.getDataRange().getValues();
+  if (!expedienteData || !expedienteData.length || String(expedienteData[0][0] || "").trim().toUpperCase() !== "EXPEDIENTEID" ||
+      String(expedienteData[0][1] || "").trim().toUpperCase() !== "PERSONAID") return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  const matches = expedienteData.slice(1).filter(row => String(row[1] || "").trim() === personId);
+  if (matches.length !== 1 || !String(matches[0][0] || "").trim()) return { status: "error", code: "RESOURCE_OWNERSHIP_AMBIGUOUS" };
+  return { status: "success", expedienteId: String(matches[0][0]).trim(), personId: personId };
+}
+
 function reviewAbsenceJustification(payload) {
   const p = payload || {};
   const actorRole = getUserVerifiedRole(p);
@@ -8965,9 +8997,25 @@ function reviewAbsenceJustification(payload) {
   const map = ensureUserAbsenceRequestSchema_(sheet);
   const rows = sheet.getDataRange().getValues();
   var rowIndex = -1;
-  for (var i = 1; i < rows.length; i++) if (String(rows[i][map.SolicitudID] || "").trim() === solicitudId) { rowIndex = i; break; }
+  for (var i = 1; i < rows.length; i++) if (String(rows[i][map.SolicitudID] || "").trim() === solicitudId) {
+    if (rowIndex !== -1) return { status: "error", code: "RESOURCE_AMBIGUOUS" };
+    rowIndex = i;
+  }
   if (rowIndex < 1 || String(rows[rowIndex][3] || "") !== "Justificación de Ausencia") return { status: "error", code: "RESOURCE_NOT_FOUND" };
   var row = rows[rowIndex];
+  var studentUserId = String(row[map.EstudianteID] || row[2] || "").trim();
+  var studentResource = resolveAbsenceReviewExpedienteId_(ss, studentUserId);
+  if (!studentResource || studentResource.status !== "success") return { status: "error", code: studentResource && studentResource.code || "RESOURCE_OWNERSHIP_UNVERIFIED" };
+  if (actorRole === "Administrador" || actorRole === "Desarrollador") {
+    var institutionScope = null;
+    try { institutionScope = getInstitutionalDepartmentScope_(p, actorRole); } catch (_) {}
+    if (!institutionScope || institutionScope.status !== "success" || institutionScope.institutionWide !== true) {
+      return { status: "error", code: "RESOURCE_SCOPE_DENIED" };
+    }
+  } else {
+    var resourceAccess = assertRecordOwnership(p, "EXPEDIENTE_ESTUDIANTE", studentResource.expedienteId, "UPDATE");
+    if (!resourceAccess || resourceAccess.authorized !== true) return { status: "error", code: resourceAccess && resourceAccess.code || "RESOURCE_SCOPE_DENIED" };
+  }
   var justId = String(row[map.JustificacionID] || row[map.SolicitudID] || "").trim();
   var evidenceIds = [];
   try { evidenceIds = JSON.parse(String(map.EvidenciaIDsJSON === undefined ? "[]" : row[map.EvidenciaIDsJSON] || "[]")); } catch (_) { return { status: "error", code: "EVIDENCE_LINKAGE_CORRUPT" }; }
