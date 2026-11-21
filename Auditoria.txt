@@ -3234,3 +3234,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-222 / TASK-502 | C1.920] Hallazgos: sendInternalMessage permitía remitenteId falsificado y reutilización de conversaciones con participantes distintos; closeConversationThread permitía cierre arbitrario. Corrección: sender verificado, pareja de participantes y estado de hilo validados; cierre solo por participante; send/close comparten ScriptLock. Contrato Node y syntax PASS. Pendiente validar destinatario/estudiante al iniciar conversaciones nuevas y ejecutar prueba concurrente real Apps Script.
+
+
+[2026-11-21 | AUD-NG-222 / TASK-502 | C1.921] Hallazgo: getAppointmentBookings permitía consultas globales mediante filtros controlados por cliente. Corrección: actor autenticado, self/participant scope para usuarios sin ámbito institucional, assertRecordOwnership EXPEDIENTE_ESTUDIANTE/READ para scope departamental e institutionWide para consulta global. Contrato Node/syntax PASS. Hallazgos abiertos: bookAppointment/updateAppointmentStatus sin ownership y getDepartmentalWorkInbox con departamento del payload.

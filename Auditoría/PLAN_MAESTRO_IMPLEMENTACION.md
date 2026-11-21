@@ -6278,3 +6278,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Workflows complementarios del commit 708f6681: Academic, UI, Accounting Import, Hierarchical Configuration, SACE, Task e Identity SUCCESS. Lock probado con harness Node; concurrencia real Apps Script NOT RUN.
 - Pendiente: validar destinatario/estudiante al crear conversaciones nuevas; getDepartmentalWorkInbox confía en departamento/authRole del cliente; getAppointmentBookings permite consultas sin filtros.
 - Estado: TASK-502/TASK-506 siguen En ejecución. Siguiente: corregir inbox departamental y revisar citas y autorización del destinatario.
+
+
+### Continuidad C1.921 — AUD-NG-222 / TASK-502 (sin cierre)
+- getAppointmentBookings exige identidad verificada. Usuarios sin scope institucional solo ven citas donde participan; personal departamental requiere expediente único y assertRecordOwnership EXPEDIENTE_ESTUDIANTE/READ; institutionWide conserva consulta global. Filtros cliente no conceden acceso y la lectura no crea hojas.
+- Contrato Node cubre citas propias, solicitante tutor, filtro de otro usuario, scope departamental, ownership denegado, institutionWide, identidad ausente y hoja ausente.
+- GitHub Actions run 44950486345: contrato nuevo paso 90 PASS; USER 82–89, ownership académico 91–100, integridad binaria/adjuntos 102–104 y syntax-check 105 PASS. El agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
+- Workflows complementarios del commit 54005cbc: Academic, Task, Identity, UI, Hierarchical, SACE y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
+- Pendiente: bookAppointment y updateAppointmentStatus no validan solicitante/participante; getDepartmentalWorkInbox confía en departamento/authRole del payload; sendInternalMessage necesita revisar destinatario y estudiante asociado.
+- Estado: TASK-502/TASK-506 siguen En ejecución. Siguiente: asegurar mutaciones de citas y luego inbox departamental.

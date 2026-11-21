@@ -1110,3 +1110,41 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
 - Siguiente: derivar departamento autorizado en getDepartmentalWorkInbox sin confiar en payload; luego revisar getAppointmentBookings y destinatario/contexto de sendInternalMessage.
 ===============================================================================
+
+
+===============================================================================
+### C1.921 — IMA-EXEC-20261121-AUD-NG-222-USER-APPOINTMENT-READ-SCOPE-92
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.920, commit documental 0df7970d55da97ff20cafd9efe5ff8fecfa2af42. HEAD de implementación antes del checkpoint: cbc6f0a3aabdca7fb3e333af240cd090015889a0.
+- Commits de esta unidad: 54005cbc (scope de lectura de citas); b3990ddc (contrato Node); cbc6f0a3 (workflow, syntax-check y filtro de paths).
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección
+- getAppointmentBookings permitía listar todas las citas sin filtros y aceptaba filtros solicitanteId/estudianteId/solicitadoA del cliente como único criterio, sin vincular el resultado al actor autenticado.
+- Corrección: exige identidad verificada; sin scope institucional devuelve solo citas donde actor es solicitante, estudiante o destinatario; con scope departamental exige resolución de estudiante a expediente y assertRecordOwnership EXPEDIENTE_ESTUDIANTE/READ; con institutionWide permite consulta global. Los filtros enviados solo acotan resultados y nunca conceden acceso.
+- La lectura usa getSheetByName; no crea CitasReuniones al consultar.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-appointment-bookings-scope.test.js (nuevo)
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- GitHub Actions Department Scope Contract, run 44950486345, Node.js 24.22.3: contrato USER appointment bookings scope (paso 90) PASS; contratos USER 82–89 PASS; ownership académico 91–100 PASS; integridad de adjuntos 102–104 PASS; syntax-check (105) PASS.
+- El workflow agregado termina FAILURE únicamente en Phase22 document management suite, paso 106. El error conocido es missing function configureSchoolDocumentTemplate en tests/regression/phase22-document-management-suite-contract.test.js; pasos focalizados previos PASS.
+- En el commit de código 54005cbc: Academic-Service single authorization context, Task-Service, Identity mapping, UI Accessibility, Hierarchical Configuration, SACE y Accounting Import Preflight — SUCCESS. Department Scope falla solo en Phase22.
+- Node.js y node --check ejecutados en GitHub Actions; CLI local independiente NOT RUN. Apps Script/Sheets real, staging y concurrencia entre proyectos NOT RUN. BETA-FUNC-128 pendiente de beta.
+
+### Hallazgos abiertos para la siguiente iteración
+- bookAppointment acepta solicitanteId del payload y updateAppointmentStatus modifica citas por citaId sin validar participante/ownership.
+- getDepartmentalWorkInbox confía en departamento/authRole enviados por el cliente.
+- sendInternalMessage aún requiere validar el destinatario y la relación/contexto del estudiante al iniciar una conversación nueva.
+
+### Estado y siguiente acción elegible
+- La lectura de citas queda limitada por actor o por ownership del expediente/ámbito institucional.
+- AUD-NG-222 / TASK-502 sigue En ejecución; faltan mutaciones de citas, inbox departamental, autorización de destinatario en mensajes nuevos y revisión de bindings en ACADEMIC/ACCOUNTING/TASK/EXAM.
+- TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
+- Siguiente: validar solicitante y participante en bookAppointment/updateAppointmentStatus; después derivar el ámbito de getDepartmentalWorkInbox sin confiar en payload.
+===============================================================================

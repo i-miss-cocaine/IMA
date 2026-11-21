@@ -997,3 +997,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502/TASK-506 permanecen En ejecución.
 - Siguiente: corregir inbox departamental y revisar citas/destinatario.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.921 — AUD-NG-222 / TASK-502
+- USER getAppointmentBookings limita lectura por actor/participante, expediente ownership o institutionWide; filtros cliente no conceden permisos.
+- Contrato Node, syntax-check, contratos USER 82–90, ownership académico 91–100 e integridad adjuntos 102–104 PASS. Phase22 continúa fallando por configureSchoolDocumentTemplate.
+- Apps Script/Sheets real, staging y concurrencia interproyecto NOT RUN. BETA-FUNC-128 pendiente.
+- Pendiente: bookAppointment/updateAppointmentStatus sin ownership; getDepartmentalWorkInbox confía en departamento/authRole del cliente; destinatario/estudiante de mensaje nuevo.
+- TASK-502/TASK-506 permanecen En ejecución.
+- Siguiente: asegurar mutaciones de citas y derivar scope del inbox desde contexto verificado.
+===============================================================================
