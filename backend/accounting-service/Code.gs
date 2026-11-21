@@ -3859,7 +3859,34 @@ function createCafeteriaOrder(p){var a=familyCreditApprovalActor_(p),ss=Spreadsh
 function getCafeteriaOrders(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),role=institutionalServiceRoleKey_(a.role),sid="";if(role==="padre"){sid=String(p.estudianteUserId||"");if(sid&&!familyCreditGuardianCanAuthorizeStudent_(ss,a.userId,sid))throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");}else if(role==="estudiante"||role==="alumno")sid=a.userId;else if(["administrador","director","contador","secretaria","encargadocafeteria"].indexOf(role)<0)throw new Error("ROLE_NOT_ALLOWED");var allowed=role==="padre"?familyCreditGetActiveStudentUserIdsForGuardian_(ss,a.userId):[];var rows=getOrCreateSheet(ss,"CafeteriaPedidos").getDataRange().getValues().slice(1).filter(function(r){return(!sid||String(r[2])===sid)&&(!p.pedidoId||String(r[0])===String(p.pedidoId))&&(role!=="padre"||sid||allowed.indexOf(String(r[2]))>=0);});return{status:"success",pedidos:rows.map(function(r){return{pedidoId:r[0],fecha:r[1],estudianteUserId:r[2],responsableUserId:r[3],detalleJSON:r[4],turnoEntrega:r[5],montoTotal:Number(r[6]||0),metodoPago:r[7],estado:r[8],observaciones:r[9]};})};}
 function updateStoreOrderStatus(p){var ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();lock.waitLock(10000);try{var sh=getOrCreateSheet(ss,"TiendaOrdenes"),r=sh.getDataRange().getValues(),i=r.findIndex(function(x){return String(x[0])===String(p.ordenId);});if(i<1)throw new Error("STORE_ORDER_NOT_FOUND");if(familyCreditIsRequested_(r[i][6])&&p.estadoPago==="Pagado")throw new Error("FAMILY_CREDIT_PAYMENT_STATE_SERVER_MANAGED");if(familyCreditIsRequested_(r[i][6])&&familyCreditIsCancellationStatus_(p.estadoPago))familyCreditReverseApprovedOrder_(ss,"TIENDA",p.ordenId);if(p.estadoPago)sh.getRange(i+1,8).setValue(p.estadoPago);if(p.estadoEntrega)sh.getRange(i+1,9).setValue(p.estadoEntrega);if(p.observaciones!==undefined)sh.getRange(i+1,12).setValue(p.observaciones);return{status:"success",ordenId:p.ordenId};}finally{lock.releaseLock();}}
 function updateCafeteriaOrderStatus(p){var ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();lock.waitLock(10000);try{var sh=getOrCreateSheet(ss,"CafeteriaPedidos"),r=sh.getDataRange().getValues(),i=r.findIndex(function(x){return String(x[0])===String(p.pedidoId);});if(i<1)throw new Error("CAFETERIA_ORDER_NOT_FOUND");if(familyCreditIsRequested_(r[i][7])&&p.nuevoEstado==="Pagado")throw new Error("FAMILY_CREDIT_PAYMENT_STATE_SERVER_MANAGED");if(familyCreditIsRequested_(r[i][7])&&familyCreditIsCancellationStatus_(p.nuevoEstado))familyCreditReverseApprovedOrder_(ss,"CAFETERIA",p.pedidoId);sh.getRange(i+1,9).setValue(p.nuevoEstado);if(p.observaciones!==undefined)sh.getRange(i+1,10).setValue(p.observaciones);return{status:"success",pedidoId:p.pedidoId};}finally{lock.releaseLock();}}
-function getStudentAccountStatement(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),sid=familyCreditResolveStudent_(ss,a,p.userId),c=getOrCreateSheet(ss,"CargosEstudiante").getDataRange().getValues().slice(1).filter(function(r){return String(r[2])===sid&&String(r[7])!=="Anulado";}),pay=getOrCreateSheet(ss,"PagosAbonos").getDataRange().getValues().slice(1).filter(function(r){return String(r[2])===sid&&String(r[8])!=="Anulado";}),charges=c.reduce(function(s,r){return s+Number(r[6]||0);},0),paid=pay.reduce(function(s,r){return s+Number(r[5]||0);},0),mov=familyCreditGetStatementMovements_(ss,sid),credit=mov.reduce(function(s,r){return s+(String(r.estado).toLowerCase()==="reversado"?-r.monto:r.monto);},0);return{status:"success",data:{userId:sid,totalCargos:charges,totalPagado:paid,saldoPendiente:Math.max(0,charges-paid),cargos:c,pagos:pay,consumosCreditoFamiliar:mov,totalConsumoCreditoFamiliar:credit}};}
+function getStudentAccountStatement(payload) {
+  var input = payload || {}, actor;
+  try { actor = familyCreditApprovalActor_(input); }
+  catch (error) { return { status: "error", code: error && error.message || "VERIFIED_IDENTITY_REQUIRED" }; }
+  var permission = validateRolePermission(actor, "getStudentAccountStatement");
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
+  var role = String(actor.role || "").trim().toLowerCase();
+  if (role !== "estudiante" && role !== "alumno") return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var studentId = String(actor.userId || "").trim();
+  if (!studentId) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var chargeSheet = ss.getSheetByName("CargosEstudiante"), paymentSheet = ss.getSheetByName("PagosAbonos");
+  var charges = chargeSheet ? chargeSheet.getDataRange().getValues().slice(1).filter(function(row) {
+    return String(row[2] || "").trim() === studentId && String(row[7] || "") !== "Anulado";
+  }) : [];
+  var payments = paymentSheet ? paymentSheet.getDataRange().getValues().slice(1).filter(function(row) {
+    return String(row[2] || "").trim() === studentId && String(row[8] || "") !== "Anulado";
+  }) : [];
+  var totalCharges = charges.reduce(function(sum, row) { return sum + Number(row[6] || 0); }, 0);
+  var totalPaid = payments.reduce(function(sum, row) { return sum + Number(row[5] || 0); }, 0);
+  var movements = familyCreditGetStatementMovements_(ss, studentId);
+  var creditTotal = movements.reduce(function(sum, row) {
+    return sum + (String(row.estado).toLowerCase() === "reversado" ? -row.monto : row.monto);
+  }, 0);
+  return { status: "success", data: { userId: studentId, totalCargos: totalCharges, totalPagado: totalPaid,
+    saldoPendiente: Math.max(0, totalCharges - totalPaid), cargos: charges, pagos: payments,
+    consumosCreditoFamiliar: movements, totalConsumoCreditoFamiliar: creditTotal } };
+}
 function getFamilyCreditSalesReconciliation(p){var a=familyCreditApprovalActor_(p),role=institutionalServiceRoleKey_(a.role);if(["contador","director","administrador"].indexOf(role)<0)throw new Error("FAMILY_CREDIT_SALES_REPORT_ROLE_NOT_ALLOWED");var lock=LockService.getScriptLock();lock.waitLock(10000);try{var ss=SpreadsheetApp.openById(SPREADSHEET_ID),mov=getOrCreateSheet(ss,"CreditoFamiliarMovimientos").getDataRange().getValues().slice(1),store=getOrCreateSheet(ss,"TiendaOrdenes").getDataRange().getValues().slice(1),cafe=getOrCreateSheet(ss,"CafeteriaPedidos").getDataRange().getValues().slice(1),d=[],summary={TIENDA:{ventasNetas:0,pedidosPendientes:0},CAFETERIA:{ventasNetas:0,pedidosPendientes:0}};store.forEach(function(r){if(familyCreditIsRequested_(r[6])){if(r[7]==="PendienteAprobacionFamiliar")summary.TIENDA.pedidosPendientes++;}});cafe.forEach(function(r){if(familyCreditIsRequested_(r[7])){if(r[8]==="PendienteAprobacionFamiliar")summary.CAFETERIA.pedidosPendientes++;}});mov.forEach(function(r){var key=institutionalServiceRoleKey_(r[5]),amt=Number(r[6]||0),state=String(r[8]||"").toLowerCase();if(!summary[key==="tienda"?"TIENDA":key==="cafeteria"?"CAFETERIA":""])return;var bucket=summary[key==="tienda"?"TIENDA":"CAFETERIA"];if(state==="aprobado")bucket.ventasNetas+=amt;if(state==="reversado"){bucket.ventasNetas-=amt;var id=String(r[7]||"").replace(/^REV:/,""),orig=mov.filter(function(x){return String(x[0])===id;});if(orig.length!==1||Number(orig[0][6])!==amt||String(orig[0][3])!==String(r[3])||String(orig[0][4])!==String(r[4]))d.push({codigo:"REVERSAL_AMOUNT_OR_OWNER_MISMATCH"});}});mov.filter(function(r){return String(r[8]).toLowerCase()==="aprobado";}).forEach(function(r){var list=institutionalServiceRoleKey_(r[5])==="tienda"?store:cafe;if(!list.some(function(x){return String(x[0])===String(r[7])&&String(x[2])===String(r[3]);}))d.push({codigo:"ORPHAN_APPROVED_MOVEMENT"});});var total={ventasNetas:summary.TIENDA.ventasNetas+summary.CAFETERIA.ventasNetas,pedidosPendientes:summary.TIENDA.pedidosPendientes+summary.CAFETERIA.pedidosPendientes};return{status:"success",coincide:d.length===0,resumen:summary,total:total,discrepancias:d};}finally{lock.releaseLock();}}
 
 
@@ -6242,17 +6269,44 @@ function registerAssetsFromPurchaseReceipt(payload) {
 }
 
 function getAssetItems(payload) {
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = ss.getSheetByName("ActivosPatrimoniales");
+  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", activos: [] };
+  var permission = validateRolePermission(actor, "getAssetItems");
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED", activos: [] };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var scope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
+  if (!scope || scope.valid !== true || scope.authorized === false) return { status: "error", code: scope && scope.code || "RESOURCE_SCOPE_DENIED", activos: [] };
+  var sheet = ss.getSheetByName("ActivosPatrimoniales");
   if (!sheet) return { status: "success", activos: [] };
   var values = sheet.getDataRange().getValues();
-  if (!values || values.length < 2) return { status: "success", activos: [] };
-  var headers = values[0].map(String);
+  if (!values || !values.length) return { status: "success", activos: [] };
+  var headers = values[0].map(function(value) { return String(value || "").trim(); });
+  var idIndexes = [], departmentIndex = -1, custodianIndex = -1;
+  headers.forEach(function(header, index) {
+    if (header === "ActivoID") idIndexes.push(index);
+    if (["DepartamentoID", "Departamento", "DepartamentoResponsable"].indexOf(header) !== -1) departmentIndex = index;
+    if (["CustodioUserId", "CustodianUserId", "Custodio Usuario"].indexOf(header) !== -1) custodianIndex = index;
+  });
+  if (idIndexes.length !== 1) return { status: "error", code: "ASSET_SCHEMA_INVALID", activos: [] };
+  if (scope.institutionWide !== true && departmentIndex < 0 && custodianIndex < 0) return { status: "error", code: "RESOURCE_SCOPE_UNVERIFIED", activos: [] };
+  var idIndex = idIndexes[0], counts = Object.create(null);
+  values.slice(1).forEach(function(row) { var id = String(row[idIndex] || "").trim(); if (id) counts[id] = (counts[id] || 0) + 1; });
   var activos = values.slice(1).filter(function(row) {
-    return !!String(row[headers.indexOf("ActivoID")] || "").trim();
+    var assetId = String(row[idIndex] || "").trim();
+    if (!assetId || counts[assetId] !== 1) return false;
+    if (scope.institutionWide === true) return true;
+    var departmentValue = departmentIndex >= 0 ? String(row[departmentIndex] || "").trim() : "";
+    var custodianValue = custodianIndex >= 0 ? String(row[custodianIndex] || "").trim() : "";
+    if (!departmentValue && !custodianValue) return false;
+    var allowedDepartments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(String) : [];
+    if (!allowedDepartments.length) return false;
+    for (var i = 0; i < allowedDepartments.length; i++) {
+      try { maintenancePlanAssertAssetScope_(ss, input, actor, assetId, allowedDepartments[i]); return true; }
+      catch (ignored) {}
+    }
+    return false;
   }).map(function(row) {
-    var result = {};
-    headers.forEach(function(header, index) { result[header] = row[index]; });
-    return result;
+    var result = {}; headers.forEach(function(header, index) { result[header] = row[index]; }); return result;
   });
   return { status: "success", activos: activos };
 }
@@ -9400,9 +9454,41 @@ function updatePayrollPeriodStatus(payload) {
   }
 }
 function getPayrollPeriodSummary(payload) {
-  const { periodoMes, planillaId, employeeId, compararConPeriodo, umbralVariacion } = payload || {};
+  const input = payload || {};
+  const { periodoMes, planillaId, employeeId, compararConPeriodo, umbralVariacion } = input;
+  const actor = getVerifiedAccountingIdentity_(input);
+  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  const permission = validateRolePermission(actor, "getPayrollPeriodSummary");
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "PlanillasNomenclatura").getDataRange().getValues().slice(1);
+  const scope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
+  if (!scope || scope.valid !== true || scope.authorized === false) return { status: "error", code: scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  const employeeSheet = ss.getSheetByName("ExpedientesLaborales");
+  if (!employeeSheet) return { status: "error", code: "PAYROLL_EMPLOYEE_OWNERSHIP_SOURCE_MISSING" };
+  const employeeData = employeeSheet.getDataRange().getValues();
+  if (!employeeData || !employeeData.length) return { status: "error", code: "PAYROLL_EMPLOYEE_OWNERSHIP_SOURCE_INVALID" };
+  const employeeHeaders = employeeData[0].map(value => String(value || "").trim());
+  const idIndexes = [], departmentIndexes = [];
+  employeeHeaders.forEach((header, index) => { if (header === "ExpedienteID") idIndexes.push(index); if (header === "Departamento") departmentIndexes.push(index); });
+  if (idIndexes.length !== 1 || departmentIndexes.length !== 1) return { status: "error", code: "PAYROLL_EMPLOYEE_OWNERSHIP_SCHEMA_INVALID" };
+  const employeeIdIndex = idIndexes[0], departmentIndex = departmentIndexes[0], allEmployeeRows = employeeData.slice(1);
+  const requestedEmployeeId = String(employeeId || "").trim();
+  if (requestedEmployeeId) {
+    const matches = allEmployeeRows.filter(row => String(row[employeeIdIndex] || "").trim() === requestedEmployeeId);
+    if (matches.length !== 1) return { status: "error", code: matches.length ? "PAYROLL_EMPLOYEE_RESOURCE_AMBIGUOUS" : "RESOURCE_NOT_FOUND" };
+  }
+  const allowedDepartments = scope.institutionWide === true ? null : (Array.isArray(scope.departmentIds) ? scope.departmentIds.map(String) : []);
+  if (allowedDepartments && !allowedDepartments.length) return { status: "error", code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+  const employeeRows = allEmployeeRows.filter(row =>
+    (!allowedDepartments || allowedDepartments.indexOf(String(row[departmentIndex] || "").trim()) !== -1) &&
+    (!requestedEmployeeId || String(row[employeeIdIndex] || "").trim() === requestedEmployeeId));
+  if (requestedEmployeeId && employeeRows.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  try { assertPayrollEmployeeResourceScope_(ss, scope, employeeRows, "READ"); }
+  catch (error) { return { status: "error", code: error && error.message || "PAYROLL_EMPLOYEE_SCOPE_DENIED" }; }
+  const allowedEmployeeIds = Object.create(null);
+  employeeRows.forEach(row => { allowedEmployeeIds[String(row[employeeIdIndex] || "").trim()] = true; });
+  const planSheet = ss.getSheetByName("PlanillasNomenclatura");
+  const rows = planSheet ? planSheet.getDataRange().getValues().slice(1).filter(row => !!allowedEmployeeIds[String(row[3] || "").trim()]) : [];
 
   let filtered = rows.filter(r=>!["REEMPLAZADA","ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(normalizePayrollBatchValue_(r[15])));
   if (planillaId) filtered = filtered.filter(r => String(r[0]).trim() === String(planillaId).trim());
@@ -9473,7 +9559,7 @@ function getPayrollPeriodSummary(payload) {
   if (compararConPeriodo) {
     const currentPeriod=String(periodoMes||mapped[0]&&mapped[0].periodoMes||"").trim(),priorPeriod=String(compararConPeriodo).trim();
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(currentPeriod)||!/^\d{4}-(0[1-9]|1[0-2])$/.test(priorPeriod)||currentPeriod===priorPeriod) return {status:"error",code:"PAYROLL_COMPARISON_PERIOD_INVALID",message:"Seleccione dos períodos distintos con formato AAAA-MM."};
-    const priorRows=rows.filter(r=>String(r[2]||"").trim()===priorPeriod&&!["REEMPLAZADA","ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(normalizePayrollBatchValue_(r[15])));
+    const priorRows=rows.filter(r=>!!allowedEmployeeIds[String(r[3]||"").trim()]&&String(r[2]||"").trim()===priorPeriod&&!["REEMPLAZADA","ANULADA","ANULADO","REVERTIDA","REVERTIDO","CANCELADA","CANCELADO"].includes(normalizePayrollBatchValue_(r[15])));
     const priorEmployerTotals=getPayrollEmployerConceptTotalsByEmployee_(ss,[...new Set(priorRows.map(r=>String(r[0]||"").trim()))]);
     const priorByEmployee=Object.create(null);priorRows.forEach(r=>{const id=String(r[3]||"").trim();if(id){if(priorByEmployee[id])priorByEmployee[id].duplicate=true;else priorByEmployee[id]=r;}});
     const threshold=Number.isFinite(Number(umbralVariacion))?Number(umbralVariacion):10,employeeVariances=[];
