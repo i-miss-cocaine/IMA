@@ -51,7 +51,8 @@ function makeHarness(options) {
     waitLock: () => { calls.lockAttempts++; if (!settings.lockAvailable) throw new Error("LOCK_TIMEOUT"); },
     releaseLock: () => { calls.releases++; }
   };
-  const ss = { getSheetByName: name => name === "ExpedientesEstudiantes" ? expSheet : name === "Matriculas" ? matSheet : null };
+  const usersSheet = { getLastRow: () => 2, getDataRange: () => ({ getValues: () => [["UserId","PersonaID","Rol","EstadoCuenta"],["STU-1","PERSON-1","Estudiante","Activa"]] }) };
+  const ss = { getSheetByName: name => name === "ExpedientesEstudiantes" ? expSheet : name === "Matriculas" ? matSheet : name === "Usuarios" ? usersSheet : null };
   const runtime = {
     SPREADSHEET_ID: "TEST",
     SpreadsheetApp: { openById: () => ss },
@@ -67,6 +68,7 @@ function makeHarness(options) {
       calls.ownership.push({ type, id, operation });
       return { authorized: settings.ownershipAllowed, code: "RESOURCE_SCOPE_DENIED" };
     },
+    getStudentPersonIdForUser_: (spreadsheet, userId) => userId === "STU-1" ? "PERSON-1" : "",
     getStudentIdentityForPerson_: (spreadsheet, personId) => personId === "PERSON-1" ? { userId: "STU-1", role: "Estudiante" } : null,
     recordEntityChangeLog: (...args) => calls.audit.push(args),
     logStructuredEvent: () => {},
@@ -75,10 +77,26 @@ function makeHarness(options) {
     Date, String, Number, Object, Array, JSON
   };
   vm.createContext(runtime);
-  vm.runInContext(extractFunction("updateStudentLifecycleStatus") + "\n" +
+  vm.runInContext(extractFunction("assertAcademicStudentMutationAccess_") + "\n" +
+    extractFunction("updateStudentLifecycleStatus") + "\n" +
     extractFunction("reconcileStudentLifecycleState") +
-    "\nthis.update=updateStudentLifecycleStatus;this.reconcile=reconcileStudentLifecycleState;", runtime);
+    "\nthis.resolve=assertAcademicStudentMutationAccess_;this.update=updateStudentLifecycleStatus;this.reconcile=reconcileStudentLifecycleState;", runtime);
   return { runtime, calls, expRows, matRows };
+}
+
+const scopedTarget = makeHarness();
+const resolvedTarget = scopedTarget.runtime.resolve("changeStudentSection", { sessionToken: "verified", expedienteId: "EXP-1", userId: "STU-1" },
+  { getSheetByName: name => name === "ExpedientesEstudiantes" ? { getDataRange: () => ({ getValues: () => scopedTarget.expRows.map(row => row.slice()) }) } :
+    name === "Usuarios" ? { getLastRow: () => 2, getDataRange: () => ({ getValues: () => [["UserId","PersonaID","Rol","EstadoCuenta"],["STU-1","PERSON-1","Estudiante","Activa"]] }) } : null },
+  "EXP-1", "STU-1");
+assert.equal(resolvedTarget.expedienteId, "EXP-1");
+assert.equal(resolvedTarget.userId, "STU-1");
+assert.equal(scopedTarget.calls.access.length, 1);
+for (const action of ["changeStudentSection","recordStudentTransfer","recordStudentWithdrawal","processStudentReentry","processStudentPromotion","processStudentGraduation"]) {
+  const start = source.indexOf("function " + action + "(");
+  const end = source.indexOf("\nfunction ", start + 10);
+  assert.ok(start >= 0 && source.slice(start, end > 0 ? end : source.length).includes("assertAcademicStudentMutationAccess_"),
+    action + " must enforce verified student ownership");
 }
 
 const noPermission = makeHarness({ permissionAllowed: false });
