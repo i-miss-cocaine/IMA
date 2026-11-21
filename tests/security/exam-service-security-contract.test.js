@@ -348,7 +348,18 @@ const ownershipRows = [
 const sheets = {
   Examenes: { getDataRange() { return { getValues: () => [["ID"], ...examRows].map(row => row.slice()) }; } },
   AsignacionesAmbitosRoles: { getDataRange() { return { getValues: () => scopeRows.map(row => row.slice()) }; } },
-  ResourceOwnership: { getDataRange() { return { getValues: () => ownershipRows.map(row => row.slice()) }; } }
+  ResourceOwnership: { getDataRange() { return { getValues: () => ownershipRows.map(row => row.slice()) }; } },
+  CatalogoAsignaturas: { getDataRange() { return { getValues: () => [
+    ["AsignaturaID","NombreOficial","Codigo","Estado"],["SUB-MATH","Matemáticas","MATH","Activo"]
+  ] }; } },
+  OfertaAcademica: { getDataRange() { return { getValues: () => [
+    ["OfertaID","AnoID","SedeID","Grado","Seccion","AsignaturaID","PlanID","Modalidad","CapacidadMax","Estado","CodigoClase"],
+    ["OFF-MATH","2026","","10","A","SUB-MATH","PLAN-1","","","Activo",""]
+  ] }; } },
+  AsignacionesDocentes: { getDataRange() { return { getValues: () => [
+    ["AsignacionID","OfertaID","DocenteUserId","RolDocente","FechaInicio","FechaFin","Estado"],
+    ["ASG-MATH","OFF-MATH","TEACHER-1","Titular","2020-01-01","2099-12-31","Activo"]
+  ] }; } }
 };
 const ss = { getSheetByName(name) { return sheets[name] || null; } };
 const runtime = {
@@ -404,7 +415,7 @@ assert.equal(runtime.validate("getStudentExams", ownStudent).authorized, true);
 const otherStudent = { sessionToken: "student-session", userId: "STUDENT-2" };
 assert.equal(runtime.validate("getStudentExams", otherStudent).authorized, false, "student cannot request another student's exams");
 
-const helpers = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "getAllExams", "getAllExamsUnlocked_"]
+const helpers = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "hasExamTeacherActiveOfferAssignment_", "getAllExams", "getAllExamsUnlocked_"]
   .map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(helpers + "\nthis.getVerifiedExamIdentity_ = getVerifiedExamIdentity_; this.getVerifiedExamDepartmentScope_ = getVerifiedExamDepartmentScope_; this.getAllExams = getAllExams;", runtime);
 const teacherExamList = runtime.getAllExams({
