@@ -2091,43 +2091,61 @@ function hasActiveDelegationForAction(userId, action) {
 }
 
 // [TAREA-F5-009] [TAREA-F4-P1-04] [Fase 5: Admisiones y Portal de Familias] - Validación contextual con permisos individuales por relación de tutor
+function getGuardianPermissionKeyForAction_(action) {
+  const value = String(action || "").replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+  if (/(payment|finance|account|billing|voucher|credit|invoice|purchase|receipt|tuition|fee)/.test(value)) return "permisoFinanciero";
+  if (/(attendance|absence|justification|check in|checkin)/.test(value)) return "permisoAsistencia";
+  if (/(document|file|certificate|expedient|attachment)/.test(value)) return "permisoDocumental";
+  if (/(grade|exam|task|academic|schedule|classroom|enrollment|student record|report)/.test(value)) return "permisoAcademico";
+  return "";
+}
+
 function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   const verifiedActorId = String(verifiedUserId || "").trim();
   const verifiedActorRole = String(userRole || "").trim();
   if (!verifiedActorId || !verifiedActorRole) return { authorized: false, reason: "VERIFIED_IDENTITY_REQUIRED" };
-  if (verifiedActorRole === "Administrador" || verifiedActorRole === "Desarrollador") {
-    return { authorized: true };
-  }
+  if (verifiedActorRole === "Administrador" || verifiedActorRole === "Desarrollador") return { authorized: true };
 
-  const targetStudentId = payload && (payload.studentId || payload.estudianteId || payload.targetUserId || payload.userId);
+  const targetStudentId = payload && (
+    payload.studentId || payload.estudianteId || payload.targetUserId ||
+    payload.userId || payload.expedienteId || payload.expedienteEstudianteId
+  );
 
-  if (userRole === "Estudiante" || userRole === "Alumno") {
+  if (verifiedActorRole === "Estudiante" || verifiedActorRole === "Alumno") {
     if (targetStudentId && String(targetStudentId).trim() !== verifiedActorId) {
-      return { authorized: false, reason: "Aislamiento estricto de estudiante: intento de acceso a ID ajeno." };
+      return { authorized: false, reason: "STUDENT_RESOURCE_SCOPE_DENIED" };
     }
   }
 
-  if (userRole === "Padre" || userRole === "Tutor" || userRole === "Responsable") {
-    if (targetStudentId && verifiedUserId && String(targetStudentId).trim() !== String(verifiedUserId).trim()) {
-      try {
-        const guardianRes = getGuardianStudents({ userId: verifiedActorId, _verifiedUserId: verifiedActorId, _verifiedRole: verifiedActorRole, sessionToken: payload && (payload.sessionToken || payload.authToken || payload.token) });
-        const linkedStudents = (guardianRes.data || []);
-        const match = linkedStudents.find(s => String(s.studentUserId || s.userId || s.expedienteEstudianteId).trim() === String(targetStudentId).trim());
-        if (!match) {
-          return { authorized: false, reason: "Aislamiento estricto de tutor: el estudiante no está vinculado al tutor." };
-        }
-
-        // Evaluar permisos individuales por tutor si la directiva GRANULAR_FAMILY_PERMISSIONS_ENABLED está activa
-        if (typeof GRANULAR_FAMILY_PERMISSIONS_ENABLED !== "undefined" && GRANULAR_FAMILY_PERMISSIONS_ENABLED === true && match.permisos) {
-          if (action.indexOf("Payment") !== -1 || action.indexOf("Finance") !== -1 || action.indexOf("Account") !== -1) {
-            if (match.permisos.permisoFinanciero === false) {
-              return { authorized: false, reason: "Permiso denegado: El tutor no cuenta con Permiso Financiero asignado para este alumno." };
-            }
-          }
-        }
-      } catch (e) {
-        return { authorized: false, reason: "Aislamiento estricto de tutor: fallo al verificar vinculación familiar: " + e.message };
+  if (["Padre", "Tutor", "Responsable"].indexOf(verifiedActorRole) !== -1 &&
+      targetStudentId && String(targetStudentId).trim() !== verifiedActorId) {
+    try {
+      const guardianRes = getGuardianStudents({
+        userId: verifiedActorId,
+        _verifiedUserId: verifiedActorId,
+        _verifiedRole: verifiedActorRole,
+        sessionToken: payload && (payload.sessionToken || payload.authToken || payload.token)
+      });
+      if (!guardianRes || guardianRes.status !== "success" || !Array.isArray(guardianRes.data)) {
+        return { authorized: false, reason: "GUARDIAN_RELATIONSHIP_UNVERIFIED" };
       }
+      const requested = String(targetStudentId).trim();
+      const matches = guardianRes.data.filter(function(student) {
+        return student && [student.studentUserId, student.userId, student.expedienteEstudianteId]
+          .some(function(value) { return String(value || "").trim() === requested; });
+      });
+      if (matches.length !== 1) {
+        return { authorized: false, reason: matches.length ? "GUARDIAN_RELATIONSHIP_AMBIGUOUS" : "GUARDIAN_RELATIONSHIP_NOT_FOUND" };
+      }
+      const permissionKey = getGuardianPermissionKeyForAction_(action);
+      if (permissionKey) {
+        const permissions = matches[0].permisos;
+        if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) || permissions[permissionKey] !== true) {
+          return { authorized: false, reason: "GUARDIAN_DOMAIN_PERMISSION_DENIED" };
+        }
+      }
+    } catch (_) {
+      return { authorized: false, reason: "GUARDIAN_RELATIONSHIP_VALIDATION_FAILED" };
     }
   }
 
@@ -5659,9 +5677,12 @@ function getGuardianStudents(payload) {
       const expId = String(r[1]).trim();
       const mappedUserId = expToUserMap[expId] || expId;
       const u = usersMap[mappedUserId] || usersMap[expId] || { userId: mappedUserId, nombre: "Estudiante " + expId, grado: "", seccion: "" };
-      let permsObj = { permisoAcademico: true, permisoFinanciero: true, permisoDocumental: true, permisoAsistencia: true };
+      let permsObj = { permisoAcademico: false, permisoFinanciero: false, permisoDocumental: false, permisoAsistencia: false };
       try {
-        if (r[8]) permsObj = typeof r[8] === "string" ? JSON.parse(r[8]) : r[8];
+        if (r[8] !== "" && r[8] !== null && r[8] !== undefined) {
+          const parsedPermissions = typeof r[8] === "string" ? JSON.parse(r[8]) : r[8];
+          if (parsedPermissions && typeof parsedPermissions === "object" && !Array.isArray(parsedPermissions)) permsObj = parsedPermissions;
+        }
       } catch (e) {}
       return {
         relacionId: r[0],
@@ -5684,8 +5705,19 @@ function getGuardianStudents(payload) {
     const tutorRelSheet = getOrCreateSheet(ss, "RelacionesEstudianteTutor");
     const tutorData = tutorRelSheet.getDataRange().getValues();
     if (tutorData.length > 1) {
-      verifiedStudents = tutorData.slice(1).filter(r => {
-        return String(r[2]).trim() === String(uid).trim() && (r[9] === "Verificada" || r[9] === "Activa" || r[9] === "Aprobada");
+      const legacyCandidates = tutorData.slice(1).filter(r =>
+        String(r[2] || "").trim() === String(uid).trim() &&
+        ["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(String(r[9] || "").trim().toUpperCase()) !== -1
+      );
+      const legacyRelationCounts = Object.create(null), legacyStudentCounts = Object.create(null);
+      legacyCandidates.forEach(r => {
+        const relationId = String(r[0] || "").trim(), studentId = String(r[1] || "").trim();
+        if (relationId) legacyRelationCounts[relationId] = (legacyRelationCounts[relationId] || 0) + 1;
+        if (studentId) legacyStudentCounts[studentId] = (legacyStudentCounts[studentId] || 0) + 1;
+      });
+      verifiedStudents = legacyCandidates.filter(r => {
+        const relationId = String(r[0] || "").trim(), studentId = String(r[1] || "").trim();
+        return !!relationId && !!studentId && legacyRelationCounts[relationId] === 1 && legacyStudentCounts[studentId] === 1;
       }).map(r => {
         const studentId = String(r[1]).trim();
         const u = usersMap[studentId] || { userId: studentId, nombre: "Estudiante " + studentId, grado: "", seccion: "" };
@@ -5699,7 +5731,8 @@ function getGuardianStudents(payload) {
           seccion: u.seccion,
           tipoParentesco: r[3],
           estadoMatricula: u.estadoCuenta || "Activa",
-          estado: r[9]
+          estado: r[9],
+          permisos: { permisoAcademico: false, permisoFinanciero: false, permisoDocumental: false, permisoAsistencia: false }
         };
       });
     }

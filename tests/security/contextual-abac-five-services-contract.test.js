@@ -146,6 +146,42 @@ assert.deepEqual(Array.from(userGuardianRuntime.lookup({ sessionToken: "signed" 
 familyRows.pop();
 assert.equal(userGuardianResult.data.find(row => row.studentUserId === "STU-5").permisos.permisoAcademico, false,
   "USER preserves explicit academic denial for downstream contextual checks");
+const primaryRowsSnapshot = familyRows.splice(1);
+const legacyOnlyResult = userGuardianRuntime.lookup({ sessionToken: "signed" });
+assert.equal(legacyOnlyResult.data.length, 1, "USER preserves a unique legacy guardian relation for non-domain metadata");
+assert.equal(legacyOnlyResult.data[0].permisos.permisoAcademico, false, "USER legacy relationships do not infer academic permission");
+legacyRows.push(legacyRows[1].slice());
+assert.deepEqual(Array.from(userGuardianRuntime.lookup({ sessionToken: "signed" }).data), [],
+  "USER rejects duplicate legacy relationship identities instead of returning an ambiguous grant");
+legacyRows.pop();
+familyRows.push(...primaryRowsSnapshot);
+
+const guardianPolicyCode = [
+  extractFunction(userSource, "getGuardianPermissionKeyForAction_"),
+  extractFunction(userSource, "validateContextualAccess")
+].join(String.fromCharCode(10));
+const guardianPolicyRuntime = {
+  getGuardianStudents: payload => userGuardianRuntime.lookup(payload),
+  Date, String, Number, Object, Array
+};
+vm.createContext(guardianPolicyRuntime);
+vm.runInContext(guardianPolicyCode + "\nthis.check = validateContextualAccess;", guardianPolicyRuntime);
+assert.equal(guardianPolicyRuntime.check("getStudentAcademicReport", { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, true,
+  "USER allows a guardian only when the linked relationship explicitly grants the requested academic domain");
+assert.equal(guardianPolicyRuntime.check("getPaymentVouchers", { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, false,
+  "USER denies a financial action when the relationship omits its financial permission");
+assert.equal(guardianPolicyRuntime.check("getStudentAcademicReport", { expedienteId: "EXP-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, true,
+  "USER resolves an expediente selector against the linked student's authoritative relationship");
+familyRows[1][8] = "";
+const missingPermissionResult = userGuardianRuntime.lookup({ sessionToken: "signed" });
+assert.equal(missingPermissionResult.data.find(row => row.studentUserId === "STU-1").permisos.permisoAcademico, false,
+  "USER treats an absent permission document as deny, not implicit allow");
+assert.equal(guardianPolicyRuntime.check("getStudentAcademicReport", { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, false,
+  "USER denies academic access when the primary relationship has no explicit domain permission");
+familyRows[1][8] = "{\"permisoAcademico\":true,\"permisoFinanciero\":true}";
+assert.equal(guardianPolicyRuntime.check("getPaymentVouchers", { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, true,
+  "USER allows financial access only after the financial permission is explicitly granted");
+
 
 const taskSource = fs.readFileSync("backend/task-service/Code.gs", "utf8");
 const taskGuardianFn = extractFunction(taskSource, "getTaskServiceGuardianStudentIds");
