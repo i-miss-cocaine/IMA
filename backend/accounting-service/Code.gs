@@ -12448,7 +12448,7 @@ function assignStudentTransport(payload) {
       return { status: "error", code: routeMatches.length ? "ROUTE_ID_AMBIGUOUS" : "ROUTE_NOT_FOUND" };
     }
     const targetRuta = routeMatches[0];
-    if (["active", "activa"].indexOf(String(targetRuta[6] || "").trim().toLowerCase()) === -1) {
+    if (["active", "activa", "activo", "vigente"].indexOf(String(targetRuta[6] || "").trim().toLowerCase()) === -1) {
       return { status: "error", code: "ROUTE_NOT_ACTIVE" };
     }
     const studentAccess = transportAssertStudentOwnershipForMutation_(ss, payload, actor, String(estudianteUserId).trim(), "WRITE");
