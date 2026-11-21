@@ -140,6 +140,7 @@ function makeMutationContext(rows, failVersionBump) {
   let releases = 0;
   const ss = { getSheetByName: name => name === "DelegacionesSeguridad" ? sheet : null };
   const context = {
+    SPREADSHEET_ID: "LOCAL",
     getUserVerifiedRole: () => "Administrador",
     generateInstitutionalId: () => ({ generatedId: "DEL-NEW" }),
     getOrCreateSheet: () => sheet,
