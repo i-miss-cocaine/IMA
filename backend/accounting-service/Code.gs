@@ -3717,10 +3717,15 @@ function familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid){
   var uh=(u[0]||[]).map(String),rh=(r[0]||[]).map(String);
   var ui=uh.indexOf("UserId"),pi=uh.indexOf("PersonaID"),ri=uh.indexOf("Rol"),si=uh.indexOf("Estado");
   var sp=rh.indexOf("PersonaEstudianteID"),gp=rh.indexOf("PersonaResponsableID"),st=rh.indexOf("EstadoAutorizacion"),fi=rh.indexOf("FechaInicio"),ti=rh.indexOf("FechaFin");
+  var permissionsIndex=rh.indexOf("PermisosJSON"),financialPermissionIndex=rh.indexOf("PermisoFinanciero");
+  if(permissionsIndex<0&&rh.length===8)permissionsIndex=8;
   if([ui,pi,ri,sp,gp,st].some(function(x){return x<0;}))return[];
-  var g=u.slice(1).filter(function(x){return String(x[ui])===String(gid);});
-  if(g.length!==1||!g[0][pi])return[];
-  var person=String(g[0][pi]),now=new Date(),out=[];
+  var guardians=u.slice(1).filter(function(x){return String(x[ui])===String(gid);});
+  if(guardians.length!==1||!guardians[0][pi])return[];
+  var guardian=guardians[0],guardianRole=institutionalServiceRoleKey_(guardian[ri]);
+  if(["padre","madre","tutor","responsable"].indexOf(guardianRole)<0)return[];
+  if(si>=0&&guardian[si]&&["activo","active","habilitado"].indexOf(String(guardian[si]).trim().toLowerCase())<0)return[];
+  var person=String(guardian[pi]),now=new Date(),out=[],candidates=[];
   var parseBound=function(value){
     if(value===""||value===null||value===undefined)return {valid:true,date:null};
     var date=value instanceof Date?value:new Date(value);
@@ -3729,9 +3734,28 @@ function familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid){
   r.slice(1).forEach(function(rel){
     var state=String(rel[st]||"").toLowerCase(),from=parseBound(fi>=0?rel[fi]:""),to=parseBound(ti>=0?rel[ti]:"");
     if(String(rel[gp])!==person||["aprobado","autorizado","activo","active","verificada"].indexOf(state)<0||
-      !from.valid||!to.valid||(from.date&&from.date>now)||(to.date&&to.date<now))return;
+      !from.valid||!to.valid||(from.date&&from.date>now)||(to.date&&to.date<now)||
+      (from.date&&to.date&&from.date>to.date))return;
+    candidates.push(rel);
+  });
+  var relationCounts=Object.create(null);
+  candidates.forEach(function(rel){var studentPerson=String(rel[sp]||"").trim();if(studentPerson)relationCounts[studentPerson]=(relationCounts[studentPerson]||0)+1;});
+  candidates.forEach(function(rel){
+    var studentPerson=String(rel[sp]||"").trim();
+    if(!studentPerson||relationCounts[studentPerson]!==1)return;
+    if(financialPermissionIndex>=0){
+      var directPermission=rel[financialPermissionIndex];
+      if(directPermission===false||String(directPermission||"").trim().toLowerCase()==="false")return;
+    }
+    if(permissionsIndex>=0&&rel[permissionsIndex]!==""&&rel[permissionsIndex]!==null&&rel[permissionsIndex]!==undefined){
+      var permissions;
+      try{permissions=typeof rel[permissionsIndex]==="string"?JSON.parse(rel[permissionsIndex]):rel[permissionsIndex];}
+      catch(_){return;}
+      if(!permissions||typeof permissions!=="object"||Array.isArray(permissions))return;
+      if(permissions.permisoFinanciero===false||String(permissions.permisoFinanciero||"").trim().toLowerCase()==="false")return;
+    }
     var students=u.slice(1).filter(function(x){
-      return String(x[pi])===String(rel[sp])&&["estudiante","alumno"].indexOf(institutionalServiceRoleKey_(x[ri]))>=0&&
+      return String(x[pi])===studentPerson&&["estudiante","alumno"].indexOf(institutionalServiceRoleKey_(x[ri]))>=0&&
         (!x[si]||["activo","active","habilitado"].indexOf(String(x[si]).toLowerCase())>=0);
     });
     if(students.length===1&&out.indexOf(String(students[0][ui]))<0)out.push(String(students[0][ui]));

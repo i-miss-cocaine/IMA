@@ -335,6 +335,7 @@ jobs:
           node --check < backend/user-service/Code.gs
           node --check < backend/academic-service/Code.gs
           node --check < backend/accounting-service/Code.gs
+          node --check tests/security/accounting-family-credit-preference.test.js
           node --check js/accounting.js
           node --check js/secretary.js
           node --check js/transport-analytics.js

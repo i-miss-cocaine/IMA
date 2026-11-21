@@ -120,6 +120,28 @@ assert.equal(studentAuthorizations.autorizaciones.length, 1);
 assert.equal(studentAuthorizations.autorizaciones[0].estudianteUserId, "STU-1");
 assert.throws(() => context.getFamilyCreditAuthorizations({ _verifiedUserId: "STU-1", _verifiedRole: "Estudiante", estudianteUserId: "STU-2" }), /FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED/);
 assert.throws(() => context.getFamilyCreditAuthorizations({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", estudianteUserId: "STU-2" }), /FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED/);
+const originalFamilyRelations = rows.RelacionesFamiliares.map(row => row.slice());
+rows.RelacionesFamiliares = [
+  headers.RelacionesFamiliares,
+  ["REL-DENIED","PERSON-S","PERSON-G","Madre","Aprobado","","","",JSON.stringify({ permisoFinanciero: false })]
+];
+assert.deepEqual(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1"), [],
+  "explicitly denied financial guardian permission must block family credit");
+rows.RelacionesFamiliares = [
+  headers.RelacionesFamiliares,
+  ["REL-MALFORMED","PERSON-S","PERSON-G","Madre","Aprobado","","","", "{malformed"]
+];
+assert.deepEqual(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1"), [],
+  "malformed guardian permission JSON must fail closed");
+rows.RelacionesFamiliares = [
+  headers.RelacionesFamiliares,
+  ["REL-DUP-1","PERSON-S","PERSON-G","Madre","Aprobado","","","",JSON.stringify({ permisoFinanciero: true })],
+  ["REL-DUP-2","PERSON-S","PERSON-G","Madre","Aprobado","","","",JSON.stringify({ permisoFinanciero: true })]
+];
+assert.deepEqual(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1"), [],
+  "duplicate active guardian relationships must fail closed");
+rows.RelacionesFamiliares = originalFamilyRelations;
+
 
 
 const loaded = context.getFamilyCreditApprovalPreference({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" });
