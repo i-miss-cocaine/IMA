@@ -295,7 +295,7 @@ assert.equal(context.getPaymentVouchers({sessionToken:"staffA",userId:"U-OTHER"}
 const voucherFileCountBeforeUnauthorizedUpload=Object.keys(files).length;
 assert.equal(context.uploadPaymentVoucher({sessionToken:"student",userId:"U-OTHER",montoReportado:100}).code,"RESOURCE_SCOPE_DENIED","a student cannot upload evidence for another account");
 assert.equal(Object.keys(files).length,voucherFileCountBeforeUnauthorizedUpload,"unauthorized voucher uploads must be rejected before creating Drive attachments");
-assert.equal(context.reviewPaymentVoucher({sessionToken:"student",comprobanteId:"VCH-A",nuevoEstado:"Rechazado"}).code,"RESOURCE_SCOPE_DENIED");
+assert.equal(context.reviewPaymentVoucher({sessionToken:"student",comprobanteId:"VCH-A",nuevoEstado:"Rechazado"}).code,"ROLE_PERMISSION_DENIED","students are denied review permission before voucher resource lookup");
 assert.equal(context.reviewPaymentVoucher({sessionToken:"staffA",comprobanteId:"VCH-B",nuevoEstado:"Rechazado"}).code,"RESOURCE_SCOPE_DENIED");
 const staffReviewResult=context.reviewPaymentVoucher({sessionToken:"staffA",comprobanteId:"VCH-A",nuevoEstado:"Rechazado"});
 assert.equal(staffReviewResult.status,"success","authorized reviewer should process a verified voucher");
