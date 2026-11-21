@@ -537,3 +537,68 @@ Siguiente paso elegible:
 - **Estado:** TASK-501 / AUD-NG-221 En ejecución (implementación de dimensiones/editor integrada; propagación de caché pendiente). TASK-502 / AUD-NG-222 no iniciado. No se modificó `Pendientes.md`, `completadas.md` ni la rama base; no se alteraron datos productivos ni se desplegó a Apps Script.
 - **Siguiente tarea elegible:** ejecutar la ampliación pendiente `AUD-NG-160` (versión lógica común, caché caliente/fría y propagación de invalidación en cinco servicios); después cerrar TASK-501 con esa evidencia y continuar TASK-502. Revalidar TASK-506 solo tras integrar ambos.
 
+
+===============================================================================
+CHECKPOINT C1.909 — IMA-EXEC-20261121-AUD-NG-160-80
+===============================================================================
+Fecha: 2026-11-21
+Sesión: IMA-EXEC-20261121-AUD-NG-160-80
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+Rama base observada: NG_beta_0.0.0.1
+HEAD inicial de esta continuación: 50914135f33306a22fa4157ec2bb08b75ed40d47
+HEAD de implementación verificado: fb7e3a82240abadcd7c3e335b49ab28d723f77cc
+Objetivo: cerrar la dependencia AUD-NG-160 y completar TASK-501/AUD-NG-221 antes de iniciar TASK-502/AUD-NG-222.
+
+### Resultado técnico
+- USER, ACADEMIC, ACCOUNTING, TASK y EXAM leen la hoja compartida VersionesSeguridad en cada decisión de autorización. Se eliminó SECURITY_VERSION_READ_CACHE_ y cualquier caché local de la versión; la versión de PERMISSION_MATRIX y USER_ROLE cambia la clave de la caché dinámica, por lo que una instancia caliente deja de reutilizar una autorización antigua.
+- USER inicializa el ledger únicamente durante la emisión inicial de sesión, bajo ScriptLock y con sentinel persistente IMA_SECURITY_VERSION_SCHEMA_INITIALIZED. Si el ledger falta después de inicializado, no se recrea; la sesión no se emite.
+- getSecurityVersion_ falla cerrado ante hoja ausente, encabezados inválidos, claves duplicadas, versión no entera/negativa o error de lectura. incrementSecurityVersionLocked_ no recrea la hoja perdida y falla sin incrementar.
+- Se preservó la serialización de las mutaciones existentes. La inicialización ahora también falla cerrada cuando no puede adquirir ScriptLock.
+- ACCOUNTING obtiene SPREADSHEET_ID desde configuración de proyecto; su coincidencia con el spreadsheet común no puede probarse desde el repositorio y queda como verificación obligatoria de BETA-FUNC-124.
+
+### Archivos de implementación y pruebas
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/accounting-service/Code.gs
+- backend/task-service/Code.gs
+- backend/exam-service/Code.gs
+- tests/security/security-version-propagation-contract.test.js
+- tests/security/session-token-expiry.test.js
+- tests/security/hmac-secret-config.test.js
+- tests/security/user-role-membership-contract.test.js
+- tests/security/task-service-security-contract.test.js
+- tests/security/internal-responsibility-rbac-contract.test.js
+- tests/security/accounting-departmental-resource-access.test.js
+- tests/security/accounting-vacation-medical-leave-ownership.test.js
+- tests/security/exam-service-departmental-access.test.js
+- tests/security/security-delegation-version-propagation-contract.test.js
+- beta_test.txt, changueslogs.txt, Auditoria.txt, tareas_auditoria.txt, índice y este checkpoint.
+
+### Commits de esta continuación
+- Implementación central: 769d5e4 — security(auth): make shared versions authoritative across services.
+- Contratos/harnesses y regresiones: 291acf0, 9e1fdd9, 7354a14, f0e2641, 608f7fd, bef84ee, b64b060, f7ec1c7, bd35de7, 85ac7b6, d9a6253.
+- Documentación de límite de caché: fb7e3a8.
+- Los commits intermedios de compatibilidad de contratos se conservan en el historial; no se reescribió ni se hizo force-push.
+
+### Verificaciones
+- Harness V8 local aislado ejecutando security-version-propagation-contract.test.js: PASS. Cubre cambio de PERMISSION_MATRIX y USER_ROLE en contexto caliente en los cinco servicios, ledger ausente fail-closed y ausencia de caché local.
+- Harness V8 local aislado ejecutando session-token-expiry.test.js: PASS. Cubre parseo de servicios, emisión de sesión, inicialización de ledger, contención del lock, roleVersion inicial y eliminación del ledger tras inicializar.
+- Parseo JavaScript de los cinco Code.gs y contratos modificados con new Function: PASS.
+- GitHub Actions en Node.js v22.23.5: Task-Service security local contracts 44915954908 SUCCESS; Accounting Import Preflight 44915954719 SUCCESS; Academic single authorization context 44915954797 SUCCESS; Identity mapping 44915954681 SUCCESS; Task-Service backup/restore 44915954730 SUCCESS; Department Reference Consumers 44915954794 SUCCESS; UI Accessibility 44915954707 SUCCESS; SACE monotonic source revision 44915954695 SUCCESS; Hierarchical Configuration 44915954664 SUCCESS.
+- Department Scope 44915954723: FAIL únicamente por Phase22-document management, que no encuentra configureSchoolDocumentTemplate.
+- Exam-Service security 44915954821: FAIL únicamente por Phase22/document management, que no encuentra configureSchoolDocumentTemplate ni ensureSchoolDocumentIssuedSchema_. Son fallos ajenos al cambio, no se alteraron dichos módulos y no se ocultan como PASS.
+- Node CLI nativo en checkout local: NOT RUN; no hay checkout montado y el contenedor no tiene resolución de red. La ejecución V8 aislada y Node.js CI sí se ejecutaron.
+- Apps Script/Sheets real: NOT RUN. No hubo despliegue ni se usaron credenciales o datos reales.
+
+### Estado
+- AUD-NG-160: completada en código y contratos; validación beta real pendiente.
+- TASK-501 / AUD-NG-221: completada en código/CI; BETA-FUNC-124 pendiente.
+- TASK-502 / AUD-NG-222: PENDIENTE; siguiente tarea elegible.
+- TASK-496 / AUD-NG-217 y TASK-685 / AUD-NG-373 permanecen independientes.
+- No se modificó la rama base ni se publicó en otra rama.
+
+### Siguiente acción
+Auditar las implementaciones existentes de validateContextualAccess, validateRolePermission, validateRoleScopeAccess, getGuardianStudents y getAcademicAreaCoordinationScope en los cinco servicios; diseñar el contrato ABAC común fail-closed de TASK-502 sin duplicar reglas ni ampliar privilegios.
+
+===============================================================================

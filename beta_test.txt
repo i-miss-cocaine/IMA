@@ -2178,3 +2178,40 @@ Resultado esperado:
 Estado: PENDIENTE — requiere acceso autorizado a SACE Notas y un archivo sintético/saneado.
 Evidencia requerida: SHA-256, contexto no personal, layout signature, diff estructural, prueba binaria sobre copia sintética, decisión de vigencia y semántica de recuperación.
 ===============================================================================
+
+
+===============================================================================
+BETA-FUNC-124 — Propagación de versiones de seguridad entre los cinco servicios
+===============================================================================
+Módulo/rol: USER, ACADEMIC, ACCOUNTING, TASK y EXAM; Administrador institucional y roles sintéticos autorizados
+Tarea/requisito: AUD-NG-160 / TASK-501 / AUD-NG-221 — versión común de privilegios y permisos
+Objetivo: verificar en despliegue real que los cinco proyectos Apps Script consultan el mismo ledger VersionesSeguridad y que los cambios de rol/permisos se reflejan en instancias calientes sin reiniciar servicios ni vaciar cachés.
+Prioridad: P1
+Ambiente/build: staging aislado; desplegar los cinco proyectos desde el commit de implementación fb7e3a82240abadcd7c3e335b49ab28d723f77cc o posterior. No ejecutar contra producción.
+Precondiciones:
+- Cuenta sintética y datos institucionales de prueba, sin datos personales reales.
+- USER, ACADEMIC, TASK y EXAM configurados con el mismo spreadsheet de staging; verificar que la propiedad de script SPREADSHEET_ID de ACCOUNTING apunta al mismo archivo.
+- La hoja VersionesSeguridad existe con encabezados Clave, Version, UpdatedAt, UpdatedBy; no registrar IDs completos, tokens ni secretos en evidencia.
+- Tener acceso para consultar versiones, matriz de permisos y logs de los cinco servicios.
+Pasos:
+1. Iniciar sesión con el usuario sintético y comprobar que USER inicializa el ledger una sola vez bajo ScriptLock.
+2. Calentar las rutas de autorización y lectura de permisos en ACADEMIC, ACCOUNTING, TASK y EXAM; registrar las versiones anonimizadas de USER_ROLE y PERMISSION_MATRIX.
+3. Cambiar/revocar la membresía de rol del usuario desde USER. Reutilizar inmediatamente la sesión anterior en cada servicio sin reiniciar proyectos ni limpiar CacheService.
+4. Confirmar que cada operación protegida deniega la sesión obsoleta; emitir una sesión nueva y comprobar que solo obtiene los permisos vigentes.
+5. Calentar una regla de MatrizPermisosRoles con permiso Allow, cambiarla a Deny e invocar de nuevo los cinco servicios sin reiniciar ni vaciar cachés; repetir el ciclo Deny→Allow.
+6. En una copia desechable del spreadsheet de staging, eliminar o alterar el ledger después de inicializarlo. Comprobar que la autenticación/autorización falla cerrada y que ningún servicio recrea silenciosamente versiones en cero.
+7. Ejecutar dos mutaciones de privilegios concurrentes y comprobar que el ScriptLock serializa los incrementos, las versiones son monotónicas y no se pierden actualizaciones.
+8. Restaurar el spreadsheet de staging y verificar una sesión nueva y las reglas originales.
+Resultado esperado:
+- Los cinco servicios observan cada incremento de versión sin reinicio ni invalidación manual de cachés.
+- Ninguna sesión con versión anterior conserva acceso después de confirmar la mutación.
+- La caché de matriz se consulta con la versión vigente; las entradas antiguas no se reutilizan.
+- Ledger ausente, corrupto, duplicado o inaccesible produce denegación segura; no hay reinicio silencioso a versión cero.
+- Los incrementos concurrentes son monotónicos y no pierden actualizaciones.
+Resultado real: no ejecutado; no hay despliegue beta verificado en esta sesión.
+Estado: PENDIENTE DE BETA.
+Severidad si falla: Alta — posible acceso con privilegios obsoletos o indisponibilidad segura.
+Evidencia requerida: SHA de despliegue de cada proyecto, confirmación enmascarada del spreadsheet común, request IDs, versiones antes/después, resultados Allow/Deny por servicio, prueba de ledger ausente/corrupto, trazas de lock y evidencia sin tokens/PII.
+Incidencia/tarea derivada: registrar una incidencia vinculada a AUD-NG-160/TASK-501 si cualquier servicio conserva acceso obsoleto o no comparte el ledger.
+Responsable: QA/administrador del ambiente beta.
+===============================================================================

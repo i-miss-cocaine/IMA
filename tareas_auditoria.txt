@@ -877,3 +877,13 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - BETA-EXAM-059 Pendiente beta. TASK-153 permanece En ejecución; AUD-NG-386 abierto.
 - Limitación: la ruta legacy exige CategoriasEvaluacion de ocho columnas; el esquema canónico de seis columnas se rechaza de forma segura. ConfiguracionAcademica carece de DepartmentID y no permite atribuir un grupo a un departamento.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.909 — tareas derivadas de TASK-636 (ámbito PM-01 independiente)
+- TASK-501 / AUD-NG-221: completada en código. Matriz dinámica por rol/servicio/acción/ámbito y ledger compartido versionado; cinco servicios consultan la versión vigente sin caché local. Contratos V8 locales y CI focalizado PASS.
+- AUD-NG-160: completada en código como dependencia de invalidación común. Ledger ausente, corrupto, duplicado o no disponible falla cerrado; USER inicializa una sola vez bajo ScriptLock y sentinel persistente.
+- TASK-501/AUD-NG-221: BETA-FUNC-124 pendiente de despliegue real; no declarar beta PASS.
+- TASK-502 / AUD-NG-222: pendiente y siguiente tarea elegible; centralizar autorización contextual RBAC/ABAC y denegación fail-closed en los cinco servicios.
+- TASK-496 / AUD-NG-217 y TASK-685 / AUD-NG-373 conservan sus ámbitos y no se declaran completadas por este hito.
+===============================================================================
