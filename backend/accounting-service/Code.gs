@@ -3747,17 +3747,24 @@ function familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid){
   candidates.forEach(function(rel){
     var studentPerson=String(rel[sp]||"").trim(),relationId=relationIdIndex>=0?String(rel[relationIdIndex]||"").trim():"";
     if(!studentPerson||relationCounts[studentPerson]!==1||!relationId||relationIdCounts[relationId]!==1)return;
+    var hasExplicitFinancialGrant=false;
     if(financialPermissionIndex>=0){
       var directPermission=rel[financialPermissionIndex];
       if(directPermission===false||String(directPermission||"").trim().toLowerCase()==="false")return;
+      if(directPermission===true)hasExplicitFinancialGrant=true;
+      else if(directPermission!==""&&directPermission!==null&&directPermission!==undefined)return;
     }
     if(permissionsIndex>=0&&rel[permissionsIndex]!==""&&rel[permissionsIndex]!==null&&rel[permissionsIndex]!==undefined){
       var permissions;
       try{permissions=typeof rel[permissionsIndex]==="string"?JSON.parse(rel[permissionsIndex]):rel[permissionsIndex];}
       catch(_){return;}
       if(!permissions||typeof permissions!=="object"||Array.isArray(permissions))return;
-      if(permissions.permisoFinanciero===false||String(permissions.permisoFinanciero||"").trim().toLowerCase()==="false")return;
+      if(Object.prototype.hasOwnProperty.call(permissions,"permisoFinanciero")){
+        if(permissions.permisoFinanciero!==true)return;
+        hasExplicitFinancialGrant=true;
+      }
     }
+    if(!hasExplicitFinancialGrant)return;
     var students=u.slice(1).filter(function(x){
       return String(x[pi])===studentPerson&&["estudiante","alumno"].indexOf(institutionalServiceRoleKey_(x[ri]))>=0&&
         (!x[si]||["activo","active","habilitado"].indexOf(String(x[si]).toLowerCase())>=0);

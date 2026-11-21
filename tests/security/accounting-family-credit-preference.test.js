@@ -28,7 +28,7 @@ function extractFunction(name) {
 const rows = Object.create(null);
 const headers = {
   Usuarios: ["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","Estado"],
-  RelacionesFamiliares: ["RelacionID","PersonaEstudianteID","PersonaResponsableID","TipoParentesco","EstadoAutorizacion","FechaInicio","FechaFin","Observaciones"],
+  RelacionesFamiliares: ["RelacionID","PersonaEstudianteID","PersonaResponsableID","TipoParentesco","EstadoAutorizacion","FechaInicio","FechaFin","Observaciones","PermisoFinanciero","PermisosJSON"],
   CreditoFamiliarConfiguracion: ["ConfiguracionID","ResponsableUserID","ModalidadAprobacion","FechaActualizacion","ActualizadoPor","PinSalt","PinHash","PinUpdatedAt","FailedAttempts","LockedUntil"],
   CreditoFamiliarAutorizaciones: ["AutorizacionID","Fecha","ResponsableUserId","EstudianteUserId","LimiteDiario","LimiteMensual","SaldoUsado","Estado","FechaVencimiento","Observaciones","ModalidadAprobacion","PinApprovedBy","PinApprovedAt"]
 };
@@ -98,8 +98,8 @@ rows.Usuarios = [
 ];
 rows.RelacionesFamiliares = [
   headers.RelacionesFamiliares,
-  ["REL-1","PERSON-S","PERSON-G","Madre","Aprobado","","",""],
-  ["REL-2","PERSON-S2","PERSON-OTHER","Madre","Aprobado","","",""]
+  ["REL-1","PERSON-S","PERSON-G","Madre","Aprobado","","","",true,JSON.stringify({ permisoFinanciero: true })],
+  ["REL-2","PERSON-S2","PERSON-OTHER","Madre","Aprobado","","","",false,JSON.stringify({ permisoFinanciero: false })]
 ];
 rows.CreditoFamiliarConfiguracion = [
   headers.CreditoFamiliarConfiguracion.slice(0, 5),
@@ -123,23 +123,41 @@ assert.throws(() => context.getFamilyCreditAuthorizations({ _verifiedUserId: "GU
 const originalFamilyRelations = rows.RelacionesFamiliares.map(row => row.slice());
 rows.RelacionesFamiliares = [
   headers.RelacionesFamiliares,
-  ["REL-DENIED","PERSON-S","PERSON-G","Madre","Aprobado","","","",JSON.stringify({ permisoFinanciero: false })]
+  ["REL-DENIED","PERSON-S","PERSON-G","Madre","Aprobado","","","","",JSON.stringify({ permisoFinanciero: false })]
 ];
 assert.deepEqual(Array.from(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1")), [],
   "explicitly denied financial guardian permission must block family credit");
 rows.RelacionesFamiliares = [
   headers.RelacionesFamiliares,
-  ["REL-MALFORMED","PERSON-S","PERSON-G","Madre","Aprobado","","","", "{malformed"]
+  ["REL-MALFORMED","PERSON-S","PERSON-G","Madre","Aprobado","","","","", "{malformed"]
 ];
 assert.deepEqual(Array.from(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1")), [],
   "malformed guardian permission JSON must fail closed");
 rows.RelacionesFamiliares = [
   headers.RelacionesFamiliares,
-  ["REL-DUP-1","PERSON-S","PERSON-G","Madre","Aprobado","","","",JSON.stringify({ permisoFinanciero: true })],
-  ["REL-DUP-2","PERSON-S","PERSON-G","Madre","Aprobado","","","",JSON.stringify({ permisoFinanciero: true })]
+  ["REL-DUP-1","PERSON-S","PERSON-G","Madre","Aprobado","","","","",JSON.stringify({ permisoFinanciero: true })],
+  ["REL-DUP-2","PERSON-S","PERSON-G","Madre","Aprobado","","","","",JSON.stringify({ permisoFinanciero: true })]
 ];
 assert.deepEqual(Array.from(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1")), [],
   "duplicate active guardian relationships must fail closed");
+rows.RelacionesFamiliares = [
+  headers.RelacionesFamiliares,
+  ["REL-NO-GRANT","PERSON-S","PERSON-G","Madre","Aprobado","","","","",""]
+];
+assert.deepEqual(Array.from(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1")), [],
+  "missing direct and JSON financial permission must not authorize family credit");
+rows.RelacionesFamiliares = [
+  headers.RelacionesFamiliares,
+  ["REL-STRING-GRANT","PERSON-S","PERSON-G","Madre","Aprobado","","","","true",""]
+];
+assert.deepEqual(Array.from(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1")), [],
+  "string direct financial permission must not authorize family credit");
+rows.RelacionesFamiliares = [
+  headers.RelacionesFamiliares,
+  ["REL-JSON-STRING-GRANT","PERSON-S","PERSON-G","Madre","Aprobado","","","","",JSON.stringify({ permisoFinanciero: "true" })]
+];
+assert.deepEqual(Array.from(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1")), [],
+  "string JSON financial permission must not authorize family credit");
 rows.RelacionesFamiliares = originalFamilyRelations;
 
 
