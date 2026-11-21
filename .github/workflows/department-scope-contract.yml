@@ -315,6 +315,37 @@ jobs:
         run: node tests/security/file-attachment-persistence-contract.test.js
       - name: Run request attachment SHA-256 integrity and tamper detection contract
         run: node tests/security/user-service-request-attachment-integrity.test.js
+      - name: Syntax-check updated Apps Script services
+        run: |
+          node --check < backend/user-service/Code.gs
+          node --check < backend/academic-service/Code.gs
+          node --check < backend/accounting-service/Code.gs
+          node --check js/accounting.js
+          node --check js/secretary.js
+          node --check js/transport-analytics.js
+          node --check js/api.js
+          node --check js/developer.js
+          node --check tests/security/permission-matrix-dimensions-contract.test.js
+          node --check tests/security/security-version-propagation-contract.test.js
+          node --check tests/security/session-token-expiry.test.js
+          node --check tests/security/user-role-membership-contract.test.js
+          node --check tests/security/internal-responsibility-rbac-contract.test.js
+          node --check tests/security/department-scope-contract.test.js
+          node --check tests/security/task-service-security-contract.test.js
+          node --check tests/security/hmac-secret-config.test.js
+          node --check js/teacher.js
+          node --check tests/security/academic-teacher-justification-abac.test.js
+          node --check tests/contracts/api-response-contract.test.js
+          node --check tests/security/user-service-signature-provider-callback.test.js
+          node --check tests/security/file-binary-validation-contract.test.js
+          node --check tests/security/accounting-import-mapping-profiles.test.js
+          node --check tests/security/user-service-help-preferences.test.js
+          node --check tests/regression/phase22-document-management-suite-contract.test.js
+          node --check tests/regression/hr-vacation-dashboard-contract.test.js
+          node --check js/ui-common.js
+          node --check < backend/task-service/Code.gs
+          node --check < backend/exam-service/Code.gs
+          node --check < backend/developer-service/Code.gs
       - name: Run Phase 22 document management suite contract
         run: node tests/regression/phase22-document-management-suite-contract.test.js
       - name: Run user-service signature document integrity contract
@@ -339,32 +370,6 @@ jobs:
         run: node tests/security/academic-student-document-private-storage.test.js
       - name: Run ACCOUNTING department reference consumer contract
         run: node tests/security/accounting-department-reference-consumer.test.js
-      - name: Syntax-check updated Apps Script services
-        run: |
-          node --check < backend/user-service/Code.gs
-          node --check < backend/academic-service/Code.gs
-          node --check < backend/accounting-service/Code.gs
-          node --check js/accounting.js
-          node --check js/secretary.js
-          node --check js/transport-analytics.js
-          node --check js/api.js
-          node --check js/developer.js
-          node --check tests/security/permission-matrix-dimensions-contract.test.js
-          node --check tests/security/security-version-propagation-contract.test.js
-          node --check tests/security/session-token-expiry.test.js
-          node --check js/teacher.js
-          node --check tests/security/academic-teacher-justification-abac.test.js
-          node --check tests/contracts/api-response-contract.test.js
-          node --check tests/security/user-service-signature-provider-callback.test.js
-          node --check tests/security/file-binary-validation-contract.test.js
-          node --check tests/security/accounting-import-mapping-profiles.test.js
-          node --check tests/security/user-service-help-preferences.test.js
-          node --check tests/regression/phase22-document-management-suite-contract.test.js
-          node --check tests/regression/hr-vacation-dashboard-contract.test.js
-          node --check js/ui-common.js
-          node --check < backend/task-service/Code.gs
-          node --check < backend/exam-service/Code.gs
-          node --check < backend/developer-service/Code.gs
       - name: Run student private voucher client contract
         run: node tests/security/student-payment-voucher-client.test.js
       - name: Check student client syntax
