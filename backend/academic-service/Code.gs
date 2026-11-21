@@ -6957,6 +6957,90 @@ function getAcademicAreaTemplateCatalog(payload) {
 
 // [TAREA-F6-006] [Fase 6: Reestructuración en microservicios independientes] - Gestión de ámbito de supervisión y coordinaciones académicas parametrizadas por área
 
+
+function resolveAcademicSubjectIdForAuthorization_(ss, reference) {
+  const raw = String(reference || "").trim();
+  const sheet = ss && ss.getSheetByName("CatalogoAsignaturas");
+  if (!raw || !sheet || sheet.getLastRow() < 2) return "";
+  let map, rows;
+  try {
+    map = getInstitutionalSubjectColumnMap_(sheet, false);
+    rows = sheet.getDataRange().getValues().slice(1);
+  } catch (_) { return ""; }
+  const key = raw.toUpperCase();
+  const matches = rows.filter(function(row) {
+    return [row[map.asignaturaId], row[map.nombreOficial], row[map.codigo]]
+      .some(function(value) { return String(value || "").trim().toUpperCase() === key; });
+  });
+  if (matches.length !== 1) return "";
+  const subject = matches[0], state = String(subject[map.estado] || "").trim().toUpperCase();
+  if (["ACTIVO", "ACTIVA", "ACTIVE", "TRUE"].indexOf(state) === -1) return "";
+  return String(subject[map.asignaturaId] || "").trim();
+}
+
+function hasActiveTeacherPlanningAssignment_(ss, teacherUserId, subjectReference, grade, section, periodId) {
+  const teacherId = String(teacherUserId || "").trim();
+  const subjectId = resolveAcademicSubjectIdForAuthorization_(ss, subjectReference);
+  if (!teacherId || !subjectId || !String(grade || "").trim() || !String(section || "").trim()) return false;
+  const assignmentsSheet = ss && ss.getSheetByName("AsignacionesDocentes");
+  const offersSheet = ss && ss.getSheetByName("OfertaAcademica");
+  if (!assignmentsSheet || assignmentsSheet.getLastRow() < 2 || !offersSheet || offersSheet.getLastRow() < 2) return false;
+  const assignments = assignmentsSheet.getDataRange().getValues();
+  const headers = (assignments[0] || []).map(function(value) {
+    return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  });
+  const index = function(names) {
+    for (let i = 0; i < names.length; i++) {
+      const found = headers.indexOf(names[i]);
+      if (found >= 0) return found;
+    }
+    return -1;
+  };
+  const offerIdIndex = index(["ofertaid"]);
+  const teacherIndex = index(["docenteuserid", "docenteid", "userid"]);
+  const startIndex = index(["fechainicio"]);
+  const endIndex = index(["fechafin"]);
+  const stateIndex = index(["estado"]);
+  if (offerIdIndex < 0 || teacherIndex < 0 || stateIndex < 0) return false;
+  let offerMap, offerRows;
+  try {
+    offerMap = getAcademicOfferColumnMap(offersSheet, false);
+    offerRows = offersSheet.getDataRange().getValues().slice(1);
+  } catch (_) { return false; }
+  const offerById = Object.create(null);
+  offerRows.forEach(function(row) {
+    const id = String(getAcademicOfferValue(row, offerMap, "ofertaId", "") || "").trim();
+    if (!id) return;
+    if (Object.prototype.hasOwnProperty.call(offerById, id)) offerById[id] = null;
+    else offerById[id] = row;
+  });
+  const now = Date.now(), matches = [];
+  const parseBound = function(value) {
+    if (value === "" || value === null || value === undefined) return { valid: true, time: null };
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isFinite(date.getTime()) ? { valid: true, time: date.getTime() } : { valid: false, time: null };
+  };
+  assignments.slice(1).forEach(function(row) {
+    if (String(row[teacherIndex] || "").trim() !== teacherId ||
+        ["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(row[stateIndex] || "").trim().toUpperCase()) === -1) return;
+    const start = parseBound(startIndex < 0 ? "" : row[startIndex]);
+    const end = parseBound(endIndex < 0 ? "" : row[endIndex]);
+    if (!start.valid || !end.valid || (start.time !== null && start.time > now) ||
+        (end.time !== null && end.time < now) ||
+        (start.time !== null && end.time !== null && start.time > end.time)) return;
+    const offerId = String(row[offerIdIndex] || "").trim();
+    const offer = offerById[offerId];
+    if (!offer) return;
+    const state = String(getAcademicOfferValue(offer, offerMap, "estado", "") || "").trim().toUpperCase();
+    if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) === -1) return;
+    if (String(getAcademicOfferValue(offer, offerMap, "asignaturaId", "") || "").trim() !== subjectId ||
+        String(getAcademicOfferValue(offer, offerMap, "grado", "") || "").trim().toUpperCase() !== String(grade).trim().toUpperCase() ||
+        String(getAcademicOfferValue(offer, offerMap, "seccion", "") || "").trim().toUpperCase() !== String(section).trim().toUpperCase()) return;
+    matches.push(offerId);
+  });
+  return matches.length === 1;
+}
+
 function getVerifiedAcademicCoordinatorAreaIds_(payload) {
   const actorId = String(payload && payload._verifiedUserId || "").trim();
   if (!actorId || String(payload && payload._verifiedRole || "").trim() !== "Coordinador") {
@@ -8683,8 +8767,8 @@ function savePedagogicalPlanning(payload) {
       version
     } = payload || {};
 
-    const effectiveDocente = docenteUserId || (verifiedRole === "Profesor" ? callerId : "DOCENTE-TITULAR");
-    if (!effectiveDocente || !asignatura || !grado) {
+    const effectiveDocente = verifiedRole === "Profesor" ? callerId : (docenteUserId || "DOCENTE-TITULAR");
+    if (!effectiveDocente || !asignatura || !grado || (verifiedRole === "Profesor" && !callerId)) {
       return { status: "error", code: "VALIDATION_ERROR", message: "docenteUserId, asignatura y grado son campos requeridos." };
     }
 
@@ -8715,6 +8799,14 @@ function savePedagogicalPlanning(payload) {
       if (foundIdx !== -1) {
         const existingArea = assertAcademicCoordinatorAreaAccess_(payload, ss, data[foundIdx][4], true);
         if (!existingArea.authorized) return { status: "error", code: existingArea.code || "COORDINATION_SCOPE_DENIED" };
+      }
+    }
+
+    if (verifiedRole === "Profesor") {
+      if (docenteUserId && String(docenteUserId).trim() !== callerId) return { status: "error", code: "NOT_FOUND" };
+      if (foundIdx !== -1 && String(data[foundIdx][1] || "").trim() !== callerId) return { status: "error", code: "NOT_FOUND" };
+      if (!hasActiveTeacherPlanningAssignment_(ss, callerId, asignatura, grado, seccion || "A", periodo || "1")) {
+        return { status: "error", code: "ACADEMIC_ASSIGNMENT_REQUIRED" };
       }
     }
 
@@ -8830,8 +8922,12 @@ function getPedagogicalPlannings(payload) {
         })) continue;
       }
 
+      if (verifiedRole === "Profesor" &&
+          (docId !== callerId || !hasActiveTeacherPlanningAssignment_(ss, callerId, pAsig, pGrado, pSeccion, pPeriodo))) continue;
+
       // Restricción: un profesor general solo puede ver sus propias planificaciones a menos que se trate de coordinación/dirección
-      if (verifiedRole === "Profesor" && docId !== callerId && callerId !== "") {
+      if (verifiedRole === "Profesor" &&
+        (docId !== callerId || !hasActiveTeacherPlanningAssignment_(ss, callerId, targetRow[4], targetRow[2], targetRow[3], targetRow[5]))) {
         continue;
       }
       if (planificacionId && pId !== String(planificacionId).trim()) continue;
@@ -8988,6 +9084,11 @@ function reviewPedagogicalPlanning(payload) {
       return { status: "error", code: "NOT_FOUND", message: `Planificación ${planificacionId} no encontrada.` };
     }
 
+    if (verifiedRole === "Profesor" &&
+        (String(targetRow[1] || "").trim() !== callerId ||
+         !hasActiveTeacherPlanningAssignment_(ss, callerId, targetRow[4], targetRow[2], targetRow[3], targetRow[5]))) {
+      return { status: "error", code: "NOT_FOUND" };
+    }
     if (verifiedRole === "Coordinador") {
       const areaAccess = assertAcademicCoordinatorAreaAccess_(payload, ss, targetRow[4], true);
       if (!areaAccess.authorized) return { status: "error", code: "NOT_FOUND" };
@@ -9045,6 +9146,14 @@ function getPlanningReviewHistory(payload) {
     }
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    if (verifiedRole === "Profesor") {
+      const plans = getOrCreateSheet(ss, "PlanificacionesPedagogicas").getDataRange().getValues();
+      const matchingPlans = plans.slice(1).filter(function(row) { return String(row[0] || "").trim() === String(planificacionId).trim(); });
+      if (matchingPlans.length !== 1 || String(matchingPlans[0][1] || "").trim() !== callerId ||
+          !hasActiveTeacherPlanningAssignment_(ss, callerId, matchingPlans[0][4], matchingPlans[0][2], matchingPlans[0][3], matchingPlans[0][5])) {
+        return { status: "error", code: "NOT_FOUND" };
+      }
+    }
     if (verifiedRole === "Coordinador") {
       const plans = getOrCreateSheet(ss, "PlanificacionesPedagogicas").getDataRange().getValues();
       const matchingPlans = plans.slice(1).filter(function(row) { return String(row[0] || "").trim() === String(planificacionId).trim(); });
