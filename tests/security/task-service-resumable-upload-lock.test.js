@@ -57,6 +57,25 @@ assert.deepEqual(calls, { attempts: 1, releases: 1, operations: 1 });
 assert.throws(() => context.run(() => { throw new Error("operation failed"); }), /operation failed/);
 assert.equal(calls.releases, 2, "lock must be released when an operation throws");
 
+let lockHeld = false, overlappingOperations = 0;
+const interleavingContext = {
+  LockService: { getScriptLock: () => ({
+    tryLock: () => { if (lockHeld) return false; lockHeld = true; return true; },
+    releaseLock: () => { lockHeld = false; }
+  }) }
+};
+vm.createContext(interleavingContext);
+vm.runInContext(extract("withTaskUploadSessionLock_") + "\nthis.run=withTaskUploadSessionLock_;", interleavingContext);
+const outerResult = interleavingContext.run(() => {
+  overlappingOperations++;
+  assert.throws(() => interleavingContext.run(() => { overlappingOperations++; }), /TASK_UPLOAD_SESSION_LOCK_TIMEOUT/,
+    "a concurrent request must not mutate the same upload state while the first holds the lock");
+  return "serialized";
+});
+assert.equal(outerResult, "serialized");
+assert.equal(overlappingOperations, 1);
+assert.equal(lockHeld, false, "outer request must release the lock after the overlapping request is rejected");
+
 const busyContext = {
   LockService: { getScriptLock: () => ({
     tryLock: () => false,
