@@ -134,6 +134,7 @@ test("reentrant submission during appendRow is rejected while the outer ScriptLo
   const ss = { getSheetByName(name) { return ({ Examenes: examSheet, PreguntasExamen: questionSheet, EntregasExamen: deliveries })[name] || null; } };
   const lock = { tryLock() { state.locks++; if (state.held) return false; state.held = true; return true; }, releaseLock() { state.releases++; state.held = false; } };
   const runtime = {
+    clearRequestAuthorizationContext_() {},
     validateRolePermission() { state.permissions++; return { authorized: true }; },
     getVerifiedExamIdentity_() { state.identities++; return actor; },
     LockService: { getScriptLock() { return lock; } },
