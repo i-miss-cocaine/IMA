@@ -4281,7 +4281,7 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
         if (String(row[1] || "").trim() !== expedienteId) return false;
         const state = String(row[9] || "").trim().toUpperCase();
         const portal = String(row[8] || "").trim().toUpperCase();
-        if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) === -1 ||
+        if (["ACTIVO", "ACTIVA", "ACTIVE", "VERIFICADA", "APROBADA", "APROBADO", "AUTORIZADO", "AUTORIZADA"].indexOf(state) === -1 ||
             ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(portal) === -1) return false;
         const guardianMatches = guardianRows.filter(function(guardian) {
           return String(guardian[0] || "").trim() === String(row[2] || "").trim();
