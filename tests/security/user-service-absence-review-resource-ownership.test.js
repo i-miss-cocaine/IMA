@@ -56,7 +56,7 @@ function makeHarness(options) {
 
   const userRow = ["STU-1","","Estudiante Uno","","","","Estudiante","","","PERSON-1",settings.studentState];
   const users = [userHeaders, userRow];
-  if (settings.duplicateStudentIdentity) users.push(userRow.slice());
+  if (settings.duplicateStudentIdentity) users.push(["STU-ALT","","Estudiante Alterno","","","","Estudiante","","","PERSON-1","Activo"]);
   const expedientes = [expHeaders, ["EXP-1","PERSON-1","COD-1"]];
   const mkSheet = rows => ({
     getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }),
@@ -74,7 +74,7 @@ function makeHarness(options) {
     SpreadsheetApp: { openById: () => ({ getSheetByName: name => sheets[name] || null }) },
     getOrCreateSheet: (_ss, name) => sheets[name] || null,
     ensureUserAbsenceRequestSchema_: () => map,
-    getUserVerifiedRole: payload => { payload._verifiedUserId = "STAFF-1"; return settings.role; },
+    getUserVerifiedRole: payload => { if (!payload._verifiedUserId) payload._verifiedUserId = "STAFF-1"; return settings.role; },
     assertRecordOwnership: (...args) => {
       calls.ownership.push(args.slice(1));
       return { authorized: settings.allowed, code: "RESOURCE_SCOPE_DENIED" };
