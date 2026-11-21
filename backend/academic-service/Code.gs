@@ -19153,9 +19153,6 @@ function getStudentEnrollmentHistory(payload) {
     const state = String(value === true ? "TRUE" : value || "").trim().toUpperCase();
     return ["ACTIVO", "ACTIVA", "ACTIVE", "TRUE", "1"].indexOf(state) !== -1;
   };
-  const isEnabled = function(value) {
-    return ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA", "YES"].indexOf(String(value || "").trim().toUpperCase()) !== -1;
-  };
   const actorRole = normalizeRole(actor.role);
   const studentRoles = ["ESTUDIANTE", "ALUMNO"];
   const guardianRoles = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"];
@@ -19238,26 +19235,14 @@ function getStudentEnrollmentHistory(payload) {
     return { status: "error", code: "RESOURCE_NOT_FOUND", message: "Historial no disponible." };
   }
 
-  // Un tutor puede consultar matrículas por relación/portal, pero los cargos
-  // requieren además la atribución explícita de responsable financiero.
+  // Las matrículas requieren permiso académico; los cargos requieren además el permiso financiero explícito de la relación primaria.
   let guardianCanReadCharges = !isGuardian;
   if (isGuardian) {
-    const relationsSheet = ss.getSheetByName("RelacionesEstudianteTutor");
-    const guardiansSheet = ss.getSheetByName("ResponsablesTutores");
-    if (relationsSheet && guardiansSheet) {
-      const relationRows = relationsSheet.getDataRange().getValues().slice(1);
-      const guardianRows = guardiansSheet.getDataRange().getValues().slice(1);
-      const actorPersonId = String(actorRows[0][personIdIndex] || "").trim();
-      const financialRelations = relationRows.filter(function(row) {
-        if (String(row[1] || "").trim() !== expedienteId) return false;
-        if (!isEnabled(row[6]) || !isEnabled(row[8]) || !activeState(row[9])) return false;
-        const matches = guardianRows.filter(function(guardian) {
-          return String(guardian[0] || "").trim() === String(row[2] || "").trim();
-        });
-        return matches.length === 1 && String(matches[0][1] || "").trim() === actorPersonId;
-      });
-      guardianCanReadCharges = financialRelations.length === 1;
-    }
+    const financialAccess = assertStudentExpedienteScopeAccess_(
+      request, ss, expedienteSheet, expediente, "permisoFinanciero"
+    );
+    guardianCanReadCharges = !!financialAccess &&
+      financialAccess.authorized === true && financialAccess.accessType === "GUARDIAN";
   }
 
   const readOwnedRows = function(sheetName, headers, idIndex, mapRow) {

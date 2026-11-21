@@ -128,6 +128,18 @@ assert.equal(check(ctx).authorized, false,
   "revoked primary relationship must not be bypassed by an active legacy row");
 
 
+const enrollmentHistoryFn = extractFunction(source, "getStudentEnrollmentHistory");
+assert(enrollmentHistoryFn.includes('assertStudentExpedienteScopeAccess_(\n      request, ss, expedienteSheet, expediente, "permisoFinanciero"\n    )'),
+  "guardian enrollment history must separately authorize financial charges with the primary financial-domain grant");
+assert(!enrollmentHistoryFn.includes("RelacionesEstudianteTutor"),
+  "legacy portal/financial flags cannot bypass the primary financial-domain grant for charges");
+ctx = runtime([primaryHeaders, validPrimary.slice(0,8).concat([JSON.stringify({ permisoAcademico: true, permisoFinanciero: true })])]);
+assert.equal(check(ctx, "permisoFinanciero").authorized, true,
+  "explicit primary financial permission authorizes financial-domain reads");
+ctx = runtime([primaryHeaders, validPrimary.slice(0,8).concat([JSON.stringify({ permisoAcademico: true, permisoFinanciero: false })])]);
+assert.equal(check(ctx, "permisoFinanciero").authorized, false,
+  "academic permission cannot substitute for an explicit financial grant");
+
 const documentScopeFn = extractFunction(source, "assertStudentDocumentScopeAccess_");
 assert(documentScopeFn.includes('assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp, "permisoDocumental")'),
   "all student-document reads and writes require the explicit document-domain permission");
