@@ -5119,7 +5119,7 @@ function getTripPassengerManifest(payload) {
   if (!matches.length) return { status: "error", code: "RESOURCE_NOT_FOUND", manifiestoPasajeros: [] };
   if (matches.length !== 1) {
     transportAuditDenied_(actor, "getTripPassengerManifest", tripId);
-    return { status: "error", code: scope.management ? "RESOURCE_AMBIGUOUS" : "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+    return { status: "error", code: "RESOURCE_AMBIGUOUS", manifiestoPasajeros: [] };
   }
   var trip = matches[0], role = String(scope.role || "").trim().toLowerCase();
   var routeId = String(trip[1] || "").trim();
@@ -5137,7 +5137,7 @@ function getTripPassengerManifest(payload) {
   if (!routeMatches.length) return { status: "error", code: scope.management ? "ROUTE_NOT_FOUND" : "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
   if (routeMatches.length !== 1) {
     transportAuditDenied_(actor, "getTripPassengerManifest", tripId);
-    return { status: "error", code: scope.management ? "ROUTE_ID_AMBIGUOUS" : "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+    return { status: "error", code: "ROUTE_ID_AMBIGUOUS", manifiestoPasajeros: [] };
   }
   var routeState = String(routeMatches[0][6] || "").trim().toLowerCase();
   if (["active","activo","activa","vigente"].indexOf(routeState) === -1) {
