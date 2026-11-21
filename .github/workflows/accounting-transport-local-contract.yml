@@ -8,6 +8,7 @@ on:
     paths:
       - backend/accounting-service/Code.gs
       - tests/security/accounting-transport-*.test.js
+      - tests/security/transport-access-scope.test.js
       - .github/workflows/accounting-transport-local-contract.yml
 
 permissions:
@@ -31,10 +32,13 @@ jobs:
         run: |
           node --check tests/security/accounting-transport-monthly-charges.test.js
           node --check tests/security/accounting-transport-assignment-ownership.test.js
+          node --check tests/security/transport-access-scope.test.js
       - name: Run transport monthly billing, proration and rollback contract
         run: node tests/security/accounting-transport-monthly-charges.test.js
       - name: Run transport assignment ownership and concurrency contract
         run: node tests/security/accounting-transport-assignment-ownership.test.js
+      - name: Run transport read scope and ownership contract
+        run: node tests/security/transport-access-scope.test.js
       - name: Run accounting monthly charge period regression
         run: node tests/security/accounting-monthly-charge-period.test.js
       - name: Run accounting payroll generation authorization regression
