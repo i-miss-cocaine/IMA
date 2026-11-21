@@ -13709,49 +13709,156 @@ function registerLegalCustodyRestriction(payload) {
 }
 
 function getStudentGuardianConsolidatedList(payload) {
-  const { expedienteId } = payload || {};
-  if (!expedienteId) throw new Error("expedienteId es requerido.");
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  const expedienteId = String(request.expedienteId || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (!expedienteId) return { status: "error", code: "EXPEDIENTE_ID_REQUIRED" };
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const relSheet = getOrCreateSheet(ss, "RelacionesFamiliares");
-  const relData = relSheet.getDataRange().getValues().slice(1);
+  const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!expSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  const expData = expSheet.getDataRange().getValues();
+  if (!expData || !expData.length || String(expData[0][0] || "").trim().toUpperCase() !== "EXPEDIENTEID" ||
+      String(expData[0][1] || "").trim().toUpperCase() !== "PERSONAID") {
+    return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  }
+  const expedienteRows = expData.slice(1);
+  const targetRows = expedienteRows.filter(row => String(row[0] || "").trim() === expedienteId);
+  if (targetRows.length !== 1 || !String(targetRows[0][1] || "").trim()) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  }
 
-  const custSheet = getOrCreateSheet(ss, "RestriccionesCustodiaLegal");
-  const custData = custSheet.getDataRange().getValues().slice(1);
+  const normalizedRole = role.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (normalizedRole === "ESTUDIANTE" || normalizedRole === "ALUMNO") {
+    const usersSheet = ss.getSheetByName("Usuarios");
+    if (!usersSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    const userData = usersSheet.getDataRange().getValues();
+    const headers = userData.length ? userData[0].map(value => String(value || "").trim().toUpperCase()) : [];
+    const userIdIndex = headers.indexOf("USERID"), personIdIndex = headers.indexOf("PERSONAID");
+    const roleIndex = headers.indexOf("ROL"), stateIndex = headers.indexOf("ESTADOCUENTA") >= 0 ? headers.indexOf("ESTADOCUENTA") : headers.indexOf("ESTADO");
+    if ([userIdIndex, personIdIndex, roleIndex, stateIndex].some(index => index < 0)) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+    const actorRows = userData.slice(1).filter(row => String(row[userIdIndex] || "").trim() === actorId);
+    if (actorRows.length !== 1 || String(actorRows[0][personIdIndex] || "").trim() !== String(targetRows[0][1]).trim() ||
+        !["ESTUDIANTE", "ALUMNO"].includes(String(actorRows[0][roleIndex] || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "")) ||
+        !["ACTIVO", "ACTIVA", "ACTIVE"].includes(String(actorRows[0][stateIndex] || "").trim().toUpperCase())) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    }
+  } else if (normalizedRole === "ADMINISTRADOR" || normalizedRole === "DESARROLLADOR") {
+    let context;
+    try { context = getInstitutionalDepartmentScope_(request, role); } catch (_) { context = null; }
+    if (!context || context.status !== "success" || context.institutionWide !== true) return { status: "error", code: "RESOURCE_SCOPE_DENIED" };
+  } else {
+    const ownership = assertRecordOwnership(request, "EXPEDIENTE_ESTUDIANTE", expedienteId, "READ");
+    if (!ownership || ownership.authorized !== true) return { status: "error", code: ownership && ownership.code || "RESOURCE_NOT_FOUND" };
+  }
 
-  const matchedRels = relData.filter(r => String(r[1]).trim() === String(expedienteId).trim());
-  const matchedCust = custData.filter(c => String(c[1]).trim() === String(expedienteId).trim() && String(c[9]).trim() === "Activa");
-
-  const list = matchedRels.map(r => {
-    const tutorId = String(r[2]).trim();
-    const custInfo = matchedCust.find(c => String(c[2]).trim() === tutorId);
-    let perms = {};
-    try { perms = JSON.parse(r[8] || "{}"); } catch(e) {}
-
-    return {
-      relacionId: r[0],
-      expedienteId: r[1],
-      tutorUserId: tutorId,
-      nombreTutor: r[3] || "N/A",
-      parentesco: r[4] || "Tutor",
-      estadoVinculo: r[5] || "Activo",
-      permisos: perms,
-      restriccionJudicial: custInfo ? {
-        restriccionId: custInfo[0],
-        tipoRestriccion: custInfo[3],
-        ordenJudicialRef: custInfo[4],
-        prohibirContacto: custInfo[5] === "SÍ",
-        observaciones: custInfo[6]
-      } : null
-    };
-  });
-
-  return {
-    status: "success",
-    expedienteId: expedienteId,
-    totalTutores: list.length,
-    tutores: list
+  const relationSheet = ss.getSheetByName("RelacionesFamiliares");
+  if (!relationSheet) return { status: "success", expedienteId: expedienteId, totalTutores: 0, tutores: [] };
+  const relationData = relationSheet.getDataRange().getValues();
+  const relationHeaders = ["RelacionID", "ExpedienteID", "ResponsableID", "TipoParentesco", "Estado", "FechaInicio", "FechaFin", "VerificadaPor", "PermisosJSON"];
+  if (!relationData || !relationData.length || relationHeaders.some((header, index) =>
+    String(relationData[0][index] || "").trim().toUpperCase() !== header.toUpperCase())) {
+    return { status: "error", code: "FAMILY_RELATION_SCHEMA_INVALID" };
+  }
+  const relationRows = relationData.slice(1);
+  const relationIdCounts = Object.create(null);
+  relationRows.forEach(row => { const id = String(row[0] || "").trim(); if (id) relationIdCounts[id] = (relationIdCounts[id] || 0) + 1; });
+  const now = Date.now();
+  const parseBoundary = value => {
+    if (value === "" || value === null || value === undefined) return { valid: true, time: null };
+    const time = new Date(value).getTime();
+    return { valid: Number.isFinite(time), time: Number.isFinite(time) ? time : null };
   };
+  const matchedRelations = relationRows.filter(row => String(row[1] || "").trim() === expedienteId &&
+    ["VERIFICADA", "ACTIVA", "APROBADA"].includes(String(row[4] || "").trim().toUpperCase()));
+  const currentRelations = [];
+  for (const row of matchedRelations) {
+    const relationId = String(row[0] || "").trim(), guardianId = String(row[2] || "").trim();
+    const start = parseBoundary(row[5]), end = parseBoundary(row[6]);
+    if (!relationId || !guardianId || !start.valid || !end.valid || relationIdCounts[relationId] !== 1) {
+      return { status: "error", code: "FAMILY_RELATION_AMBIGUOUS_OR_INVALID" };
+    }
+    if ((start.time !== null && start.time > now) || (end.time !== null && end.time < now)) continue;
+    currentRelations.push(row);
+  }
+  const pairCounts = Object.create(null);
+  currentRelations.forEach(row => {
+    const guardianId = String(row[2] || "").trim();
+    pairCounts[guardianId] = (pairCounts[guardianId] || 0) + 1;
+  });
+  const activeRelations = [];
+  for (const row of currentRelations) {
+    const relationId = String(row[0] || "").trim(), guardianId = String(row[2] || "").trim();
+    if (pairCounts[guardianId] !== 1) return { status: "error", code: "FAMILY_RELATION_AMBIGUOUS_OR_INVALID" };
+    let permissions = {};
+    if (row[8] !== "" && row[8] !== null && row[8] !== undefined) {
+      try {
+        permissions = typeof row[8] === "string" ? JSON.parse(row[8]) : row[8];
+      } catch (_) { return { status: "error", code: "FAMILY_RELATION_PERMISSION_SCHEMA_INVALID" }; }
+      if (!permissions || typeof permissions !== "object" || Array.isArray(permissions)) {
+        return { status: "error", code: "FAMILY_RELATION_PERMISSION_SCHEMA_INVALID" };
+      }
+    }
+    activeRelations.push({ row: row, permissions: permissions, guardianId: guardianId });
+  }
+
+  const usersSheet = ss.getSheetByName("Usuarios");
+  if (!usersSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  const userData = usersSheet.getDataRange().getValues();
+  const userHeaders = userData.length ? userData[0].map(value => String(value || "").trim().toUpperCase()) : [];
+  const userIdIndex = userHeaders.indexOf("USERID"), nameIndex = userHeaders.indexOf("NOMBRE");
+  const userStateIndex = userHeaders.indexOf("ESTADOCUENTA") >= 0 ? userHeaders.indexOf("ESTADOCUENTA") : userHeaders.indexOf("ESTADO");
+  if ([userIdIndex, nameIndex, userStateIndex].some(index => index < 0)) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  const users = userData.slice(1);
+  const guardians = [];
+  for (const relation of activeRelations) {
+    const userMatches = users.filter(row => String(row[userIdIndex] || "").trim() === relation.guardianId);
+    if (userMatches.length !== 1 || !["ACTIVO", "ACTIVA", "ACTIVE"].includes(String(userMatches[0][userStateIndex] || "").trim().toUpperCase())) {
+      return { status: "error", code: "GUARDIAN_IDENTITY_AMBIGUOUS_OR_INACTIVE" };
+    }
+    guardians.push({
+      relacionId: String(relation.row[0]),
+      expedienteId: expedienteId,
+      tutorUserId: relation.guardianId,
+      nombreTutor: String(userMatches[0][nameIndex] || "").trim(),
+      parentesco: String(relation.row[3] || ""),
+      estadoVinculo: String(relation.row[4] || ""),
+      permisos: relation.permissions
+    });
+  }
+
+  const custodySheet = ss.getSheetByName("RestriccionesCustodiaLegal");
+  if (custodySheet) {
+    const custodyData = custodySheet.getDataRange().getValues();
+    const custodyHeaders = ["RestriccionID", "ExpedienteID", "TutorUserId", "TipoRestriccion", "OrdenJudicialRef", "ProhibirContacto", "Observaciones", "FechaRegistro", "RegistradoPor", "Estado"];
+    if (!custodyData || !custodyData.length || custodyHeaders.some((header, index) =>
+      String(custodyData[0][index] || "").trim().toUpperCase() !== header.toUpperCase())) {
+      return { status: "error", code: "CUSTODY_RESTRICTION_SCHEMA_INVALID" };
+    }
+    const custodyRows = custodyData.slice(1);
+    const custodyIdCounts = Object.create(null);
+    custodyRows.forEach(row => { const id = String(row[0] || "").trim(); if (id) custodyIdCounts[id] = (custodyIdCounts[id] || 0) + 1; });
+    for (const guardian of guardians) {
+      const restrictions = custodyRows.filter(row => String(row[1] || "").trim() === expedienteId &&
+        String(row[2] || "").trim() === guardian.tutorUserId && String(row[9] || "").trim().toUpperCase() === "ACTIVA");
+      if (restrictions.some(row => !String(row[0] || "").trim() || custodyIdCounts[String(row[0]).trim()] !== 1)) {
+        return { status: "error", code: "CUSTODY_RESTRICTION_AMBIGUOUS" };
+      }
+      guardian.restriccionJudicial = restrictions.length ? {
+        restriccionId: restrictions.map(row => String(row[0] || "").trim()).join(", "),
+        tipoRestriccion: restrictions.map(row => String(row[3] || "").trim()).filter(Boolean).join("; "),
+        ordenJudicialRef: restrictions.map(row => String(row[4] || "").trim()).filter(Boolean).join("; "),
+        prohibirContacto: restrictions.some(row => String(row[5] || "").trim().toUpperCase() === "SÍ"),
+        observaciones: restrictions.map(row => String(row[6] || "").trim()).filter(Boolean).join("; ")
+      } : null;
+    }
+  } else {
+    guardians.forEach(guardian => { guardian.restriccionJudicial = null; });
+  }
+
+  return { status: "success", expedienteId: expedienteId, totalTutores: guardians.length, tutores: guardians };
 }
 
 // [TAREA-F7-IMP-10] [Fase 7: Planificación Académica, Horarios y Recursos] - Despacho estandarizado de notificaciones por cambios de horario con deduplicación y aislamiento de errores.
