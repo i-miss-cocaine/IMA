@@ -2163,6 +2163,7 @@ function ensureExamSubmissionSnapshotSchema_(deliverySheet) {
 }
 
 function submitExam(payload) {
+  // Preflight barato: rechaza solicitudes inválidas antes de competir por el lock.
   const permission = validateRolePermission("submitExam", payload);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(payload);
@@ -2171,18 +2172,29 @@ function submitExam(payload) {
       (role !== "Estudiante" && role !== "Alumno")) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
-  // Construir una sola vez el contexto autorizado; el lock serializa intentos y escritura.
-  const context = getExamReadContext_(payload, undefined, actor);
-  if (!context || !context.studentActor || !context.actor ||
-      String(context.actor.userId || "").trim() !== String(actor.userId).trim()) {
-    throw new Error("RESOURCE_NOT_AVAILABLE");
-  }
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_SUBMISSION_LOCK_TIMEOUT");
   try {
+    // Revalidar identidad, permiso, perfil y scope después de obtener el lock.
+    // No reutilizar contexto calculado antes del lock: la relación o asignación pudo cambiar.
+    const currentPermission = validateRolePermission("submitExam", payload);
+    if (!currentPermission || currentPermission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const currentActor = getVerifiedExamIdentity_(payload);
+    const currentRole = String(currentActor && currentActor.role || "").trim();
+    if (!currentActor || currentActor.authorized !== true ||
+        String(currentActor.userId || "").trim() !== String(actor.userId).trim() ||
+        (currentRole !== "Estudiante" && currentRole !== "Alumno")) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+    const context = getExamReadContext_(payload, undefined, currentActor);
+    if (!context || !context.studentActor || !context.actor ||
+        String(context.actor.userId || "").trim() !== String(currentActor.userId).trim()) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
     return submitExamUnlocked_(payload, context);
   } finally {
-    lock.releaseLock();
+    try { lock.releaseLock(); } catch (_) {}
   }
 }
 
