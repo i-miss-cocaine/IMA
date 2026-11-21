@@ -8763,24 +8763,57 @@ function createUserNotification(payload) {
 
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento de solicitudes administrativas
 function getAdministrativeRequests(payload) {
-  const callerRole = getUserVerifiedRole(payload);
-  if (callerRole === "NO_ACCESS") throw new Error("Acceso denegado: Credenciales de sesión inválidas o expiradas.");
-  let { userId, estudianteId } = payload || {};
-  if ((callerRole === "Estudiante" || callerRole === "Alumno") && payload._verifiedUserId) {
-    userId = payload._verifiedUserId; estudianteId = payload._verifiedUserId;
-  }
-  var canReviewInstitutionalQueue = ["Administrador", "Desarrollador", "Director", "Subdirector", "Secretaría"].indexOf(callerRole) !== -1;
-  if (!userId && payload && payload._verifiedUserId && !canReviewInstitutionalQueue) userId = payload._verifiedUserId;
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const callerRole = String(request._verifiedRole || "").trim();
+  if (!actorId || !callerRole || callerRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+
+  const normalizedRole = callerRole.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const selfServiceRoles = ["ESTUDIANTE", "ALUMNO", "PADRE", "TUTOR", "RESPONSABLE"];
+  const isSelfService = selfServiceRoles.indexOf(normalizedRole) !== -1;
+  let scope = null;
+  try { scope = getInstitutionalDepartmentScope_(request, callerRole); } catch (_) {}
+  const hasScope = !!scope && scope.status === "success";
+  const institutionWide = hasScope && scope.institutionWide === true;
+
+  let userId = isSelfService ? actorId : String(request.userId || "").trim();
+  let estudianteId = isSelfService
+    ? ((normalizedRole === "ESTUDIANTE" || normalizedRole === "ALUMNO") ? actorId : "")
+    : String(request.estudianteId || "").trim();
+  if (!userId && !hasScope) userId = actorId;
+
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
+  const sheet = ss.getSheetByName("SolicitudesTramites");
+  if (!sheet) return { status: "success", data: [] };
   const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return { status:"success", data:[] };
+  if (data.length <= 1) return { status: "success", data: [] };
   let attachmentMap = {};
   try { attachmentMap = requestAttachmentHeaderMap_(sheet); } catch (_) {}
+
+  const resourceAccessCache = Object.create(null);
+  const canReadStudentRequest = function(studentUserId) {
+    const targetStudentId = String(studentUserId || "").trim();
+    if (!targetStudentId) return false;
+    if (institutionWide) return true;
+    if (!hasScope || isSelfService) return false;
+    if (!Object.prototype.hasOwnProperty.call(resourceAccessCache, targetStudentId)) {
+      const studentResource = resolveAbsenceReviewExpedienteId_(ss, targetStudentId);
+      if (!studentResource || studentResource.status !== "success") {
+        resourceAccessCache[targetStudentId] = false;
+      } else {
+        const ownership = assertRecordOwnership(request, "EXPEDIENTE_ESTUDIANTE", studentResource.expedienteId, "READ");
+        resourceAccessCache[targetStudentId] = !!ownership && ownership.authorized === true;
+      }
+    }
+    return resourceAccessCache[targetStudentId] === true;
+  };
+
   const requests = data.slice(1).filter(function(row) {
-    if (userId && String(row[1]).trim() !== String(userId).trim()) return false;
-    if (estudianteId && String(row[2]).trim() !== String(estudianteId).trim()) return false;
-    return true;
+    if (userId && String(row[1] || "").trim() !== userId) return false;
+    if (estudianteId && String(row[2] || "").trim() !== estudianteId) return false;
+    if (isSelfService || !hasScope) return true;
+    if (institutionWide) return true;
+    return canReadStudentRequest(row[2]);
   }).map(function(row) {
     const stored = String(row[5] || "").trim();
     const integrityState = attachmentMap.AdjuntoIntegridadEstado === undefined ? "" : String(row[attachmentMap.AdjuntoIntegridadEstado] || "").trim();
@@ -8803,7 +8836,7 @@ function getAdministrativeRequests(payload) {
       observacionesAdmin:row[8]||"", fechaSolicitud:row[9]?new Date(row[9]).toISOString():null,
       fechaResolucion:row[10]?new Date(row[10]).toISOString():null };
   });
-  return { status:"success", data:requests };
+  return { status: "success", data: requests };
 }
 const REQUEST_ATTACHMENT_INTEGRITY_HEADERS_ = ["AdjuntoSHA256","AdjuntoVersion","AdjuntoSizeBytes","AdjuntoMimeType","AdjuntoFechaRecepcion","AdjuntoIntegridadEstado","EvidenciaIDsJSON"];
 const EVIDENCE_DOCUMENT_HEADERS_ = ["EvidenciaID","SolicitudID","EvidenciaGrupoID","VersionNumero","NombreOriginal","MimeType","SizeBytes","FechaRecepcionISO","UserId","SHA256","DriveFileID","Estado","DecisionHash","DecisionID","DecisionTimestamp","EsVersionActual","CreadoEn","CreadoPor","TipoEvidencia","CorrelationID"];
