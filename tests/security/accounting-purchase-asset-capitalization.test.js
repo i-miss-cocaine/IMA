@@ -97,7 +97,9 @@ const duplicateManual=()=>ctx.manageAssetItem({codigoPatrimonial:"PAT-NEW",nombr
 assert.throws(duplicateManual,/ASSET_SERIAL_ALREADY_EXISTS/);
 rows.ActivosPatrimoniales.push(["ACT-LEGACY","PAT-LEGACY","Equipo antiguo","Equipo","SN-LEGACY","","","available",""]);
 assert.throws(()=>ctx.manageAssetItem({codigoPatrimonial:"PAT-NEW-LEGACY",nombre:"Equipo",numeroSerie:"SN-LEGACY"}),/ASSET_SERIAL_ALREADY_EXISTS/);
-const countBefore=rows.ActivosPatrimoniales.length,listed=ctx.getAssetItems({});
+const assetListCtx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>spreadsheet},getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-1",role:"Administrador",institutionId:"INST-1"}),validateRolePermission:()=>({authorized:true}),getVerifiedAccountingDepartmentScope_:()=>({valid:true,authorized:true,institutionWide:true,departmentIds:[]})};
+vm.createContext(assetListCtx);vm.runInContext(extract(source,"getAssetItems"),assetListCtx);
+const countBefore=rows.ActivosPatrimoniales.length,listed=assetListCtx.getAssetItems({});
 assert.equal(listed.activos.length,3);assert.equal(rows.ActivosPatrimoniales.length,countBefore);
 const absentCtx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:()=>null})},getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-1",role:"Director",institutionId:"INST-1"}),validateRolePermission:()=>({authorized:true}),getVerifiedAccountingDepartmentScope_:()=>({valid:true,authorized:true,institutionWide:true,institutionId:"INST-1",departmentIds:[]})};vm.createContext(absentCtx);vm.runInContext(extract(source,"getAssetItems"),absentCtx);
 assert.deepEqual(JSON.parse(JSON.stringify(absentCtx.getAssetItems({}))),{status:"success",activos:[]});
