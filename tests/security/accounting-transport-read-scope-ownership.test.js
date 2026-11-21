@@ -42,8 +42,8 @@ function makeHarness(options) {
   const calls = { permissions: [], scopes: 0, opens: 0, reads: Object.create(null), denied: [] };
   const data = {
     TransporteRutas: [headers.TransporteRutas,
-      ["R-1","Ruta 1","BUS-1","EMP-1",10,"[]","active"],
-      ["R-2","Ruta 2","BUS-2","EMP-2",8,"[]","active"],
+      ["R-1","Ruta 1","BUS-1","LAB-1",10,"[]","active"],
+      ["R-2","Ruta 2","BUS-2","LAB-2",8,"[]","active"],
       ["R-3","Ruta inactiva","BUS-3","EMP-3",8,"[]","inactive"]],
     TransporteAsignaciones: [headers.TransporteAsignaciones,
       ["A-1","R-1","STU-1","Parada A","06:30","active","2026-11-21","Matutina"],
@@ -51,7 +51,7 @@ function makeHarness(options) {
       ["A-3","R-2","STU-2","Parada C","07:00","active","2026-11-21","Matutina"],
       ["A-4","R-1","STU-1","Parada A","06:30","cancelled","2026-11-20","Matutina"]],
     TransporteViajes: [headers.TransporteViajes,
-      ["T-1","R-1","BUS-1","EMP-1","EMP-2","2026-11-21","Matutina","06:30","07:30","active"],
+      ["T-1","R-1","BUS-1","LAB-1","LAB-2","2026-11-21","Matutina","06:30","07:30","active"],
       ["T-2","R-2","BUS-2","EMP-3","EMP-4","2026-11-21","Matutina","07:00","08:00","active"]],
     ExpedientesEstudiantes: [headers.ExpedientesEstudiantes, ["EXP-1","STU-1"], ["EXP-2","STU-2"]],
     ExpedientesLaborales: [headers.ExpedientesLaborales,
