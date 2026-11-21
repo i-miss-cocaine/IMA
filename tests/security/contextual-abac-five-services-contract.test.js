@@ -212,7 +212,7 @@ assert(extractFunction(userSource, "getFamilyConsolidatedSummary").includes('has
   "family summary applies explicit financial permission");
 assert(extractFunction(userSource, "resolveVerifiedRequestSubmitter_").includes("hasExplicitGuardianDomainPermission_(linkedMatches[0], permissionKey)"),
   "family requests require explicit permission for their domain");
-assert(extractFunction(userSource, "getAdministrativeRequestAttachment").includes('hasExplicitGuardianDomainPermission_(student, "permisoDocumental")'),
+assert(extractFunction(userSource, "getAdministrativeRequestAttachment").includes('hasExplicitGuardianDomainPermission_(linkedMatches[0], "permisoDocumental")'),
   "guardian document attachments require explicit document permission");
 
 
