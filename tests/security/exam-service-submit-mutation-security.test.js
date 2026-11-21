@@ -24,7 +24,7 @@ function extractFunction(name) {
   throw new Error("unclosed function " + name);
 }
 function submitRuntime(options = {}) {
-  const events = [], state = { lockAttempts: 0, releases: 0, workerCalls: 0, permissionCalls: 0, identityCalls: 0 };
+  const events = [], state = { lockAttempts: 0, releases: 0, workerCalls: 0, permissionCalls: 0, identityCalls: 0, contextCalls: 0 };
   const actor = options.actor === undefined ? { authorized: true, userId: "STUDENT-1", role: "Estudiante" } : options.actor;
   const actors = options.actors || [actor, options.actorAfterLock === undefined ? actor : options.actorAfterLock];
   const permissions = options.permissions || [options.permission !== false, options.permissionAfterLock !== false];
@@ -32,7 +32,7 @@ function submitRuntime(options = {}) {
     extractFunction("submitExam") + "; return submitExam;")(
     () => { events.push("permission"); const result=permissions[state.permissionCalls++]; return { authorized: result === true }; },
     () => { events.push("identity"); return actors[state.identityCalls++]; },
-    (payload, requestedStudentId, verifiedActor) => { events.push("context"); return options.contextAfterLock || { actor: verifiedActor, studentActor: true }; },
+    (payload, requestedStudentId, verifiedActor) => { events.push("context"); state.contextCalls++; return options.contextAfterLock || { actor: verifiedActor, studentActor: true }; },
     { getScriptLock() { return { tryLock() { events.push("lock"); state.lockAttempts++; return !options.timeout; },
       releaseLock() { events.push("release"); state.releases++; } }; } },
     () => { events.push("worker"); state.workerCalls++; return { status: "success" }; });
