@@ -33,6 +33,7 @@ jobs:
           node --check tests/security/accounting-transport-monthly-charges.test.js
           node --check tests/security/accounting-transport-assignment-ownership.test.js
           node --check tests/security/accounting-transport-read-permissions.test.js
+          node --check tests/security/accounting-transport-efficiency-metrics.test.js
           node --check tests/security/accounting-transport-read-scope-ownership.test.js
           node --check tests/security/transport-access-scope.test.js
       - name: Run transport monthly billing, proration and rollback contract
@@ -41,6 +42,8 @@ jobs:
         run: node tests/security/accounting-transport-assignment-ownership.test.js
       - name: Run transport read action permission contract
         run: node tests/security/accounting-transport-read-permissions.test.js
+      - name: Run transport efficiency metrics authorization and legacy schema contract
+        run: node tests/security/accounting-transport-efficiency-metrics.test.js
       - name: Run transport read scope and ownership contract
         run: node tests/security/accounting-transport-read-scope-ownership.test.js
       - name: Run legacy transport access scope regression
