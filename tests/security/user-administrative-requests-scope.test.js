@@ -62,6 +62,10 @@ function makeHarness(options) {
       return sheets[name] ? sheet(name) : null;
     } }) },
     getOrCreateSheet: () => { throw new Error("read path must not create sheets"); },
+    getUserVerifiedRole: payload => {
+      if (!payload || !payload._verifiedUserId || !payload._verifiedRole) return "NO_ACCESS";
+      return payload._verifiedRole;
+    },
     getInstitutionalDepartmentScope_: () => {
       if (settings.scope === "none") throw new Error("DEPARTMENT_SCOPE_NOT_ASSIGNED");
       return { status: "success", institutionWide: settings.institutionWide, departmentIds: ["DEP-1"] };
