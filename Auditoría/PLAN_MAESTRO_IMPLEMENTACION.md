@@ -6189,3 +6189,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Se define `VinculosDepartamentosInstitucionales` como relación many-to-many explícita entre `DepartamentosAcademicos` y `CatalogoDepartamentos`; ambos catálogos siguen separados. Se validan ambos extremos, se soporta link/read/unlink paginado y USER bloquea la baja administrativa si existe vínculo activo.
 - Dashboard HR conecta catálogos con selectores, altas/bajas, asignaciones, finalización y paginación del historial. Contratos Node 24 para jerarquía, adscripciones, gobernanza académica y UI PASS. El workflow global mantiene un fallo ajeno al alcance: Phase22 no encuentra `configureSchoolDocumentTemplate`, reproducido antes del cambio.
 - **Estado:** En ejecución. Pendientes: UI de edición y crosswalk, prueba del dispatcher con roles reales, estrés concurrente Apps Script y migración de datos históricos/huérfanos.
+
+
+## 10.84 AUD-NG-221 / TASK-501 y AUD-NG-222 / TASK-502 — dependencias de autorización para AUD-NG-226 (C1.907)
+
+- La implementación local de ámbitos en USER/ACADEMIC para TASK-506 no sustituye el contrato transversal. Los registros vigentes de legacy mantienen TASK-501 y TASK-502 como Pendientes; se deben ejecutar conforme al Plan Maestro y sin duplicar sus superficies.
+- **Siguiente orden:** TASK-501 (matriz dinámica por rol, módulo, acción y ámbito; clave/upsert compuesto, editor restringido, versión y auditoría) y luego TASK-502 (política ABAC común fail-closed en USER, ACADEMIC, ACCOUNTING, TASK y EXAM).
+- TASK-506 conserva su estado En ejecución hasta integrar la matriz/ABAC común y verificar la autorización contextual real de las consultas/operaciones de departamentos, cargos, adscripciones y crosswalk.
+- Evidencia C1.907: UI HR editable, UI Dirección para crosswalk, cinco contratos Node 24 PASS; único FAIL de CI en Phase22 por configureSchoolDocumentTemplate ausente y previo al cambio.
