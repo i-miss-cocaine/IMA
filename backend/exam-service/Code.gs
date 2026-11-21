@@ -2510,6 +2510,111 @@ function getExamResultUnlocked_(payload, context) {
 function getTeacherExamActivity(payload) {
   return withAuthorizedExamRead_("getTeacherExamActivity", payload, context => getTeacherExamActivityUnlocked_(payload, context));
 }
+function hasExamTeacherActiveOfferAssignment_(ss, teacherUserId, examRow) {
+  try {
+    const teacherId = String(teacherUserId || "").trim();
+    if (!ss || !teacherId || !examRow) return false;
+    const subjectReference = String(examRow[2] || "").trim();
+    const grade = String(examRow[3] || "").trim();
+    const section = String(examRow[4] || "").trim();
+    if (!subjectReference || !grade || !section) return false;
+    const offerSheet = ss.getSheetByName("OfertaAcademica");
+    const assignmentSheet = ss.getSheetByName("AsignacionesDocentes");
+    const subjectSheet = ss.getSheetByName("CatalogoAsignaturas");
+    if (!offerSheet || !assignmentSheet || !subjectSheet) return false;
+    const normalizeHeader = value => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    const findIndex = (headers, aliases) => {
+      for (let i = 0; i < aliases.length; i++) {
+        const index = headers.indexOf(aliases[i]);
+        if (index >= 0) return index;
+      }
+      return -1;
+    };
+    const subjectData = subjectSheet.getDataRange().getValues();
+    if (!subjectData || subjectData.length < 2) return false;
+    const subjectHeaders = subjectData[0].map(normalizeHeader);
+    const si = {
+      id: findIndex(subjectHeaders, ["asignaturaid"]),
+      name: findIndex(subjectHeaders, ["nombreoficial", "nombre"]),
+      code: findIndex(subjectHeaders, ["codigo"]),
+      state: findIndex(subjectHeaders, ["estado"])
+    };
+    if (si.id < 0 || si.state < 0 || (si.name < 0 && si.code < 0)) return false;
+    const subjectKey = subjectReference.toUpperCase();
+    const subjects = subjectData.slice(1).filter(row =>
+      [row[si.id], si.name >= 0 ? row[si.name] : "", si.code >= 0 ? row[si.code] : ""]
+        .some(value => String(value || "").trim().toUpperCase() === subjectKey));
+    const active = value => ["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(String(value || "").trim().toUpperCase()) !== -1;
+    if (subjects.length !== 1 || !active(subjects[0][si.state])) return false;
+    const subjectId = String(subjects[0][si.id] || "").trim();
+    if (!subjectId) return false;
+
+    const offerData = offerSheet.getDataRange().getValues();
+    if (!offerData || offerData.length < 2) return false;
+    const offerHeaders = offerData[0].map(normalizeHeader);
+    const oi = {
+      id: findIndex(offerHeaders, ["ofertaid", "offerid"]),
+      year: findIndex(offerHeaders, ["anoid", "anolectivo", "ano"]),
+      grade: findIndex(offerHeaders, ["grado"]),
+      section: findIndex(offerHeaders, ["seccion"]),
+      subject: findIndex(offerHeaders, ["asignaturaid", "asignatura"]),
+      plan: findIndex(offerHeaders, ["planid"]),
+      state: findIndex(offerHeaders, ["estado", "estadooferta"])
+    };
+    if (Object.keys(oi).some(key => oi[key] < 0)) return false;
+    const matchingOffers = offerData.slice(1).filter(row =>
+      String(row[oi.grade] || "").trim().toUpperCase() === grade.toUpperCase() &&
+      String(row[oi.section] || "").trim().toUpperCase() === section.toUpperCase() &&
+      String(row[oi.subject] || "").trim() === subjectId && active(row[oi.state]) &&
+      String(row[oi.year] || "").trim() && String(row[oi.plan] || "").trim());
+    if (matchingOffers.length !== 1) return false;
+    const offerId = String(matchingOffers[0][oi.id] || "").trim();
+    if (!offerId) return false;
+    const offerIdCounts = Object.create(null);
+    offerData.slice(1).forEach(row => {
+      const id = String(row[oi.id] || "").trim();
+      if (id) offerIdCounts[id] = (offerIdCounts[id] || 0) + 1;
+    });
+    if (offerIdCounts[offerId] !== 1) return false;
+
+    const assignmentData = assignmentSheet.getDataRange().getValues();
+    if (!assignmentData || assignmentData.length < 2) return false;
+    const assignmentHeaders = assignmentData[0].map(normalizeHeader);
+    const ai = {
+      id: findIndex(assignmentHeaders, ["asignacionid", "assignmentid", "id"]),
+      offer: findIndex(assignmentHeaders, ["ofertaid", "offerid"]),
+      teacher: findIndex(assignmentHeaders, ["docenteuserid", "docenteid", "profesorid", "userid", "teacheruserid"]),
+      start: findIndex(assignmentHeaders, ["fechainicio", "inicio", "startdate"]),
+      end: findIndex(assignmentHeaders, ["fechafin", "fin", "enddate"]),
+      state: findIndex(assignmentHeaders, ["estado", "status"])
+    };
+    if (Object.keys(ai).some(key => ai[key] < 0)) return false;
+    const assignmentIdCounts = Object.create(null);
+    assignmentData.slice(1).forEach(row => {
+      const id = String(row[ai.id] || "").trim();
+      if (id) assignmentIdCounts[id] = (assignmentIdCounts[id] || 0) + 1;
+    });
+    const matches = assignmentData.slice(1).filter(row =>
+      String(row[ai.offer] || "").trim() === offerId &&
+      String(row[ai.teacher] || "").trim() === teacherId && active(row[ai.state]));
+    if (matches.length !== 1) return false;
+    const assignmentId = String(matches[0][ai.id] || "").trim();
+    if (!assignmentId || assignmentIdCounts[assignmentId] !== 1) return false;
+    const parseBound = value => {
+      if (value === "" || value === null || value === undefined) return { valid: true, time: null };
+      const date = value instanceof Date ? value : new Date(value);
+      return Number.isFinite(date.getTime()) ? { valid: true, time: date.getTime() } : { valid: false, time: null };
+    };
+    const start = parseBound(matches[0][ai.start]), end = parseBound(matches[0][ai.end]), now = Date.now();
+    return start.valid && end.valid &&
+      (start.time === null || start.time <= now) &&
+      (end.time === null || end.time >= now) &&
+      !(start.time !== null && end.time !== null && start.time > end.time);
+  } catch (_) {
+    return false;
+  }
+}
+
 function getTeacherExamActivityUnlocked_(payload, context) {
   const { actor, ss, scope } = context;
   const userRows = getSheetOrThrow(ss, "Usuarios").getDataRange().getValues().slice(1);
@@ -2542,7 +2647,8 @@ function getTeacherExamActivityUnlocked_(payload, context) {
     if (!deliveryId || deliveryIdCounts[deliveryId] !== 1 || !examId || examIdCounts[examId] !== 1) return;
     const exam = examById[examId];
     if (!exam) return;
-    if (actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) return;
+    if (actor.role === "Profesor" && (String(exam[8] || "").trim() !== actor.userId ||
+        !hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam))) return;
     const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "READ_SUBMISSIONS", payload);
     if (!ownership || ownership.authorized !== true) return;
     const usuario = userIdCounts[studentId] === 1 ? userById[studentId] : null;
