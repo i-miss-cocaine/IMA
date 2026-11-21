@@ -237,7 +237,7 @@ assert.ok(deniedEvents.length >= 1);
 managementScopeValid = false;
 const lockCallsBeforeScopeDenied = lockCalls;
 const noInstitutionScope = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
-assert.equal(noInstitutionScope.code, "INSTITUTION_WIDE_SCOPE_REQUIRED");
+assert.equal(noInstitutionScope.code, "INSTITUTION_WIDE_SCOPE_REQUIRED", JSON.stringify({ noInstitutionScope, managementScopeCalls, lockCalls, lockCallsBeforeScopeDenied }));
 assert.equal(lockCalls, lockCallsBeforeScopeDenied, "institution scope denial must occur before acquiring the global lock");
 managementScopeValid = true;
 
