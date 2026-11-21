@@ -415,11 +415,11 @@ console.log("C1.626 multi-role context contract: active-department selection, cr
 // C1.627: explicit RBAC permissions are resolved from the authenticated role membership, never from responsibility metadata.
 lifecycleMembershipRows[1][6]="";
 const rbacMatrixRows = [
-  ["RoleID","PermissionID","Action","Permitted","Scope"],
-  ["Director","P-DIR-APPROVE","approveFinancialRecords",true,"INST-1"],
-  ["Auditor","P-AUD-APPROVE","approveFinancialRecords",false,"INST-1"],
-  ["Auditor","P-AUD-AUDIT","viewAuditLogs",true,"INST-1"],
-  ["Director","P-DIR-AUDIT","viewAuditLogs",false,"INST-1"]
+  ["rol","modulo","accion","permitido","ambito"],
+  ["Director","USER","approveFinancialRecords",true,"INST-1"],
+  ["Auditor","USER","approveFinancialRecords",false,"INST-1"],
+  ["Auditor","USER","viewAuditLogs",true,"INST-1"],
+  ["Director","USER","viewAuditLogs",false,"INST-1"]
 ];
 const rbacCacheValues = {};
 const rbacCache = {
