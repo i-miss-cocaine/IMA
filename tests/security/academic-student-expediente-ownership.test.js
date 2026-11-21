@@ -851,3 +851,61 @@ console.log("ACADEMIC admission conversion lock contention and release contract 
     "enrollment reads must not create or mutate persistence");
 }
 console.log("ACADEMIC student enrollment query ResourceOwnership contract passed.");
+
+
+// getStudentFile must resolve every supplied selector to one identical record.
+// Conflicting or duplicated identifiers must never fall through to the first OR match.
+{
+  const expedienteRows = [
+    ["ExpedienteID","PersonaID","CodigoInstitucional"],
+    ["EXP-1","PERSON-1","CODE-1"],
+    ["EXP-2","PERSON-2","CODE-2"]
+  ];
+  const sheet = rows => ({ getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }) });
+  const sheets = {
+    ExpedientesEstudiantes: sheet(expedienteRows),
+    Matriculas: sheet([["MatriculaID","Fecha","UserId"],["MAT-1","2026-01-01","PERSON-1"],["MAT-2","2026-01-01","PERSON-2"]]),
+    RelacionesEstudianteTutor: sheet([["RelacionID","ExpedienteID","ResponsableID"]]),
+    ResponsablesTutores: sheet([["ResponsableID","Nombres","Apellidos","Identificacion","Telefono","Email"]]),
+    DocumentosEstudiante: sheet([["DocumentoID","ExpedienteID","SolicitudID"]]),
+    MovimientosEstudiante: sheet([["MovimientoID","ExpedienteID"]])
+  };
+  const makeFileContext = identity => ({
+    SPREADSHEET_ID: "LOCAL",
+    SpreadsheetApp: { openById: () => ({ getSheetByName: name => sheets[name] || null }) },
+    getOrCreateSheet: (_ss, name) => sheets[name],
+    getVerifiedAcademicIdentity_: () => identity,
+    getStudentPersonIdForUser_: (_ss, userId) => userId === "STUDENT-1" ? "PERSON-1" : "",
+    assertStudentExpedienteScopeAccess_: () => ({ authorized: true }),
+    sanitizeStudentPhotoUrl_: value => value || "",
+    String, Array, Object
+  });
+  const staffContext = makeFileContext({ authorized: true, userId: "STAFF-1", role: "Secretaría" });
+  vm.runInNewContext(extractFunction("getStudentFile") + "\nthis.run=getStudentFile;", staffContext);
+  assert.equal(staffContext.run({ expedienteId: "EXP-1", userId: "PERSON-2" }).code, "RESOURCE_SELECTOR_CONFLICT",
+    "conflicting expediente/person selectors must not return whichever row appears first");
+  assert.equal(staffContext.run({ expedienteId: "EXP-1", codigoInstitucional: "CODE-2" }).code, "RESOURCE_SELECTOR_CONFLICT",
+    "conflicting expediente/code selectors must be rejected");
+  assert.equal(staffContext.run({ expedienteId: "EXP-404" }).code, "RESOURCE_NOT_FOUND");
+  assert.equal(staffContext.run({}).code, "RESOURCE_TARGET_REQUIRED");
+  expedienteRows.push(["EXP-1","PERSON-3","CODE-3"]);
+  assert.equal(staffContext.run({ expedienteId: "EXP-1" }).code, "RESOURCE_AMBIGUOUS",
+    "duplicate expediente IDs must fail closed");
+  expedienteRows.pop();
+  expedienteRows[2][2] = "CODE-1";
+  assert.equal(staffContext.run({ codigoInstitucional: "CODE-1" }).code, "RESOURCE_AMBIGUOUS",
+    "duplicate institutional codes must fail closed");
+  expedienteRows[2][2] = "CODE-2";
+  const valid = staffContext.run({ expedienteId: "EXP-1", userId: "PERSON-1", codigoInstitucional: "CODE-1" });
+  assert.equal(valid.status, "success", "consistent unique selectors retain the existing read behavior");
+  assert.equal(valid.studentFile.expedienteId, "EXP-1");
+
+  const studentContext = makeFileContext({ authorized: true, userId: "STUDENT-1", role: "Estudiante" });
+  vm.runInNewContext(extractFunction("getStudentFile") + "\nthis.run=getStudentFile;", studentContext);
+  const own = studentContext.run({ expedienteId: "EXP-1", userId: "PERSON-2" });
+  assert.equal(own.status, "success", "student ownership is resolved from signed identity, not client userId");
+  assert.equal(own.studentFile.expedienteId, "EXP-1");
+  assert.equal(studentContext.run({ expedienteId: "EXP-2" }).code, "RESOURCE_SELECTOR_CONFLICT",
+    "student cannot substitute a foreign expediente while the signed person selector remains their own");
+}
+console.log("ACADEMIC getStudentFile selector uniqueness and consistency contracts passed.");

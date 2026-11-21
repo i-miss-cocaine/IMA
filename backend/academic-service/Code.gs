@@ -4835,12 +4835,31 @@ function getStudentFile(payload) {
   const actorRole = String(actor.role || "").toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
   const isStudentActor = actorRole === "ESTUDIANTE" || actorRole === "ALUMNO";
   const effectiveUserId = isStudentActor ? getStudentPersonIdForUser_(ss, actor.userId) : userId;
-  const exp = expRows.find(r =>
-    (expedienteId && String(r[0]).trim() === String(expedienteId).trim()) ||
-    (effectiveUserId && String(r[1]).trim() === String(effectiveUserId).trim()) ||
-    (codigoInstitucional && String(r[2]).trim() === String(codigoInstitucional).trim())
-  );
-  if (!exp) return { status: "error", message: "Expediente de estudiante no encontrado." };
+  const requestedExpedienteId = String(expedienteId || "").trim();
+  const requestedUserId = String(effectiveUserId || "").trim();
+  const requestedCodigo = String(codigoInstitucional || "").trim();
+  const selectors = [];
+  if (requestedExpedienteId) selectors.push({ name: "expedienteId", value: requestedExpedienteId, index: 0 });
+  if (requestedUserId) selectors.push({ name: "userId", value: requestedUserId, index: 1 });
+  if (requestedCodigo) selectors.push({ name: "codigoInstitucional", value: requestedCodigo, index: 2 });
+  if (!selectors.length) return { status: "error", code: "RESOURCE_TARGET_REQUIRED", message: "Debe indicar un expediente de estudiante." };
+
+  // Every supplied selector must resolve uniquely to the same expediente.
+  // OR-based first-match lookup can silently return a different record when
+  // selectors conflict or legacy rows contain duplicate identifiers.
+  const selectorMatches = selectors.map(selector => {
+    const matches = expRows.filter(row => String(row[selector.index] || "").trim() === selector.value);
+    if (matches.length !== 1) {
+      return { selector: selector.name, matches: matches, error: matches.length ? "RESOURCE_AMBIGUOUS" : "RESOURCE_NOT_FOUND" };
+    }
+    return { selector: selector.name, matches: matches };
+  });
+  const invalidSelector = selectorMatches.find(result => result.error);
+  if (invalidSelector) return { status: "error", code: invalidSelector.error, message: "Expediente de estudiante no disponible." };
+  const exp = selectorMatches[0].matches[0];
+  if (selectorMatches.some(result => result.matches[0] !== exp)) {
+    return { status: "error", code: "RESOURCE_SELECTOR_CONFLICT", message: "Los identificadores no corresponden al mismo expediente." };
+  }
   const access = assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp, "permisoDocumental");
   if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
 
