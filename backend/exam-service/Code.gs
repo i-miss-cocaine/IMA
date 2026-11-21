@@ -1139,7 +1139,8 @@ function withAuthorizedExamCreation_(p, mutation) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_CREATE_LOCK_TIMEOUT");
   try {
-    // Revalidar dentro del lock: el rol, la identidad o la adscripción pudieron cambiar mientras esperaba.
+    // Invalidar caches del preflight antes de revalidar RBAC, identidad y scope bajo lock.
+    clearRequestAuthorizationContext_(p);
     const currentPermission = validateRolePermission("createExam", p);
     if (!currentPermission || currentPermission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
     const currentActor = getVerifiedExamIdentity_(p);
@@ -2195,8 +2196,8 @@ function submitExam(payload) {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_SUBMISSION_LOCK_TIMEOUT");
   try {
-    // Revalidar identidad, permiso, perfil y scope después de obtener el lock.
-    // No reutilizar contexto calculado antes del lock: la relación o asignación pudo cambiar.
+    // Invalidar el contexto cacheado del preflight y revalidar dentro del lock.
+    clearRequestAuthorizationContext_(payload);
     const currentPermission = validateRolePermission("submitExam", payload);
     if (!currentPermission || currentPermission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
     const currentActor = getVerifiedExamIdentity_(payload);
