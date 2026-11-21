@@ -275,6 +275,8 @@ console.log("TASK-636 getPosts local contract: verified role, string/boolean dra
 
 function makeProjectDeleteFixture(ownerId, fileId, options) {
   options = options || {};
+  const lockAvailable = options.lockAvailable !== false;
+  const lockCalls = { attempts: 0, releases: 0 };
   const rows = [
     ["UserId","NombreArchivo","ArchivoUrl","Codigo"],
     [ownerId,"project.psc",fileId ? "https://drive.google.com/file/d/" + fileId + "/view" : "","print('test')"]
@@ -298,6 +300,7 @@ function makeProjectDeleteFixture(ownerId, fileId, options) {
   const context = {
     SPREADSHEET_ID: "LOCAL",
     SpreadsheetApp: { openById: () => ss },
+    LockService: { getScriptLock: () => ({ tryLock: () => { lockCalls.attempts++; return lockAvailable; }, releaseLock: () => { lockCalls.releases++; } }) },
     getSheetOrThrow: (_ss, name) => { if (name !== "pseudocode") throw new Error("missing " + name); return sheet; },
     DriveApp: { getFileById: id => { assert.equal(id, fileId); return file; } }
   };
@@ -307,7 +310,7 @@ function makeProjectDeleteFixture(ownerId, fileId, options) {
     "this.run = deleteProject;",
     context
   );
-  return { run: context.run, rows, file };
+  return { run: context.run, rows, file, lockCalls };
 }
 const wrongNameFixture = makeProjectDeleteFixture("STU-1", "FILE-OWN");
 assert.throws(() => wrongNameFixture.run({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",fileName:"wrong.psc"}), /no coincide con los identificadores/);
@@ -335,6 +338,12 @@ const sheetFailureFixture = makeProjectDeleteFixture("STU-1", "FILE-OWN", { fail
 assert.throws(() => sheetFailureFixture.run({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",fileId:"FILE-OWN"}), /DELETE_PROJECT_METADATA_FAILED/);
 assert.equal(sheetFailureFixture.rows.length, 2, "metadata row remains after failed deletion");
 assert.equal(sheetFailureFixture.file.trashed, false, "Drive trash is compensated if metadata deletion fails");
+
+const projectLockBusyFixture = makeProjectDeleteFixture("STU-1", "FILE-OWN", { lockAvailable: false });
+assert.throws(() => projectLockBusyFixture.run({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",fileId:"FILE-OWN"}), /TASK_PROJECT_LOCK_TIMEOUT/);
+assert.equal(projectLockBusyFixture.rows.length, 2);
+assert.equal(projectLockBusyFixture.file.trashed, false);
+assert.equal(projectLockBusyFixture.lockCalls.releases, 0);
 
 console.log("TASK-636 deleteProject local contract: strict ownership/identifier matching and Drive/Sheets compensation passed.");
 
