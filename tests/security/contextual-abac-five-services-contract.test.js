@@ -223,7 +223,7 @@ const applicantRuntime = {
   Date, String, Number, Object, Array
 };
 vm.createContext(applicantRuntime);
-vm.runInContext(guardianApplicantFn + "\\nthis.lookup = getGuardianApplicants;", applicantRuntime);
+vm.runInContext(guardianApplicantFn + "\nthis.lookup = getGuardianApplicants;", applicantRuntime);
 const ownedApplicants = applicantRuntime.lookup({ _verifiedUserId: "GUARDIAN-1", userId: "OTHER-1" });
 assert.deepEqual(Array.from(ownedApplicants.data, row => row.solicitudId), ["APP-OWNED"],
   "guardian applicants are filtered by the exact email on the verified account, not a name substring or payload identity");
