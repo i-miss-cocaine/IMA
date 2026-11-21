@@ -7441,22 +7441,38 @@ function getDepartmentalWorkInbox(payload) {
 }
 
 function closeConversationThread(payload) {
-  const { conversacionId, observaciones } = payload || {};
-  if (!conversacionId) throw new Error("conversacionId requerido.");
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  const conversacionId = String(request.conversacionId || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (!conversacionId) return { status: "error", code: "CONVERSATION_ID_REQUIRED" };
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ConversacionesMensajes");
-  const data = sheet.getDataRange().getValues();
-
-  let count = 0;
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][1]).trim() === String(conversacionId).trim()) {
-      sheet.getRange(i + 1, 9).setValue("Cerrado");
-      count++;
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return { status: "error", code: "CONVERSATION_LOCK_BUSY" };
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName("ConversacionesMensajes");
+    if (!sheet) return { status: "error", code: "CONVERSATION_NOT_FOUND" };
+    const data = sheet.getDataRange().getValues();
+    const conversationRows = [];
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][1] || "").trim() === conversacionId) conversationRows.push({ row: i + 1, values: data[i] });
     }
-  }
+    if (!conversationRows.length) return { status: "error", code: "CONVERSATION_NOT_FOUND" };
+    const isParticipant = conversationRows.some(item =>
+      String(item.values[2] || "").trim() === actorId || String(item.values[3] || "").trim() === actorId);
+    if (!isParticipant) return { status: "error", code: "CONVERSATION_PARTICIPANT_REQUIRED" };
 
-  return { status: "success", conversacionId: conversacionId, mensajesAfectados: count, message: "Hilo de conversación cerrado exitosamente." };
+    let count = 0;
+    conversationRows.forEach(item => {
+      sheet.getRange(item.row, 9).setValue("Cerrado");
+      count++;
+    });
+    return { status: "success", conversacionId: conversacionId, mensajesAfectados: count, message: "Hilo de conversación cerrado exitosamente." };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function getInternalConversations(payload) {
@@ -7498,41 +7514,85 @@ function getInternalMessages(payload) {
 }
 
 function sendInternalMessage(payload) {
-  const { conversacionId, remitenteId, destinatarioId, estudianteId, mensajeTexto, adjuntoUrl } = payload || {};
-  if (!remitenteId || !destinatarioId || !mensajeTexto) throw new Error("Remitente, Destinatario y Mensaje son requeridos.");
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  const senderId = String(request.remitenteId || "").trim();
+  const recipientId = String(request.destinatarioId || "").trim();
+  const mensajeTexto = String(request.mensajeTexto || "");
+  const requestedStudentId = String(request.estudianteId || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (!senderId || !recipientId || !mensajeTexto.trim()) return { status: "error", code: "MESSAGE_FIELDS_REQUIRED" };
+  if (senderId !== actorId) return { status: "error", code: "MESSAGE_SENDER_MISMATCH" };
+  if (recipientId === actorId) return { status: "error", code: "MESSAGE_RECIPIENT_INVALID" };
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ConversacionesMensajes");
-
-  const msgId = "MSG-" + Date.now();
-  const convId = conversacionId || ("CONV-" + [remitenteId, destinatarioId].sort().join("-"));
-  const now = new Date();
-
-  sheet.appendRow([
-    msgId,
-    convId,
-    remitenteId,
-    destinatarioId,
-    estudianteId || "",
-    mensajeTexto,
-    adjuntoUrl || "",
-    now,
-    "Enviado"
-  ]);
-
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return { status: "error", code: "CONVERSATION_LOCK_BUSY" };
+  let notificationPayload = null;
+  let result = null;
   try {
-    createUserNotification({
-      userId: destinatarioId,
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "ConversacionesMensajes");
+    const data = sheet.getDataRange().getValues();
+    const convId = String(request.conversacionId || "").trim() ||
+      ("CONV-" + [senderId, recipientId].sort().join("-"));
+    const existing = data.slice(1).filter(row => String(row[1] || "").trim() === convId);
+    let effectiveStudentId = requestedStudentId;
+
+    if (existing.length) {
+      const participants = new Set();
+      const studentIds = new Set();
+      existing.forEach(row => {
+        const from = String(row[2] || "").trim(), to = String(row[3] || "").trim();
+        if (from) participants.add(from);
+        if (to) participants.add(to);
+        const student = String(row[4] || "").trim();
+        if (student) studentIds.add(student);
+      });
+      if (!participants.has(actorId) || !participants.has(recipientId) ||
+          participants.size > 2 || Array.from(participants).some(id => id !== actorId && id !== recipientId)) {
+        return { status: "error", code: "CONVERSATION_PARTICIPANT_MISMATCH" };
+      }
+      if (existing.some(row => String(row[8] || "").trim().toUpperCase() === "CERRADO")) {
+        return { status: "error", code: "CONVERSATION_CLOSED" };
+      }
+      if (studentIds.size > 1 || (requestedStudentId && studentIds.size === 1 && !studentIds.has(requestedStudentId))) {
+        return { status: "error", code: "CONVERSATION_STUDENT_MISMATCH" };
+      }
+      if (!effectiveStudentId && studentIds.size === 1) effectiveStudentId = Array.from(studentIds)[0];
+    }
+
+    const msgId = "MSG-" + Utilities.getUuid();
+    const now = new Date();
+    sheet.appendRow([
+      msgId,
+      convId,
+      senderId,
+      recipientId,
+      effectiveStudentId || "",
+      mensajeTexto,
+      request.adjuntoUrl || "",
+      now,
+      "Enviado"
+    ]);
+    notificationPayload = {
+      userId: recipientId,
       titulo: "Nuevo Mensaje Institucional",
       mensaje: `Ha recibido un mensaje: "${mensajeTexto.substring(0, 50)}..."`,
       tipo: "Mensaje",
       categoria: "Comunicacion"
-    });
+    };
+    result = { status: "success", message: "Mensaje interno enviado.", data: { mensajeId: msgId, conversacionId: convId } };
+  } finally {
+    lock.releaseLock();
+  }
+
+  try {
+    createUserNotification(notificationPayload);
   } catch (e) {
     logDebug("Error creando notificacion de mensaje:", e.message);
   }
-
-  return { status: "success", message: "Mensaje interno enviado.", data: { mensajeId: msgId, conversacionId: convId } };
+  return result;
 }
 
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento estricto de notificaciones unificadas
