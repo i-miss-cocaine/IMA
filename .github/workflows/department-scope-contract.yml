@@ -50,6 +50,7 @@ on:
       - tests/security/user-student-guardian-consolidated-list-abac.test.js
       - tests/security/user-service-absence-justification-guardian-abac.test.js
       - tests/security/user-service-absence-review-resource-ownership.test.js
+      - tests/security/user-student-procedure-notification-logs-ownership.test.js
       - tests/security/academic-student-expediente-ownership.test.js
       - tests/security/academic-student-document-private-storage.test.js
       - tests/security/academic-student-enrollment-history-ownership.test.js
