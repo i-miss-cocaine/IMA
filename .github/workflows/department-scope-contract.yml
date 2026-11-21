@@ -60,6 +60,7 @@ on:
       - tests/security/user-departmental-work-inbox-scope.test.js
       - tests/security/user-administrative-requests-scope.test.js
       - tests/security/academic-student-expediente-ownership.test.js
+      - tests/security/academic-update-student-file-ownership.test.js
       - tests/security/academic-student-document-private-storage.test.js
       - tests/security/academic-student-enrollment-history-ownership.test.js
       - tests/security/academic-student-enrollment-write-ownership.test.js
@@ -346,6 +347,8 @@ jobs:
         run: node tests/security/user-administrative-requests-scope.test.js
       - name: Run academic student expediente ownership contract
         run: node tests/security/academic-student-expediente-ownership.test.js
+      - name: Run academic update student file ownership contract
+        run: node tests/security/academic-update-student-file-ownership.test.js
       - name: Run academic student enrollment history ownership contract
         run: node tests/security/academic-student-enrollment-history-ownership.test.js
       - name: Run academic student enrollment write ownership contract
@@ -377,6 +380,7 @@ jobs:
           node --check < backend/user-service/Code.gs
           node --check < backend/academic-service/Code.gs
           node --check < backend/accounting-service/Code.gs
+          node --check tests/security/academic-update-student-file-ownership.test.js
           node --check tests/security/accounting-family-credit-preference.test.js
           node --check js/accounting.js
           node --check js/secretary.js
