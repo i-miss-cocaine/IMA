@@ -33,6 +33,7 @@ function makeHarness(options) {
     ["USER-C", "PERSON-C", "Estudiante", "Activo"],
     ["USER-D", "PERSON-D", "Estudiante", "Activo"]
   ];
+  if (settings.inactiveRecipient) users[2][3] = "Inactiva";
   const rows = [
     ["MensajeID", "ConversacionID", "RemitenteID", "DestinatarioID", "EstudianteID", "MensajeTexto", "AdjuntoURL", "FechaEnvio", "EstadoLectura"],
     ["MSG-1", "CONV-A", "USER-A", "USER-B", "STU-A", "Mensaje A1", "", "2026-11-20T10:00:00Z", "Enviado"],
@@ -110,6 +111,12 @@ assert.equal(closedThread.send(request("USER-C", {
   remitenteId: "USER-C", destinatarioId: "USER-D", conversacionId: "CONV-C", mensajeTexto: "Después del cierre"
 })).code, "CONVERSATION_CLOSED");
 assert.equal(closedThread.calls.appends, 0);
+
+const inactiveRecipient = makeHarness({ inactiveRecipient: true });
+assert.equal(inactiveRecipient.send(request("USER-A", {
+  remitenteId: "USER-A", destinatarioId: "USER-B", mensajeTexto: "Cuenta inactiva"
+})).code, "USER_NOT_ACTIVE");
+assert.equal(inactiveRecipient.calls.appends, 0);
 
 const unknownRecipient = makeHarness();
 assert.equal(unknownRecipient.send(request("USER-A", {
