@@ -44,8 +44,6 @@ assert.equal(Math.round((Number(fullCharge[6])+adjustmentRows.reduce((sum,r)=>su
 assert.equal(context.cancelStudentTransportAssignment({assignmentId:full.asignacionTranspId}).idempotent,true);
 context.generateTransportMonthlyCharges({ano:nextYear,mesPeriodo:String(nextMonth)});assert.ok(rows.CargosEstudiante.some(r=>r[10]==="TRN-"+String(nextMonth).padStart(2,"0")+"-"+nextYear+"-STU-001"));assert.equal(Number(rows.CargosEstudiante.find(r=>r[10]==="TRN-"+String(nextMonth).padStart(2,"0")+"-"+nextYear+"-STU-001")[6]),400,"the next period must use its effective tariff");
 assert.equal(context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-002",modalidadServicio:"MEDIA",fechaInicioServicio:firstDay}).code,"DUPLICATE_TRANSPORT_ASSIGNMENT");
-rows.ExpedientesEstudiantes.push(["EXP-AUTH","STU-AUTH","PERSON-AUTH"]);
-rows.Usuarios.push(["STU-AUTH","PERSON-AUTH","Estudiante"]);
 
 assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-AUTH",_verifiedRole:"Estudiante"}),/TRANSPORT_BILLING_ROLE_NOT_ALLOWED/);
 denyIdentity=true;
