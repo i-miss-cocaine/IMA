@@ -7464,26 +7464,34 @@ function getInternalConversations(payload) {
 }
 
 function getInternalMessages(payload) {
-  const { conversacionId, userId } = payload || {};
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+
+  const conversacionId = String(request.conversacionId || "").trim();
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ConversacionesMensajes");
+  const sheet = ss.getSheetByName("ConversacionesMensajes");
+  if (!sheet) return { status: "success", data: [] };
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status: "success", data: [] };
 
-  const messages = data.slice(1).filter(r => {
-    if (conversacionId && String(r[1]).trim() === String(conversacionId).trim()) return true;
-    if (userId && (String(r[2]).trim() === String(userId).trim() || String(r[3]).trim() === String(userId).trim())) return true;
-    return false;
-  }).map(r => ({
-    mensajeId: r[0],
-    conversacionId: r[1],
-    remitenteId: r[2],
-    destinatarioId: r[3],
-    estudianteId: r[4],
-    mensajeTexto: r[5],
-    adjuntoUrl: r[6],
-    fechaEnvio: r[7] ? new Date(r[7]).toISOString() : null,
-    estadoLectura: r[8] || "Enviado"
+  const messages = data.slice(1).filter(row => {
+    const senderId = String(row[2] || "").trim();
+    const recipientId = String(row[3] || "").trim();
+    const isParticipant = senderId === actorId || recipientId === actorId;
+    if (!isParticipant) return false;
+    return !conversacionId || String(row[1] || "").trim() === conversacionId;
+  }).map(row => ({
+    mensajeId: row[0],
+    conversacionId: row[1],
+    remitenteId: row[2],
+    destinatarioId: row[3],
+    estudianteId: row[4],
+    mensajeTexto: row[5],
+    adjuntoUrl: row[6],
+    fechaEnvio: row[7] ? new Date(row[7]).toISOString() : null,
+    estadoLectura: row[8] || "Enviado"
   }));
 
   return { status: "success", data: messages };
