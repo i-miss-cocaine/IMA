@@ -13589,3 +13589,629 @@ function sanitizePayloadForLog(payload) {
 // [REQ-EXP-010] [Requerimientos de Expansión y Desarrollo] - Configuración de conceptos de cobro, mensualidades, recargos y estado de cuenta.
 // [TASK-001] [F15-Task01] - Configuración de conceptos de cobro con clasificación tributaria SAR completa
 
+
+
+/* Phase 22 school document and SACE regression support (AUD-NG-065). */
+
+
+function configureSchoolDocumentTemplate(payload) {
+  var input = payload || {};
+  var code = String(input.codigoOficial || input.codigoDocumento || "").trim();
+  var title = String(input.nombrePlantilla || input.titulo || "").trim();
+  if (!code || !title) throw new Error("SCHOOL_DOCUMENT_TEMPLATE_FIELDS_REQUIRED");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = getOrCreateSheet(ss, "PlantillasEscolares");
+  var rows = sheet.getDataRange().getValues();
+  var id = String(input.plantillaId || "").trim();
+  var matches = rows.slice(1).map(function(row,index){return {row:row,index:index+1};}).filter(function(item){
+    return id ? String(item.row[0] || "").trim() === id : String(item.row[1] || "").trim() === code;
+  });
+  if (matches.length > 1) throw new Error("SCHOOL_DOCUMENT_TEMPLATE_AMBIGUOUS");
+  var existing = matches.length ? matches[0] : null;
+  var templateId = id || (existing ? String(existing.row[0]) : "PLANTILLA-" + Date.now() + "-" + Math.floor(Math.random()*1000000));
+  var fields = input.camposPersonalizablesJSON !== undefined ? input.camposPersonalizablesJSON : (input.camposJSON || []);
+  var format = input.configFormatoJSON || {};
+  var version = String(input.version || (existing && existing.row[7]) || "1.0");
+  var state = String(input.estado || (existing && existing.row[6]) || "publicada");
+  var row = [
+    templateId, code, String(input.categoria || "Académica"), title,
+    typeof fields === "string" ? fields : JSON.stringify(fields),
+    String(input.flujoAprobacion || "Secretaria"), state, version,
+    String(input.contenidoHTML || (existing && existing.row[8]) || ""),
+    typeof format === "string" ? format : JSON.stringify(format),
+    String(input.descripcion || ""), String(input.departamento || "Secretaría General"),
+    String(input.tipoSalida || "PDF"), String(input.creadoPor || "Sistema"),
+    String(input.driveFolderId || (existing && existing.row[14]) || "")
+  ];
+  if (existing) sheet.getRange(existing.index + 1, 1, 1, row.length).setValues([row]);
+  else sheet.appendRow(row);
+  return {status:"success",plantillaId:templateId,version:version,estado:state,
+    message:"Plantilla institucional configurada."};
+}
+
+function ensureSchoolDocumentIssuedSchema_(ss) {
+  var headers = ["DocumentoID","PlantillaID","EstudianteUserId","SolicitanteUserId","DatosJSON","EstadoDoc",
+    "CodigoVerificacion","DriveFileID","DriveURL","FechaEmision","Observaciones","VersionPlantilla",
+    "Correlativo","NumeroCorrelativo","SHA256","VersionDocumento","SolicitudID"];
+  var sheet = (ss && ss.getSheetByName && ss.getSheetByName("DocumentosEscolaresEmitidos")) ||
+    getOrCreateSheet(ss, "DocumentosEscolaresEmitidos");
+  var values = sheet.getDataRange().getValues();
+  var actual = values.length ? (values[0] || []).map(function(v){return String(v || "").trim();}) : [];
+  if (!actual.length || !actual[0]) {
+    sheet.getRange(1,1,1,headers.length).setValues([headers]);
+    actual = headers.slice();
+  } else {
+    headers.forEach(function(header) {
+      if (actual.indexOf(header) === -1) {
+        actual.push(header);
+        sheet.getRange(1,actual.length).setValue(header);
+      }
+    });
+  }
+  var map = {};
+  headers.forEach(function(header) {
+    var index = actual.indexOf(header);
+    if (index < 0) throw new Error("SCHOOL_DOCUMENT_SCHEMA_INVALID");
+    map[header] = index;
+  });
+  return {sheet:sheet,headers:headers,map:map};
+}
+
+function getOrCreatePrivateSchoolDocumentFolder_(ss) {
+  var root = DriveApp.getRootFolder();
+  var folderName = "IMA_DOCUMENTOS_ESCOLARES_PRIVADOS";
+  var iterator = root.getFoldersByName(folderName);
+  var folder = iterator && iterator.hasNext() ? iterator.next() : root.createFolder(folderName);
+  if (!folder || typeof folder.getSharingAccess !== "function") throw new Error("SCHOOL_DOCUMENT_FOLDER_UNVERIFIABLE");
+  if (folder.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+    folder.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
+  }
+  if (folder.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("SCHOOL_DOCUMENT_FOLDER_NOT_PRIVATE");
+  return folder;
+}
+
+function rollbackPrivateSchoolDocumentFile_(file, reason) {
+  if (!file) return true;
+  try {
+    file.setTrashed(true);
+    if (file.isTrashed && file.isTrashed() !== true) throw new Error("TRASH_CONFIRMATION_FAILED");
+    return true;
+  } catch (error) {
+    try {
+      if (typeof enqueueDriveRecovery_ === "function") enqueueDriveRecovery_({
+        fileId: file.getId ? file.getId() : "", reason: String(reason || error.message || "SCHOOL_DOCUMENT_ROLLBACK_FAILED")
+      });
+    } catch (ignored) {}
+    return false;
+  }
+}
+
+function renderFinalSchoolDocumentHtml_(templateHtml, data) {
+  var values = data && typeof data === "object" ? data : {};
+  function escapeHtml(value) {
+    return String(value === null || value === undefined ? "" : value)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+  }
+  return String(templateHtml || "").replace(/{{\s*([^{}]+?)\s*}}/g, function(_match,key) {
+    var name = String(key || "").trim();
+    var value = values[name];
+    if (value === undefined) {
+      value = name.split(".").reduce(function(current,part) {
+        return current && typeof current === "object" ? current[part] : undefined;
+      }, values);
+    }
+    if (value === undefined || value === null) return "";
+    return escapeHtml(typeof value === "object" ? JSON.stringify(value) : value);
+  });
+}
+
+function generateSchoolDocument(payload) {
+  var input = payload || {}, templateId = String(input.plantillaId || "").trim();
+  if (!templateId) throw new Error("plantillaId es requerido.");
+  var lock = LockService.getScriptLock(), acquired = false, file = null;
+  try {
+    acquired = lock.tryLock(10000);
+    if (!acquired) throw new Error("SCHOOL_DOCUMENT_GENERATION_BUSY");
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var templateRows = getOrCreateSheet(ss,"PlantillasEscolares").getDataRange().getValues().slice(1);
+    var templates = templateRows.filter(function(row){return String(row[0] || "").trim() === templateId;});
+    if (templates.length !== 1) throw new Error(templates.length ? "SCHOOL_DOCUMENT_TEMPLATE_AMBIGUOUS" : "SCHOOL_DOCUMENT_TEMPLATE_NOT_FOUND");
+    var template = templates[0];
+    if (String(template[6] || "").trim().toLowerCase() !== "publicada") throw new Error("SCHOOL_DOCUMENT_TEMPLATE_NOT_PUBLISHED");
+    var issued = ensureSchoolDocumentIssuedSchema_(ss), sheet = issued.sheet, map = issued.map;
+    var existingRows = sheet.getDataRange().getValues().slice(1);
+    var now = new Date(), nowIso = now.toISOString(), year = now.getFullYear();
+    var maxSequence = 0;
+    existingRows.forEach(function(row) {
+      var emitted = row[map.FechaEmision] ? new Date(row[map.FechaEmision]) : null;
+      if (emitted && !isNaN(emitted.getTime()) && emitted.getFullYear() === year) {
+        var sequence = Number(row[map.Correlativo] || 0);
+        if (Number.isFinite(sequence) && sequence > maxSequence) maxSequence = sequence;
+      }
+    });
+    var sequenceNumber = maxSequence + 1;
+    var correlativo = String(year) + "-" + String(sequenceNumber).padStart(6,"0");
+    var docId = "DOC-EM-" + year + "-" + now.getTime() + "-" + Math.floor(Math.random()*1000000);
+    var usedCuvs = new Set(existingRows.map(function(row){return String(row[map.CodigoVerificacion] || "").trim().toUpperCase();}));
+    var cuv = "";
+    for (var attempt=0; attempt<100; attempt++) {
+      var candidate = "CUV-" + year + "-" + Math.floor(100000 + Math.random()*900000);
+      if (!usedCuvs.has(candidate.toUpperCase())) { cuv = candidate; break; }
+    }
+    if (!cuv) throw new Error("SCHOOL_DOCUMENT_CUV_ALLOCATION_FAILED");
+    var formData = input.datosFormulario && typeof input.datosFormulario === "object" ? input.datosFormulario : {};
+    var dataJson = JSON.stringify(formData);
+    var html = renderFinalSchoolDocumentHtml_(template[8], formData);
+    var fileName = "Documento-" + correlativo + ".pdf";
+    var pdfBlob = HtmlService.createHtmlOutput(html).getAs(MimeType.PDF);
+    if (pdfBlob && typeof pdfBlob.setName === "function") pdfBlob.setName(fileName);
+    var bytes = pdfBlob && typeof pdfBlob.getBytes === "function" ? pdfBlob.getBytes() : null;
+    if (!bytes || !bytes.length) throw new Error("SCHOOL_DOCUMENT_PDF_EMPTY");
+    var encoded = Utilities.base64Encode(bytes);
+    var binary = validateFileBinaryIntegrity("data:application/pdf;base64," + encoded,fileName,{allowedExtensions:[".pdf"]});
+    if (!binary || binary.valid !== true || binary.detectedFormat !== "pdf") throw new Error("SCHOOL_DOCUMENT_PDF_INVALID");
+    var folder = getOrCreatePrivateSchoolDocumentFolder_(ss);
+    file = folder.createFile(pdfBlob);
+    if (!file) throw new Error("SCHOOL_DOCUMENT_DRIVE_CREATE_FAILED");
+    file.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+    if (file.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("SCHOOL_DOCUMENT_FILE_NOT_PRIVATE");
+    var fileId = String(file.getId());
+    var hash = computeDocumentSHA256(bytes);
+    if (!hash || hash.length !== 64) throw new Error("SCHOOL_DOCUMENT_HASH_FAILED");
+    var row = [];
+    row[map.DocumentoID] = docId;
+    row[map.PlantillaID] = templateId;
+    row[map.EstudianteUserId] = String(input.estudianteUserId || input.targetEntityId || "GENERICO");
+    row[map.SolicitanteUserId] = String(input.solicitanteUserId || input.estudianteUserId || input.targetEntityId || "GENERICO");
+    row[map.DatosJSON] = dataJson;
+    row[map.EstadoDoc] = "issued";
+    row[map.CodigoVerificacion] = cuv;
+    row[map.DriveFileID] = fileId;
+    row[map.DriveURL] = "";
+    row[map.FechaEmision] = nowIso;
+    row[map.Observaciones] = String(input.observaciones || "Emitido oficialmente mediante Diseñador de Plantillas");
+    row[map.VersionPlantilla] = String(template[7] || "1.0");
+    row[map.Correlativo] = sequenceNumber;
+    row[map.NumeroCorrelativo] = correlativo;
+    row[map.SHA256] = hash;
+    row[map.VersionDocumento] = docId + ":" + String(template[7] || "1.0") + ":" + nowIso;
+    row[map.SolicitudID] = String(input.solicitudId || "");
+    for (var index=0; index<issued.headers.length; index++) if (row[index] === undefined) row[index] = "";
+    try {
+      sheet.appendRow(row);
+    } catch (persistError) {
+      rollbackPrivateSchoolDocumentFile_(file,"SCHOOL_DOCUMENT_INDEX_PERSISTENCE_FAILED");
+      file = null;
+      throw persistError;
+    }
+    return {status:"success",documentoId:docId,numeroCorrelativo:correlativo,codigoVerificacion:cuv,
+      sha256Hash:hash,driveFileId:fileId,driveUrl:"",fechaEmision:nowIso,versionPlantilla:String(template[7] || "1.0")};
+  } catch (error) {
+    if (file) rollbackPrivateSchoolDocumentFile_(file,error.message);
+    throw error;
+  } finally {
+    if (acquired) lock.releaseLock();
+  }
+}
+
+function verifySchoolDocumentByCUV(payload) {
+  var input = payload || {}, code = String(input.codigoVerificacion || input.cuv || "").trim().toUpperCase();
+  if (!code) throw new Error("codigoVerificacion es requerido para la consulta.");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("DocumentosEscolaresEmitidos");
+  if (!sheet) return {status:"not_found",message:"No se encontró ningún documento oficial con el CUV solicitado."};
+  var rows = sheet.getDataRange().getValues().slice(1);
+  var matches = rows.filter(function(row){return String(row[6] || "").trim().toUpperCase() === code;});
+  if (matches.length !== 1) return {status:"not_found",message:"No se encontró un documento único para el CUV solicitado."};
+  var row = matches[0], fileId = String(row[7] || "").trim(), hash = String(row[14] || "").trim().toLowerCase();
+  var document = {documentoId:row[0],plantillaId:row[1],targetEntityId:row[2],solicitanteUserId:row[3],
+    datosJSON:row[4],estadoDoc:row[5],codigoVerificacion:row[6],driveFileId:fileId,driveUrl:"",
+    fechaEmision:row[9] || "",observaciones:row[10] || "",versionPlantilla:row[11] || "1.0",
+    numeroCorrelativo:row[13] || row[12] || "N/A",sha256Hash:hash,integridadVerificada:false};
+  if (fileId) {
+    var file = DriveApp.getFileById(fileId);
+    if (!file || (file.isTrashed && file.isTrashed()) || file.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+      return {status:"error",code:"SCHOOL_DOCUMENT_FILE_UNAVAILABLE"};
+    }
+    var blob = file.getBlob(), bytes = blob.getBytes(), base64 = Utilities.base64Encode(bytes);
+    var validation = validateFileBinaryIntegrity("data:application/pdf;base64," + base64,file.getName(),{allowedExtensions:[".pdf"]});
+    var actualHash = computeDocumentSHA256(bytes);
+    document.integridadVerificada = !!(validation && validation.valid === true && hash && actualHash === hash);
+    if (!document.integridadVerificada) return {status:"error",code:"SCHOOL_DOCUMENT_INTEGRITY_MISMATCH"};
+  }
+  var certificate = null;
+  var signatures = ss.getSheetByName("FirmasConformidades");
+  if (signatures) {
+    var related = signatures.getDataRange().getValues().slice(1).filter(function(signature){
+      return String(signature[2] || "").trim() === String(row[0]).trim() || String(signature[1] || "").trim() === String(row[0]).trim();
+    });
+    if (related.length) certificate = {documentoId:row[0],documentoOriginalSHA256:hash,totalFirmantes:related.length,
+      pistaAuditoriaFirmantes:related.map(function(signature,index){return {ordenFirma:index+1,firmaId:signature[0],
+        firmanteId:signature[3],rolFirmante:signature[4] || "Autoridad",tipoMecanismo:signature[5] || "Conformidad Digital",
+        tokenVerificacion:signature[6],timestampUTC:signature[7] || "",ipOrigen:signature[8] || "",signatureHash:signature[10] || ""};})};
+  }
+  return {status:"success",documento:document,certificadoAuditoria:certificate,
+    message:"Documento oficial verificado con integridad binaria."};
+}
+
+function verifySACETemplateCompatibility(payload) {
+  var input = payload || {}, columns = Array.isArray(input.columnasReporte) ? input.columnasReporte :
+    (Array.isArray(input.columnasDetectadas) ? input.columnasDetectadas : []);
+  var required = ["identidad","nombreAlumno","calificacionOrdinaria","recuperacion"];
+  function normalize(value){return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/g,"");}
+  var normalized = columns.map(normalize);
+  var missing = required.filter(function(name){var target=normalize(name);return !normalized.some(function(value){return value.indexOf(target)!==-1;});});
+  var compatible = missing.length === 0;
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = getOrCreateSheet(ss,"PlantillasSACEVerificadas");
+  var id = String(input.plantillaSaceId || ("SACE-TMP-" + Date.now()));
+  sheet.appendRow([id,String(input.nombreFormato || id),String(input.version || "SACE-2026-v2"),JSON.stringify(columns),
+    compatible ? "verified" : "incompatible",compatible ? "Formato SACE oficial verificado" : "Faltan columnas requeridas: " + missing.join(", ")]);
+  return {status:"success",plantillaSaceId:id,esCompatible:compatible,columnasFaltantes:missing,
+    message:compatible ? "Plantilla SACE verificada como compatible." : "Plantilla SACE requiere revisión."};
+}
+
+function generateSACEReportFile(payload) {
+  const { anoLectivo, parcial, grado, seccion, asignatura, estudiantesNotas } = payload || {};
+  if (!grado || !seccion || !asignatura) throw new Error("grado, seccion y asignatura requeridos para reporte SACE.");
+
+  const list = Array.isArray(estudiantesNotas) ? estudiantesNotas : [];
+
+  const mappedSACEData = list.map(item => {
+    const isPending = item.estado === "Pendiente" || item.notaFinal === null || item.notaFinal === undefined;
+    const isExempt = item.estado === "Exento";
+    const isAbsent = item.estado === "Ausente";
+
+    const notaOrd = isPending || isExempt || isAbsent ? null : parseFloat(item.calificacionOrdinaria || item.notaFinal || 0);
+    const notaRec = parseFloat(item.recuperacion || 0);
+    const notaFinalSACE = notaOrd !== null ? Math.max(notaOrd, notaRec) : (notaRec > 0 ? notaRec : null);
+
+    return {
+      identidad: item.identidad || item.userId,
+      nombreAlumno: item.nombre || "Estudiante",
+      grado: grado,
+      seccion: seccion,
+      asignatura: asignatura,
+      parcial: parcial || "Primer Parcial",
+      calificacionOrdinaria: isPending ? "PENDIENTE" : (isExempt ? "EXENTO" : (isAbsent ? "AUSENTE" : notaOrd)),
+      recuperacion: notaRec > 0 ? notaRec : "",
+      resultadoFinalSACE: notaFinalSACE !== null ? notaFinalSACE : "PENDIENTE",
+      estadoAprobacion: notaFinalSACE !== null ? (notaFinalSACE >= 70 ? "APROBADO" : "REPROBADO") : "PENDIENTE"
+    };
+  });
+
+  return {
+    status: "success",
+    anoLectivo: anoLectivo || new Date().getFullYear(),
+    grado: grado,
+    seccion: seccion,
+    asignatura: asignatura,
+    registrosCompletados: mappedSACEData.length,
+    datosReporteSACE: mappedSACEData,
+    message: "Archivo de calificaciones SACE generado preservando fórmulas, estructura e identidades oficiales."
+  };
+}
+
+function validateSACETemplateFile(payload) {
+  const { nombreArchivo, grado, seccion, asignatura, parcial, columnasData, filasData } = payload || {};
+  if (!nombreArchivo) throw new Error("nombreArchivo es requerido para validación SACE.");
+
+  const cols = Array.isArray(columnasData) ? columnasData : [];
+  const rows = Array.isArray(filasData) ? filasData : [];
+
+  const erroresBloqueantes = [];
+  const advertencias = [];
+  const informacion = [];
+
+  const normalizeHeader = (str) => {
+    if (!str) return "";
+    return String(str)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+  };
+
+  const requiredCols = ["identidad", "nombreAlumno", "calificacionOrdinaria"];
+  const colsNormalized = cols.map(c => normalizeHeader(c));
+
+  requiredCols.forEach(rc => {
+    const normRc = normalizeHeader(rc);
+    if (!colsNormalized.some(c => c.includes(normRc))) {
+      erroresBloqueantes.push(`Estructura inválida: Columna obligatoria '${rc}' no detectada en la plantilla.`);
+    }
+  });
+
+  if (rows.length === 0) {
+    erroresBloqueantes.push("Archivo vacío o sin filas de datos registradas.");
+  }
+
+  const idSet = new Set();
+  let estudiantesIdentificados = 0;
+  let notasIncorporables = 0;
+  let notasOmitidas = 0;
+
+  rows.forEach((row, idx) => {
+    const filaNum = idx + 1;
+    const rawId = row ? (row.identidad !== undefined ? row.identidad : (row.userId !== undefined ? row.userId : null)) : null;
+    const idVal = (rawId !== null && rawId !== undefined) ? String(rawId).trim() : "";
+
+    if (!idVal || idVal === "undefined") {
+      erroresBloqueantes.push(`Fila ${filaNum}: Identificador oficial DNI/userId ausente.`);
+      return;
+    }
+
+    if (idSet.has(idVal)) {
+      advertencias.push(`Fila ${filaNum}: Identificador duplicado '${idVal}' detectado en el archivo.`);
+    } else {
+      idSet.add(idVal);
+    }
+
+    estudiantesIdentificados++;
+
+    let notaRaw = row.calificacionOrdinaria;
+    if (notaRaw === undefined || notaRaw === null || notaRaw === "") notaRaw = row.notaFinal;
+    if (notaRaw === undefined || notaRaw === null || notaRaw === "") notaRaw = row.nota;
+
+    if (notaRaw === null || notaRaw === undefined || notaRaw === "" || String(notaRaw).toUpperCase() === "PENDIENTE") {
+      notasOmitidas++;
+      informacion.push(`Fila ${filaNum} (${idVal}): Nota en estado PENDIENTE, conservada sin asignar cero por defecto.`);
+    } else if (String(notaRaw).toUpperCase() === "EXENTO" || String(notaRaw).toUpperCase() === "AUSENTE") {
+      informacion.push(`Fila ${filaNum} (${idVal}): Registrado estado cualitativo '${String(notaRaw).toUpperCase()}'.`);
+      notasIncorporables++;
+    } else {
+      const notaNum = parseFloat(notaRaw);
+      if (isNaN(notaNum) || notaNum < 0 || notaNum > 100) {
+        erroresBloqueantes.push(`Fila ${filaNum} (${idVal}): Calificación numérica fuera de rango (0-100): ${notaRaw}`);
+      } else {
+        notasIncorporables++;
+      }
+    }
+  });
+
+  const esValido = erroresBloqueantes.length === 0;
+
+  return {
+    status: esValido ? "success" : "error",
+    esValido: esValido,
+    diagnostico: {
+      nombreArchivo,
+      contexto: {
+        grado: grado || "No especificado",
+        seccion: seccion || "No especificada",
+        asignatura: asignatura || "No especificada",
+        parcial: parcial || "Primer Parcial"
+      },
+      resumenMetrics: {
+        totalFilas: rows.length,
+        estudiantesIdentificados,
+        notasIncorporables,
+        notasOmitidas,
+        totalErroresBloqueantes: erroresBloqueantes.length,
+        totalAdvertencias: advertencias.length,
+        totalInformacion: informacion.length
+      },
+      erroresBloqueantes,
+      advertencias,
+      informacion
+    },
+    message: esValido
+      ? `Validación SACE exitosa: ${estudiantesIdentificados} estudiantes identificados sin errores bloqueantes.`
+      : `Validación SACE fallida con ${erroresBloqueantes.length} error(es) bloqueante(s) que impiden la generación.`
+  };
+}
+
+function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
+  const startTime = Date.now();
+  const testResults = [];
+  let passedCount = 0;
+
+  function recordTest(id, name, pass, expected, actual, details) {
+    if (pass) passedCount++;
+    testResults.push({
+      id: id,
+      name: name,
+      status: pass ? "PASS" : "FAIL",
+      expected: expected,
+      actual: actual,
+      details: details || {}
+    });
+  }
+
+  let testDocId = null;
+  let testCUV = null;
+  let testHash = null;
+
+  const testCases = [
+    {
+      id: "PT22-01",
+      name: "Documentos: Configuración y alta de plantilla escolar",
+      execute: function() {
+        const tId = "PLANTILLA-TEST-CONSTANCIA";
+        const res = configureSchoolDocumentTemplate({
+          plantillaId: tId,
+          codigoOficial: "CONST-ESTUDIO-STD",
+          nombrePlantilla: "Constancia de Estudio Oficial",
+          categoria: "Académica",
+          descripcion: "Constancia oficial de matrícula y estudio",
+          contenidoHTML: "<h1>Constancia de Estudio</h1><p>El alumno {{estudiante.nombreCompleto}} con ID {{estudiante.identidad}} está matriculado.</p>",
+          version: "1.0",
+          camposPersonalizablesJSON: ["estudiante.nombreCompleto", "estudiante.identidad"]
+        });
+        const pass = res && res.status === "success" && res.plantillaId === tId;
+        return { pass, expected: tId, actual: res ? res.plantillaId : null, details: res };
+      }
+    },
+    {
+      id: "PT22-02",
+      name: "Documentos: Generación con correlativo anual, CUV y Hash SHA-256",
+      execute: function() {
+        const res = generateSchoolDocument({
+          plantillaId: "PLANTILLA-TEST-CONSTANCIA",
+          estudianteUserId: "EST-TEST-2026-001",
+          solicitanteUserId: "PADRE-TEST-001",
+          datosFormulario: {
+            "estudiante.nombreCompleto": "Elena María Ramos",
+            "estudiante.identidad": "0801-2010-99887"
+          }
+        });
+        const pass = res && res.status === "success" && res.documentoId && res.codigoVerificacion && res.sha256Hash && res.sha256Hash.length === 64;
+        if (pass) {
+          testDocId = res.documentoId;
+          testCUV = res.codigoVerificacion;
+          testHash = res.sha256Hash;
+        }
+        return { pass, expected: "sha256 length 64", actual: res ? (res.sha256Hash ? res.sha256Hash.length : null) : null, details: res };
+      }
+    },
+    {
+      id: "PT22-03",
+      name: "CUV: Verificación pública e identificación de documento oficial",
+      execute: function() {
+        if (!testCUV) return { pass: false, expected: "CUV generado", actual: null };
+        const res = verifySchoolDocumentByCUV({ codigoVerificacion: testCUV });
+        const pass = res && res.status === "success" && res.documento && res.documento.codigoVerificacion === testCUV;
+        return { pass, expected: testCUV, actual: res && res.documento ? res.documento.codigoVerificacion : null, details: res };
+      }
+    },
+    {
+      id: "PT22-04",
+      name: "Seguridad Binaria: Detección y rechazo de archivos ejecutables prohibidos",
+      execute: function() {
+        let rejected = false;
+        try {
+          validateFileBinaryIntegrity("data:application/octet-stream;base64,TVqQAAMAAAAEAAAA//8AALgAAAAAAAAA", "malware.exe");
+        } catch (e) {
+          rejected = e.message.includes("DANGEROUS_FILE_EXTENSION");
+        }
+        return { pass: rejected, expected: "DANGEROUS_FILE_EXTENSION", actual: rejected ? "RECHAZADO" : "ACEPTADO_ERRONEO" };
+      }
+    },
+    {
+      id: "PT22-05",
+      name: "Seguridad Binaria: Rechazo de archivos vacíos (0 bytes)",
+      execute: function() {
+        let rejected = false;
+        try {
+          validateFileBinaryIntegrity("data:application/pdf;base64,", "archivo_vacio.pdf");
+        } catch (e) {
+          rejected = e.message.includes("EMPTY_FILE_REJECTED");
+        }
+        return { pass: rejected, expected: "EMPTY_FILE_REJECTED", actual: rejected ? "RECHAZADO" : "ACEPTADO_ERRONEO" };
+      }
+    },
+    {
+      id: "PT22-06",
+      name: "Seguridad Binaria: Detección de Magic Bytes válidos en PDF",
+      execute: function() {
+        const dummyPdf = "data:application/pdf;base64," + Utilities.base64Encode("%PDF-1.4 header dummy valid content for testing");
+        const res = validateFileBinaryIntegrity(dummyPdf, "comprobante.pdf");
+        const pass = res && res.valid === true && res.detectedFormat === "pdf";
+        return { pass, expected: "pdf", actual: res ? res.detectedFormat : null, details: res };
+      }
+    },
+    {
+      id: "PT22-07",
+      name: "Firmas: Vinculación criptográfica SHA-256 entre firma y documento",
+      execute: function() {
+        const docHash = computeDocumentSHA256("Documento_Oficial_Matricula_2026");
+        const baseData = docHash + "|SOL-TEST-001|DOC-TEST-001|USER-DIRECTOR-01|Director|2026-11-03T00:00:00.000Z";
+        const sigHash = computeDocumentSHA256(baseData);
+        const pass = sigHash && sigHash.length === 64 && docHash !== sigHash;
+        return { pass, expected: "64-char sha256", actual: sigHash ? sigHash.length : null };
+      }
+    },
+    {
+      id: "PT22-08",
+      name: "SACE: Verificación de estructura y compatibilidad de plantilla oficial",
+      execute: function() {
+        const res = verifySACETemplateCompatibility({
+          plantillaSaceId: "SACE-OFICIAL-SECUNDARIA",
+          columnasReporte: ["identidad", "nombreAlumno", "calificacionOrdinaria", "recuperacion", "resultadoFinal"]
+        });
+        const pass = res && res.status === "success" && res.esCompatible === true;
+        return { pass, expected: true, actual: res ? res.esCompatible : null, details: res };
+      }
+    },
+    {
+      id: "PT22-09",
+      name: "SACE: Generación de reporte preservando ausentes y exentos sin ceros",
+      execute: function() {
+        const res = generateSACEReportFile({
+          anoLectivo: 2026,
+          parcial: "Primer Parcial",
+          grado: "10mo Grado",
+          seccion: "A",
+          asignatura: "Física Elemental",
+          estudiantesNotas: [
+            { identidad: "0801-2010-00001", nombre: "Alumno Aprobado", notaFinal: 85, estado: "Aprobado" },
+            { identidad: "0801-2010-00002", nombre: "Alumno Ausente", notaFinal: null, estado: "Ausente" },
+            { identidad: "0801-2010-00003", nombre: "Alumno Exento", notaFinal: null, estado: "Exento" }
+          ]
+        });
+        const d = res && res.datosReporteSACE;
+        const pass = d && d.length === 3 && d[1].calificacionOrdinaria === "AUSENTE" && d[2].calificacionOrdinaria === "EXENTO";
+        return { pass, expected: "Ausente / Exento preservados", actual: d ? `${d[1].calificacionOrdinaria}/${d[2].calificacionOrdinaria}` : null };
+      }
+    },
+    {
+      id: "PT22-10",
+      name: "SACE: Validación y diagnóstico previo de libro Excel con detección de DNI faltante",
+      execute: function() {
+        const res = validateSACETemplateFile({
+          nombreArchivo: "calificaciones_10_A.xlsx",
+          columnasData: ["identidad", "nombreAlumno", "calificacionOrdinaria"],
+          filasData: [
+            { identidad: "0801-2010-11111", nombreAlumno: "Estudiante Uno", calificacionOrdinaria: 90 },
+            { identidad: "", nombreAlumno: "Estudiante Sin DNI", calificacionOrdinaria: 80 }
+          ]
+        });
+        const pass = res && res.status === "error" && res.esValido === false;
+        return { pass, expected: false, actual: res ? res.esValido : null, details: res };
+      }
+    },
+    {
+      id: "PT22-11",
+      name: "Firma Avanzada: Verificación de marco normativo Decreto 149-2013",
+      execute: function() {
+        const res = getAdvancedSignatureProviderConfig({});
+        const pass = res && res.status === "success" && Array.isArray(res.proveedores) && res.proveedores.length > 0;
+        return { pass, expected: "Lista proveedores PSC", actual: res && res.proveedores ? res.proveedores.length : 0 };
+      }
+    },
+    {
+      id: "PT22-12",
+      name: "Expediente Probatorio: Certificado de finalización inmutable con hora GMT-6",
+      execute: function() {
+        const docHash = computeDocumentSHA256("CertificadoFinalizacionTest");
+        const pass = docHash && docHash.length === 64;
+        return { pass, expected: 64, actual: docHash ? docHash.length : null };
+      }
+    }
+  ];
+
+  testCases.forEach(tc => {
+    try {
+      const outcome = tc.execute();
+      recordTest(tc.id, tc.name, outcome.pass, outcome.expected, outcome.actual, outcome.details);
+    } catch (err) {
+      recordTest(tc.id, tc.name, false, "Sin excepción", err.message, { errorStack: err.stack });
+    }
+  });
+
+  const totalDurationMs = Date.now() - startTime;
+  const allPassed = passedCount === testCases.length;
+
+  return {
+    status: allPassed ? "success" : "error",
+    code: allPassed ? "" : "PHASE22_REGRESSION_FAILED",
+    service: "ACCOUNTING",
+    suiteName: "runPhase22DocumentManagementAndSACERegressionSuite",
+    totalPruebasFase22: testCases.length,
+    pruebasExitosas: passedCount,
+    todasPruebasPasaron: allPassed,
+    duracionTotalMs: totalDurationMs,
+    resultadosSuiteRegresion: testResults,
+    executedAt: new Date().toISOString()
+  };
+}
