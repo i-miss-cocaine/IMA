@@ -2096,7 +2096,7 @@ function getGuardianPermissionKeyForAction_(action) {
   if (/(payment|finance|account|billing|voucher|credit|invoice|purchase|receipt|tuition|fee)/.test(value)) return "permisoFinanciero";
   if (/(attendance|absence|justification|check in|checkin)/.test(value)) return "permisoAsistencia";
   if (/(document|file|certificate|expedient|attachment)/.test(value)) return "permisoDocumental";
-  if (/(grade|exam|task|academic|schedule|classroom|enrollment|student record|report)/.test(value)) return "permisoAcademico";
+  if (/(grade|exam|task|academic|schedule|classroom|enrollment|student records?|report)/.test(value)) return "permisoAcademico";
   return "";
 }
 

@@ -53,12 +53,12 @@ for (const [service, path] of services) {
 }
 
 const userSource = fs.readFileSync("backend/user-service/Code.gs", "utf8");
-const userFn = extractFunction(userSource, "validateContextualAccess");
+const userFn = [extractFunction(userSource, "getGuardianPermissionKeyForAction_"), extractFunction(userSource, "validateContextualAccess")].join(String.fromCharCode(10));
 let guardianRequest = null;
 const guardianRuntime = {
   getGuardianStudents(payload) {
     guardianRequest = payload;
-    return { data: [{ studentUserId: "STUDENT-1", permisos: {} }] };
+    return { status: "success", data: [{ studentUserId: "STUDENT-1", permisos: { permisoAcademico: true } }] };
   },
   Date, Number, String, Object, Array
 };
@@ -69,7 +69,7 @@ const guardianDecision = guardianRuntime.check("getStudentRecords",
 assert.equal(guardianDecision.authorized, true, "verified guardian can access a linked student");
 assert.equal(guardianRequest.sessionToken, "signed-token", "guardian relationship lookup must carry the verified session");
 assert.equal(guardianRequest._verifiedUserId, "GUARDIAN-1");
-guardianRuntime.getGuardianStudents = () => ({ data: [] });
+guardianRuntime.getGuardianStudents = () => ({ status: "success", data: [] });
 const unlinkedDecision = guardianRuntime.check("getStudentRecords",
   { studentId: "STUDENT-2", sessionToken: "signed-token" }, "GUARDIAN-1", "Tutor");
 assert.equal(unlinkedDecision.authorized, false, "unlinked guardian-student relationship must deny");
