@@ -6352,3 +6352,13 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Department Scope run 44962416432 SUCCESS 137/137; PT22 suite (paso 118), binary integrity (120) y syntax-check (117) PASS. Workflows ACCOUNTING Transport, Identity Mapping, Hierarchical Configuration, Department Reference Consumers, Accounting Import Preflight y Library Circulation Concurrency SUCCESS.
 - AUD-NG-065 completado en contratos Node aislados. BETA-FUNC-129 creado y queda pendiente de ejecución en Apps Script/Sheets/Drive reales.
 - AUD-NG-222/TASK-502 y TASK-506 continúan En ejecución. Siguiente: inventario action/resource restante en ACADEMIC/ACCOUNTING/TASK/EXAM y pruebas focalizadas sin repetir evidencia vigente.
+
+
+### Continuidad C1.930 — AUD-NG-222 / TASK-502 (EXAM)
+- Hallazgo TOCTOU en submitExam: el contexto de estudiante/scope se calculaba antes de ScriptLock. Se mueve la construcción del contexto dentro del lock y se revalidan permiso, identidad, userId y rol antes de submitExamUnlocked_.
+- Hallazgo TOCTOU en withAuthorizedExamCreation_: la asignación departamental se calculaba antes de lock y se reutilizaba. Se mantiene preflight, pero RBAC/identidad/rol/scope/departmentId se verifican de nuevo dentro de la sección crítica.
+- Contratos cubren permiso revocado, sesión/identidad revocada, perfil/contexto estudiantil invalidado, adscripción cambiada de D1 a D2, lock timeout, reentrada y ausencia de escrituras ante denegación.
+- Auditoría estática de funciones EXAM con ScriptLock confirmó que las únicas rutas con contexto/scope anterior al lock eran submitExam y createExam; ambas corregidas. Los demás wrappers ya construyen contexto dentro del lock.
+- Exam-Service security local run 44963334570 SUCCESS 42/42; Department Scope 44963151092 SUCCESS 136/136; SACE Monotonic Source Revision 44963151083 SUCCESS.
+- BETA-EXAM-116 creado para verificar en Apps Script/Sheets la revocación/cambio de rol/scope durante espera real de lock. Pendiente beta.
+- TASK-502 sigue En ejecución; TASK-506 depende de TASK-502. Siguiente: continuar inventario action/resource en ACADEMIC y handlers restantes de ACCOUNTING/TASK/EXAM.

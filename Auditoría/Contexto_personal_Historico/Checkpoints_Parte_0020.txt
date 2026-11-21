@@ -1530,3 +1530,39 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
 - Próximo paso: continuar el inventario focalizado ACADEMIC/ACCOUNTING (lecturas y mutaciones con IDs de expediente/empleado/transporte), reutilizando contratos vigentes; ejecutar CLI local cuando exista checkout local. Mantener BETA-FUNC-129 pendiente de entorno Apps Script/Drive.
 ===============================================================================
+
+
+===============================================================================
+### C1.930 — IMA-EXEC-20261121-AUD-NG-222-EXAM-TOCTOU-101
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.929, HEAD a54d2c3eb312588ae8e6ed1608c95f1b2825c2ba.
+- HEAD de código al cerrar esta unidad: a82b4c2b6320249ab00385ead29d027926698474; documentación BETA-EXAM-116 commit eee6104b40adb3768c6aa61a95190f913afd0561.
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección — EXAM TOCTOU
+- submitExam construía getExamReadContext_ antes de obtener ScriptLock y reutilizaba identidad/perfil/scope durante la escritura. Una revocación o cambio de perfil mientras esperaba el lock podía dejar válido un contexto obsoleto.
+- Corrección: conserva preflight RBAC/identidad para rechazo temprano; después de adquirir lock vuelve a validar permiso e identidad, comprueba que userId/rol no cambiaron y construye getExamReadContext_ dentro de la sección crítica. El envío se deniega si el contexto actual ya no corresponde a un estudiante autorizado.
+- withAuthorizedExamCreation_ prevalidaba scope departamental y luego lo reutilizaba tras esperar lock. Ahora revalida RBAC, identidad, rol, institución, asignación y departmentId dentro del lock; cambio de departamento, revocación o cambio de identidad falla cerrado sin crear examen.
+- Auditoría estática de funciones EXAM con ScriptLock y scope/context: las únicas dos excepciones encontradas eran submitExam y withAuthorizedExamCreation_; ambas corregidas. Los demás wrappers construyen contexto después de adquirir lock.
+
+### Archivos modificados
+- backend/exam-service/Code.gs
+- tests/security/exam-service-submit-mutation-security.test.js
+- tests/security/exam-service-create-exam-security.test.js
+- beta_test.txt (nuevo BETA-EXAM-116)
+
+### Verificaciones
+- Exam-Service security local contracts run 44963334570: SUCCESS; 42/42 pasos y contratos Node, incluye submit/create revalidation, lock timeout, reentrada y denegación sin escrituras.
+- Department Scope Contract run 44963151092: SUCCESS, 136/136 pasos.
+- SACE Monotonic Source Revision run 44963151083: SUCCESS.
+- El runner ejecutó Node.js y los contratos de seguridad/sintaxis. Apps Script/Sheets real, despliegue staging y concurrencia interproyecto NOT RUN.
+- BETA-EXAM-116 documenta revocación de sesión/rol/asignación mientras una solicitud espera lock; permanece PENDIENTE DE BETA.
+
+### Estado y siguiente acción elegible
+- EXAM: las rutas submitExam y createExam ahora revalidan identidad/scope bajo lock; contratos locales PASS.
+- AUD-NG-222 / TASK-502 permanece En ejecución; el inventario global action/resource no está cerrado.
+- TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
+- Siguiente: continuar el inventario action/resource en ACADEMIC y revisar los handlers restantes de ACCOUNTING/TASK/EXAM, sin repetir contratos vigentes; mantener BETA-EXAM-116 pendiente de ejecución real.
+===============================================================================

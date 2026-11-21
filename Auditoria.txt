@@ -3264,3 +3264,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-222 / TASK-502 | C1.930] EXAM: hallazgo de carrera en createExam: permisos/identidad/adscripción se resolvían antes de esperar ScriptLock. Se revalida RBAC, userId/role y ámbito dentro del lock antes de mutar; el lock se libera por finally. Contrato Node cubre permiso revocado, actor cambiado, departamento cambiado, timeout, reentrada y liberación. Exam-Service run 44963334570 SUCCESS, incluido all repository Node.js tests. CLI local NOT RUN por ausencia de checkout; no cerrar auditoría global ACADEMIC/ACCOUNTING.
+
+
+[2026-11-21 | AUD-NG-222 / TASK-502 | C1.930] Hallazgo TOCTOU: submitExam y createExam autorizaban perfil/scope antes de ScriptLock y reutilizaban el contexto tras esperar; una revocación o cambio de departamento podía dejar una autorización obsoleta. Corrección: ambos revalidan RBAC/identidad/scope dentro del lock; submitExam reconstruye contexto estudiantil actual y createExam valida la asignación/departmentId actual. Contratos locales PASS; beta real pendiente BETA-EXAM-116.

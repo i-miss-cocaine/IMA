@@ -1099,3 +1099,15 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - AUD-NG-222/TASK-502 y TASK-506 continúan En ejecución.
 - Siguiente: continuar inventario action/resource restante en ACADEMIC/ACCOUNTING/TASK/EXAM.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.930 — AUD-NG-222 / TASK-502 (EXAM)
+- submitExam construye el contexto estudiantil dentro del lock y revalida RBAC/identidad/rol.
+- createExam conserva preflight y vuelve a validar permiso, identidad, scope e institución/departamento bajo lock.
+- Tests cubren revocación de sesión/permisos, contexto estudiantil invalidado, cambio de D1 a D2, lock timeout, reentrada y no-write.
+- Exam-Service local 42/42 PASS; Department Scope 136/136 PASS; SACE Monotonic PASS.
+- BETA-EXAM-116 pendiente de Apps Script/Sheets real.
+- TASK-502 y TASK-506 siguen En ejecución.
+- Siguiente: inventario action/resource de ACADEMIC y handlers restantes de ACCOUNTING/TASK/EXAM.
+===============================================================================
