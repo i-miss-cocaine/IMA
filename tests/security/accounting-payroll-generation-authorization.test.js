@@ -49,7 +49,7 @@ function makeScopeHarness(options) {
     Date, String, Number, Object, Array, JSON
   };
   vm.createContext(runtime);
-  vm.runInContext(extractFunction("assertPayrollInstitutionWriteScope_") + "\nthis.run = assertPayrollInstitutionWriteScope_;", runtime);
+  vm.runInContext(extractFunction("assertPayrollEmployeeResourceScope_") + "\n" + extractFunction("assertPayrollInstitutionWriteScope_") + "\nthis.run = assertPayrollInstitutionWriteScope_;", runtime);
   return { run: runtime.run, calls, ss, rows };
 }
 
