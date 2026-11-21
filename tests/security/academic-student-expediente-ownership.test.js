@@ -747,6 +747,10 @@ console.log("ACADEMIC admission conversion lock contention and release contract 
     ["RelacionID","ExpedienteID","ResponsableID","TipoParentesco","EsRepresentanteLegal","EsContactoEmergencia","EsResponsableFinanciero","AutorizadoPickUp","AccesoPortal","Estado"],
     ["REL-1","EXP-1","RESP-1","Madre","Sí","Sí","Sí","Sí","Sí","Activo"]
   ];
+  const primaryRelationRows = [
+    ["RelacionID","ExpedienteID","ResponsableID","TipoParentesco","Estado","FechaInicio","FechaFin","VerificadaPor","PermisosJSON"],
+    ["REL-PRIMARY-1","EXP-1","TUTOR-1","Madre","Verificada","2020-01-01","2099-12-31","","{\"permisoAcademico\":true,\"permisoFinanciero\":true}"]
+  ];
   const guardianRows = [
     ["ResponsableID","PersonaID","Nombres","Apellidos"],
     ["RESP-1","PERSON-T","Guardian","One"]
@@ -757,6 +761,7 @@ console.log("ACADEMIC admission conversion lock contention and release contract 
     ExpedientesEstudiantes:makeSheet(expedienteRows),
     Matriculas:makeSheet(enrollmentRows),
     RelacionesEstudianteTutor:makeSheet(relationRows),
+    RelacionesFamiliares:makeSheet(primaryRelationRows),
     ResponsablesTutores:makeSheet(guardianRows)
   };
   const enrollmentSs = {getSheetByName:name=>enrollmentSheets[name]||null};
@@ -794,7 +799,7 @@ console.log("ACADEMIC admission conversion lock contention and release contract 
   assert.deepEqual(studentPeriod.enrollments.map(row=>row.matriculaId),["MAT-1-OLD"],
     "period filters may narrow but must not expand the signed student's access");
   const guardianOwn=call({authorized:true,userId:"TUTOR-1",role:"Tutor"},{userId:"STU-1"});
-  assert.equal(guardianOwn.status,"success","guardian with an active portal relationship may read the linked student's enrollments");
+  assert.equal(guardianOwn.status,"success","guardian with an explicit primary academic grant may read the linked student's enrollments");
   assert.deepEqual(guardianOwn.enrollments.map(row=>row.matriculaId),["MAT-1","MAT-1-OLD"]);
   assert.equal(call({authorized:true,userId:"TUTOR-1",role:"Tutor"},{userId:"STU-2"}).code,"RESOURCE_NOT_FOUND",
     "guardian must not query an unrelated student's enrollments");
