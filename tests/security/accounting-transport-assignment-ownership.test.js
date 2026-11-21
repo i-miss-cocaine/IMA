@@ -110,6 +110,11 @@ const duplicateRoute=makeHarness({routeRows:[
 assert.equal(duplicateRoute.runAssign(payload()).code,"ROUTE_ID_AMBIGUOUS");
 const inactiveRoute=makeHarness({routeRows:[["RUT-1","Ruta 1","BUS-1","EMP-1",20,"[]","inactive","","06:30","","Matutina"]]});
 assert.equal(inactiveRoute.runAssign(payload()).code,"ROUTE_NOT_ACTIVE");
+for (const activeState of ["activo","activa","vigente"]) {
+  const compatibleRoute = makeHarness({routeRows:[["RUT-1","Ruta 1","BUS-1","EMP-1",20,"[]",activeState,"","06:30","","Matutina"]]});
+  assert.equal(compatibleRoute.runAssign(payload()).status,"success",
+    "assignment must accept route states exposed as active by getTransportRoutes: " + activeState);
+}
 const lockBusy=makeHarness({lockAvailable:false});
 assert.equal(lockBusy.runAssign(payload()).code,"LOCK_TIMEOUT");
 assert.equal(lockBusy.data.TransporteAsignaciones.length,1);
