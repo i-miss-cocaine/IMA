@@ -110,7 +110,7 @@ test(() => {
   assert.equal(result.status, "success");
   assert.equal(x.stats.action, "createExam");
   assert.equal(x.stats.permissionCalls, 2, "permission is revalidated after acquiring the mutation lock");
-  assert.deepEqual(x.stats.events, ["rbac","identity","sheets","scope","lock","rbac","identity","sheets","scope"]);
+  assert.deepEqual(x.stats.events, ["rbac","identity","sheets","scope","lock","rbac","identity","sheets","scope","release"]);
   assert.equal(x.sheets.Examenes.rows.length, 2);
   assert.equal(x.sheets.ResourceOwnership.rows.length, 2);
   assert.equal(x.sheets.PreguntasExamen.rows.length, 2);
