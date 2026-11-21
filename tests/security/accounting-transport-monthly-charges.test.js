@@ -68,10 +68,11 @@ rows.TransporteRutas.push(["R-DUP","Duplicate B","BUS-DUP","EMP-1",5,"[]","activ
 assert.equal(context.assignStudentTransport({rutaId:"R-DUP",estudianteUserId:"STU-001"}).code,"ROUTE_ID_AMBIGUOUS");
 const beforeRollbackAssignments=rows.TransporteAsignaciones.length;
 const beforeRollbackCharges=JSON.stringify(rows.CargosEstudiante);
-const originalRecalculate=context.transportRecalculateStudentMonthlyChargeLocked_;
-context.transportRecalculateStudentMonthlyChargeLocked_=()=>{throw Error("BILLING_WRITE_FAILED");};
+context.__originalTransportRecalculate=context.transportRecalculateStudentMonthlyChargeLocked_;
+vm.runInContext('transportRecalculateStudentMonthlyChargeLocked_=function(){throw Error("BILLING_WRITE_FAILED");};',context);
 assert.throws(()=>context.assignStudentTransport({rutaId:"R2",estudianteUserId:"STU-ROLLBACK",fechaInicioServicio:firstDay}),/BILLING_WRITE_FAILED/);
-context.transportRecalculateStudentMonthlyChargeLocked_=originalRecalculate;
+vm.runInContext('transportRecalculateStudentMonthlyChargeLocked_=__originalTransportRecalculate;',context);
+delete context.__originalTransportRecalculate;
 assert.equal(rows.TransporteAsignaciones.length,beforeRollbackAssignments,"billing failure must rollback the assignment row");
 assert.equal(JSON.stringify(rows.CargosEstudiante),beforeRollbackCharges,"billing failure must preserve the prior charge snapshot");
 const originalChargeRows=JSON.stringify(rows.CargosEstudiante);
