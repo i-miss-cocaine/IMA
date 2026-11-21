@@ -60,6 +60,8 @@ const functions = [
   "getDepartmentHierarchyColumnMap_",
   "validateDepartmentHierarchy_",
   "getDepartmentHierarchySnapshot_",
+  "getInstitutionalDepartmentScope_",
+  "requireInstitutionalDepartmentScope_",
   "manageDepartmentPositions"
 ].map(extractFunction).join("\n");
 
@@ -69,6 +71,7 @@ function createContext(sheet, options) {
   const context = {
     SPREADSHEET_ID:"TEST",
     getUserVerifiedRole:() => options && options.role || "RecursosHumanos",
+    getUserContextScope:() => ({status:"success",institutionWide:true,departmentIds:[]}),
     SpreadsheetApp:{ openById:() => spreadsheet },
     getOrCreateSheet:(_ss,name) => name === "CatalogoDepartamentos" ? sheet : makeSheet([],[]),
     LockService:{ getScriptLock:() => ({ tryLock:() => !(options && options.lockBusy), releaseLock:() => {} }) },
