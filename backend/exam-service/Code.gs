@@ -1974,7 +1974,8 @@ function checkExamSchedulingConflictUnlocked_(payload, context) {
     if (!id || idCounts[id] !== 1 || id === excludedId) return;
     const status = String(row[7] || "").trim().toUpperCase();
     if (status === "INACTIVO" || status === "CANCELADO") return;
-    if (actor.role === "Profesor" && String(row[8] || "").trim() !== actor.userId) return;
+    if (actor.role === "Profesor" && (String(row[8] || "").trim() !== actor.userId ||
+        !hasExamTeacherActiveOfferAssignment_(ss, actor.userId, row))) return;
     const sameSection = normalizeString(row[4]) === section || normalizeString(row[3]) === section;
     if (!sameSection || dateKey(row[5]) !== dateTarget) return;
     const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", id,
@@ -2008,7 +2009,8 @@ function simulateExamRescheduleUnlocked_(payload, context) {
   if (matches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
   const examRow = matches[0];
 
-  if (actor.role === "Profesor" && String(examRow[8] || "").trim() !== actor.userId) {
+  if (actor.role === "Profesor" && (String(examRow[8] || "").trim() !== actor.userId ||
+      !hasExamTeacherActiveOfferAssignment_(ss, actor.userId, examRow))) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
   const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examenId,
