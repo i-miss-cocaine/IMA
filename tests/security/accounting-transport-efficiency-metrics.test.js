@@ -38,7 +38,7 @@ function extractFunction(name) {
 }
 
 const names = [
-  "getVerifiedAccountingIdentity_", "transportRows_", "transportMetricsDateKey_", "transportMetricsTimeMinutes_", "getTransportEfficiencyMetrics"
+  "getVerifiedAccountingIdentity_", "transportRows_", "transportManagementReadScope_", "transportMetricsDateKey_", "transportMetricsTimeMinutes_", "getTransportEfficiencyMetrics"
 ];
 const extracted = names.map(extractFunction).join("\n");
 const rows = {
@@ -133,7 +133,7 @@ const context = {
   Date, Math, Number, String, Object, Array, JSON, Error, isFinite, console
 };
 vm.createContext(context);
-vm.runInContext(extracted + "\nthis.metrics = getTransportEfficiencyMetrics; this.parseTime = transportMetricsTimeMinutes_;", context);
+vm.runInContext(extracted + "\nfunction getVerifiedAccountingDepartmentScope_(payload, spreadsheet, actor) { return { valid: true, authorized: true, institutionWide: true, institutionId: actor && actor.institutionId || \"INST-1\" }; }\nthis.metrics = getTransportEfficiencyMetrics; this.parseTime = transportMetricsTimeMinutes_;", context);
 
 function run(payload) { return context.metrics(payload); }
 
