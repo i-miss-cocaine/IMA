@@ -2092,14 +2092,17 @@ function hasActiveDelegationForAction(userId, action) {
 
 // [TAREA-F5-009] [TAREA-F4-P1-04] [Fase 5: Admisiones y Portal de Familias] - Validación contextual con permisos individuales por relación de tutor
 function validateContextualAccess(action, payload, verifiedUserId, userRole) {
-  if (!userRole || userRole === "Administrador" || userRole === "Desarrollador") {
+  const verifiedActorId = String(verifiedUserId || "").trim();
+  const verifiedActorRole = String(userRole || "").trim();
+  if (!verifiedActorId || !verifiedActorRole) return { authorized: false, reason: "VERIFIED_IDENTITY_REQUIRED" };
+  if (verifiedActorRole === "Administrador" || verifiedActorRole === "Desarrollador") {
     return { authorized: true };
   }
 
   const targetStudentId = payload && (payload.studentId || payload.estudianteId || payload.targetUserId || payload.userId);
 
   if (userRole === "Estudiante" || userRole === "Alumno") {
-    if (targetStudentId && verifiedUserId && String(targetStudentId).trim() !== String(verifiedUserId).trim()) {
+    if (targetStudentId && String(targetStudentId).trim() !== verifiedActorId) {
       return { authorized: false, reason: "Aislamiento estricto de estudiante: intento de acceso a ID ajeno." };
     }
   }
@@ -2107,7 +2110,7 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   if (userRole === "Padre" || userRole === "Tutor" || userRole === "Responsable") {
     if (targetStudentId && verifiedUserId && String(targetStudentId).trim() !== String(verifiedUserId).trim()) {
       try {
-        const guardianRes = getGuardianStudents({ userId: verifiedUserId, _verifiedUserId: verifiedUserId, _verifiedRole: userRole });
+        const guardianRes = getGuardianStudents({ userId: verifiedActorId, _verifiedUserId: verifiedActorId, _verifiedRole: verifiedActorRole, sessionToken: payload && (payload.sessionToken || payload.authToken || payload.token) });
         const linkedStudents = (guardianRes.data || []);
         const match = linkedStudents.find(s => String(s.studentUserId || s.userId || s.expedienteEstudianteId).trim() === String(targetStudentId).trim());
         if (!match) {
@@ -5733,7 +5736,7 @@ function getFamilyConsolidatedSummary(payload) {
   if (!uid) uid = payload._verifiedUserId;
   if (!uid) throw new Error("userIdResponsable es requerido.");
 
-  const studentsRes = getGuardianStudents({ userIdResponsable: uid });
+  const studentsRes = getGuardianStudents({ userIdResponsable: uid, sessionToken: payload && (payload.sessionToken || payload.authToken || payload.token) });
   const students = (studentsRes && studentsRes.data) ? studentsRes.data : [];
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);

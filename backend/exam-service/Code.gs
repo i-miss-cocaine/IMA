@@ -442,14 +442,17 @@ function assertExamResourceOwnershipForScope_(ss, scope, resourceType, resourceI
 // [TAREA-01] [TAREA-F4-P0-01] [Fase 4 - Seguridad RBAC y Token Unificado] - Validar y reforzar la seguridad mediante verificación de credencial de sesión HMAC
 // [TAREA-F4-P1-04] [Fase 4: Reglas Contextuales RBAC/ABAC] - Validación de atributos contextuales (Docentes, Tutores, Estudiantes)
 function validateContextualAccess(action, payload, verifiedUserId, userRole) {
-  if (!userRole || userRole === "Administrador" || userRole === "Desarrollador") {
+  const verifiedActorId = String(verifiedUserId || "").trim();
+  const verifiedActorRole = String(userRole || "").trim();
+  if (!verifiedActorId || !verifiedActorRole) return { authorized: false, reason: "VERIFIED_IDENTITY_REQUIRED" };
+  if (verifiedActorRole === "Administrador" || verifiedActorRole === "Desarrollador") {
     return { authorized: true };
   }
 
   const targetStudentId = payload && (payload.studentId || payload.estudianteId || payload.targetUserId || payload.userId);
 
   if (userRole === "Estudiante" || userRole === "Alumno") {
-    if (targetStudentId && verifiedUserId && String(targetStudentId).trim() !== String(verifiedUserId).trim()) {
+    if (targetStudentId && String(targetStudentId).trim() !== verifiedActorId) {
       return { authorized: false, reason: "Aislamiento estricto de estudiante: intento de acceso a ID ajeno." };
     }
   }

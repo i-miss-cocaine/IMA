@@ -34,6 +34,7 @@ on:
       - tests/security/student-payment-voucher-client.test.js
       - tests/security/department-scope-contract.test.js
       - tests/security/contextual-abac-policy-contract.test.js
+      - tests/security/contextual-abac-five-services-contract.test.js
       - tests/security/user-service-department-hierarchy-cycle.test.js
       - tests/security/user-service-department-affiliation-integrity.test.js
       - tests/security/academic-department-governance-contract.test.js
@@ -151,6 +152,8 @@ jobs:
         run: node tests/security/department-scope-contract.test.js
       - name: Run contextual ABAC fail-closed policy contract
         run: node tests/security/contextual-abac-policy-contract.test.js
+      - name: Run five-service contextual ABAC identity contract
+        run: node tests/security/contextual-abac-five-services-contract.test.js
       - name: Run organizational department hierarchy cycle contract
         run: node tests/security/user-service-department-hierarchy-cycle.test.js
       - name: Run institutional department affiliation integrity contract
@@ -338,6 +341,7 @@ jobs:
           node --check tests/security/internal-responsibility-rbac-contract.test.js
           node --check tests/security/department-scope-contract.test.js
           node --check tests/security/contextual-abac-policy-contract.test.js
+          node --check tests/security/contextual-abac-five-services-contract.test.js
           node --check tests/security/task-service-security-contract.test.js
           node --check tests/security/hmac-secret-config.test.js
           node --check js/teacher.js
