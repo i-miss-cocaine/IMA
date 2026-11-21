@@ -12868,10 +12868,19 @@ function getOrCreateTransportVehiclesCatalog() {
 }
 
 // Approval-gated route optimization proposals.
-function transportOptimizationActor_(payload){
- const actor=getVerifiedAccountingIdentity_(payload||{});if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");
- const role=String(actor.role||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+function transportOptimizationActor_(payload, action, spreadsheet) {
+ const input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+ if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");
+ const role=String(actor.role||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
  if(["ADMINISTRADOR","DIRECTOR","SUBDIRECTOR"].indexOf(role)===-1)throw new Error("ROUTE_OPTIMIZATION_ROLE_NOT_ALLOWED");
+ if(action) {
+  const permission=validateRolePermission(actor,action);
+  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+ }
+ if(spreadsheet) {
+  const access=transportManagementReadScope_(input,spreadsheet,actor,{authorized:true,management:true,role:actor.role});
+  if(!access||access.authorized!==true)throw new Error(access&&access.code||"INSTITUTION_WIDE_SCOPE_REQUIRED");
+ }
  return actor;
 }
 
@@ -12936,63 +12945,117 @@ function transportOptimizationOrder_(stops,speed,startTime){
  return {stops:ordered,evaluation:evaluated};
 }
 
-function transportOptimizationSheet_(ss){
- const sh=getOrCreateSheet(ss,"TransporteOptimizaciones"),headers=["PropuestaID","RutaID","FechaCreacion","CreadoPor","VelocidadPromedioKmh","HoraInicio","DistanciaActualKm","DistanciaPropuestaKm","TiempoEstimadoMinutos","ParadasOriginalesJSON","ParadasPropuestasJSON","Estado","ResueltoPor","FechaResolucion","Observaciones"],data=sh.getDataRange().getValues();
- if(!data.length||!data[0].some(v=>String(v||"").trim()))sh.getRange(1,1,1,headers.length).setValues([headers]);
- else if(headers.some((h,i)=>String(data[0][i]||"").trim()!==h))throw new Error("ROUTE_OPTIMIZATION_SCHEMA_CONFLICT");
+function transportOptimizationSheet_(ss, createIfMissing) {
+ const headers=["PropuestaID","RutaID","FechaCreacion","CreadoPor","VelocidadPromedioKmh","HoraInicio","DistanciaActualKm","DistanciaPropuestaKm","TiempoEstimadoMinutos","ParadasOriginalesJSON","ParadasPropuestasJSON","Estado","ResueltoPor","FechaResolucion","Observaciones"];
+ const sh=createIfMissing===false?ss.getSheetByName("TransporteOptimizaciones"):getOrCreateSheet(ss,"TransporteOptimizaciones");
+ if(!sh)return null;
+ const data=sh.getDataRange().getValues();
+ if(!data.length||!data[0].some(v=>String(v||"").trim())) {
+  if(createIfMissing===false)return null;
+  sh.getRange(1,1,1,headers.length).setValues([headers]);
+ } else if(headers.some((h,i)=>String(data[0][i]||"").trim()!==h)) throw new Error("ROUTE_OPTIMIZATION_SCHEMA_CONFLICT");
  return sh;
 }
 
-function optimizeRouteStopsSequence(payload){
- const p=payload||{},actor=transportOptimizationActor_(p),routeId=String(p.rutaId||"").trim(),speed=Number(p.velocidadPromedioKmh),lock=LockService.getScriptLock();
- if(!routeId)throw new Error("ROUTE_ID_REQUIRED");if(!Number.isFinite(speed)||speed<1||speed>120)throw new Error("ROUTE_OPTIMIZATION_SPEED_INVALID");
+function optimizeRouteStopsSequence(payload) {
+ const p=payload||{},action="optimizeRouteStopsSequence";
+ transportOptimizationActor_(p,action);
+ const routeId=String(p.rutaId||"").trim(),speed=Number(p.velocidadPromedioKmh),lock=LockService.getScriptLock();
+ if(!routeId)throw new Error("ROUTE_ID_REQUIRED");
+ if(!Number.isFinite(speed)||speed<1||speed>120)throw new Error("ROUTE_OPTIMIZATION_SPEED_INVALID");
  lock.waitLock(15000);
- try{
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),routes=getOrCreateSheet(ss,"TransporteRutas"),rows=routes.getDataRange().getValues(),matches=rows.map((r,i)=>({r:r,n:i+1})).filter(x=>x.n>1&&String(x.r[0]||"").trim()===routeId);
+ try {
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),actor=transportOptimizationActor_(p,action,ss);
+  const routeSnapshot=transportRowsPrefix_(ss,"TransporteRutas",[["RutaID"],["NombreRuta","Nombre"],["UnidadCodigo","Unidad"],["ConductorEmpleadoId","Conductor"],["Capacidad"],["ParadasJSON","Paradas"],["Estado"]]);
+  if(!routeSnapshot.valid)throw new Error("TRANSPORT_SCHEMA_INVALID");
+  const matches=routeSnapshot.rows.filter(r=>String(r[0]||"").trim()===routeId);
   if(matches.length!==1)throw new Error(matches.length?"ROUTE_ID_AMBIGUOUS":"ROUTE_NOT_FOUND");
-  const route=matches[0].r,original=String(route[5]||""),stops=transportOptimizationNormalizeStops_(original),startTime=transportOptimizationTime_(p.horaInicio||route[8]);
+  const route=matches[0],original=String(route[5]||""),stops=transportOptimizationNormalizeStops_(original),startTime=transportOptimizationTime_(p.horaInicio||route[8]);
   if(startTime===null)throw new Error("ROUTE_OPTIMIZATION_START_TIME_REQUIRED");
   const currentEval=transportOptimizationEvaluate_(stops,speed,startTime),optimized=transportOptimizationOrder_(stops,speed,startTime),proposed=optimized.stops.map((s,i)=>Object.assign({},s.source,{orden:i+1}));
-  const proposalSheet=transportOptimizationSheet_(ss),proposalId="RTO-"+Utilities.getUuid(),proposal=[proposalId,routeId,new Date(),actor.userId,speed,String(p.horaInicio||route[8]),currentEval.distanceKm,optimized.evaluation.distanceKm,optimized.evaluation.totalMinutes,original,JSON.stringify(proposed),"PENDIENTE","","",String(p.observaciones||"")];
+  const proposalSheet=transportOptimizationSheet_(ss,true),proposalId="RTO-"+Utilities.getUuid(),proposal=[proposalId,routeId,new Date(),actor.userId,speed,String(p.horaInicio||route[8]),currentEval.distanceKm,optimized.evaluation.distanceKm,optimized.evaluation.totalMinutes,original,JSON.stringify(proposed),"PENDIENTE","","",String(p.observaciones||"")];
   proposalSheet.appendRow(proposal);
   return {status:"success",propuestaId:proposalId,rutaId:routeId,estado:"PENDIENTE",distanciaActualKm:currentEval.distanceKm,ventanasActualesValidas:currentEval.valid,distanciaPropuestaKm:optimized.evaluation.distanceKm,tiempoEstimadoMinutos:optimized.evaluation.totalMinutes,paradasPropuestas:proposed,message:"Propuesta creada; la ruta activa no fue modificada."};
- }finally{lock.releaseLock();}
+ } finally {lock.releaseLock();}
 }
 
-function getRouteOptimizationProposals(payload){
- const p=payload||{};transportOptimizationActor_(p);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=transportOptimizationSheet_(ss),rows=sh.getDataRange().getValues().slice(1),routeId=String(p.rutaId||"").trim(),state=String(p.estado||"").trim().toUpperCase();
+function getRouteOptimizationProposals(payload) {
+ const p=payload||{},action="getRouteOptimizationProposals";
+ transportOptimizationActor_(p,action);
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),actor=transportOptimizationActor_(p,action,ss);
+ const routeId=String(p.rutaId||"").trim(),state=String(p.estado||"").trim().toUpperCase();
+ if(routeId) {
+  const routeSnapshot=transportRowsPrefix_(ss,"TransporteRutas",[["RutaID"],["NombreRuta","Nombre"],["UnidadCodigo","Unidad"],["ConductorEmpleadoId","Conductor"],["Capacidad"],["ParadasJSON","Paradas"],["Estado"]]);
+  if(!routeSnapshot.valid)throw new Error("TRANSPORT_SCHEMA_INVALID");
+  const routeMatches=routeSnapshot.rows.filter(r=>String(r[0]||"").trim()===routeId);
+  if(routeMatches.length!==1)throw new Error(routeMatches.length?"ROUTE_ID_AMBIGUOUS":"ROUTE_NOT_FOUND");
+ }
+ const sh=transportOptimizationSheet_(ss,false);
+ if(!sh)return {status:"success",propuestas:[],total:0};
+ const rows=sh.getDataRange().getValues().slice(1);
  const data=rows.filter(r=>(!routeId||String(r[1])===routeId)&&(!state||String(r[11]||"").toUpperCase()===state)).map(r=>({propuestaId:r[0],rutaId:r[1],fechaCreacion:r[2],creadoPor:r[3],velocidadPromedioKmh:r[4],horaInicio:r[5],distanciaActualKm:r[6],distanciaPropuestaKm:r[7],tiempoEstimadoMinutos:r[8],paradasOriginalesJSON:r[9],paradasPropuestasJSON:r[10],estado:r[11],resueltoPor:r[12],fechaResolucion:r[13],observaciones:r[14]}));
  return {status:"success",propuestas:data,total:data.length};
 }
 
-function approveRouteStopsOptimization(payload){
- const p=payload||{},actor=transportOptimizationActor_(p),id=String(p.propuestaId||"").trim();if(!id)throw new Error("ROUTE_OPTIMIZATION_PROPOSAL_ID_REQUIRED");
+function approveRouteStopsOptimization(payload) {
+ const p=payload||{},action="approveRouteStopsOptimization",id=String(p.propuestaId||"").trim();
+ transportOptimizationActor_(p,action);
+ if(!id)throw new Error("ROUTE_OPTIMIZATION_PROPOSAL_ID_REQUIRED");
  const lock=LockService.getScriptLock();lock.waitLock(15000);
- try{
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),proposalSheet=transportOptimizationSheet_(ss),proposals=proposalSheet.getDataRange().getValues(),found=proposals.map((r,i)=>({r:r,n:i+1})).filter(x=>x.n>1&&String(x.r[0])===id);
+ try {
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),actor=transportOptimizationActor_(p,action,ss),proposalSheet=transportOptimizationSheet_(ss,true),proposals=proposalSheet.getDataRange().getValues(),found=proposals.map((r,i)=>({r:r,n:i+1})).filter(x=>x.n>1&&String(x.r[0])===id);
   if(found.length!==1)throw new Error(found.length?"ROUTE_OPTIMIZATION_PROPOSAL_AMBIGUOUS":"ROUTE_OPTIMIZATION_PROPOSAL_NOT_FOUND");
-  const item=found[0],proposal=item.r;if(String(proposal[11]||"").toUpperCase()==="APROBADA")return {status:"success",idempotent:true,propuestaId:id,rutaId:proposal[1]};
+  const item=found[0],proposal=item.r;
+  if(String(proposal[11]||"").toUpperCase()==="APROBADA")return {status:"success",idempotent:true,propuestaId:id,rutaId:proposal[1]};
   if(String(proposal[11]||"").toUpperCase()!=="PENDIENTE")throw new Error("ROUTE_OPTIMIZATION_PROPOSAL_NOT_PENDING");
-  const routes=getOrCreateSheet(ss,"TransporteRutas"),routeRows=routes.getDataRange().getValues(),routeMatches=routeRows.map((r,i)=>({r:r,n:i+1})).filter(x=>x.n>1&&String(x.r[0])===String(proposal[1]));
+  const routeSheet=ss.getSheetByName("TransporteRutas");
+  if(!routeSheet)throw new Error("ROUTE_NOT_FOUND");
+  const routeSnapshot=transportRowsPrefix_(ss,"TransporteRutas",[["RutaID"],["NombreRuta","Nombre"],["UnidadCodigo","Unidad"],["ConductorEmpleadoId","Conductor"],["Capacidad"],["ParadasJSON","Paradas"],["Estado"]]);
+  if(!routeSnapshot.valid)throw new Error("TRANSPORT_SCHEMA_INVALID");
+  const routeMatches=routeSnapshot.rows.map((r,i)=>({r:r,n:i+2})).filter(x=>String(x.r[0]||"").trim()===String(proposal[1]||"").trim());
   if(routeMatches.length!==1)throw new Error(routeMatches.length?"ROUTE_ID_AMBIGUOUS":"ROUTE_NOT_FOUND");
-  const route=routeMatches[0],current=String(route.r[5]||"");if(current!==String(proposal[9]||""))throw new Error("ROUTE_OPTIMIZATION_STALE_ROUTE");
+  const route=routeMatches[0],current=String(route.r[5]||"");
+  if(current!==String(proposal[9]||""))throw new Error("ROUTE_OPTIMIZATION_STALE_ROUTE");
   const proposed=JSON.parse(String(proposal[10]||""));transportOptimizationNormalizeStops_(proposed);
   const oldRoute=route.r.slice(),oldProposal=proposal.slice();
-  try{routes.getRange(route.n,6).setValue(JSON.stringify(proposed));proposalSheet.getRange(item.n,12).setValue("APROBADA");proposalSheet.getRange(item.n,13).setValue(actor.userId);proposalSheet.getRange(item.n,14).setValue(new Date());return {status:"success",propuestaId:id,rutaId:proposal[1],estado:"APROBADA",aprobadoPor:actor.userId};}
-  catch(e){routes.getRange(route.n,1,1,oldRoute.length).setValues([oldRoute]);proposalSheet.getRange(item.n,1,1,oldProposal.length).setValues([oldProposal]);throw e;}
- }finally{lock.releaseLock();}
+  try {
+   routeSheet.getRange(route.n,6).setValue(JSON.stringify(proposed));
+   proposalSheet.getRange(item.n,12).setValue("APROBADA");
+   proposalSheet.getRange(item.n,13).setValue(actor.userId);
+   proposalSheet.getRange(item.n,14).setValue(new Date());
+   return {status:"success",propuestaId:id,rutaId:proposal[1],estado:"APROBADA",aprobadoPor:actor.userId};
+  } catch(e) {
+   routeSheet.getRange(route.n,1,1,oldRoute.length).setValues([oldRoute]);
+   proposalSheet.getRange(item.n,1,1,oldProposal.length).setValues([oldProposal]);
+   throw e;
+  }
+ } finally {lock.releaseLock();}
 }
 
-function rejectRouteStopsOptimization(payload){
- const p=payload||{},actor=transportOptimizationActor_(p),id=String(p.propuestaId||"").trim(),reason=String(p.motivo||p.observaciones||"").trim();if(!id)throw new Error("ROUTE_OPTIMIZATION_PROPOSAL_ID_REQUIRED");if(reason.length<5)throw new Error("ROUTE_OPTIMIZATION_REJECTION_REASON_REQUIRED");
+function rejectRouteStopsOptimization(payload) {
+ const p=payload||{},action="rejectRouteStopsOptimization",id=String(p.propuestaId||"").trim(),reason=String(p.motivo||p.observaciones||"").trim();
+ transportOptimizationActor_(p,action);
+ if(!id)throw new Error("ROUTE_OPTIMIZATION_PROPOSAL_ID_REQUIRED");
+ if(reason.length<5)throw new Error("ROUTE_OPTIMIZATION_REJECTION_REASON_REQUIRED");
  const lock=LockService.getScriptLock();lock.waitLock(15000);
- try{
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=transportOptimizationSheet_(ss),rows=sh.getDataRange().getValues(),matches=rows.map((r,i)=>({r:r,n:i+1})).filter(x=>x.n>1&&String(x.r[0])===id);
+ try {
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),actor=transportOptimizationActor_(p,action,ss),sh=transportOptimizationSheet_(ss,true),rows=sh.getDataRange().getValues(),matches=rows.map((r,i)=>({r:r,n:i+1})).filter(x=>x.n>1&&String(x.r[0])===id);
   if(matches.length!==1)throw new Error(matches.length?"ROUTE_OPTIMIZATION_PROPOSAL_AMBIGUOUS":"ROUTE_OPTIMIZATION_PROPOSAL_NOT_FOUND");
-  const item=matches[0],state=String(item.r[11]||"").toUpperCase();if(state==="RECHAZADA")return {status:"success",idempotent:true,propuestaId:id,estado:state};if(state!=="PENDIENTE")throw new Error("ROUTE_OPTIMIZATION_PROPOSAL_NOT_PENDING");
-  const old=item.r.slice();try{sh.getRange(item.n,12).setValue("RECHAZADA");sh.getRange(item.n,13).setValue(actor.userId);sh.getRange(item.n,14).setValue(new Date());sh.getRange(item.n,15).setValue(reason);return {status:"success",propuestaId:id,estado:"RECHAZADA",resueltoPor:actor.userId};}
-  catch(e){sh.getRange(item.n,1,1,old.length).setValues([old]);throw e;}
- }finally{lock.releaseLock();}
+  const item=matches[0],state=String(item.r[11]||"").toUpperCase();
+  if(state==="RECHAZADA")return {status:"success",idempotent:true,propuestaId:id,estado:state};
+  if(state!=="PENDIENTE")throw new Error("ROUTE_OPTIMIZATION_PROPOSAL_NOT_PENDING");
+  const old=item.r.slice();
+  try {
+   sh.getRange(item.n,12).setValue("RECHAZADA");
+   sh.getRange(item.n,13).setValue(actor.userId);
+   sh.getRange(item.n,14).setValue(new Date());
+   sh.getRange(item.n,15).setValue(reason);
+   return {status:"success",propuestaId:id,estado:"RECHAZADA",resueltoPor:actor.userId};
+  } catch(e) {
+   sh.getRange(item.n,1,1,old.length).setValues([old]);
+   throw e;
+  }
+ } finally {lock.releaseLock();}
 }
 
 // Authorized, aggregate transport operations metrics.
