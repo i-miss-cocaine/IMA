@@ -15,7 +15,7 @@ function extractFunction(name){
     if(ch==="{")depth++;else if(ch==="}"&&--depth===0){
       const extracted=source.slice(start,i+1);
       if(name!=="clearRequestAuthorizationContext_"&&name!=="refreshAcademicAdmissionScopeContext_"&&extracted.includes("refreshAcademicAdmissionScopeContext_")){
-        return extractFunction("clearRequestAuthorizationContext_")+"\\n"+extractFunction("refreshAcademicAdmissionScopeContext_")+"\\n"+extracted;
+        return extractFunction("clearRequestAuthorizationContext_")+"\n"+extractFunction("refreshAcademicAdmissionScopeContext_")+"\n"+extracted;
       }
       return extracted;
     }
