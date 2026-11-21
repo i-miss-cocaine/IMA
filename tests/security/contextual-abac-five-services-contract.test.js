@@ -328,14 +328,14 @@ const legacyExamSheets = {
       (name === "RelacionesEstudianteTutor" ? sheet(legacyExamRows) : null))
 };
 assert.deepEqual(Array.from(examRuntime.lookup(legacyExamSheets, "GUARDIAN-1")), [],
-  "EXAM legacy links without explicit academic-domain permission cannot authorize access");
+  "EXAM legacy relationships without explicit academic-domain permission fail closed");
 const duplicateLegacyExamSheets = {
   getSheetByName: name => name === "ExpedientesEstudiantes" ? sheet([expedienteRows[0]]) :
     (name === "RelacionesFamiliares" ? sheet([familyRows[0]]) :
       (name === "RelacionesEstudianteTutor" ? sheet(legacyExamRows.concat([legacyExamRows[2]])) : null))
 };
 assert.deepEqual(Array.from(examRuntime.lookup(duplicateLegacyExamSheets, "GUARDIAN-1")), [],
-  "EXAM denies legacy links without explicit academic-domain permission");
+  "EXAM legacy fallback denies duplicate relationship records");
 
 const accountingFamilyUsers = [
   ["UserId","PersonaID","Rol","Estado","Unused5","Unused6","Unused7","Unused8","Unused9","Unused10"],

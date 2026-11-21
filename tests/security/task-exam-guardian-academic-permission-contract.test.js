@@ -118,7 +118,7 @@ function examLegacyLookup() {
   };
   const context = { Date, String, Number, Object, Array, JSON };
   vm.createContext(context);
-  vm.runInContext(extractFunction(examSource, "getVerifiedGuardianStudentIds_") + "\\nthis.lookup=getVerifiedGuardianStudentIds_;", context);
+  vm.runInContext(extractFunction(examSource, "getVerifiedGuardianStudentIds_") + "\nthis.lookup=getVerifiedGuardianStudentIds_;", context);
   return Array.from(context.lookup({ getSheetByName: name => sheets[name] || null }, "GUARD-1"));
 }
 assert.deepEqual(examLegacyLookup(), [], "EXAM legacy relationship without explicit academic-domain permission denies");
