@@ -9,6 +9,7 @@ on:
       - 'js/api.js'
       - 'js/auth.js'
       - 'tests/security/task-service-security-contract.test.js'
+      - 'tests/security/task-service-teacher-offer-abac-contract.test.js'
       - 'tests/security/task-service-resource-ownership.test.js'
       - 'tests/security/task-service-submission-mutation-contract.test.js'
       - 'tests/security/task-service-submission-access-contract.test.js'
@@ -43,6 +44,7 @@ jobs:
         with:
           node-version: '22'
       - run: node tests/security/task-service-security-contract.test.js
+      - run: node tests/security/task-service-teacher-offer-abac-contract.test.js
       - run: node tests/security/task-service-resource-ownership.test.js
       - run: node tests/security/task-service-grade-submission-history.test.js
       - run: node tests/security/task-service-submission-mutation-contract.test.js
@@ -53,4 +55,5 @@ jobs:
       - run: node tests/security/task-service-single-auth-context.test.js
       - name: Run five-service contextual ABAC and guardian relation contract
         run: node tests/security/contextual-abac-five-services-contract.test.js
+      - run: node --check tests/security/task-service-teacher-offer-abac-contract.test.js
       - run: node --check js/teacher.js

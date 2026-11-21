@@ -569,7 +569,7 @@ function createTask(payload) {
  let assignedClassroom=null;
  if(role==="Profesor"){const classes=getSheetOrThrow(ss,"AulasVirtuales").getDataRange().getValues().slice(1);
   assignedClassroom=classes.find(r=>normalizeString(r[7]||"Activa")!=="desactivada"&&normalizeString(r[3])===normalizeString(gradoAsignado)&&(!r[4]||normalizeString(r[4])===normalizeString(seccionAsignada||""))&&normalizeString(r[5])===normalizeString(asignatura)&&String(r[6]||"").trim()===owner);
-  if(!assignedClassroom)throw new Error("No existe aula asignada para el ámbito de la tarea.");assertTaskServiceTeacherAssignedToOffer(owner,assignedClassroom[1]);
+  if(!assignedClassroom)throw new Error("No existe aula asignada para el ámbito de la tarea.");assertTaskServiceTeacherAssignedToOffer(owner,assignedClassroom[1],assignedClassroom);
  }else if(payload.profesorId)owner=String(payload.profesorId).trim();
  if(tareaOriginalId){const orig=taskSheet.getDataRange().getValues().slice(1).find(r=>String(r[0]).trim()===String(tareaOriginalId).trim());if(!orig)throw new Error("Tarea original no encontrada.");assertTaskServiceTeacherCanManageTask(payload,orig,"CREATE_DERIVED");}
  const scope=getVerifiedTaskDepartmentScope_(payload,ss,identity);if(!scope.authorized)throw new Error(scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");
@@ -644,7 +644,7 @@ function updateTask(payload) {
         String(row[6] || "").trim() === String(identity.userId).trim()
       );
       if (!classroom) throw new Error("El nuevo ámbito no pertenece a una asignación docente.");
-      assertTaskServiceTeacherAssignedToOffer(identity.userId, classroom[1]);
+      assertTaskServiceTeacherAssignedToOffer(identity.userId, classroom[1], classroom);
     }
 
     const updatedRow = originalRow.slice();
@@ -1420,12 +1420,131 @@ function getTaskServiceGuardianStudentIds(guardianUserId) {
 }
 
 function isTaskServiceAdministrativeRole(role) { return ["Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role)!==-1; }
-function assertTaskServiceTeacherAssignedToOffer(userId,offerId) {
- if(!userId||!offerId)throw new Error("Oferta académica no verificable.");
- const sh=SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName("AsignacionesDocentes");if(!sh)throw new Error("No existe AsignacionesDocentes; acceso denegado.");
- const now=Date.now(),rows=sh.getDataRange().getValues().slice(1);
- if(!rows.some(r=>String(r[1]).trim()===String(offerId).trim()&&String(r[2]).trim()===String(userId).trim()&&String(r[6]||"Activo").trim().toLowerCase()==="activo"&&(!r[4]||new Date(r[4]).getTime()<=now)&&(!r[5]||new Date(r[5]).getTime()>=now)))throw new Error("Acceso denegado: no existe asignación docente activa para la oferta.");
- return true;
+function assertTaskServiceTeacherAssignedToOffer(userId, offerId, classroomContext) {
+  const teacherId = String(userId || "").trim(), requestedOfferId = String(offerId || "").trim();
+  if (!teacherId || !requestedOfferId) throw new Error("TEACHER_ASSIGNMENT_CONTEXT_REQUIRED");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const assignmentSheet = ss && ss.getSheetByName("AsignacionesDocentes");
+  const offerSheet = ss && ss.getSheetByName("OfertaAcademica");
+  if (!assignmentSheet || !offerSheet) throw new Error("TEACHER_ASSIGNMENT_SOURCE_UNAVAILABLE");
+  const assignmentData = assignmentSheet.getDataRange().getValues();
+  const offerData = offerSheet.getDataRange().getValues();
+  if (!assignmentData || assignmentData.length < 2 || !offerData || offerData.length < 2) {
+    throw new Error("TEACHER_ASSIGNMENT_NOT_FOUND");
+  }
+  const normalizeHeader = value => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const assignmentHeaders = assignmentData[0].map(normalizeHeader);
+  const assignmentIndex = aliases => {
+    for (let i = 0; i < aliases.length; i++) {
+      const index = assignmentHeaders.indexOf(aliases[i]);
+      if (index >= 0) return index;
+    }
+    return -1;
+  };
+  const ai = {
+    id: assignmentIndex(["asignacionid", "assignmentid", "id"]),
+    offer: assignmentIndex(["ofertaid", "offerid"]),
+    teacher: assignmentIndex(["docenteuserid", "docenteid", "profesorid", "userid", "teacheruserid"]),
+    start: assignmentIndex(["fechainicio", "inicio", "startdate"]),
+    end: assignmentIndex(["fechafin", "fin", "enddate"]),
+    state: assignmentIndex(["estado", "status"])
+  };
+  if (Object.keys(ai).some(key => ai[key] < 0)) throw new Error("TEACHER_ASSIGNMENT_SCHEMA_INVALID");
+  const offerHeaders = offerData[0].map(normalizeHeader);
+  const offerIndex = aliases => {
+    for (let i = 0; i < aliases.length; i++) {
+      const index = offerHeaders.indexOf(aliases[i]);
+      if (index >= 0) return index;
+    }
+    return -1;
+  };
+  const oi = {
+    id: offerIndex(["ofertaid", "offerid"]),
+    year: offerIndex(["anoid", "anolectivo", "ano"]),
+    grade: offerIndex(["grado"]),
+    section: offerIndex(["seccion"]),
+    subject: offerIndex(["asignaturaid", "asignatura"]),
+    plan: offerIndex(["planid"]),
+    state: offerIndex(["estado", "estadooferta"])
+  };
+  if (Object.keys(oi).some(key => oi[key] < 0)) throw new Error("ACADEMIC_OFFER_SCHEMA_INVALID");
+  const offerIdCounts = Object.create(null), offerById = Object.create(null);
+  offerData.slice(1).forEach(row => {
+    const id = String(row[oi.id] || "").trim();
+    if (!id) return;
+    offerIdCounts[id] = (offerIdCounts[id] || 0) + 1;
+    offerById[id] = row;
+  });
+  if (offerIdCounts[requestedOfferId] !== 1) throw new Error("ACADEMIC_OFFER_NOT_UNIQUE");
+  const offer = offerById[requestedOfferId];
+  const activeState = value => ["activo", "activa", "active"].indexOf(String(value || "").trim().toLowerCase()) !== -1;
+  if (!offer || !activeState(offer[oi.state]) || !String(offer[oi.year] || "").trim() ||
+      !String(offer[oi.grade] || "").trim() || !String(offer[oi.section] || "").trim() ||
+      !String(offer[oi.subject] || "").trim() || !String(offer[oi.plan] || "").trim()) {
+    throw new Error("ACADEMIC_OFFER_NOT_ACTIVE_OR_INCOMPLETE");
+  }
+  const assignmentIdCounts = Object.create(null);
+  assignmentData.slice(1).forEach(row => {
+    const id = String(row[ai.id] || "").trim();
+    if (id) assignmentIdCounts[id] = (assignmentIdCounts[id] || 0) + 1;
+  });
+  const activeAssignments = assignmentData.slice(1).filter(row =>
+    String(row[ai.offer] || "").trim() === requestedOfferId &&
+    String(row[ai.teacher] || "").trim() === teacherId && activeState(row[ai.state]));
+  if (activeAssignments.length !== 1) throw new Error("TEACHER_ASSIGNMENT_NOT_UNIQUE");
+  const assignment = activeAssignments[0], assignmentId = String(assignment[ai.id] || "").trim();
+  if (!assignmentId || assignmentIdCounts[assignmentId] !== 1) throw new Error("TEACHER_ASSIGNMENT_ID_AMBIGUOUS");
+  const parseBound = value => {
+    if (value === "" || value === null || value === undefined) return { valid: true, time: null };
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isFinite(date.getTime()) ? { valid: true, time: date.getTime() } : { valid: false, time: null };
+  };
+  const start = parseBound(assignment[ai.start]), end = parseBound(assignment[ai.end]), now = Date.now();
+  if (!start.valid || !end.valid || (start.time !== null && start.time > now) ||
+      (end.time !== null && end.time < now) ||
+      (start.time !== null && end.time !== null && start.time > end.time)) {
+    throw new Error("TEACHER_ASSIGNMENT_OUTSIDE_EFFECTIVE_WINDOW");
+  }
+  if (classroomContext) {
+    const classroom = Array.isArray(classroomContext)
+      ? { grade: classroomContext[3], section: classroomContext[4], subject: classroomContext[5] }
+      : classroomContext;
+    const same = (left, right) => String(left || "").trim().toLowerCase() === String(right || "").trim().toLowerCase();
+    if (!same(classroom.grade, offer[oi.grade]) || !same(classroom.section, offer[oi.section])) {
+      throw new Error("TEACHER_ASSIGNMENT_OFFER_SCOPE_MISMATCH");
+    }
+    const subjectReference = String(classroom.subject || "").trim();
+    const subjectSheet = ss.getSheetByName("CatalogoAsignaturas");
+    if (!subjectReference || !subjectSheet) throw new Error("ACADEMIC_SUBJECT_SOURCE_UNAVAILABLE");
+    const subjectData = subjectSheet.getDataRange().getValues();
+    if (!subjectData || subjectData.length < 2) throw new Error("ACADEMIC_SUBJECT_NOT_FOUND");
+    const subjectHeaders = subjectData[0].map(normalizeHeader);
+    const subjectIndex = aliases => {
+      for (let i = 0; i < aliases.length; i++) {
+        const index = subjectHeaders.indexOf(aliases[i]);
+        if (index >= 0) return index;
+      }
+      return -1;
+    };
+    const si = {
+      id: subjectIndex(["asignaturaid"]),
+      name: subjectIndex(["nombreoficial", "nombre"]),
+      code: subjectIndex(["codigo"]),
+      state: subjectIndex(["estado"])
+    };
+    if (si.id < 0 || si.state < 0 || (si.name < 0 && si.code < 0)) {
+      throw new Error("ACADEMIC_SUBJECT_SCHEMA_INVALID");
+    }
+    const reference = subjectReference.toUpperCase();
+    const subjectMatches = subjectData.slice(1).filter(row =>
+      [row[si.id], si.name >= 0 ? row[si.name] : "", si.code >= 0 ? row[si.code] : ""]
+        .some(value => String(value || "").trim().toUpperCase() === reference));
+    if (subjectMatches.length !== 1 || !activeState(subjectMatches[0][si.state]) ||
+        String(subjectMatches[0][si.id] || "").trim() !== String(offer[oi.subject] || "").trim()) {
+      throw new Error("TEACHER_ASSIGNMENT_OFFER_SCOPE_MISMATCH");
+    }
+  }
+  return true;
 }
 function getTaskServiceClassroomById(id) {
  if(!id||String(id).trim()==="General")return null;
@@ -1448,7 +1567,7 @@ function assertTaskServiceClassroomAccess(payload,id,verifiedIdentity) {
  const ownership=assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL",id,"WRITE",ss,actor,scope);
  if(!ownership||!ownership.authorized)throw new Error(ownership&&ownership.code||"RESOURCE_SCOPE_DENIED");
  if(role==="Profesor"){
-  assertTaskServiceTeacherAssignedToOffer(actor.userId,row[1]);
+  assertTaskServiceTeacherAssignedToOffer(actor.userId,row[1],row);
   if(String(row[6]||"").trim()!==String(actor.userId).trim())throw new Error("El aula no está asignada al docente autenticado.");
   return row;
  }
@@ -2565,7 +2684,7 @@ function createVirtualClassroom(payload) {
     (teacherScope.institutionWide!==true&&(teacherScope.departmentIds||[]).map(String).indexOf(department.departmentId)===-1))
    throw new Error("El profesor no tiene asignación activa en el departamento seleccionado.");
  }
- assertTaskServiceTeacherAssignedToOffer(teacher,ofertaId);
+ assertTaskServiceTeacherAssignedToOffer(teacher,ofertaId,{grade:grado,section:seccion,subject:asignatura});
 
  const sh=getOrCreateSheet(ss,"AulasVirtuales");
  if(sh.getLastRow()===0)sh.appendRow(["AulaID","OfertaID","NombreClase","Grado","Seccion","Asignatura","ProfesorID","Estado","AnioLectivo","Periodo","CreadoEn"]);
