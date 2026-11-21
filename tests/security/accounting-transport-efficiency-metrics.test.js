@@ -129,6 +129,13 @@ const context = {
     }
     return { valid: true, authorized: true, institutionId: actor.institutionId || "INST-1", institutionWide: true, departmentIds: [] };
   },
+  transportManagementReadScope_(payload, spreadsheet, actor, scope) {
+    managementScopeCalls++;
+    if (!managementScopeValid || (invalidateManagementAfterFirst && managementScopeCalls === 2)) {
+      return { authorized: false, code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
+    }
+    return { authorized: true, scope: scope };
+  },
   transportAuditDenied_(...args) { deniedEvents.push(args); },
   Date, Math, Number, String, Object, Array, JSON, Error, isFinite, console
 };
