@@ -122,7 +122,7 @@ const context = {
     }
     return { authorized: true, management: ["Administrador", "Director", "Subdirector"].includes(role), role, userId };
   },
-  getVerifiedAccountingDepartmentScope_(payload, spreadsheet, actor) {
+  __getVerifiedAccountingDepartmentScopeStub(payload, spreadsheet, actor) {
     managementScopeCalls++;
     if (!managementScopeValid || (invalidateManagementAfterFirst && managementScopeCalls === 2)) {
       return { valid: false, authorized: false, code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
@@ -147,7 +147,7 @@ const context = {
   Date, Math, Number, String, Object, Array, JSON, Error, isFinite, console
 };
 vm.createContext(context);
-vm.runInContext(extracted + "\nfunction getVerifiedAccountingDepartmentScope_(payload, spreadsheet, actor) { return { valid: true, authorized: true, institutionWide: true, institutionId: actor && actor.institutionId || \"INST-1\" }; }\nthis.metrics = getTransportEfficiencyMetrics; this.parseTime = transportMetricsTimeMinutes_;", context);
+vm.runInContext(extracted + "\nfunction getVerifiedAccountingDepartmentScope_(payload, spreadsheet, actor) { return globalThis.__getVerifiedAccountingDepartmentScopeStub(payload, spreadsheet, actor); }\nthis.metrics = getTransportEfficiencyMetrics; this.parseTime = transportMetricsTimeMinutes_;", context);
 
 function run(payload) { return context.metrics(payload); }
 
