@@ -85,20 +85,31 @@ const generationContext = {
     getUuid: () => "S1"
   },
   SPREADSHEET_ID: "LOCAL",
-  versionRows: [["Clave","Version","UpdatedAt","UpdatedBy"]],
+  versionRows: [],
   properties: {},
   LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
   PropertiesService: { getScriptProperties: () => ({ getProperty: key => generationContext.properties[key] || null, setProperty: (key,value) => generationContext.properties[key] = value }) },
-  SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "VersionesSeguridad" ? generationContext.versionSheet : null, insertSheet: () => generationContext.versionSheet }) },
+  SpreadsheetApp: { openById: () => ({
+    getSheetByName: name => name === "VersionesSeguridad" ? generationContext.versionSheet : null,
+    insertSheet: () => {
+      generationContext.versionSheet = {
+        getLastRow: () => generationContext.versionRows.length,
+        getDataRange: () => ({ getValues: () => generationContext.versionRows.map(row => row.slice()) }),
+        appendRow: row => generationContext.versionRows.push(row.slice())
+      };
+      return generationContext.versionSheet;
+    }
+  }) },
   versionSheet: null
-};
-generationContext.versionSheet = {
-  getLastRow: () => generationContext.versionRows.length,
-  getDataRange: () => ({ getValues: () => generationContext.versionRows.map(row => row.slice()) }),
-  appendRow: row => generationContext.versionRows.push(row.slice())
 };
 const generationVersionPrelude = userSource.slice(userSource.indexOf("var SECURITY_VERSION_HEADERS_"), userSource.indexOf("function getDynamicPermissionsForRole"));
 vm.runInNewContext(generationVersionPrelude + "\n" + generateFn + "\nthis.generate = generateSessionToken;", generationContext);
+const originalLockService = generationContext.LockService;
+generationContext.LockService = { getScriptLock: () => ({ tryLock: () => false, releaseLock() {} }) };
+assert.throws(() => generationContext.generate({ userId: "U1", email: "u@example.test", role: "Estudiante" }), /SECURITY_VERSION_UNAVAILABLE/, "version ledger initialization must fail closed under lock contention");
+assert.equal(generationContext.versionSheet, null, "lock contention must not create a partial version sheet");
+assert.equal(generationContext.properties.IMA_SECURITY_VERSION_SCHEMA_INITIALIZED, undefined, "lock contention must not mark initialization complete");
+generationContext.LockService = originalLockService;
 const token = generationContext.generate({ userId: "U1", email: "u@example.test", role: "Estudiante" });
 const generatedClaims = JSON.parse(encoded);
 assert.equal(token, "payload.SIG");
