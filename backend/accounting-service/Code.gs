@@ -11910,10 +11910,49 @@ function resolveMonthlyChargeTariff_(ss,year,grade,conceptId){
  if(!matches.length)return null;const r=matches[0],total=Number(r[h.montototal]),installments=Number(r[h.cuotasnum]||1);if(!Number.isFinite(total)||total<=0||!Number.isFinite(installments)||installments<=0)throw new Error("MONTHLY_CHARGE_TARIFF_INVALID");
  return {tarifaId:String(r[h.tarifaid]||""),montoTotal:Math.round(total*100)/100,cuotas:installments,montoBase:Math.round(total/installments*100)/100};
 }
-function previewBatchMonthlyCharges(payload){
+function assertMonthlyChargeAccess_(payload, action) {
+ const input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+ if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");
+ const permission=validateRolePermission(actor,action);
+ if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(input,ss,actor);
+ if(!scope||scope.valid!==true||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_UNVERIFIED");
+ return {actor:actor,ss:ss,scope:scope};
+}
+
+function assertMonthlyChargeStudentOwnership_(ss, scope, studentIds, operation) {
+ const expSheet=ss&&ss.getSheetByName("ExpedientesEstudiantes"),usersSheet=ss&&ss.getSheetByName("Usuarios");
+ if(!expSheet||!usersSheet)throw new Error("MONTHLY_CHARGE_STUDENT_OWNERSHIP_SOURCE_MISSING");
+ const expData=expSheet.getDataRange().getValues(),userData=usersSheet.getDataRange().getValues();
+ if(!expData||!userData||!expData.length||!userData.length)throw new Error("MONTHLY_CHARGE_STUDENT_OWNERSHIP_SOURCE_INVALID");
+ function uniqueIndex(headers,name){const matches=[];headers.forEach((value,index)=>{if(String(value||"").trim().toLowerCase()===name.toLowerCase())matches.push(index);});if(matches.length!==1)throw new Error("MONTHLY_CHARGE_STUDENT_OWNERSHIP_SCHEMA_INVALID:"+name);return matches[0];}
+ const expHeaders=expData[0],userHeaders=userData[0];
+ const expIdIndex=uniqueIndex(expHeaders,"ExpedienteID"),personIndex=uniqueIndex(expHeaders,"PersonaID");
+ const userIdIndex=uniqueIndex(userHeaders,"UserId"),userPersonIndex=uniqueIndex(userHeaders,"PersonaID"),roleIndex=uniqueIndex(userHeaders,"Rol");
+ const seen=Object.create(null);
+ (studentIds||[]).forEach(function(rawId){
+  const userId=String(rawId||"").trim();if(!userId)return;if(seen[userId])return;seen[userId]=true;
+  const userMatches=userData.slice(1).filter(function(row){const role=String(row[roleIndex]||"").trim().toLowerCase();return String(row[userIdIndex]||"").trim()===userId&&(role==="estudiante"||role==="alumno");});
+  if(userMatches.length!==1)throw new Error(userMatches.length?"MONTHLY_CHARGE_STUDENT_IDENTITY_AMBIGUOUS":"MONTHLY_CHARGE_STUDENT_IDENTITY_UNRESOLVED");
+  const personId=String(userMatches[0][userPersonIndex]||"").trim();if(!personId)throw new Error("MONTHLY_CHARGE_STUDENT_IDENTITY_UNRESOLVED");
+  const expedienteMatches=expData.slice(1).filter(function(row){return String(row[personIndex]||"").trim()===personId;});
+  if(expedienteMatches.length!==1)throw new Error(expedienteMatches.length?"MONTHLY_CHARGE_EXPEDIENTE_AMBIGUOUS":"MONTHLY_CHARGE_EXPEDIENTE_UNRESOLVED");
+  const expedienteId=String(expedienteMatches[0][expIdIndex]||"").trim();if(!expedienteId)throw new Error("MONTHLY_CHARGE_EXPEDIENTE_UNRESOLVED");
+  const ownership=assertResourceOwnershipForScope_(ss,scope,"EXPEDIENTE_ESTUDIANTE",expedienteId,String(operation||"READ").trim().toUpperCase());
+  if(!ownership||ownership.authorized!==true)throw new Error(ownership&&ownership.code||"RESOURCE_SCOPE_DENIED");
+ });
+ return true;
+}
+
+function previewBatchMonthlyCharges(payload) {
+ const access=assertMonthlyChargeAccess_(payload,"previewBatchMonthlyCharges");
+ return buildMonthlyChargePreview_(payload,access.ss,access.scope,"READ");
+}
+
+function buildMonthlyChargePreview_(payload, ss, scope, ownershipOperation){
  const p=payload||{},year=String(p.anoLectivo||"").trim(),month=normalizeMonthlyChargeMonth_(p.mesPeriodo);if(!year||!p.mesPeriodo)throw new Error("MONTHLY_CHARGE_PERIOD_REQUIRED");
  if(!/^\d{4}$/.test(year)||Number(year)<2000||Number(year)>2200)throw new Error("MONTHLY_CHARGE_YEAR_INVALID");
- const ss=SpreadsheetApp.openById(SPREADSHEET_ID),mat=ss.getSheetByName("Matriculas"),tariffs=ss.getSheetByName("TarifasPlanPago"),concepts=ss.getSheetByName("ConceptosCobro"),charges=ss.getSheetByName("CargosEstudiante");
+ const mat=ss.getSheetByName("Matriculas"),tariffs=ss.getSheetByName("TarifasPlanPago"),concepts=ss.getSheetByName("ConceptosCobro"),charges=ss.getSheetByName("CargosEstudiante");
  if(!mat||!tariffs||!concepts||!charges)throw new Error("MONTHLY_CHARGE_REQUIRED_SHEET_MISSING");
  const matRows=mat.getDataRange().getValues(),mh=monthlyChargeHeaderMap_(matRows[0],["MatriculaID","UserId","Alumno","Grado","Seccion","AnoLectivo","Estado","BecaDescuento"]);
  const conceptRows=concepts.getDataRange().getValues(),ch=monthlyChargeHeaderMap_(conceptRows[0],["ConceptoID","NombreConcepto","Estado"]),concept=conceptRows.slice(1).find(r=>String(r[ch.conceptoid]||"").trim()===String(p.conceptoId||"").trim()&&["activo","activa"].includes(String(r[ch.estado]||"Activo").trim().toLowerCase()));
@@ -11933,6 +11972,7 @@ function previewBatchMonthlyCharges(payload){
   if(Array.isArray(p.studentIds)&&p.studentIds.length&&!p.studentIds.map(String).includes(user))return;
   seen.add(user);students.push({userId:user,nombre:String(cell(r,"alumno",3)||""),grado:grade,seccion:section,descuentoPct:Math.max(0,Math.min(100,Number.parseFloat(cell(r,"becadescuento",9)||0)||0))});
  });
+ assertMonthlyChargeStudentOwnership_(ss,scope,students.map(st=>st.userId),ownershipOperation);
  let total=0,already=0,noTariff=0,pending=0;const breakdown=[];
  students.forEach(st=>{
   const tariff=resolveMonthlyChargeTariff_(ss,year,st.grado,p.conceptoId),key=monthlyChargeDedupeKey_(st.userId,p.conceptoId,year,month),legacy=String(st.userId).toLowerCase()+"_"+conceptName.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")+"_"+monthName+"_"+year;
@@ -11945,7 +11985,7 @@ function previewBatchMonthlyCharges(payload){
 function generateBatchMonthlyCharges(payload){
  const p=payload||{},lock=LockService.getScriptLock();if(!lock.tryLock(30000))return {status:"error",code:"LOCK_TIMEOUT",message:"El proceso de generación mensual está ocupado."};
  try{
-  const sim=previewBatchMonthlyCharges(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("CargosEstudiante");if(!sheet)throw new Error("MONTHLY_CHARGE_REQUIRED_SHEET_MISSING");
+  const access=assertMonthlyChargeAccess_(p,"generateBatchMonthlyCharges"),ss=access.ss,sim=buildMonthlyChargePreview_(p,ss,access.scope,"WRITE"),sheet=ss.getSheetByName("CargosEstudiante");if(!sheet)throw new Error("MONTHLY_CHARGE_REQUIRED_SHEET_MISSING");
   const year=sim.anoLectivo,month=sim.mesClave,now=new Date(),batchId="BATCH-"+now.getTime()+"-"+Math.floor(Math.random()*1000000),existing=new Set();
   sheet.getDataRange().getValues().slice(1).forEach(r=>{const k=monthlyChargeExistingKey_(r,year,month);if(k)existing.add(k);});
   const excluded=new Set((Array.isArray(p.excludeUserIds)?p.excludeUserIds:[]).map(x=>String(x).trim().toLowerCase())),newRows=[],seen=new Set();let omitidos=0,sinTarifa=0,total=0;
@@ -11958,7 +11998,7 @@ function generateBatchMonthlyCharges(payload){
    existing.add(key);total+=final;
   });
   if(newRows.length)sheet.getRange(sheet.getLastRow()+1,1,newRows.length,newRows[0].length).setValues(newRows);
-  if(typeof logStructuredEvent==="function")logStructuredEvent("ACCOUNTING","generateBatchMonthlyCharges","INFO","BATCH_MONTHLY_CHARGES_GENERATED","Generación mensual: "+newRows.length+" cargos.",{batchId:batchId,year:year,month:month,created:newRows.length,omitted:omitidos},p.authorizedBy||"Sistema");
+  if(typeof logStructuredEvent==="function")logStructuredEvent("ACCOUNTING","generateBatchMonthlyCharges","INFO","BATCH_MONTHLY_CHARGES_GENERATED","Generación mensual: "+newRows.length+" cargos.",{batchId:batchId,year:year,month:month,created:newRows.length,omitted:omitidos},access.actor.userId);
   return {status:"success",batchId:batchId,anoLectivo:year,mesPeriodo:sim.mesPeriodo,totalProcesados:sim.totalEstudiantesElegibles,creados:newRows.length,omitidos:omitidos,sinTarifa:sinTarifa,fallidos:0,totalMontoGenerado:Math.round(total*100)/100};
  }finally{lock.releaseLock();}
 }
