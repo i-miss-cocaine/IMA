@@ -200,7 +200,7 @@ assert.equal(guardianPolicyRuntime.check("getPaymentVouchers", { studentId: "STU
 const guardianDomainPermissionFn = extractFunctionFrom(userSource, "hasExplicitGuardianDomainPermission_");
 const guardianDomainPermissionRuntime = {};
 vm.createContext(guardianDomainPermissionRuntime);
-vm.runInContext(guardianDomainPermissionFn + "\\nthis.check = hasExplicitGuardianDomainPermission_;", guardianDomainPermissionRuntime);
+vm.runInContext(guardianDomainPermissionFn + "\nthis.check = hasExplicitGuardianDomainPermission_;", guardianDomainPermissionRuntime);
 assert.equal(guardianDomainPermissionRuntime.check({ permisos: { permisoFinanciero: true } }, "permisoFinanciero"), true);
 assert.equal(guardianDomainPermissionRuntime.check({ permisos: { permisoFinanciero: false } }, "permisoFinanciero"), false);
 assert.equal(guardianDomainPermissionRuntime.check({ permisos: {} }, "permisoFinanciero"), false,
