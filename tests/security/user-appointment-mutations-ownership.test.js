@@ -36,7 +36,9 @@ function makeHarness(options) {
   const users = [
     ["UserID", "PersonaID", "Rol", "EstadoCuenta"],
     ["STU-1", "PERSON-1", "Estudiante", "Activo"],
-    ["STU-2", "PERSON-2", "Estudiante", "Activo"]
+    ["STU-2", "PERSON-2", "Estudiante", "Activo"],
+    ["STAFF-A", "PERSON-A", "Secretaría", "Activo"],
+    ["STAFF-B", "PERSON-B", "Secretaría", "Activo"]
   ];
   const expedientes = [
     ["ExpedienteID", "PersonaID"],
@@ -64,7 +66,7 @@ function makeHarness(options) {
     SPREADSHEET_ID: "TEST",
     SpreadsheetApp: { openById: () => ({ getSheetByName: name => {
       if (name === "CitasReuniones") return settings.appointmentSheet ? appointmentSheet : null;
-      return sheets[name] ? { getDataRange: () => ({ getValues: () => sheets[name].map(row => row.slice()) }) } : null;
+      return sheets[name] ? { getLastRow: () => sheets[name].length, getDataRange: () => ({ getValues: () => sheets[name].map(row => row.slice()) }) } : null;
     } }) },
     getOrCreateSheet: () => appointmentSheet,
     LockService: { getScriptLock: () => lock },
@@ -81,6 +83,7 @@ function makeHarness(options) {
   };
   vm.createContext(runtime);
   vm.runInContext(
+    extractFunction("getInstitutionalUserRecord_") + "\n" +
     extractFunction("resolveAbsenceReviewExpedienteId_") + "\n" +
     extractFunction("getGuardianPermissionKeyForAction_") + "\n" +
     extractFunction("bookAppointment") + "\n" +
@@ -166,6 +169,12 @@ const duplicateAppointment = makeHarness({ duplicateAppointment: true });
 assert.equal(duplicateAppointment.update(request("Secretaría", "STAFF-A", {
   citaId: "CITA-1", nuevoEstado: "Confirmada"
 })).code, "APPOINTMENT_AMBIGUOUS");
+
+const unknownRecipient = makeHarness();
+assert.equal(unknownRecipient.book(request("Estudiante", "STU-1", {
+  solicitanteId: "STU-1", solicitadoA: "STAFF-X", motivo: "Consulta", fechaHora: "2026-11-22T10:00:00Z"
+})).code, "USER_NOT_FOUND");
+assert.equal(unknownRecipient.calls.appends, 0);
 
 const noIdentity = makeHarness();
 assert.equal(noIdentity.book({ solicitanteId: "STU-1" }).code, "VERIFIED_IDENTITY_REQUIRED");
