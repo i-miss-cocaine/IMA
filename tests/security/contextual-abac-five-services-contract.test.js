@@ -168,6 +168,12 @@ vm.createContext(guardianPolicyRuntime);
 vm.runInContext(guardianPolicyCode + "\nthis.check = validateContextualAccess;", guardianPolicyRuntime);
 assert.equal(guardianPolicyRuntime.check("getStudentAcademicReport", { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, true,
   "USER allows a guardian only when the linked relationship explicitly grants the requested academic domain");
+const unclassifiedGuardianDecision = guardianPolicyRuntime.check("customStudentResourceAction",
+  { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre");
+assert.equal(unclassifiedGuardianDecision.authorized, false,
+  "USER denies guardian access when a student resource action has no explicit domain classification");
+assert.equal(unclassifiedGuardianDecision.reason, "GUARDIAN_DOMAIN_PERMISSION_UNCLASSIFIED",
+  "unclassified guardian actions fail closed before resource access");
 assert.equal(guardianPolicyRuntime.check("getPaymentVouchers", { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, false,
   "USER denies a financial action when the relationship omits its financial permission");
 assert.equal(guardianPolicyRuntime.check("getStudentAcademicReport", { expedienteId: "EXP-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, true,

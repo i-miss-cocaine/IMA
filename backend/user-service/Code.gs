@@ -2139,11 +2139,12 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
         return { authorized: false, reason: matches.length ? "GUARDIAN_RELATIONSHIP_AMBIGUOUS" : "GUARDIAN_RELATIONSHIP_NOT_FOUND" };
       }
       const permissionKey = getGuardianPermissionKeyForAction_(action);
-      if (permissionKey) {
-        const permissions = matches[0].permisos;
-        if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) || permissions[permissionKey] !== true) {
-          return { authorized: false, reason: "GUARDIAN_DOMAIN_PERMISSION_DENIED" };
-        }
+      if (!permissionKey) {
+        return { authorized: false, reason: "GUARDIAN_DOMAIN_PERMISSION_UNCLASSIFIED" };
+      }
+      const permissions = matches[0].permisos;
+      if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) || permissions[permissionKey] !== true) {
+        return { authorized: false, reason: "GUARDIAN_DOMAIN_PERMISSION_DENIED" };
       }
     } catch (_) {
       return { authorized: false, reason: "GUARDIAN_RELATIONSHIP_VALIDATION_FAILED" };
