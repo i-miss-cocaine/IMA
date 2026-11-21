@@ -1,0 +1,46 @@
+name: Repair transport assignment security
+on:
+  push:
+    branches:
+      - NG_beta_0.0.0.1_work
+    paths:
+      - tools/repair-transport-assignment.mjs
+      - .github/workflows/repair-transport-assignment.yml
+permissions:
+  contents: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: NG_beta_0.0.0.1_work
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Restore full source and apply reviewed patch
+        run: |
+          git show 2ec4276770de32df94fd2bcf8d3bd48e8315fe7b:backend/accounting-service/Code.gs > backend/accounting-service/Code.gs
+          node tools/repair-transport-assignment.mjs
+      - name: Verify source and focused contract
+        run: |
+          node --check < backend/accounting-service/Code.gs
+          node tests/security/accounting-transport-assignment-ownership.test.js
+          git diff --check
+      - name: Commit and push only the authorized branch
+        env:
+          TARGET_BRANCH: NG_beta_0.0.0.1_work
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/accounting-service/Code.gs
+          git commit -m "security(accounting): scope transport assignment mutations"
+          for attempt in 1 2 3; do
+            git fetch origin "$TARGET_BRANCH"
+            git rebase "origin/$TARGET_BRANCH"
+            if git push origin "HEAD:refs/heads/$TARGET_BRANCH"; then exit 0; fi
+            sleep 2
+          done
+          echo "Unable to push after rebasing against the authorized branch" >&2
+          exit 1
