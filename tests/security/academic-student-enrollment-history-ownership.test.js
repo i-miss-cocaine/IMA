@@ -110,7 +110,14 @@ const call=(identity,extra)=>context.run(Object.assign({identity},extra||{}));
  assert.equal(restricted.status,"success");
  assert.deepEqual(Array.from(restricted.data.matriculas,row=>row.matriculaId),["MAT-1","MAT-1-OLD"]);
  assert.deepEqual(Array.from(restricted.data.cargos),[],"guardian without an explicit financial-domain grant cannot read charges");
+ primaryRelationRows[1][8]=JSON.stringify({permisoAcademico:false,permisoFinanciero:true});
+ assert.equal(call({authorized:true,userId:"TUTOR-1",role:"Tutor"},{userId:"STU-1"}).code,"RESOURCE_NOT_FOUND",
+   "legacy portal relationship cannot bypass a revoked primary academic permission");
  primaryRelationRows[1][8]=JSON.stringify({permisoAcademico:true,permisoFinanciero:true});
+ const primarySheet=sheets.RelacionesFamiliares;delete sheets.RelacionesFamiliares;
+ assert.equal(call({authorized:true,userId:"TUTOR-1",role:"Tutor"},{userId:"STU-1"}).code,"RESOURCE_NOT_FOUND",
+   "missing primary relation source fails closed despite a legacy portal relationship");
+ sheets.RelacionesFamiliares=primarySheet;
  assert.equal(call({authorized:true,userId:"TUTOR-1",role:"Tutor"},{userId:"STU-2"}).code,"RESOURCE_NOT_FOUND","guardian cannot query an unrelated student");
 }
 {
