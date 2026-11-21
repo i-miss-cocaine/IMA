@@ -156,7 +156,7 @@ assert.equal(successfulDelete.lockCalls.releases, 1);
 const lockBusyDelete = makeDeleteFileFixture("FILE-LOCK-BUSY", [versionHeaders], false, false);
 assert.throws(() => lockBusyDelete.run({_verifiedRole:"Estudiante",_verifiedUserId:"USR-DELETE",fileId:"FILE-LOCK-BUSY"}), /TASK_FILE_DELETE_LOCK_TIMEOUT/);
 assert.equal(lockBusyDelete.file.trashed, false, "file deletion must not proceed without the shared submission lock");
-assert.equal(lockBusyDelete.rows[1][14], "activo");
+assert.equal(lockBusyDelete.rows[1][14], "Activo");
 assert.equal(lockBusyDelete.lockCalls.releases, 0);
 
 console.log("TASK-636 deleteFile local contract: reference guards, metadata rollback and shared submission lock passed.");
