@@ -88,6 +88,7 @@ function makeHarness(options) {
   vm.createContext(runtime);
   const names = [
     "transportRows_",
+    "transportRowsPrefix_",
     "transportEmployeeIdsForUser_",
     "getTransportRouteIdsForScope_",
     "resolveTransportAccessScope_",
