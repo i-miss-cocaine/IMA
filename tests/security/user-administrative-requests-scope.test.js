@@ -117,8 +117,8 @@ const institutionWide = makeHarness({ scope: "assigned", institutionWide: true }
 assert.equal(institutionWide.run(request("Administrador", "ADMIN-1")).data.length, 4);
 
 const noScope = makeHarness({ scope: "none" });
-assert.deepEqual(Array.from(noScope.run(request("Director", "DIR-1")).data), [],
-  "staff without verified scope is reduced to their own submitted requests");
+assert.deepEqual(Array.from(noScope.run(request("Director", "DIR-1", { userId: "STU-2" })).data), [],
+  "staff without verified scope cannot spoof userId and is reduced to their own submitted requests");
 
 const noIdentity = makeHarness();
 assert.equal(noIdentity.run({ userId: "STU-2" }).code, "VERIFIED_IDENTITY_REQUIRED");
