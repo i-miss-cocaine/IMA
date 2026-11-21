@@ -2161,45 +2161,54 @@ function deleteFile(payload) {
   const role = payload && payload._verifiedRole;
   const fileId = extractTaskServiceFileId(payload && payload.fileId);
   if (!actorId || !fileId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Acceso denegado: se requiere identidad de estudiante.");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ensureTaskServiceFileMetadataSheet(ss);
-  const rows = sheet.getDataRange().getValues();
-  const idx = rows.findIndex((row, index) => index > 0 &&
-    String(row[15] || "").trim() === fileId &&
-    String(row[19] || "").trim() === String(actorId).trim() &&
-    String(row[14] || "").trim().toLowerCase() === "activo");
-  if (idx < 1) throw new Error("Acceso denegado: archivo sin metadatos de propiedad verificables.");
-  const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
-  const linkedToSubmission = deliveries.some(row => extractTaskServiceFileId(row[4]) === fileId);
-  const versionsSheet = ss.getSheetByName("EntregasVersiones");
-  let linkedToVersion = false;
-  if (versionsSheet) {
-    const versionData = versionsSheet.getDataRange().getValues();
-    if (versionData.length > 1) {
-      const versionHeaders = versionData[0].map(value => String(value || "").trim());
-      const fileIndex = versionHeaders.indexOf("FileID") >= 0 ? versionHeaders.indexOf("FileID") : 6;
-      const urlIndex = versionHeaders.indexOf("ArchivoUrl") >= 0 ? versionHeaders.indexOf("ArchivoUrl") : 5;
-      linkedToVersion = versionData.slice(1).some(row =>
-        [row[fileIndex], row[urlIndex]].some(value => extractTaskServiceFileId(value) === fileId)
-      );
-    }
-  }
-  if (linkedToSubmission || linkedToVersion) throw new Error("No se puede eliminar: el archivo está vinculado a una entrega o versión académica.");
 
-  const file = DriveApp.getFileById(fileId);
-  if (file.isTrashed()) throw new Error("No se puede eliminar: el archivo ya está en papelera.");
-  file.setTrashed(true);
+  // Serialize against submitAssignment so the file cannot be trashed after the
+  // submission check but before the delivery/version record is persisted.
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("TASK_FILE_DELETE_LOCK_TIMEOUT");
   try {
-    sheet.getRange(idx + 1, 15).setValue("Eliminado");
-  } catch (metadataError) {
-    try {
-      file.setTrashed(false);
-    } catch (rollbackError) {
-      throw new Error("DELETE_FILE_ROLLBACK_FAILED: " + metadataError.message + " | " + rollbackError.message);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ensureTaskServiceFileMetadataSheet(ss);
+    const rows = sheet.getDataRange().getValues();
+    const idx = rows.findIndex((row, index) => index > 0 &&
+      String(row[15] || "").trim() === fileId &&
+      String(row[19] || "").trim() === String(actorId).trim() &&
+      String(row[14] || "").trim().toLowerCase() === "activo");
+    if (idx < 1) throw new Error("Acceso denegado: archivo sin metadatos de propiedad verificables.");
+    const deliveries = getSheetOrThrow(ss, "Entregas").getDataRange().getValues().slice(1);
+    const linkedToSubmission = deliveries.some(row => extractTaskServiceFileId(row[4]) === fileId);
+    const versionsSheet = ss.getSheetByName("EntregasVersiones");
+    let linkedToVersion = false;
+    if (versionsSheet) {
+      const versionData = versionsSheet.getDataRange().getValues();
+      if (versionData.length > 1) {
+        const versionHeaders = versionData[0].map(value => String(value || "").trim());
+        const fileIndex = versionHeaders.indexOf("FileID") >= 0 ? versionHeaders.indexOf("FileID") : 6;
+        const urlIndex = versionHeaders.indexOf("ArchivoUrl") >= 0 ? versionHeaders.indexOf("ArchivoUrl") : 5;
+        linkedToVersion = versionData.slice(1).some(row =>
+          [row[fileIndex], row[urlIndex]].some(value => extractTaskServiceFileId(value) === fileId)
+        );
+      }
     }
-    throw new Error("DELETE_FILE_METADATA_UPDATE_FAILED: " + metadataError.message);
+    if (linkedToSubmission || linkedToVersion) throw new Error("No se puede eliminar: el archivo está vinculado a una entrega o versión académica.");
+
+    const file = DriveApp.getFileById(fileId);
+    if (file.isTrashed()) throw new Error("No se puede eliminar: el archivo ya está en papelera.");
+    file.setTrashed(true);
+    try {
+      sheet.getRange(idx + 1, 15).setValue("Eliminado");
+    } catch (metadataError) {
+      try {
+        file.setTrashed(false);
+      } catch (rollbackError) {
+        throw new Error("DELETE_FILE_ROLLBACK_FAILED: " + metadataError.message + " | " + rollbackError.message);
+      }
+      throw new Error("DELETE_FILE_METADATA_UPDATE_FAILED: " + metadataError.message);
+    }
+    return { status: "success", message: "Archivo propio no entregado eliminado." };
+  } finally {
+    lock.releaseLock();
   }
-  return { status: "success", message: "Archivo propio no entregado eliminado." };
 }
 
 
