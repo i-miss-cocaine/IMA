@@ -120,7 +120,11 @@ assert.equal(deniedPermission.calls.opens, 0, "permission denial must happen bef
 
 const departmentOnly = makeHarness({ institutionWide: false });
 assert.equal(departmentOnly.getAssignments({ sessionToken: "verified" }).code, "INSTITUTION_WIDE_SCOPE_REQUIRED");
+assert.equal(departmentOnly.getRoutes({ sessionToken: "verified" }).code, "INSTITUTION_WIDE_SCOPE_REQUIRED");
+assert.equal(departmentOnly.getManifest({ sessionToken: "verified", viajeId: "T-1" }).code, "INSTITUTION_WIDE_SCOPE_REQUIRED");
 assert.equal(departmentOnly.calls.reads.TransporteAsignaciones || 0, 0, "department-only management scope must not enumerate all assignments");
+assert.equal(departmentOnly.calls.reads.TransporteRutas || 0, 0, "department-only management scope must not enumerate all routes");
+assert.equal(departmentOnly.calls.reads.TransporteViajes || 0, 0, "department-only management scope must not enumerate all trips");
 
 const student = makeHarness({ actor: { authorized: true, userId: "STU-1", role: "Estudiante", institutionId: "INST-1", membershipId: "MEM-STU" } });
 const studentRoutes = student.getRoutes({ sessionToken: "verified" });
