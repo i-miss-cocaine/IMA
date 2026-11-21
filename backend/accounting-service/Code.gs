@@ -12389,20 +12389,38 @@ function assignStudentTransport(payload) {
   }
 
   try {
+    // Verificar identidad y rol dentro del lock, antes de leer o crear recursos.
+    const actor = transportBillingActor_(payload || {});
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const rutaSheet = ss.getSheetByName("TransporteRutas");
+    if (!rutaSheet) return { status: "error", code: "TRANSPORT_RESOURCE_NOT_FOUND" };
+    const routeValues = rutaSheet.getDataRange().getValues();
+    const routeMatches = routeValues.slice(1).filter(r => String(r[0] || "").trim() === String(rutaId).trim());
+    if (routeMatches.length !== 1) {
+      return { status: "error", code: routeMatches.length ? "ROUTE_ID_AMBIGUOUS" : "ROUTE_NOT_FOUND" };
+    }
+    const targetRuta = routeMatches[0];
+
+    // El estudiante debe resolver a un único expediente de esta institución.
+    const studentSheet = ss.getSheetByName("ExpedientesEstudiantes");
+    if (!studentSheet) return { status: "error", code: "TRANSPORT_STUDENT_RESOURCE_NOT_FOUND" };
+    const studentValues = studentSheet.getDataRange().getValues();
+    if (!studentValues || !studentValues.length) return { status: "error", code: "TRANSPORT_STUDENT_SCHEMA_INVALID" };
+    const studentHeaders = studentValues[0].map(value => String(value || "").trim());
+    const studentUserIndex = studentHeaders.indexOf("UserId");
+    if (studentUserIndex < 0) return { status: "error", code: "TRANSPORT_STUDENT_SCHEMA_INVALID" };
+    const studentMatches = studentValues.slice(1).filter(row =>
+      String(row[studentUserIndex] || "").trim() === String(estudianteUserId).trim());
+    if (studentMatches.length !== 1) {
+      return { status: "error", code: studentMatches.length ? "TRANSPORT_STUDENT_AMBIGUOUS" : "TRANSPORT_STUDENT_NOT_FOUND" };
+    }
+
     getOrCreateTransportVehiclesCatalog(ss);
     const billingSchema=transportEnsureBillingSchema_(ss);
-
-    const rutaSheet = getOrCreateSheet(ss, "TransporteRutas");
     const asgnSheet = getOrCreateSheet(ss, "TransporteAsignaciones");
     const vehSheet = getOrCreateSheet(ss, "TransporteVehiculos");
 
-    const rutasData = rutaSheet.getDataRange().getValues().slice(1);
-    const targetRuta = rutasData.find(r => String(r[0]).trim() === String(rutaId).trim());
-    if (!targetRuta) {
-      return { status: "error", code: "ROUTE_NOT_FOUND", message: `Ruta de transporte '${rutaId}' no encontrada.` };
-    }
-
+    const rutasData = routeValues.slice(1);
     const unidadCod = String(targetRuta[2]).trim();
     const vehRows = vehSheet.getDataRange().getValues().slice(1);
     const targetVeh = vehRows.find(v => String(v[1]).trim() === unidadCod);
@@ -12497,7 +12515,7 @@ function assignStudentTransport(payload) {
       "TRANSPORT_ASSIGNMENT_CREATED",
       `Asignación de transporte creada para estudiante ${estudianteUserId} en ruta ${rutaId}`,
       { asignacionTranspId: asgnId, rutaId, estudianteUserId, capAutorizada, cuposOcupadosDespues: cuposOcupados + 1 },
-      (payload && payload.authUserId) || "System"
+      actor.userId
     );
 
     return {
@@ -25465,7 +25483,7 @@ function generateTransportMonthlyCharges(payload){
 }
 
 function cancelStudentTransportAssignment(payload){
- const p=payload||{},id=String(p.asignacionTranspId||p.assignmentId||"").trim();if(!id)throw new Error("TRANSPORT_ASSIGNMENT_ID_REQUIRED");const lock=LockService.getScriptLock();lock.waitLock(15000);try{transportBillingActor_(p);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),s=transportEnsureBillingSchema_(ss),data=s.assignments.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0]||"").trim()===id);if(idx<0)throw new Error("TRANSPORT_ASSIGNMENT_NOT_FOUND");const original=data[idx].slice(),state=String(original[5]||"").toLowerCase();if(["cancelled","cancelada"].indexOf(state)!==-1)return {status:"success",idempotent:true,asignacionTranspId:id};if(state!=="active"&&state!=="activa")throw new Error("TRANSPORT_ASSIGNMENT_NOT_ACTIVE");const date=transportParseDate_(p.fechaCancelacion)||new Date(),start=transportParseDate_(original[10]||original[6]);if(p.fechaCancelacion&&!transportParseDate_(p.fechaCancelacion))throw new Error("TRANSPORT_CANCELLATION_DATE_INVALID");if(start&&date<start)throw new Error("TRANSPORT_CANCELLATION_BEFORE_START");const chargeSnapshot=s.charges.getDataRange().getValues().map(r=>r.slice());try{const updated=original.slice();updated[5]="cancelled";updated[11]=date;updated[13]=date;s.assignments.getRange(idx+1,1,1,updated.length).setValues([updated]);const billing=transportRecalculateStudentMonthlyChargeLocked_(ss,String(original[2]),date.getFullYear(),date.getMonth()+1);return {status:billing.missingTariff?"warning":"success",asignacionTranspId:id,fechaCancelacion:date.toISOString(),facturacion:billing};}catch(e){s.assignments.getRange(idx+1,1,1,original.length).setValues([original]);if(chargeSnapshot.length)s.charges.getRange(1,1,chargeSnapshot.length,chargeSnapshot[0].length).setValues(chargeSnapshot);while(s.charges.getLastRow()>chargeSnapshot.length)s.charges.deleteRow(s.charges.getLastRow());throw e;}}finally{lock.releaseLock();}
+ const p=payload||{},id=String(p.asignacionTranspId||p.assignmentId||"").trim();if(!id)throw new Error("TRANSPORT_ASSIGNMENT_ID_REQUIRED");const lock=LockService.getScriptLock();lock.waitLock(15000);try{transportBillingActor_(p);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),s=transportEnsureBillingSchema_(ss),data=s.assignments.getDataRange().getValues(),matches=data.map((r,i)=>({row:r,index:i})).filter(x=>x.index>0&&String(x.row[0]||"").trim()===id);if(!matches.length)throw new Error("TRANSPORT_ASSIGNMENT_NOT_FOUND");if(matches.length!==1)throw new Error("TRANSPORT_ASSIGNMENT_AMBIGUOUS");const idx=matches[0].index,original=data[idx].slice(),state=String(original[5]||"").toLowerCase();if(["cancelled","cancelada"].indexOf(state)!==-1)return {status:"success",idempotent:true,asignacionTranspId:id};if(state!=="active"&&state!=="activa")throw new Error("TRANSPORT_ASSIGNMENT_NOT_ACTIVE");const date=transportParseDate_(p.fechaCancelacion)||new Date(),start=transportParseDate_(original[10]||original[6]);if(p.fechaCancelacion&&!transportParseDate_(p.fechaCancelacion))throw new Error("TRANSPORT_CANCELLATION_DATE_INVALID");if(start&&date<start)throw new Error("TRANSPORT_CANCELLATION_BEFORE_START");const chargeSnapshot=s.charges.getDataRange().getValues().map(r=>r.slice());try{const updated=original.slice();updated[5]="cancelled";updated[11]=date;updated[13]=date;s.assignments.getRange(idx+1,1,1,updated.length).setValues([updated]);const billing=transportRecalculateStudentMonthlyChargeLocked_(ss,String(original[2]),date.getFullYear(),date.getMonth()+1);return {status:billing.missingTariff?"warning":"success",asignacionTranspId:id,fechaCancelacion:date.toISOString(),facturacion:billing};}catch(e){s.assignments.getRange(idx+1,1,1,original.length).setValues([original]);if(chargeSnapshot.length)s.charges.getRange(1,1,chargeSnapshot.length,chargeSnapshot[0].length).setValues(chargeSnapshot);while(s.charges.getLastRow()>chargeSnapshot.length)s.charges.deleteRow(s.charges.getLastRow());throw e;}}finally{lock.releaseLock();}
 }
 
 function assignStudentTransport(payload) {
