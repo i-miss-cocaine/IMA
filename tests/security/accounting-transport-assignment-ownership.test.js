@@ -39,7 +39,7 @@ function makeHarness(options) {
   const data = {
     ExpedientesEstudiantes:[headers.ExpedientesEstudiantes,["EXP-1","STU-1"],["EXP-2","STU-2"]],
     TransporteRutas:[headers.TransporteRutas,...cfg.routeRows],
-    TransporteAsignaciones:[headers.TransporteAsignaciones,...cfg.assignmentRows],
+    TransporteAsignaciones:[headers.TransporteAsignaciones,...cfg.assignmentRows.map(row=>row.slice())],
     TransporteVehiculos:[headers.TransporteVehiculos,["V-1","BUS-1","Bus","","",20,"active"]],
     CargosTransporte:[headers.CargosTransporte,["C-1","STU-1",10]]
   };
