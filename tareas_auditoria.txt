@@ -910,3 +910,13 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Node.js 24.22.3. Apps Script/Sheets real, beta y concurrencia de cambios de asignación entre proyectos NOT RUN.
 - BETA-FUNC-125/126 añadidos, pendientes de staging. TASK-502 y TASK-506 continúan abiertos.
 ===============================================================================
+
+===============================================================================
+### Seguimiento C1.912 — AUD-NG-222 / TASK-502
+- USER: acciones familiares con target estudiante requieren clasificación de dominio; una acción no clasificada falla cerrada. Se reconocen estudianteUserId/studentUserId/targetStudentId/targetStudentUserId y expedienteId; userId del tutor no puede ocultar el expediente objetivo. Acciones extracurriculares se mapean a permiso académico explícito.
+- ACADEMIC: listado de hijos, inscripción y cancelación extracurricular reutilizan una única resolución de relaciones activas/vigentes y exigen PermisosJSON.permisoAcademico === true; esquema sin columna, JSON ausente/malformado, IDs/par duplicados y mapeos ambiguos fallan cerrados. Operaciones siguen bajo ScriptLock.
+- ACCOUNTING: se corrigió el fixture de tarifas para representar tutor único y permiso financiero explícito; no se debilitaron las aserciones.
+- Node.js 24 CI: contextual-abac-five-services-contract PASS; academic-extracurricular-enrollment PASS; accounting-service-tariffs PASS; Task-Service, Academic-Service, Accounting Import, Hierarchical Configuration, Identity Mapping, SACE source revision y UI Accessibility SUCCESS en HEAD 9620f0c4. Department Scope FAIL solo por Phase22/configureSchoolDocumentTemplate ausente y preexistente. Exam aggregate en 5c431835 FAIL por Phase22/configureSchoolDocumentTemplate y accounting ensureSchoolDocumentIssuedSchema_ ausentes, ajenos al alcance.
+- BETA-FUNC-127 añadido, Pendiente beta. No se ejecutó Apps Script/Sheets real ni concurrencia entre proyectos; el test local cubre lock contention de las operaciones extracurriculares.
+- TASK-502 permanece En ejecución; revisar superficies restantes de USER/ACADEMIC/ACCOUNTING/TASK/EXAM y aislamiento institucional. TASK-506 sigue abierto hasta integrar la política completa.
+===============================================================================

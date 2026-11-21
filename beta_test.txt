@@ -2265,3 +2265,30 @@ Evidencia requerida: SHA de despliegue, IDs sintéticos, respuestas Allow/Deny, 
 Tarea vinculada: AUD-NG-222 / TASK-502.
 Responsable: QA/administrador del ambiente beta.
 ===============================================================================
+
+
+
+===============================================================================
+BETA-FUNC-127 — Permiso académico explícito en servicios extracurriculares (USER / ACADEMIC)
+Objetivo: verificar que el tutor solo pueda consultar, inscribir y cancelar inscripciones extracurriculares de estudiantes con relación familiar única, activa y vigente, y con PermisosJSON.permisoAcademico=true.
+Precondiciones:
+- Desplegar USER y ACADEMIC en staging con una hoja RelacionesFamiliares sintética que incluya RelacionID, PersonaEstudianteID, PersonaResponsableID, Estado, fechas y PermisosJSON.
+- Crear dos estudiantes, un tutor y relaciones independientes; usar IDs sintéticos y permisos explícitos.
+Pasos:
+1. Con relación única y permiso académico booleano true, verificar consulta de hijos/inscripciones, inscripción y cancelación autorizadas.
+2. Cambiar permisoAcademico a false, eliminar PermisosJSON o dejarlo vacío; verificar que consulta, inscripción y cancelación se deniegan/ocultan para ese estudiante.
+3. Probar JSON malformado y valores no booleanos ("true", 1, null); deben denegarse.
+4. Probar relación ausente, pendiente, revocada, expirada, futura, fechas malformadas o intervalo invertido.
+5. Duplicar RelacionID, duplicar el par estudiante-responsable y duplicar el mapeo PersonaID/UserId; verificar denegación sin exponer inscripciones ajenas.
+6. Repetir con otro tutor y otra institución para comprobar que no hay acceso cruzado.
+7. Revocar el permiso entre una lectura y una nueva mutación; la mutación posterior debe volver a validar y denegar.
+Resultado esperado:
+- Solo relaciones únicas, activas, vigentes y con permiso académico explícito booleano true habilitan las operaciones extracurriculares.
+- Las relaciones ambiguas o con esquema/permisos ausentes fallan cerradas; los registros e inscripciones históricos no se exponen por el solo hecho de existir.
+Resultado real: no ejecutado; pendiente despliegue beta.
+Estado: PENDIENTE DE BETA.
+Severidad si falla: Alta — acceso familiar a información o mutaciones extracurriculares sin permiso académico explícito.
+Evidencia requerida: SHA de despliegue USER/ACADEMIC, IDs sintéticos, respuestas Allow/Deny, inscripciones consultadas/creadas/canceladas y trazas sin tokens/PII.
+Tarea vinculada: AUD-NG-222 / TASK-502.
+Responsable: QA/administrador del ambiente beta.
+===============================================================================

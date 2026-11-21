@@ -6197,3 +6197,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Siguiente orden:** TASK-501 (matriz dinámica por rol, módulo, acción y ámbito; clave/upsert compuesto, editor restringido, versión y auditoría) y luego TASK-502 (política ABAC común fail-closed en USER, ACADEMIC, ACCOUNTING, TASK y EXAM).
 - TASK-506 conserva su estado En ejecución hasta integrar la matriz/ABAC común y verificar la autorización contextual real de las consultas/operaciones de departamentos, cargos, adscripciones y crosswalk.
 - Evidencia C1.907: UI HR editable, UI Dirección para crosswalk, cinco contratos Node 24 PASS; único FAIL de CI en Phase22 por configureSchoolDocumentTemplate ausente y previo al cambio.
+
+### Continuidad C1.912 — AUD-NG-222 / TASK-502 (sin cierre)
+
+- USER exige permiso de dominio explícito para acciones de tutor con recurso estudiante; acciones no clasificadas fallan cerradas. Se incluyen los selectores estudianteUserId, studentUserId, targetStudentId, targetStudentUserId y expediente, evitando que userId del tutor oculte el recurso real. Las acciones extracurriculares se clasifican como permiso académico.
+- ACADEMIC unifica la resolución de hijos autorizados para consulta/inscripción/cancelación extracurricular. Exige relación única, vigente, ID y mapeo únicos y PermisosJSON.permisoAcademico === true; datos o esquema ambiguos/ausentes fallan cerrados. Se mantiene ScriptLock en las mutaciones.
+- El contrato de tarifas ACCOUNTING incorpora tutor único y permisos financieros explícitos en sus fixtures. No se cambió la política productiva de ACCOUNTING en este incremento.
+- Evidencia Node 24 CI en HEAD 9620f0c4: contratos contextual ABAC, extracurricular y tarifas PASS; Academic-Service, Accounting Import, Task-Service, Hierarchical Configuration, Identity Mapping, SACE y UI Accessibility SUCCESS. Department Scope conserva un fallo ajeno en Phase22 por configureSchoolDocumentTemplate ausente. El agregado Exam de 5c431835 conserva fallos ajenos por configureSchoolDocumentTemplate y ensureSchoolDocumentIssuedSchema_ ausentes.
+- BETA-FUNC-127 pendiente de staging. Apps Script/Sheets real y concurrencia entre proyectos NOT RUN.
+- Estado: TASK-502 continúa En ejecución. Siguiente: auditar las rutas restantes de USER/ACADEMIC y los bindings action/resource de ACCOUNTING/TASK/EXAM, con pruebas de aislamiento institucional y revalidación de TASK-506.

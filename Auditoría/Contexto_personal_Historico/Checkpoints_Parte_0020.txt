@@ -714,3 +714,65 @@ Objetivo: continuar AUD-NG-222 / TASK-502 con autorización docente contextual p
 Completar la matriz action/resource de USER y ACADEMIC y revisar las operaciones restantes de ACCOUNTING, TASK y EXAM que aún no pasan por los adaptadores contextuales. Probar omisión de contexto, fuentes ausentes, IDs duplicados, cambios de asignación concurrentes, cruce de institución/departamento y regresiones de permisos. Después revalidar TASK-506. No cerrar TASK-502 hasta cubrir el contrato completo.
 
 ===============================================================================
+
+===============================================================================
+CHECKPOINT C1.912 — IMA-EXEC-20261121-AUD-NG-222-GUARDIAN-DOMAIN-83
+===============================================================================
+Fecha: 2026-11-21
+Sesión: IMA-EXEC-20261121-AUD-NG-222-GUARDIAN-DOMAIN-83
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+Checkpoint previo: C1.911 — HEAD 2a02c91554c765ff5823a03216f48e9fedfc5170
+HEAD observado al reanudar: 0a0fe701a13aefafe6ca6cb7b186696f7118bfef
+HEAD final verificado: 9620f0c4ff62c143fe37156993715862299c17e4
+Objetivo: continuar AUD-NG-222 / TASK-502 y cerrar brechas de permiso familiar explícito en USER/ACADEMIC sin declarar completa la matriz ABAC transversal.
+
+### Resultado técnico
+- USER: getGuardianPermissionKeyForAction_ clasifica dominios financieros, asistencia, documental y académico; acciones de recurso estudiante sin clasificación conocida ahora fallan cerradas. Se incluyen selectores estudianteUserId, studentUserId, targetStudentId y targetStudentUserId; expediente se prioriza sobre userId cuando este identifica al tutor, evitando que la identidad del actor oculte el recurso objetivo. Las acciones extracurriculares se mapean al permiso académico.
+- USER: se verifica que la relación de tutoría exista exactamente una vez y que el objeto de permisos contenga el booleano estricto true para el dominio solicitado. Ausencia, valores no booleanos y acciones sin clasificación no conceden acceso.
+- ACADEMIC: assertStudentExpedienteScopeAccess_ requiere PermisosJSON.permisoAcademico === true para relaciones primarias. Las rutas de extracurricular ahora usan extracurricularGuardianStudentUserIds_ como resolución compartida para listado, inscripción y cancelación; exige tutor y estudiante únicos/activos, relación activa/vigente, RelacionID y par únicos, JSON explícito y permiso académico booleano true. Esquema antiguo sin PermisosJSON, JSON vacío/malformado, relaciones duplicadas y mapeos ambiguos fallan cerrados. Las mutaciones siguen protegidas por ScriptLock.
+- ACCOUNTING: el contrato de tarifas se adaptó para incluir un tutor con identidad única y columnas de permiso financiero explícito; la aserción de hermanos vuelve a verificar la condición válida y agrega denegaciones para tutor inexistente/permiso falso. No se cambió código productivo ACCOUNTING en este incremento.
+
+### Archivos modificados desde C1.911
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- tests/security/contextual-abac-five-services-contract.test.js
+- tests/security/academic-guardian-primary-relation-abac-contract.test.js
+- tests/security/academic-extracurricular-enrollment.test.js
+- tests/security/accounting-service-tariffs.test.js
+- beta_test.txt (BETA-FUNC-127)
+- changueslogs.txt, Auditoria.txt, tareas_auditoria.txt, Plan Maestro, índice y este checkpoint.
+
+### Commits relevantes de esta continuación
+- 8b90c50a — USER requiere permisos familiares explícitos por dominio.
+- 5847b50e — contratos de permisos familiares USER.
+- 6c9d409a — preservación de selectores de estudiante y dependencias del contrato de tarifas.
+- b645baa3 — carga del helper de identidad familiar en contrato ACCOUNTING.
+- 0a0fe701 — ACADEMIC exige permiso académico explícito en relaciones primarias.
+- 3fd157dc — fixture de tarifas con tutor/permiso financiero explícitos.
+- d33ce77b — acciones familiares no clasificadas fallan cerradas.
+- 9404d5b9 — resolución de target independiente de userId del tutor.
+- 5c431835 — permiso académico explícito en servicios extracurriculares ACADEMIC.
+- 9620f0c4 — acciones USER extracurriculares ligadas al permiso académico.
+- Se conservaron los commits intermedios; no hubo rebase, force push ni escritura fuera de la rama autorizada.
+
+### Verificaciones
+- GitHub Actions Node.js 24 en HEAD 9620f0c4: Academic-Service single authorization SUCCESS; Accounting Import Preflight SUCCESS; Task-Service security SUCCESS; Hierarchical Configuration SUCCESS; Identity Mapping SUCCESS; SACE source revision SUCCESS; UI Accessibility SUCCESS.
+- Department Scope Contract 44942020500: FAIL únicamente en tests/regression/phase22-document-management-suite-contract.test.js porque falta configureSchoolDocumentTemplate; los contratos contextual ABAC, ACCOUNTING tariff y Academic extracurricular ejecutados antes del fallo pasaron.
+- Department Scope Contract 44941905926 en HEAD 5c431835: academic-extracurricular-enrollment.test.js PASS; el único fallo fue Phase22/configureSchoolDocumentTemplate.
+- Exam-Service security 44941905991 en HEAD 5c431835: FAIL global por configureSchoolDocumentTemplate y ensureSchoolDocumentIssuedSchema_ ausentes; no son regresiones de TASK-502 y no se modificaron esos módulos.
+- new Function sobre los servicios y contratos editados: PASS de parseo en el entorno de herramientas. node --check y ejecución Node 24 en Actions: PASS para contratos contextual y extracurriculares. Contrato de tarifas Node 24: PASS en workflow 44941422651.
+- Concurrencia: los contratos extracurriculares conservan prueba de lock contention; no se ejecutó carrera real entre proyectos Apps Script/Sheets.
+- Apps Script/Sheets desplegado, staging y datos productivos: NOT RUN.
+
+### Estado y limitaciones
+- AUD-NG-222 / TASK-502: En ejecución; se cerró este incremento de permisos familiares, pero no la matriz action/resource completa de los cinco servicios ni el aislamiento institucional integral.
+- TASK-506 / AUD-NG-226 sigue abierto hasta integrar y probar el contrato común completo.
+- BETA-FUNC-127 queda PENDIENTE DE BETA; BETA-FUNC-124/125/126 también conservan su estado beta.
+- Fallos Phase22 y Accounting document schema permanecen ajenos al alcance de esta iteración; no se alteraron ni se declararon PASS.
+- Rama base NG_beta_0.0.0.1 no modificada.
+
+### Siguiente acción elegible
+Auditar las rutas restantes de USER/ACADEMIC que resuelven recursos familiares o expedientes, y continuar los bindings action/resource pendientes en ACCOUNTING/TASK/EXAM. Priorizar denegación ante recurso/identidad/ámbito ausente, duplicado o cruzado entre instituciones; agregar pruebas deterministas de concurrencia cuando haya escritores compartidos. Revalidar TASK-506 después de completar TASK-502.
+
+===============================================================================
