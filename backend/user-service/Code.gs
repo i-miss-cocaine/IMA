@@ -7458,7 +7458,7 @@ function getDepartmentalWorkInbox(payload) {
     fechaResolucion: row[10]
   }));
 
-  return { status: "success", departamento: institutionWide ? requestedDepartment || "INSTITUCIONAL" : "", solicitudes: solicitudes };
+  return { status: "success", departamento: institutionWide ? requestedDepartment || "INSTITUCIONAL" : role, solicitudes: solicitudes };
 }
 
 function closeConversationThread(payload) {
