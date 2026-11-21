@@ -2,12 +2,12 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
 const source=fs.readFileSync("backend/accounting-service/Code.gs","utf8");
 function extractFunction(name){const start=source.indexOf("function "+name+"(");assert.notEqual(start,-1,"missing "+name);const open=source.indexOf("{",start);let depth=0,quote="",escaped=false,lineComment=false,blockComment=false;for(let i=open;i<source.length;i++){const c=source[i],n=source[i+1];if(lineComment){if(c==="\n")lineComment=false;continue;}if(blockComment){if(c==="*"&&n==="/"){blockComment=false;i++;}continue;}if(quote){if(escaped)escaped=false;else if(c==="\\")escaped=true;else if(c===quote)quote="";continue;}if(c==="/"&&n==="/"){lineComment=true;i++;continue;}if(c==="/"&&n==="*"){blockComment=true;i++;continue;}if(c==="'"||c==='"'||c==="`"){quote=c;continue;}if(c==="{")depth++;else if(c==="}"&&--depth===0)return source.slice(start,i+1);}throw Error("unclosed "+name);}
-const names=["monthlyChargeHeaderMap_","normalizeMonthlyChargeMonth_","transportEnsureBillingSchema_","transportBillingActor_","transportNormalizeMode_","transportParseDate_","transportMonthWindow_","transportActiveDays_","transportEnsureConcept_","serviceEnsureTariffsSheet_","serviceEnsureConcept_","serviceNormalizePeriod_","manageServiceTariffLocked_","manageServiceTariff","getServiceTariffs","serviceStudentGuardianIds_","serviceSiblingCount_","serviceApprovedScholarshipDiscount_","serviceCalculateDiscounts_","transportFindTariff_","manageTransportTariff","transportRecalculateStudentMonthlyChargeLocked_","generateTransportMonthlyCharges","cancelStudentTransportAssignment","assignStudentTransport"];
+const names=["monthlyChargeHeaderMap_","normalizeMonthlyChargeMonth_","transportEnsureBillingSchema_","transportBillingActor_","transportAssertStudentOwnershipForMutation_","transportNormalizeMode_","transportParseDate_","transportMonthWindow_","transportActiveDays_","transportEnsureConcept_","serviceEnsureTariffsSheet_","serviceEnsureConcept_","serviceNormalizePeriod_","manageServiceTariffLocked_","manageServiceTariff","getServiceTariffs","serviceStudentGuardianIds_","serviceSiblingCount_","serviceApprovedScholarshipDiscount_","serviceCalculateDiscounts_","transportFindTariff_","manageTransportTariff","transportRecalculateStudentMonthlyChargeLocked_","generateTransportMonthlyCharges","cancelStudentTransportAssignment","assignStudentTransport"];
 const rows=Object.create(null),defaults={TransporteRutas:["RutaID","NombreRuta","UnidadCodigo","ConductorEmpleadoId","Capacidad","ParadasJSON","Estado","Observaciones","HoraInicio","HoraFin","Jornada"],TransporteAsignaciones:["AsignacionTranspID","RutaID","EstudianteUserId","ParadaNombre","HorarioPlan","Estado"],TransporteVehiculos:["VehiculoID","CodigoUnidad","Marca","Modelo","Placa","Capacidad","Estado"],CargosEstudiante:["CargoID","Fecha","UserId","Concepto","MontoBase","Descuento","MontoFinal","Estado","FechaVencimiento","Observaciones","ClaveUnicaDedupe","BatchId"],ConceptosCobro:["ConceptoID","Fecha","NombreConcepto","MontoBase","AplicaAGrado","PeriodoVigencia","Estado","Observaciones"]};
 function makeSheet(name){if(!rows[name])rows[name]=(defaults[name]||[]).length?[defaults[name].slice()]:[];return {getDataRange(){return {getValues(){return rows[name].map(r=>r.slice());}};},getLastRow(){return rows[name].length;},appendRow(r){rows[name].push(r.slice());},deleteRow(i){rows[name].splice(i-1,1);},getRange(row,col){return {setValue(v){while(rows[name].length<row)rows[name].push([]);while(rows[name][row-1].length<col)rows[name][row-1].push("");rows[name][row-1][col-1]=v;},setValues(values){values.forEach((r,ri)=>{while(rows[name].length<row+ri)rows[name].push([]);const target=rows[name][row+ri-1];for(let ci=0;ci<r.length;ci++)target[col+ci-1]=r[ci];});}};}};}
 const ss={getSheetByName(n){return rows[n]?makeSheet(n):null;}},getOrCreateSheet=(db,n)=>makeSheet(n);
-let lockBusy=false,uuid=0;
-const context={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById(){return ss;}},LockService:{getScriptLock(){return {tryLock(){return !lockBusy;},waitLock(){if(lockBusy)throw Error("LOCK_BUSY");},releaseLock(){}};}},Utilities:{getUuid(){return "UUID-"+(++uuid);}},getOrCreateSheet,getOrCreateTransportVehiclesCatalog(){},getVerifiedAccountingIdentity_(p){return {authorized:true,role:(p&&p._verifiedRole)||"Contador",userId:(p&&p._verifiedUserId)||"ACC-1"};},logStructuredEvent(){},console,Date,Math,Set,Map,Number,String,Object,Array,JSON,Error};
+let lockBusy=false,uuid=0,permissionDenied=false,scopeInvalid=false,ownershipDenied=false,denyIdentity=false,ownershipCalls=[];
+const context={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById(){return ss;}},LockService:{getScriptLock(){return {tryLock(){return !lockBusy;},waitLock(){if(lockBusy)throw Error("LOCK_BUSY");},releaseLock(){}};}},Utilities:{getUuid(){return "UUID-"+(++uuid);}},getOrCreateSheet,getOrCreateTransportVehiclesCatalog(){},getVerifiedAccountingIdentity_(p){return denyIdentity?{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"}:{authorized:true,role:(p&&p._verifiedRole)||"Contador",userId:(p&&p._verifiedUserId)||"ACC-1"};},validateRolePermission(actor,action){return permissionDenied?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:{authorized:true,actor,action};},getVerifiedAccountingDepartmentScope_(p,db,actor){return scopeInvalid?{valid:false,code:"RESOURCE_SCOPE_DENIED"}:{valid:true,institutionId:"INST-1",departmentIds:["DEPT-1"],institutionWide:true};},assertMonthlyChargeStudentOwnership_(db,scope,ids,operation){ownershipCalls.push({ids:ids.slice(),operation});if(ownershipDenied)throw Error("RESOURCE_SCOPE_DENIED");return true;},logStructuredEvent(){},console,Date,Math,Set,Map,Number,String,Object,Array,JSON,Error};
 vm.createContext(context);vm.runInContext(names.map(extractFunction).join("\n")+"\nfunction seedRoute(id,capacity){getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),'TransporteRutas').appendRow([id,'Ruta '+id,'BUS-'+id,'EMP-1',capacity,'[]','active','','06:30','07:30','Matutina']);}",context);
 vm.runInContext('seedRoute("R1",5);seedRoute("R2",5);seedRoute("R3",1);',context);
 assert.equal(context.transportParseDate_("2026-11-14T23:30:00Z").getDate(),14,"transport date parsing must be date-only");
@@ -42,6 +42,41 @@ assert.equal(Math.round((Number(fullCharge[6])+adjustmentRows.reduce((sum,r)=>su
 assert.equal(context.cancelStudentTransportAssignment({assignmentId:full.asignacionTranspId}).idempotent,true);
 context.generateTransportMonthlyCharges({ano:nextYear,mesPeriodo:String(nextMonth)});assert.ok(rows.CargosEstudiante.some(r=>r[10]==="TRN-"+String(nextMonth).padStart(2,"0")+"-"+nextYear+"-STU-001"));assert.equal(Number(rows.CargosEstudiante.find(r=>r[10]==="TRN-"+String(nextMonth).padStart(2,"0")+"-"+nextYear+"-STU-001")[6]),400,"the next period must use its effective tariff");
 assert.equal(context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-002",modalidadServicio:"MEDIA",fechaInicioServicio:firstDay}).code,"DUPLICATE_TRANSPORT_ASSIGNMENT");
+
+assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-AUTH",_verifiedUserId:"ACC-1"}),/TRANSPORT_BILLING_ROLE_NOT_ALLOWED|ROLE_PERMISSION_DENIED/);
+denyIdentity=true;
+assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-AUTH"}),/VERIFIED_IDENTITY_REQUIRED/);
+denyIdentity=false;
+permissionDenied=true;
+assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-AUTH"}),/ROLE_PERMISSION_DENIED/);
+permissionDenied=false;
+scopeInvalid=true;
+assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-AUTH"}),/RESOURCE_SCOPE_DENIED/);
+scopeInvalid=false;
+ownershipDenied=true;
+assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-AUTH"}),/RESOURCE_SCOPE_DENIED/);
+ownershipDenied=false;
+assert.equal(ownershipCalls.some(call=>call.operation==="WRITE"&&call.ids[0]==="STU-AUTH"),true,"assignment must verify student expediente ownership before writes");
+const inactiveRoute=["R-INACTIVE","Inactive","BUS-INACTIVE","EMP-1",5,"[]","inactive","","06:30","07:30","Matutina"];
+rows.TransporteRutas.push(inactiveRoute);
+assert.equal(context.assignStudentTransport({rutaId:"R-INACTIVE",estudianteUserId:"STU-INACTIVE"}).code,"ROUTE_NOT_ACTIVE");
+rows.TransporteRutas.push(["R-DUP","Duplicate A","BUS-DUP","EMP-1",5,"[]","active","","06:30","07:30","Matutina"]);
+rows.TransporteRutas.push(["R-DUP","Duplicate B","BUS-DUP","EMP-1",5,"[]","active","","06:30","07:30","Matutina"]);
+assert.equal(context.assignStudentTransport({rutaId:"R-DUP",estudianteUserId:"STU-DUP"}).code,"ROUTE_AMBIGUOUS");
+const beforeRollbackAssignments=rows.TransporteAsignaciones.length;
+const beforeRollbackCharges=JSON.stringify(rows.CargosEstudiante);
+const originalRecalculate=context.transportRecalculateStudentMonthlyChargeLocked_;
+context.transportRecalculateStudentMonthlyChargeLocked_=()=>{throw Error("BILLING_WRITE_FAILED");};
+assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-ROLLBACK",fechaInicioServicio:firstDay}),/BILLING_WRITE_FAILED/);
+context.transportRecalculateStudentMonthlyChargeLocked_=originalRecalculate;
+assert.equal(rows.TransporteAsignaciones.length,beforeRollbackAssignments,"billing failure must rollback the assignment row");
+assert.equal(JSON.stringify(rows.CargosEstudiante),beforeRollbackCharges,"billing failure must preserve the prior charge snapshot");
+const originalChargeRows=JSON.stringify(rows.CargosEstudiante);
+ownershipDenied=true;
+assert.throws(()=>context.cancelStudentTransportAssignment({assignmentId:full.asignacionTranspId}),/RESOURCE_SCOPE_DENIED/);
+ownershipDenied=false;
+assert.equal(JSON.stringify(rows.CargosEstudiante),originalChargeRows,"denied cancellation must not mutate charges");
+
 assert.throws(()=>context.manageTransportTariff({_verifiedRole:"Estudiante",rutaId:"R1",modalidadServicio:"COMPLETA",montoMensual:10}),/TRANSPORT_BILLING_ROLE_NOT_ALLOWED/);
 lockBusy=true;const blocked=context.generateTransportMonthlyCharges({ano:year,mesPeriodo:month});lockBusy=false;assert.equal(blocked.code,"LOCK_TIMEOUT");
 console.log("TASK-200 transport monthly charge contract: PASS");
