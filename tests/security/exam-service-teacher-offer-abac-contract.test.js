@@ -61,6 +61,7 @@ for (const [name, binding] of [
   ["getStudentExamsUnlocked_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam)"],
   ["getExamQuestionsUnlocked_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam)"],
   ["getExamResultUnlocked_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam)"],
-  ["getAllExamsUnlocked_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, row)"]
+  ["getAllExamsUnlocked_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, row)"],
+  ["getExamGradeDistributionAnalyticsUnlocked_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, examRow)"]
 ]) assert.ok(extractFunction(source, name).includes(binding), name + " enforces active teacher offer binding");
 process.stdout.write("exam-service-teacher-offer-abac-contract: all assertions passed\n");

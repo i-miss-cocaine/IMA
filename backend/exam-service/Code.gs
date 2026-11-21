@@ -1853,7 +1853,9 @@ function getExamGradeDistributionAnalyticsUnlocked_(payload, context) {
   examRows.forEach(row => { const id = String(row[0] || "").trim(); if (id) examIdCounts[id] = (examIdCounts[id] || 0) + 1; });
   if (examIdCounts[examenId] !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
   const examRow = examRows.find(row => String(row[0] || "").trim() === examenId);
-  if (!examRow || (actor.role === "Profesor" && String(examRow[8] || "").trim() !== actor.userId)) throw new Error("RESOURCE_NOT_AVAILABLE");
+  if (!examRow || (actor.role === "Profesor" &&
+      (String(examRow[8] || "").trim() !== actor.userId ||
+       !hasExamTeacherActiveOfferAssignment_(ss, actor.userId, examRow)))) throw new Error("RESOURCE_NOT_AVAILABLE");
   const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examenId, "READ_ANALYTICS", payload);
   if (!ownership || ownership.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const deliveryRows = getSheetOrThrow(ss, "EntregasExamen").getDataRange().getValues().slice(1);
