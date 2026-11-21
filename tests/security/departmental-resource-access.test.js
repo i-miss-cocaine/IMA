@@ -222,7 +222,8 @@ assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"teacher",userId:"U-ADMIN",role:"Administrador",asignaturaId:"ASIG-B"}).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"student",estudianteId:"U-STUDENT"}).authorized,true);
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"student",estudianteId:"U-B"}).authorized,false);
-assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"guardian",estudianteId:"U-A"}).authorized,true);
+assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"guardian",estudianteId:"U-STUDENT-A"}).authorized,true);
+assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"guardian",estudianteId:"U-A"}).authorized,false);
 
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",estudianteId:"U-A"}).authorized,true);
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",estudianteId:"U-B"}).authorized,false);
