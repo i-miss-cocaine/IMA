@@ -72,7 +72,7 @@ const runtime = {
   if(assignments.length!==1)return {authorized:false,code:"ROLE_SCOPE_NOT_ASSIGNED"};
   return {authorized:true,institutionId:"I1",departmentIds:[String(assignments[0][4]||"").trim()].filter(Boolean)};
  },
- getDynamicPermissionsForRole(role,action){return (role==="Lector"||role==="Profesor")&&action==="getQuestionBank";},
+ getDynamicPermissionsForRole(role,action){return (role==="Lector"&&action==="getQuestionBank")||(role==="Profesor"&&(action==="getQuestionBank"||action==="manageQuestionBank"));},
  hasActiveDelegationForAction(){return false;},
  PropertiesService:{getScriptProperties(){return {getProperty(name){return name==="IMA_INSTITUTION_ID"?"I1":null;}};}},
  Logger:{log(){}},
