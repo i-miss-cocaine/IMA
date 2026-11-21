@@ -4623,8 +4623,8 @@ function transportEmployeeIdsForUser_(ss, userId, expectedRole) {
   }).map(function(row) { return String(row[idIndex] || "").trim(); }).filter(Boolean);
 }
 
-function resolveTransportAccessScope_(payload, ss) {
-  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+function resolveTransportAccessScope_(payload, ss, identityOverride) {
+  var input = payload || {}, actor = identityOverride || getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { authorized: false, reason: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var role = String(actor.role || "").trim(), normalizedRole = role.toLowerCase();
   var scope = { authorized: true, role: role, userId: actor.userId, studentIds: [], employeeIds: [], routeIds: [] };
@@ -4752,11 +4752,49 @@ function getTransportRouteIdsForScope_(ss, scope) {
   return allowed;
 }
 
-function getTransportRoutes(payload) {
+function transportReadAccess_(payload, action) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
-  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", rutas: [] };
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), scope = resolveTransportAccessScope_(input, ss);
-  if (!scope.authorized) return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", rutas: [] };
+  if (!actor || actor.authorized !== true) return { authorized: false, code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var permission = validateRolePermission(actor, action);
+  if (!permission || permission.authorized !== true) return { authorized: false, code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
+
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var role = String(actor.role || "").trim().toLowerCase();
+  if (["director", "subdirector", "administrador"].indexOf(role) !== -1) {
+    var departmentScope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
+    if (!departmentScope || departmentScope.valid !== true || departmentScope.authorized !== true) {
+      return { authorized: false, code: departmentScope && departmentScope.code || "RESOURCE_SCOPE_DENIED" };
+    }
+    if (departmentScope.institutionWide !== true) {
+      return { authorized: false, code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
+    }
+    return {
+      authorized: true,
+      actor: actor,
+      ss: ss,
+      scope: {
+        authorized: true,
+        role: actor.role,
+        userId: actor.userId,
+        studentIds: null,
+        employeeIds: null,
+        routeIds: null,
+        management: true
+      }
+    };
+  }
+
+  var transportScope = resolveTransportAccessScope_(input, ss, actor);
+  if (!transportScope || transportScope.authorized !== true) {
+    return { authorized: false, code: transportScope && transportScope.reason || "RESOURCE_SCOPE_DENIED" };
+  }
+  return { authorized: true, actor: actor, ss: ss, scope: transportScope };
+}
+
+function getTransportRoutes(payload) {
+  var input = payload || {}, access = transportReadAccess_(input, "getTransportRoutes");
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", rutas: [] };
+  var actor = access.actor, ss = access.ss, scope = access.scope;
   var snapshot = transportRows_(ss, "TransporteRutas", ["RutaID","Nombre","Unidad","Conductor","Capacidad","Paradas","Estado"]);
   if (!snapshot.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", rutas: [] };
   var allowed = scope.management ? null : getTransportRouteIdsForScope_(ss, scope);
@@ -4777,10 +4815,9 @@ function getTransportRoutes(payload) {
 }
 
 function getTransportAssignments(payload) {
-  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
-  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", total: 0, asignaciones: [] };
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), scope = resolveTransportAccessScope_(input, ss);
-  if (!scope.authorized) return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", total: 0, asignaciones: [] };
+  var input = payload || {}, access = transportReadAccess_(input, "getTransportAssignments");
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", total: 0, asignaciones: [] };
+  var actor = access.actor, ss = access.ss, scope = access.scope;
   var snapshot = transportRows_(ss, "TransporteAsignaciones", ["ID","RutaID","EstudianteUserId","Parada","Horario","Estado","Fecha","Jornada"]);
   if (!snapshot.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", total: 0, asignaciones: [] };
   var allowedRoutes = scope.management ? null : getTransportRouteIdsForScope_(ss, scope);
@@ -4818,12 +4855,11 @@ function getTransportAssignments(payload) {
 }
 
 function getTripPassengerManifest(payload) {
-  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
-  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", manifiestoPasajeros: [] };
+  var input = payload || {}, access = transportReadAccess_(input, "getTripPassengerManifest");
+  if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", manifiestoPasajeros: [] };
+  var actor = access.actor, ss = access.ss, scope = access.scope;
   var tripId = String(input.viajeId || "").trim();
   if (!tripId) return { status: "error", code: "RESOURCE_NOT_FOUND", manifiestoPasajeros: [] };
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), scope = resolveTransportAccessScope_(input, ss);
-  if (!scope.authorized) return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", manifiestoPasajeros: [] };
   var trips = transportRows_(ss, "TransporteViajes", ["ViajeID","RutaID","Unidad","Conductor","Monitor","Fecha","Jornada","Inicio","Fin","Estado"]);
   if (!trips.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", manifiestoPasajeros: [] };
   var matches = trips.rows.filter(function(row) { return String(row[0] || "").trim() === tripId; });
