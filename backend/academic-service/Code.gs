@@ -4271,18 +4271,18 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
       }
       let permissionsIndex = primaryHeaders.indexOf("PermisosJSON");
       if (permissionsIndex < 0 && primaryHeaders.length === 8) permissionsIndex = 8;
-      if (permissionsIndex >= 0 && relation[permissionsIndex] !== "" &&
-          relation[permissionsIndex] !== null && relation[permissionsIndex] !== undefined) {
-        let permissions;
-        try {
-          permissions = typeof relation[permissionsIndex] === "string"
-            ? JSON.parse(relation[permissionsIndex]) : relation[permissionsIndex];
-        } catch (_) { return { authorized: false, code: "RESOURCE_SCOPE_DENIED" }; }
-        if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) ||
-            permissions.permisoAcademico === false ||
-            String(permissions.permisoAcademico || "").trim().toLowerCase() === "false") {
-          return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-        }
+      if (permissionsIndex < 0 || relation[permissionsIndex] === "" ||
+          relation[permissionsIndex] === null || relation[permissionsIndex] === undefined) {
+        return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+      }
+      let permissions;
+      try {
+        permissions = typeof relation[permissionsIndex] === "string"
+          ? JSON.parse(relation[permissionsIndex]) : relation[permissionsIndex];
+      } catch (_) { return { authorized: false, code: "RESOURCE_SCOPE_DENIED" }; }
+      if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) ||
+          permissions.permisoAcademico !== true) {
+        return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
       }
     } else {
       const relations = ss.getSheetByName("RelacionesEstudianteTutor");

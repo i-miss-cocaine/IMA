@@ -63,8 +63,14 @@ let ctx = runtime([primaryHeaders, validPrimary]);
 assert.equal(check(ctx).authorized, true,
   "active primary guardian relationship with academic permission must authorize");
 ctx = runtime([primaryHeaders, validPrimary.slice(0,8)]);
-assert.equal(check(ctx).authorized, true,
-  "legacy primary rows without permission JSON retain the documented default");
+assert.equal(check(ctx).authorized, false,
+  "primary guardian relationships without an explicit academic permission fail closed");
+ctx = runtime([primaryHeaders, validPrimary.slice(0,8).concat(["{}"])]);
+assert.equal(check(ctx).authorized, false,
+  "an empty permission document does not imply academic access");
+ctx = runtime([primaryHeaders, validPrimary.slice(0,8).concat([JSON.stringify({ permisoAcademico: "true" })])]);
+assert.equal(check(ctx).authorized, false,
+  "non-boolean permission values do not grant academic access");
 ctx = runtime([primaryHeaders, validPrimary.slice(0,8).concat([JSON.stringify({ permisoAcademico: false })])]);
 assert.equal(check(ctx).authorized, false,
   "explicit academic permission denial must override an active relationship");
