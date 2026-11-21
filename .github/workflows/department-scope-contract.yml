@@ -385,6 +385,7 @@ jobs:
           node --check < backend/accounting-service/Code.gs
           node --check tests/security/academic-update-student-file-ownership.test.js
           node --check tests/security/academic-merge-student-files-ownership.test.js
+          node --check tests/security/accounting-monthly-charge-period.test.js
           node --check tests/security/accounting-family-credit-preference.test.js
           node --check js/accounting.js
           node --check js/secretary.js
