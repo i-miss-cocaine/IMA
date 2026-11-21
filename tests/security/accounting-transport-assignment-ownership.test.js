@@ -81,7 +81,7 @@ function makeHarness(options) {
     Date,String,Number,Object,Array,JSON,Math
   };
   vm.createContext(runtime);
-  const names=["transportBillingActor_","transportAssertStudentOwnershipForMutation_","assignStudentTransport","cancelStudentTransportAssignment"];
+  const names=["transportBillingActor_","assertTransportStudentWriteAccess_","assignStudentTransport","cancelStudentTransportAssignment"];
   vm.runInContext(names.map(extractFunction).join("\n")+"\nthis.assign=assignStudentTransport;this.cancel=cancelStudentTransportAssignment;",runtime);
   return {runAssign:runtime.assign,runCancel:runtime.cancel,calls,data};
 }
