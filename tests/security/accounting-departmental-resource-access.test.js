@@ -39,7 +39,7 @@ const roleStart=accounting.indexOf("const ROLE_PERMISSIONS = {");
 const roleEnd=accounting.indexOf("\n};",roleStart);
 assert.ok(roleStart>=0&&roleEnd>roleStart,"ROLE_PERMISSIONS must be present in the isolated contract");
 const roleConfig=accounting.slice(roleStart,roleEnd+3);
-const code=roleConfig+"\nfunction getDynamicPermissionsForRole(role,module,action,institutionId){var permissions=ROLE_PERMISSIONS[role],requested=String(action||'');return module==='ACCOUNTING'&&institutionId==='INST-1'&&((Array.isArray(permissions)&&permissions.indexOf(requested)!==-1)||(role==='Director'&&['uploadEmployeeDocument','getEmployeeContracts'].indexOf(requested)!==-1));}\nvar RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
+const code=roleConfig+"\nfunction getDynamicPermissionsForRole(role,module,action,institutionId){var permissions=ROLE_PERMISSIONS[role],requested=String(action||'');return module==='ACCOUNTING'&&institutionId==='INST-1'&&((Array.isArray(permissions)&&permissions.indexOf(requested)!==-1)||((role==='Director'&&requested==='uploadEmployeeDocument')||(['Director','Administrador','Empleado'].indexOf(role)!==-1&&requested==='getEmployeeContracts')));}\nvar RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();\n"+names.map(n=>extractFunction(accounting,n)).join("\n");
 const claims={
  staffA:{userId:"U-A",role:"Director",membershipId:"M-DIR-A",institutionId:"INST-1"},
  staffB:{userId:"U-B",role:"Director",membershipId:"M-DIR-B",institutionId:"INST-1"},
