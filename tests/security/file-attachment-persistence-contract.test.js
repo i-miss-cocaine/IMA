@@ -303,10 +303,10 @@ const requestRows = [
   ["id","userId","studentId","type","description","attachment","state","assigned","notes","created","resolved"],
   ["SOL-1","guardian-1","student-1","Trámite","Solicitud",legacyRequestUrl,"Enviada","Secretaría","","2026-01-01",""]
 ];
+const requestListSheet = { getDataRange: () => ({ getValues: () => requestRows }) };
 const requestListContext = {
   getUserVerifiedRole: () => "Padre",
-  SpreadsheetApp: { openById: () => ({}) },
-  getOrCreateSheet: () => ({ getDataRange: () => ({ getValues: () => requestRows }) }),
+  SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "SolicitudesTramites" ? requestListSheet : null }) },
   SPREADSHEET_ID: "test"
 };
 vm.runInNewContext(requestsFn + "\nthis.list=getAdministrativeRequests;", requestListContext);
