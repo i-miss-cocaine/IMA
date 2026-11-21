@@ -29,6 +29,10 @@ const relationRows=[
   ["RelacionID","ExpedienteID","ResponsableID","Parentesco","x4","x5","x6","x7","AccesoPortal","Estado"],
   ["REL-1","EXP-1","RESP-1","","","","","","Sí","Activo"]
 ];
+const primaryRelationRows=[
+  ["RelacionID","ExpedienteID","ResponsableID","Parentesco","Estado","FechaInicio","FechaFin","PermisosJSON"],
+  ["REL-PRIMARY-1","EXP-1","TUTOR-1","Tutor","ACTIVA","","",JSON.stringify({permisoAcademico:true})]
+];
 const guardianRows=[
   ["ResponsableID","PersonaID","Nombres"],
   ["RESP-1","PERSON-T","Guardian"]
@@ -36,6 +40,7 @@ const guardianRows=[
 const sheets={
   Usuarios:makeSheet(userRows),
   RelacionesEstudianteTutor:makeSheet(relationRows),
+  RelacionesFamiliares:makeSheet(primaryRelationRows),
   ResponsablesTutores:makeSheet(guardianRows)
 };
 const ownershipByExam={"EXP-1":"D1","EXP-2":"D2"};
@@ -87,6 +92,10 @@ function access(identity,expRow){return context.check({identity},ss,{getDataRang
   assert.equal(result.authorized,true,"guardian with an active portal relationship can read the linked student's expediente inside the student's department");
   assert.equal(result.accessType,"GUARDIAN");
   assert.equal(scopeCalls.some(call=>call.userId==="STU-1"&&call.role==="Estudiante"),true,"guardian ownership scope is resolved from the linked student account, not the guardian");
+  primaryRelationRows[1][7]=JSON.stringify({permisoDocumental:true});
+  const wrongDomain=access({authorized:true,userId:"TUTOR-1",role:"Tutor"},["EXP-1","PERSON-1"]);
+  assert.equal(wrongDomain.authorized,false,"academic expediente read requires academic grant, not document grant");
+  primaryRelationRows[1][7]=JSON.stringify({permisoAcademico:true});
 }
 {
   ownershipByExam["EXP-1"]="D2";
