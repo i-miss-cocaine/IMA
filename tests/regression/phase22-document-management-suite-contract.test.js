@@ -100,6 +100,9 @@ function makeIsolatedHarness(options = {}) {
       let sheet = sheets.get(name);
       if (!sheet) {
         sheet = makeMemorySheet(headers[name] || ["TestID"]);
+        if (options.failIssuedAppend && name === "DocumentosEscolaresEmitidos") {
+          sheet.appendRow = () => { throw new Error("INJECTED_ISSUED_INDEX_FAILURE"); };
+        }
         sheets.set(name, sheet);
         state.createdSheets.push(name);
       }
@@ -148,6 +151,23 @@ function makeIsolatedHarness(options = {}) {
   assert.equal(h.sheets.get("DocumentosEscolaresEmitidos").rows.length, 2, "one document fixture must be created");
   assert.equal(h.sheets.get("PlantillasSACEVerificadas").rows.length, 2, "one SACE fixture must be created");
   assert.equal(h.sheets.has("FirmasConformidades"), false, "read-only CUV lookup must not create the signatures sheet");
+  assert.equal(h.state.lockHeld, false);
+  assert.equal(h.state.lockReleases, 1);
+  assert.equal(h.state.folderSharing, "PRIVATE", "school document folder must remain private");
+  const generatedFiles = Array.from(h.state.files.values());
+  assert.equal(generatedFiles.length, 1);
+  assert.equal(generatedFiles[0].getSharingAccess(), "PRIVATE", "generated school documents must not be shared publicly");
+  assert.equal(generatedFiles[0].isTrashed(), false);
+}
+
+{
+  const h = makeIsolatedHarness({ failIssuedAppend: true });
+  const result = h.run();
+  assert.equal(result.status, "error", "failed index persistence must fail document generation");
+  const generatedFiles = Array.from(h.state.files.values());
+  assert.equal(generatedFiles.length, 1);
+  assert.equal(generatedFiles[0].isTrashed(), true, "Drive file must be rolled back if the issued-document index cannot persist");
+  assert.equal(h.sheets.get("DocumentosEscolaresEmitidos").rows.length, 1, "failed persistence must not leave a phantom index row");
   assert.equal(h.state.lockHeld, false);
   assert.equal(h.state.lockReleases, 1);
 }
