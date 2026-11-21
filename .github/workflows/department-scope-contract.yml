@@ -355,6 +355,7 @@ jobs:
           node --check tests/security/department-scope-contract.test.js
           node --check tests/security/contextual-abac-policy-contract.test.js
           node --check tests/security/contextual-abac-five-services-contract.test.js
+          node --check tests/security/task-exam-guardian-academic-permission-contract.test.js
           node --check tests/security/academic-coordinator-area-abac-contract.test.js
           node --check tests/security/academic-planning-teacher-abac-contract.test.js
           node --check tests/security/academic-guardian-primary-relation-abac-contract.test.js

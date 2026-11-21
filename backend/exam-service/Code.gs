@@ -442,21 +442,46 @@ function assertExamResourceOwnershipForScope_(ss, scope, resourceType, resourceI
 // [TAREA-01] [TAREA-F4-P0-01] [Fase 4 - Seguridad RBAC y Token Unificado] - Validar y reforzar la seguridad mediante verificación de credencial de sesión HMAC
 // [TAREA-F4-P1-04] [Fase 4: Reglas Contextuales RBAC/ABAC] - Validación de atributos contextuales (Docentes, Tutores, Estudiantes)
 function validateContextualAccess(action, payload, verifiedUserId, userRole) {
-  const verifiedActorId = String(verifiedUserId || "").trim();
-  const verifiedActorRole = String(userRole || "").trim();
-  if (!verifiedActorId || !verifiedActorRole) return { authorized: false, reason: "VERIFIED_IDENTITY_REQUIRED" };
-  if (verifiedActorRole === "Administrador" || verifiedActorRole === "Desarrollador") {
-    return { authorized: true };
+  const actorId = String(verifiedUserId || "").trim();
+  const role = String(userRole || "").trim();
+  if (!actorId || !role) return { authorized: false, reason: "VERIFIED_IDENTITY_REQUIRED" };
+  if (role === "Administrador" || role === "Desarrollador") return { authorized: true };
+  const guardianRole = ["Padre", "Madre", "Tutor", "Responsable", "ResponsableFamiliar"].indexOf(role) !== -1;
+  let targetStudentId = String(payload && (
+    payload.studentId || payload.estudianteId || payload.estudianteUserId || payload.studentUserId ||
+    payload.targetStudentId || payload.targetStudentUserId || payload.targetUserId || payload.userId
+  ) || "").trim();
+  const targetExpedienteId = String(payload && (payload.expedienteId || payload.expedienteEstudianteId) || "").trim();
+  if (guardianRole && targetStudentId === actorId) targetStudentId = "";
+  if ((role === "Estudiante" || role === "Alumno") && targetStudentId && targetStudentId !== actorId) {
+    return { authorized: false, reason: "STUDENT_RESOURCE_SCOPE_DENIED" };
   }
-
-  const targetStudentId = payload && (payload.studentId || payload.estudianteId || payload.targetUserId || payload.userId);
-
-  if (userRole === "Estudiante" || userRole === "Alumno") {
-    if (targetStudentId && String(targetStudentId).trim() !== verifiedActorId) {
-      return { authorized: false, reason: "Aislamiento estricto de estudiante: intento de acceso a ID ajeno." };
+  if (guardianRole && (targetStudentId || targetExpedienteId)) {
+    try {
+      const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      const linkedStudentIds = getVerifiedGuardianStudentIds_(ss, actorId);
+      const normalizedIds = Array.isArray(linkedStudentIds)
+        ? linkedStudentIds.map(value => String(value || "").trim()).filter(Boolean) : [];
+      let expedienteStudentId = "";
+      if (targetExpedienteId) {
+        const sheet = ss.getSheetByName("ExpedientesEstudiantes");
+        if (!sheet) return { authorized: false, reason: "GUARDIAN_EXPEDIENTE_SOURCE_UNAVAILABLE" };
+        const rows = sheet.getDataRange().getValues().slice(1);
+        const matches = rows.filter(row => String(row[0] || "").trim() === targetExpedienteId);
+        if (matches.length !== 1) return { authorized: false, reason: "GUARDIAN_EXPEDIENTE_AMBIGUOUS_OR_MISSING" };
+        expedienteStudentId = String(matches[0][1] || "").trim();
+        if (!expedienteStudentId || (targetStudentId && targetStudentId !== expedienteStudentId)) {
+          return { authorized: false, reason: "GUARDIAN_EXPEDIENTE_TARGET_MISMATCH" };
+        }
+      }
+      const requestedStudentId = targetStudentId || expedienteStudentId;
+      if (!requestedStudentId || normalizedIds.indexOf(requestedStudentId) === -1) {
+        return { authorized: false, reason: "GUARDIAN_ACADEMIC_RELATIONSHIP_DENIED" };
+      }
+    } catch (_) {
+      return { authorized: false, reason: "GUARDIAN_ACADEMIC_RELATIONSHIP_UNVERIFIED" };
     }
   }
-
   return { authorized: true };
 }
 
@@ -2392,31 +2417,8 @@ function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
       return false;
     }
   }).map(row => expToUser[String(row[1] || "").trim()] || "").filter(Boolean);
-  // El esquema legado solo se consulta si el tutor no tiene ninguna fila en la fuente primaria.
-  // Una relación revocada/pendiente en RelacionesFamiliares nunca se reactiva por fallback.
-  if (!primaryTutorRows.length) {
-    const legacySheet = ss && ss.getSheetByName("RelacionesEstudianteTutor");
-    const legacyRows = legacySheet ? legacySheet.getDataRange().getValues().slice(1) : [];
-    const portalAllowed = value => ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(String(value || "").trim().toUpperCase()) !== -1;
-    const legacyCandidates = legacyRows.filter(row => {
-      if (String(row[2] || "").trim() !== tutorId || !statusAllowed(row[9]) || !portalAllowed(row[8]) || !isCurrentRelation(row)) return false;
-      return true;
-    });
-    const legacyRelationCounts = Object.create(null), legacyStudentCounts = Object.create(null);
-    legacyCandidates.forEach(row => {
-      const relationId = String(row[0] || "").trim(), studentId = String(row[1] || "").trim();
-      if (relationId) legacyRelationCounts[relationId] = (legacyRelationCounts[relationId] || 0) + 1;
-      if (studentId) legacyStudentCounts[studentId] = (legacyStudentCounts[studentId] || 0) + 1;
-    });
-    studentIds = legacyCandidates.filter(row => {
-      const relationId = String(row[0] || "").trim(), studentId = String(row[1] || "").trim();
-      return !!relationId && !!studentId && legacyRelationCounts[relationId] === 1 && legacyStudentCounts[studentId] === 1;
-    }).map(row => {
-      const id = String(row[1] || "").trim();
-      if (Object.prototype.hasOwnProperty.call(expToUser, id)) return expToUser[id] || "";
-      return id;
-    }).filter(Boolean);
-  }
+
+  // Legacy links lack explicit academic-domain permission and cannot authorize access.
   return Array.from(new Set(studentIds));
 }
 function getExamReadContext_(payload, requestedStudentId, verifiedActor) {
