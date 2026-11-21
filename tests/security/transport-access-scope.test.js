@@ -473,7 +473,7 @@ const duplicateParentManifest = runEndpoint("getTripPassengerManifest", {
   _verifiedUserId: "PARENT-01",
   viajeId: "TRIP-1"
 }, duplicateRouteData);
-assert.equal(duplicateParentManifest.result.code, "UNAUTHORIZED_ACCESS_ATTEMPT",
+assert.equal(duplicateParentManifest.result.code, "ROUTE_ID_AMBIGUOUS",
   "manifest access must fail closed when the route identifier is ambiguous");
 
 const duplicateTripData = Object.assign({}, data, {

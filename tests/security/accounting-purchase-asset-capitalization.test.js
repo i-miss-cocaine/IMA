@@ -38,6 +38,7 @@ const ctx={SPREADSHEET_ID:"TEST",failAssignmentWrite:false,
  catalogActor_:()=>({userId:"U-1"}),catalogFindItem_:()=>({id:"CAT-ITEM",code:"ITEM-C",name:"Papel",baseUnit:"Unidad",unit:"Unidad"}),catalogFindUnit_:()=>({name:"Unidad",base:"Unidad",factor:1}),catalogNormalizeText_:v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(),purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"U-1",role:"Contador"},scope:{institutionWide:true,departmentIds:[]}}),supplierEnsureActiveForOrder_:()=>true
 };
 vm.createContext(ctx);
+vm.runInContext('function getVerifiedAccountingIdentity_(payload){return {authorized:true,userId:String(payload&&payload._verifiedUserId||"U-1"),role:"Director",institutionId:"INST-1"};} function validateRolePermission(){return {authorized:true};}',ctx);
 vm.runInContext(constants[0],ctx);
 ["normalizePurchaseAwardRole_","purchaseQuotationItemKey_","purchaseQuotationJsonArray_","normalizePurchaseAssetClassification_","ensureAssetAcquisitionSchema_","purchaseAssetReceiptContext_","getPurchaseReceiptAssetCandidates","registerAssetsFromPurchaseReceipt","getAssetItems","manageAssetItem","createPurchaseRequest","createPurchaseOrder"].forEach(name=>vm.runInContext(extract(source,name),ctx));
 assert.equal(ctx.normalizePurchaseAssetClassification_({tipoBien:"Bienes Capitalizables / Activos Fijos"}),"ActivoFijo");
