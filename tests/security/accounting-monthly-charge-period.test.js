@@ -28,7 +28,7 @@ assertResourceOwnershipForScope_:(spreadsheet,scope,type,id,operation)=>{calls.o
 Date,Math,JSON,Number,String,Set,Map,isFinite,parseFloat,parseInt,Error
 };
 const names=["monthlyChargeHeaderMap_","normalizeMonthlyChargeMonth_","monthlyChargeDedupeKey_","resolveMonthlyChargeTariff_","monthlyChargeExistingKey_","assertMonthlyChargeAccess_","assertMonthlyChargeStudentOwnership_","buildMonthlyChargePreview_","previewBatchMonthlyCharges","generateBatchMonthlyCharges"];
-vm.runInNewContext(names.map(extract).join("\n")+"\nthis.preview=previewBatchMonthlyCharges;this.generate=generateBatchMonthlyCharges;",context);
+vm.runInNewContext(names.map(extract).join(String.fromCharCode(10))+String.fromCharCode(10)+"this.preview=previewBatchMonthlyCharges;this.generate=generateBatchMonthlyCharges;",context);
 return{context,sheets,calls};
 }
 {
