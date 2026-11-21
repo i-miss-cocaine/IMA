@@ -18457,7 +18457,10 @@ function reconcileStudentLifecycleState(payload) {
 
     const inconsistencies = [];
     expRows.forEach((exp, i) => {
-      const expId = exp[0], userId = exp[1], estadoExp = String(exp[7] || "Activo").trim();
+      const expId = exp[0], personId = exp[1], estadoExp = String(exp[7] || "Activo").trim();
+      const studentIdentity = getStudentIdentityForPerson_(ss, personId);
+      if (!studentIdentity || !studentIdentity.userId) throw new Error("LIFECYCLE_STUDENT_IDENTITY_UNRESOLVED");
+      const userId = studentIdentity.userId;
       if (estadoExp === "Graduado" || estadoExp === "Retirado" || estadoExp === "Trasladado") {
         matRows.slice(1).forEach((matricula, mIdx) => {
           const mUserId = matricula[2], mEstado = matricula[8];
