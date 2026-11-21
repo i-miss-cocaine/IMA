@@ -92,7 +92,7 @@ const runtime = {
   SPREADSHEET_ID: "LOCAL", EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_: new WeakMap(),
   getSaceExamSourceRevisionLocked_() { return "EXAM-EPOCH-123456:0"; },
   PUBLIC_ACTIONS: [], ROLE_PERMISSIONS: { Profesor: ["getAllExams","getTeacherExamActivity","getStudentExams","getExamQuestions","updateExam","updateExamStatus","deleteExam","gradeExamSubmission","deleteExamSubmission"], Estudiante: ["getStudentExams","getExamQuestions","getExamResult","submitExam"], Tutor: ["getStudentExams","getExamQuestions","getExamResult"], "Dirección": ["*"] },
-  getDynamicPermissionsForRole() { return null; }, hasActiveDelegationForAction() { return false; },
+  getDynamicPermissionsForRole(role, action) { const grants = runtime.ROLE_PERMISSIONS[role] || []; return grants.indexOf("*") !== -1 || grants.indexOf(action) !== -1; }, hasActiveDelegationForAction() { return false; },
   validateContextualAccess() { return { authorized: true }; },
   verifySessionToken(token) { return claims[token] || null; },
   prepareExamGradeRectificationEvent_() { return null; },

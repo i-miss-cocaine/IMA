@@ -154,9 +154,11 @@ function makeMutationContext(rows, failVersionBump) {
     },
     logStructuredEvent() {}
   };
-  vm.runInNewContext(extract(user, "createSecurityDelegation") + "\n" +
-    extract(user, "revokeSecurityDelegation") +
-    "\\nthis.create = createSecurityDelegation; this.revoke = revokeSecurityDelegation;", context);
+  vm.runInNewContext([
+    extract(user, "createSecurityDelegation"),
+    extract(user, "revokeSecurityDelegation"),
+    "this.create = createSecurityDelegation; this.revoke = revokeSecurityDelegation;"
+  ].join(String.fromCharCode(10)), context);
   return { context, rows, bumps, versions, releases: () => releases };
 }
 const delegationHeaders = ["delegacionId","deleganteUserId","delegadoUserId","accionesAutorizadas","ambito","fechaInicio","fechaFin","estado","motivo","creadoPor","fechaCreacion"];
