@@ -305,8 +305,24 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   ) || "").trim();
   const targetExpedienteId = String(payload && (payload.expedienteId || payload.expedienteEstudianteId) || "").trim();
   if (guardianRole && targetStudentId === actorId) targetStudentId = "";
-  if ((role === "Estudiante" || role === "Alumno") && targetStudentId && targetStudentId !== actorId) {
-    return { authorized: false, reason: "STUDENT_RESOURCE_SCOPE_DENIED" };
+  if (role === "Estudiante" || role === "Alumno") {
+    if (targetStudentId && targetStudentId !== actorId) {
+      return { authorized: false, reason: "STUDENT_RESOURCE_SCOPE_DENIED" };
+    }
+    if (targetExpedienteId) {
+      try {
+        const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+        const sheet = ss.getSheetByName("ExpedientesEstudiantes");
+        if (!sheet) return { authorized: false, reason: "STUDENT_EXPEDIENTE_SOURCE_UNAVAILABLE" };
+        const rows = sheet.getDataRange().getValues().slice(1);
+        const matches = rows.filter(row => String(row[0] || "").trim() === targetExpedienteId);
+        if (matches.length !== 1 || String(matches[0][1] || "").trim() !== actorId) {
+          return { authorized: false, reason: "STUDENT_EXPEDIENTE_SCOPE_DENIED" };
+        }
+      } catch (_) {
+        return { authorized: false, reason: "STUDENT_EXPEDIENTE_SCOPE_UNVERIFIED" };
+      }
+    }
   }
   if (guardianRole && (targetStudentId || targetExpedienteId)) {
     try {

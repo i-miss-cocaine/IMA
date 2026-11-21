@@ -102,6 +102,14 @@ for (const [name, check] of [["TASK", taskContext], ["EXAM", examContext]]) {
     name + " contextual guard resolves an expediente to its linked student");
   assert.equal(check("getStudentResource", { expedienteId: "EXP-2" }, "GUARD-1", "Tutor").authorized, false,
     name + " contextual guard rejects an expediente belonging to an unlinked student");
+  assert.equal(check("getStudentResource", { studentId: "STUDENT-1", expedienteId: "EXP-2" }, "GUARD-1", "Tutor").authorized, false,
+    name + " contextual guard rejects a mismatched student/expediente pair");
+
+  assert.equal(check("getStudentResource", { expedienteId: "EXP-1" }, "STUDENT-1", "Estudiante").authorized, true,
+    name + " contextual guard binds a student's own expediente");
+  assert.equal(check("getStudentResource", { expedienteId: "EXP-2" }, "STUDENT-1", "Estudiante").authorized, false,
+    name + " contextual guard denies another student's expediente");
+
 
 }
 
