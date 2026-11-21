@@ -108,8 +108,23 @@ const duplicateRoute=makeHarness({routeRows:[
   ["RUT-1","Ruta duplicate","BUS-1","EMP-1",20,"[]","active","","06:30","","Matutina"]
 ]});
 assert.equal(duplicateRoute.runAssign(payload()).code,"ROUTE_ID_AMBIGUOUS");
+const legacyActiveDuplicate = makeHarness({assignmentRows:[["AS-OLD","RUT-1","STU-1","Parada A","06:30","activo","2026-11-01","Matutina","[]","","2026-11-01","","COMPLETA",""]]});
+assert.equal(legacyActiveDuplicate.runAssign(payload()).code,"DUPLICATE_TRANSPORT_ASSIGNMENT",
+  "legacy active assignment states must prevent duplicate assignment");
+const legacyCapacity = makeHarness({
+  routeRows:[["RUT-1","Ruta 1","BUS-1","EMP-1",1,"[]","active","","06:30","","Matutina"]],
+  assignmentRows:[["AS-OLD","RUT-1","STU-2","Parada A","06:30","activo","2026-11-01","Matutina","[]","","2026-11-01","","COMPLETA",""]]
+});
+assert.equal(legacyCapacity.runAssign(payload()).code,"TRANSPORT_CAPACITY_EXCEEDED",
+  "legacy active assignments must count toward capacity");
 const inactiveRoute=makeHarness({routeRows:[["RUT-1","Ruta 1","BUS-1","EMP-1",20,"[]","inactive","","06:30","","Matutina"]]});
 assert.equal(inactiveRoute.runAssign(payload()).code,"ROUTE_NOT_ACTIVE");
+for (const vehicleState of ["activo","activa","vigente"]) {
+  const compatibleVehicle = makeHarness();
+  compatibleVehicle.data.TransporteVehiculos[1][6] = vehicleState;
+  assert.equal(compatibleVehicle.runAssign(payload()).status,"success",
+    "assignment must accept vehicle states previously treated as active: " + vehicleState);
+}
 for (const activeState of ["activo","activa","vigente"]) {
   const compatibleRoute = makeHarness({routeRows:[["RUT-1","Ruta 1","BUS-1","EMP-1",20,"[]",activeState,"","06:30","","Matutina"]]});
   assert.equal(compatibleRoute.runAssign(payload()).status,"success",
@@ -142,6 +157,14 @@ assert.equal(cancelNoPermission.calls.locks,0);
 const cancelLockBusy=makeHarness({lockAvailable:false,assignmentRows:[assignment]});
 assert.throws(()=>cancelLockBusy.runCancel({sessionToken:"verified",assignmentId:"AS-1"}),/LOCK_TIMEOUT/);
 assert.equal(cancelLockBusy.data.TransporteAsignaciones[1][5],"active");
+const legacyActiveAssignment=assignment.slice();legacyActiveAssignment[5]="activo";
+const cancelLegacyActive=makeHarness({assignmentRows:[legacyActiveAssignment]});
+assert.equal(cancelLegacyActive.runCancel({sessionToken:"verified",assignmentId:"AS-1"}).status,"success",
+  "legacy active assignment must remain cancellable");
+const legacyCancelledAssignment=assignment.slice();legacyCancelledAssignment[5]="cancelado";
+const cancelLegacyIdempotent=makeHarness({assignmentRows:[legacyCancelledAssignment]});
+assert.equal(cancelLegacyIdempotent.runCancel({sessionToken:"verified",assignmentId:"AS-1"}).idempotent,true,
+  "legacy cancelled assignment remains idempotent");
 const cancelSuccess=makeHarness({assignmentRows:[assignment]});
 const cancelled=cancelSuccess.runCancel({sessionToken:"verified",assignmentId:"AS-1"});
 assert.equal(cancelled.status,"success");
