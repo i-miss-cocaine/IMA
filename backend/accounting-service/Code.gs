@@ -12065,16 +12065,18 @@ function serviceFamilyRelationIsActive_(row, indexes, now) {
     const direct = row[indexes.directPermission];
     if (direct === false || String(direct || "").trim().toLowerCase() === "false") return false;
     if (direct === true) hasExplicitFinancialGrant = true;
+    else if (direct !== "" && direct !== null && direct !== undefined) return false;
   }
   if (indexes.permissions >= 0) {
     const raw = row[indexes.permissions];
     if (raw !== "" && raw !== null && raw !== undefined) {
       let permissions;
       try { permissions = typeof raw === "string" ? JSON.parse(raw) : raw; } catch (_) { return false; }
-      if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) ||
-          permissions.permisoFinanciero === false ||
-          String(permissions.permisoFinanciero || "").trim().toLowerCase() === "false") return false;
-      if (permissions.permisoFinanciero === true) hasExplicitFinancialGrant = true;
+      if (!permissions || typeof permissions !== "object" || Array.isArray(permissions)) return false;
+      if (Object.prototype.hasOwnProperty.call(permissions, "permisoFinanciero")) {
+        if (permissions.permisoFinanciero !== true) return false;
+        hasExplicitFinancialGrant = true;
+      }
     }
   }
   return hasExplicitFinancialGrant;
