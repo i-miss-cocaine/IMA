@@ -261,9 +261,9 @@ const permissionCache = new Map();
 let activeTenant = "INST-1";
 const permissionRows = [
   ["rol","modulo","accion","permitido","ambito"],
-  ["Director","General","readRecords",true,"Global"],
-  ["Director","General","readRecords",false,"INST-1"],
-  ["Director","General","readRecords",true,"INST-2"]
+  ["Director","USER","readRecords",true,"Global"],
+  ["Director","USER","readRecords",false,"INST-1"],
+  ["Director","USER","readRecords",true,"INST-2"]
 ];
 const permissionCtx = {
   SPREADSHEET_ID: "LOCAL",
@@ -271,7 +271,7 @@ const permissionCtx = {
   CacheService: { getScriptCache: () => ({ get: key => permissionCache.get(key) || null, put: (key,value) => permissionCache.set(key,value), remove: key => permissionCache.delete(key) }) },
   SpreadsheetApp: { openById: () => ({ getSheetByName: () => ({ getLastRow: () => permissionRows.length, getDataRange: () => ({ getValues: () => permissionRows }) }) }) }
 };
-vm.runInNewContext(permissionCacheKeyFn + "\n" + dynamicPermissionsFn + "\nthis.getDynamicPermissionsForRole=getDynamicPermissionsForRole;", permissionCtx);
+vm.runInNewContext('const PERMISSION_MATRIX_SERVICE_="USER";\n' + permissionCacheKeyFn + "\n" + dynamicPermissionsFn + "\nthis.getDynamicPermissionsForRole=getDynamicPermissionsForRole;", permissionCtx);
 assert.equal(permissionCtx.getDynamicPermissionsForRole("Director","readRecords"), false, "institution deny overrides global allow");
 activeTenant = "INST-2";
 assert.equal(permissionCtx.getDynamicPermissionsForRole("Director","readRecords"), true, "institution two uses its own permission rule and cache");
