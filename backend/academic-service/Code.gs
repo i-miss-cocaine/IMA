@@ -3274,16 +3274,16 @@ function updateAdmissionStatus(payload) {
       }
     }
 
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "SolicitudesAdmision");
-    const data = sheet.getDataRange().getValues();
-
+    clearRequestAuthorizationContext_(payload);
     const permission = validateRolePermission("updateAdmissionStatus", payload);
     if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
     const actor = getVerifiedAcademicIdentity_(payload);
     if (!actor.authorized) throw new Error("RESOURCE_NOT_FOUND");
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const scope = getVerifiedAcademicDepartmentScope_(payload, ss, actor);
     if (!scope || !scope.authorized) throw new Error("RESOURCE_NOT_FOUND");
+    const sheet = getOrCreateSheet(ss, "SolicitudesAdmision");
+    const data = sheet.getDataRange().getValues();
     const matches = data.map((row, index) => ({ row, index })).filter(item => String(item.row[0] || "").trim() === String(solicitudId).trim());
     if (matches.length !== 1) throw new Error("RESOURCE_NOT_FOUND");
     const idx = matches[0].index;
@@ -3660,26 +3660,36 @@ function assertAdmissionConversionArtifactsComplete_(ss, solicitudRow, solicitud
 function convertAdmissionToStudent(payload) {
   const { solicitudId, seccion, forceCapacityOverride, allowIncompleteOverride } = payload || {};
   if (!solicitudId) throw new Error("solicitudId es requerido.");
-  const ctx = getAcademicAdmissionScopeContext_(payload, "convertAdmissionToStudent", solicitudId, "UPDATE");
+  let ctx = getAcademicAdmissionScopeContext_(payload, "convertAdmissionToStudent", solicitudId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const departmentResolution = resolveAcademicAdmissionDepartment_(payload, ctx.scope, ctx.requestAccess);
   if (!departmentResolution.authorized) throw new Error(departmentResolution.code || "RESOURCE_DEPARTMENT_SELECTION_REQUIRED");
-  const departmentId = departmentResolution.departmentId;
+  let departmentId = departmentResolution.departmentId;
 
   const requestedIncompleteOverride = allowIncompleteOverride === true;
   const requestedCapacityOverride = forceCapacityOverride === true;
-  const incompleteOverrideAllowed = requestedIncompleteOverride && getDynamicPermissionsForRole(ctx.actor.role, "overrideAdmissionRequirements") === true;
-  const capacityOverrideAllowed = requestedCapacityOverride && getDynamicPermissionsForRole(ctx.actor.role, "overrideEnrollmentCapacity") === true;
+  let incompleteOverrideAllowed = requestedIncompleteOverride && getDynamicPermissionsForRole(ctx.actor.role, "overrideAdmissionRequirements") === true;
+  let capacityOverrideAllowed = requestedCapacityOverride && getDynamicPermissionsForRole(ctx.actor.role, "overrideEnrollmentCapacity") === true;
   if (requestedIncompleteOverride && !incompleteOverrideAllowed) throw new Error("AUTH_PERMISSION_DENIED");
   if (requestedCapacityOverride && !capacityOverrideAllowed) throw new Error("AUTH_PERMISSION_DENIED");
   const systemAllowsIncomplete = typeof ALLOW_INCOMPLETE_ADMISSION_CONVERSION !== "undefined" && ALLOW_INCOMPLETE_ADMISSION_CONVERSION === true;
-  const allowIncomplete = incompleteOverrideAllowed || systemAllowsIncomplete;
+  let allowIncomplete = incompleteOverrideAllowed || systemAllowsIncomplete;
 
   let hasLock = false;
   const lock = LockService.getScriptLock();
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado procesando solicitudes de admisiones en paralelo. Por favor reintente en unos segundos.");
+    ctx = refreshAcademicAdmissionScopeContext_(payload, "convertAdmissionToStudent", solicitudId, "UPDATE");
+    if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+    const currentDepartmentResolution = resolveAcademicAdmissionDepartment_(payload, ctx.scope, ctx.requestAccess);
+    if (!currentDepartmentResolution.authorized) throw new Error(currentDepartmentResolution.code || "RESOURCE_DEPARTMENT_SELECTION_REQUIRED");
+    departmentId = currentDepartmentResolution.departmentId;
+    incompleteOverrideAllowed = requestedIncompleteOverride && getDynamicPermissionsForRole(ctx.actor.role, "overrideAdmissionRequirements") === true;
+    capacityOverrideAllowed = requestedCapacityOverride && getDynamicPermissionsForRole(ctx.actor.role, "overrideEnrollmentCapacity") === true;
+    if (requestedIncompleteOverride && !incompleteOverrideAllowed) throw new Error("AUTH_PERMISSION_DENIED");
+    if (requestedCapacityOverride && !capacityOverrideAllowed) throw new Error("AUTH_PERMISSION_DENIED");
+    allowIncomplete = incompleteOverrideAllowed || systemAllowsIncomplete;
     advanceSaceAcademicSourceRevisionLocked_();
 
     const ss = ctx.ss;
