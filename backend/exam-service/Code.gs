@@ -1254,7 +1254,8 @@ function getAuthorizedExamMutationContext_(payload, action, requestedExamId) {
   }
   if (matches.length !== 1) throw new Error("RESOURCE_NOT_AVAILABLE");
   const exam = matches[0];
-  if (actor.role === "Profesor" && String(exam.row[8] || "").trim() !== actor.userId) {
+  if (actor.role === "Profesor" && (String(exam.row[8] || "").trim() !== actor.userId ||
+      !hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam.row))) {
     throw new Error("RESOURCE_NOT_AVAILABLE");
   }
   const ownership = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, action, payload);
@@ -1597,7 +1598,9 @@ function getStudentExamsUnlocked_(payload, context) {
     const examId = String(exam[0] || "").trim();
     if (!examId || examIdCounts[examId] !== 1 || !isExamAssignedToStudent_(exam, targetProfile) ||
         !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "READ_STUDENT_EXAMS", payload).authorized) return false;
-    if (!studentActor && !guardianActor && actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) return false;
+    if (!studentActor && !guardianActor && actor.role === "Profesor" &&
+        (String(exam[8] || "").trim() !== actor.userId ||
+         !hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam))) return false;
     const matchingDeliveries = deliveries.filter(row => String(row[1] || "").trim() === examId && String(row[2] || "").trim() === targetId);
     if (matchingDeliveries.length > 1) return false;
     return String(exam[7] || "") === "Activo" || matchingDeliveries.length === 1;
@@ -1628,7 +1631,8 @@ function getExamQuestionsUnlocked_(payload, context) {
     const ownDeliveries = deliveries.filter(row => String(row[1] || "").trim() === examenId && String(row[2] || "").trim() === profile.userId);
     if (ownDeliveries.length > 1 || (String(exam[7] || "") !== "Activo" && ownDeliveries.length !== 1)) throw new Error("RESOURCE_NOT_AVAILABLE");
   } else {
-    if (actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) throw new Error("RESOURCE_NOT_AVAILABLE");
+    if (actor.role === "Profesor" && (String(exam[8] || "").trim() !== actor.userId ||
+        !hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam))) throw new Error("RESOURCE_NOT_AVAILABLE");
     if (!assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examenId, "READ_QUESTIONS", payload).authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   }
   const questionRows = getSheetOrThrow(ss, "PreguntasExamen").getDataRange().getValues().slice(1)
@@ -2482,7 +2486,8 @@ function getExamResultUnlocked_(payload, context) {
     if (String(delivery[2] || "").trim() !== profile.userId || String(delivery[6] || "") === "Pendiente" ||
         !assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "READ_RESULT", payload).authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   } else {
-    if (actor.role === "Profesor" && String(exam[8] || "").trim() !== actor.userId) throw new Error("RESOURCE_NOT_AVAILABLE");
+    if (actor.role === "Profesor" && (String(exam[8] || "").trim() !== actor.userId ||
+        !hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam))) throw new Error("RESOURCE_NOT_AVAILABLE");
     if (!assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "READ_RESULT", payload).authorized) throw new Error("RESOURCE_NOT_AVAILABLE");
   }
   const answers = JSON.parse(delivery[4] || "[]");

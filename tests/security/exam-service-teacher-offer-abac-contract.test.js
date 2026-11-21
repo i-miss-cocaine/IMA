@@ -56,4 +56,11 @@ assert.equal(fixture({missingAssignments:true})(),false,"missing assignment sour
 assert.equal(fixture({missingSubjects:true})(),false,"missing subject source denies");
 const activity=extractFunction(source,"getTeacherExamActivityUnlocked_");
 assert.match(activity,/hasExamTeacherActiveOfferAssignment_\(ss, actor\.userId, exam\)/,"teacher activity endpoint enforces active offer assignment");
+for (const [name, binding] of [
+  ["getAuthorizedExamMutationContext_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam.row)"],
+  ["getStudentExamsUnlocked_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam)"],
+  ["getExamQuestionsUnlocked_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam)"],
+  ["getExamResultUnlocked_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, exam)"],
+  ["getAllExamsUnlocked_", "hasExamTeacherActiveOfferAssignment_(ss, actor.userId, row)"]
+]) assert.ok(extractFunction(source, name).includes(binding), name + " enforces active teacher offer binding");
 process.stdout.write("exam-service-teacher-offer-abac-contract: all assertions passed\n");

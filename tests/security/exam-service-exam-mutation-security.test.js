@@ -37,9 +37,9 @@ function fixture(options = {}) {
   ] }) };
   const context = new Function(
     "validateRolePermission", "getVerifiedExamIdentity_", "SpreadsheetApp", "SPREADSHEET_ID",
-    "getVerifiedExamDepartmentScope_", "getSheetOrThrow", "assertExamResourceOwnershipForScope_",
+    "getVerifiedExamDepartmentScope_", "getSheetOrThrow", "assertExamResourceOwnershipForScope_", "hasExamTeacherActiveOfferAssignment_",
     extractFunction("getAuthorizedExamMutationContext_") + "; return getAuthorizedExamMutationContext_;"
-  )(permission, identity, { openById() { state.opens++; return {}; } }, "TEST", scope, () => examSheet, () => ({ authorized: true }));
+  )(permission, identity, { openById() { state.opens++; return {}; } }, "TEST", scope, () => examSheet, () => ({ authorized: true }), () => true);
   const lock = {
     tryLock() { state.lockAttempts++; if (options.timeout || state.held) return false; state.held = true; return true; },
     releaseLock() { state.releases++; state.held = false; }
