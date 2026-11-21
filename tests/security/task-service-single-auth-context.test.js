@@ -7,7 +7,7 @@ const names=["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCa
 let verifyCalls=0,contextCalls=0,dynamicCalls=0;
 const rt={PUBLIC_ACTIONS:[],ROLE_PERMISSIONS:{Profesor:["createTask","gradeSubmission","createStudyMaterial"]},
 verifySessionToken(token){verifyCalls++;return token==="valid"?{userId:"T1",role:"Profesor",sessionId:"S1"}:null;},
-validateContextualAccess(){contextCalls++;return {authorized:true};},getDynamicPermissionsForRole(){dynamicCalls++;return null;},
+validateContextualAccess(){contextCalls++;return {authorized:true};},getDynamicPermissionsForRole(){dynamicCalls++;return true;},
 hasActiveDelegationForAction(){return false;},Logger:{log(){}}};
 const runSource=names.map(extract).join("\n")+"\nthis.validate=validateRolePermission;this.identity=getVerifiedTaskIdentity_;this.clear=clearRequestAuthorizationContext_;";
 vm.runInNewContext(runSource,rt);

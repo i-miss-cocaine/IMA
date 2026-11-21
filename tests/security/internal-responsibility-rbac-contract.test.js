@@ -913,7 +913,9 @@ const revocationAuthorizationCtx = {
 };
 vm.runInNewContext(extractFunction(source,"validateRolePermission")+"\nthis.validateRolePermission=validateRolePermission;",revocationAuthorizationCtx);
 assert.equal(revocationAuthorizationCtx.validateRolePermission("revokeUserSession",{role:"Director",userId:"U-DIRECTOR"}).authorized,false,"direct administrative revocation is not public or implicitly granted to Director");
-assert.equal(revocationAuthorizationCtx.validateRolePermission("revokeUserSession",{role:"Administrador",userId:"U-ADMIN"}).authorized,true,"administrator wildcard explicitly authorizes administrative revocation");
+assert.equal(revocationAuthorizationCtx.validateRolePermission("revokeUserSession",{role:"Administrador",userId:"U-ADMIN"}).authorized,false,"administrator wildcard cannot bypass a missing matrix rule");
+revocationAuthorizationCtx.getDynamicPermissionsForRole=(role,action)=>role==="Administrador"&&action==="revokeUserSession"?true:null;
+assert.equal(revocationAuthorizationCtx.validateRolePermission("revokeUserSession",{role:"Administrador",userId:"U-ADMIN"}).authorized,true,"an explicit matrix grant authorizes administrative revocation");
 assert.equal(revocationAuthorizationCtx.validateRolePermission("logoutUser",{}).authorized,true,"logout remains public but the handler requires signed claims before revoking any session");
 
 // Legacy role-only tokens remain compatible, but their SessionID is covered by the persistent revocation ledger.
