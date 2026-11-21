@@ -9764,27 +9764,51 @@ function submitInstitutionalFormRequest(payload) {
     message: "Trámite digital enviado con éxito para revisión oficial." };
 }
 function getAppointmentBookings(payload) {
-  const { solicitanteId, estudianteId, solicitadoA } = payload || {};
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CitasReuniones");
+  const sheet = ss.getSheetByName("CitasReuniones");
+  if (!sheet) return { status: "success", data: [] };
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status: "success", data: [] };
 
-  const appointments = data.slice(1).filter(r => {
-    if (solicitanteId && String(r[1]).trim() !== String(solicitanteId).trim()) return false;
-    if (estudianteId && String(r[2]).trim() !== String(estudianteId).trim()) return false;
-    if (solicitadoA && String(r[3]).trim() !== String(solicitadoA).trim()) return false;
-    return true;
-  }).map(r => ({
-    citaId: r[0],
-    solicitanteId: r[1],
-    estudianteId: r[2],
-    solicitadoA: r[3],
-    motivo: r[4],
-    fechaHora: r[5] ? new Date(r[5]).toISOString() : null,
-    modalidad: r[6] || "Presencial",
-    estado: r[7] || "Solicitada",
-    comentarios: r[8] || ""
+  let scope = null;
+  try { scope = getInstitutionalDepartmentScope_(request, role); } catch (_) {}
+  const hasInstitutionalScope = !!scope && scope.status === "success";
+  const institutionWide = hasInstitutionalScope && scope.institutionWide === true;
+  const requestedSolicitante = String(request.solicitanteId || "").trim();
+  const requestedEstudiante = String(request.estudianteId || "").trim();
+  const requestedRecipient = String(request.solicitadoA || "").trim();
+
+  const appointments = data.slice(1).filter(row => {
+    if (requestedSolicitante && String(row[1] || "").trim() !== requestedSolicitante) return false;
+    if (requestedEstudiante && String(row[2] || "").trim() !== requestedEstudiante) return false;
+    if (requestedRecipient && String(row[3] || "").trim() !== requestedRecipient) return false;
+
+    if (institutionWide) return true;
+    if (!hasInstitutionalScope) {
+      return String(row[1] || "").trim() === actorId || String(row[2] || "").trim() === actorId;
+    }
+
+    const studentId = String(row[2] || "").trim();
+    if (!studentId) return false;
+    const studentResource = resolveAbsenceReviewExpedienteId_(ss, studentId);
+    if (!studentResource || studentResource.status !== "success") return false;
+    const ownership = assertRecordOwnership(request, "EXPEDIENTE_ESTUDIANTE", studentResource.expedienteId, "READ");
+    return !!ownership && ownership.authorized === true;
+  }).map(row => ({
+    citaId: row[0],
+    solicitanteId: row[1],
+    estudianteId: row[2],
+    solicitadoA: row[3],
+    motivo: row[4],
+    fechaHora: row[5] ? new Date(row[5]).toISOString() : null,
+    modalidad: row[6] || "Presencial",
+    estado: row[7] || "Solicitada",
+    comentarios: row[8] || ""
   }));
 
   return { status: "success", data: appointments };
