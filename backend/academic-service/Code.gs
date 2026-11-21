@@ -4222,20 +4222,74 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
     if (!actorPersonId || personId !== actorPersonId) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
   } else if (isGuardian) {
     if (!actorPersonId || !expedienteId || !personId) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-    const relations = ss.getSheetByName("RelacionesEstudianteTutor");
-    const guardians = ss.getSheetByName("ResponsablesTutores");
-    if (!relations || !guardians) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-    const relRows = relations.getDataRange().getValues().slice(1);
-    const guardianRows = guardians.getDataRange().getValues().slice(1);
-    const linked = relRows.some(function(r) {
-      if (String(r[1] || "").trim() !== expedienteId) return false;
-      const state = String(r[9] || "").trim().toUpperCase();
-      const portal = String(r[8] || "").trim().toUpperCase();
-      if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) === -1 || ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(portal) === -1) return false;
-      const guardianMatches = guardianRows.filter(function(g) { return String(g[0] || "").trim() === String(r[2] || "").trim(); });
-      return guardianMatches.length === 1 && String(guardianMatches[0][1] || "").trim() === actorPersonId;
-    });
-    if (!linked) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    const primarySheet = ss.getSheetByName("RelacionesFamiliares");
+    let primaryGuardianRows = [], primaryHeaders = [];
+    if (primarySheet) {
+      let primaryValues;
+      try { primaryValues = primarySheet.getDataRange().getValues(); }
+      catch (_) { return { authorized: false, code: "RESOURCE_SCOPE_DENIED" }; }
+      primaryHeaders = (primaryValues[0] || []).map(function(value) { return String(value || "").trim(); });
+      primaryGuardianRows = primaryValues.slice(1).filter(function(row) {
+        return String(row[2] || "").trim() === String(actor.userId).trim();
+      });
+    }
+    if (primaryGuardianRows.length > 0) {
+      const matchingPrimary = primaryGuardianRows.filter(function(row) {
+        return String(row[1] || "").trim() === expedienteId;
+      });
+      if (matchingPrimary.length !== 1) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+      const relation = matchingPrimary[0];
+      const relationState = String(relation[4] || "").trim().toUpperCase();
+      if (["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(relationState) === -1) {
+        return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+      }
+      const now = Date.now();
+      const parseRelationDate = function(value) {
+        if (value === "" || value === null || value === undefined) return { valid: true, time: null };
+        const date = value instanceof Date ? value : new Date(value);
+        return Number.isFinite(date.getTime()) ? { valid: true, time: date.getTime() } : { valid: false, time: null };
+      };
+      const startDate = parseRelationDate(relation[5]), endDate = parseRelationDate(relation[6]);
+      if (!startDate.valid || !endDate.valid ||
+          (startDate.time !== null && startDate.time > now) ||
+          (endDate.time !== null && endDate.time < now) ||
+          (startDate.time !== null && endDate.time !== null && startDate.time > endDate.time)) {
+        return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+      }
+      let permissionsIndex = primaryHeaders.indexOf("PermisosJSON");
+      if (permissionsIndex < 0 && primaryHeaders.length === 8) permissionsIndex = 8;
+      if (permissionsIndex >= 0 && relation[permissionsIndex] !== "" &&
+          relation[permissionsIndex] !== null && relation[permissionsIndex] !== undefined) {
+        let permissions;
+        try {
+          permissions = typeof relation[permissionsIndex] === "string"
+            ? JSON.parse(relation[permissionsIndex]) : relation[permissionsIndex];
+        } catch (_) { return { authorized: false, code: "RESOURCE_SCOPE_DENIED" }; }
+        if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) ||
+            permissions.permisoAcademico === false ||
+            String(permissions.permisoAcademico || "").trim().toLowerCase() === "false") {
+          return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+        }
+      }
+    } else {
+      const relations = ss.getSheetByName("RelacionesEstudianteTutor");
+      const guardians = ss.getSheetByName("ResponsablesTutores");
+      if (!relations || !guardians) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+      const relRows = relations.getDataRange().getValues().slice(1);
+      const guardianRows = guardians.getDataRange().getValues().slice(1);
+      const legacyMatches = relRows.filter(function(row) {
+        if (String(row[1] || "").trim() !== expedienteId) return false;
+        const state = String(row[9] || "").trim().toUpperCase();
+        const portal = String(row[8] || "").trim().toUpperCase();
+        if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) === -1 ||
+            ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(portal) === -1) return false;
+        const guardianMatches = guardianRows.filter(function(guardian) {
+          return String(guardian[0] || "").trim() === String(row[2] || "").trim();
+        });
+        return guardianMatches.length === 1 && String(guardianMatches[0][1] || "").trim() === actorPersonId;
+      });
+      if (legacyMatches.length !== 1) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    }
     const studentIdentity = getStudentIdentityForPerson_(ss, personId);
     if (!studentIdentity || !studentIdentity.userId || !studentIdentity.role) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
     ownershipIdentity = { authorized: true, userId: studentIdentity.userId, role: studentIdentity.role };
