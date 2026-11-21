@@ -210,7 +210,7 @@ assert.equal(guardianDomainPermissionRuntime.check({ permisos: { permisoFinancie
 assert.equal(guardianDomainPermissionRuntime.check({ permisos: [] }, "permisoFinanciero"), false);
 assert(extractFunction(userSource, "getFamilyConsolidatedSummary").includes('hasExplicitGuardianDomainPermission_(s, "permisoFinanciero")'),
   "family summary applies explicit financial permission");
-assert(extractFunction(userSource, "resolveVerifiedRequestSubmitter_").includes("hasExplicitGuardianDomainPermission_(student, permissionKey)"),
+assert(extractFunction(userSource, "resolveVerifiedRequestSubmitter_").includes("hasExplicitGuardianDomainPermission_(linkedMatches[0], permissionKey)"),
   "family requests require explicit permission for their domain");
 assert(extractFunction(userSource, "getAdministrativeRequestAttachment").includes('hasExplicitGuardianDomainPermission_(student, "permisoDocumental")'),
   "guardian document attachments require explicit document permission");
