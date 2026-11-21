@@ -28,7 +28,7 @@ function extractFunction(name) {
 }
 const helperNames = [
   "getVerifiedAccountingIdentity_", "transportRows_", "transportDateBoundary_", "transportRelationshipIsCurrent_",
-  "transportEmployeeIdsForUser_", "resolveTransportAccessScope_", "transportAuditDenied_",
+  "transportEmployeeIdsForUser_", "resolveTransportAccessScope_", "transportManagementReadScope_", "transportAuditDenied_",
   "getTransportRouteIdsForScope_", "getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"
 ];
 const helperSource = helperNames.map(extractFunction).join("\n");
@@ -290,7 +290,8 @@ function runEndpoint(name, payload, spreadsheetData) {
     SpreadsheetApp: { openById: () => makeSpreadsheet(spreadsheetData) },
     logStructuredEvent: (...args) => events.push(args),
     getOrCreateTransportVehiclesCatalog: () => {},
-    validateRolePermission: (actor, action) => ({ authorized: true, actor, action })
+    validateRolePermission: (actor, action) => ({ authorized: true, actor, action }),
+    getVerifiedAccountingDepartmentScope_: () => ({ valid: true, authorized: true, institutionWide: true })
   }, makeAuthContext(spreadsheetData));
   vm.runInNewContext(
     helperSource +
