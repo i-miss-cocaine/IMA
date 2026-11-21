@@ -82,7 +82,7 @@ assert.equal(ctx.check(ctx.ss, "", "SUB-1", "7", "A"), false,
 assert.equal(ctx.check(ctx.ss, "TEACHER-1", "unknown", "7", "A"), false,
   "unresolved subject must deny");
 
-ctx = runtime({ assignmentRows: [assignmentRows[0], ["ASG-2","OFF-1","TEACHER-1","2026-01-01","2099-12-31","Activo"]] });
+ctx = runtime({ assignmentRows: [assignmentRows[0], assignmentRows[1], ["ASG-2","OFF-1","TEACHER-1","2026-01-01","2099-12-31","Activo"]] });
 assert.equal(ctx.check(ctx.ss, "TEACHER-1", "SUB-1", "7", "A"), false,
   "duplicate active assignment must deny as ambiguous");
 ctx = runtime({ assignmentRows: [assignmentRows[0], ["ASG-1","OFF-1","TEACHER-1","2099-01-01","2099-12-31","Activo"]] });
@@ -94,7 +94,7 @@ assert.equal(ctx.check(ctx.ss, "TEACHER-1", "SUB-1", "7", "A"), false,
 ctx = runtime({ assignmentRows: [assignmentRows[0], ["ASG-1","OFF-1","TEACHER-1","not-a-date","2099-12-31","Activo"]] });
 assert.equal(ctx.check(ctx.ss, "TEACHER-1", "SUB-1", "7", "A"), false,
   "malformed assignment dates must deny");
-ctx = runtime({ assignmentRows: [assignmentRows[0], ["ASG-2","OFF-1","TEACHER-1","2026-01-01","2099-12-31","Activo"]] });
+ctx = runtime({ assignmentRows: [assignmentRows[0], assignmentRows[1], ["ASG-2","OFF-1","TEACHER-1","2026-01-01","2099-12-31","Activo"]] });
 assert.equal(ctx.check(ctx.ss, "TEACHER-1", "SUB-1", "7", "A"), false,
   "ambiguous assignment records must deny");
 ctx = runtime({ missing: "AsignacionesDocentes" });
