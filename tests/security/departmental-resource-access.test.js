@@ -63,8 +63,8 @@ const rows = {
     ["U-STUDENT","","","","","","Estudiante","","","P-STUDENT","Activo","",""],
     ["U-STUDENT-A","","","","","","Estudiante","","","P-A","Activo","",""],
     ["U-GUARDIAN","","","","","","Tutor","","","P-GUARDIAN","Activo","",""],
-    ["U-A","","","","","","Director","","","P-A","","",""],
-    ["U-B","","","","","","Director","","","P-B","","",""],
+    ["U-A","","","","","","Director","","","P-DIRECTOR-A","","",""],
+    ["U-B","","","","","","Director","","","P-DIRECTOR-B","","",""],
     ["U-TEACH","","","","","","Docente","","","P-TEACH","","",""]
   ],
   ExpedientesEstudiantes:[

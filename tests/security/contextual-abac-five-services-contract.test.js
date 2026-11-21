@@ -404,11 +404,11 @@ const accountingFamilyUsers = [
   ["STU-4","PERSON-S4","Estudiante","Activo","","","","","",""]
 ];
 const accountingFamilyRelations = [
-  ["RelacionID","PersonaEstudianteID","PersonaResponsableID","TipoRelacion","Estado","FechaInicio","FechaFin","VerificadaPor","FechaVerificacion","EstadoAutorizacion"],
-  ["R1","PERSON-S1","PERSON-G","Madre","Activo","2020-01-01","2099-12-31","","","Activo"],
-  ["R2","PERSON-S2","PERSON-G","Madre","Activo","2099-01-01","2099-12-31","","","Activo"],
-  ["R3","PERSON-S3","PERSON-G","Madre","Activo","2020-01-01","2020-12-31","","","Activo"],
-  ["R4","PERSON-S4","PERSON-G","Madre","Activo","invalid-date","2099-12-31","","","Activo"]
+  ["RelacionID","PersonaEstudianteID","PersonaResponsableID","TipoRelacion","Estado","FechaInicio","FechaFin","VerificadaPor","FechaVerificacion","EstadoAutorizacion","PermisoFinanciero"],
+  ["R1","PERSON-S1","PERSON-G","Madre","Activo","2020-01-01","2099-12-31","","","Activo",true],
+  ["R2","PERSON-S2","PERSON-G","Madre","Activo","2099-01-01","2099-12-31","","","Activo",true],
+  ["R3","PERSON-S3","PERSON-G","Madre","Activo","2020-01-01","2020-12-31","","","Activo",true],
+  ["R4","PERSON-S4","PERSON-G","Madre","Activo","invalid-date","2099-12-31","","","Activo",true]
 ];
 const familyCreditFn = extractFunction(accountingSource, "familyCreditGetActiveStudentUserIdsForGuardian_");
 const familyCreditRuntime = {
@@ -424,7 +424,7 @@ const familyCreditSheetSet = {
 assert.deepEqual(Array.from(familyCreditRuntime.lookup(familyCreditSheetSet, "GUARDIAN-1")), ["STU-1"],
   "ACCOUNTING family-credit scope rejects future, expired and malformed relationship windows");
 
-accountingFamilyRelations.push(["R1","PERSON-S2","PERSON-G","Madre","Activo","2020-01-01","2099-12-31","","","Activo"]);
+accountingFamilyRelations.push(["R1","PERSON-S2","PERSON-G","Madre","Activo","2020-01-01","2099-12-31","","","Activo",true]);
 assert.deepEqual(Array.from(familyCreditRuntime.lookup(familyCreditSheetSet, "GUARD-1")), [],
   "ACCOUNTING denies duplicate active relationship IDs instead of collapsing them into a grant");
 accountingFamilyRelations.pop();
