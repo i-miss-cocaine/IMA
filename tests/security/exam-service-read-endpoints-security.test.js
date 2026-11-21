@@ -57,7 +57,10 @@ function runtime(options = {}) {
     EntregasExamen: makeSheet([["EntregaID"], ...deliveryRows]),
     PreguntasExamen: makeSheet([["PreguntaID"], ...questionRows]),
     Usuarios: makeSheet([["UserID"], ["STU-1","Estudiante Uno","10","A","one@example.test"],
-      ["STU-D","Duplicado A","10","A","a@example.test"], ["STU-D","Duplicado B","10","A","b@example.test"]])
+      ["STU-D","Duplicado A","10","A","a@example.test"], ["STU-D","Duplicado B","10","A","b@example.test"]]),
+    CatalogoAsignaturas: makeSheet([["AsignaturaID","NombreOficial","Codigo","Estado"],["SUB-MATH","Math","MATH","Activo"]]),
+    OfertaAcademica: makeSheet([["OfertaID","AnoID","SedeID","Grado","Seccion","AsignaturaID","PlanID","Modalidad","CapacidadMax","Estado","CodigoClase"],["OFF-MATH","2026","","10","A","SUB-MATH","PLAN-1","","","Activo",""]]),
+    AsignacionesDocentes: makeSheet([["AsignacionID","OfertaID","DocenteUserId","RolDocente","FechaInicio","FechaFin","Estado"],["ASG-MATH","OFF-MATH","PROF-1","Titular","2020-01-01","2099-12-31","Activo"]])
   };
   ["CalificacionesEstudiantes", "CategoriasEvaluacion", "HistorialRectificacionesNotas", "CierresPeriodos",
     "RecuperacionesEstudiante", "EvaluacionesCompetencias"].forEach(name => {
@@ -105,7 +108,7 @@ function runtime(options = {}) {
   };
   const names = ["withAuthorizedExamRead_", "getAuthorizedExamReadContext_", "getStudentExams", "getStudentExamsUnlocked_",
     "getExamQuestions", "getExamQuestionsUnlocked_", "getAllExams", "getAllExamsUnlocked_",
-    "getTeacherExamActivity", "getTeacherExamActivityUnlocked_", "getExamGradeDistributionAnalytics",
+    "hasExamTeacherActiveOfferAssignment_", "getTeacherExamActivity", "getTeacherExamActivityUnlocked_", "getExamGradeDistributionAnalytics",
     "getExamGradeDistributionAnalyticsUnlocked_", "scoreExamQuestionAnswer_", "calculateExamPsychometricAnalytics_", "checkExamSchedulingConflict", "checkExamSchedulingConflictUnlocked_", "simulateExamReschedule", "simulateExamRescheduleUnlocked_", "getGradingPerformanceAndPersistenceMetrics", "getGradingPerformanceAndPersistenceMetricsUnlocked_"];
   vm.runInNewContext(names.map(extractFunction).join("\n") +
     "\nthis.getStudentExams=getStudentExams; this.getExamQuestions=getExamQuestions; " +

@@ -75,6 +75,9 @@ const familyRows = [["RelacionID", "PersonaEstudianteID", "PersonaResponsableID"
 const studentExpRows = [["ExpedienteID", "UserID"], ["EXP-1", "STUDENT-1"], ["EXP-2", "STUDENT-2"]];
 const legacyGuardianRows = [["RelacionID", "EstudianteID", "TutorID", "", "", "", "", "", "", "Estado"], ["LEG-2", "STUDENT-2", "TUTOR-1", "", "", "", "", "", "", "Activa"]];
 const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows, RelacionesFamiliares: familyRows, ExpedientesEstudiantes: studentExpRows, RelacionesEstudianteTutor: legacyGuardianRows,
+  CatalogoAsignaturas: [["AsignaturaID","NombreOficial","Codigo","Estado"],["SUB-MATH","Matemáticas","MATH","Activo"]],
+  OfertaAcademica: [["OfertaID","AnoID","SedeID","Grado","Seccion","AsignaturaID","PlanID","Modalidad","CapacidadMax","Estado","CodigoClase"],["OFF-MATH","2026","","10","A","SUB-MATH","PLAN-1","","","Activo",""]],
+  AsignacionesDocentes: [["AsignacionID","OfertaID","DocenteUserId","RolDocente","FechaInicio","FechaFin","Estado"],["ASG-MATH","OFF-MATH","TEACHER-1","Titular","2020-01-01","2099-12-31","Activo"]],
   HistorialEliminacionesEntregasExamen: [["EventoID", "EntregaExamenID", "ExamenID", "EstudianteID", "ActorID", "RolActor", "Motivo", "FechaSolicitud", "Estado"]] };
 const sheetObjects = Object.fromEntries(Object.entries(sheets).map(([name, rows]) => [name, {
   getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; },
@@ -130,7 +133,7 @@ const runtime = {
     releaseLock() { examMutationLockReleases++; examMutationLockHeld = false; }
   }; } }
 };
-const helpers = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "validateRolePermission", "getAllExams", "getAllExamsUnlocked_", "getTeacherExamActivity", "getTeacherExamActivityUnlocked_"].map(name => extractFunction(source, name)).join("\n");
+const helpers = ["getRequestSessionToken_","getVerifiedRequestSessionClaims_","getCachedRequestAuthorization_","cacheRequestAuthorization_","getVerifiedExamIdentity_", "getVerifiedExamDepartmentScope_", "assertExamResourceOwnershipForScope_", "validateRolePermission", "hasExamTeacherActiveOfferAssignment_", "getAllExams", "getAllExamsUnlocked_", "getTeacherExamActivity", "getTeacherExamActivityUnlocked_"].map(name => extractFunction(source, name)).join("\n");
 vm.runInNewContext(helpers + "\nthis.getAllExams = getAllExams; this.getTeacherExamActivity = getTeacherExamActivity; this.validateRolePermission = validateRolePermission; this.getVerifiedExamDepartmentScope_ = getVerifiedExamDepartmentScope_; this.assertExamResourceOwnershipForScope_ = assertExamResourceOwnershipForScope_;", runtime);
 const payload = { sessionToken: "teacher-token", profesorId: "TEACHER-2" };
 const list = runtime.getAllExams(payload);
