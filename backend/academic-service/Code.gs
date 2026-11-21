@@ -4256,7 +4256,7 @@ function assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payl
   return assertResourceOwnershipForScope_(ss,scope,"SOLICITUD_ADMISION",solicitudId,operation||"READ",payload);
 }
 
-function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow, guardianPermissionKey) {
+function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow, guardianPermissionKey, operation) {
   const requiredGuardianPermissionKey = String(guardianPermissionKey || "permisoAcademico").trim();
   const actor = getVerifiedAcademicIdentity_(payload);
   if (!actor.authorized) return actor;
@@ -4343,7 +4343,7 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow, guar
     ? getVerifiedAcademicGuardianDepartmentScope_(payload, ss, actor, ownershipIdentity)
     : getVerifiedAcademicDepartmentScope_(payload, ss, ownershipIdentity);
   if (!scope || !scope.authorized) return scope || { authorized: false, code: "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
-  const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", expedienteId, "READ", payload);
+  const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", expedienteId, String(operation || "READ").trim().toUpperCase(), payload);
   if (!ownership || !ownership.authorized) return ownership || { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
   return {
     authorized: true,
@@ -15587,22 +15587,49 @@ function checkAndDispatchAttendanceAlerts(payload) {
 
 // [REQ-EXP-002] [Fase 1: Registro y Expediente de Estudiantes] - Service backend endpoint (updateStudentFile) para la edición de datos personales del expediente del estudiante.
 function updateStudentFile(payload) {
-  const { expedienteId, fechaNacimiento, nacionalidad, direccionResidencia, fotografiaUrl, estadoExpediente, observaciones } = payload || {};
+  const request = payload || {};
+  const { expedienteId, fechaNacimiento, nacionalidad, direccionResidencia, fotografiaUrl, estadoExpediente, observaciones } = request;
   if (!expedienteId) throw new Error("expedienteId es requerido.");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
-  const data = sheet.getDataRange().getValues();
+  const permission = validateRolePermission("updateStudentFile", request);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true) throw new Error("VERIFIED_IDENTITY_REQUIRED");
 
-  const idx = data.findIndex(r => String(r[0]).trim() === String(expedienteId).trim());
-  if (idx === -1) throw new Error("Expediente de estudiante no encontrado.");
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!sheet) throw new Error("RESOURCE_NOT_FOUND");
+  const data = sheet.getDataRange().getValues();
+  const matches = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0] || "").trim() === String(expedienteId).trim()) matches.push(i);
+  }
+  if (!matches.length) throw new Error("RESOURCE_NOT_FOUND");
+  if (matches.length !== 1) throw new Error("RESOURCE_AMBIGUOUS");
+
+  const idx = matches[0];
+  const access = assertStudentExpedienteScopeAccess_(request, ss, sheet, data[idx], "permisoDocumental", "UPDATE");
+  if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
+
+  const currentState = String(data[idx][7] || "Activo").trim();
+  const nextState = estadoExpediente === undefined ? currentState : String(estadoExpediente || "").trim();
+  if (estadoExpediente !== undefined && nextState !== currentState) {
+    const allowed = ALLOWED_STUDENT_LIFECYCLE_TRANSITIONS[currentState] || [];
+    if (!allowed.includes(nextState)) throw new Error("STUDENT_LIFECYCLE_TRANSITION_DENIED");
+    if (!String(request.motivo || "").trim() || String(request.motivo).trim().length < 5) {
+      throw new Error("STUDENT_LIFECYCLE_REASON_REQUIRED");
+    }
+  }
 
   const now = new Date();
   if (fechaNacimiento !== undefined) sheet.getRange(idx + 1, 4).setValue(fechaNacimiento);
   if (nacionalidad !== undefined) sheet.getRange(idx + 1, 5).setValue(nacionalidad);
   if (direccionResidencia !== undefined) sheet.getRange(idx + 1, 6).setValue(direccionResidencia);
   if (fotografiaUrl !== undefined) sheet.getRange(idx + 1, 7).setValue(fotografiaUrl);
-  if (estadoExpediente !== undefined) sheet.getRange(idx + 1, 8).setValue(estadoExpediente);
+  if (estadoExpediente !== undefined && nextState !== currentState) {
+    sheet.getRange(idx + 1, 8).setValue(nextState);
+    recordEntityChangeLog("ExpedienteEstudiante", expedienteId, currentState, nextState, "STATUS_CHANGE", actor.userId, "LIFECYCLE-" + Date.now());
+  }
   sheet.getRange(idx + 1, 10).setValue(now);
   if (observaciones !== undefined) sheet.getRange(idx + 1, 11).setValue(observaciones);
 
