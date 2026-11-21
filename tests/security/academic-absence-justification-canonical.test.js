@@ -377,6 +377,10 @@ const userContext = {
   },
   getOrCreateSheet(_ss, name) { return sheet(name); },
   getUserVerifiedRole(payload) { payload._verifiedUserId = payload._userId; payload._verifiedRole = payload._role; return payload._role; },
+  getInstitutionalDepartmentScope_(_payload, role) {
+    if (role === "Secretaría" || role === "Administrador" || role === "Desarrollador") return { status: "success", institutionWide: true, departmentIds: [] };
+    throw new Error("DEPARTMENT_SCOPE_NOT_ASSIGNED");
+  },
   assertRecordOwnership(payload, resourceType, resourceId, action) {
     userOwnershipCalls.push({ userId: payload._verifiedUserId, resourceType, resourceId, action });
     return { authorized: true };
