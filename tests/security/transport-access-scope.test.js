@@ -412,4 +412,59 @@ assert.ok(source.includes('"Monitor": ["getTransportRoutes", "getTransportAssign
 assert.ok(source.includes('"UNAUTHORIZED_ACCESS_ATTEMPT"'));
 assert.ok(!source.includes('request.action === "getTransportTripLiveLocation"'), "No live-GPS action is registered in this service; do not imply a protected endpoint exists.");
 
+
+const duplicateRouteData = Object.assign({}, data, {
+  TransporteRutas: data.TransporteRutas.concat([
+    ["RUT-01", "Duplicated route identifier", "BUS-X", "EMP-DRIVER-2", 20, "[]", "active"]
+  ])
+});
+const duplicateParentScope = runScope({
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01"
+}, duplicateRouteData);
+assert.deepEqual(Array.from(duplicateParentScope.routeIds), [],
+  "a duplicated route identifier must not grant parent route scope");
+const duplicateDriverScope = runScope({
+  _verifiedRole: "Conductor",
+  _verifiedUserId: "DRIVER-1"
+}, duplicateRouteData);
+assert.deepEqual(Array.from(duplicateDriverScope.routeIds), [],
+  "a duplicated route identifier must not grant driver route scope");
+const duplicateRouteRead = runEndpoint("getTransportRoutes", {
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01",
+  rutaId: "RUT-01"
+}, duplicateRouteData);
+assert.equal(duplicateRouteRead.result.code, "RESOURCE_AMBIGUOUS");
+const duplicateManagementRouteList = runEndpoint("getTransportRoutes", {
+  _verifiedRole: "Director",
+  _verifiedUserId: "DIRECTOR-1"
+}, duplicateRouteData);
+assert.ok(duplicateManagementRouteList.result.rutas.every(route => route.rutaId !== "RUT-01"),
+  "ambiguous route IDs must be excluded even from management list projection");
+const duplicateParentAssignments = runEndpoint("getTransportAssignments", {
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01"
+}, duplicateRouteData);
+assert.equal(duplicateParentAssignments.result.total, 0,
+  "ambiguous route identifiers must not expose assignment rows");
+const duplicateParentManifest = runEndpoint("getTripPassengerManifest", {
+  _verifiedRole: "Padre",
+  _verifiedUserId: "PARENT-01",
+  viajeId: "TRIP-1"
+}, duplicateRouteData);
+assert.equal(duplicateParentManifest.result.code, "UNAUTHORIZED_ACCESS_ATTEMPT",
+  "manifest access must fail closed when the route identifier is ambiguous");
+
+const duplicateTripData = Object.assign({}, data, {
+  TransporteViajes: data.TransporteViajes.concat([data.TransporteViajes[1].slice()])
+});
+const duplicateTripManifest = runEndpoint("getTripPassengerManifest", {
+  _verifiedRole: "Conductor",
+  _verifiedUserId: "DRIVER-1",
+  viajeId: "TRIP-1"
+}, duplicateTripData);
+assert.equal(duplicateTripManifest.result.code, "RESOURCE_NOT_FOUND",
+  "duplicate trip identifiers must not resolve to an arbitrary trip");
+
 console.log("TASK-030 transport access scope tests: PASS");
