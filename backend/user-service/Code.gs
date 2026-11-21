@@ -5592,18 +5592,30 @@ function revokeFamilyLink(payload) {
 
 function updateFamilyLinkPermissions(payload) {
   const { relacionId, permisos } = payload || {};
-  if (!relacionId || !permisos) throw new Error("relacionId y objeto de permisos son requeridos.");
+  if (!relacionId || !permisos || typeof permisos !== "object" || Array.isArray(permisos)) {
+    throw new Error("relacionId y objeto de permisos son requeridos.");
+  }
+  const permissionKeys = ["permisoAcademico", "permisoFinanciero", "permisoDocumental", "permisoAsistencia"];
+  if (permissionKeys.some(function(key) {
+    return Object.prototype.hasOwnProperty.call(permisos, key) && typeof permisos[key] !== "boolean";
+  })) throw new Error("FAMILY_PERMISSION_SCHEMA_INVALID");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "RelacionesFamiliares");
-  const data = sheet.getDataRange().getValues();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(relacionId).trim());
-  if (idx === -1) throw new Error("Vínculo familiar no encontrado.");
-
-  sheet.getRange(idx + 1, 9).setValue(JSON.stringify(permisos));
-
-  return { status: "success", message: "Permisos del tutor actualizados exitosamente." };
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("FAMILY_PERMISSION_LOCK_TIMEOUT");
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "RelacionesFamiliares");
+    const data = sheet.getDataRange().getValues();
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0] || "").trim() === String(relacionId).trim()) matches.push(i);
+    }
+    if (matches.length !== 1) throw new Error("FAMILY_RELATIONSHIP_AMBIGUOUS");
+    sheet.getRange(matches[0] + 1, 9).setValue(JSON.stringify(permisos));
+    return { status: "success", message: "Permisos del tutor actualizados exitosamente." };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Verificación estricta de vínculo tutores-estudiantes en RelacionesFamiliares
@@ -6490,33 +6502,46 @@ function getAdministrativeRequestAttachment(payload) {
   }
 }
 
-function submitJointFamilyPayment(payload) {
-  const { userIdResponsable, comprobanteUrl, comprobanteFileId, fileData, fileName, numeroReferencia, montoTotal, distribuciones, observaciones } = payload || {};
-  if (!montoTotal || !Array.isArray(distribuciones) || !distribuciones.length) throw new Error("Datos de pago conjunto incompletos.");
-  if (String(comprobanteUrl || "").trim() || String(comprobanteFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
-  const submitter = resolveVerifiedRequestSubmitter_(payload, "", false, "permisoFinanciero");
-  if (userIdResponsable && String(userIdResponsable).trim() !== submitter.userId) throw new Error("VERIFIED_IDENTITY_MISMATCH");
-  const guardianResult = getGuardianStudents({ userId: submitter.userId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
-  if (!guardianResult || guardianResult.status !== "success" || !Array.isArray(guardianResult.data)) {
+function assertGuardianFinancialDistributionScope_(guardianUserId, payload, distributions) {
+  const request = payload || {};
+  const result = getGuardianStudents({
+    userId: guardianUserId,
+    sessionToken: request.sessionToken || request.authToken || request.token
+  });
+  if (!result || result.status !== "success" || !Array.isArray(result.data)) {
     throw new Error("FAMILY_RELATIONSHIP_UNVERIFIED");
   }
   const linked = Object.create(null);
-  guardianResult.data.forEach(function(student) {
+  result.data.forEach(function(student) {
     if (!student || typeof student !== "object") return;
     const studentId = String(student.studentUserId || student.userId || "").trim();
     if (!studentId) return;
     if (!linked[studentId]) linked[studentId] = [];
     linked[studentId].push(student);
   });
-  let sum = 0; const seen = Object.create(null);
-  distribuciones.forEach(function(item) {
-    const id = String(item && item.estudianteId || "").trim();
-    const matches = linked[id] || [];
-    const amount = Number(item.montoAplicado);
-    if (!id || matches.length !== 1 ||
+  (distributions || []).forEach(function(item) {
+    const studentId = String(item && item.estudianteId || "").trim();
+    const matches = linked[studentId] || [];
+    if (!studentId || matches.length !== 1 ||
         !hasExplicitGuardianDomainPermission_(matches[0], "permisoFinanciero")) {
       throw new Error("FAMILY_FINANCIAL_SCOPE_DENIED");
     }
+  });
+  return true;
+}
+
+function submitJointFamilyPayment(payload) {
+  const { userIdResponsable, comprobanteUrl, comprobanteFileId, fileData, fileName, numeroReferencia, montoTotal, distribuciones, observaciones } = payload || {};
+  if (!montoTotal || !Array.isArray(distribuciones) || !distribuciones.length) throw new Error("Datos de pago conjunto incompletos.");
+  if (String(comprobanteUrl || "").trim() || String(comprobanteFileId || "").trim()) throw new Error("UNTRUSTED_ATTACHMENT_REFERENCE");
+  const submitter = resolveVerifiedRequestSubmitter_(payload, "", false, "permisoFinanciero");
+  if (userIdResponsable && String(userIdResponsable).trim() !== submitter.userId) throw new Error("VERIFIED_IDENTITY_MISMATCH");
+  assertGuardianFinancialDistributionScope_(submitter.userId, payload, distribuciones);
+  let sum = 0; const seen = Object.create(null);
+  distribuciones.forEach(function(item) {
+    const id = String(item && item.estudianteId || "").trim();
+    const amount = Number(item.montoAplicado);
+    if (!id) throw new Error("FAMILY_FINANCIAL_SCOPE_DENIED");
     if (seen["$"+id]) throw new Error("DUPLICATE_STUDENT_DISTRIBUTION");
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("INVALID_DISTRIBUTION_AMOUNT");
     seen["$"+id] = true; sum += amount;
@@ -6530,6 +6555,7 @@ function submitJointFamilyPayment(payload) {
   const pagoId = "PAGO-CONJUNTO-" + Utilities.getUuid(), fecha = new Date().toISOString();
   let compSheet = null, distSheet = null, compRow = 0; const distRows = [];
   try {
+    assertGuardianFinancialDistributionScope_(submitter.userId, payload, distribuciones);
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     compSheet = getOrCreateSheet(ss,"ComprobantesPago");
     distSheet = getOrCreateSheet(ss,"DistribucionPagosConjuntos");

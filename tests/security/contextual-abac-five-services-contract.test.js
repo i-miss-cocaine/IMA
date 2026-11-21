@@ -532,6 +532,7 @@ const jointPaymentRuntime = {
 };
 vm.createContext(jointPaymentRuntime);
 vm.runInContext(
+  extractFunction(userSource, "assertGuardianFinancialDistributionScope_") + "\n" +
   extractFunction(userSource, "submitJointFamilyPayment") + "\nthis.submit = submitJointFamilyPayment;",
   jointPaymentRuntime
 );
@@ -558,5 +559,66 @@ assert.throws(
   /LOCK_TIMEOUT/,
   "joint family payment with an explicit financial grant reaches the serialized mutation boundary"
 );
+
+
+let guardianReadCount = 0, paymentAttachmentRolledBack = false, paymentLockReleased = false;
+jointPaymentRuntime.getGuardianStudents = () => {
+  guardianReadCount++;
+  return { status: "success", data: [{
+    studentUserId: "STU-1",
+    permisos: { permisoFinanciero: guardianReadCount === 1 }
+  }] };
+};
+jointPaymentRuntime.createPrivateRequestAttachment_ = () => ({ getId: () => "PRIVATE-FILE" });
+jointPaymentRuntime.rollbackPrivateAttachment_ = () => { paymentAttachmentRolledBack = true; };
+jointPaymentRuntime.LockService = {
+  getScriptLock: () => ({
+    tryLock: () => true,
+    releaseLock: () => { paymentLockReleased = true; }
+  })
+};
+jointPaymentRuntime.Utilities = { getUuid: () => "PAYMENT-1" };
+assert.throws(
+  () => jointPaymentRuntime.submit({ montoTotal: 10, distribuciones: [{ estudianteId: "STU-1", montoAplicado: 10 }] }),
+  /FAMILY_FINANCIAL_SCOPE_DENIED/,
+  "joint family payment revalidates financial permission after acquiring the mutation lock"
+);
+assert.equal(guardianReadCount, 2, "joint family payment resolves guardian scope both before and inside the lock");
+assert.equal(paymentAttachmentRolledBack, true, "joint family payment compensates the private attachment after permission revocation");
+assert.equal(paymentLockReleased, true, "joint family payment releases its lock after a failed in-lock permission recheck");
+
+let permissionUpdateReleased = false, permissionUpdateWritten = false;
+let permissionRelationRows = [
+  ["RelacionID","ExpedienteID","ResponsableID","","Estado","","","","PermisosJSON"],
+  ["REL-1","EXP-1","GUARDIAN-1","","Activa","","","","{}"],
+  ["REL-1","EXP-2","GUARDIAN-1","","Activa","","","","{}"]
+];
+const permissionUpdateRuntime = {
+  LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => { permissionUpdateReleased = true; } }) },
+  SpreadsheetApp: { openById: () => ({}) },
+  getOrCreateSheet: () => ({
+    getDataRange: () => ({ getValues: () => permissionRelationRows.map(row => row.slice()) }),
+    getRange: () => ({ setValue: () => { permissionUpdateWritten = true; } })
+  }),
+  SPREADSHEET_ID: "TEST", String, Object, Array, JSON
+};
+vm.createContext(permissionUpdateRuntime);
+vm.runInContext(
+  extractFunction(userSource, "updateFamilyLinkPermissions") + "\nthis.update = updateFamilyLinkPermissions;",
+  permissionUpdateRuntime
+);
+assert.throws(
+  () => permissionUpdateRuntime.update({ relacionId: "REL-1", permisos: { permisoFinanciero: true } }),
+  /FAMILY_RELATIONSHIP_AMBIGUOUS/,
+  "family permission update denies duplicate relationship IDs"
+);
+assert.equal(permissionUpdateWritten, false, "ambiguous family permission update performs no write");
+assert.equal(permissionUpdateReleased, true, "family permission update releases its lock after ambiguity denial");
+permissionUpdateReleased = false;
+permissionRelationRows = permissionRelationRows.slice(0, 2);
+const permissionUpdateResult = permissionUpdateRuntime.update({ relacionId: "REL-1", permisos: { permisoFinanciero: true } });
+assert.equal(permissionUpdateResult.status, "success", "unique family permission update remains available");
+assert.equal(permissionUpdateWritten, true, "unique family permission update writes under the lock");
+assert.equal(permissionUpdateReleased, true, "successful family permission update releases its lock");
 
 process.stdout.write("contextual-abac-five-services-contract: all assertions passed\n");
