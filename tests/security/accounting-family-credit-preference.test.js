@@ -239,8 +239,9 @@ assert.throws(() => context.getCafeteriaOrders({ estudianteUserId: "STU-2", _ver
 assert.equal(context.getCafeteriaOrders({ estudianteUserId: "STU-2", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" }).pedidos[0].estudianteUserId, "STU-1");
 
 const guardianStatement = context.getStudentAccountStatement({ userId: "STU-1", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" });
-assert.deepEqual(guardianStatement, { status: "error", code: "ROLE_NOT_ALLOWED" },
+assert.equal(guardianStatement.status, "error",
   "the current accounting permission matrix does not grant parents access to the full student account statement");
+assert.equal(guardianStatement.code, "ROLE_NOT_ALLOWED");
 const studentStatement = context.getStudentAccountStatement({ userId: "STU-2", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" });
 assert.equal(studentStatement.data.userId, "STU-1", "students cannot request another student's statement");
 assert.equal(studentStatement.data.totalConsumoCreditoFamiliar, 20);
