@@ -6325,3 +6325,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El workflow Exam-Service que ejecuta toda la suite Node revela un fallo existente en accounting-school-document-binary-integrity.test.js: falta ensureSchoolDocumentIssuedSchema_ en accounting-service/Code.gs. No se considera aprobado ni se atribuye a los cambios de este checkpoint.
 - Attendance summary: contrato aislado Node local v22.16.0 PASS y CI Node 24 PASS. Apps Script/Sheets reales y concurrencia interproyecto quedan Pendiente beta.
 - Siguiente elegible: auditar asignación/cancelación de transporte en ACCOUNTING; después continuar los handlers restantes de ACADEMIC/ACCOUNTING/TASK/EXAM. TASK-502 y TASK-506 siguen En ejecución.
+
+
+### Continuidad C1.927 — AUD-NG-222 / TASK-502 (sin cierre)
+- ACADEMIC: updateStudentLifecycleStatus y reconcileStudentLifecycleState ahora validan identidad, permiso, expediente único, ownership y scope institucional donde corresponde; escrituras con lock y auditoría. Contrato Node cubre permisos, ownership, duplicados, read-only, autoFix y lock.
+- ACCOUNTING: asignación/cancelación de transporte validan identidad/permiso dinámico, ownership canónico del expediente, ruta/asignación únicas, ruta activa para asignar, vehículo/capacidad, duplicados y rollback de cargos/asignación bajo ScriptLock.
+- Contrato local aislado ACCOUNTING Transport Local Contracts run 44958593202: syntax, transporte mensual/prorrateo/rollback, ownership/concurrencia, período de cargos y nómina PASS en Node 24.22.3.
+- Department Scope run 44958593117: contratos ACADEMIC lifecycle (99), ownership académico (94–100), transporte (66–68, 104), cargos/nómina (102–103) y syntax (114) PASS. El agregado conserva FAIL solo en Phase22 por configureSchoolDocumentTemplate ausente.
+- Apps Script/Sheets real, staging y concurrencia entre proyectos NOT RUN; escenarios añadidos a beta_test.txt. TASK-502/TASK-506 siguen En ejecución.
+- Siguiente: revisar getTransportAssignments/getTripPassengerManifest/getTransportRoutes para confirmar aislamiento de lecturas y continuar handlers restantes ACADEMIC/ACCOUNTING/TASK/EXAM.

@@ -2417,3 +2417,47 @@ Estado: PENDIENTE DE BETA.
 Evidencia requerida: SHA de despliegue, IDs sintéticos de archivo/proyecto, trazas de concurrencia y snapshots antes/después sin PII.
 Tarea vinculada: AUD-NG-222 / TASK-502.
 ===============================================================================
+
+
+===============================================================================
+### BETA-AUD-NG-222-ACADEMIC-LIFECYCLE-001
+Módulo/rol: ACADEMIC — Director/Subdirector y actores institucionales con permiso de ciclo de vida.
+Tarea/requisito: AUD-NG-222 / TASK-502 — updateStudentLifecycleStatus y reconcileStudentLifecycleState.
+Objetivo: validar en Apps Script/Sheets desplegados que las mutaciones de estado y la reconciliación respetan identidad, permiso, ownership y scope institucional, y que la lectura no escribe.
+Precondiciones:
+- Versión beta con C1.927 desplegada; expediente, usuario y matrícula sintéticos con relaciones únicas.
+- Permisos/scope de prueba para un actor institucional y un actor de ámbito departamental.
+Pasos:
+1. Actualizar el estado de un expediente propio/permitido; repetir con expediente ajeno, inexistente y duplicado.
+2. Ejecutar reconcileStudentLifecycleState en modo lectura y verificar que no modifica matrícula, revisión ni auditoría.
+3. Ejecutar autoFix con scope institucional completo; repetir con scope departamental, permiso denegado y ownership inválido.
+4. Forzar timeout/fallo de escritura y verificar rollback/no mutación y liberación del lock.
+Resultado esperado:
+- Solo el actor autorizado puede actualizar el expediente único dentro del scope; autoFix exige scope institucional completo; lectura no escribe; auditoría/revisión solo cambian tras reparación válida.
+Resultado real: no ejecutado; requiere Apps Script/Sheets real.
+Estado: PENDIENTE DE BETA.
+Evidencia requerida: SHA de despliegue, IDs sintéticos, scope/permisos, snapshots antes/después, auditoría y trazas de lock sin PII/tokens.
+Tarea vinculada: AUD-NG-222 / TASK-502.
+===============================================================================
+
+===============================================================================
+### BETA-AUD-NG-222-ACCOUNTING-TRANSPORT-ASSIGNMENT-001
+Módulo/rol: ACCOUNTING — Administrador/Director/Subdirector/Contador.
+Tarea/requisito: AUD-NG-222 / TASK-502 — assignStudentTransport y cancelStudentTransportAssignment.
+Objetivo: validar en Apps Script/Sheets desplegados la autorización dinámica, ownership canónico, integridad de rutas/asignaciones y serialización real de la facturación de transporte.
+Precondiciones:
+- Versión beta con C1.927 desplegada; estudiantes, expedientes, rutas y vehículos sintéticos; ruta activa con cupo controlado y tarifa vigente.
+- Dos sesiones de prueba con permisos/scope distintos y sin datos personales reales.
+Pasos:
+1. Asignar un estudiante propio/permitido; repetir con identidad, permiso o ownership denegado, expediente duplicado y ruta inexistente/duplicada/inactiva.
+2. Intentar asignar sobrecupo, duplicar ruta/estudiante/jornada y provocar conflicto de horario; verificar que no se creen filas ni cargos adicionales.
+3. Lanzar asignaciones concurrentes para el último cupo y comprobar serialización, un único resultado válido y facturación coherente.
+4. Cancelar asignación propia, ajena, duplicada e inexistente; repetir cancelación para comprobar idempotencia.
+5. En entorno aislado, inyectar fallo del recálculo de cargos durante asignación/cancelación y verificar restauración de asignación y snapshot de cargos.
+Resultado esperado:
+- Solo operaciones autorizadas sobre estudiante/ruta/asignación únicos; sin sobrecupo, duplicados ni exposición entre instituciones; lock liberado y asignación/cargos consistentes tras fallos.
+Resultado real: no ejecutado; requiere Apps Script/Sheets real.
+Estado: PENDIENTE DE BETA.
+Evidencia requerida: SHA de despliegue, IDs sintéticos, permisos/scope, respuestas, snapshots de asignación/cargos y trazas de concurrencia sin PII/tokens.
+Tarea vinculada: AUD-NG-222 / TASK-502.
+===============================================================================

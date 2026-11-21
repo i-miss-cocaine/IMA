@@ -1064,3 +1064,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Apps Script/Sheets/Drive reales, staging y concurrencia interproyecto NOT RUN; beta pendiente. TASK-502 y TASK-506 siguen En ejecución.
 - Siguiente: revisar assignStudentTransport/cancelStudentTransportAssignment por identidad, permiso, ownership, ruta única y rollback; luego completar inventario ACADEMIC/ACCOUNTING/TASK/EXAM.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.927 — AUD-NG-222 / TASK-502
+- ACADEMIC lifecycle: updateStudentLifecycleStatus y reconcileStudentLifecycleState verifican identidad, permiso, expediente único, scope/ownership; autoFix institucional y escrituras con lock/auditoría.
+- ACCOUNTING transport: assign/cancel verifican actor y permiso dinámico, ownership canónico, ruta/asignación únicas, ruta activa para alta, capacidad, conflictos, idempotencia y rollback de cargos.
+- Contratos focalizados de transporte, lifecycle, ownership académico, cargos/nómina y syntax PASS en GitHub Actions Node 24.22.3.
+- Department Scope agregador conserva FAIL únicamente en Phase22/configureSchoolDocumentTemplate. Apps Script/Sheets real, staging y concurrencia interproyecto NOT RUN; escenarios Pendiente beta.
+- TASK-502 y TASK-506 permanecen En ejecución.
+- Siguiente: auditar lecturas de transporte y handlers restantes ACADEMIC/ACCOUNTING/TASK/EXAM.
+===============================================================================

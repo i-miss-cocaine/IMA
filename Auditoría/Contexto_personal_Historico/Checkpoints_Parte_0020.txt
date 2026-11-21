@@ -1352,3 +1352,50 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 sigue En ejecución y depende de TASK-502.
 - Siguiente: auditar assignStudentTransport y cancelStudentTransportAssignment en ACCOUNTING; comprobar identidad verificada, permiso dinámico, ownership del expediente estudiantil, ruta única/activa y rollback bajo lock antes de modificar la asignación o su facturación.
 ===============================================================================
+
+
+===============================================================================
+### C1.927 — IMA-EXEC-20261121-AUD-NG-222-ACADEMIC-TRANSPORT-98
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.926, checkpoint/documentación en la rama autorizada. HEAD inicial de esta unidad: e4ae8552c42ae2bf2628a44cad86b255606b33ab.
+- HEAD antes de registrar C1.927: da3953086346e38f3534f42ef55ce82c0a7af597.
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- La unidad agrupa trabajo de continuidad AUD-NG-222 / TASK-502 en ACADEMIC y ACCOUNTING; no cierra TASK-502 ni TASK-506.
+
+### Resultado técnico
+1. ACADEMIC — mutaciones de ciclo de vida estudiantil:
+   - updateStudentLifecycleStatus valida identidad autenticada, permiso, expediente único y ownership del recurso antes de modificar el estado; serializa la escritura con lock, registra auditoría y libera el lock.
+   - reconcileStudentLifecycleState valida permiso y scope institucional completo para autoFix; distingue lectura de reparación, valida expediente/matrícula únicos, comprueba ownership READ/WRITE y actualiza revisión/auditoría solo cuando repara.
+   - Se agregó tests/security/academic-student-lifecycle-mutations-ownership.test.js para identidad, permiso, scope, ownership, duplicidad, lectura sin escritura, reparación y lock.
+2. ACCOUNTING — asignación/cancelación de transporte:
+   - assignStudentTransport/cancelStudentTransportAssignment exigen identidad verificada y permiso dinámico; validan ownership canónico del expediente estudiantil y target único.
+   - Asignación exige ruta única y activa, vehículo no ambiguo/activo cuando existe, capacidad válida, duplicidad y conflicto horario; operaciones de escritura se serializan mediante ScriptLock.
+   - Cancelación exige asignación única, ownership del estudiante y ruta única; conserva idempotencia para cancelaciones ya aplicadas.
+   - Si falla el recálculo de cargos, se restaura la fila de asignación y el snapshot de cargos. El lock se libera en finally.
+   - Se añadieron/ajustaron contratos de ownership, autorización, ruta, capacidad, concurrencia, cancelación, rollback y regresiones de facturación.
+
+### Archivos de implementación, pruebas y CI
+- backend/academic-service/Code.gs
+- backend/accounting-service/Code.gs
+- tests/security/academic-student-lifecycle-mutations-ownership.test.js (nuevo)
+- tests/security/accounting-transport-assignment-ownership.test.js (nuevo)
+- tests/security/accounting-transport-monthly-charges.test.js (ampliado)
+- .github/workflows/accounting-transport-local-contract.yml (nuevo)
+- .github/workflows/department-scope-contract.yml (integración de contratos/sintaxis)
+- beta_test.txt (casos beta pendientes)
+- Registros de continuidad: Auditoria.txt, changueslogs.txt, tareas_auditoria.txt, Plan Maestro, índice y este checkpoint.
+
+### Verificaciones locales/aisladas
+- GitHub Actions ACCOUNTING Transport Local Contracts, run 44958593202, Node.js 24.22.3: syntax-check ACCOUNTING y contratos PASS; transporte mensual/prorrateo/rollback PASS; ownership/concurrencia de asignaciones PASS; regresión de período de cargos PASS; autorización de generación de nómina PASS.
+- GitHub Actions Department Scope Contract, run 44958593117: contratos ACADEMIC lifecycle mutations (paso 99), expediente/update/merge/historial (94–98), attendance summary (100), ACCOUNTING transport assignment ownership (104), transporte mensual/rutas/eficiencia (66–68), cargos/nómina (102–103) y syntax-check (114) PASS.
+- El agregador Department Scope termina FAILURE únicamente en Phase22 document management suite (paso 115): tests/regression/phase22-document-management-suite-contract.test.js reporta que falta configureSchoolDocumentTemplate. Este fallo es preexistente y no corresponde a los cambios de esta unidad.
+- No se ejecutó Node CLI fuera de los runners de CI; los contratos sí se ejecutaron en runners Node 24 con checkout local del código. Apps Script/Sheets reales, staging y concurrencia interproyecto NOT RUN; registrados como Pendiente beta.
+
+### Estado y siguiente acción elegible
+- Los incrementos ACADEMIC lifecycle y ACCOUNTING transport quedan verificados localmente.
+- AUD-NG-222 / TASK-502 permanece En ejecución: falta completar el inventario action/resource en los handlers restantes de ACADEMIC, ACCOUNTING, TASK y EXAM.
+- TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
+- Siguiente: revisar lecturas de transporte (getTransportAssignments, getTripPassengerManifest y getTransportRoutes) y su resolución de scope/ownership; continuar el inventario de handlers restantes sin repetir evidencia vigente.
+===============================================================================
