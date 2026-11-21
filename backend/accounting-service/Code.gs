@@ -4762,6 +4762,11 @@ function getTransportRouteIdsForScope_(ss, scope) {
 function getTransportRoutes(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", rutas: [] };
+  var permission = validateRolePermission(actor, "getTransportRoutes");
+  if (!permission || permission.authorized !== true) {
+    transportAuditDenied_(actor, "getTransportRoutes", input.rutaId || null);
+    return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED", rutas: [] };
+  }
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), scope = resolveTransportAccessScope_(input, ss);
   if (!scope.authorized) return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", rutas: [] };
   var snapshot = transportRows_(ss, "TransporteRutas", ["RutaID","Nombre","Unidad","Conductor","Capacidad","Paradas","Estado"]);
@@ -4796,6 +4801,11 @@ function getTransportRoutes(payload) {
 function getTransportAssignments(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", total: 0, asignaciones: [] };
+  var permission = validateRolePermission(actor, "getTransportAssignments");
+  if (!permission || permission.authorized !== true) {
+    transportAuditDenied_(actor, "getTransportAssignments", input.rutaId || input.estudianteUserId || null);
+    return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED", total: 0, asignaciones: [] };
+  }
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), scope = resolveTransportAccessScope_(input, ss);
   if (!scope.authorized) return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", total: 0, asignaciones: [] };
   var snapshot = transportRows_(ss, "TransporteAsignaciones", ["ID","RutaID","EstudianteUserId","Parada","Horario","Estado","Fecha","Jornada"]);
@@ -4837,6 +4847,11 @@ function getTransportAssignments(payload) {
 function getTripPassengerManifest(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", manifiestoPasajeros: [] };
+  var permission = validateRolePermission(actor, "getTripPassengerManifest");
+  if (!permission || permission.authorized !== true) {
+    transportAuditDenied_(actor, "getTripPassengerManifest", input.viajeId || null);
+    return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED", manifiestoPasajeros: [] };
+  }
   var tripId = String(input.viajeId || "").trim();
   if (!tripId) return { status: "error", code: "RESOURCE_NOT_FOUND", manifiestoPasajeros: [] };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), scope = resolveTransportAccessScope_(input, ss);
@@ -12778,6 +12793,16 @@ function transportMetricsTimeMinutes_(value) {
 
 function getTransportEfficiencyMetrics(payload) {
   const data = payload || {};
+  const actor = getVerifiedAccountingIdentity_(data);
+  if (!actor || actor.authorized !== true) {
+    return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una identidad verificada." };
+  }
+  const permission = validateRolePermission(actor, "getTransportEfficiencyMetrics");
+  if (!permission || permission.authorized !== true) {
+    transportAuditDenied_(actor, "getTransportEfficiencyMetrics", null);
+    return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED",
+      message: "No tiene permiso para consultar la analítica de transporte." };
+  }
   let ss;
   try {
     ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -12802,6 +12827,17 @@ function getTransportEfficiencyMetrics(payload) {
 
   try {
     // Revalidar identidad/rol dentro del lock para evitar TOCTOU durante la espera.
+    const lockedActor = getVerifiedAccountingIdentity_(data);
+    if (!lockedActor || lockedActor.authorized !== true) {
+      return { status: "error", code: lockedActor && lockedActor.code || "VERIFIED_IDENTITY_REQUIRED",
+        message: "La identidad dejó de ser válida." };
+    }
+    const lockedPermission = validateRolePermission(lockedActor, "getTransportEfficiencyMetrics");
+    if (!lockedPermission || lockedPermission.authorized !== true) {
+      transportAuditDenied_(lockedActor, "getTransportEfficiencyMetrics", null);
+      return { status: "error", code: lockedPermission && lockedPermission.code || "ROLE_PERMISSION_DENIED",
+        message: "El permiso de analítica dejó de estar vigente." };
+    }
     const scope = resolveTransportAccessScope_(data, ss);
     if (!scope.authorized) {
       transportAuditDenied_(scope, "getTransportEfficiencyMetrics", null);
