@@ -371,7 +371,7 @@ const runtime = {
     return { authorized: true, institutionId: "I1", departmentIds, institutionWide,
       userId: actor.userId, role: actor.role };
   },
-  getDynamicPermissionsForRole() { return null; },
+  getDynamicPermissionsForRole(role, action) { return (role === "Profesor" && action === "getAllExams") || (role === "Estudiante" && action === "getStudentExams"); },
   hasActiveDelegationForAction() { return false; },
   Logger: { log() {} },
   PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
