@@ -91,7 +91,7 @@ function makeHarness(options) {
     "transportEmployeeIdsForUser_",
     "getTransportRouteIdsForScope_",
     "resolveTransportAccessScope_",
-    "transportReadAccess_",
+    "transportManagementReadScope_",
     "getTransportRoutes",
     "getTransportAssignments",
     "getTripPassengerManifest"
