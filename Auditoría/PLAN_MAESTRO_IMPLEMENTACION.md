@@ -6334,3 +6334,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Department Scope run 44958593117: contratos ACADEMIC lifecycle (99), ownership académico (94–100), transporte (66–68, 104), cargos/nómina (102–103) y syntax (114) PASS. El agregado conserva FAIL solo en Phase22 por configureSchoolDocumentTemplate ausente.
 - Apps Script/Sheets real, staging y concurrencia entre proyectos NOT RUN; escenarios añadidos a beta_test.txt. TASK-502/TASK-506 siguen En ejecución.
 - Siguiente: revisar getTransportAssignments/getTripPassengerManifest/getTransportRoutes para confirmar aislamiento de lecturas y continuar handlers restantes ACADEMIC/ACCOUNTING/TASK/EXAM.
+
+
+### Continuidad C1.928 — AUD-NG-222 / TASK-502 (sin cierre)
+- TASK-Service: uploadFile ahora aplica ownership/scope también a roles administrativos. Las sesiones reanudables serializan inicio, chunk, progreso, cancelación y ensamblado mediante ScriptLock; las llamadas internas evitan reentrada; IDs de sesión duplicados fallan cerrados. Contrato Node verifica solapamiento, lock timeout/release, chunk retry idempotente y sesión ambigua.
+- ACCOUNTING: lecturas de comprobantes de pago preservan contexto de payload durante permisos/scope, incluidas revalidaciones bajo lock; Padre/Tutor pueden listar/descargar comprobantes únicamente con relación/ownership válido. Preferencias de crédito familiar migran esquema legado antes de lectura.
+- BETA-FUNC-009 incorpora prueba concurrente de fragmentos y cancelación/finalización; sigue Pendiente de ejecución real en Apps Script/Drive.
+- Task-Service security local contracts run 44961081179, ACCOUNTING Transport Local run 44961384630, Identity mapping 44961384530, Hierarchical Configuration 44961384529, Accounting Import Preflight 44961384531 y Department Reference Consumers 44961384527 SUCCESS.
+- Department Scope run 44961542948: pasos 1–117 PASS; falla Phase22 (paso 118) porque falta configureSchoolDocumentTemplate en ACCOUNTING; el contrato requiere más funciones de documentos escolares aún ausentes. Sin Apps Script/Sheets/Drive real ni concurrencia interproyecto.
+- TASK-502 y TASK-506 continúan En ejecución. Siguiente: resolver Phase22 y después continuar el inventario action/resource restante en los cinco servicios.

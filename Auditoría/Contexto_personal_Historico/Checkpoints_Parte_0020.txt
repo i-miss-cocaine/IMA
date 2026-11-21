@@ -1399,3 +1399,52 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
 - Siguiente: revisar lecturas de transporte (getTransportAssignments, getTripPassengerManifest y getTransportRoutes) y su resolución de scope/ownership; continuar el inventario de handlers restantes sin repetir evidencia vigente.
 ===============================================================================
+
+
+===============================================================================
+### C1.928 — IMA-EXEC-20261121-AUD-NG-222-TASK-ACCOUNTING-99
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.927, HEAD 5294eacdd7792032a0df59585b55eaa91749c870.
+- HEAD de implementación al cerrar esta unidad: 0b22573b68f8ebc232f89dc71e90910c8bc9d959. Los commits de esta unidad permanecen en NG_beta_0.0.0.1_work.
+- Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgos y correcciones — TASK-Service
+- uploadFile permitía a Administrador/roles administrativos pasar sin assertTaskServiceTeacherCanManageTask. Ahora todos los uploads de Profesor y roles administrativos resuelven el ownership y ámbito institucional/departamental de la tarea antes de Drive.
+- Las operaciones de sesión reanudable initiateResumableUpload, uploadChunk, getUploadProgress, cancelUploadSession y reconstructFileParts comparten withTaskUploadSessionLock_ con ScriptLock y liberación en finally. Los flujos internos llaman reconstructFilePartsUnlocked_ para evitar reentrada/deadlock.
+- findTaskServiceUploadSession exige clave única; claves de sesión duplicadas se rechazan como UPLOAD_SESSION_AMBIGUOUS antes de escribir en Drive.
+- El contrato Node prueba wrapper/lock, timeout, liberación tras error, solapamiento concurrente, duplicidad de sesión e idempotencia de reintento de chunk (un único archivo por chunkIndex). Se amplió BETA-FUNC-009 para concurrencia real de fragmentos/cancelación/finalización.
+
+### Hallazgos y correcciones — ACCOUNTING
+- getFamilyCreditApprovalPreference usa familyCreditApprovalPreferenceRow_ y migra el esquema legado antes de leer la preferencia; conserva respuesta no configurada cuando la hoja no existe.
+- getPaymentVouchers/getPaymentVoucherFile/reviewPaymentVoucher conservan el payload original al validar permisos y scope departamental, también durante la revalidación bajo lock de reviewPaymentVoucher.
+- La matriz ACCOUNTING habilita lectura/descarga de comprobantes para Padre y Tutor; assertPaymentVoucherOwnerAccess_ mantiene la validación de relación activa/portal y ownership. No se amplió el acceso a revisión para estudiantes/tutores.
+- Los contratos reflejan denegación de revisión por rol antes de resolver recursos; el acceso ambiguo a rutas de transporte queda en denegación genérica sin revelar existencia.
+
+### Archivos modificados
+- backend/task-service/Code.gs
+- tests/security/task-service-upload-contract.test.js
+- tests/security/task-service-resumable-upload-lock.test.js (nuevo)
+- .github/workflows/task-service-security-contract.yml
+- backend/accounting-service/Code.gs
+- tests/security/accounting-family-credit-preference.test.js
+- tests/security/accounting-departmental-resource-access.test.js
+- tests/security/transport-access-scope.test.js
+- tests/security/file-attachment-persistence-contract.test.js
+- beta_test.txt
+
+### Verificaciones
+- Task-Service security local contracts, run 44961081179: SUCCESS; contratos Node y sintaxis del servicio ejecutados en runner Node.
+- ACCOUNTING Transport Local Contracts, run 44961384630: SUCCESS.
+- Identity mapping and transport security, Hierarchical Configuration, Accounting Import Preflight y Department Reference Consumers, runs 44961384530/44961384529/44961384531/44961384527: SUCCESS.
+- Department Scope Contract, run 44961542948: FAIL únicamente en el paso 118, Phase 22 document management suite. Los pasos 1–117, incluidos los contratos de permisos, ownership, transport reads, vouchers, family credit y syntax-check de Apps Script, completaron PASS.
+- Causa confirmada de Phase22: tests/regression/phase22-document-management-suite-contract.test.js no encuentra configureSchoolDocumentTemplate en backend/accounting-service/Code.gs. El test requiere además funciones auxiliares privadas de documentos escolares; la rama base contiene implementaciones legacy de algunas funciones, pero no el conjunto actual esperado. No se cambió Phase22 en esta unidad.
+- Node CLI y node --check se ejecutaron en runners GitHub Actions. Ejecución local independiente fuera del runner NOT RUN. Apps Script/Sheets/Drive real, staging y concurrencia interproyecto NOT RUN; requieren beta.
+
+### Estado y siguiente acción elegible
+- Incrementos TASK upload ownership/concurrency y ACCOUNTING voucher/family-credit/transport-read contracts verificados localmente.
+- AUD-NG-222 / TASK-502 permanece En ejecución; no se declara cerrada la auditoría global de action/resource en ACADEMIC, ACCOUNTING, TASK y EXAM.
+- TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
+- Siguiente: resolver Phase22 document management suite empezando por la ausencia de configureSchoolDocumentTemplate y las funciones privadas exigidas por el contrato; después continuar el inventario restante de handlers sin repetir evidencia vigente.
+===============================================================================

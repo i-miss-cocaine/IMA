@@ -1075,3 +1075,15 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502 y TASK-506 permanecen En ejecución.
 - Siguiente: auditar lecturas de transporte y handlers restantes ACADEMIC/ACCOUNTING/TASK/EXAM.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.928 — AUD-NG-222 / TASK-502
+- TASK: uploadFile valida ownership/scope de tarea para roles administrativos. Sesiones reanudables serializan inicio, chunk, progreso, cancelación y ensamblado; helper interno evita doble lock y las sessionKey duplicadas fallan cerradas.
+- Contrato Node nuevo prueba lock timeout/release, solapamiento, chunk retry sin duplicar archivo y sesión ambigua; Task-Service security local contracts PASS.
+- ACCOUNTING: getPaymentVouchers/getPaymentVoucherFile/reviewPaymentVoucher mantienen el payload original para validación de scope, incluso bajo lock; permisos de lectura para Padre/Tutor dependen de relación activa y ownership. Preferencia familiar compatible con esquema legado.
+- ACCOUNTING Transport Local, Identity Mapping, Hierarchical Configuration, Accounting Import Preflight y Department Reference Consumers PASS.
+- Department Scope: pasos 1–117 PASS; Phase22 falla en paso 118 por función configureSchoolDocumentTemplate ausente. Apps Script/Sheets/Drive real y concurrencia interproyecto NOT RUN; BETA-FUNC-009 actualizado y pendiente de beta.
+- TASK-502 y TASK-506 permanecen En ejecución.
+- Siguiente: resolver Phase22 document management suite y continuar inventario action/resource restante en ACADEMIC/ACCOUNTING/TASK/EXAM.
+===============================================================================
