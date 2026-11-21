@@ -97,4 +97,75 @@ accountingRuntime.requestAccountingUserAuthorization_ = () => ({
 });
 assert.equal(accountingRuntime.resolve({ sessionToken: "token" }).authorized, false, "ACCOUNTING rejects another institution");
 
+
+function sheet(rows) {
+  return { getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }) };
+}
+const familyRows = [
+  ["RelacionID","ExpedienteID","ResponsableID","Parentesco","EstadoAutorizacion","FechaInicio","FechaFin","Observaciones","PermisosJSON"],
+  ["R1","EXP-1","GUARDIAN-1","Madre","Activa","2020-01-01","2099-12-31","", "{\"permisoAcademico\":true}"],
+  ["R2","EXP-2","GUARDIAN-1","Madre","Activa","2099-01-01","2099-12-31","", "{\"permisoAcademico\":true}"],
+  ["R3","EXP-3","GUARDIAN-1","Madre","Activa","2020-01-01","2020-12-31","", "{\"permisoAcademico\":true}"],
+  ["R4","EXP-4","GUARDIAN-1","Madre","Activa","invalid-date","2099-12-31","", "{\"permisoAcademico\":true}"],
+  ["R5","EXP-5","GUARDIAN-1","Madre","Activa","2020-01-01","2099-12-31","", "{\"permisoAcademico\":false}"]
+];
+const expedienteRows = [["ExpedienteID","UserID"],["EXP-1","STU-1"],["EXP-2","STU-2"],["EXP-3","STU-3"],["EXP-4","STU-4"],["EXP-5","STU-5"]];
+const userRows = [["UserId","Nombre","Grado","Seccion","Email","Unused","Rol","Telefono","Unused2","PersonaID","Estado"],
+  ["STU-1","Student 1","1","A","","","Estudiante","","","P-1","Activa"],
+  ["STU-2","Student 2","1","A","","","Estudiante","","","P-2","Activa"],
+  ["STU-3","Student 3","1","A","","","Estudiante","","","P-3","Activa"],
+  ["STU-4","Student 4","1","A","","","Estudiante","","","P-4","Activa"],
+  ["STU-5","Student 5","1","A","","","Estudiante","","","P-5","Activa"]];
+const legacyRows = [["RelacionID","ExpedienteID","ResponsableID","","","","","","","Estado"],
+  ["L1","STU-LEGACY","GUARDIAN-1","","","","","","","Activa"]];
+
+const userGuardianFn = extractFunction(userSource, "getGuardianStudents");
+const userSheets = {
+  ExpedientesEstudiantes: sheet(expedienteRows),
+  Usuarios: sheet(userRows),
+  RelacionesFamiliares: sheet(familyRows),
+  RelacionesEstudianteTutor: sheet(legacyRows)
+};
+const userGuardianRuntime = {
+  SPREADSHEET_ID: "TEST",
+  SpreadsheetApp: { openById: () => ({}) },
+  getOrCreateSheet: (_ss, name) => userSheets[name],
+  getUserVerifiedRole: payload => { payload._verifiedUserId = "GUARDIAN-1"; return "Padre"; },
+  Date, String, Number, Object, Array, JSON
+};
+vm.createContext(userGuardianRuntime);
+vm.runInContext(userGuardianFn + "\nthis.lookup = getGuardianStudents;", userGuardianRuntime);
+const userGuardianResult = userGuardianRuntime.lookup({ sessionToken: "signed" });
+assert.deepEqual(Array.from(userGuardianResult.data, row => row.studentUserId), ["STU-1"],
+  "USER includes only currently active, valid family relations and never falls back to legacy after primary rows exist");
+
+const taskSource = fs.readFileSync("backend/task-service/Code.gs", "utf8");
+const taskGuardianFn = extractFunction(taskSource, "getTaskServiceGuardianStudentIds");
+const taskRuntime = {
+  SPREADSHEET_ID: "TEST",
+  SpreadsheetApp: { openById: () => ({ getSheetByName: name =>
+    name === "ExpedientesEstudiantes" ? sheet(expedienteRows) :
+      (name === "RelacionesFamiliares" ? sheet(familyRows) : null)
+  }) },
+  Date, String, Number, Object, Array, JSON
+};
+vm.createContext(taskRuntime);
+vm.runInContext(taskGuardianFn + "\nthis.lookup = getTaskServiceGuardianStudentIds;", taskRuntime);
+assert.deepEqual(Array.from(taskRuntime.lookup("GUARDIAN-1")), ["STU-1"],
+  "TASK excludes future, expired, malformed and academically restricted family relations");
+
+const examSource = fs.readFileSync("backend/exam-service/Code.gs", "utf8");
+const examGuardianFn = extractFunction(examSource, "getVerifiedGuardianStudentIds_");
+const examRuntime = {
+  Date, String, Number, Object, Array, JSON
+};
+vm.createContext(examRuntime);
+vm.runInContext(examGuardianFn + "\nthis.lookup = getVerifiedGuardianStudentIds_;", examRuntime);
+const examSheets = { getSheetByName: name =>
+  name === "ExpedientesEstudiantes" ? sheet(expedienteRows) :
+    (name === "RelacionesFamiliares" ? sheet(familyRows) : null)
+};
+assert.deepEqual(Array.from(examRuntime.lookup(examSheets, "GUARDIAN-1")), ["STU-1","STU-5"],
+  "EXAM excludes future, expired and malformed family relations while preserving its documented relation-permission semantics");
+
 process.stdout.write("contextual-abac-five-services-contract: all assertions passed\n");

@@ -5619,10 +5619,23 @@ function getGuardianStudents(payload) {
   const relSheet = getOrCreateSheet(ss, "RelacionesFamiliares");
   const relData = relSheet.getDataRange().getValues();
 
+  const primaryGuardianRows = relData.length > 1
+    ? relData.slice(1).filter(r => String(r[2] || "").trim() === String(uid).trim())
+    : [];
+  const now = Date.now();
+  const isCurrentGuardianRelation = row => {
+    const startValue = row[5], endValue = row[6];
+    const start = startValue === "" || startValue === null || startValue === undefined ? null : new Date(startValue).getTime();
+    const end = endValue === "" || endValue === null || endValue === undefined ? null : new Date(endValue).getTime();
+    if ((startValue !== "" && startValue !== null && startValue !== undefined && !Number.isFinite(start)) ||
+        (endValue !== "" && endValue !== null && endValue !== undefined && !Number.isFinite(end))) return false;
+    return (start === null || start <= now) && (end === null || end >= now);
+  };
   let verifiedStudents = [];
-  if (relData.length > 1) {
-    verifiedStudents = relData.slice(1).filter(r => {
-      return String(r[2]).trim() === String(uid).trim() && (r[4] === "Verificada" || r[4] === "Activa" || r[4] === "Aprobada");
+  if (primaryGuardianRows.length > 0) {
+    verifiedStudents = primaryGuardianRows.filter(r => {
+      return ["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(String(r[4] || "").trim().toUpperCase()) !== -1 &&
+        isCurrentGuardianRelation(r);
     }).map(r => {
       const expId = String(r[1]).trim();
       const mappedUserId = expToUserMap[expId] || expId;
@@ -5648,7 +5661,7 @@ function getGuardianStudents(payload) {
   }
 
   // Fallback / Sync con RelacionesEstudianteTutor
-  if (verifiedStudents.length === 0) {
+  if (primaryGuardianRows.length === 0) {
     const tutorRelSheet = getOrCreateSheet(ss, "RelacionesEstudianteTutor");
     const tutorData = tutorRelSheet.getDataRange().getValues();
     if (tutorData.length > 1) {

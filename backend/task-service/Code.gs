@@ -1383,7 +1383,13 @@ function getTaskServiceGuardianStudentIds(guardianUserId) {
   const relationSheet = ss.getSheetByName("RelacionesFamiliares");
   if (relationSheet) relationSheet.getDataRange().getValues().slice(1).forEach(row => {
     if (String(row[2] || "").trim() !== String(guardianUserId).trim()) return;
-    if (["Verificada", "Activa", "Aprobada"].indexOf(String(row[4] || "").trim()) === -1) return;
+    if (["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(String(row[4] || "").trim().toUpperCase()) === -1) return;
+    const startValue = row[5], endValue = row[6], now = Date.now();
+    const start = startValue === "" || startValue === null || startValue === undefined ? null : new Date(startValue).getTime();
+    const end = endValue === "" || endValue === null || endValue === undefined ? null : new Date(endValue).getTime();
+    if ((startValue !== "" && startValue !== null && startValue !== undefined && !Number.isFinite(start)) ||
+        (endValue !== "" && endValue !== null && endValue !== undefined && !Number.isFinite(end)) ||
+        (start !== null && start > now) || (end !== null && end < now)) return;
     let permissions = {}; try { permissions = typeof row[8] === "string" ? JSON.parse(row[8] || "{}") : (row[8] || {}); } catch (_) {}
     if (permissions.permisoAcademico === false) return;
     const expedienteId = String(row[1] || "").trim(), studentId = expMap[expedienteId] || expedienteId;
