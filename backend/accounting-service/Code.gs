@@ -4498,32 +4498,71 @@ function resolveStudentExpedienteForAccounting_(ss,userId) {
 }
 
 function assertJointFamilyVoucherOwnerAccess_(payload, ss, targetUserId) {
-  var actor=getVerifiedAccountingIdentity_(payload||{});
-  if(!actor||actor.authorized!==true)return {authorized:false,code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
-  if(String(actor.userId||"")===String(targetUserId||""))return {authorized:true,actor:actor};
-  var role=normalizeVacationRole_(actor.role);
-  if(["padre","tutor","responsable"].indexOf(role)<0)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
-  var guardianPerson=getAccountingPersonIdForUser_(ss,actor.userId);
-  var studentPerson=getAccountingPersonIdForUser_(ss,targetUserId);
-  if(!guardianPerson||!studentPerson)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
-  var rel=ss.getSheetByName("RelacionesFamiliares");
-  if(!rel)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
-  var rows=rel.getDataRange().getValues(),h=(rows[0]||[]).map(function(v){return String(v||"").trim();});
-  var sp=h.indexOf("PersonaEstudianteID"),gp=h.indexOf("PersonaResponsableID"),st=h.indexOf("EstadoAutorizacion");
-  var fi=h.indexOf("FechaInicio"),ti=h.indexOf("FechaFin"),now=new Date();
-  if([sp,gp,st].some(function(index){return index<0;}))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
-  var validDate=function(value){
-    if(value===""||value===null||value===undefined)return {valid:true,date:null};
-    var date=value instanceof Date?value:new Date(value);
-    return Number.isFinite(date.getTime())?{valid:true,date:date}:{valid:false,date:null};
-  };
-  var matches=rows.slice(1).filter(function(r){
-    if(String(r[sp]||"").trim()!==studentPerson||String(r[gp]||"").trim()!==guardianPerson||
-      ["aprobado","autorizado","activo","active","verificada"].indexOf(String(r[st]||"").trim().toLowerCase())<0)return false;
-    var from=validDate(fi<0?"":r[fi]),to=validDate(ti<0?"":r[ti]);
-    return from.valid&&to.valid&&(!from.date||from.date<=now)&&(!to.date||to.date>=now);
+  var actor = getVerifiedAccountingIdentity_(payload || {});
+  if (!actor || actor.authorized !== true) return { authorized: false, code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  if (String(actor.userId || "") === String(targetUserId || "")) return { authorized: true, actor: actor };
+  var role = normalizeVacationRole_(actor.role);
+  if (["padre", "tutor", "responsable"].indexOf(role) < 0) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var guardianPerson = getAccountingPersonIdForUser_(ss, actor.userId);
+  var studentPerson = getAccountingPersonIdForUser_(ss, targetUserId);
+  if (!guardianPerson || !studentPerson) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var rel = ss.getSheetByName("RelacionesFamiliares");
+  if (!rel) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+  var rows = rel.getDataRange().getValues();
+  var headers = (rows[0] || []).map(function(value) { return String(value || "").trim(); });
+  var relationIdIndex = headers.indexOf("RelacionID");
+  var studentIndex = headers.indexOf("PersonaEstudianteID");
+  var guardianIndex = headers.indexOf("PersonaResponsableID");
+  var stateIndex = headers.indexOf("EstadoAutorizacion");
+  var startIndex = headers.indexOf("FechaInicio"), endIndex = headers.indexOf("FechaFin");
+  var directPermissionIndex = headers.indexOf("PermisoFinanciero");
+  var permissionsIndex = headers.indexOf("PermisosJSON");
+  if ([relationIdIndex, studentIndex, guardianIndex, stateIndex].some(function(index) { return index < 0; }) ||
+      (directPermissionIndex < 0 && permissionsIndex < 0)) {
+    return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
+  }
+  var relationIdCounts = Object.create(null);
+  rows.slice(1).forEach(function(row) {
+    var id = String(row[relationIdIndex] || "").trim();
+    if (id) relationIdCounts[id] = (relationIdCounts[id] || 0) + 1;
   });
-  return matches.length===1?{authorized:true,actor:actor}:{authorized:false,code:"RESOURCE_NOT_FOUND"};
+  var validDate = function(value) {
+    if (value === "" || value === null || value === undefined) return { valid: true, date: null };
+    var date = value instanceof Date ? value : new Date(value);
+    return Number.isFinite(date.getTime()) ? { valid: true, date: date } : { valid: false, date: null };
+  };
+  var now = new Date();
+  var matches = rows.slice(1).filter(function(row) {
+    if (String(row[studentIndex] || "").trim() !== studentPerson ||
+        String(row[guardianIndex] || "").trim() !== guardianPerson ||
+        ["aprobado", "autorizado", "activo", "active", "verificada"].indexOf(
+          String(row[stateIndex] || "").trim().toLowerCase()) < 0) return false;
+    var from = validDate(startIndex < 0 ? "" : row[startIndex]);
+    var to = validDate(endIndex < 0 ? "" : row[endIndex]);
+    if (!from.valid || !to.valid || (from.date && from.date > now) || (to.date && to.date < now) ||
+        (from.date && to.date && from.date > to.date)) return false;
+    var relationId = String(row[relationIdIndex] || "").trim();
+    if (!relationId || relationIdCounts[relationId] !== 1) return false;
+    var explicitGrant = false;
+    if (directPermissionIndex >= 0) {
+      var direct = row[directPermissionIndex];
+      if (direct === false || String(direct || "").trim().toLowerCase() === "false") return false;
+      if (direct === true) explicitGrant = true;
+    }
+    if (permissionsIndex >= 0) {
+      var raw = row[permissionsIndex];
+      if (raw !== "" && raw !== null && raw !== undefined) {
+        var permissions;
+        try { permissions = typeof raw === "string" ? JSON.parse(raw) : raw; } catch (_) { return false; }
+        if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) ||
+            permissions.permisoFinanciero === false ||
+            String(permissions.permisoFinanciero || "").trim().toLowerCase() === "false") return false;
+        if (permissions.permisoFinanciero === true) explicitGrant = true;
+      }
+    }
+    return explicitGrant;
+  });
+  return matches.length === 1 ? { authorized: true, actor: actor } : { authorized: false, code: "RESOURCE_NOT_FOUND" };
 }
 
 function transportRows_(ss, sheetName, expectedHeaders) {

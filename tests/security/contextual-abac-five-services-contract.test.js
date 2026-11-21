@@ -460,15 +460,36 @@ const jointFamilyRuntime = {
 vm.createContext(jointFamilyRuntime);
 vm.runInContext(jointFamilyFn + "\nthis.check = assertJointFamilyVoucherOwnerAccess_;", jointFamilyRuntime);
 const jointRelations = [
-  ["RelacionID","PersonaEstudianteID","PersonaResponsableID","EstadoAutorizacion","FechaInicio","FechaFin"],
-  ["R1","PERSON-S1","PERSON-G","Activo","2020-01-01","2099-12-31"]
+  ["RelacionID","PersonaEstudianteID","PersonaResponsableID","EstadoAutorizacion","FechaInicio","FechaFin","PermisoFinanciero","PermisosJSON"],
+  ["R1","PERSON-S1","PERSON-G","Activo","2020-01-01","2099-12-31",true,""]
 ];
 const jointSheetSet = { getSheetByName: () => sheet(jointRelations) };
 assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, true,
   "ACCOUNTING joint family owner accepts one active linked relationship");
+
+const jointPermissionRow = jointRelations[1].slice();
+jointRelations[1][6] = "";
+jointRelations[1][7] = "";
+assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, false,
+  "ACCOUNTING joint family owner requires an explicit financial grant");
+jointRelations[1][7] = '{"permisoFinanciero":true}';
+assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, true,
+  "ACCOUNTING accepts an explicit JSON financial grant");
+jointRelations[1][7] = '{"permisoFinanciero":"true"}';
+assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, false,
+  "ACCOUNTING rejects string financial booleans");
+jointRelations[1][6] = false;
+jointRelations[1][7] = '{"permisoFinanciero":true}';
+assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, false,
+  "ACCOUNTING direct financial denial overrides a JSON grant");
+jointRelations[1].splice(0, jointRelations[1].length, ...jointPermissionRow);
+jointRelations.push(["R1","PERSON-S2","PERSON-G","Activo","2020-01-01","2099-12-31",true,""]);
+assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, false,
+  "ACCOUNTING denies duplicate relation IDs across different student targets");
+jointRelations.pop();
 for (const [start,end] of [["2099-01-01","2099-12-31"],["2020-01-01","2020-12-31"],["invalid-date","2099-12-31"]]) {
   const invalidSheet = { getSheetByName: () => sheet([
-    jointRelations[0], ["R2","PERSON-S1","PERSON-G","Activo",start,end]
+    jointRelations[0], ["R2","PERSON-S1","PERSON-G","Activo",start,end,true,""]
   ]) };
   assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, invalidSheet, "STU-1").authorized, false,
     "ACCOUNTING joint family owner denies invalid or inactive relationship dates");
