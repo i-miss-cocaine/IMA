@@ -125,20 +125,20 @@ rows.RelacionesFamiliares = [
   headers.RelacionesFamiliares,
   ["REL-DENIED","PERSON-S","PERSON-G","Madre","Aprobado","","","",JSON.stringify({ permisoFinanciero: false })]
 ];
-assert.deepEqual(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1"), [],
+assert.deepEqual(Array.from(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1")), [],
   "explicitly denied financial guardian permission must block family credit");
 rows.RelacionesFamiliares = [
   headers.RelacionesFamiliares,
   ["REL-MALFORMED","PERSON-S","PERSON-G","Madre","Aprobado","","","", "{malformed"]
 ];
-assert.deepEqual(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1"), [],
+assert.deepEqual(Array.from(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1")), [],
   "malformed guardian permission JSON must fail closed");
 rows.RelacionesFamiliares = [
   headers.RelacionesFamiliares,
   ["REL-DUP-1","PERSON-S","PERSON-G","Madre","Aprobado","","","",JSON.stringify({ permisoFinanciero: true })],
   ["REL-DUP-2","PERSON-S","PERSON-G","Madre","Aprobado","","","",JSON.stringify({ permisoFinanciero: true })]
 ];
-assert.deepEqual(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1"), [],
+assert.deepEqual(Array.from(context.familyCreditGetActiveStudentUserIdsForGuardian_(ss, "GUARD-1")), [],
   "duplicate active guardian relationships must fail closed");
 rows.RelacionesFamiliares = originalFamilyRelations;
 
