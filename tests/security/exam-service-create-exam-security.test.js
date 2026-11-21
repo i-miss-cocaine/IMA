@@ -52,6 +52,7 @@ function makeSheet(rows, options = {}) {
 function fixture(options = {}) {
   const stats = { permissionCalls: 0, action: "", acquired: 0, released: 0, opened: 0, held: false, events: [] };
   const hooks = {};
+  const scopeResults = Array.isArray(options.scopes) ? options.scopes.slice() : null;
   const questionHeaders = options.legacyQuestionSchema
     ? ["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta","Puntos","AreaCurricular","Dificultad","BancoPreguntaID"]
     : ["PreguntaID","ExamenID","Tipo","Texto","OpcionesJSON","RespuestaCorrecta","Puntos","AreaCurricular","Dificultad","BancoPreguntaID","Etiquetas","ObjetivosJSON","CriteriosJSON","BancoPreguntaVersion","Asignatura","Grado","Tema"];
@@ -72,7 +73,7 @@ function fixture(options = {}) {
     SPREADSHEET_ID: "TEST",
     validateRolePermission(action) { stats.events.push("rbac"); stats.permissionCalls++; stats.action = action; const allowed = Array.isArray(options.permissions) ? options.permissions.shift() : options.permissionDenied !== true; return { authorized: allowed !== false }; },
     getVerifiedExamIdentity_() { stats.events.push("identity"); if (Array.isArray(options.actors)) return options.actors.shift(); if (options.invalidIdentity) return { authorized: false, userId: "P1", role: "Profesor" }; if (options.actor !== undefined) return options.actor; return { authorized: true, userId: "P1", role: "Profesor" }; },
-    getVerifiedExamDepartmentScope_() { stats.events.push("scope"); return options.invalidScope ? { authorized: false } : { authorized: true, institutionId: "I1", departmentIds: ["D1"] }; },
+    getVerifiedExamDepartmentScope_() { stats.events.push("scope"); if (scopeResults) return scopeResults.shift(); return options.invalidScope ? { authorized: false } : { authorized: true, institutionId: "I1", departmentIds: ["D1"] }; },
     SpreadsheetApp: { openById() { stats.events.push("sheets"); stats.opened++; return { getSheetByName: name => sheets[name] || null }; } },
     getSheetOrThrow(ss, name) { const sheet = ss.getSheetByName(name); if (!sheet) throw new Error("missing " + name); return sheet; },
     LockService: { getScriptLock: () => ({
@@ -146,11 +147,25 @@ test(() => { const x=fixture(); assert.throws(()=>x.call({departmentId:"D2"}),/R
 test(() => { const x=fixture(); x.sheets.ResourceOwnership.rows[0]=["wrong"]; assert.throws(()=>x.call(),/RESOURCE_OWNERSHIP_SCHEMA_INVALID/); assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]); });
 test(() => {
  const x=fixture({actors:[{authorized:true,userId:"P1",role:"Profesor"},{authorized:false,userId:"",role:""}],permissions:[true,false]});
- const result=x.call();
- assert.equal(result.status,"success");
- assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock"]);
- assert.equal(x.stats.permissionCalls,1);
- assert.equal(x.sheets.Examenes.rows.length,2);
+ assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
+ assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock","rbac"]);
+ assert.equal(x.stats.permissionCalls,2);
+ assert.equal(x.sheets.Examenes.rows.length,1);
+ assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
+});
+test(() => {
+ const x=fixture({actors:[{authorized:true,userId:"P1",role:"Profesor"},{authorized:false,userId:"",role:""}],permissions:[true,true]});
+ assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
+ assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock","rbac","identity","release"]);
+ assert.equal(x.sheets.Examenes.rows.length,1);
+ assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
+});
+test(() => {
+ const x=fixture({scopes:[{authorized:true,institutionId:"I1",departmentIds:["D1"]},{authorized:false}]});
+ assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
+ assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock","rbac","identity","sheets","scope","release"]);
+ assert.equal(x.sheets.Examenes.rows.length,1);
+ assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
 });
 for (const point of ["ownershipAppend", "examAppend", "questionWrite"]) {
   test(() => {
@@ -168,7 +183,7 @@ for (const point of ["ownershipAppend", "examAppend", "questionWrite"]) {
     assert.equal(x.sheets.PreguntasExamen.writes, 1);
     assert.deepEqual([
       x.stats.opened, x.stats.acquired, x.stats.released, x.stats.held
-    ], [2, 2, 1, false]);
+    ], [3, 2, 1, false]);
   });
 }
 console.log("exam-service-create-exam-security: " + scenarios + "/" + scenarios + " PASS");
