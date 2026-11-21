@@ -1198,41 +1198,67 @@ function verifySessionToken(tokenString) {
 // [TAREA-F6-012] [TAREA-F6-037] [Fase 6: Seguridad, Aislamiento y Gestión Centralizada de Permisos] - Validación de acceso contextual server-side, aislamiento IDOR y ámbito de coordinación por área/rol (RBAC/ABAC)
 function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   if (!userRole || userRole === "Administrador" || userRole === "Desarrollador") return { authorized: true };
+
   const targetStudentId = payload && (payload.studentId || payload.estudianteId || payload.targetUserId || payload.userId);
-  if ((userRole === "Estudiante" || userRole === "Alumno") && targetStudentId && verifiedUserId &&
-      String(targetStudentId).trim() !== String(verifiedUserId).trim()) {
-    return { authorized: false, reason: "Aislamiento estricto de estudiante: intento de acceso a ID ajeno." };
+  if ((userRole === "Estudiante" || userRole === "Alumno") && targetStudentId &&
+      (!verifiedUserId || String(targetStudentId).trim() !== String(verifiedUserId).trim())) {
+    return { authorized: false, reason: "STUDENT_RESOURCE_SCOPE_DENIED" };
   }
-  if (payload && payload.scopeType && payload.requestedValue && verifiedUserId) {
+
+  const hasScopeType = !!String(payload && payload.scopeType || "").trim();
+  const hasRequestedValue = !!String(payload && payload.requestedValue || "").trim();
+  if (hasScopeType || hasRequestedValue) {
+    if (!hasScopeType || !hasRequestedValue || !verifiedUserId) {
+      return { authorized: false, reason: "DEPARTMENT_SCOPE_CONTEXT_REQUIRED" };
+    }
     try {
       const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
       const scope = getVerifiedAcademicDepartmentScope_(payload, ss, { authorized: true, userId: verifiedUserId, role: userRole });
-      if (!scope || scope.authorized !== true) return { authorized: false, reason: "Aislamiento de ámbito: " + String(scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED") };
+      if (!scope || scope.authorized !== true) {
+        return { authorized: false, reason: String(scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED") };
+      }
       const scopeType = String(payload.scopeType).trim().toUpperCase();
       const requested = String(payload.requestedValue).trim().toUpperCase();
       const institutionGrant = scopeType === "DEPARTAMENTO" && scope.institutionWide === true;
       const matched = (scope.scopes || []).some(function(item) {
         return String(item.scopeType || "").trim().toUpperCase() === scopeType &&
-          (item.scopeValues || []).some(function(value) { return String(value).trim().toUpperCase() === requested; });
+          (item.scopeValues || []).some(function(value) { return String(value || "").trim().toUpperCase() === requested; });
       });
-      if (!institutionGrant && !matched) return { authorized: false, reason: "Aislamiento de ámbito: el valor solicitado está fuera de los ámbitos activos de la membresía." };
+      if (!institutionGrant && !matched) return { authorized: false, reason: "DEPARTMENT_SCOPE_DENIED" };
     } catch (_) {
-      return { authorized: false, reason: "Aislamiento de ámbito: no fue posible validar el contexto firmado." };
+      return { authorized: false, reason: "DEPARTMENT_SCOPE_VALIDATION_FAILED" };
     }
   }
-  // [TAREA-F6-012] [Fase 6: Reestructuración en microservicios independientes] - Validación de aislamiento y ámbito de supervisión por área para Coordinadores
-  if (userRole === "Coordinador") {
-    const targetAreaId = payload && payload.areaId;
-    if (targetAreaId && verifiedUserId) {
-      try {
-        const scopesRes = getAcademicAreaCoordinationScope({ areaId: targetAreaId, userId: verifiedUserId });
-        const matchedScope = (scopesRes.scopes || []).find(s => String(s.areaId).trim().toUpperCase() === String(targetAreaId).trim().toUpperCase());
-        if (!matchedScope) {
-          return { authorized: false, reason: "Aislamiento de coordinación: el usuario no tiene la área " + targetAreaId + " asignada en su ámbito de supervisión." };
-        }
-      } catch (_) {}
+
+  if (userRole === "Coordinador" && payload && Object.prototype.hasOwnProperty.call(payload, "areaId")) {
+    const requestedAreaId = String(payload.areaId || "").trim();
+    if (!requestedAreaId || !verifiedUserId) return { authorized: false, reason: "COORDINATION_AREA_CONTEXT_REQUIRED" };
+    try {
+      const result = getAcademicAreaCoordinationScope({ areaId: requestedAreaId, userId: verifiedUserId });
+      if (!result || result.status !== "success" || !Array.isArray(result.scopes) || result.scopes.length !== 1) {
+        return { authorized: false, reason: "COORDINATION_SCOPE_UNVERIFIED" };
+      }
+      const assignment = result.scopes[0];
+      const context = assignment && assignment.ambitoSupervision;
+      if (!assignment || String(assignment.userId || "").trim() !== String(verifiedUserId).trim() ||
+          String(assignment.areaId || "").trim().toUpperCase() !== requestedAreaId.toUpperCase() ||
+          !context || typeof context !== "object" || Array.isArray(context) ||
+          String(context.areaId || "").trim().toUpperCase() !== requestedAreaId.toUpperCase() ||
+          ["TITULAR", "SUPLENTE"].indexOf(String(context.tipoCoordinacion || "").trim().toUpperCase()) === -1) {
+        return { authorized: false, reason: "COORDINATION_SCOPE_DENIED" };
+      }
+      const now = Date.now();
+      const from = context.fechaInicio ? new Date(context.fechaInicio).getTime() : null;
+      const to = context.fechaFin ? new Date(context.fechaFin).getTime() : null;
+      if ((context.fechaInicio && !Number.isFinite(from)) || (context.fechaFin && !Number.isFinite(to)) ||
+          (from !== null && from > now) || (to !== null && to < now) || (from !== null && to !== null && from > to)) {
+        return { authorized: false, reason: "COORDINATION_ASSIGNMENT_INACTIVE" };
+      }
+    } catch (_) {
+      return { authorized: false, reason: "COORDINATION_SCOPE_VALIDATION_FAILED" };
     }
   }
+
   return { authorized: true };
 }
 
