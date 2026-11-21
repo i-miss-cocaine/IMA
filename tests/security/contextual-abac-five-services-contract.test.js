@@ -271,18 +271,19 @@ assert.deepEqual(Array.from(familyCreditRuntime.lookup(familyCreditSheetSet, "GU
 accountingFamilyRelations.pop();
 
 const transportUsers = [
-  ["UserId","","","","","","","","","PersonaID"],
-  ["STU-1","","","","","","","","","PERSON-S1"],
-  ["STU-2","","","","","","","","","PERSON-S2"],
-  ["STU-3","","","","","","","","","PERSON-S3"],
-  ["STU-4","","","","","","","","","PERSON-S4"],
-  ["GUARDIAN-1","","","","","","","","","PERSON-G"]
+  ["UserId","Rol","PersonaID","Estado"],
+  ["STU-1","Estudiante","PERSON-S1","Activo"],
+  ["STU-2","Estudiante","PERSON-S2","Activo"],
+  ["STU-3","Estudiante","PERSON-S3","Activo"],
+  ["STU-4","Estudiante","PERSON-S4","Activo"],
+  ["GUARDIAN-1","Tutor","PERSON-G","Activo"]
 ];
-const transportDateFn = extractFunction(accountingSource, "transportParseDate_");
-const transportGuardianFn = extractFunction(accountingSource, "serviceStudentGuardianIds_");
-const transportRuntime = { Date, String, Number, Object, Array, Set };
+const transportFunctions = [
+  "institutionalServiceRoleKey_", "serviceFamilyHeaderIndex_", "serviceFamilyRelationIsActive_", "serviceStudentGuardianIds_"
+].map(name => extractFunction(accountingSource, name));
+const transportRuntime = { Date, String, Number, Object, Array, Set, JSON };
 vm.createContext(transportRuntime);
-vm.runInContext(transportDateFn + "\n" + transportGuardianFn + "\nthis.lookup = serviceStudentGuardianIds_;", transportRuntime);
+vm.runInContext(transportFunctions.join("\n") + "\nthis.lookup = serviceStudentGuardianIds_;", transportRuntime);
 const transportSheetSet = {
   getSheetByName: name => name === "Usuarios" ? sheet(transportUsers) :
     (name === "RelacionesFamiliares" ? sheet(accountingFamilyRelations) : null)
