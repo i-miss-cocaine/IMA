@@ -6169,3 +6169,13 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Pruebas de cierres antes de sesión/futuros, límites inclusivos y sesiones externas PASS. Academic-Service Action 44635526817 SUCCESS; SACE template compatibility 44635261490 SUCCESS.
 - Commit 4e4cddc6ea50feaad4d8bd1d667e3bf719fd23ae. Evidencia en Checkpoints_Parte_0019.txt — C1.877.
 - Siguiente: auditar consistencia temporal/versión entre matrícula, identidad USER y snapshots gradebook de ambos parciales, sin ampliar bloqueos a llamadas interservicio.
+
+
+## 10.82 AUD-NG-226 / TASK-506 — primer incremento de integridad de adscripciones (C1.905)
+
+- USER valida usuario activo (`Usuarios.EstadoCuenta`), departamento/cargo activos y relación cargo-departamento; valida jefaturas administrativas existentes y activas. La gestión de jefaturas se mantiene en `CatalogoDepartamentos` mediante USER, sin asumir que `DepartamentosAcademicos` sea el mismo catálogo.
+- ASSIGN_USER usa ScriptLock para revalidar y serializar el cambio; crea una fila candidata Pendiente, cierra la adscripción anterior y activa la nueva. Ante fallo, restaura la anterior y marca la candidata Cancelada; reintentos sobre la asignación ya activa devuelven el ID existente. Identificadores se generan antes del lock para evitar adquisición anidada del ScriptLock.
+- Se agregan `GET_CARGOS` y paginación estable por offset/limit (máximo 200) a `getUserInstitutionalAffiliations`. Se incorpora contrato Node al workflow Department Scope Contract.
+- **Evidencia actual:** parseo V8 del servicio y del contrato PASS; ejecución Node/CI pendiente del commit. No se afirma cierre de tarea.
+- **Pendientes:** UI RRHH, autorización contextual por departamento, crosswalk/relación validada con el modelo académico y contratos adicionales de concurrencia/rollback/UI. La función `assignDepartmentHead` no existe en ACADEMIC en el baseline; no se crea un duplicado académico.
+- **Estado:** En ejecución. Siguiente acción: revisar CI y continuar el alcance pendiente sin tocar datos productivos.

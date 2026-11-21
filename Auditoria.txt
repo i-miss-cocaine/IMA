@@ -3200,3 +3200,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-20 | AUD-NG-164 | C1.889] Avance: PlanesEstudio alineado por encabezados; lectura canónica/legacy sin desplazamiento; escritura por mapa, vigencia validada, duplicado lógico rechazado e ID UUID. Academic-Service run 44656530850 SUCCESS. AUD-NG-164 permanece en progreso; pendientes relaciones PlanAsignaturas, validación de ofertas y dependencias de catálogo AUD-NG-175/AUD-NG-226.
+
+
+[2026-11-20 | AUD-NG-226 / TASK-506 | C1.905] Primer incremento backend: USER valida usuario/estado de cuenta, departamento y cargo activos, compatibilidad cargo-departamento y jefatura. ASSIGN_USER reserva ID antes del lock, revalida bajo ScriptLock, conserva una sola adscripción activa, admite reintento idempotente y compensa el cierre previo ante fallo; la fila candidata fallida queda Cancelada, sin borrar historia. getUserInstitutionalAffiliations agrega limit/offset (máximo 200), filtros user/departamento/estado y metadatos de paginación. GET_CARGOS devuelve catálogo activo filtrable. Se agregó contrato de regresión y workflow. Parseo V8 PASS; Node/CI pendiente. UI, autorización departamental contextual y crosswalk administrativo-académico continúan pendientes; TASK-506 no se cierra.

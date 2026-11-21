@@ -2536,7 +2536,8 @@
   7. La UI de RRHH utiliza catálogos institucionales y muestra resultados/errores reales, sin depender de texto libre para referencias controladas.
   8. Las pruebas automatizadas cubren integridad, fallos, recuperación, concurrencia, paginación, permisos y regresión de USER/ACADEMIC/UI.
 - **Prioridad:** P1.
-- **Estado:** Pendiente.
+- **Estado:** En ejecución (C1.905).
+- **Avance C1.905:** USER valida referencias/estados, serializa reasignaciones con compensación y agrega paginación/consulta de cargos; contrato Node agregado al workflow. Sintaxis V8 PASS; CI pendiente. UI RRHH, autorización contextual y relación intercatálogo siguen pendientes.
 - **Evidencia de cierre:** pendiente. Registrar SHA de implementación, pruebas de integridad/atomicidad y concurrencia, validación de migración y evidencia de UI antes de cambiar el estado.
 - **Origen del Hallazgo:** AUD-NG-226.
 - **Severidad/Clasificación:** Alto (P1).
@@ -2544,7 +2545,7 @@
 - **Dependencias Expuestas:** CatalogoDepartamentos, CatalogoCargos, HistorialAdscripciones, DepartamentosAcademicos, Usuarios, manageDepartmentPositions, assignDepartmentHead, generateInstitutionalId.
 - **Descripción del Alcance:** Cerrar validaciones referenciales, unicidad, consistencia intercatálogo y atomicidad de las operaciones de departamento, cargo y adscripción; conectar flujos a la consola HR con consultas paginadas y auditoría.
 - **Criterios de Aceptación:** Se cumplen los criterios de AUD-NG-226; ningún fallo parcial cierra la asignación anterior; no se generan IDs duplicados ni referencias huérfanas; UI y pruebas verifican comportamiento real.
-- **Estado:** [ ] Pendiente
+- **Estado:** [~] En ejecución (C1.905)
 
 ---
 

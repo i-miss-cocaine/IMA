@@ -4719,172 +4719,148 @@ function getDepartmentHierarchySnapshot_(sheet) {
 }
 
 // [TAREA-F4-P1-07] [Fase 4: Gestión de Roles y Adscripciones] - Administración centralizada de departamentos, cargos e historial laboral/académico
-function manageDepartmentPositions(payload) {
-  const input = payload && typeof payload === "object" ? payload : {};
-  const callerRole = getUserVerifiedRole(input);
-  const callerId = input._verifiedUserId;
-  const { subAction, deptId, deptNombre, jefaturaUserId, cargoId, cargoNombre, nivelJerarquico, userId, motivo, parentDeptId } = input;
-  if (callerRole !== "Administrador" && callerRole !== "Desarrollador" && callerRole !== "RecursosHumanos") {
-    throw new Error("Acceso denegado: Se requieren permisos administrativos o de Recursos Humanos.");
-  }
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const act = String(subAction || "ASSIGN_USER").toUpperCase().trim();
 
-  if (act === "GET_DEPARTMENT_HIERARCHY") {
-    const lock = LockService.getScriptLock();
-    if (!lock.tryLock(10000)) throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
-    try {
-      const sheet = getOrCreateSheet(ss,"CatalogoDepartamentos");
-      return {status:"success",data:getDepartmentHierarchySnapshot_(sheet)};
-    } finally { lock.releaseLock(); }
-  }
 
-  if (act === "CREATE_DEPT") {
-    if (!deptNombre || !String(deptNombre).trim()) throw new Error("deptNombre es requerido.");
-    const generated = deptId ? null : generateInstitutionalId({ entityType:"Departamento", prefix:"DEP-" });
-    const newDeptId = String(deptId || generated && generated.generatedId || "").trim().toUpperCase();
-    if (!newDeptId) throw new Error("No se pudo generar un identificador institucional único para el departamento.");
-    const lock = LockService.getScriptLock();
-    if (!lock.tryLock(10000)) throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
-    try {
-      const sheet = getOrCreateSheet(ss, "CatalogoDepartamentos");
-      if (sheet.getLastRow() === 0) sheet.appendRow(["deptId","nombre","jefaturaUserId","estado","fechaCreacion","DepartamentoPadreID"]);
-      const map = getDepartmentHierarchyColumnMap_(sheet, true);
-      const rows = sheet.getDataRange().getValues().slice(1);
-      if (rows.some(row => String(row[map.deptId] || "").trim().toUpperCase() === newDeptId)) {
-        throw new Error("DEPARTMENT_ID_ALREADY_EXISTS:" + newDeptId);
-      }
-      const parent = String(parentDeptId || "").trim().toUpperCase();
-      const hierarchy = validateDepartmentHierarchy_(sheet, newDeptId, parent);
-      const row = new Array(sheet.getLastColumn()).fill("");
-      row[map.deptId] = newDeptId;
-      row[map.nombre] = String(deptNombre).trim();
-      if (map.jefaturaUserId >= 0) row[map.jefaturaUserId] = jefaturaUserId || "";
-      row[map.estado] = "Activo";
-      if (map.fechaCreacion >= 0) row[map.fechaCreacion] = new Date();
-      if (map.parentDeptId >= 0) row[map.parentDeptId] = parent;
-      sheet.appendRow(row);
-      logStructuredEvent("USER","manageDepartmentPositions","INFO","DEPARTMENT_CREATED",`Departamento ${newDeptId} (${deptNombre}) creado por ${callerId}`,{deptId:newDeptId,deptNombre,parentDeptId:parent,hierarchyPath:hierarchy.path},callerRole);
-      return {status:"success",deptId:newDeptId,parentDeptId:parent,hierarchyPath:hierarchy.path,message:"Departamento registrado exitosamente."};
-    } finally { lock.releaseLock(); }
-  }
+function getInstitutionalUserRecord_(ss,userId){
+ var sheet=ss.getSheetByName("Usuarios");if(!sheet||sheet.getLastRow()<=1)throw new Error("USER_NOT_FOUND");
+ var data=sheet.getDataRange().getValues(),norm=function(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");},headers=data[0].map(norm);
+ var ui=headers.findIndex(function(v){return v==="userid"||v==="idusuario";}),si=headers.findIndex(function(v){return v==="estadocuenta"||v==="estado";});
+ if(ui<0||si<0)throw new Error("USER_CATALOG_SCHEMA_INVALID");
+ var matches=[];for(var i=1;i<data.length;i++)if(String(data[i][ui]||"").trim()===String(userId).trim())matches.push({row:data[i],rowNumber:i+1});
+ if(matches.length!==1)throw new Error(matches.length?"USER_ID_AMBIGUOUS":"USER_NOT_FOUND");
+ var state=String(matches[0].row[si]||"Activa").trim().toLowerCase();
+ if(["activa","activo","active","enabled","vigente"].indexOf(state)<0)throw new Error("USER_NOT_ACTIVE");
+ return {sheet:sheet,row:matches[0].row,rowNumber:matches[0].rowNumber,state:state};
+}
+function getInstitutionalDepartmentRecord_(ss,deptId){
+ var sheet=ss.getSheetByName("CatalogoDepartamentos");if(!sheet||sheet.getLastRow()<=1)throw new Error("DEPARTMENT_NOT_FOUND");
+ var map=getDepartmentHierarchyColumnMap_(sheet,false),target=String(deptId||"").trim().toUpperCase(),data=sheet.getDataRange().getValues(),matches=[];
+ for(var i=1;i<data.length;i++)if(String(data[i][map.deptId]||"").trim().toUpperCase()===target)matches.push({row:data[i],rowNumber:i+1});
+ if(matches.length!==1)throw new Error(matches.length?"DEPARTMENT_ID_AMBIGUOUS":"DEPARTMENT_NOT_FOUND");
+ var r=matches[0],state=String(r.row[map.estado]||"").trim().toLowerCase();
+ if(["activo","active","enabled","vigente"].indexOf(state)<0)throw new Error("DEPARTMENT_NOT_ACTIVE");
+ return {sheet:sheet,row:r.row,rowNumber:r.rowNumber,map:map,deptId:target};
+}
+function getInstitutionalCargoColumnMap_(sheet){
+ var norm=function(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");},h=sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0].map(norm);
+ var a={cargoId:["cargoid","idcargo"],deptId:["deptid","departamentoid"],nombreCargo:["nombrecargo","cargo"],nivelJerarquico:["niveljerarquico","nivel"],estado:["estado","status"],fechaCreacion:["fechacreacion"]},m={};
+ Object.keys(a).forEach(function(k){m[k]=h.findIndex(function(v){return a[k].indexOf(v)>=0;});});
+ var missing=["cargoId","deptId","nombreCargo","estado"].filter(function(k){return m[k]<0;});if(missing.length)throw new Error("CARGO_CATALOG_SCHEMA_INVALID:"+missing.join(","));
+ return m;
+}
+function getInstitutionalCargoRecord_(ss,cargoId,deptId){
+ var sheet=ss.getSheetByName("CatalogoCargos");if(!sheet||sheet.getLastRow()<=1)throw new Error("CARGO_NOT_FOUND");
+ var map=getInstitutionalCargoColumnMap_(sheet),data=sheet.getDataRange().getValues(),target=String(cargoId||"").trim().toUpperCase(),matches=[];
+ for(var i=1;i<data.length;i++)if(String(data[i][map.cargoId]||"").trim().toUpperCase()===target)matches.push({row:data[i],rowNumber:i+1});
+ if(matches.length!==1)throw new Error(matches.length?"CARGO_ID_AMBIGUOUS":"CARGO_NOT_FOUND");
+ var r=matches[0],state=String(r.row[map.estado]||"").trim().toLowerCase();if(["activo","active","enabled","vigente"].indexOf(state)<0)throw new Error("CARGO_NOT_ACTIVE");
+ var assigned=String(r.row[map.deptId]||"").trim().toUpperCase();if(assigned&&assigned!==String(deptId||"").trim().toUpperCase())throw new Error("CARGO_DEPARTMENT_MISMATCH");
+ return {sheet:sheet,row:r.row,rowNumber:r.rowNumber,map:map,cargoId:target,deptId:assigned};
+}
+function getInstitutionalAffiliationColumnMap_(sheet){
+ if(sheet.getLastColumn()===0)sheet.getRange(1,1,1,10).setValues([["adscripcionId","userId","deptId","cargoId","fechaInicio","fechaFin","estado","motivo","autorizadoPor","fechaRegistro"]]);
+ var norm=function(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");},h=sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0].map(norm);
+ var a={adscripcionId:["adscripcionid"],userId:["userid","idusuario"],deptId:["deptid","departamentoid"],cargoId:["cargoid"],fechaInicio:["fechainicio"],fechaFin:["fechafin"],estado:["estado","status"],motivo:["motivo"],autorizadoPor:["autorizadopor"],fechaRegistro:["fecharegistro"]},m={};
+ Object.keys(a).forEach(function(k){m[k]=h.findIndex(function(v){return a[k].indexOf(v)>=0;});});
+ var missing=["adscripcionId","userId","deptId","cargoId","fechaInicio","fechaFin","estado"].filter(function(k){return m[k]<0;});if(missing.length)throw new Error("AFFILIATION_SCHEMA_INVALID:"+missing.join(","));
+ return m;
+}
+function formatInstitutionalDate_(v){if(!v)return "";var d=v instanceof Date?v:new Date(v);return isNaN(d.getTime())?"":d.toISOString();}
 
-  if (act === "UPDATE_DEPT") {
-    const targetId = String(deptId || "").trim().toUpperCase();
-    if (!targetId) throw new Error("DEPARTMENT_ID_REQUIRED");
-    const lock = LockService.getScriptLock();
-    if (!lock.tryLock(10000)) throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
-    try {
-      const sheet = getOrCreateSheet(ss, "CatalogoDepartamentos");
-      const map = getDepartmentHierarchyColumnMap_(sheet, true);
-      const data = sheet.getDataRange().getValues();
-      const matches = data.slice(1).map((row,index)=>({row,index:index+1}))
-        .filter(item=>String(item.row[map.deptId] || "").trim().toUpperCase()===targetId);
-      if (matches.length !== 1) throw new Error(matches.length ? "DEPARTMENT_ID_AMBIGUOUS:" + targetId : "DEPARTMENT_NOT_FOUND:" + targetId);
-      const target = matches[0], row = target.row.slice();
-      const nextParent = parentDeptId === undefined ? String(row[map.parentDeptId] || "").trim().toUpperCase() : String(parentDeptId || "").trim().toUpperCase();
-      const hierarchy = validateDepartmentHierarchy_(sheet,targetId,nextParent);
-      if (deptNombre !== undefined) {
-        const name = String(deptNombre || "").trim();
-        if (!name) throw new Error("DEPARTMENT_NAME_REQUIRED");
-        row[map.nombre] = name;
-      }
-      if (map.parentDeptId >= 0) row[map.parentDeptId] = nextParent;
-      if (map.updatedAt >= 0) row[map.updatedAt] = new Date();
-      sheet.getRange(target.index + 1,1,1,row.length).setValues([row]);
-      logStructuredEvent("USER","manageDepartmentPositions","INFO","DEPARTMENT_UPDATED",`Jerarquía del departamento ${targetId} actualizada por ${callerId}`,{deptId:targetId,parentDeptId:nextParent,hierarchyPath:hierarchy.path},callerRole);
-      return {status:"success",deptId:targetId,parentDeptId:nextParent,hierarchyPath:hierarchy.path,message:"Departamento actualizado; la jerarquía se conserva sin ciclos."};
-    } finally { lock.releaseLock(); }
-  }
-
-  if (act === "CREATE_CARGO") {
-    if (!cargoNombre) throw new Error("cargoNombre es requerido.");
-    const cargoSheet = getOrCreateSheet(ss, "CatalogoCargos");
-    if (cargoSheet.getLastRow() === 0) cargoSheet.appendRow(["cargoId","deptId","nombreCargo","nivelJerarquico","estado","fechaCreacion"]);
-    const genRes = generateInstitutionalId({entityType:"Cargo",prefix:"CRG-"});
-    const newCargoId = cargoId || genRes && genRes.generatedId;
-    if (!newCargoId) throw new Error("No se pudo generar un identificador institucional único para el cargo.");
-    const cargoRows = cargoSheet.getDataRange().getValues().slice(1);
-    if (cargoRows.some(row=>String(row[0] || "").trim().toUpperCase()===String(newCargoId).trim().toUpperCase())) throw new Error("CARGO_ID_ALREADY_EXISTS");
-    const level = Number(nivelJerarquico === undefined ? 1 : nivelJerarquico);
-    if (!Number.isInteger(level) || level < 1) throw new Error("CARGO_HIERARCHY_LEVEL_INVALID");
-    cargoSheet.appendRow([newCargoId,deptId || "",String(cargoNombre).trim(),level,"Activo",new Date()]);
-    logStructuredEvent("USER","manageDepartmentPositions","INFO","POSITION_CREATED",`Cargo ${newCargoId} (${cargoNombre}) creado por ${callerId}`,{cargoId:newCargoId,deptId:deptId || "",nivelJerarquico:level},callerRole);
-    return {status:"success",cargoId:newCargoId,message:"Cargo registrado exitosamente."};
-  }
-
-  if (act === "ASSIGN_USER") {
-    if (!userId || !deptId || !cargoId) throw new Error("userId, deptId y cargoId son requeridos para asignación.");
-    const userSheet = ss.getSheetByName("Usuarios");
-    if (!userSheet) throw new Error("Hoja Usuarios no encontrada.");
-    const uRows = userSheet.getDataRange().getValues();
-    const userRow = uRows.find(r => String(r[0]).trim() === String(userId).trim());
-    if (!userRow) throw new Error("Usuario no encontrado.");
-    const adsSheet = getOrCreateSheet(ss,"HistorialAdscripciones");
-    if (adsSheet.getLastRow() === 0) adsSheet.appendRow(["adscripcionId","userId","deptId","cargoId","fechaInicio","fechaFin","estado","motivo","autorizadoPor","fechaRegistro"]);
-    const adsData = adsSheet.getDataRange().getValues();
-    const now = new Date();
-    for (let i=1;i<adsData.length;i++) {
-      if (String(adsData[i][1]).trim()===String(userId).trim() && String(adsData[i][6]).trim()==="Activa") {
-        adsSheet.getRange(i+1,6).setValue(now);
-        adsSheet.getRange(i+1,7).setValue("Inactiva");
-      }
-    }
-    const genRes = generateInstitutionalId({entityType:"Adscripcion",prefix:"ADS-"});
-    const adsId = genRes && genRes.generatedId ? genRes.generatedId : null;
-    if (!adsId) throw new Error("No se pudo generar un identificador institucional único para la adscripción.");
-    adsSheet.appendRow([adsId,String(userId).trim(),String(deptId).trim(),String(cargoId).trim(),now,"","Activa",motivo || "Cambio de cargo/departamento institucional",callerId,now]);
-    invalidateUserRoleCache(userId);
-    recordEntityChangeLog("UsuarioAdscripcion",userId,{}, {deptId,cargoId,estado:"Activa"},"AFFILIATION_UPDATED",callerId);
-    logStructuredEvent("USER","manageDepartmentPositions","INFO","INSTITUTIONAL_AFFILIATION_UPDATED",`Adscripción ${adsId} asignada a ${userId}: Dept ${deptId}, Cargo ${cargoId}`,{adsId,userId,deptId,cargoId},callerRole);
-    return {status:"success",adscripcionId:adsId,message:"Adscripción de departamento y cargo registrada exitosamente."};
-  }
-  throw new Error("Acción de gestión de departamento/cargo no soportada.");
+function manageDepartmentPositions(payload){
+ var input=payload&&typeof payload==="object"?payload:{},role=getUserVerifiedRole(input),callerId=input._verifiedUserId;
+ var deptId=input.deptId,deptNombre=input.deptNombre,jefaturaUserId=input.jefaturaUserId,cargoId=input.cargoId,cargoNombre=input.cargoNombre,nivel=input.nivelJerarquico,userId=input.userId,motivo=input.motivo,parentDeptId=input.parentDeptId;
+ if(["Administrador","Desarrollador","RecursosHumanos"].indexOf(role)<0)throw new Error("Acceso denegado: Se requieren permisos administrativos o de Recursos Humanos.");
+ var ss=SpreadsheetApp.openById(SPREADSHEET_ID),act=String(input.subAction||"ASSIGN_USER").toUpperCase().trim();
+ if(act==="GET_DEPARTMENT_HIERARCHY"){var rl=LockService.getScriptLock();if(!rl.tryLock(10000))throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");try{return {status:"success",data:getDepartmentHierarchySnapshot_(getOrCreateSheet(ss,"CatalogoDepartamentos"))};}finally{rl.releaseLock();}}
+ if(act==="GET_CARGOS"){
+  var cs=ss.getSheetByName("CatalogoCargos");if(!cs||cs.getLastRow()<=1)return {status:"success",data:[],total:0,limit:50,offset:0,nextOffset:null,hasMore:false};
+  var cm=getInstitutionalCargoColumnMap_(cs),cr=cs.getDataRange().getValues(),fd=String(deptId||"").trim().toUpperCase(),list=[];
+  for(var ci=1;ci<cr.length;ci++){var row=cr[ci],st=String(row[cm.estado]||"").trim().toLowerCase(),rd=String(row[cm.deptId]||"").trim().toUpperCase();if(["activo","active","enabled","vigente"].indexOf(st)<0)continue;if(fd&&rd&&rd!==fd)continue;list.push({cargoId:row[cm.cargoId],deptId:row[cm.deptId]||"",nombreCargo:row[cm.nombreCargo],nivelJerarquico:cm.nivelJerarquico>=0?row[cm.nivelJerarquico]:null,estado:row[cm.estado]});}
+  var lim=Math.min(200,Math.max(1,parseInt(input.limit,10)||50)),off=Math.max(0,parseInt(input.offset,10)||0),page=list.slice(off,off+lim),more=off+page.length<list.length;
+  return {status:"success",data:page,total:list.length,limit:lim,offset:off,nextOffset:more?off+page.length:null,hasMore:more};
+ }
+ if(act==="CREATE_DEPT"){
+  if(!deptNombre||!String(deptNombre).trim())throw new Error("DEPARTMENT_NAME_REQUIRED");
+  var gen=deptId?null:generateInstitutionalId({entityType:"Departamento",prefix:"DEP-"}),newId=String(deptId||gen&&gen.generatedId||"").trim().toUpperCase();if(!newId)throw new Error("DEPARTMENT_ID_REQUIRED");
+  var lk=LockService.getScriptLock();if(!lk.tryLock(10000))throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
+  try{var ds=getOrCreateSheet(ss,"CatalogoDepartamentos");if(ds.getLastRow()===0)ds.appendRow(["deptId","nombre","jefaturaUserId","estado","fechaCreacion","DepartamentoPadreID"]);
+   var dm=getDepartmentHierarchyColumnMap_(ds,true),dr=ds.getDataRange().getValues().slice(1);if(dr.some(function(r){return String(r[dm.deptId]||"").trim().toUpperCase()===newId;}))throw new Error("DEPARTMENT_ID_ALREADY_EXISTS:"+newId);
+   var head=String(jefaturaUserId||"").trim();if(head)getInstitutionalUserRecord_(ss,head);
+   var parent=String(parentDeptId||"").trim().toUpperCase(),hier=validateDepartmentHierarchy_(ds,newId,parent),nr=new Array(ds.getLastColumn()).fill("");
+   nr[dm.deptId]=newId;nr[dm.nombre]=String(deptNombre).trim();if(dm.jefaturaUserId>=0)nr[dm.jefaturaUserId]=head;nr[dm.estado]="Activo";if(dm.fechaCreacion>=0)nr[dm.fechaCreacion]=new Date();if(dm.parentDeptId>=0)nr[dm.parentDeptId]=parent;ds.appendRow(nr);
+   try{logStructuredEvent("USER","manageDepartmentPositions","INFO","DEPARTMENT_CREATED","Departamento "+newId+" creado",{deptId:newId,parentDeptId:parent},role);}catch(e){}
+   return {status:"success",deptId:newId,parentDeptId:parent,hierarchyPath:hier.path};
+  }finally{lk.releaseLock();}
+ }
+ if(act==="UPDATE_DEPT"||act==="ASSIGN_DEPARTMENT_HEAD"){
+  var target=String(deptId||"").trim().toUpperCase();if(!target)throw new Error("DEPARTMENT_ID_REQUIRED");
+  var ul=LockService.getScriptLock();if(!ul.tryLock(10000))throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
+  try{var us=getOrCreateSheet(ss,"CatalogoDepartamentos"),um=getDepartmentHierarchyColumnMap_(us,true),ud=us.getDataRange().getValues(),found=[];
+   for(var ui=1;ui<ud.length;ui++)if(String(ud[ui][um.deptId]||"").trim().toUpperCase()===target)found.push({row:ud[ui],rowNumber:ui+1});
+   if(found.length!==1)throw new Error(found.length?"DEPARTMENT_ID_AMBIGUOUS":"DEPARTMENT_NOT_FOUND");
+   var old=found[0],next=old.row.slice();if(String(next[um.estado]||"").trim().toLowerCase()!=="activo")throw new Error("DEPARTMENT_NOT_ACTIVE");
+   if(act==="ASSIGN_DEPARTMENT_HEAD"||input.jefaturaUserId!==undefined){var nh=String(jefaturaUserId||"").trim();if(nh)getInstitutionalUserRecord_(ss,nh);if(um.jefaturaUserId<0)throw new Error("DEPARTMENT_CATALOG_SCHEMA_INVALID:jefaturaUserId");next[um.jefaturaUserId]=nh;}
+   var hierarchy=null;if(act==="UPDATE_DEPT"){var np=parentDeptId===undefined?String(next[um.parentDeptId]||"").trim().toUpperCase():String(parentDeptId||"").trim().toUpperCase();hierarchy=validateDepartmentHierarchy_(us,target,np);if(deptNombre!==undefined){var nn=String(deptNombre||"").trim();if(!nn)throw new Error("DEPARTMENT_NAME_REQUIRED");next[um.nombre]=nn;}if(um.parentDeptId>=0)next[um.parentDeptId]=np;if(um.updatedAt>=0)next[um.updatedAt]=new Date();}
+   us.getRange(old.rowNumber,1,1,next.length).setValues([next]);return {status:"success",deptId:target,parentDeptId:hierarchy?hierarchy.parentDeptId:undefined,jefaturaUserId:um.jefaturaUserId>=0?next[um.jefaturaUserId]:""};
+  }finally{ul.releaseLock();}
+ }
+ if(act==="CREATE_CARGO"){
+  if(!cargoNombre||!String(cargoNombre).trim())throw new Error("CARGO_NAME_REQUIRED");
+  var cg=cargoId?null:generateInstitutionalId({entityType:"Cargo",prefix:"CRG-"}),newCargo=String(cargoId||cg&&cg.generatedId||"").trim().toUpperCase();if(!newCargo)throw new Error("CARGO_ID_REQUIRED");
+  var lev=Number(nivel===undefined?1:nivel);if(!Number.isInteger(lev)||lev<1)throw new Error("CARGO_HIERARCHY_LEVEL_INVALID");
+  var cl=LockService.getScriptLock();if(!cl.tryLock(10000))throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
+  try{if(deptId)getInstitutionalDepartmentRecord_(ss,deptId);var csh=getOrCreateSheet(ss,"CatalogoCargos");if(csh.getLastRow()===0)csh.appendRow(["cargoId","deptId","nombreCargo","nivelJerarquico","estado","fechaCreacion"]);
+   var cMap=getInstitutionalCargoColumnMap_(csh),cRows=csh.getDataRange().getValues().slice(1);if(cRows.some(function(r){return String(r[cMap.cargoId]||"").trim().toUpperCase()===newCargo;}))throw new Error("CARGO_ID_ALREADY_EXISTS");
+   var cNew=new Array(csh.getLastColumn()).fill("");cNew[cMap.cargoId]=newCargo;cNew[cMap.deptId]=String(deptId||"").trim().toUpperCase();cNew[cMap.nombreCargo]=String(cargoNombre).trim();if(cMap.nivelJerarquico>=0)cNew[cMap.nivelJerarquico]=lev;cNew[cMap.estado]="Activo";if(cMap.fechaCreacion>=0)cNew[cMap.fechaCreacion]=new Date();csh.appendRow(cNew);
+   try{logStructuredEvent("USER","manageDepartmentPositions","INFO","POSITION_CREATED","Cargo "+newCargo+" creado",{cargoId:newCargo,deptId:deptId||"",nivelJerarquico:lev},role);}catch(e){}
+   return {status:"success",cargoId:newCargo};
+  }finally{cl.releaseLock();}
+ }
+ if(act==="ASSIGN_USER"){
+  var uid=String(userId||"").trim(),did=String(deptId||"").trim().toUpperCase(),cid=String(cargoId||"").trim().toUpperCase();if(!uid||!did||!cid)throw new Error("AFFILIATION_FIELDS_REQUIRED");
+  var generated=generateInstitutionalId({entityType:"Adscripcion",prefix:"ADS-"}),newAds=String(generated&&generated.generatedId||"").trim();if(!newAds)throw new Error("AFFILIATION_ID_GENERATION_FAILED");
+  var al=LockService.getScriptLock();if(!al.tryLock(10000))throw new Error("AFFILIATION_LOCK_TIMEOUT");
+  var result=null,previous=[],newRowNo=0,as=null,am=null,now=new Date();
+  try{getInstitutionalUserRecord_(ss,uid);getInstitutionalDepartmentRecord_(ss,did);getInstitutionalCargoRecord_(ss,cid,did);
+   as=getOrCreateSheet(ss,"HistorialAdscripciones");am=getInstitutionalAffiliationColumnMap_(as);var all=as.getDataRange().getValues(),active=[];
+   for(var ai=1;ai<all.length;ai++){var er=all[ai];if(String(er[am.adscripcionId]||"").trim()===newAds)throw new Error("AFFILIATION_ID_ALREADY_EXISTS");if(String(er[am.userId]||"").trim()===uid&&String(er[am.estado]||"").trim().toLowerCase()==="activa")active.push({row:er.slice(),rowNumber:ai+1});}
+   if(active.length>1)throw new Error("ACTIVE_AFFILIATION_CONFLICT");
+   if(active.length===1&&String(active[0].row[am.deptId]||"").trim().toUpperCase()===did&&String(active[0].row[am.cargoId]||"").trim().toUpperCase()===cid)result={status:"success",adscripcionId:active[0].row[am.adscripcionId],idempotent:true,message:"La adscripción solicitada ya está activa."};
+   else{previous=active;var nr=new Array(as.getLastColumn()).fill("");nr[am.adscripcionId]=newAds;nr[am.userId]=uid;nr[am.deptId]=did;nr[am.cargoId]=cid;nr[am.fechaInicio]=now;nr[am.estado]="Pendiente";if(am.motivo>=0)nr[am.motivo]=motivo||"Cambio de cargo/departamento institucional";if(am.autorizadoPor>=0)nr[am.autorizadoPor]=callerId;if(am.fechaRegistro>=0)nr[am.fechaRegistro]=now;
+    as.appendRow(nr);newRowNo=as.getLastRow();
+    try{previous.forEach(function(p){var closed=p.row.slice();closed[am.fechaFin]=now;closed[am.estado]="Inactiva";as.getRange(p.rowNumber,1,1,closed.length).setValues([closed]);});as.getRange(newRowNo,am.estado+1).setValue("Activa");result={status:"success",adscripcionId:newAds,idempotent:false,message:"Adscripción institucional registrada exitosamente."};}
+    catch(writeError){var failed=false;previous.forEach(function(p){try{as.getRange(p.rowNumber,1,1,p.row.length).setValues([p.row]);}catch(restoreError){failed=true;}});if(newRowNo){try{var pending=as.getRange(newRowNo,1,1,as.getLastColumn()).getValues()[0];pending[am.estado]="Cancelada";pending[am.fechaFin]=new Date();as.getRange(newRowNo,1,1,pending.length).setValues([pending]);}catch(cancelError){failed=true;}}if(failed)throw new Error("AFFILIATION_REPAIR_REQUIRED");throw new Error("AFFILIATION_ASSIGNMENT_FAILED:"+String(writeError&&writeError.message||writeError));}
+   }
+  }finally{al.releaseLock();}
+  if(result&&!result.idempotent){try{invalidateUserRoleCache(uid);}catch(e){}try{recordEntityChangeLog("UsuarioAdscripcion",uid,{}, {deptId:did,cargoId:cid,estado:"Activa"},"AFFILIATION_UPDATED",callerId);}catch(e){}try{logStructuredEvent("USER","manageDepartmentPositions","INFO","INSTITUTIONAL_AFFILIATION_UPDATED","Adscripción "+newAds+" asignada",{adscripcionId:newAds,userId:uid,deptId:did,cargoId:cid},role);}catch(e){}}
+  return result;
+ }
+ throw new Error("DEPARTMENT_POSITION_ACTION_UNSUPPORTED:"+act);
 }
 
-function getUserInstitutionalAffiliations(payload) {
-  const callerRole = getUserVerifiedRole(payload);
-  const callerId = payload._verifiedUserId;
-  const { userId } = payload || {};
 
-  let targetUserId = userId || callerId;
-  if (callerRole !== "Administrador" && callerRole !== "Desarrollador" && callerRole !== "RecursosHumanos") {
-    targetUserId = callerId;
-  }
 
-  if (!targetUserId) throw new Error("userId es requerido.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const adsSheet = ss.getSheetByName("HistorialAdscripciones");
-  if (!adsSheet || adsSheet.getLastRow() <= 1) return { status: "success", data: [] };
-
-  const data = adsSheet.getDataRange().getValues().slice(1);
-  const affiliations = [];
-
-  for (let i = data.length - 1; i >= 0; i--) {
-    const row = data[i];
-    if (String(row[1]).trim() === String(targetUserId).trim()) {
-      affiliations.push({
-        adscripcionId: row[0],
-        userId: row[1],
-        deptId: row[2],
-        cargoId: row[3],
-        fechaInicio: row[4] ? new Date(row[4]).toISOString() : "",
-        fechaFin: row[5] ? new Date(row[5]).toISOString() : "",
-        estado: row[6],
-        motivo: row[7] || "",
-        autorizadoPor: row[8] || "",
-        fechaRegistro: row[9] ? new Date(row[9]).toISOString() : ""
-      });
-    }
-  }
-
-  return { status: "success", data: affiliations };
-}
 
 // ---------------------------------------------------------------------------
 // ANALÍTICA Y GAMIFICACIÓN
 // ---------------------------------------------------------------------------
+
+
+function getUserInstitutionalAffiliations(payload){
+ var input=payload&&typeof payload==="object"?payload:{},role=getUserVerifiedRole(input),caller=String(input._verifiedUserId||"").trim();
+ var privileged=["Administrador","Desarrollador","RecursosHumanos"].indexOf(role)>=0,target=privileged?String(input.userId||caller).trim():caller;
+ if(!target)throw new Error("USER_ID_REQUIRED");
+ var limit=Math.min(200,Math.max(1,parseInt(input.limit,10)||50)),offset=Math.max(0,parseInt(input.offset,10)||0),dept=String(input.deptId||"").trim().toUpperCase(),state=String(input.estado||"").trim().toLowerCase();
+ var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("HistorialAdscripciones");
+ if(!sheet||sheet.getLastRow()<=1)return {status:"success",data:[],total:0,limit:limit,offset:offset,nextOffset:null,hasMore:false};
+ var map=getInstitutionalAffiliationColumnMap_(sheet),rows=sheet.getDataRange().getValues(),list=[];
+ for(var i=rows.length-1;i>=1;i--){var r=rows[i],rid=String(r[map.userId]||"").trim();if(rid!==target)continue;if(dept&&String(r[map.deptId]||"").trim().toUpperCase()!==dept)continue;if(state&&String(r[map.estado]||"").trim().toLowerCase()!==state)continue;
+  list.push({adscripcionId:r[map.adscripcionId],userId:rid,deptId:r[map.deptId],cargoId:r[map.cargoId],fechaInicio:formatInstitutionalDate_(r[map.fechaInicio]),fechaFin:formatInstitutionalDate_(r[map.fechaFin]),estado:r[map.estado],motivo:map.motivo>=0?r[map.motivo]||"":"",autorizadoPor:map.autorizadoPor>=0?r[map.autorizadoPor]||"":"",fechaRegistro:map.fechaRegistro>=0?formatInstitutionalDate_(r[map.fechaRegistro]):""});
+ }
+ var page=list.slice(offset,offset+limit),more=offset+page.length<list.length;
+ return {status:"success",data:page,total:list.length,limit:limit,offset:offset,nextOffset:more?offset+page.length:null,hasMore:more};
+}
 
 function saveGameResult(payload) {
   const { userId, nombreAlumno, juego, asignatura, puntaje, nivel, grado, xpGanada } = payload || {};

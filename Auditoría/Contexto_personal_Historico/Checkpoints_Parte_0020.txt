@@ -479,3 +479,16 @@ Auditoría:
 Siguiente paso elegible:
 - Recuperar/identificar el flujo vigente de ciclo de vida laboral y sus contratos de identidad, sesión, adscripción, coordinación y asignación docente. Después diseñar una saga idempotente con checkpoints por etapa y pruebas de fallo/reanudación, sin duplicar propietarios.
 ===============================================================================
+
+
+### C1.905 — IMA-EXEC-20261120-DEPARTMENT-AFFILIATION-INTEGRITY-76
+
+- **HEAD inicial:** c5d30b272e613421d866eb7c351059c7dbea69bc; rama exclusiva NG_beta_0.0.0.1_work.
+- **Tarea:** AUD-NG-226 / TASK-506 — primer incremento implementable de integridad referencial y atomicidad de catálogos/adscripciones.
+- **Cambios:** USER incorpora validación de usuarios activos, departamentos y cargos activos; unicidad de IDs; compatibilidad cargo/departamento; asignación de jefatura validada; operación ASSIGN_USER con bloqueo completo, fila candidata Pendiente, cierre compensable de adscripción previa, activación final, rollback y estado Cancelada recuperable; reintento idempotente; consulta de historial paginada (límite máximo 200); consulta paginada GET_CARGOS. Se conserva separado el catálogo administrativo del académico. No se encontró función assignDepartmentHead en ACADEMIC; la jefatura administrativa se implementa como subacción USER ASSIGN_DEPARTMENT_HEAD, sin crear un segundo propietario académico.
+- **Archivos previstos en el commit:** backend/user-service/Code.gs; tests/security/user-service-department-affiliation-integrity.test.js; .github/workflows/department-scope-contract.yml; pendientes/Dirección/Pendientes.md; Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md; Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0020.txt; Auditoría/INDICE_CHECKPOINTS.md; Auditoria.txt; changueslogs.txt.
+- **Verificaciones previas:** parseo sintáctico V8 del USER Code.gs actualizado PASS; parseo sintáctico V8 del nuevo contrato Node PASS. Node.js CLI y ejecución del contrato aún pendientes de GitHub Actions; no se declara PASS funcional hasta recibir el resultado.
+- **Límites pendientes:** UI de Recursos Humanos aún no integrada; alcance de autorización contextual por departamento requiere terminar de reconciliar el modelo de permisos; relación con DepartamentosAcademicos queda explícita como no fusionada hasta existir crosswalk/decisión verificable; no se modificó ACADEMIC porque assignDepartmentHead no existe en el baseline actual. Sin datos productivos ni despliegue Apps Script.
+- **Riesgos:** operación de Sheets no es transacción distribuida; el flujo compensa fallos locales bajo ScriptLock y conserva fila Cancelada si falla la activación. Deben revisarse los resultados de CI y la idempotencia bajo reintentos reales antes de ampliar.
+- **Estado:** En ejecución; TASK-506 no se cierra.
+- **Siguiente acción:** revisar el run de Department Scope Contract; corregir únicamente fallos reproducibles. Después completar selector/UI RRHH, autorización contextual, relación intercatálogo validable y contratos adicionales de fallos/concurrencia/UI.
