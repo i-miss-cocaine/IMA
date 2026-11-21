@@ -1002,6 +1002,7 @@ function makeSharedSheet(rows) {
   return {getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())})};
 }
 const crossSharedSpreadsheet={getSheetByName:name=>{
+  if(name==="VersionesSeguridad")return tenantVersionSheet;
   if(name==="Usuarios")return makeSharedSheet(tenantUserRows);
   if(name==="MembresiasRolesRBAC")return makeSharedSheet(tenantMembershipRows);
   if(name==="SesionesRevocadas")return makeSharedSheet(sessionRevocationRows);
