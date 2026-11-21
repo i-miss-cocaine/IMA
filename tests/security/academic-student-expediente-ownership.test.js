@@ -12,7 +12,13 @@ function extractFunction(name){
     if(ch==="/"&&next==="/"){line=true;i++;continue;}
     if(ch==="/"&&next==="*"){block=true;i++;continue;}
     if(ch==="'"||ch==='"'||ch==="\x60"){quote=ch;continue;}
-    if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return source.slice(start,i+1);
+    if(ch==="{")depth++;else if(ch==="}"&&--depth===0){
+      const extracted=source.slice(start,i+1);
+      if(name!=="clearRequestAuthorizationContext_"&&name!=="refreshAcademicAdmissionScopeContext_"&&extracted.includes("refreshAcademicAdmissionScopeContext_")){
+        return extractFunction("clearRequestAuthorizationContext_")+"\\n"+extractFunction("refreshAcademicAdmissionScopeContext_")+"\\n"+extracted;
+      }
+      return extracted;
+    }
   }
   throw Error("unbalanced "+name);
 }
@@ -932,7 +938,7 @@ console.log("ACADEMIC getStudentFile selector uniqueness and consistency contrac
     String, Array, Object
   };
   vm.runInNewContext(extractFunction("updateDocumentStatus") + "\nthis.run=updateDocumentStatus;", context);
-  assert.equal(context.run({documentoId:"DOC-MISSING",nuevoEstado:"Aprobado"}).code,"RESOURCE_NOT_FOUND");
+  assert.throws(()=>context.run({documentoId:"DOC-MISSING",nuevoEstado:"Aprobado"}),/Documento no encontrado/);
   assert.equal(writes.length,0,"missing document IDs do not write");
   rows.push(["DOC-1","EXP-3","SOL-3","ID","duplicate.pdf","","","","","Pendiente","","",""]);
   assert.equal(context.run({documentoId:"DOC-1",nuevoEstado:"Aprobado"}).code,"RESOURCE_AMBIGUOUS",

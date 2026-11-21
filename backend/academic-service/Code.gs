@@ -16891,9 +16891,9 @@ function updateDocumentStatus(payload) {
 
   const documentMatches = data.map((row, index) => ({ row: row, index: index }))
     .filter(item => item.index > 0 && String(item.row[0] || "").trim() === String(documentoId).trim());
-  if (documentMatches.length !== 1) {
-    return { status: "error", code: documentMatches.length ? "RESOURCE_AMBIGUOUS" : "RESOURCE_NOT_FOUND",
-      message: "Documento no disponible." };
+  if (documentMatches.length === 0) throw new Error("Documento no encontrado.");
+  if (documentMatches.length > 1) {
+    return { status: "error", code: "RESOURCE_AMBIGUOUS", message: "Documento no disponible." };
   }
   const idx = documentMatches[0].index;
   const access = assertStudentDocumentScopeAccess_(payload, ss, sheet, data[idx], ss.getSheetByName("ExpedientesEstudiantes"));
