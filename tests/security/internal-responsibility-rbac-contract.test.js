@@ -825,6 +825,7 @@ tenantSessionCtx.LockService={getScriptLock:()=>({waitLock:()=>{},releaseLock:()
 tenantSessionCtx.getOrCreateSheet=(_ss,name)=>name==="SesionesRevocadas"?sessionRevocationSheet:(name==="EstadoRevocacionSesiones"?sessionRevocationStateSheet:null);
 tenantSessionCtx.logStructuredEvent=()=>{};
 tenantSessionCtx.SpreadsheetApp={openById:()=>({getSheetByName:name=>{
+  if(name==="VersionesSeguridad")return tenantVersionSheet;
   if(name==="Usuarios")return {getDataRange:()=>({getValues:()=>tenantUserRows.map(row=>row.slice())})};
   if(name==="MembresiasRolesRBAC")return {getDataRange:()=>({getValues:()=>tenantMembershipRows.map(row=>row.slice())})};
   if(name==="AsignacionesAmbitosRoles")return {getDataRange:()=>({getValues:()=>tenantScopeRows.map(row=>row.slice())})};
