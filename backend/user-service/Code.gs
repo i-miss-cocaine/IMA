@@ -6497,12 +6497,26 @@ function submitJointFamilyPayment(payload) {
   const submitter = resolveVerifiedRequestSubmitter_(payload, "", false, "permisoFinanciero");
   if (userIdResponsable && String(userIdResponsable).trim() !== submitter.userId) throw new Error("VERIFIED_IDENTITY_MISMATCH");
   const guardianResult = getGuardianStudents({ userId: submitter.userId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
-  const linked = {};
-  (guardianResult.data || []).forEach(function(student) { linked[String(student.studentUserId || student.userId || "").trim()] = student; });
-  let sum = 0; const seen = {};
+  if (!guardianResult || guardianResult.status !== "success" || !Array.isArray(guardianResult.data)) {
+    throw new Error("FAMILY_RELATIONSHIP_UNVERIFIED");
+  }
+  const linked = Object.create(null);
+  guardianResult.data.forEach(function(student) {
+    if (!student || typeof student !== "object") return;
+    const studentId = String(student.studentUserId || student.userId || "").trim();
+    if (!studentId) return;
+    if (!linked[studentId]) linked[studentId] = [];
+    linked[studentId].push(student);
+  });
+  let sum = 0; const seen = Object.create(null);
   distribuciones.forEach(function(item) {
-    const id = String(item && item.estudianteId || "").trim(), relation = linked[id], amount = Number(item.montoAplicado);
-    if (!id || !relation || (relation.permisos && relation.permisos.permisoFinanciero === false)) throw new Error("FAMILY_FINANCIAL_SCOPE_DENIED");
+    const id = String(item && item.estudianteId || "").trim();
+    const matches = linked[id] || [];
+    const amount = Number(item.montoAplicado);
+    if (!id || matches.length !== 1 ||
+        !hasExplicitGuardianDomainPermission_(matches[0], "permisoFinanciero")) {
+      throw new Error("FAMILY_FINANCIAL_SCOPE_DENIED");
+    }
     if (seen["$"+id]) throw new Error("DUPLICATE_STUDENT_DISTRIBUTION");
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("INVALID_DISTRIBUTION_AMOUNT");
     seen["$"+id] = true; sum += amount;

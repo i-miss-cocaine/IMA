@@ -519,5 +519,44 @@ assert.equal(
   "RESOURCE_NOT_FOUND",
   "USER denies document download when guardian target is ambiguous"
 );
+const jointPaymentRuntime = {
+  resolveVerifiedRequestSubmitter_: () => ({ userId: "GUARDIAN-1" }),
+  getGuardianStudents: () => ({ status: "success", data: [
+    { studentUserId: "STU-1", permisos: { permisoAcademico: true } }
+  ] }),
+  hasExplicitGuardianDomainPermission_: (student, key) => !!student && !!student.permisos && student.permisos[key] === true,
+  createPrivateRequestAttachment_: () => { throw new Error("ATTACHMENT_MUST_NOT_BE_CREATED_BEFORE_AUTHORIZATION"); },
+  rollbackPrivateAttachment_: () => {},
+  LockService: { getScriptLock: () => ({ tryLock: () => false, releaseLock: () => {} }) },
+  String, Number, Object, Array, Date
+};
+vm.createContext(jointPaymentRuntime);
+vm.runInContext(
+  extractFunction(userSource, "submitJointFamilyPayment") + "\nthis.submit = submitJointFamilyPayment;",
+  jointPaymentRuntime
+);
+assert.throws(
+  () => jointPaymentRuntime.submit({ montoTotal: 10, distribuciones: [{ estudianteId: "STU-1", montoAplicado: 10 }] }),
+  /FAMILY_FINANCIAL_SCOPE_DENIED/,
+  "joint family payments require explicit financial permission per student"
+);
+jointPaymentRuntime.getGuardianStudents = () => ({ status: "success", data: [
+  { studentUserId: "STU-1", permisos: { permisoFinanciero: true } },
+  { studentUserId: "STU-1", permisos: { permisoFinanciero: true } }
+] });
+assert.throws(
+  () => jointPaymentRuntime.submit({ montoTotal: 10, distribuciones: [{ estudianteId: "STU-1", montoAplicado: 10 }] }),
+  /FAMILY_FINANCIAL_SCOPE_DENIED/,
+  "joint family payments deny ambiguous duplicate guardian targets"
+);
+jointPaymentRuntime.getGuardianStudents = () => ({ status: "success", data: [
+  { studentUserId: "STU-1", permisos: { permisoFinanciero: true } }
+] });
+jointPaymentRuntime.createPrivateRequestAttachment_ = () => null;
+assert.throws(
+  () => jointPaymentRuntime.submit({ montoTotal: 10, distribuciones: [{ estudianteId: "STU-1", montoAplicado: 10 }] }),
+  /LOCK_TIMEOUT/,
+  "joint family payment with an explicit financial grant reaches the serialized mutation boundary"
+);
 
 process.stdout.write("contextual-abac-five-services-contract: all assertions passed\n");
