@@ -7566,30 +7566,31 @@ function sendInternalMessage(payload) {
       } catch (error) {
         return { status: "error", code: error && error.message || "MESSAGE_RECIPIENT_INVALID" };
       }
+    }
 
-      if (requestedStudentId) {
-        const normalizedRole = role.toUpperCase().replace(/[^A-Z0-9]/g, "");
-        if (normalizedRole === "ESTUDIANTE" || normalizedRole === "ALUMNO") {
-          if (requestedStudentId !== actorId) return { status: "error", code: "MESSAGE_STUDENT_SCOPE_DENIED" };
-        } else if (["PADRE", "TUTOR", "RESPONSABLE"].indexOf(normalizedRole) !== -1) {
-          const guardian = request._verifiedGuardianStudent;
-          if (!guardian || (String(guardian.studentUserId || "").trim() !== requestedStudentId &&
-              String(guardian.expedienteId || "").trim() !== requestedStudentId)) {
-            return { status: "error", code: "MESSAGE_STUDENT_SCOPE_DENIED" };
+    const conversationHasStudentContext = existing.some(row => String(row[4] || "").trim() !== "");
+    if (requestedStudentId && (!existing.length || !conversationHasStudentContext)) {
+      const normalizedRole = role.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (normalizedRole === "ESTUDIANTE" || normalizedRole === "ALUMNO") {
+        if (requestedStudentId !== actorId) return { status: "error", code: "MESSAGE_STUDENT_SCOPE_DENIED" };
+      } else if (["PADRE", "TUTOR", "RESPONSABLE"].indexOf(normalizedRole) !== -1) {
+        const guardian = request._verifiedGuardianStudent;
+        if (!guardian || (String(guardian.studentUserId || "").trim() !== requestedStudentId &&
+            String(guardian.expedienteId || "").trim() !== requestedStudentId)) {
+          return { status: "error", code: "MESSAGE_STUDENT_SCOPE_DENIED" };
+        }
+      } else {
+        let scope = null;
+        try { scope = getInstitutionalDepartmentScope_(request, role); } catch (_) {}
+        if (!scope || scope.status !== "success") return { status: "error", code: "INSTITUTIONAL_SCOPE_UNVERIFIED" };
+        if (scope.institutionWide !== true) {
+          const studentResource = resolveAbsenceReviewExpedienteId_(ss, requestedStudentId);
+          if (!studentResource || studentResource.status !== "success") {
+            return { status: "error", code: studentResource && studentResource.code || "RESOURCE_OWNERSHIP_UNVERIFIED" };
           }
-        } else {
-          let scope = null;
-          try { scope = getInstitutionalDepartmentScope_(request, role); } catch (_) {}
-          if (!scope || scope.status !== "success") return { status: "error", code: "INSTITUTIONAL_SCOPE_UNVERIFIED" };
-          if (scope.institutionWide !== true) {
-            const studentResource = resolveAbsenceReviewExpedienteId_(ss, requestedStudentId);
-            if (!studentResource || studentResource.status !== "success") {
-              return { status: "error", code: studentResource && studentResource.code || "RESOURCE_OWNERSHIP_UNVERIFIED" };
-            }
-            const ownership = assertRecordOwnership(request, "EXPEDIENTE_ESTUDIANTE", studentResource.expedienteId, "READ");
-            if (!ownership || ownership.authorized !== true) {
-              return { status: "error", code: ownership && ownership.code || "RESOURCE_SCOPE_DENIED" };
-            }
+          const ownership = assertRecordOwnership(request, "EXPEDIENTE_ESTUDIANTE", studentResource.expedienteId, "READ");
+          if (!ownership || ownership.authorized !== true) {
+            return { status: "error", code: ownership && ownership.code || "RESOURCE_SCOPE_DENIED" };
           }
         }
       }
