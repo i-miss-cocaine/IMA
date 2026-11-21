@@ -58,13 +58,14 @@ function makeSheet(name) {
   };
 }
 const ss = { getSheetByName(name) { return rows[name] ? makeSheet(name) : null; } };
-let lockBusy = false, uuid = 0, lockReleased = false, failNextAppend = false;
+let lockBusy = false, uuid = 0, lockReleased = false, failNextAppend = false, permissionAllowed = true;
 const context = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById() { return ss; } },
   LockService: { getScriptLock() { return { waitLock() { if (lockBusy) throw new Error("LOCK_BUSY"); }, releaseLock() { lockReleased = true; } }; } },
   Utilities: { getUuid() { return "UUID-" + (++uuid); } },
   getOrCreateSheet(db, name) { return makeSheet(name); },
+  validateRolePermission(actor, action) { return { authorized: permissionAllowed, code: "ROLE_PERMISSION_DENIED", actor, action }; },
   computeHmacSignature(message, secret) { return "HMAC:" + secret + ":" + message; },
   getAuthTokenSecret() { return "test-auth-secret-012345678901234567890123456789"; },
   PropertiesService: { getScriptProperties() { return {
@@ -118,6 +119,9 @@ assert.equal(guardianAuthorizations.autorizaciones[0].estudianteUserId, "STU-1")
 const studentAuthorizations = context.getFamilyCreditAuthorizations({ _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" });
 assert.equal(studentAuthorizations.autorizaciones.length, 1);
 assert.equal(studentAuthorizations.autorizaciones[0].estudianteUserId, "STU-1");
+permissionAllowed = false;
+assert.throws(() => context.getFamilyCreditAuthorizations({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }), /ROLE_PERMISSION_DENIED/);
+permissionAllowed = true;
 assert.throws(() => context.getFamilyCreditAuthorizations({ _verifiedUserId: "STU-1", _verifiedRole: "Estudiante", estudianteUserId: "STU-2" }), /FAMILY_CREDIT_STUDENT_OWNERSHIP_REQUIRED/);
 assert.throws(() => context.getFamilyCreditAuthorizations({ _verifiedUserId: "GUARD-1", _verifiedRole: "Padre", estudianteUserId: "STU-2" }), /FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED/);
 const originalFamilyRelations = rows.RelacionesFamiliares.map(row => row.slice());
