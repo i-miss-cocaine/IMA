@@ -3799,16 +3799,18 @@ function getFamilyCreditApprovalPreference(p) {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   if (institutionalServiceRoleKey_(actor.role) !== "padre") throw new Error("FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED");
   if (!familyCreditGuardianHasActiveStudentRelation_(ss, actor.userId)) throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");
-  var sheet = ss.getSheetByName("CreditoFamiliarConfiguracion");
-  if (!sheet) return { status: "success", configured: false, modalidadAprobacion: null, pinConfigured: false };
-  var values = sheet.getDataRange().getValues(), headers = (values[0] || []).map(String);
-  var guardianIndex = headers.indexOf("ResponsableUserID"), modeIndex = headers.indexOf("ModalidadAprobacion"), pinIndex = headers.indexOf("PinHash");
-  if (guardianIndex < 0 || modeIndex < 0 || pinIndex < 0) throw new Error("FAMILY_CREDIT_CONFIGURATION_SCHEMA_INVALID");
-  var matches = values.slice(1).filter(function(row) { return String(row[guardianIndex] || "") === String(actor.userId); });
-  if (matches.length > 1) throw new Error("FAMILY_CREDIT_CONFIGURATION_DUPLICATE");
-  var row = matches[0] || null;
-  return { status: "success", configured: !!(row && row[modeIndex]), modalidadAprobacion: row && row[modeIndex] || null,
-    pinConfigured: !!(row && row[pinIndex]) };
+  if (!ss.getSheetByName("CreditoFamiliarConfiguracion")) {
+    return { status: "success", configured: false, modalidadAprobacion: null, pinConfigured: false };
+  }
+  var configuration = familyCreditApprovalPreferenceRow_(ss, actor.userId);
+  var row = configuration.match && configuration.match.row;
+  var map = configuration.schema.map;
+  return {
+    status: "success",
+    configured: !!(row && row[map.ModalidadAprobacion]),
+    modalidadAprobacion: row && row[map.ModalidadAprobacion] || null,
+    pinConfigured: !!(row && row[map.PinHash])
+  };
 }
 function configureFamilyCreditPin(p){var a=familyCreditApprovalActor_(p),ss=SpreadsheetApp.openById(SPREADSHEET_ID);if(institutionalServiceRoleKey_(a.role)!=="padre")throw new Error("FAMILY_CREDIT_GUARDIAN_ROLE_REQUIRED");if(!familyCreditGuardianHasActiveStudentRelation_(ss,a.userId))throw new Error("FAMILY_CREDIT_ACTIVE_GUARDIAN_RELATION_REQUIRED");var pin=String(p.newPin||"");if(!/^\d{6}$/.test(pin)||pin!==String(p.confirmPin||""))throw new Error("FAMILY_CREDIT_PIN_INPUT_INVALID");var lock=LockService.getScriptLock();lock.waitLock(10000);try{var d=familyCreditApprovalPreferenceRow_(ss,a.userId),m=d.schema.map;if(!d.match){var row=new Array(d.schema.sheet.getDataRange().getValues()[0].length).fill("");row[m.ConfiguracionID]="CFG-"+Utilities.getUuid();row[m.ResponsableUserID]=a.userId;row[m.FechaActualizacion]=new Date();row[m.ActualizadoPor]=a.userId;d.schema.sheet.appendRow(row);d=familyCreditApprovalPreferenceRow_(ss,a.userId);}if(d.match.row[m.PinHash]){if(!p.currentPin)throw new Error("FAMILY_CREDIT_CURRENT_PIN_REQUIRED");familyCreditVerifyPinInConfig_(ss,a.userId,p.currentPin);}var salt=String(Utilities.getUuid())+String(Date.now());d.schema.sheet.getRange(d.match.i+2,m.PinSalt+1).setValue(salt);d.schema.sheet.getRange(d.match.i+2,m.PinHash+1).setValue(familyCreditPinDigest_(pin,salt));d.schema.sheet.getRange(d.match.i+2,m.PinUpdatedAt+1).setValue(new Date());d.schema.sheet.getRange(d.match.i+2,m.FailedAttempts+1).setValue(0);d.schema.sheet.getRange(d.match.i+2,m.LockedUntil+1).setValue("");return{status:"success",pinConfigured:true};}finally{lock.releaseLock();}}
 function familyCreditEnsurePurchaseAuthorization_(ss,gid,sid){if(!familyCreditGuardianCanAuthorizeStudent_(ss,gid,sid))throw new Error("FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED");var s=familyCreditEnsureAuthorizationSheet_(ss),r=s.sheet.getDataRange().getValues(),m=s.map,a=r.slice(1).map(function(row,i){return{row:row,i:i};}).filter(function(x){return String(x.row[m.ResponsableUserId])===String(gid)&&String(x.row[m.EstudianteUserId])===String(sid)&&["activa","active"].indexOf(String(x.row[m.Estado]).toLowerCase())>=0;});if(a.length!==1)throw new Error(a.length?"FAMILY_CREDIT_AUTHORIZATION_AMBIGUOUS":"FAMILY_CREDIT_AUTHORIZATION_NOT_FOUND");if(a[0].row[m.FechaVencimiento]&&new Date(a[0].row[m.FechaVencimiento])<new Date())throw new Error("FAMILY_CREDIT_AUTHORIZATION_EXPIRED");return{schema:s,row:a[0].row,rowIndex:a[0].i+2,map:m};}
