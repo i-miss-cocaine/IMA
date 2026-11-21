@@ -38,7 +38,7 @@ function extractFunction(name) {
 }
 
 const names = [
-  "transportRows_", "transportRowsPrefix_", "transportManagementReadScope_", "transportMetricsDateKey_", "transportMetricsTimeMinutes_", "getTransportEfficiencyMetrics"
+  "transportRows_", "transportRowsPrefix_", "transportMetricsDateKey_", "transportMetricsTimeMinutes_", "getTransportEfficiencyMetrics"
 ];
 const extracted = names.map(extractFunction).join("\n");
 const rows = {
@@ -128,13 +128,6 @@ const context = {
       return { valid: false, authorized: false, code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
     }
     return { valid: true, authorized: true, institutionId: actor.institutionId || "INST-1", institutionWide: true, departmentIds: [] };
-  },
-  transportManagementReadScope_(payload, spreadsheet, actor, scope) {
-    managementScopeCalls++;
-    if (!managementScopeValid || (invalidateManagementAfterFirst && managementScopeCalls === 2)) {
-      return { authorized: false, code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
-    }
-    return { authorized: true };
   },
   transportManagementReadScope_(payload, spreadsheet, actor, scope) {
     managementScopeCalls++;
