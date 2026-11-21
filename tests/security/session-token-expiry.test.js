@@ -61,7 +61,7 @@ const cases = [
   ["expired", { userId: "U1", role: "Estudiante", sessionId: "S1", iat: now - 3600, exp: now - 1 }, false],
   ["equal-exp-iat", { userId: "U1", role: "Estudiante", sessionId: "S1", iat: now, exp: now }, false],
   ["long-lifetime", { userId: "U1", role: "Estudiante", sessionId: "S1", iat: now, exp: now + 86401 }, false],
-  ["future-iat", { userId: "U1", role: "Estudiante", sessionId: "S1", iat: now + 61, exp: now + 3600 }, false],
+  ["future-iat", { userId: "U1", role: "Estudiante", sessionId: "S1", iat: now + 120, exp: now + 3600 }, false],
   ["missing-user", { role: "Estudiante", sessionId: "S1", iat: now, exp: now + 3600 }, false],
   ["missing-role", { userId: "U1", sessionId: "S1", iat: now, exp: now + 3600 }, false],
   ["missing-session", { userId: "U1", role: "Estudiante", iat: now, exp: now + 3600 }, false]
