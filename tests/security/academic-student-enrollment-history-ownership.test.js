@@ -51,6 +51,10 @@ const relationRows=[
  ["REL-1","EXP-1","RESP-1","Madre","Sí","Sí","Sí","Sí","Sí","Activo"]
 ];
 const guardianRows=[["ResponsableID","PersonaID"],["RESP-1","PERSON-T"]];
+const primaryRelationRows=[
+ ["RelacionID","ExpedienteID","ResponsableID","TipoParentesco","Estado","FechaInicio","FechaFin","VerificadaPor","PermisosJSON"],
+ ["REL-PRIMARY-1","EXP-1","TUTOR-1","Madre","Verificada","2020-01-01","2099-12-31","","{\"permisoAcademico\":true,\"permisoFinanciero\":true}"]
+];
 const ownership={"EXP-1":"D1","EXP-2":"D2"};
 const scopeByUser={"STU-1":"D1","STU-2":"D2","STAFF-A":"D1","STAFF-B":"D2"};
 let createAttempts=0,guardCalls=0;
@@ -61,6 +65,7 @@ const sheets={
  Matriculas:makeSheet(matriculaRows),
  CargosEstudiante:makeSheet(cargoRows),
  RelacionesEstudianteTutor:makeSheet(relationRows),
+ RelacionesFamiliares:makeSheet(primaryRelationRows),
  ResponsablesTutores:makeSheet(guardianRows)
 };
 const ss={getSheetByName:name=>sheets[name]||null};
@@ -72,13 +77,17 @@ const context={
    const rows=userRows.slice(1).filter(row=>row[9]===personId&&["ESTUDIANTE","ALUMNO"].includes(String(row[6]).toUpperCase())&&row[10]==="Activo");
    return rows.length===1?{userId:rows[0][0],role:rows[0][6]}:null;
  },
- assertStudentExpedienteScopeAccess_:(request,_ss,_sheet,exp)=>{
+ assertStudentExpedienteScopeAccess_:(request,_ss,_sheet,exp,permissionKey)=>{
    guardCalls++;
    const actor=request.identity||{},role=String(actor.role||"").toUpperCase(),expId=String(exp[0]);
    if(["ESTUDIANTE","ALUMNO"].includes(role))return {authorized:actor.userId=== (expId==="EXP-1"?"STU-1":"STU-2"),accessType:"SELF"};
    if(["TUTOR","PADRE","MADRE","RESPONSABLE"].includes(role)){
-     const linked=relationRows.slice(1).some(row=>row[1]===expId&&row[8]==="Sí"&&row[9]==="Activo")&&guardianRows.slice(1).some(row=>row[0]==="RESP-1"&&row[1]===userRows[3][9]);
-     return {authorized:linked&&actor.userId==="TUTOR-1",accessType:"GUARDIAN"};
+     const linked=primaryRelationRows.slice(1).filter(row=>row[1]===expId&&row[2]===actor.userId&&row[4]==="Verificada");
+     if(linked.length!==1)return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
+     let permissions;
+     try{permissions=JSON.parse(linked[0][8]);}catch(_){return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};}
+     const requiredPermission=permissionKey||"permisoAcademico";
+     return {authorized:actor.userId==="TUTOR-1"&&!!permissions&&permissions[requiredPermission]===true,accessType:"GUARDIAN"};
    }
    return {authorized:(scopeByUser[actor.userId]||"")===ownership[expId],accessType:"DEPARTMENT"};
  },
@@ -96,12 +105,12 @@ const call=(identity,extra)=>context.run(Object.assign({identity},extra||{}));
  const result=call({authorized:true,userId:"TUTOR-1",role:"Tutor"},{userId:"STU-1"});
  assert.equal(result.status,"success","linked guardian with portal access can read enrollment history");
  assert.deepEqual(Array.from(result.data.cargos,row=>row.cargoId),["CRG-1","CRG-2"],"financially responsible guardian can read charges");
- relationRows[1][6]="No";
+ primaryRelationRows[1][8]=JSON.stringify({permisoAcademico:true,permisoFinanciero:false});
  const restricted=call({authorized:true,userId:"TUTOR-1",role:"Tutor"},{userId:"STU-1"});
  assert.equal(restricted.status,"success");
  assert.deepEqual(Array.from(restricted.data.matriculas,row=>row.matriculaId),["MAT-1","MAT-1-OLD"]);
- assert.deepEqual(Array.from(restricted.data.cargos),[],"guardian without financial responsibility cannot read charges");
- relationRows[1][6]="Sí";
+ assert.deepEqual(Array.from(restricted.data.cargos),[],"guardian without an explicit financial-domain grant cannot read charges");
+ primaryRelationRows[1][8]=JSON.stringify({permisoAcademico:true,permisoFinanciero:true});
  assert.equal(call({authorized:true,userId:"TUTOR-1",role:"Tutor"},{userId:"STU-2"}).code,"RESOURCE_NOT_FOUND","guardian cannot query an unrelated student");
 }
 {
