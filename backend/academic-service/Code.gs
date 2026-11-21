@@ -15596,7 +15596,10 @@ function updateStudentFile(payload) {
   const actor = getVerifiedAcademicIdentity_(request);
   if (!actor || actor.authorized !== true) throw new Error("VERIFIED_IDENTITY_REQUIRED");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("STUDENT_FILE_UPDATE_LOCK_BUSY");
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("ExpedientesEstudiantes");
   if (!sheet) throw new Error("RESOURCE_NOT_FOUND");
   const data = sheet.getDataRange().getValues();
@@ -15633,7 +15636,10 @@ function updateStudentFile(payload) {
   sheet.getRange(idx + 1, 10).setValue(now);
   if (observaciones !== undefined) sheet.getRange(idx + 1, 11).setValue(observaciones);
 
-  return { status: "success", message: "Expediente digital actualizado exitosamente." };
+    return { status: "success", message: "Expediente digital actualizado exitosamente." };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // [TAREA-F6-019] [Fase 6: Expediente Institucional y Ciclo de Vida] - Trazabilidad consolidada, filtros, minimización de PII y consulta del historial del expediente
