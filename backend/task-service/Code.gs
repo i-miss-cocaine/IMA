@@ -2049,9 +2049,10 @@ function uploadFile(payload) {
   if (role === "Estudiante" || role === "Alumno") {
     const studentProfile = assertTaskServiceStudentCanAccessTask(ss,actorId,taskData);
     if (studentProfile) profile = studentProfile;
-  } else if (role === "Profesor") {
+  } else if (role === "Profesor" || isTaskServiceAdministrativeRole(role)) {
+    // Administrators must also resolve the task's verified institutional/department ownership.
     assertTaskServiceTeacherCanManageTask(request,taskData,"UPLOAD_FILE");
-  } else if (!isTaskServiceAdministrativeRole(role)) {
+  } else {
     throw new Error("Rol no autorizado para subir archivos.");
   }
   const parts = fileData.split(",");
