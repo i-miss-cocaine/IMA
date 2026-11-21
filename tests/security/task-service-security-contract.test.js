@@ -357,7 +357,17 @@ const classroomRows = [
 ];
 const assignmentSheets = {
   AulasVirtuales: { getDataRange: () => ({ getValues: () => classroomRows }) },
-  AsignacionesDocentes: { getDataRange: () => ({ getValues: () => assignmentRows }) }
+  AsignacionesDocentes: { getDataRange: () => ({ getValues: () => assignmentRows }) },
+  CatalogoAsignaturas: { getDataRange: () => ({ getValues: () => [
+    ["AsignaturaID","NombreOficial","Codigo","Estado"],["SUB-MATH","Matemáticas","MATH","Activo"]
+  ] }) },
+  OfertaAcademica: { getDataRange: () => ({ getValues: () => [
+    ["OfertaID","AnoID","SedeID","Grado","Seccion","AsignaturaID","PlanID","Modalidad","CapacidadMax","Estado","CodigoClase"],
+    ["OFFER-1","2026","","6","A","SUB-MATH","PLAN-1","","","Activo",""],
+    ["OFFER-2","2026","","6","B","SUB-MATH","PLAN-1","","","Activo",""],
+    ["OFFER-3","2026","","6","C","SUB-MATH","PLAN-1","","","Activo",""],
+    ["OFFER-4","2026","","6","E","SUB-MATH","PLAN-1","","","Activo",""]
+  ] }) }
 };
 const assignmentSS = { getSheetByName: name => assignmentSheets[name] || null };
 const assignmentContext = {
@@ -372,6 +382,7 @@ const assignmentContext = {
 vm.runInNewContext(
   extractFunction("normalizeString") + String.fromCharCode(10) +
   extractFunction("isInTeacherList") + String.fromCharCode(10) +
+  extractFunction("assertTaskServiceTeacherAssignedToOffer") + String.fromCharCode(10) +
   extractFunction("getTaskServiceAuthorizedClassrooms") + String.fromCharCode(10) +
   extractFunction("isTaskServiceTeacherTaskAuthorized_") + String.fromCharCode(10) +
   "this.getClassrooms = getTaskServiceAuthorizedClassrooms; this.isAuthorized = isTaskServiceTeacherTaskAuthorized_;",
