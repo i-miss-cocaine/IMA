@@ -4415,3 +4415,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-20] C1.905 / AUD-NG-226-TASK-506: USER añade validación de estado y referencias para departamentos/cargos/usuarios, asignación de jefatura, reasignación de adscripción con bloqueo, candidata Pendiente, compensación/rollback, reintento idempotente y consultas paginadas. Se incorpora contrato Node y se conecta a Department Scope Contract. Sintaxis V8 PASS; resultado de Node/CI pendiente. UI RRHH y autorización contextual siguen pendientes; tarea continúa En ejecución.
+
+
+[2026-11-21] C1.906 / AUD-NG-226-TASK-506: USER aplica ámbito departamental contextual y completa operaciones de catálogo/adscripción (crear, actualizar, desactivar, asignar/reasignar/finalizar), paginación y dependencias cruzadas. ACADEMIC endurece assignDepartmentHead y agrega VinculosDepartamentosInstitucionales many-to-many con link/read/unlink validado. Dashboard HR integra selectores, alta/baja de departamentos y cargos, asignación de jefatura, finalización y paginación. Contratos Node 24 de jerarquía, adscripciones, gobernanza académica y UI PASS; suite general sigue fallando solo por configureSchoolDocumentTemplate ausente en Phase22, reproducido antes del cambio. TASK-506 continúa En ejecución.

@@ -6179,3 +6179,13 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Evidencia actual:** parseo V8 del servicio y del contrato PASS; ejecución Node/CI pendiente del commit. No se afirma cierre de tarea.
 - **Pendientes:** UI RRHH, autorización contextual por departamento, crosswalk/relación validada con el modelo académico y contratos adicionales de concurrencia/rollback/UI. La función `assignDepartmentHead` no existe en ACADEMIC en el baseline; no se crea un duplicado académico.
 - **Estado:** En ejecución. Siguiente acción: revisar CI y continuar el alcance pendiente sin tocar datos productivos.
+
+
+## 10.83 AUD-NG-226 / TASK-506 — gobernanza académica, crosswalk y UI HR (C1.906)
+
+- Se aplica ámbito departamental contextual a USER para consulta de jerarquía/cargos/adscripciones y operaciones de escritura; las desactivaciones respetan dependencias activas y el crosswalk académico-administrativo.
+- Se completan transiciones de catálogo: CREATE/UPDATE/DEACTIVATE_DEPT, CREATE/UPDATE/DEACTIVATE_CARGO, ASSIGN_USER y END_AFFILIATION, además de jefatura administrativa. Reasignación mantiene bloqueo, candidata, compensación y reintento idempotente.
+- Se localiza y corrige la acción existente `assignDepartmentHead` de ACADEMIC: identidad, permiso, scope, departamento y usuario activos, bloqueo y auditoría desde la sesión. No crea departamentos implícitamente.
+- Se define `VinculosDepartamentosInstitucionales` como relación many-to-many explícita entre `DepartamentosAcademicos` y `CatalogoDepartamentos`; ambos catálogos siguen separados. Se validan ambos extremos, se soporta link/read/unlink paginado y USER bloquea la baja administrativa si existe vínculo activo.
+- Dashboard HR conecta catálogos con selectores, altas/bajas, asignaciones, finalización y paginación del historial. Contratos Node 24 para jerarquía, adscripciones, gobernanza académica y UI PASS. El workflow global mantiene un fallo ajeno al alcance: Phase22 no encuentra `configureSchoolDocumentTemplate`, reproducido antes del cambio.
+- **Estado:** En ejecución. Pendientes: UI de edición y crosswalk, prueba del dispatcher con roles reales, estrés concurrente Apps Script y migración de datos históricos/huérfanos.
