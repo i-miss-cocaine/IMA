@@ -1390,7 +1390,13 @@ function getTaskServiceGuardianStudentIds(guardianUserId) {
     if ((startValue !== "" && startValue !== null && startValue !== undefined && !Number.isFinite(start)) ||
         (endValue !== "" && endValue !== null && endValue !== undefined && !Number.isFinite(end)) ||
         (start !== null && start > now) || (end !== null && end < now)) return;
-    let permissions = {}; try { permissions = typeof row[8] === "string" ? JSON.parse(row[8] || "{}") : (row[8] || {}); } catch (_) {}
+    let permissions = {};
+    if (row[8] !== "" && row[8] !== null && row[8] !== undefined) {
+      try {
+        permissions = typeof row[8] === "string" ? JSON.parse(row[8]) : row[8];
+        if (!permissions || typeof permissions !== "object" || Array.isArray(permissions)) return;
+      } catch (_) { return; }
+    }
     if (permissions.permisoAcademico === false) return;
     const expedienteId = String(row[1] || "").trim(), studentId = expMap[expedienteId] || expedienteId;
     if (studentId) ids.push(studentId);

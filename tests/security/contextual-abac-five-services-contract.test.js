@@ -107,7 +107,8 @@ const familyRows = [
   ["R2","EXP-2","GUARDIAN-1","Madre","Activa","2099-01-01","2099-12-31","", "{\"permisoAcademico\":true}"],
   ["R3","EXP-3","GUARDIAN-1","Madre","Activa","2020-01-01","2020-12-31","", "{\"permisoAcademico\":true}"],
   ["R4","EXP-4","GUARDIAN-1","Madre","Activa","invalid-date","2099-12-31","", "{\"permisoAcademico\":true}"],
-  ["R5","EXP-5","GUARDIAN-1","Madre","Activa","2020-01-01","2099-12-31","", "{\"permisoAcademico\":false}"]
+  ["R5","EXP-5","GUARDIAN-1","Madre","Activa","2020-01-01","2099-12-31","", "{\"permisoAcademico\":false}"],
+  ["R6","EXP-6","GUARDIAN-1","Madre","Activa","2020-01-01","2099-12-31","", "{bad-json"]
 ];
 const expedienteRows = [["ExpedienteID","UserID"],["EXP-1","STU-1"],["EXP-2","STU-2"],["EXP-3","STU-3"],["EXP-4","STU-4"],["EXP-5","STU-5"]];
 const userRows = [["UserId","Nombre","Grado","Seccion","Email","Unused","Rol","Telefono","Unused2","PersonaID","Estado"],
@@ -115,7 +116,8 @@ const userRows = [["UserId","Nombre","Grado","Seccion","Email","Unused","Rol","T
   ["STU-2","Student 2","1","A","","","Estudiante","","","P-2","Activa"],
   ["STU-3","Student 3","1","A","","","Estudiante","","","P-3","Activa"],
   ["STU-4","Student 4","1","A","","","Estudiante","","","P-4","Activa"],
-  ["STU-5","Student 5","1","A","","","Estudiante","","","P-5","Activa"]];
+  ["STU-5","Student 5","1","A","","","Estudiante","","","P-5","Activa"],
+  ["STU-6","Student 6","1","A","","","Estudiante","","","P-6","Activa"]];
 const legacyRows = [["RelacionID","ExpedienteID","ResponsableID","","","","","","","Estado"],
   ["L1","STU-LEGACY","GUARDIAN-1","","","","","","","Activa"]];
 
@@ -136,8 +138,10 @@ const userGuardianRuntime = {
 vm.createContext(userGuardianRuntime);
 vm.runInContext(userGuardianFn + "\nthis.lookup = getGuardianStudents;", userGuardianRuntime);
 const userGuardianResult = userGuardianRuntime.lookup({ sessionToken: "signed" });
-assert.deepEqual(Array.from(userGuardianResult.data, row => row.studentUserId), ["STU-1"],
-  "USER includes only currently active, valid family relations and never falls back to legacy after primary rows exist");
+assert.deepEqual(Array.from(userGuardianResult.data, row => row.studentUserId), ["STU-1","STU-5"],
+  "USER includes current relationships, preserves explicit granular permissions and never falls back to legacy after primary rows exist");
+assert.equal(userGuardianResult.data.find(row => row.studentUserId === "STU-5").permisos.permisoAcademico, false,
+  "USER preserves explicit academic denial for downstream contextual checks");
 
 const taskSource = fs.readFileSync("backend/task-service/Code.gs", "utf8");
 const taskGuardianFn = extractFunction(taskSource, "getTaskServiceGuardianStudentIds");
@@ -165,7 +169,7 @@ const examSheets = { getSheetByName: name =>
   name === "ExpedientesEstudiantes" ? sheet(expedienteRows) :
     (name === "RelacionesFamiliares" ? sheet(familyRows) : null)
 };
-assert.deepEqual(Array.from(examRuntime.lookup(examSheets, "GUARDIAN-1")), ["STU-1","STU-5"],
+assert.deepEqual(Array.from(examRuntime.lookup(examSheets, "GUARDIAN-1")), ["STU-1"],
   "EXAM excludes future, expired and malformed family relations while preserving its documented relation-permission semantics");
 
 process.stdout.write("contextual-abac-five-services-contract: all assertions passed\n");

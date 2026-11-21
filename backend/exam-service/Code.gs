@@ -2357,8 +2357,17 @@ function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
         (endValue !== "" && endValue !== null && endValue !== undefined && !Number.isFinite(end))) return false;
     return (start === null || start <= now) && (end === null || end >= now);
   };
-  let studentIds = primaryTutorRows.filter(row => statusAllowed(row[4]) && isCurrentRelation(row))
-    .map(row => expToUser[String(row[1] || "").trim()] || String(row[1] || "").trim()).filter(Boolean);
+  let studentIds = primaryTutorRows.filter(row => {
+    if (!statusAllowed(row[4]) || !isCurrentRelation(row)) return false;
+    if (row[8] === "" || row[8] === null || row[8] === undefined) return true;
+    try {
+      const permissions = typeof row[8] === "string" ? JSON.parse(row[8]) : row[8];
+      return !!permissions && typeof permissions === "object" && !Array.isArray(permissions) &&
+        permissions.permisoAcademico !== false;
+    } catch (_) {
+      return false;
+    }
+  }).map(row => expToUser[String(row[1] || "").trim()] || String(row[1] || "").trim()).filter(Boolean);
   // El esquema legado solo se consulta si el tutor no tiene ninguna fila en la fuente primaria.
   // Una relación revocada/pendiente en RelacionesFamiliares nunca se reactiva por fallback.
   if (!primaryTutorRows.length) {

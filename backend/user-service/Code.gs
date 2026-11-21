@@ -5634,8 +5634,15 @@ function getGuardianStudents(payload) {
   let verifiedStudents = [];
   if (primaryGuardianRows.length > 0) {
     verifiedStudents = primaryGuardianRows.filter(r => {
-      return ["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(String(r[4] || "").trim().toUpperCase()) !== -1 &&
-        isCurrentGuardianRelation(r);
+      if (["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(String(r[4] || "").trim().toUpperCase()) === -1 ||
+          !isCurrentGuardianRelation(r)) return false;
+      if (r[8] === "" || r[8] === null || r[8] === undefined) return true;
+      try {
+        const permissions = typeof r[8] === "string" ? JSON.parse(r[8]) : r[8];
+        return !!permissions && typeof permissions === "object" && !Array.isArray(permissions);
+      } catch (_) {
+        return false;
+      }
     }).map(r => {
       const expId = String(r[1]).trim();
       const mappedUserId = expToUserMap[expId] || expId;
