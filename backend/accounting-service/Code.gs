@@ -13661,9 +13661,11 @@ function getOrCreatePrivateSchoolDocumentFolder_(ss) {
   var root = DriveApp.getRootFolder();
   var folderName = "IMA_DOCUMENTOS_ESCOLARES_PRIVADOS";
   var iterator = root.getFoldersByName(folderName);
-  var folder = iterator && iterator.hasNext() ? iterator.next() : root.createFolder(folderName);
+  var exists = iterator && iterator.hasNext();
+  var folder = exists ? iterator.next() : root.createFolder(folderName);
   if (!folder || typeof folder.getSharingAccess !== "function") throw new Error("SCHOOL_DOCUMENT_FOLDER_UNVERIFIABLE");
   if (folder.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+    if (exists) throw new Error("SCHOOL_DOCUMENT_FOLDER_NOT_PRIVATE");
     folder.setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE);
   }
   if (folder.getSharingAccess() !== DriveApp.Access.PRIVATE) throw new Error("SCHOOL_DOCUMENT_FOLDER_NOT_PRIVATE");
@@ -13712,13 +13714,15 @@ function generateSchoolDocument(payload) {
   var lock = LockService.getScriptLock(), acquired = false, file = null;
   try {
     acquired = lock.tryLock(10000);
-    if (!acquired) throw new Error("SCHOOL_DOCUMENT_GENERATION_BUSY");
+    if (!acquired) throw new Error("No se pudo obtener el bloqueo de concurrencia para generar documento.");
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var templateRows = getOrCreateSheet(ss,"PlantillasEscolares").getDataRange().getValues().slice(1);
     var templates = templateRows.filter(function(row){return String(row[0] || "").trim() === templateId;});
     if (templates.length !== 1) throw new Error(templates.length ? "SCHOOL_DOCUMENT_TEMPLATE_AMBIGUOUS" : "SCHOOL_DOCUMENT_TEMPLATE_NOT_FOUND");
     var template = templates[0];
-    if (String(template[6] || "").trim().toLowerCase() !== "publicada") throw new Error("SCHOOL_DOCUMENT_TEMPLATE_NOT_PUBLISHED");
+    if (String(template[6] || "").trim().toLowerCase() !== "publicada" && String(template[6] || "").trim().toLowerCase() !== "activa") {
+      throw new Error("SCHOOL_DOCUMENT_TEMPLATE_NOT_PUBLISHED");
+    }
     var issued = ensureSchoolDocumentIssuedSchema_(ss), sheet = issued.sheet, map = issued.map;
     var existingRows = sheet.getDataRange().getValues().slice(1);
     var now = new Date(), nowIso = now.toISOString(), year = now.getFullYear();
@@ -13759,6 +13763,8 @@ function generateSchoolDocument(payload) {
     var fileId = String(file.getId());
     var hash = computeDocumentSHA256(bytes);
     if (!hash || hash.length !== 64) throw new Error("SCHOOL_DOCUMENT_HASH_FAILED");
+    var version = String(template[7] || "1.0");
+    var versionDocumento = docId + ":" + version + ":" + nowIso;
     var row = [];
     row[map.DocumentoID] = docId;
     row[map.PlantillaID] = templateId;
@@ -13771,11 +13777,11 @@ function generateSchoolDocument(payload) {
     row[map.DriveURL] = "";
     row[map.FechaEmision] = nowIso;
     row[map.Observaciones] = String(input.observaciones || "Emitido oficialmente mediante Diseñador de Plantillas");
-    row[map.VersionPlantilla] = String(template[7] || "1.0");
+    row[map.VersionPlantilla] = version;
     row[map.Correlativo] = sequenceNumber;
     row[map.NumeroCorrelativo] = correlativo;
     row[map.SHA256] = hash;
-    row[map.VersionDocumento] = docId + ":" + String(template[7] || "1.0") + ":" + nowIso;
+    row[map.VersionDocumento] = versionDocumento;
     row[map.SolicitudID] = String(input.solicitudId || "");
     for (var index=0; index<issued.headers.length; index++) if (row[index] === undefined) row[index] = "";
     try {
@@ -13786,7 +13792,8 @@ function generateSchoolDocument(payload) {
       throw persistError;
     }
     return {status:"success",documentoId:docId,numeroCorrelativo:correlativo,codigoVerificacion:cuv,
-      sha256Hash:hash,driveFileId:fileId,driveUrl:"",fechaEmision:nowIso,versionPlantilla:String(template[7] || "1.0")};
+      sha256Hash:hash,versionDocumento:versionDocumento,integridadVerificada:true,driveFileId:fileId,driveUrl:"",
+      fechaEmision:nowIso,versionPlantilla:version};
   } catch (error) {
     if (file) rollbackPrivateSchoolDocumentFile_(file,error.message);
     throw error;
@@ -13808,18 +13815,24 @@ function verifySchoolDocumentByCUV(payload) {
   var document = {documentoId:row[0],plantillaId:row[1],targetEntityId:row[2],solicitanteUserId:row[3],
     datosJSON:row[4],estadoDoc:row[5],codigoVerificacion:row[6],driveFileId:fileId,driveUrl:"",
     fechaEmision:row[9] || "",observaciones:row[10] || "",versionPlantilla:row[11] || "1.0",
-    numeroCorrelativo:row[13] || row[12] || "N/A",sha256Hash:hash,integridadVerificada:false};
-  if (fileId) {
-    var file = DriveApp.getFileById(fileId);
-    if (!file || (file.isTrashed && file.isTrashed()) || file.getSharingAccess() !== DriveApp.Access.PRIVATE) {
-      return {status:"error",code:"SCHOOL_DOCUMENT_FILE_UNAVAILABLE"};
-    }
+    numeroCorrelativo:row[13] || row[12] || "N/A",sha256Hash:hash,versionDocumento:row[15] || "",integridadVerificada:false};
+  if (!fileId) return {status:"error",code:"DOCUMENT_FILE_UNAVAILABLE",documento:document};
+  var file;
+  try { file = DriveApp.getFileById(fileId); }
+  catch (fileError) { return {status:"error",code:"DOCUMENT_FILE_UNAVAILABLE",documento:document}; }
+  if (!file || (file.isTrashed && file.isTrashed())) return {status:"error",code:"DOCUMENT_FILE_UNAVAILABLE",documento:document};
+  if (!file.getSharingAccess || file.getSharingAccess() !== DriveApp.Access.PRIVATE) {
+    return {status:"error",code:"DOCUMENT_FILE_NOT_PRIVATE",documento:document};
+  }
+  try {
     var blob = file.getBlob(), bytes = blob.getBytes(), base64 = Utilities.base64Encode(bytes);
     var validation = validateFileBinaryIntegrity("data:application/pdf;base64," + base64,file.getName(),{allowedExtensions:[".pdf"]});
     var actualHash = computeDocumentSHA256(bytes);
     document.integridadVerificada = !!(validation && validation.valid === true && hash && actualHash === hash);
-    if (!document.integridadVerificada) return {status:"error",code:"SCHOOL_DOCUMENT_INTEGRITY_MISMATCH"};
+  } catch (integrityError) {
+    document.integridadVerificada = false;
   }
+  if (!document.integridadVerificada) return {status:"error",code:"DOCUMENT_INTEGRITY_MISMATCH",documento:document};
   var certificate = null;
   var signatures = ss.getSheetByName("FirmasConformidades");
   if (signatures) {
