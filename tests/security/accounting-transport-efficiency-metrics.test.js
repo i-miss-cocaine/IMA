@@ -86,6 +86,9 @@ let invalidHeaderSheet = "";
 let lockCalls = 0;
 let releaseCount = 0;
 let scopeCalls = 0;
+let managementScopeCalls = 0;
+let managementScopeValid = true;
+let invalidateManagementAfterFirst = false;
 let invalidateAfterFirstScope = false;
 const deniedEvents = [];
 const ss = {
@@ -118,6 +121,13 @@ const context = {
       return { authorized: false, management: false, role, userId };
     }
     return { authorized: true, management: ["Administrador", "Director", "Subdirector"].includes(role), role, userId };
+  },
+  transportManagementReadScope_(payload, spreadsheet, actor, scope) {
+    managementScopeCalls++;
+    if (!managementScopeValid || (invalidateManagementAfterFirst && managementScopeCalls === 2)) {
+      return { authorized: false, code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
+    }
+    return { authorized: true, scope: scope };
   },
   transportAuditDenied_(...args) { deniedEvents.push(args); },
   Date, Math, Number, String, Object, Array, JSON, Error, isFinite, console
@@ -177,6 +187,20 @@ const nonManagement = run({ _verifiedRole: "Padre", _verifiedUserId: "PARENT-1" 
 assert.equal(nonManagement.code, "UNAUTHORIZED_ACCESS_ATTEMPT");
 assert.equal(lockCalls, lockCallsBeforeDenied, "unauthorized requests must not acquire the global lock");
 assert.ok(deniedEvents.length >= 1);
+
+managementScopeValid = false;
+const lockCallsBeforeScopeDenied = lockCalls;
+const noInstitutionScope = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
+assert.equal(noInstitutionScope.code, "INSTITUTION_WIDE_SCOPE_REQUIRED");
+assert.equal(lockCalls, lockCallsBeforeScopeDenied, "institution scope denial must occur before acquiring the global lock");
+managementScopeValid = true;
+
+managementScopeCalls = 0;
+invalidateManagementAfterFirst = true;
+const scopeChanged = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
+assert.equal(scopeChanged.code, "INSTITUTION_WIDE_SCOPE_REQUIRED", "institution scope must be revalidated after lock acquisition");
+assert.equal(managementScopeCalls, 2);
+invalidateManagementAfterFirst = false;
 
 invalidateAfterFirstScope = true;
 const roleChanged = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
