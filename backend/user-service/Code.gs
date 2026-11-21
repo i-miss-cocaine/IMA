@@ -10775,12 +10775,24 @@ function getAutomationRules(payload) {
 
 function getNotificationAuditLogs(payload) {
   try {
-    const verifiedRole = getUserVerifiedRole(payload);
-    if (["Administrador", "Desarrollador", "Director", "Subdirector"].indexOf(verifiedRole) === -1) {
-      return { status: "error", message: "Acceso denegado para consultar logs de auditoría." };
+    const request = payload || {};
+    const verifiedRole = String(request._verifiedRole || "").trim();
+    const verifiedUserId = String(request._verifiedUserId || "").trim();
+    if (!verifiedRole || !verifiedUserId || verifiedRole === "NO_ACCESS") {
+      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+    }
+    const hasGlobalAuditPermission = ["Administrador", "Desarrollador"].indexOf(verifiedRole) !== -1 ||
+      getDynamicPermissionsForRole(verifiedRole, "getNotificationAuditLogs") === true;
+    if (!hasGlobalAuditPermission) {
+      return { status: "error", code: "AUDIT_PERMISSION_DENIED" };
+    }
+    const scope = getInstitutionalDepartmentScope_(request, verifiedRole);
+    if (!scope || scope.status !== "success" || scope.institutionWide !== true) {
+      return { status: "error", code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
     }
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "BandejaNotificaciones");
+    const sheet = ss.getSheetByName("BandejaNotificaciones");
+    if (!sheet) return { status: "success", logs: [] };
     const data = sheet.getDataRange().getValues();
     const logs = [];
     for (let i = 1; i < data.length; i++) {
@@ -14070,29 +14082,44 @@ function dispatchScheduleChangeNotifications(payload) {
 
 // [TAREA-F7-IMP-10] [Fase 7: Planificación Académica, Horarios y Recursos] - Consulta del historial de notificaciones de cambios de horario.
 function getScheduleChangeNotificationLogs(payload) {
-  const { horarioId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "BandejaNotificaciones");
-  const data = sheet.getDataRange().getValues();
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
 
+  let scope = null;
+  try { scope = getInstitutionalDepartmentScope_(request, role); } catch (_) {}
+  if (!scope || scope.status !== "success" || scope.institutionWide !== true) {
+    return { status: "error", code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
+  }
+
+  const horarioId = String(request.horarioId || "").trim();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName("BandejaNotificaciones");
+  if (!sheet) return { status: "success", data: [] };
+  const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status: "success", data: [] };
 
-  const notifs = data.slice(1).filter(r => {
-    if (r[2] !== "CambioHorarioAcademico") return false;
-    if (horarioId && !String(r[4] || "").includes(String(horarioId))) return false;
-    return true;
-  }).map(r => ({
-    notificacionId: r[0],
-    destinatario: r[1],
-    tipo: r[2],
-    titulo: r[3],
-    mensaje: r[4],
-    fecha: r[5] ? new Date(r[5]).toISOString() : null,
-    leido: r[6],
-    categoria: r[7],
-    deduplicationKey: r[9],
-    estadoEntrega: r[10],
-    emailDestino: r[11]
+  const scheduleKeyPrefix = ("NOTIF_SCHED_" + horarioId + "_").toLowerCase();
+  const messageTarget = ("(" + horarioId + ")").toLowerCase();
+  const notifs = data.slice(1).filter(row => {
+    if (row[2] !== "CambioHorarioAcademico") return false;
+    if (!horarioId) return true;
+    const message = String(row[4] || "").toLowerCase();
+    const dedupKey = String(row[9] || "").toLowerCase();
+    return message.indexOf(messageTarget) !== -1 || dedupKey.indexOf(scheduleKeyPrefix) === 0;
+  }).map(row => ({
+    notificacionId: row[0],
+    destinatario: row[1],
+    tipo: row[2],
+    titulo: row[3],
+    mensaje: row[4],
+    fecha: row[5] ? new Date(row[5]).toISOString() : null,
+    leido: row[6],
+    categoria: row[7],
+    deduplicationKey: row[9],
+    estadoEntrega: row[10],
+    emailDestino: row[11]
   })).reverse();
 
   return { status: "success", data: notifs };
