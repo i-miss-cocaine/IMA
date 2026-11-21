@@ -19,7 +19,7 @@ const sharedLock={locked:false,tryLock(){if(this.locked)return false;this.locked
 const actor={authorized:true,userId:"ACCOUNTANT-1",role:"Contador",institutionId:"INST-1"};
 const context={
 SpreadsheetApp:{openById:()=>ss},SPREADSHEET_ID:"TEST",LockService:{getScriptLock:()=>sharedLock},
-normalizeString:v=>String(v||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().trim(),
+normalizeString:v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(),
 logStructuredEvent:()=>{},applyApprovedScholarshipsToCharges:()=>{},
 getVerifiedAccountingIdentity_:()=>settings.identityAllowed?actor:{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"},
 validateRolePermission:(verified,action)=>{calls.permissions.push(action);return{authorized:settings.permissionAllowed,actor:verified,code:"ROLE_PERMISSION_DENIED"};},
@@ -28,7 +28,7 @@ assertResourceOwnershipForScope_:(spreadsheet,scope,type,id,operation)=>{calls.o
 Date,Math,JSON,Number,String,Set,Map,isFinite,parseFloat,parseInt,Error
 };
 const names=["monthlyChargeHeaderMap_","normalizeMonthlyChargeMonth_","monthlyChargeDedupeKey_","resolveMonthlyChargeTariff_","monthlyChargeExistingKey_","assertMonthlyChargeAccess_","assertMonthlyChargeStudentOwnership_","buildMonthlyChargePreview_","previewBatchMonthlyCharges","generateBatchMonthlyCharges"];
-vm.runInNewContext(names.map(extract).join("\\n")+"\\nthis.preview=previewBatchMonthlyCharges;this.generate=generateBatchMonthlyCharges;",context);
+vm.runInNewContext(names.map(extract).join("\n")+"\nthis.preview=previewBatchMonthlyCharges;this.generate=generateBatchMonthlyCharges;",context);
 return{context,sheets,calls};
 }
 {
