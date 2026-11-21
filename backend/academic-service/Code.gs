@@ -9036,7 +9036,8 @@ function submitPlanningForReview(payload) {
       const areaAccess = assertAcademicCoordinatorAreaAccess_(payload, ss, targetRow[4], true);
       if (!areaAccess.authorized) return { status: "error", code: "NOT_FOUND" };
     }
-    if (verifiedRole === "Profesor" && docId !== callerId && callerId !== "") {
+    if (verifiedRole === "Profesor" &&
+        (docId !== callerId || !hasActiveTeacherPlanningAssignment_(ss, callerId, targetRow[4], targetRow[2], targetRow[3], targetRow[5]))) {
       return { status: "error", code: "FORBIDDEN", message: "No tiene permisos para entregar la planificación de otro docente." };
     }
 
