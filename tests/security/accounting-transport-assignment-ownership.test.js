@@ -6,7 +6,7 @@ const source = fs.readFileSync("backend/accounting-service/Code.gs", "utf8");
 new vm.Script(source);
 function extractFunction(name) {
   const start = source.indexOf("function " + name + "(");
-  assert.ok(start >= 0, "missing " + name);
+  assert.ok(start >= 0, "missing function " + name);
   const open = source.indexOf("{", start);
   let depth = 0, quote = "", escaped = false, line = false, block = false;
   for (let i = open; i < source.length; i++) {
@@ -85,7 +85,7 @@ function makeHarness(options) {
   vm.runInContext(names.map(extractFunction).join("\n")+"\nthis.assign=assignStudentTransport;this.cancel=cancelStudentTransportAssignment;",runtime);
   return {runAssign:runtime.assign,runCancel:runtime.cancel,calls,data};
 }
-const payload=(user,role,extra)=>Object.assign({sessionToken:"verified",rutaId:"RUT-1",estudianteUserId:"STU-1"},extra||{});
+const payload=(extra)=>Object.assign({sessionToken:"verified",rutaId:"RUT-1",estudianteUserId:"STU-1"},extra||{});
 const noIdentity=makeHarness({identity:{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"}});
 assert.throws(()=>noIdentity.runAssign(payload()),/VERIFIED_IDENTITY_REQUIRED/);
 assert.equal(noIdentity.calls.locks,0);
@@ -96,13 +96,13 @@ const noScope=makeHarness({scopeValid:false});
 assert.throws(()=>noScope.runAssign(payload()),/DEPARTMENT_SCOPE_UNVERIFIED/);
 assert.equal(noScope.data.TransporteAsignaciones.length,1);
 const foreignStudent=makeHarness();
-assert.throws(()=>foreignStudent.runAssign(payload("DIRECTOR-1","Director",{estudianteUserId:"STU-2"})),/RESOURCE_SCOPE_DENIED/);
+assert.throws(()=>foreignStudent.runAssign(payload({estudianteUserId:"STU-2"})),/RESOURCE_SCOPE_DENIED/);
 assert.equal(foreignStudent.data.TransporteAsignaciones.length,1);
 const duplicateStudent=makeHarness({duplicateStudent:true});
 assert.equal(duplicateStudent.runAssign(payload()).code,"TRANSPORT_STUDENT_AMBIGUOUS");
 assert.equal(duplicateStudent.data.TransporteAsignaciones.length,1);
 const missingRoute=makeHarness();
-assert.equal(missingRoute.runAssign(payload("DIRECTOR-1","Director",{rutaId:"NO-ROUTE"})).code,"ROUTE_NOT_FOUND");
+assert.equal(missingRoute.runAssign(payload({rutaId:"NO-ROUTE"})).code,"ROUTE_NOT_FOUND");
 const duplicateRoute=makeHarness({routeRows:[
   ["RUT-1","Ruta 1","BUS-1","EMP-1",20,"[]","active","","06:30","","Matutina"],
   ["RUT-1","Ruta duplicate","BUS-1","EMP-1",20,"[]","active","","06:30","","Matutina"]
