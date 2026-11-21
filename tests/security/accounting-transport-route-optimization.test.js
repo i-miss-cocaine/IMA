@@ -22,7 +22,7 @@ function extractFunction(name) {
   throw new Error("unclosed function " + name);
 }
 const names = [
-  "transportOptimizationActor_", "transportOptimizationTime_", "transportOptimizationDistanceKm_",
+  "transportOptimizationActor_", "transportRowsPrefix_", "transportOptimizationTime_", "transportOptimizationDistanceKm_",
   "transportOptimizationNormalizeStops_", "transportOptimizationEvaluate_", "transportOptimizationOrder_",
   "transportOptimizationSheet_", "optimizeRouteStopsSequence", "getRouteOptimizationProposals",
   "approveRouteStopsOptimization", "rejectRouteStopsOptimization"
@@ -48,14 +48,17 @@ function makeSheet(name) {
 }
 const ss={getSheetByName(name){return rows[name]?makeSheet(name):null;}};
 function getOrCreateSheet(database,name){if(!rows[name])rows[name]=[[]];return makeSheet(name);}
-let uuid=0,lockBusy=false;
+let uuid=0,lockBusy=false,lockCalls=0,openCalls=0,scopeCalls=0,institutionScopeValid=true,releaseCalls=0;
+const deniedActions=new Set(),permissionCalls=Object.create(null),denyOnCall=Object.create(null);
 const context={
   SPREADSHEET_ID:"TEST",
-  SpreadsheetApp:{openById(){return ss;}},
-  LockService:{getScriptLock(){return {waitLock(){if(lockBusy)throw new Error("LOCK_BUSY");},releaseLock(){}};}},
+  SpreadsheetApp:{openById(){openCalls++;return ss;}},
+  LockService:{getScriptLock(){return {waitLock(){lockCalls++;if(lockBusy)throw new Error("LOCK_BUSY");},releaseLock(){releaseCalls++;}};}},
   Utilities:{getUuid(){return "UUID-"+(++uuid);}},
   getOrCreateSheet,
-  getVerifiedAccountingIdentity_(p){return {authorized:true,userId:(p&&p._verifiedUserId)||"DIR-1",role:(p&&p._verifiedRole)||"Director"};},
+  getVerifiedAccountingIdentity_(p){return {authorized:true,userId:(p&&p._verifiedUserId)||"DIR-1",role:(p&&p._verifiedRole)||"Director",institutionId:"INST-1"};},
+  validateRolePermission(actor,action){permissionCalls[action]=(permissionCalls[action]||0)+1;return deniedActions.has(action)||denyOnCall[action]===permissionCalls[action]?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:{authorized:true,actor};},
+  transportManagementReadScope_(payload,spreadsheet,actor,scope){scopeCalls++;return institutionScopeValid?{authorized:true,scope}:{authorized:false,code:"INSTITUTION_WIDE_SCOPE_REQUIRED"};},
   console,Date,Math,Set,Map,Number,String,Object,Array,JSON,Error
 };
 vm.createContext(context);
@@ -69,6 +72,28 @@ const stops=[
 const original=JSON.stringify(stops);
 rows.TransporteRutas.push(["R1","Ruta de prueba","BUS-1","DRV-1",20,original,"active","","06:30","07:30","Matutina"]);
 const payload={rutaId:"R1",velocidadPromedioKmh:25,horaInicio:"06:30",_verifiedUserId:"DIR-1",_verifiedRole:"Director"};
+const permissionOpenBefore=openCalls, permissionLockBefore=lockCalls;
+deniedActions.add("getRouteOptimizationProposals");
+assert.throws(()=>context.getRouteOptimizationProposals(payload),/ROLE_PERMISSION_DENIED/);
+assert.equal(openCalls,permissionOpenBefore,"proposal permission denial must precede spreadsheet reads");
+assert.equal(lockCalls,permissionLockBefore,"proposal permission denial must not acquire a lock");
+deniedActions.delete("getRouteOptimizationProposals");
+
+institutionScopeValid=false;
+const scopeLockBefore=lockCalls, scopeRouteBefore=rows.TransporteRutas[1][5];
+assert.throws(()=>context.optimizeRouteStopsSequence(payload),/INSTITUTION_WIDE_SCOPE_REQUIRED/);
+assert.equal(lockCalls,scopeLockBefore+1,"scope is checked after the mutation lock is acquired");
+assert.equal(rows.TransporteRutas[1][5],scopeRouteBefore,"scope denial must not alter the route");
+institutionScopeValid=true;
+
+const revalidateAction="optimizeRouteStopsSequence";
+denyOnCall[revalidateAction]=(permissionCalls[revalidateAction]||0)+2;
+const revalidateLockBefore=lockCalls,revalidateReleaseBefore=releaseCalls;
+assert.throws(()=>context.optimizeRouteStopsSequence(payload),/ROLE_PERMISSION_DENIED/);
+assert.equal(lockCalls,revalidateLockBefore+1);
+assert.equal(releaseCalls,revalidateReleaseBefore+1,"lock must release when dynamic permission is revoked while waiting");
+delete denyOnCall[revalidateAction];
+
 const proposal=context.optimizeRouteStopsSequence(payload);
 assert.equal(proposal.status,"success");
 assert.equal(proposal.estado,"PENDIENTE");
