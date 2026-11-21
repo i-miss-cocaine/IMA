@@ -70,7 +70,7 @@ const beforeRollbackAssignments=rows.TransporteAsignaciones.length;
 const beforeRollbackCharges=JSON.stringify(rows.CargosEstudiante);
 const originalRecalculate=context.transportRecalculateStudentMonthlyChargeLocked_;
 context.transportRecalculateStudentMonthlyChargeLocked_=()=>{throw Error("BILLING_WRITE_FAILED");};
-assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-ROLLBACK",fechaInicioServicio:firstDay}),/BILLING_WRITE_FAILED/);
+assert.throws(()=>context.assignStudentTransport({rutaId:"R2",estudianteUserId:"STU-ROLLBACK",fechaInicioServicio:firstDay}),/BILLING_WRITE_FAILED/);
 context.transportRecalculateStudentMonthlyChargeLocked_=originalRecalculate;
 assert.equal(rows.TransporteAsignaciones.length,beforeRollbackAssignments,"billing failure must rollback the assignment row");
 assert.equal(JSON.stringify(rows.CargosEstudiante),beforeRollbackCharges,"billing failure must preserve the prior charge snapshot");
