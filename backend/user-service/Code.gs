@@ -1769,8 +1769,7 @@ function incrementSecurityVersionLocked_(key, actorId) {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = ss.getSheetByName("VersionesSeguridad");
-    if (!sheet) sheet = ss.insertSheet("VersionesSeguridad");
-    if (sheet.getLastRow() === 0) sheet.appendRow(SECURITY_VERSION_HEADERS_.slice());
+    if (!sheet || sheet.getLastRow() === 0) return false;
     var values = sheet.getDataRange().getValues();
     if (!values.length || JSON.stringify((values[0] || []).map(String)) !== JSON.stringify(SECURITY_VERSION_HEADERS_)) return false;
     var matches = [];
@@ -1783,7 +1782,6 @@ function incrementSecurityVersionLocked_(key, actorId) {
     if (matches.length) sheet.getRange(matches[0] + 1, 1, 1, 4).setValues([row]); else sheet.appendRow(row);
     var verify = sheet.getDataRange().getValues().slice(1).filter(function(r) { return String(r[0] || "").trim() === versionKey; });
     if (verify.length !== 1 || Number(verify[0][1]) !== next) return false;
-    SECURITY_VERSION_READ_CACHE_[versionKey] = next;
     return next;
   } catch (error) { return false; }
 }
@@ -1791,6 +1789,7 @@ function generateSessionToken(user) {
   const secret = getAuthTokenSecret();
   const now = Math.floor(Date.now() / 1000);
   const exp = now + (24 * 3600); // 24 horas de vigencia
+  if (!ensureSecurityVersionSheet_()) throw new Error("SECURITY_VERSION_UNAVAILABLE");
   const roleVersion = getSecurityVersion_("USER_ROLE:" + String(user.userId || "").trim());
   if (roleVersion === false) throw new Error("SECURITY_VERSION_UNAVAILABLE");
   const payloadData = {
@@ -3576,18 +3575,36 @@ function getDynamicPermissionCacheKey_() {
 
 function getPermissionMatrixInstitutionId_(){try{if(typeof getIdentityInstitutionId_==="function"){var v=String(getIdentityInstitutionId_()||"").trim();if(v)return v;}}catch(_){}try{if(typeof PropertiesService!=="undefined"){var p=PropertiesService.getScriptProperties();return String(p.getProperty("IMA_INSTITUTION_ID")||p.getProperty("INSTITUTION_ID")||"").trim();}}catch(_){}return "";}
 var SECURITY_VERSION_HEADERS_ = ["Clave","Version","UpdatedAt","UpdatedBy"];
-var SECURITY_VERSION_READ_CACHE_ = Object.create(null);
-function resetSecurityVersionReadCache_() {
-  SECURITY_VERSION_READ_CACHE_ = Object.create(null);
+function ensureSecurityVersionSheet_() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return false;
+  try {
+    var properties = PropertiesService.getScriptProperties();
+    var initialized = properties.getProperty("IMA_SECURITY_VERSION_SCHEMA_INITIALIZED") === "1";
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("VersionesSeguridad");
+    if (!sheet) {
+      if (initialized) return false;
+      sheet = ss.insertSheet("VersionesSeguridad");
+    }
+    if (sheet.getLastRow() === 0) {
+      if (initialized) return false;
+      sheet.appendRow(SECURITY_VERSION_HEADERS_.slice());
+    }
+    var values = sheet.getDataRange().getValues();
+    if (!values.length || JSON.stringify((values[0] || []).map(String)) !== JSON.stringify(SECURITY_VERSION_HEADERS_)) return false;
+    if (!initialized) properties.setProperty("IMA_SECURITY_VERSION_SCHEMA_INITIALIZED", "1");
+    return properties.getProperty("IMA_SECURITY_VERSION_SCHEMA_INITIALIZED") === "1";
+  } catch (error) { return false; }
+  finally { try { lock.releaseLock(); } catch (_) {} }
 }
 function getSecurityVersion_(key) {
   var versionKey = String(key || "").trim();
   if (!versionKey || versionKey.length > 180) return false;
-  if (Object.prototype.hasOwnProperty.call(SECURITY_VERSION_READ_CACHE_, versionKey)) return SECURITY_VERSION_READ_CACHE_[versionKey];
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = ss.getSheetByName("VersionesSeguridad");
-    if (!sheet) { SECURITY_VERSION_READ_CACHE_[versionKey] = 0; return 0; }
+    if (!sheet) return false;
     var values = sheet.getDataRange().getValues();
     if (!values.length || JSON.stringify((values[0] || []).map(String)) !== JSON.stringify(SECURITY_VERSION_HEADERS_)) return false;
     var matches = [];
@@ -3595,7 +3612,6 @@ function getSecurityVersion_(key) {
     if (matches.length > 1) return false;
     var version = matches.length ? Number(matches[0][1]) : 0;
     if (!Number.isSafeInteger(version) || version < 0) return false;
-    SECURITY_VERSION_READ_CACHE_[versionKey] = version;
     return version;
   } catch (error) { return false; }
 }

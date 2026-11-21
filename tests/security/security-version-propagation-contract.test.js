@@ -16,15 +16,25 @@ function permissionLookup(service,matrixRows,versionRows,cache,throwOnOpen){
   SpreadsheetApp:{openById:()=>{if(throwOnOpen)throw Error("SPREADSHEET_UNAVAILABLE");return{getSheetByName:n=>n==="VersionesSeguridad"?versions:(n==="MatrizPermisosRoles"?matrix:null)};}}};
  const prelude=source.slice(source.indexOf("var SECURITY_VERSION_HEADERS_"),source.indexOf("function getDynamicPermissionsForRole"));
  vm.runInNewContext(prelude+"\n"+extract(source,"getPermissionMatrixInstitutionId_")+"\n"+extract(source,"getDynamicPermissionsForRole")+"\nthis.lookup=getDynamicPermissionsForRole;",context);
- return context.lookup;
+ return { lookup: context.lookup, context };
 }
 for(const service of services){
  const module=service.toUpperCase(),cache={},matrix=[["rol","modulo","accion","permitido","ambito"],["Director",module,"readSensitive",true,"INST-A"]];
  const versions=[["Clave","Version","UpdatedAt","UpdatedBy"],["PERMISSION_MATRIX",0,"",""]];
- assert.equal(permissionLookup(service,matrix,versions,cache)("Director",module,"readSensitive","INST-A"),true,service+" starts with grant");
+ const warm = permissionLookup(service,matrix,versions,cache);
+ assert.equal(warm.lookup("Director",module,"readSensitive","INST-A"),true,service+" hot context starts with grant");
+ matrix[1][3]=false; versions[1][1]=1;
+ assert.equal(warm.lookup("Director",module,"readSensitive","INST-A"),false,service+" hot context observes shared version change without process restart");
+ assert.equal(warm.context.SECURITY_VERSION_READ_CACHE_,undefined,service+" does not retain stale process-local version state");
+ const originalOpenById=warm.context.SpreadsheetApp.openById;
+ warm.context.SpreadsheetApp.openById=()=>({getSheetByName:()=>null});
+ assert.equal(warm.lookup("Director",module,"readSensitive","INST-A"),false,service+" missing shared version sheet fails closed");
+ warm.context.SpreadsheetApp.openById=originalOpenById;
+ matrix[1][3]=true; versions[1][1]=0;
+ assert.equal(permissionLookup(service,matrix,versions,cache).lookup("Director",module,"readSensitive","INST-A"),true,service+" starts with grant");
  matrix[1][3]=false;versions[1][1]=1;
- assert.equal(permissionLookup(service,matrix,versions,cache)("Director",module,"readSensitive","INST-A"),false,service+" observes cross-service version change");
- assert.equal(permissionLookup(service,matrix,versions,{},true)("Director",module,"readSensitive","INST-A"),false,service+" spreadsheet read failure fails closed");
+ assert.equal(permissionLookup(service,matrix,versions,cache).lookup("Director",module,"readSensitive","INST-A"),false,service+" observes cross-service version change");
+ assert.equal(permissionLookup(service,matrix,versions,{},true).lookup("Director",module,"readSensitive","INST-A"),false,service+" spreadsheet read failure fails closed");
  assert.ok(Object.keys(cache).some(k=>k.indexOf("dynamic_permissions_matrix_v3:"+module+":INST-A:1")===0),service+" cache key includes logical version");
 }
 const userSource=fs.readFileSync(path.resolve(__dirname,"../../backend/user-service/Code.gs"),"utf8");
@@ -39,6 +49,10 @@ assert.equal(versionContext.bump("USER_ROLE:u-1","admin"),3,"role version increm
 assert.equal(versionContext.read("USER_ROLE:u-1"),3,"same execution observes its own version bump");
 versionSheet.rows.push(["USER_ROLE:u-1",3,new Date(),"admin"]);
 assert.equal(versionContext.bump("USER_ROLE:u-1","admin"),false,"duplicate version key fails closed");
+const originalVersionOpen=versionContext.SpreadsheetApp.openById;
+versionContext.SpreadsheetApp.openById=()=>({getSheetByName:()=>null});
+assert.equal(versionContext.bump("USER_ROLE:u-1","admin"),false,"missing version ledger must not be recreated by a privilege mutation");
+versionContext.SpreadsheetApp.openById=originalVersionOpen;
 function verifyWithVersion(claimVersion,currentVersion){
  const now=Math.floor(Date.now()/1000),claims={userId:"u-1",role:"Director",iat:now-10,exp:now+3600,sessionId:"S-1"};
  if(claimVersion!==undefined)claims.roleVersion=claimVersion;

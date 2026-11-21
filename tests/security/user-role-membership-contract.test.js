@@ -94,11 +94,12 @@ function makeHarness(membershipRows = [headers]) {
     computeHmacSignature:(v,s)=>"sig:"+v+":"+s,
     getIdentityInstitutionId_:()=>"INST-1",
     // An absent revocation ledger is represented by an uninitialized script property.
-    PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},
+    securityProperties:{},
+    PropertiesService:{getScriptProperties:()=>({getProperty:key=>ctx.securityProperties[key]||null,setProperty:(key,value)=>ctx.securityProperties[key]=value})},
     // Role switching persists a session-scoped revocation; model the shared ledger in this harness.
     revokeUserSession:({sessionId})=>{sheets.SesionesRevocadas=sheet([["SessionID","UserID","RevokedAt","ExpiresAt"],[sessionId,"",now,new Date(now.getTime()+86460*1000)]]);return {status:"success"};},
     getSheetOrThrow:(ss,name)=>ss.getSheetByName(name),
-    LockService:{getScriptLock:()=>({waitLock(){ctx.locked=true;},releaseLock(){ctx.locked=false;}})},
+    LockService:{getScriptLock:()=>({tryLock(){if(ctx.locked)return false;ctx.locked=true;return true;},waitLock(){ctx.locked=true;},releaseLock(){ctx.locked=false;}})},
     validateRolePermission:()=>({authorized:true}),
     invalidateUserRoleCache:()=>true,
     logStructuredEvent:()=>true,

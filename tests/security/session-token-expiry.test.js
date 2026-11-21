@@ -83,7 +83,17 @@ const generationContext = {
     getUuid: () => "S1"
   },
   SPREADSHEET_ID: "LOCAL",
-  SpreadsheetApp: { openById: () => ({ getSheetByName: () => null }) }
+  versionRows: [["Clave","Version","UpdatedAt","UpdatedBy"]],
+  properties: {},
+  LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
+  PropertiesService: { getScriptProperties: () => ({ getProperty: key => generationContext.properties[key] || null, setProperty: (key,value) => generationContext.properties[key] = value }) },
+  SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "VersionesSeguridad" ? generationContext.versionSheet : null, insertSheet: () => generationContext.versionSheet }) },
+  versionSheet: null
+};
+generationContext.versionSheet = {
+  getLastRow: () => generationContext.versionRows.length,
+  getDataRange: () => ({ getValues: () => generationContext.versionRows.map(row => row.slice()) }),
+  appendRow: row => generationContext.versionRows.push(row.slice())
 };
 const generationVersionPrelude = userSource.slice(userSource.indexOf("var SECURITY_VERSION_HEADERS_"), userSource.indexOf("function getDynamicPermissionsForRole"));
 vm.runInNewContext(generationVersionPrelude + "\n" + generateFn + "\nthis.generate = generateSessionToken;", generationContext);
@@ -94,4 +104,7 @@ assert.ok(Number.isSafeInteger(generatedClaims.iat));
 assert.ok(Number.isSafeInteger(generatedClaims.exp));
 assert.equal(generatedClaims.exp - generatedClaims.iat, 86400);
 assert.equal(generatedClaims.roleVersion, 0, "new sessions carry the current role version");
+assert.equal(generationContext.properties.IMA_SECURITY_VERSION_SCHEMA_INITIALIZED, "1", "first login initializes the shared version ledger");
+generationContext.versionSheet = null;
+assert.throws(() => generationContext.generate({ userId: "U1", email: "u@example.test", role: "Estudiante" }), /SECURITY_VERSION_UNAVAILABLE/, "deleted version ledger must not be silently recreated after initialization");
 process.stdout.write("session-token-expiry: 40 local-verifier cases + generation assertions passed\n");

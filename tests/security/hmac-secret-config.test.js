@@ -107,10 +107,20 @@ const genFn = extractFunction(userSource, "generateSessionToken");
 let currentSecret = "OLD_SECRET_012345678901234567890123456789";
 const genContext = {
   SPREADSHEET_ID: "LOCAL",
-  SpreadsheetApp: { openById: () => ({ getSheetByName: () => null }) },
+  versionRows: [["Clave","Version","UpdatedAt","UpdatedBy"]],
+  properties: {},
+  versionSheet: null,
+  LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) },
+  PropertiesService: { getScriptProperties: () => ({ getProperty: key => genContext.properties[key] || null, setProperty: (key,value) => genContext.properties[key] = value }) },
+  SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "VersionesSeguridad" ? genContext.versionSheet : null, insertSheet: () => genContext.versionSheet }) },
   getAuthTokenSecret: () => currentSecret,
   computeHmacSignature: (_payload, secret) => "SIG-" + secret,
   Utilities: { base64EncodeWebSafe: () => "payload", getUuid: () => "S1" }
+};
+genContext.versionSheet = {
+  getLastRow: () => genContext.versionRows.length,
+  getDataRange: () => ({ getValues: () => genContext.versionRows.map(row => row.slice()) }),
+  appendRow: row => genContext.versionRows.push(row.slice())
 };
 const versionPrelude = userSource.slice(userSource.indexOf("var SECURITY_VERSION_HEADERS_"), userSource.indexOf("function getDynamicPermissionsForRole"));
 vm.runInNewContext(versionPrelude + "\n" + genFn + "\nthis.generate = generateSessionToken;", genContext);

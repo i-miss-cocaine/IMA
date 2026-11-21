@@ -5049,18 +5049,13 @@ ROLE_PERMISSIONS["Bibliotecario"] = ["processLibraryLoan", "reserveLibraryBook"]
 
 function getPermissionMatrixInstitutionId_(){try{if(typeof getIdentityInstitutionId_==="function"){var v=String(getIdentityInstitutionId_()||"").trim();if(v)return v;}}catch(_){}try{if(typeof PropertiesService!=="undefined"){var p=PropertiesService.getScriptProperties();return String(p.getProperty("IMA_INSTITUTION_ID")||p.getProperty("INSTITUTION_ID")||"").trim();}}catch(_){}return "";}
 var SECURITY_VERSION_HEADERS_ = ["Clave","Version","UpdatedAt","UpdatedBy"];
-var SECURITY_VERSION_READ_CACHE_ = Object.create(null);
-function resetSecurityVersionReadCache_() {
-  SECURITY_VERSION_READ_CACHE_ = Object.create(null);
-}
 function getSecurityVersion_(key) {
   var versionKey = String(key || "").trim();
   if (!versionKey || versionKey.length > 180) return false;
-  if (Object.prototype.hasOwnProperty.call(SECURITY_VERSION_READ_CACHE_, versionKey)) return SECURITY_VERSION_READ_CACHE_[versionKey];
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var sheet = ss.getSheetByName("VersionesSeguridad");
-    if (!sheet) { SECURITY_VERSION_READ_CACHE_[versionKey] = 0; return 0; }
+    if (!sheet) return false;
     var values = sheet.getDataRange().getValues();
     if (!values.length || JSON.stringify((values[0] || []).map(String)) !== JSON.stringify(SECURITY_VERSION_HEADERS_)) return false;
     var matches = [];
@@ -5068,7 +5063,6 @@ function getSecurityVersion_(key) {
     if (matches.length > 1) return false;
     var version = matches.length ? Number(matches[0][1]) : 0;
     if (!Number.isSafeInteger(version) || version < 0) return false;
-    SECURITY_VERSION_READ_CACHE_[versionKey] = version;
     return version;
   } catch (error) { return false; }
 }
