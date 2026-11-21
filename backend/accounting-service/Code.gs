@@ -4953,18 +4953,18 @@ function getTransportAssignments(payload) {
     transportAuditDenied_(actor, "getTransportAssignments", requestedRoute);
     return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", total: 0, asignaciones: [] };
   }
-  if (requestedRoute && scope.management && routeCounts[requestedRoute] > 1) return { status: "error", code: "RESOURCE_AMBIGUOUS", total: 0, asignaciones: [] };
-  if (scope.management && requestedRoute && !routeCounts[requestedRoute]) return { status: "error", code: "ROUTE_NOT_FOUND", total: 0, asignaciones: [] };
+  if (requestedRoute && scope.management && routeCounts[requestedRoute] > 1) {
+    return { status: "error", code: "RESOURCE_AMBIGUOUS", total: 0, asignaciones: [] };
+  }
+  if (scope.management && requestedRoute && !routeCounts[requestedRoute]) {
+    return { status: "error", code: "ROUTE_NOT_FOUND", total: 0, asignaciones: [] };
+  }
   var activeRouteIds = Object.create(null);
   routeSnapshot.rows.forEach(function(row) {
     var id = String(row[0] || "").trim(), state = String(row[6] || "").trim().toLowerCase();
     if (id && routeCounts[id] === 1 && ["active","activo","activa","vigente"].indexOf(state) !== -1) activeRouteIds[id] = true;
   });
   var uniqueRouteIds = Object.keys(activeRouteIds);
-  if (requestedRoute && !scope.management && (!allowedRoutes || allowedRoutes.indexOf(requestedRoute) === -1)) {
-    transportAuditDenied_(actor, "getTransportAssignments", requestedRoute);
-    return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", total: 0, asignaciones: [] };
-  }
   var role = String(scope.role || "").trim().toLowerCase();
   var today = Date.now(), startIndex = snapshot.headers.indexOf("FechaInicioServicio");
   var endIndex = snapshot.headers.indexOf("FechaFinServicio");
