@@ -291,7 +291,7 @@ function runEndpoint(name, payload, spreadsheetData) {
     logStructuredEvent: (...args) => events.push(args),
     getOrCreateTransportVehiclesCatalog: () => {},
     validateRolePermission: (actor, action) => ({ authorized: true, actor, action }),
-    getVerifiedAccountingDepartmentScope_: () => ({ valid: true, authorized: true, institutionWide: true })
+    getVerifiedAccountingDepartmentScope_: (payload, spreadsheet, actor) => spreadsheetData.departmentScope || ({ valid: true, authorized: true, institutionId: "I", institutionWide: true, departmentIds: [] })
   }, makeAuthContext(spreadsheetData));
   vm.runInNewContext(
     helperSource +
@@ -442,6 +442,22 @@ const duplicateManagementRouteList = runEndpoint("getTransportRoutes", {
   _verifiedRole: "Director",
   _verifiedUserId: "DIRECTOR-1"
 }, duplicateRouteData);
+const departmentScopedDirector = runEndpoint("getTransportRoutes", {
+  _verifiedRole: "Director",
+  _verifiedUserId: "DIRECTOR-1"
+}, Object.assign({}, data, { departmentScope: {
+  valid: true, authorized: true, institutionId: "I", institutionWide: false, departmentIds: ["DEP-1"]
+} }));
+assert.equal(departmentScopedDirector.result.code, "INSTITUTION_WIDE_SCOPE_REQUIRED",
+  "management transport reads must not treat a department scope as institution-wide");
+const unverifiedDirectorScope = runEndpoint("getTransportAssignments", {
+  _verifiedRole: "Director",
+  _verifiedUserId: "DIRECTOR-1"
+}, Object.assign({}, data, { departmentScope: {
+  valid: false, authorized: false, code: "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED"
+} }));
+assert.equal(unverifiedDirectorScope.result.code, "DEPARTMENT_IMPORT_MEMBERSHIP_SCOPE_UNVERIFIED",
+  "management transport reads must fail closed without a verified scope");
 assert.ok(duplicateManagementRouteList.result.rutas.every(route => route.rutaId !== "RUT-01"),
   "ambiguous route IDs must be excluded even from management list projection");
 const duplicateParentAssignments = runEndpoint("getTransportAssignments", {
