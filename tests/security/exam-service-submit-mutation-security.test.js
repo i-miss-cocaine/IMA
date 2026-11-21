@@ -32,7 +32,7 @@ function submitRuntime(options = {}) {
     extractFunction("submitExam") + "; return submitExam;")(
     () => { events.push("permission"); const result=permissions[state.permissionCalls++]; return { authorized: result === true }; },
     () => { events.push("identity"); return actors[state.identityCalls++]; },
-    (payload, requestedStudentId, verifiedActor) => { events.push("context"); return { actor: verifiedActor, studentActor: true }; },
+    (payload, requestedStudentId, verifiedActor) => { events.push("context"); return options.contextAfterLock || { actor: verifiedActor, studentActor: true }; },
     { getScriptLock() { return { tryLock() { events.push("lock"); state.lockAttempts++; return !options.timeout; },
       releaseLock() { events.push("release"); state.releases++; } }; } },
     () => { events.push("worker"); state.workerCalls++; return { status: "success" }; });
@@ -68,8 +68,25 @@ test("RBAC denial precedes identity and lock", () => { const x=submitRuntime({pe
 test("invalid signed identity is rejected before lock", () => { const x=submitRuntime({actor:{authorized:false,userId:"S1",role:"Estudiante"}}); assert.equal(x.error,"RESOURCE_NOT_AVAILABLE"); assert.deepEqual(x.events,["permission","identity"]); assert.equal(x.state.lockAttempts,0); });
 test("empty signed userId is rejected before lock", () => { const x=submitRuntime({actor:{authorized:true,userId:" ",role:"Estudiante"}}); assert.equal(x.error,"RESOURCE_NOT_AVAILABLE"); assert.equal(x.state.lockAttempts,0); assert.equal(x.state.workerCalls,0); });
 test("non-student role is rejected before lock", () => { const x=submitRuntime({actor:{authorized:true,userId:"T1",role:"Profesor"}}); assert.equal(x.error,"RESOURCE_NOT_AVAILABLE"); assert.equal(x.state.lockAttempts,0); });
-test("authorization and identity are reused after acquiring the data lock", () => { const x=submitRuntime({permissions:[true,false],actors:[{authorized:true,userId:"STUDENT-1",role:"Estudiante"},{authorized:false,userId:"",role:""}]}); assert.deepEqual(x.events,["permission","identity","context","lock","worker","release"]); assert.equal(x.result.status,"success"); assert.equal(x.state.releases,1); assert.equal(x.state.permissionCalls,1); assert.equal(x.state.identityCalls,1); });
-test("the verified student context is built once before the lock", () => { const x=submitRuntime(); assert.deepEqual(x.events,["permission","identity","context","lock","worker","release"]); assert.equal(x.result.status,"success"); assert.equal(x.state.releases,1); assert.equal(x.state.permissionCalls,1); assert.equal(x.state.identityCalls,1); });
+test("permission is revalidated after acquiring the data lock", () => {
+ const x=submitRuntime({permissions:[true,false]});
+ assert.equal(x.error,"RESOURCE_NOT_AVAILABLE");
+ assert.deepEqual(x.events,["permission","identity","lock","permission","release"]);
+ assert.equal(x.state.workerCalls,0); assert.equal(x.state.releases,1);
+ assert.equal(x.state.permissionCalls,2); assert.equal(x.state.identityCalls,1);
+});
+test("identity and student context are refreshed under the data lock", () => {
+ const x=submitRuntime();
+ assert.deepEqual(x.events,["permission","identity","lock","permission","identity","context","worker","release"]);
+ assert.equal(x.result.status,"success"); assert.equal(x.state.releases,1);
+ assert.equal(x.state.permissionCalls,2); assert.equal(x.state.identityCalls,2);
+});
+test("revoked or changed student context is denied before submission writes", () => {
+ const x=submitRuntime({contextAfterLock:{actor:{authorized:true,userId:"STUDENT-1",role:"Estudiante"},studentActor:false}});
+ assert.equal(x.error,"RESOURCE_NOT_AVAILABLE");
+ assert.equal(x.state.workerCalls,0); assert.equal(x.state.releases,1);
+ assert.deepEqual(x.events,["permission","identity","lock","permission","identity","context","release"]);
+});
 test("Alumno remains accepted", () => { const x=submitRuntime({actor:{authorized:true,userId:"A1",role:"Alumno"}}); assert.equal(x.error,undefined); assert.equal(x.state.workerCalls,1); });
 test("lock timeout does not invoke worker or revalidate", () => { const x=submitRuntime({timeout:true}); assert.equal(x.error,"EXAM_SUBMISSION_LOCK_TIMEOUT"); assert.deepEqual(x.events,["permission","identity","context","lock"]); assert.equal(x.state.workerCalls,0); assert.equal(x.state.releases,0); assert.equal(x.state.permissionCalls,1); assert.equal(x.state.identityCalls,1); });
 test("shared exam context rejects invalid or incomplete identity before Sheets", () => {
@@ -122,9 +139,9 @@ test("reentrant submission during appendRow is rejected while the outer ScriptLo
   const result = handler({ examenId: "EXAM-1", respuestas: [{ preguntaId: "Q1", respuestaEstudiante: "4" }] });
   assert.equal(result.status, "success");
   assert.deepEqual(state.nestedErrors, ["EXAM_SUBMISSION_LOCK_TIMEOUT"]);
-  assert.equal(state.permissions, 2); assert.equal(state.identities, 2);
+  assert.equal(state.permissions, 3); assert.equal(state.identities, 3);
   assert.equal(state.locks, 2); assert.equal(state.releases, 1); assert.equal(state.held, false);
-  assert.equal(state.opens, 2); assert.equal(state.writes, 1); assert.equal(deliveryRows.length, 2);
+  assert.equal(state.opens, 1); assert.equal(state.writes, 1); assert.equal(deliveryRows.length, 2);
   assert.equal(JSON.parse(deliveryRows[1][10])[0][0], "Q1", "submission stores the question snapshot used for grading");
 });
 const failed=cases.filter(x=>x.result!=="PASS");
