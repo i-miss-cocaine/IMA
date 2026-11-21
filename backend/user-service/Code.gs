@@ -4767,22 +4767,39 @@ function getInstitutionalAffiliationColumnMap_(sheet){
 }
 function formatInstitutionalDate_(v){if(!v)return "";var d=v instanceof Date?v:new Date(v);return isNaN(d.getTime())?"":d.toISOString();}
 
+
+function getInstitutionalDepartmentScope_(payload, role) {
+  if (["Administrador","Desarrollador"].indexOf(role) !== -1) return {status:"success",institutionWide:true,departmentIds:[]};
+  var context=getUserContextScope(payload);
+  if(!context||context.status!=="success") throw new Error(context&&context.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");
+  return context;
+}
+function requireInstitutionalDepartmentScope_(payload, role, deptId) {
+  var context=getInstitutionalDepartmentScope_(payload,role);
+  if(context.institutionWide===true) return context;
+  var target=String(deptId||"").trim().toUpperCase();
+  if(!target) throw new Error("DEPARTMENT_SCOPE_REQUIRED");
+  var allowed=(context.departmentIds||[]).map(function(value){return String(value||"").trim().toUpperCase();});
+  if(allowed.indexOf(target)===-1) throw new Error("DEPARTMENT_SCOPE_DENIED");
+  return context;
+}
+
 function manageDepartmentPositions(payload){
  var input=payload&&typeof payload==="object"?payload:{},role=getUserVerifiedRole(input),callerId=input._verifiedUserId;
  var deptId=input.deptId,deptNombre=input.deptNombre,jefaturaUserId=input.jefaturaUserId,cargoId=input.cargoId,cargoNombre=input.cargoNombre,nivel=input.nivelJerarquico,userId=input.userId,motivo=input.motivo,parentDeptId=input.parentDeptId;
  if(["Administrador","Desarrollador","RecursosHumanos"].indexOf(role)<0)throw new Error("Acceso denegado: Se requieren permisos administrativos o de Recursos Humanos.");
  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),act=String(input.subAction||"ASSIGN_USER").toUpperCase().trim();
- if(act==="GET_DEPARTMENT_HIERARCHY"){var rl=LockService.getScriptLock();if(!rl.tryLock(10000))throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");try{return {status:"success",data:getDepartmentHierarchySnapshot_(getOrCreateSheet(ss,"CatalogoDepartamentos"))};}finally{rl.releaseLock();}}
+ if(act==="GET_DEPARTMENT_HIERARCHY"){var rl=LockService.getScriptLock();if(!rl.tryLock(10000))throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");try{var snapshot=getDepartmentHierarchySnapshot_(getOrCreateSheet(ss,"CatalogoDepartamentos"));var scope=getInstitutionalDepartmentScope_(input,role);if(!scope.institutionWide){var allowed=(scope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();});snapshot.departments=snapshot.departments.filter(function(item){return allowed.indexOf(String(item.deptId).toUpperCase())!==-1;});var visible=new Set(snapshot.departments.map(function(item){return item.deptId;}));snapshot.departments.forEach(function(item){if(item.parentDeptId&&!visible.has(item.parentDeptId))item.parentDeptId="";});snapshot.roots=snapshot.departments.filter(function(item){return !item.parentDeptId;}).map(function(item){return item.deptId;});snapshot.total=snapshot.departments.length;}return {status:"success",data:snapshot};}finally{rl.releaseLock();}}
  if(act==="GET_CARGOS"){
   var cs=ss.getSheetByName("CatalogoCargos");if(!cs||cs.getLastRow()<=1)return {status:"success",data:[],total:0,limit:50,offset:0,nextOffset:null,hasMore:false};
-  var cm=getInstitutionalCargoColumnMap_(cs),cr=cs.getDataRange().getValues(),fd=String(deptId||"").trim().toUpperCase(),list=[];
+  var cm=getInstitutionalCargoColumnMap_(cs),cr=cs.getDataRange().getValues(),fd=String(deptId||"").trim().toUpperCase(),list=[];var cargoScope=getInstitutionalDepartmentScope_(input,role);if(fd)requireInstitutionalDepartmentScope_(input,role,fd);else if(!cargoScope.institutionWide)throw new Error("DEPARTMENT_SCOPE_REQUIRED");
   for(var ci=1;ci<cr.length;ci++){var row=cr[ci],st=String(row[cm.estado]||"").trim().toLowerCase(),rd=String(row[cm.deptId]||"").trim().toUpperCase();if(["activo","active","enabled","vigente"].indexOf(st)<0)continue;if(fd&&rd&&rd!==fd)continue;list.push({cargoId:row[cm.cargoId],deptId:row[cm.deptId]||"",nombreCargo:row[cm.nombreCargo],nivelJerarquico:cm.nivelJerarquico>=0?row[cm.nivelJerarquico]:null,estado:row[cm.estado]});}
   var lim=Math.min(200,Math.max(1,parseInt(input.limit,10)||50)),off=Math.max(0,parseInt(input.offset,10)||0),page=list.slice(off,off+lim),more=off+page.length<list.length;
   return {status:"success",data:page,total:list.length,limit:lim,offset:off,nextOffset:more?off+page.length:null,hasMore:more};
  }
  if(act==="CREATE_DEPT"){
   if(!deptNombre||!String(deptNombre).trim())throw new Error("DEPARTMENT_NAME_REQUIRED");
-  var gen=deptId?null:generateInstitutionalId({entityType:"Departamento",prefix:"DEP-"}),newId=String(deptId||gen&&gen.generatedId||"").trim().toUpperCase();if(!newId)throw new Error("DEPARTMENT_ID_REQUIRED");
+  var gen=deptId?null:generateInstitutionalId({entityType:"Departamento",prefix:"DEP-"}),newId=String(deptId||gen&&gen.generatedId||"").trim().toUpperCase();if(!newId)throw new Error("DEPARTMENT_ID_REQUIRED");var createDeptScope=getInstitutionalDepartmentScope_(input,role);if(!createDeptScope.institutionWide)throw new Error("INSTITUTION_WIDE_SCOPE_REQUIRED");
   var lk=LockService.getScriptLock();if(!lk.tryLock(10000))throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
   try{var ds=getOrCreateSheet(ss,"CatalogoDepartamentos");if(ds.getLastRow()===0)ds.appendRow(["deptId","nombre","jefaturaUserId","estado","fechaCreacion","DepartamentoPadreID"]);
    var dm=getDepartmentHierarchyColumnMap_(ds,true),dr=ds.getDataRange().getValues().slice(1);if(dr.some(function(r){return String(r[dm.deptId]||"").trim().toUpperCase()===newId;}))throw new Error("DEPARTMENT_ID_ALREADY_EXISTS:"+newId);
@@ -4793,22 +4810,22 @@ function manageDepartmentPositions(payload){
    return {status:"success",deptId:newId,parentDeptId:parent,hierarchyPath:hier.path};
   }finally{lk.releaseLock();}
  }
- if(act==="UPDATE_DEPT"||act==="ASSIGN_DEPARTMENT_HEAD"){
-  var target=String(deptId||"").trim().toUpperCase();if(!target)throw new Error("DEPARTMENT_ID_REQUIRED");
+ if(act==="UPDATE_DEPT"||act==="ASSIGN_DEPARTMENT_HEAD"||act==="DEACTIVATE_DEPT"){
+  var target=String(deptId||"").trim().toUpperCase();if(!target)throw new Error("DEPARTMENT_ID_REQUIRED");requireInstitutionalDepartmentScope_(input,role,target);
   var ul=LockService.getScriptLock();if(!ul.tryLock(10000))throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
   try{var us=getOrCreateSheet(ss,"CatalogoDepartamentos"),um=getDepartmentHierarchyColumnMap_(us,true),ud=us.getDataRange().getValues(),found=[];
    for(var ui=1;ui<ud.length;ui++)if(String(ud[ui][um.deptId]||"").trim().toUpperCase()===target)found.push({row:ud[ui],rowNumber:ui+1});
    if(found.length!==1)throw new Error(found.length?"DEPARTMENT_ID_AMBIGUOUS":"DEPARTMENT_NOT_FOUND");
    var old=found[0],next=old.row.slice();if(String(next[um.estado]||"").trim().toLowerCase()!=="activo")throw new Error("DEPARTMENT_NOT_ACTIVE");
-   if(act==="ASSIGN_DEPARTMENT_HEAD"||input.jefaturaUserId!==undefined){var nh=String(jefaturaUserId||"").trim();if(nh)getInstitutionalUserRecord_(ss,nh);if(um.jefaturaUserId<0)throw new Error("DEPARTMENT_CATALOG_SCHEMA_INVALID:jefaturaUserId");next[um.jefaturaUserId]=nh;}
-   var hierarchy=null;if(act==="UPDATE_DEPT"){var np=parentDeptId===undefined?String(next[um.parentDeptId]||"").trim().toUpperCase():String(parentDeptId||"").trim().toUpperCase();hierarchy=validateDepartmentHierarchy_(us,target,np);if(deptNombre!==undefined){var nn=String(deptNombre||"").trim();if(!nn)throw new Error("DEPARTMENT_NAME_REQUIRED");next[um.nombre]=nn;}if(um.parentDeptId>=0)next[um.parentDeptId]=np;if(um.updatedAt>=0)next[um.updatedAt]=new Date();}
-   us.getRange(old.rowNumber,1,1,next.length).setValues([next]);return {status:"success",deptId:target,parentDeptId:hierarchy?hierarchy.parentDeptId:undefined,hierarchyPath:hierarchy?hierarchy.path:undefined,jefaturaUserId:um.jefaturaUserId>=0?next[um.jefaturaUserId]:"",message:act==="UPDATE_DEPT"?"Departamento actualizado; la jerarquía se conserva sin ciclos.":"Jefatura departamental actualizada."};
+   if(act==="ASSIGN_DEPARTMENT_HEAD"||(act==="UPDATE_DEPT"&&input.jefaturaUserId!==undefined)){var nh=String(jefaturaUserId||"").trim();if(nh)getInstitutionalUserRecord_(ss,nh);if(um.jefaturaUserId<0)throw new Error("DEPARTMENT_CATALOG_SCHEMA_INVALID:jefaturaUserId");next[um.jefaturaUserId]=nh;}
+   var hierarchy=null;if(act==="UPDATE_DEPT"){var np=parentDeptId===undefined?String(next[um.parentDeptId]||"").trim().toUpperCase():String(parentDeptId||"").trim().toUpperCase();hierarchy=validateDepartmentHierarchy_(us,target,np);if(deptNombre!==undefined){var nn=String(deptNombre||"").trim();if(!nn)throw new Error("DEPARTMENT_NAME_REQUIRED");next[um.nombre]=nn;}if(um.parentDeptId>=0)next[um.parentDeptId]=np;if(um.updatedAt>=0)next[um.updatedAt]=new Date();}else if(act==="DEACTIVATE_DEPT"){var depRows=ud.slice(1),hasChildren=depRows.some(function(row){return String(row[um.parentDeptId]||"").trim().toUpperCase()===target&&String(row[um.estado]||"").trim().toLowerCase()==="activo";});var cargoSheetCheck=ss.getSheetByName("CatalogoCargos"),hasActiveCargo=false;if(cargoSheetCheck&&cargoSheetCheck.getLastRow()>1){var cargoMapCheck=getInstitutionalCargoColumnMap_(cargoSheetCheck);hasActiveCargo=cargoSheetCheck.getDataRange().getValues().slice(1).some(function(row){return String(row[cargoMapCheck.deptId]||"").trim().toUpperCase()===target&&String(row[cargoMapCheck.estado]||"").trim().toLowerCase()==="activo";});}var adsSheetCheck=ss.getSheetByName("HistorialAdscripciones"),hasActiveAds=false;if(adsSheetCheck&&adsSheetCheck.getLastRow()>1){var adsMapCheck=getInstitutionalAffiliationColumnMap_(adsSheetCheck);hasActiveAds=adsSheetCheck.getDataRange().getValues().slice(1).some(function(row){return String(row[adsMapCheck.deptId]||"").trim().toUpperCase()===target&&String(row[adsMapCheck.estado]||"").trim().toLowerCase()==="activa";});}if(hasChildren||hasActiveCargo||hasActiveAds)throw new Error("DEPARTMENT_HAS_ACTIVE_DEPENDENCIES");next[um.estado]="Inactivo";if(um.updatedAt>=0)next[um.updatedAt]=new Date();}
+   us.getRange(old.rowNumber,1,1,next.length).setValues([next]);return {status:"success",deptId:target,parentDeptId:hierarchy?hierarchy.parentDeptId:undefined,hierarchyPath:hierarchy?hierarchy.path:undefined,jefaturaUserId:um.jefaturaUserId>=0?next[um.jefaturaUserId]:"",estado:next[um.estado],message:act==="UPDATE_DEPT"?"Departamento actualizado; la jerarquía se conserva sin ciclos.":act==="DEACTIVATE_DEPT"?"Departamento desactivado.":"Jefatura departamental actualizada."};
   }finally{ul.releaseLock();}
  }
  if(act==="CREATE_CARGO"){
   if(!cargoNombre||!String(cargoNombre).trim())throw new Error("CARGO_NAME_REQUIRED");
   var cg=cargoId?null:generateInstitutionalId({entityType:"Cargo",prefix:"CRG-"}),newCargo=String(cargoId||cg&&cg.generatedId||"").trim().toUpperCase();if(!newCargo)throw new Error("CARGO_ID_REQUIRED");
-  var lev=Number(nivel===undefined?1:nivel);if(!Number.isInteger(lev)||lev<1)throw new Error("CARGO_HIERARCHY_LEVEL_INVALID");
+  var lev=Number(nivel===undefined?1:nivel);if(!Number.isInteger(lev)||lev<1)throw new Error("CARGO_HIERARCHY_LEVEL_INVALID");if(deptId)requireInstitutionalDepartmentScope_(input,role,deptId);else if(!getInstitutionalDepartmentScope_(input,role).institutionWide)throw new Error("DEPARTMENT_SCOPE_REQUIRED");
   var cl=LockService.getScriptLock();if(!cl.tryLock(10000))throw new Error("DEPARTMENT_HIERARCHY_LOCK_TIMEOUT");
   try{if(deptId)getInstitutionalDepartmentRecord_(ss,deptId);var csh=getOrCreateSheet(ss,"CatalogoCargos");if(csh.getLastRow()===0)csh.appendRow(["cargoId","deptId","nombreCargo","nivelJerarquico","estado","fechaCreacion"]);
    var cMap=getInstitutionalCargoColumnMap_(csh),cRows=csh.getDataRange().getValues().slice(1);if(cRows.some(function(r){return String(r[cMap.cargoId]||"").trim().toUpperCase()===newCargo;}))throw new Error("CARGO_ID_ALREADY_EXISTS");
@@ -4817,8 +4834,47 @@ function manageDepartmentPositions(payload){
    return {status:"success",cargoId:newCargo};
   }finally{cl.releaseLock();}
  }
+
+ if(act==="UPDATE_CARGO"||act==="DEACTIVATE_CARGO"){
+  var targetCargo=String(cargoId||"").trim().toUpperCase();if(!targetCargo)throw new Error("CARGO_ID_REQUIRED");
+  var cargoUpdateLock=LockService.getScriptLock();if(!cargoUpdateLock.tryLock(10000))throw new Error("CARGO_CATALOG_LOCK_TIMEOUT");
+  try{
+   var cargoUpdateSheet=ss.getSheetByName("CatalogoCargos");if(!cargoUpdateSheet||cargoUpdateSheet.getLastRow()<=1)throw new Error("CARGO_NOT_FOUND");
+   var cargoUpdateMap=getInstitutionalCargoColumnMap_(cargoUpdateSheet),cargoUpdateRows=cargoUpdateSheet.getDataRange().getValues(),cargoMatches=[];
+   for(var cui=1;cui<cargoUpdateRows.length;cui++)if(String(cargoUpdateRows[cui][cargoUpdateMap.cargoId]||"").trim().toUpperCase()===targetCargo)cargoMatches.push({row:cargoUpdateRows[cui],rowNumber:cui+1});
+   if(cargoMatches.length!==1)throw new Error(cargoMatches.length?"CARGO_ID_AMBIGUOUS":"CARGO_NOT_FOUND");
+   var cargoRecord=cargoMatches[0],cargoNext=cargoRecord.row.slice(),oldDepartment=String(cargoNext[cargoUpdateMap.deptId]||"").trim().toUpperCase();
+   if(oldDepartment)requireInstitutionalDepartmentScope_(input,role,oldDepartment);else if(!getInstitutionalDepartmentScope_(input,role).institutionWide)throw new Error("DEPARTMENT_SCOPE_REQUIRED");
+   if(String(cargoNext[cargoUpdateMap.estado]||"").trim().toLowerCase()!=="activo"){if(act==="DEACTIVATE_CARGO")return {status:"success",cargoId:targetCargo,idempotent:true,estado:cargoNext[cargoUpdateMap.estado]};throw new Error("CARGO_NOT_ACTIVE");}
+   var activeCargoAffiliations=[],affSheet=ss.getSheetByName("HistorialAdscripciones");
+   if(affSheet&&affSheet.getLastRow()>1){var affMap=getInstitutionalAffiliationColumnMap_(affSheet);activeCargoAffiliations=affSheet.getDataRange().getValues().slice(1).filter(function(row){return String(row[affMap.cargoId]||"").trim().toUpperCase()===targetCargo&&String(row[affMap.estado]||"").trim().toLowerCase()==="activa";});}
+   if(act==="DEACTIVATE_CARGO"){if(activeCargoAffiliations.length)throw new Error("CARGO_HAS_ACTIVE_AFFILIATIONS");cargoNext[cargoUpdateMap.estado]="Inactivo";}
+   else{
+    if(input.deptId!==undefined){var nextDepartment=String(input.deptId||"").trim().toUpperCase();if(nextDepartment!==oldDepartment&&activeCargoAffiliations.length)throw new Error("CARGO_HAS_ACTIVE_AFFILIATIONS");if(nextDepartment)requireInstitutionalDepartmentScope_(input,role,nextDepartment);else if(!getInstitutionalDepartmentScope_(input,role).institutionWide)throw new Error("DEPARTMENT_SCOPE_REQUIRED");if(nextDepartment)getInstitutionalDepartmentRecord_(ss,nextDepartment);cargoNext[cargoUpdateMap.deptId]=nextDepartment;}
+    if(cargoNombre!==undefined){var nextCargoName=String(cargoNombre||"").trim();if(!nextCargoName)throw new Error("CARGO_NAME_REQUIRED");cargoNext[cargoUpdateMap.nombreCargo]=nextCargoName;}
+    if(nivel!==undefined){var nextLevel=Number(nivel);if(!Number.isInteger(nextLevel)||nextLevel<1)throw new Error("CARGO_HIERARCHY_LEVEL_INVALID");if(cargoUpdateMap.nivelJerarquico>=0)cargoNext[cargoUpdateMap.nivelJerarquico]=nextLevel;}
+   }
+   cargoUpdateSheet.getRange(cargoRecord.rowNumber,1,1,cargoNext.length).setValues([cargoNext]);
+   try{logStructuredEvent("USER","manageDepartmentPositions","INFO",act==="DEACTIVATE_CARGO"?"CARGO_DEACTIVATED":"CARGO_UPDATED","Cargo "+targetCargo+" actualizado",{cargoId:targetCargo,estado:cargoNext[cargoUpdateMap.estado]},role);}catch(e){}
+   return {status:"success",cargoId:targetCargo,estado:cargoNext[cargoUpdateMap.estado]};
+  }finally{cargoUpdateLock.releaseLock();}
+ }
+ if(act==="END_AFFILIATION"||act==="DEACTIVATE_AFFILIATION"){
+  var targetAffiliation=String(input.adscripcionId||"").trim();if(!targetAffiliation)throw new Error("AFFILIATION_ID_REQUIRED");
+  var endLock=LockService.getScriptLock();if(!endLock.tryLock(10000))throw new Error("AFFILIATION_LOCK_TIMEOUT");
+  try{var endSheet=ss.getSheetByName("HistorialAdscripciones");if(!endSheet||endSheet.getLastRow()<=1)throw new Error("AFFILIATION_NOT_FOUND");var endMap=getInstitutionalAffiliationColumnMap_(endSheet),endRows=endSheet.getDataRange().getValues(),endMatches=[];
+   for(var ei=1;ei<endRows.length;ei++)if(String(endRows[ei][endMap.adscripcionId]||"").trim()===targetAffiliation)endMatches.push({row:endRows[ei],rowNumber:ei+1});
+   if(endMatches.length!==1)throw new Error(endMatches.length?"AFFILIATION_ID_AMBIGUOUS":"AFFILIATION_NOT_FOUND");
+   var endRecord=endMatches[0],endRow=endRecord.row.slice();requireInstitutionalDepartmentScope_(input,role,String(endRow[endMap.deptId]||""));var endState=String(endRow[endMap.estado]||"").trim().toLowerCase();
+   if(endState!=="activa")return {status:"success",adscripcionId:targetAffiliation,idempotent:true,estado:endRow[endMap.estado]};
+   endRow[endMap.fechaFin]=new Date();endRow[endMap.estado]="Inactiva";endSheet.getRange(endRecord.rowNumber,1,1,endRow.length).setValues([endRow]);
+   try{invalidateUserRoleCache(String(endRow[endMap.userId]||""));}catch(e){}
+   try{recordEntityChangeLog("UsuarioAdscripcion",String(endRow[endMap.userId]||""),{estado:"Activa"},{estado:"Inactiva",fechaFin:endRow[endMap.fechaFin]},"AFFILIATION_ENDED",callerId);}catch(e){}
+   return {status:"success",adscripcionId:targetAffiliation,idempotent:false,estado:"Inactiva"};
+  }finally{endLock.releaseLock();}
+ }
  if(act==="ASSIGN_USER"){
-  var uid=String(userId||"").trim(),did=String(deptId||"").trim().toUpperCase(),cid=String(cargoId||"").trim().toUpperCase();if(!uid||!did||!cid)throw new Error("AFFILIATION_FIELDS_REQUIRED");
+  var uid=String(userId||"").trim(),did=String(deptId||"").trim().toUpperCase(),cid=String(cargoId||"").trim().toUpperCase();if(!uid||!did||!cid)throw new Error("AFFILIATION_FIELDS_REQUIRED");requireInstitutionalDepartmentScope_(input,role,did);
   var generated=generateInstitutionalId({entityType:"Adscripcion",prefix:"ADS-"}),newAds=String(generated&&generated.generatedId||"").trim();if(!newAds)throw new Error("AFFILIATION_ID_GENERATION_FAILED");
   var al=LockService.getScriptLock();if(!al.tryLock(10000))throw new Error("AFFILIATION_LOCK_TIMEOUT");
   var result=null,previous=[],newRowNo=0,as=null,am=null,now=new Date();
@@ -4849,13 +4905,13 @@ function manageDepartmentPositions(payload){
 
 function getUserInstitutionalAffiliations(payload){
  var input=payload&&typeof payload==="object"?payload:{},role=getUserVerifiedRole(input),caller=String(input._verifiedUserId||"").trim();
- var privileged=["Administrador","Desarrollador","RecursosHumanos"].indexOf(role)>=0,target=privileged?String(input.userId||caller).trim():caller;
+ var privileged=["Administrador","Desarrollador","RecursosHumanos"].indexOf(role)>=0,target=privileged?String(input.userId||caller).trim():caller,departmentScope=null;if(role==="RecursosHumanos")departmentScope=getInstitutionalDepartmentScope_(input,role);
  if(!target)throw new Error("USER_ID_REQUIRED");
- var limit=Math.min(200,Math.max(1,parseInt(input.limit,10)||50)),offset=Math.max(0,parseInt(input.offset,10)||0),dept=String(input.deptId||"").trim().toUpperCase(),state=String(input.estado||"").trim().toLowerCase();
+ var limit=Math.min(200,Math.max(1,parseInt(input.limit,10)||50)),offset=Math.max(0,parseInt(input.offset,10)||0),dept=String(input.deptId||"").trim().toUpperCase(),state=String(input.estado||"").trim().toLowerCase();if(role==="RecursosHumanos"&&!departmentScope.institutionWide&&dept){var requestedDept=dept;var allowedDeptIds=(departmentScope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();});if(allowedDeptIds.indexOf(requestedDept)===-1)throw new Error("DEPARTMENT_SCOPE_DENIED");}
  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("HistorialAdscripciones");
  if(!sheet||sheet.getLastRow()<=1)return {status:"success",data:[],total:0,limit:limit,offset:offset,nextOffset:null,hasMore:false};
  var map=getInstitutionalAffiliationColumnMap_(sheet),rows=sheet.getDataRange().getValues(),list=[];
- for(var i=rows.length-1;i>=1;i--){var r=rows[i],rid=String(r[map.userId]||"").trim();if(rid!==target)continue;if(dept&&String(r[map.deptId]||"").trim().toUpperCase()!==dept)continue;if(state&&String(r[map.estado]||"").trim().toLowerCase()!==state)continue;
+ for(var i=rows.length-1;i>=1;i--){var r=rows[i],rid=String(r[map.userId]||"").trim();if(rid!==target)continue;var rowDept=String(r[map.deptId]||"").trim().toUpperCase();if(dept&&rowDept!==dept)continue;if(role==="RecursosHumanos"&&!departmentScope.institutionWide&&((departmentScope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();}).indexOf(rowDept)===-1))continue;if(state&&String(r[map.estado]||"").trim().toLowerCase()!==state)continue;
   list.push({adscripcionId:r[map.adscripcionId],userId:rid,deptId:r[map.deptId],cargoId:r[map.cargoId],fechaInicio:formatInstitutionalDate_(r[map.fechaInicio]),fechaFin:formatInstitutionalDate_(r[map.fechaFin]),estado:r[map.estado],motivo:map.motivo>=0?r[map.motivo]||"":"",autorizadoPor:map.autorizadoPor>=0?r[map.autorizadoPor]||"":"",fechaRegistro:map.fechaRegistro>=0?formatInstitutionalDate_(r[map.fechaRegistro]):""});
  }
  var page=list.slice(offset,offset+limit),more=offset+page.length<list.length;
