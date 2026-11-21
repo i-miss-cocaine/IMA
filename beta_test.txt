@@ -2322,3 +2322,33 @@ Evidencia requerida: SHA de despliegue, IDs sintéticos, respuestas Allow/Deny, 
 Tarea vinculada: AUD-NG-222 / TASK-502.
 Responsable: QA/administrador del ambiente beta.
 ===============================================================================
+
+
+===============================================================================
+### BETA-AUD-NG-222-USER-RECIPIENTS-001
+Módulo/rol: USER — citas y mensajería interna.
+Tarea/requisito: AUD-NG-222 / TASK-502 — validar destinatarios y contexto académico al iniciar operaciones.
+Objetivo: confirmar en la hoja institucional real que bookAppointment y sendInternalMessage aceptan solo destinatarios con cuenta única/activa y no permiten asociar un estudiante fuera del contexto autorizado.
+Precondiciones:
+- Versión beta desplegada con el commit que contiene C1.925.
+- Usuarios sintéticos activos e inactivos en la misma institución; tutor con relación/permisos configurados; personal con y sin ownership de expediente.
+- Conversaciones nuevas y existentes, incluyendo una sin estudiante asociado.
+Pasos:
+1. Crear cita dirigida a un usuario institucional activo; confirmar persistencia.
+2. Intentar cita con destinatario inexistente, duplicado e inactivo; confirmar denegación sin fila nueva.
+3. Iniciar conversación con destinatario activo; confirmar persistencia y notificación.
+4. Intentar destinatario inexistente, duplicado e inactivo; confirmar denegación sin mensaje persistido.
+5. Iniciar conversación como estudiante con estudianteId propio y ajeno; permitir solo el propio.
+6. Repetir como tutor con relación autorizada/no autorizada y como personal con expediente dentro/fuera del ownership; denegar ámbito ausente.
+7. En hilo existente, verificar que participantes y estudiante previamente asociados se conservan; en hilo sin contexto, intentar asociar estudiante ajeno y confirmar denegación.
+Resultado esperado:
+- Solo destinatarios únicos y activos de la institución pueden recibir citas o iniciar nuevos hilos.
+- El contexto de estudiante solo se asocia cuando la identidad/relación/scope y ownership lo permiten.
+- Denegaciones no escriben registros; ScriptLock se libera ante éxito y error.
+Resultado real: no ejecutado; requiere entorno Apps Script/Sheets desplegado.
+Estado: PENDIENTE DE BETA.
+Severidad si falla: Alta — cita o comunicación institucional dirigida a cuenta inválida, o exposición de contexto académico.
+Evidencia requerida: SHA de despliegue, IDs sintéticos, respuestas de autorización, filas antes/después y trazas de lock sin PII/tokens.
+Tarea vinculada: AUD-NG-222 / TASK-502.
+Responsable: QA/administrador del ambiente beta.
+===============================================================================

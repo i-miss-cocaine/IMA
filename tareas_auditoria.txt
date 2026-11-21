@@ -1041,3 +1041,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502/TASK-506 permanecen En ejecución.
 - Siguiente: validar destinatarios y continuar action/resource bindings en ACADEMIC/ACCOUNTING/TASK/EXAM.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.925 — AUD-NG-222 / TASK-502
+- USER bookAppointment comprueba solicitadoA como usuario único/activo bajo ScriptLock.
+- USER sendInternalMessage valida destinatario al abrir hilo nuevo y valida estudiante asociado por identidad propia, relación de tutor o scope/ownership del personal. Hilos ya asociados conservan contexto; un hilo sin contexto no permite añadir estudiante ajeno.
+- Contratos Node de citas y mensajes y node --check PASS en GitHub Actions run 44955382293 (pasos 88–91 y 108).
+- Phase22 sigue FAIL por configureSchoolDocumentTemplate; no relacionado con estos cambios.
+- CLI local, Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta registrado en beta_test.txt.
+- TASK-502 y TASK-506 siguen En ejecución. Siguiente: inventario action/resource de ACADEMIC/ACCOUNTING/TASK/EXAM.
+===============================================================================

@@ -1271,3 +1271,38 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - AUD-NG-222 / TASK-502 continúa En ejecución; TASK-506 / AUD-NG-226 depende de TASK-502 y permanece En ejecución.
 - Siguiente: validar solicitadoA como usuario institucional activo y restringir destinatario/estudiante en sendInternalMessage; luego continuar auditoría de bindings en los otros servicios.
 ===============================================================================
+
+
+===============================================================================
+### C1.925 — IMA-EXEC-20261121-AUD-NG-222-USER-RECIPIENT-CONTEXT-96
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.924; HEAD inicial de esta unidad: 71d994de1b504786dbb7abc9f7b98b1b0c677f7b.
+- HEAD de implementación antes del checkpoint: e5d6e37daeaf69e19cd5a8ebc4832aec43fabe1b.
+- Commits de código y pruebas: 00ec29e6 (validación de destinatarios); 67da4b25 (contexto de conversaciones existentes sin asociación); eb3a9f2a (fixture y casos de citas); 667850eb (fixture y casos de mensajería); c1f013b6 (cuenta inactiva en citas); e5d6e37d (cuenta inactiva en mensajería).
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección
+- bookAppointment ahora valida dentro de ScriptLock que solicitadoA corresponda a un registro único y activo de Usuarios, antes de persistir la cita.
+- sendInternalMessage valida el destinatario institucional único/activo al iniciar una conversación nueva. Si se asocia estudiante, exige identidad propia para Estudiante/Alumno, relación verificada para Tutor/Padre/Responsable, o scope institucional y ownership READ de expediente para personal.
+- Los hilos existentes conservan sus participantes y contexto; si el hilo aún no tiene contexto académico y se intenta asociar uno nuevo, se aplica la misma autorización. El lock protege lectura/decisión/escritura y se libera mediante finally.
+- No se cambió la política de roles que pueden recibir citas/mensajes, al no existir un requisito original verificable que justificara imponer una allowlist.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-appointment-mutations-ownership.test.js
+- tests/security/user-internal-message-mutations-ownership.test.js
+
+### Verificaciones
+- GitHub Actions Department Scope Contract, run 44955382293, commit e5d6e37d, Node.js 24.22.3: USER internal message participant ownership (88) PASS; USER internal message mutations ownership (89) PASS, incluidos destinatario inexistente/inactivo y contexto ajeno; appointment bookings (90) PASS; appointment mutations (91) PASS, incluidos destinatario inexistente/inactivo; syntax-check de servicios (108) PASS.
+- El workflow global termina FAILURE solo en Phase 22 document management suite (109): falta configureSchoolDocumentTemplate, ajeno a los archivos y contratos de esta unidad. Los pasos posteriores quedan skipped por el fail-fast.
+- Revisión de diffs de seis commits: solo se modificaron la función USER objetivo y los dos contratos relacionados; no se eliminaron líneas ajenas ni se alteró el workflow.
+- Node CLI local independiente: NOT RUN (no hay terminal/runtime local disponible en esta sesión). Node.js se ejecutó en GitHub Actions. Apps Script/Sheets real y concurrencia interproyecto: NOT RUN; requieren beta.
+- Se agregó caso de verificación de despliegue en beta_test.txt; Pendiente beta.
+
+### Estado y siguiente acción elegible
+- Validación local aislada en GitHub Actions: PASS para citas y mensajería. TASK-502 permanece En ejecución porque falta completar el inventario action/resource en ACADEMIC, ACCOUNTING, TASK y EXAM.
+- TASK-506 / AUD-NG-226 sigue En ejecución y depende de TASK-502.
+- Siguiente: inventariar handlers con IDs de estudiante/expediente/solicitud en ACADEMIC, ACCOUNTING, TASK y EXAM; contrastar cada acción con permisos y ownership/contexto ya existentes, sin añadir validaciones redundantes.
+===============================================================================

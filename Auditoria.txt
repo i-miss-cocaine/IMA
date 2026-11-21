@@ -3246,3 +3246,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-222 / TASK-502 | C1.924] Hallazgo: getAdministrativeRequests permitía listado global por allowlist y filtros userId/estudianteId manipulables. Corrección: sesión verificada; self-only sin scope; ownership EXPEDIENTE_ESTUDIANTE/READ en ámbito departamental; institutionWide para cola global; lectura no crea hojas y adjuntoUrl sigue oculto. Contratos Node y sintaxis PASS. Único fallo CI: Phase22/configureSchoolDocumentTemplate.
+
+
+[2026-11-21 | AUD-NG-222 / TASK-502 | C1.925] bookAppointment aceptaba solicitadoA sin validar que fuera usuario institucional activo; sendInternalMessage permitía iniciar conversaciones con destinatarios no existentes/inactivos y asociar estudiante ajeno sin validar contexto. Se validan destinatarios únicos/activos mediante getInstitutionalUserRecord_ dentro del lock; contexto académico nuevo por actor/tutor/scope y ownership READ. Contratos Node de citas/mensajes y syntax-check PASS en Actions run 44955382293. No se inventó allowlist de roles de destinatario. Phase22 falla por configureSchoolDocumentTemplate ajeno. Apps Script real, CLI local y concurrencia interproyecto NOT RUN; beta pendiente. Continuar inventario action/resource en ACADEMIC/ACCOUNTING/TASK/EXAM.

@@ -4465,3 +4465,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-21] C1.924 / AUD-NG-222-TASK-502 — USER getAdministrativeRequests ahora verifica sesión; sin scope es self-only; scope departamental requiere expediente + assertRecordOwnership READ; institutionWide permite cola global. Filtros cliente no conceden acceso; lectura getSheetByName y adjuntoUrl sanitizado. Contrato Node y syntax PASS; USER 82–93, academic 94–102, firma/adjuntos 103–107 PASS. Department Scope agregado falla solo en Phase22/configureSchoolDocumentTemplate. Academic-Service, Hierarchical, UI, SACE, Task, Accounting e Identity SUCCESS. Pendientes: solicitadoA, destinatario de mensajes y transiciones de cita.
+
+
+[2026-11-21] C1.925 / AUD-NG-222-TASK-502 — USER bookAppointment y sendInternalMessage validan destinatario institucional único/activo; mensajería nueva comprueba el contexto académico asociado por identidad, relación de tutor o scope/ownership del personal. Los contratos existentes de citas y mensajes se ampliaron con cuentas inexistentes/inactivas y estudiante ajeno. GitHub Actions run 44955382293: contratos 88–91 y syntax-check 108 PASS. Phase22 sigue fallando por configureSchoolDocumentTemplate. Sin CLI local ni Apps Script real; escenarios remotos Pendiente beta.
