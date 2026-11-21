@@ -37,6 +37,8 @@ const helperStart = sourceCode.indexOf("const USER_ROLE_MEMBERSHIP_HEADERS_ =");
 const helperEnd = sourceCode.indexOf("function generateSessionToken(user) {", helperStart);
 assert.ok(helperStart >= 0 && helperEnd > helperStart, "membership helpers exist");
 const membershipHelpers = sourceCode.slice(helperStart, helperEnd);
+const versionHelpers = sourceCode.slice(sourceCode.indexOf("var SECURITY_VERSION_HEADERS_"), sourceCode.indexOf("function getDynamicPermissionsForRole"));
+const versionWriter = extractFunction(sourceCode, "incrementSecurityVersionLocked_");
 const functionNames = ["generateSessionToken","verifySessionToken","getUserVerifiedRole","getUserRoleMemberships","switchActiveRole","manageUserRoleMemberships","loginUser","ensureUserRoleMembershipSheet_","isConfiguredRbacRole_"];
 const functions = functionNames.map(name => extractFunction(sourceCode, name));
 const headers = ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"];
@@ -72,6 +74,7 @@ function makeHarness(membershipRows = [headers]) {
   sheets.MembresiasRolesRBAC = sheet(membershipRows);
   sheets.Usuarios = sheet(userRows);
   sheets.MatrizPermisosRoles = sheet(matrixRows);
+  sheets.VersionesSeguridad = sheet([["Clave","Version","UpdatedAt","UpdatedBy"]]);
   const cache = {};
   let uuidCounter = 0;
   const ctx = {
@@ -101,7 +104,7 @@ function makeHarness(membershipRows = [headers]) {
     logStructuredEvent:()=>true,
     locked:false
   };
-  vm.runInNewContext("function advanceSaceUserSourceRevisionLocked_(){return \"TEST-REVISION:1\";}\n"+membershipHelpers+"\n"+functions.join("\n")+
+  vm.runInNewContext("function advanceSaceUserSourceRevisionLocked_(){return \"TEST-REVISION:1\";}\n"+membershipHelpers+"\n"+versionHelpers+"\n"+versionWriter+"\n"+functions.join("\n")+
     "\nthis.generateSessionToken=generateSessionToken;this.verifySessionToken=verifySessionToken;"+
     "this.getUserVerifiedRole=getUserVerifiedRole;this.getUserRoleMemberships=getUserRoleMemberships;"+
     "this.switchActiveRole=switchActiveRole;this.manageUserRoleMemberships=manageUserRoleMemberships;this.loginUser=loginUser;"+
@@ -169,8 +172,9 @@ function membership(id,user,role,institution,status="ACTIVE",from=start,to=end){
   assert.equal(assigned.status,"success");
   assert.equal(membershipRows.length,3);
   assert.equal(ctx.resolveUserRoleMembership_("U-1","Director","INST-1").membershipId,assigned.membershipId);
-  assert.equal(ctx.manageUserRoleMemberships({sessionToken:adminSession,action:"ASSIGN",userId:"U-1",roleId:"Director"}).code,"ROLE_MEMBERSHIP_ALREADY_EXISTS");
-  assert.equal(ctx.manageUserRoleMemberships({sessionToken:adminSession,action:"REVOKE",userId:"U-1",membershipId:assigned.membershipId}).status,"success");
+  const refreshedAdminSession=ctx.generateSessionToken({userId:"U-1",email:"u1@example.test",role:"Student"});
+  assert.equal(ctx.manageUserRoleMemberships({sessionToken:refreshedAdminSession,action:"ASSIGN",userId:"U-1",roleId:"Director"}).code,"ROLE_MEMBERSHIP_ALREADY_EXISTS");
+  assert.equal(ctx.manageUserRoleMemberships({sessionToken:refreshedAdminSession,action:"REVOKE",userId:"U-1",membershipId:assigned.membershipId}).status,"success");
   assert.equal(membershipRows[2][4],"REVOKED");
   assert.equal(ctx.resolveUserRoleMembership_("U-1","Director","INST-1"),null);
   assert.equal(ctx.locked,false,"ScriptLock is released");
@@ -242,7 +246,12 @@ console.log("User role membership contract: institution/user binding, effective 
       computeHmacSignature:(value,secret)=>"sig:"+value+":"+secret
     };
     const revocationConstants = 'const SESSION_REVOCATION_HEADERS_ = ["SessionID","UserID","RevokedAt","ExpiresAt"]; const SESSION_REVOCATION_STATE_HEADERS_ = ["Key","Value","UpdatedAt"];\n';
-    vm.runInNewContext(revocationConstants+membershipVerifier+"\n"+revocationVerifier+"\n"+sessionVerifier+"\nthis.verifySessionToken=verifySessionToken;",serviceCtx);
+    const versionHelper = serviceSource.slice(serviceSource.indexOf("var SECURITY_VERSION_HEADERS_"), serviceSource.indexOf("function getDynamicPermissionsForRole"));
+    const versionRows = [["Clave","Version","UpdatedAt","UpdatedBy"],["USER_ROLE:U-1",0,new Date(),""]];
+    const versionSheet = {getDataRange:()=>({getValues:()=>versionRows.map(r=>r.slice())})};
+    const originalOpenById = serviceCtx.SpreadsheetApp.openById;
+    serviceCtx.SpreadsheetApp.openById = () => ({getSheetByName:name=>name==="VersionesSeguridad"?versionSheet:originalOpenById().getSheetByName(name)});
+    vm.runInNewContext(versionHelper+"\n"+revocationConstants+membershipVerifier+"\n"+revocationVerifier+"\n"+sessionVerifier+"\nthis.verifySessionToken=verifySessionToken;",serviceCtx);
     assert.equal(serviceCtx.verifySessionToken(signedRoleToken).role,"Director",relativePath+" accepts active membership token");
     delete serviceCtx.ROLE_PERMISSIONS.Director;
     assert.equal(serviceCtx.verifySessionToken(signedRoleToken),null,relativePath+" rejects role removed from RBAC configuration");

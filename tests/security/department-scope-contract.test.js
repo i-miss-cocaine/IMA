@@ -37,6 +37,7 @@ const ownershipFn = extractFunction(source, "assertRecordOwnership");
 const responsibilityFn = extractFunction(source, "resolveActiveInternalResponsibility_");
 const permissionCacheKeyFn = extractFunction(source, "getDynamicPermissionCacheKey_");
 const dynamicPermissionsFn = extractFunction(source, "getDynamicPermissionsForRole");
+const versionPrelude = source.slice(source.indexOf("var SECURITY_VERSION_HEADERS_"), source.indexOf("function getDynamicPermissionsForRole"));
 
 const headers = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID","InstitutionID","MembershipID","ResponsibilityID"];
 const rows = [
@@ -265,13 +266,16 @@ const permissionRows = [
   ["Director","USER","readRecords",false,"INST-1"],
   ["Director","USER","readRecords",true,"INST-2"]
 ];
+const versionRows = [["Clave","Version","UpdatedAt","UpdatedBy"],["PERMISSION_MATRIX",0,new Date(),""]];
+const versionSheet = { getDataRange: () => ({ getValues: () => versionRows.map(r => r.slice()) }) };
+const matrixSheet = { getLastRow: () => permissionRows.length, getDataRange: () => ({ getValues: () => permissionRows.map(r => r.slice()) }) };
 const permissionCtx = {
   SPREADSHEET_ID: "LOCAL",
   getIdentityInstitutionId_: () => activeTenant,
   CacheService: { getScriptCache: () => ({ get: key => permissionCache.get(key) || null, put: (key,value) => permissionCache.set(key,value), remove: key => permissionCache.delete(key) }) },
-  SpreadsheetApp: { openById: () => ({ getSheetByName: () => ({ getLastRow: () => permissionRows.length, getDataRange: () => ({ getValues: () => permissionRows }) }) }) }
+  SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "VersionesSeguridad" ? versionSheet : (name === "MatrizPermisosRoles" ? matrixSheet : null) }) }
 };
-vm.runInNewContext('const PERMISSION_MATRIX_SERVICE_="USER";\n' + permissionCacheKeyFn + "\n" + dynamicPermissionsFn + "\nthis.getDynamicPermissionsForRole=getDynamicPermissionsForRole;", permissionCtx);
+vm.runInNewContext(versionPrelude + "\n" + 'const PERMISSION_MATRIX_SERVICE_="USER";\n' + permissionCacheKeyFn + "\n" + dynamicPermissionsFn + "\nthis.getDynamicPermissionsForRole=getDynamicPermissionsForRole;", permissionCtx);
 assert.equal(permissionCtx.getDynamicPermissionsForRole("Director","readRecords"), false, "institution deny overrides global allow");
 activeTenant = "INST-2";
 assert.equal(permissionCtx.getDynamicPermissionsForRole("Director","readRecords"), true, "institution two uses its own permission rule and cache");

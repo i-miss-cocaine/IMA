@@ -282,7 +282,8 @@ function getOrCreateSheet(ss, name) {
 // ENDPOINTS
 // ---------------------------------------------------------------------------
 
-function doGet() { return textResponse({ status: "success", service: "ACADEMIC", timestamp: new Date().toISOString(), dbConnected: true }); }
+function doGet() {
+  resetSecurityVersionReadCache_(); return textResponse({ status: "success", service: "ACADEMIC", timestamp: new Date().toISOString(), dbConnected: true }); }
 
 
 // ---------------------------------------------------------------------------
@@ -1180,6 +1181,11 @@ function verifySessionToken(tokenString) {
       }
     }
     if (acctState !== "Activa") return null;
+    var currentRoleVersion = getSecurityVersion_("USER_ROLE:" + String(claims.userId || "").trim());
+    if (currentRoleVersion === false) return null;
+    if (claims.roleVersion === undefined) {
+      if (currentRoleVersion !== 0) return null;
+    } else if (!Number.isSafeInteger(claims.roleVersion) || claims.roleVersion !== currentRoleVersion) return null;
     var membershipCheck = verifyUserRoleMembershipClaim_(claims);
     if (membershipCheck === false) return null;
     if (membershipCheck === null && (!currentRole || currentRole !== claims.role.trim())) return null;
@@ -1346,7 +1352,31 @@ function validateRolePermission(action, payload) {
 // [TAREA-F4-P1-03] [Fase 4: Matriz Dinámica de Permisos] - Consulta y caché de la matriz dinámica por rol y acción
 
 function getPermissionMatrixInstitutionId_(){try{if(typeof getIdentityInstitutionId_==="function"){var v=String(getIdentityInstitutionId_()||"").trim();if(v)return v;}}catch(_){}try{if(typeof PropertiesService!=="undefined"){var p=PropertiesService.getScriptProperties();return String(p.getProperty("IMA_INSTITUTION_ID")||p.getProperty("INSTITUTION_ID")||"").trim();}}catch(_){}return "";}
-function getDynamicPermissionsForRole(role,moduleOrAction,actionArgument,institutionArgument){var service="ACADEMIC",module=actionArgument===undefined?service:String(moduleOrAction||"").trim().toUpperCase(),action=actionArgument===undefined?String(moduleOrAction||"").trim():String(actionArgument||"").trim(),institutionId=String(institutionArgument||"").trim();if(!institutionId){try{if(typeof getIdentityInstitutionId_==="function")institutionId=String(getIdentityInstitutionId_()||"").trim();}catch(_){}}if(!institutionId){try{if(typeof PropertiesService!=="undefined"){var props=PropertiesService.getScriptProperties();institutionId=String(props.getProperty("IMA_INSTITUTION_ID")||props.getProperty("INSTITUTION_ID")||"").trim();}}catch(_){}}if(!role||!module||!action)return false;var cache=null,snapshot=null,key="dynamic_permissions_matrix_v2:"+service+":"+(institutionId||"UNRESOLVED");try{cache=CacheService.getScriptCache();var raw=cache.get(key);if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.schemaVersion===2&&Array.isArray(parsed.rows))snapshot=parsed;}}catch(_){}if(!snapshot){try{var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("MatrizPermisosRoles");if(!sheet||sheet.getLastRow()===0)return null;var values=sheet.getDataRange().getValues(),h=(values[0]||[]).map(function(v){return String(v||"").trim().toLowerCase();}),ix={role:h.indexOf("rol"),module:h.indexOf("modulo"),action:h.indexOf("accion"),allowed:h.indexOf("permitido"),scope:h.indexOf("ambito")};if(Object.keys(ix).some(function(k){return ix[k]<0;}))return false;if(values.length<=1)return null;var rows=values.slice(1).map(function(r){var v=r[ix.allowed],allowed=v===true||String(v).trim().toLowerCase()==="true"?true:(v===false||String(v).trim().toLowerCase()==="false"?false:null);return{role:String(r[ix.role]||"").trim(),module:String(r[ix.module]||"").trim().toUpperCase(),action:String(r[ix.action]||"").trim(),allowed:allowed,scope:String(r[ix.scope]||"").trim()};});snapshot={schemaVersion:2,rows:rows};try{if(cache)cache.put(key,JSON.stringify(snapshot),600);}catch(_){}}catch(_){return false;}}var relevant=snapshot.rows.filter(function(r){return r.role===String(role).trim()&&r.action===action&&r.module!=="__LEGACY_ARCHIVED__";});if(!relevant.length)return null;if(!institutionId||relevant.some(function(r){return (!r.module||r.module===module)&&(r.allowed===null||!r.scope);}))return false;var candidates=relevant.filter(function(r){return r.module===module&&(r.scope==="Global"||r.scope===institutionId);});if(!candidates.length)return false;var seen={};for(var i=0;i<candidates.length;i++){var k=candidates[i].module+"|"+candidates[i].action+"|"+candidates[i].scope;seen[k]=(seen[k]||0)+1;if(seen[k]>1)return false;}return !candidates.some(function(r){return r.allowed!==true;});}
+var SECURITY_VERSION_HEADERS_ = ["Clave","Version","UpdatedAt","UpdatedBy"];
+var SECURITY_VERSION_READ_CACHE_ = Object.create(null);
+function resetSecurityVersionReadCache_() {
+  SECURITY_VERSION_READ_CACHE_ = Object.create(null);
+}
+function getSecurityVersion_(key) {
+  var versionKey = String(key || "").trim();
+  if (!versionKey || versionKey.length > 180) return false;
+  if (Object.prototype.hasOwnProperty.call(SECURITY_VERSION_READ_CACHE_, versionKey)) return SECURITY_VERSION_READ_CACHE_[versionKey];
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("VersionesSeguridad");
+    if (!sheet) { SECURITY_VERSION_READ_CACHE_[versionKey] = 0; return 0; }
+    var values = sheet.getDataRange().getValues();
+    if (!values.length || JSON.stringify((values[0] || []).map(String)) !== JSON.stringify(SECURITY_VERSION_HEADERS_)) return false;
+    var matches = [];
+    for (var i = 1; i < values.length; i++) if (String(values[i][0] || "").trim() === versionKey) matches.push(values[i]);
+    if (matches.length > 1) return false;
+    var version = matches.length ? Number(matches[0][1]) : 0;
+    if (!Number.isSafeInteger(version) || version < 0) return false;
+    SECURITY_VERSION_READ_CACHE_[versionKey] = version;
+    return version;
+  } catch (error) { return false; }
+}
+function getDynamicPermissionsForRole(role,moduleOrAction,actionArgument,institutionArgument){var service="ACADEMIC",module=actionArgument===undefined?service:String(moduleOrAction||"").trim().toUpperCase(),action=actionArgument===undefined?String(moduleOrAction||"").trim():String(actionArgument||"").trim(),institutionId=String(institutionArgument||"").trim();if(!institutionId){try{if(typeof getIdentityInstitutionId_==="function")institutionId=String(getIdentityInstitutionId_()||"").trim();}catch(_){}}if(!institutionId){try{if(typeof PropertiesService!=="undefined"){var props=PropertiesService.getScriptProperties();institutionId=String(props.getProperty("IMA_INSTITUTION_ID")||props.getProperty("INSTITUTION_ID")||"").trim();}}catch(_){}}if(!role||!module||!action)return false;var permissionVersion=getSecurityVersion_("PERMISSION_MATRIX");if(permissionVersion===false)return false;var cache=null,snapshot=null,key="dynamic_permissions_matrix_v3:"+service+":"+(institutionId||"UNRESOLVED")+":"+permissionVersion;try{cache=CacheService.getScriptCache();var raw=cache.get(key);if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.schemaVersion===3&&parsed.version===permissionVersion&&Array.isArray(parsed.rows))snapshot=parsed;}}catch(_){}if(!snapshot){try{var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("MatrizPermisosRoles");if(!sheet||sheet.getLastRow()===0)return null;var values=sheet.getDataRange().getValues(),h=(values[0]||[]).map(function(v){return String(v||"").trim().toLowerCase();}),ix={role:h.indexOf("rol"),module:h.indexOf("modulo"),action:h.indexOf("accion"),allowed:h.indexOf("permitido"),scope:h.indexOf("ambito")};if(Object.keys(ix).some(function(k){return ix[k]<0;}))return false;if(values.length<=1)return null;var rows=values.slice(1).map(function(r){var v=r[ix.allowed],allowed=v===true||String(v).trim().toLowerCase()==="true"?true:(v===false||String(v).trim().toLowerCase()==="false"?false:null);return{role:String(r[ix.role]||"").trim(),module:String(r[ix.module]||"").trim().toUpperCase(),action:String(r[ix.action]||"").trim(),allowed:allowed,scope:String(r[ix.scope]||"").trim()};});snapshot={schemaVersion:3,version:permissionVersion,rows:rows};try{if(cache)cache.put(key,JSON.stringify(snapshot),600);}catch(_){}}catch(_){return false;}}var relevant=snapshot.rows.filter(function(r){return r.role===String(role).trim()&&r.action===action&&r.module!=="__LEGACY_ARCHIVED__";});if(!relevant.length)return null;if(!institutionId||relevant.some(function(r){return (!r.module||r.module===module)&&(r.allowed===null||!r.scope);}))return false;var candidates=relevant.filter(function(r){return r.module===module&&(r.scope==="Global"||r.scope===institutionId);});if(!candidates.length)return false;var seen={};for(var i=0;i<candidates.length;i++){var k=candidates[i].module+"|"+candidates[i].action+"|"+candidates[i].scope;seen[k]=(seen[k]||0)+1;if(seen[k]>1)return false;}return !candidates.some(function(r){return r.allowed!==true;});}
 
 
 // [TAREA-F4-P1-01] [Fase 4: Motor de Delegaciones] - Verificación de delegaciones de seguridad activas
@@ -1511,6 +1541,7 @@ function handleTrustedMigrationEnvelope_(envelope){
 }
 
 function doPost(e) {
+  resetSecurityVersionReadCache_();
   let correlationId = apiResponseCorrelationId_();
   const respond = function(value) { return textResponse(value, correlationId, "ACADEMIC"); };
   try {

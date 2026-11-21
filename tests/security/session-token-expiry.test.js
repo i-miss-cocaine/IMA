@@ -47,7 +47,8 @@ function runVerifier(source, claims) {
     },
     SPREADSHEET_ID: "LOCAL"
   };
-  vm.runInNewContext(fn + "\nthis.verify = verifySessionToken;", context);
+  const versionPrelude = source.slice(source.indexOf("var SECURITY_VERSION_HEADERS_"), source.indexOf("function getDynamicPermissionsForRole"));
+  vm.runInNewContext(versionPrelude + "\n" + fn + "\nthis.verify = verifySessionToken;", context);
   return context.verify("payload.SIG");
 }
 const now = Math.floor(Date.now() / 1000);
@@ -80,13 +81,17 @@ const generationContext = {
   Utilities: {
     base64EncodeWebSafe(value) { encoded = value; return "payload"; },
     getUuid: () => "S1"
-  }
+  },
+  SPREADSHEET_ID: "LOCAL",
+  SpreadsheetApp: { openById: () => ({ getSheetByName: () => null }) }
 };
-vm.runInNewContext(generateFn + "\nthis.generate = generateSessionToken;", generationContext);
+const generationVersionPrelude = userSource.slice(userSource.indexOf("var SECURITY_VERSION_HEADERS_"), userSource.indexOf("function getDynamicPermissionsForRole"));
+vm.runInNewContext(generationVersionPrelude + "\n" + generateFn + "\nthis.generate = generateSessionToken;", generationContext);
 const token = generationContext.generate({ userId: "U1", email: "u@example.test", role: "Estudiante" });
 const generatedClaims = JSON.parse(encoded);
 assert.equal(token, "payload.SIG");
 assert.ok(Number.isSafeInteger(generatedClaims.iat));
 assert.ok(Number.isSafeInteger(generatedClaims.exp));
 assert.equal(generatedClaims.exp - generatedClaims.iat, 86400);
+assert.equal(generatedClaims.roleVersion, 0, "new sessions carry the current role version");
 process.stdout.write("session-token-expiry: 40 local-verifier cases + generation assertions passed\n");

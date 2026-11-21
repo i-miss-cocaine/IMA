@@ -13,6 +13,8 @@ on:
       - developer-dashboard.html
       - js/developer.js
       - tests/security/permission-matrix-dimensions-contract.test.js
+      - tests/security/security-version-propagation-contract.test.js
+      - tests/security/session-token-expiry.test.js
       - backend/academic-service/Code.gs
       - tests/security/academic-multilevel-file-validation.test.js
       - tests/security/academic-service-single-auth-context.test.js
@@ -155,6 +157,10 @@ jobs:
         run: node tests/security/internal-responsibility-rbac-contract.test.js
       - name: Run dynamic permission matrix dimension contract
         run: node tests/security/permission-matrix-dimensions-contract.test.js
+      - name: Run security version propagation and stale-session contract
+        run: node tests/security/security-version-propagation-contract.test.js
+      - name: Run session token expiry and role version contract
+        run: node tests/security/session-token-expiry.test.js
       - name: Run accounting departmental import scope contract
         run: node tests/security/accounting-departmental-import-scope.test.js
       - name: Run accounting semantic import preflight contract
@@ -344,6 +350,8 @@ jobs:
           node --check js/api.js
           node --check js/developer.js
           node --check tests/security/permission-matrix-dimensions-contract.test.js
+          node --check tests/security/security-version-propagation-contract.test.js
+          node --check tests/security/session-token-expiry.test.js
           node --check js/teacher.js
           node --check tests/security/academic-teacher-justification-abac.test.js
           node --check tests/contracts/api-response-contract.test.js

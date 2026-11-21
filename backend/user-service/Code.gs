@@ -949,7 +949,8 @@ function normalizeSubjectInBackend(name) {
 // ENDPOINTS
 // ---------------------------------------------------------------------------
 
-function doGet() { return textResponse({ status: "success", service: "USER", timestamp: new Date().toISOString(), dbConnected: true }); }
+function doGet() {
+  resetSecurityVersionReadCache_(); return textResponse({ status: "success", service: "USER", timestamp: new Date().toISOString(), dbConnected: true }); }
 
 // ---------------------------------------------------------------------------
 // CONTROL DE ACCESO BASADO EN ROLES (RBAC SERVIDOR - REQ-EXP-008 & FASE 2)
@@ -1762,14 +1763,41 @@ function isConfiguredRbacRole_(ss, roleId) {
   return sheet.getDataRange().getValues().slice(1).some(function(row) { return String(row[0] || "").trim() === roleKey; });
 }
 
+function incrementSecurityVersionLocked_(key, actorId) {
+  var versionKey = String(key || "").trim();
+  if (!versionKey || versionKey.length > 180) return false;
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("VersionesSeguridad");
+    if (!sheet) sheet = ss.insertSheet("VersionesSeguridad");
+    if (sheet.getLastRow() === 0) sheet.appendRow(SECURITY_VERSION_HEADERS_.slice());
+    var values = sheet.getDataRange().getValues();
+    if (!values.length || JSON.stringify((values[0] || []).map(String)) !== JSON.stringify(SECURITY_VERSION_HEADERS_)) return false;
+    var matches = [];
+    for (var i = 1; i < values.length; i++) if (String(values[i][0] || "").trim() === versionKey) matches.push(i);
+    if (matches.length > 1) return false;
+    var current = matches.length ? Number(values[matches[0]][1]) : 0;
+    if (!Number.isSafeInteger(current) || current < 0 || current >= Number.MAX_SAFE_INTEGER) return false;
+    var next = current + 1;
+    var row = [versionKey, next, new Date(), String(actorId || "").trim()];
+    if (matches.length) sheet.getRange(matches[0] + 1, 1, 1, 4).setValues([row]); else sheet.appendRow(row);
+    var verify = sheet.getDataRange().getValues().slice(1).filter(function(r) { return String(r[0] || "").trim() === versionKey; });
+    if (verify.length !== 1 || Number(verify[0][1]) !== next) return false;
+    SECURITY_VERSION_READ_CACHE_[versionKey] = next;
+    return next;
+  } catch (error) { return false; }
+}
 function generateSessionToken(user) {
   const secret = getAuthTokenSecret();
   const now = Math.floor(Date.now() / 1000);
   const exp = now + (24 * 3600); // 24 horas de vigencia
+  const roleVersion = getSecurityVersion_("USER_ROLE:" + String(user.userId || "").trim());
+  if (roleVersion === false) throw new Error("SECURITY_VERSION_UNAVAILABLE");
   const payloadData = {
     userId: user.userId,
     email: user.email,
     role: user.role,
+    roleVersion: roleVersion,
     accountState: user.accountState || "Activa",
     membershipId: user.membershipId || undefined,
     institutionId: user.institutionId || undefined,
@@ -1840,6 +1868,11 @@ function verifySessionToken(tokenString) {
       }
     }
     if (acctState !== "Activa") return null;
+    var currentRoleVersion = getSecurityVersion_("USER_ROLE:" + String(claims.userId || "").trim());
+    if (currentRoleVersion === false) return null;
+    if (claims.roleVersion === undefined) {
+      if (currentRoleVersion !== 0) return null;
+    } else if (!Number.isSafeInteger(claims.roleVersion) || claims.roleVersion !== currentRoleVersion) return null;
     if (claims.membershipId || claims.institutionId) {
       if (!claims.membershipId || !claims.institutionId) return null;
       var activeMembership = resolveUserRoleMembership_(claims.userId, claims.role, claims.institutionId, claims.membershipId);
@@ -1975,6 +2008,7 @@ function manageUserRoleMemberships(payload) {
         return { status: "error", code: "ROLE_MEMBERSHIP_ID_CONFLICT", message: "No se pudo generar un identificador único para la membresía." };
       }
       sheet.appendRow([newId, userId, roleId, institutionId, "ACTIVE", start.date || now, end.date || "", actorId, now, now, "", ""]);
+      if (incrementSecurityVersionLocked_("USER_ROLE:" + userId, actorId) === false) { try { sheet.deleteRow(sheet.getLastRow()); } catch (compensationError) { return { status: "error", code: "ROLE_MEMBERSHIP_COMPENSATION_REQUIRED" }; } return { status: "error", code: "ROLE_VERSION_INVALIDATION_FAILED", message: "No se pudo invalidar la versión de privilegios." }; }
       invalidateUserRoleCache(userId);
       logStructuredEvent("USER", "manageUserRoleMemberships", "INFO", "ROLE_MEMBERSHIP_ASSIGNED", "Membresía RBAC asignada.", { membershipId: newId, userId: userId, roleId: roleId }, actorRole);
       return { status: "success", action: action, membershipId: newId, userId: userId, roleId: roleId };
@@ -1989,10 +2023,12 @@ function manageUserRoleMemberships(payload) {
     var targetIndex = targetIndexes[0];
     if (String(data[targetIndex][1] || "").trim() !== userId || String(data[targetIndex][3] || "").trim() !== institutionId) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_FOUND", message: "Membresía no encontrada." };
     if (String(data[targetIndex][4] || "").trim().toUpperCase() === "REVOKED") return { status: "success", action: action, membershipId: membershipId, idempotent: true };
+    var previousMembershipRow = data[targetIndex].slice();
     sheet.getRange(targetIndex + 1, 5).setValue("REVOKED");
     sheet.getRange(targetIndex + 1, 10).setValue(now);
     sheet.getRange(targetIndex + 1, 11).setValue(actorId);
     sheet.getRange(targetIndex + 1, 12).setValue(now);
+    if (incrementSecurityVersionLocked_("USER_ROLE:" + userId, actorId) === false) { try { sheet.getRange(targetIndex + 1, 1, 1, previousMembershipRow.length).setValues([previousMembershipRow]); } catch (compensationError) { return { status: "error", code: "ROLE_MEMBERSHIP_COMPENSATION_REQUIRED" }; } return { status: "error", code: "ROLE_VERSION_INVALIDATION_FAILED", message: "No se pudo invalidar la versión de privilegios." }; }
     invalidateUserRoleCache(userId);
     logStructuredEvent("USER", "manageUserRoleMemberships", "WARN", "ROLE_MEMBERSHIP_REVOKED", "Membresía RBAC revocada.", { membershipId: membershipId, userId: userId }, actorRole);
     return { status: "success", action: action, membershipId: membershipId };
@@ -2715,6 +2751,7 @@ function getSaceSafeErrorCode_(error) {
 }
 
 function doPost(e) {
+  resetSecurityVersionReadCache_();
   let trustedSaceIdentityRequest = false;
   try {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });
@@ -3537,7 +3574,31 @@ function getDynamicPermissionCacheKey_() {
 // [TAREA-F4-P1-03] [Fase 4: Matriz Dinámica de Permisos] - Consulta y caché de la matriz dinámica por rol y acción
 
 function getPermissionMatrixInstitutionId_(){try{if(typeof getIdentityInstitutionId_==="function"){var v=String(getIdentityInstitutionId_()||"").trim();if(v)return v;}}catch(_){}try{if(typeof PropertiesService!=="undefined"){var p=PropertiesService.getScriptProperties();return String(p.getProperty("IMA_INSTITUTION_ID")||p.getProperty("INSTITUTION_ID")||"").trim();}}catch(_){}return "";}
-function getDynamicPermissionsForRole(role,moduleOrAction,actionArgument,institutionArgument){var service="USER",module=actionArgument===undefined?service:String(moduleOrAction||"").trim().toUpperCase(),action=actionArgument===undefined?String(moduleOrAction||"").trim():String(actionArgument||"").trim(),institutionId=String(institutionArgument||"").trim();if(!institutionId){try{if(typeof getIdentityInstitutionId_==="function")institutionId=String(getIdentityInstitutionId_()||"").trim();}catch(_){}}if(!institutionId){try{if(typeof PropertiesService!=="undefined"){var props=PropertiesService.getScriptProperties();institutionId=String(props.getProperty("IMA_INSTITUTION_ID")||props.getProperty("INSTITUTION_ID")||"").trim();}}catch(_){}}if(!role||!module||!action)return false;var cache=null,snapshot=null,key="dynamic_permissions_matrix_v2:"+service+":"+(institutionId||"UNRESOLVED");try{cache=CacheService.getScriptCache();var raw=cache.get(key);if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.schemaVersion===2&&Array.isArray(parsed.rows))snapshot=parsed;}}catch(_){}if(!snapshot){try{var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("MatrizPermisosRoles");if(!sheet||sheet.getLastRow()===0)return null;var values=sheet.getDataRange().getValues(),h=(values[0]||[]).map(function(v){return String(v||"").trim().toLowerCase();}),ix={role:h.indexOf("rol"),module:h.indexOf("modulo"),action:h.indexOf("accion"),allowed:h.indexOf("permitido"),scope:h.indexOf("ambito")};if(Object.keys(ix).some(function(k){return ix[k]<0;}))return false;if(values.length<=1)return null;var rows=values.slice(1).map(function(r){var v=r[ix.allowed],allowed=v===true||String(v).trim().toLowerCase()==="true"?true:(v===false||String(v).trim().toLowerCase()==="false"?false:null);return{role:String(r[ix.role]||"").trim(),module:String(r[ix.module]||"").trim().toUpperCase(),action:String(r[ix.action]||"").trim(),allowed:allowed,scope:String(r[ix.scope]||"").trim()};});snapshot={schemaVersion:2,rows:rows};try{if(cache)cache.put(key,JSON.stringify(snapshot),600);}catch(_){}}catch(_){return false;}}var relevant=snapshot.rows.filter(function(r){return r.role===String(role).trim()&&r.action===action&&r.module!=="__LEGACY_ARCHIVED__";});if(!relevant.length)return null;if(!institutionId||relevant.some(function(r){return (!r.module||r.module===module)&&(r.allowed===null||!r.scope);}))return false;var candidates=relevant.filter(function(r){return r.module===module&&(r.scope==="Global"||r.scope===institutionId);});if(!candidates.length)return false;var seen={};for(var i=0;i<candidates.length;i++){var k=candidates[i].module+"|"+candidates[i].action+"|"+candidates[i].scope;seen[k]=(seen[k]||0)+1;if(seen[k]>1)return false;}return !candidates.some(function(r){return r.allowed!==true;});}
+var SECURITY_VERSION_HEADERS_ = ["Clave","Version","UpdatedAt","UpdatedBy"];
+var SECURITY_VERSION_READ_CACHE_ = Object.create(null);
+function resetSecurityVersionReadCache_() {
+  SECURITY_VERSION_READ_CACHE_ = Object.create(null);
+}
+function getSecurityVersion_(key) {
+  var versionKey = String(key || "").trim();
+  if (!versionKey || versionKey.length > 180) return false;
+  if (Object.prototype.hasOwnProperty.call(SECURITY_VERSION_READ_CACHE_, versionKey)) return SECURITY_VERSION_READ_CACHE_[versionKey];
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("VersionesSeguridad");
+    if (!sheet) { SECURITY_VERSION_READ_CACHE_[versionKey] = 0; return 0; }
+    var values = sheet.getDataRange().getValues();
+    if (!values.length || JSON.stringify((values[0] || []).map(String)) !== JSON.stringify(SECURITY_VERSION_HEADERS_)) return false;
+    var matches = [];
+    for (var i = 1; i < values.length; i++) if (String(values[i][0] || "").trim() === versionKey) matches.push(values[i]);
+    if (matches.length > 1) return false;
+    var version = matches.length ? Number(matches[0][1]) : 0;
+    if (!Number.isSafeInteger(version) || version < 0) return false;
+    SECURITY_VERSION_READ_CACHE_[versionKey] = version;
+    return version;
+  } catch (error) { return false; }
+}
+function getDynamicPermissionsForRole(role,moduleOrAction,actionArgument,institutionArgument){var service="USER",module=actionArgument===undefined?service:String(moduleOrAction||"").trim().toUpperCase(),action=actionArgument===undefined?String(moduleOrAction||"").trim():String(actionArgument||"").trim(),institutionId=String(institutionArgument||"").trim();if(!institutionId){try{if(typeof getIdentityInstitutionId_==="function")institutionId=String(getIdentityInstitutionId_()||"").trim();}catch(_){}}if(!institutionId){try{if(typeof PropertiesService!=="undefined"){var props=PropertiesService.getScriptProperties();institutionId=String(props.getProperty("IMA_INSTITUTION_ID")||props.getProperty("INSTITUTION_ID")||"").trim();}}catch(_){}}if(!role||!module||!action)return false;var permissionVersion=getSecurityVersion_("PERMISSION_MATRIX");if(permissionVersion===false)return false;var cache=null,snapshot=null,key="dynamic_permissions_matrix_v3:"+service+":"+(institutionId||"UNRESOLVED")+":"+permissionVersion;try{cache=CacheService.getScriptCache();var raw=cache.get(key);if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.schemaVersion===3&&parsed.version===permissionVersion&&Array.isArray(parsed.rows))snapshot=parsed;}}catch(_){}if(!snapshot){try{var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("MatrizPermisosRoles");if(!sheet||sheet.getLastRow()===0)return null;var values=sheet.getDataRange().getValues(),h=(values[0]||[]).map(function(v){return String(v||"").trim().toLowerCase();}),ix={role:h.indexOf("rol"),module:h.indexOf("modulo"),action:h.indexOf("accion"),allowed:h.indexOf("permitido"),scope:h.indexOf("ambito")};if(Object.keys(ix).some(function(k){return ix[k]<0;}))return false;if(values.length<=1)return null;var rows=values.slice(1).map(function(r){var v=r[ix.allowed],allowed=v===true||String(v).trim().toLowerCase()==="true"?true:(v===false||String(v).trim().toLowerCase()==="false"?false:null);return{role:String(r[ix.role]||"").trim(),module:String(r[ix.module]||"").trim().toUpperCase(),action:String(r[ix.action]||"").trim(),allowed:allowed,scope:String(r[ix.scope]||"").trim()};});snapshot={schemaVersion:3,version:permissionVersion,rows:rows};try{if(cache)cache.put(key,JSON.stringify(snapshot),600);}catch(_){}}catch(_){return false;}}var relevant=snapshot.rows.filter(function(r){return r.role===String(role).trim()&&r.action===action&&r.module!=="__LEGACY_ARCHIVED__";});if(!relevant.length)return null;if(!institutionId||relevant.some(function(r){return (!r.module||r.module===module)&&(r.allowed===null||!r.scope);}))return false;var candidates=relevant.filter(function(r){return r.module===module&&(r.scope==="Global"||r.scope===institutionId);});if(!candidates.length)return false;var seen={};for(var i=0;i<candidates.length;i++){var k=candidates[i].module+"|"+candidates[i].action+"|"+candidates[i].scope;seen[k]=(seen[k]||0)+1;if(seen[k]>1)return false;}return !candidates.some(function(r){return r.allowed!==true;});}
 
 
 // [TAREA-F4-P1-03] [Fase 4: Matriz Dinámica de Permisos] - Obtención de la matriz dinámica persistente
@@ -3552,8 +3613,115 @@ function getPermissionMatrix(payload){var auth=getPermissionMatrixAdminContext_(
 
 
 // [TAREA-F4-P1-03] [Fase 4: Matriz Dinámica de Permisos] - Actualización y persistencia de la matriz con auditoría de versión
-function savePermissionMatrix(payload){var auth=getPermissionMatrixAdminContext_(payload);if(!auth.authorized)return{status:"error",code:auth.code};var input=payload||{},rules=Array.isArray(input.matrix)?input.matrix:(input.rol?[input]:[]);if(rules.length!==1)return{status:"error",code:"PERMISSION_MATRIX_SINGLE_RULE_REQUIRED"};var r=rules[0]||{},role=String(r.rol||"").trim(),module=String(r.modulo||"").trim().toUpperCase(),action=String(r.accion||"").trim(),scope=String(r.ambito||"").trim();if(!role||!module||!action||!scope||typeof r.permitido!=="boolean")return{status:"error",code:"PERMISSION_MATRIX_RULE_INVALID"};if(!Object.prototype.hasOwnProperty.call(ROLE_PERMISSIONS,role)||["Administrador","Desarrollador"].indexOf(role)!==-1)return{status:"error",code:"PERMISSION_MATRIX_ROLE_INVALID"};if(PERMISSION_MATRIX_MODULES_.indexOf(module)===-1||!(PERMISSION_MATRIX_ACTION_CATALOG_[module]||[]).includes(action))return{status:"error",code:"PERMISSION_MATRIX_ACTION_INVALID"};if(scope!=="Global"&&scope!==auth.institutionId)return{status:"error",code:"PERMISSION_MATRIX_TENANT_SCOPE_INVALID"};if(scope==="Global"&&auth.role!=="Desarrollador")return{status:"error",code:"PERMISSION_MATRIX_GLOBAL_ADMIN_REQUIRED"};var lock=null,locked=false,sheet=null,previous=null,rowNumber=0,appended=false;try{lock=LockService.getScriptLock();lock.waitLock(10000);locked=true;var ss=SpreadsheetApp.openById(SPREADSHEET_ID);sheet=getOrCreateSheet(ss,"MatrizPermisosRoles");if(sheet.getLastRow()===0)sheet.appendRow(["rol","modulo","accion","permitido","ambito","ultimaModificacion","modificadoPor"]);var values=sheet.getDataRange().getValues(),expected=["rol","modulo","accion","permitido","ambito","ultimamodificacion","modificadopor"];if(JSON.stringify((values[0]||[]).map(function(v){return String(v||"").trim().toLowerCase();}))!==JSON.stringify(expected))return{status:"error",code:"PERMISSION_MATRIX_SCHEMA_MISMATCH"};var matches=[];for(var i=1;i<values.length;i++){var x=values[i]||[];if(String(x[0]||"").trim()===role&&String(x[1]||"").trim().toUpperCase()===module&&String(x[2]||"").trim()===action&&String(x[4]||"").trim()===scope)matches.push(i);}if(matches.length>1)return{status:"error",code:"PERMISSION_MATRIX_DUPLICATE_KEY"};var now=new Date(),next=[role,module,action,r.permitido,scope,now,auth.actor];if(matches.length){rowNumber=matches[0]+1;previous=values[matches[0]].slice(0,7);if(previous[3]===r.permitido)return{status:"success",idempotent:true,count:1};sheet.getRange(rowNumber,1,1,7).setValues([next]);}else{sheet.appendRow(next);rowNumber=sheet.getLastRow();appended=true;}try{var audit=getPermissionMatrixAuditSheet_(ss);audit.appendRow([Utilities.getUuid(),auth.actor,auth.role,r.permitido?"GRANT":"DENY",role,module,action,scope,previous?previous[3]:null,r.permitido,now]);}catch(ae){try{if(appended)sheet.deleteRow(rowNumber);else if(previous)sheet.getRange(rowNumber,1,1,7).setValues([previous]);}catch(re){return{status:"error",code:"PERMISSION_MATRIX_COMPENSATION_REQUIRED"};}throw ae;}try{CacheService.getScriptCache().remove("dynamic_permissions_matrix_v2:USER:"+auth.institutionId);}catch(_){}return{status:"success",count:1,role:role,module:module,action:action,ambito:scope,permitido:r.permitido};}catch(e){return{status:"error",code:e.message||"PERMISSION_MATRIX_WRITE_FAILED"};}finally{if(locked&&lock)try{lock.releaseLock();}catch(_){}}}
-function migrateLegacyPermissionMatrix(payload){var auth=getPermissionMatrixAdminContext_(payload);if(!auth.authorized)return{status:"error",code:auth.code};var lock=null,locked=false;try{lock=LockService.getScriptLock();lock.waitLock(10000);locked=true;var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("MatrizPermisosRoles");if(!sheet||sheet.getLastRow()<=1)return{status:"success",migrated:0,unmapped:0};var values=sheet.getDataRange().getValues(),h=(values[0]||[]).map(function(v){return String(v||"").trim().toLowerCase();});if(JSON.stringify(h.slice(0,5))!==JSON.stringify(["rol","modulo","accion","permitido","ambito"]))return{status:"error",code:"PERMISSION_MATRIX_SCHEMA_MISMATCH"};var migrated=0,unmapped=0,appends=[],updates=[],now=new Date();for(var i=1;i<values.length;i++){var row=values[i]||[];if(String(row[1]||"").trim().toUpperCase()!=="GENERAL")continue;var scope=String(row[4]||"").trim();if(scope==="Global"&&auth.role!=="Desarrollador")continue;if(scope!=="Global"&&scope!==auth.institutionId)continue;var role=String(row[0]||"").trim(),action=String(row[2]||"").trim(),targets=PERMISSION_MATRIX_MODULES_.filter(function(m){return(PERMISSION_MATRIX_ACTION_CATALOG_[m]||[]).indexOf(action)!==-1;});if(!targets.length){unmapped++;continue;}targets.forEach(function(m){var found=values.slice(1).some(function(x){return String(x[0]||"").trim()===role&&String(x[1]||"").trim().toUpperCase()===m&&String(x[2]||"").trim()===action&&String(x[4]||"").trim()===scope;});if(!found)appends.push([role,m,action,row[3]===true||String(row[3]).toLowerCase()==="true",scope,now,auth.actor]);});updates.push({row:i+1,old:row.slice(0,7),next:[row[0],"__LEGACY_ARCHIVED__",row[2],false,row[4],now,auth.actor]});migrated++;}if(!migrated)return{status:"success",migrated:0,unmapped:unmapped};var added=[];try{appends.forEach(function(r){sheet.appendRow(r);added.push(sheet.getLastRow());});updates.forEach(function(x){sheet.getRange(x.row,1,1,7).setValues([x.next]);});var audit=getPermissionMatrixAuditSheet_(ss);updates.forEach(function(x){audit.appendRow([Utilities.getUuid(),auth.actor,auth.role,"MIGRATE_LEGACY",String(x.old[0]||""),"MULTI",String(x.old[2]||""),String(x.old[4]||""),x.old[3],false,now]);});}catch(e){try{updates.forEach(function(x){sheet.getRange(x.row,1,1,7).setValues([x.old]);});added.reverse().forEach(function(n){sheet.deleteRow(n);});}catch(re){return{status:"error",code:"PERMISSION_MATRIX_MIGRATION_COMPENSATION_REQUIRED"};}throw e;}try{CacheService.getScriptCache().remove("dynamic_permissions_matrix_v2:USER:"+auth.institutionId);}catch(_){}return{status:"success",migrated:migrated,created:appends.length,unmapped:unmapped};}catch(e){return{status:"error",code:e.message||"PERMISSION_MATRIX_MIGRATION_FAILED"};}finally{if(locked&&lock)try{lock.releaseLock();}catch(_){}}}
+function savePermissionMatrix(payload) {
+  var auth = getPermissionMatrixAdminContext_(payload);
+  if (!auth.authorized) return { status: "error", code: auth.code };
+  var input = payload || {}, rules = Array.isArray(input.matrix) ? input.matrix : (input.rol ? [input] : []);
+  if (rules.length !== 1) return { status: "error", code: "PERMISSION_MATRIX_SINGLE_RULE_REQUIRED" };
+  var r = rules[0] || {}, role = String(r.rol || "").trim(), module = String(r.modulo || "").trim().toUpperCase();
+  var action = String(r.accion || "").trim(), scope = String(r.ambito || "").trim();
+  if (!role || !module || !action || !scope || typeof r.permitido !== "boolean") return { status: "error", code: "PERMISSION_MATRIX_RULE_INVALID" };
+  if (!Object.prototype.hasOwnProperty.call(ROLE_PERMISSIONS, role) || ["Administrador", "Desarrollador"].indexOf(role) !== -1) return { status: "error", code: "PERMISSION_MATRIX_ROLE_INVALID" };
+  if (PERMISSION_MATRIX_MODULES_.indexOf(module) === -1 || !(PERMISSION_MATRIX_ACTION_CATALOG_[module] || []).includes(action)) return { status: "error", code: "PERMISSION_MATRIX_ACTION_INVALID" };
+  if (scope !== "Global" && scope !== auth.institutionId) return { status: "error", code: "PERMISSION_MATRIX_TENANT_SCOPE_INVALID" };
+  if (scope === "Global" && auth.role !== "Desarrollador") return { status: "error", code: "PERMISSION_MATRIX_GLOBAL_ADMIN_REQUIRED" };
+  var lock = null, locked = false, sheet = null, previous = null, rowNumber = 0, appended = false, auditSheet = null, auditRowNumber = 0;
+  try {
+    lock = LockService.getScriptLock(); lock.waitLock(10000); locked = true;
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    sheet = getOrCreateSheet(ss, "MatrizPermisosRoles");
+    if (sheet.getLastRow() === 0) sheet.appendRow(["rol", "modulo", "accion", "permitido", "ambito", "ultimaModificacion", "modificadoPor"]);
+    var values = sheet.getDataRange().getValues();
+    var expected = ["rol", "modulo", "accion", "permitido", "ambito", "ultimamodificacion", "modificadopor"];
+    if (JSON.stringify((values[0] || []).map(function(v) { return String(v || "").trim().toLowerCase(); })) !== JSON.stringify(expected)) return { status: "error", code: "PERMISSION_MATRIX_SCHEMA_MISMATCH" };
+    var matches = [];
+    for (var i = 1; i < values.length; i++) {
+      var x = values[i] || [];
+      if (String(x[0] || "").trim() === role && String(x[1] || "").trim().toUpperCase() === module &&
+          String(x[2] || "").trim() === action && String(x[4] || "").trim() === scope) matches.push(i);
+    }
+    if (matches.length > 1) return { status: "error", code: "PERMISSION_MATRIX_DUPLICATE_KEY" };
+    var now = new Date(), next = [role, module, action, r.permitido, scope, now, auth.actor];
+    if (matches.length) {
+      rowNumber = matches[0] + 1; previous = values[matches[0]].slice(0, 7);
+      if (previous[3] === r.permitido) return { status: "success", idempotent: true, count: 1 };
+      sheet.getRange(rowNumber, 1, 1, 7).setValues([next]);
+    } else {
+      sheet.appendRow(next); rowNumber = sheet.getLastRow(); appended = true;
+    }
+    try {
+      auditSheet = getPermissionMatrixAuditSheet_(ss);
+      auditSheet.appendRow([Utilities.getUuid(), auth.actor, auth.role, r.permitido ? "GRANT" : "DENY",
+        role, module, action, scope, previous ? previous[3] : null, r.permitido, now]);
+      auditRowNumber = auditSheet.getLastRow();
+      if (incrementSecurityVersionLocked_("PERMISSION_MATRIX", auth.actor) === false) throw new Error("SECURITY_VERSION_INVALIDATION_FAILED");
+    } catch (writeError) {
+      try {
+        if (auditRowNumber && auditSheet) auditSheet.deleteRow(auditRowNumber);
+        if (appended) sheet.deleteRow(rowNumber); else if (previous) sheet.getRange(rowNumber, 1, 1, 7).setValues([previous]);
+      } catch (compensationError) { return { status: "error", code: "PERMISSION_MATRIX_COMPENSATION_REQUIRED" }; }
+      throw writeError;
+    }
+    return { status: "success", count: 1, role: role, module: module, action: action, ambito: scope, permitido: r.permitido };
+  } catch (error) {
+    return { status: "error", code: error.message || "PERMISSION_MATRIX_WRITE_FAILED" };
+  } finally { if (locked && lock) try { lock.releaseLock(); } catch (_) {} }
+}
+function migrateLegacyPermissionMatrix(payload) {
+  var auth = getPermissionMatrixAdminContext_(payload);
+  if (!auth.authorized) return { status: "error", code: auth.code };
+  var lock = null, locked = false;
+  try {
+    lock = LockService.getScriptLock(); lock.waitLock(10000); locked = true;
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = ss.getSheetByName("MatrizPermisosRoles");
+    if (!sheet || sheet.getLastRow() <= 1) return { status: "success", migrated: 0, unmapped: 0 };
+    var values = sheet.getDataRange().getValues(), headers = (values[0] || []).map(function(v) { return String(v || "").trim().toLowerCase(); });
+    if (JSON.stringify(headers.slice(0, 5)) !== JSON.stringify(["rol", "modulo", "accion", "permitido", "ambito"])) return { status: "error", code: "PERMISSION_MATRIX_SCHEMA_MISMATCH" };
+    var migrated = 0, unmapped = 0, appends = [], updates = [], now = new Date();
+    for (var i = 1; i < values.length; i++) {
+      var row = values[i] || [];
+      if (String(row[1] || "").trim().toUpperCase() !== "GENERAL") continue;
+      var scope = String(row[4] || "").trim();
+      if (scope === "Global" && auth.role !== "Desarrollador") continue;
+      if (scope !== "Global" && scope !== auth.institutionId) continue;
+      var role = String(row[0] || "").trim(), action = String(row[2] || "").trim();
+      var targets = PERMISSION_MATRIX_MODULES_.filter(function(m) { return (PERMISSION_MATRIX_ACTION_CATALOG_[m] || []).indexOf(action) !== -1; });
+      if (!targets.length) { unmapped++; continue; }
+      targets.forEach(function(m) {
+        var found = values.slice(1).some(function(x) {
+          return String(x[0] || "").trim() === role && String(x[1] || "").trim().toUpperCase() === m &&
+            String(x[2] || "").trim() === action && String(x[4] || "").trim() === scope;
+        });
+        if (!found) appends.push([role, m, action, row[3] === true || String(row[3]).toLowerCase() === "true", scope, now, auth.actor]);
+      });
+      updates.push({ row: i + 1, old: row.slice(0, 7), next: [row[0], "__LEGACY_ARCHIVED__", row[2], false, row[4], now, auth.actor] });
+      migrated++;
+    }
+    if (!migrated) return { status: "success", migrated: 0, unmapped: unmapped };
+    var added = [], auditRows = [], auditSheet = null;
+    try {
+      appends.forEach(function(r) { sheet.appendRow(r); added.push(sheet.getLastRow()); });
+      updates.forEach(function(x) { sheet.getRange(x.row, 1, 1, 7).setValues([x.next]); });
+      auditSheet = getPermissionMatrixAuditSheet_(ss);
+      updates.forEach(function(x) {
+        auditSheet.appendRow([Utilities.getUuid(), auth.actor, auth.role, "MIGRATE_LEGACY",
+          String(x.old[0] || ""), "MULTI", String(x.old[2] || ""), String(x.old[4] || ""), x.old[3], false, now]);
+        auditRows.push(auditSheet.getLastRow());
+      });
+      if (incrementSecurityVersionLocked_("PERMISSION_MATRIX", auth.actor) === false) throw new Error("SECURITY_VERSION_INVALIDATION_FAILED");
+    } catch (error) {
+      try {
+        auditRows.reverse().forEach(function(rowNumber) { auditSheet.deleteRow(rowNumber); });
+        updates.forEach(function(x) { sheet.getRange(x.row, 1, 1, 7).setValues([x.old]); });
+        added.reverse().forEach(function(rowNumber) { sheet.deleteRow(rowNumber); });
+      } catch (compensationError) { return { status: "error", code: "PERMISSION_MATRIX_MIGRATION_COMPENSATION_REQUIRED" }; }
+      throw error;
+    }
+    return { status: "success", migrated: migrated, created: appends.length, unmapped: unmapped };
+  } catch (error) {
+    return { status: "error", code: error.message || "PERMISSION_MATRIX_MIGRATION_FAILED" };
+  } finally { if (locked && lock) try { lock.releaseLock(); } catch (_) {} }
+}
 
 // [TAREA-F4-P1-05] [Fase 4: Gobierno de Privacidad] - Registro de solicitudes de derechos sobre datos personales (ARCO)
 function submitPrivacyRightsRequest(payload) {
@@ -3950,6 +4118,7 @@ function manageAccountState(payload) {
       }
     }
 
+    if (oldState !== newState && incrementSecurityVersionLocked_("USER_ROLE:" + String(userId).trim(), payload && payload._verifiedUserId) === false) throw new Error("ROLE_VERSION_INVALIDATION_FAILED");
     sheet.getRange(idx + 1, 11).setValue(newState);
     invalidateUserRoleCache(userId);
 
