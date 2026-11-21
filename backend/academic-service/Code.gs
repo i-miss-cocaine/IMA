@@ -18369,41 +18369,52 @@ function processStudentGraduation(payload) {
 
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Actualización directa del estado institucional con validación de matriz de transición
 function updateStudentLifecycleStatus(payload) {
-  const { expedienteId, nuevoEstado, motivo } = payload || {};
+  const request = payload || {};
+  const { expedienteId, nuevoEstado, motivo } = request;
   if (!expedienteId || !nuevoEstado) throw new Error("expedienteId y nuevoEstado son requeridos.");
   if (!motivo || String(motivo).trim().length < 5) throw new Error("Debe proporcionar una justificación válida de al menos 5 caracteres.");
 
-  const lock = LockService.getScriptLock();
-  const success = lock.tryLock(10000);
-  if (!success) throw new Error("Servicio ocupado. Por favor, reintente el cambio de estado.");
+  const permission = validateRolePermission("updateStudentLifecycleStatus", request);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true) throw new Error("VERIFIED_IDENTITY_REQUIRED");
 
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("STUDENT_LIFECYCLE_UPDATE_LOCK_BUSY");
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
+    const sheet = ss.getSheetByName("ExpedientesEstudiantes");
+    if (!sheet) throw new Error("RESOURCE_NOT_FOUND");
     const data = sheet.getDataRange().getValues();
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0] || "").trim() === String(expedienteId).trim()) matches.push(i);
+    }
+    if (!matches.length) throw new Error("RESOURCE_NOT_FOUND");
+    if (matches.length !== 1) throw new Error("RESOURCE_AMBIGUOUS");
 
-    const idx = data.findIndex(r => String(r[0]).trim() === String(expedienteId).trim());
-    if (idx === -1) throw new Error("Expediente de estudiante no encontrado.");
+    const idx = matches[0];
+    const access = assertStudentExpedienteScopeAccess_(request, ss, sheet, data[idx], "permisoAcademico", "UPDATE");
+    if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
 
     const estadoActual = String(data[idx][7] || "Activo").trim();
     if (estadoActual === nuevoEstado) {
-      return { status: "success", message: `El expediente ya se encuentra en estado '${nuevoEstado}'.` };
+      return { status: "success", message: "El expediente ya se encuentra en estado '" + nuevoEstado + "'." };
     }
 
     const allowed = ALLOWED_STUDENT_LIFECYCLE_TRANSITIONS[estadoActual] || [];
-    if (!allowed.includes(nuevoEstado)) {
-      throw new Error(`Transición no permitida de '${estadoActual}' a '${nuevoEstado}'. Transiciones válidas: [${allowed.join(", ")}].`);
-    }
-
+    if (!allowed.includes(nuevoEstado)) throw new Error("STUDENT_LIFECYCLE_TRANSITION_DENIED");
     const now = new Date();
     sheet.getRange(idx + 1, 8).setValue(nuevoEstado);
     sheet.getRange(idx + 1, 10).setValue(now);
-    sheet.getRange(idx + 1, 11).setValue(`Cambio de estado manual a ${nuevoEstado}. Justificación: ${motivo}`);
+    sheet.getRange(idx + 1, 11).setValue("Cambio de estado manual a " + nuevoEstado + ". Justificación: " + motivo);
 
-    recordEntityChangeLog("ExpedienteEstudiante", expedienteId, estadoActual, nuevoEstado, "STATUS_CHANGE", (payload && payload.userId) || "Administración", "LIFECYCLE-" + Date.now());
-    logStructuredEvent("ACADEMIC", "updateStudentLifecycleStatus", "INFO", "LIFECYCLE_STATUS_UPDATED", `Estado de expediente ${expedienteId} actualizado de ${estadoActual} a ${nuevoEstado}`, { expedienteId, estadoActual, nuevoEstado, motivo }, payload && payload.authRole);
+    recordEntityChangeLog("ExpedienteEstudiante", expedienteId, estadoActual, nuevoEstado, "STATUS_CHANGE", actor.userId, "LIFECYCLE-" + Date.now());
+    logStructuredEvent("ACADEMIC", "updateStudentLifecycleStatus", "INFO", "LIFECYCLE_STATUS_UPDATED",
+      "Estado de expediente " + expedienteId + " actualizado de " + estadoActual + " a " + nuevoEstado,
+      { expedienteId: expedienteId, estadoActual: estadoActual, nuevoEstado: nuevoEstado, motivo: motivo }, actor.role);
 
-    return { status: "success", message: `Estado del expediente actualizado a '${nuevoEstado}'.` };
+    return { status: "success", message: "Estado del expediente actualizado a '" + nuevoEstado + "'." };
   } finally {
     lock.releaseLock();
   }
@@ -18411,48 +18422,76 @@ function updateStudentLifecycleStatus(payload) {
 
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Auditoría y conciliación de consistencia de estados entre Expedientes y Matrículas
 function reconcileStudentLifecycleState(payload) {
-  const { autoFix } = payload || {};
+  const request = payload || {};
+  const autoFix = request.autoFix === true;
+  const permission = validateRolePermission("reconcileStudentLifecycleState", request);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true) throw new Error("VERIFIED_IDENTITY_REQUIRED");
+
   const lock = LockService.getScriptLock();
   let lockHeld = false;
   try {
     lock.waitLock(10000);
     lockHeld = true;
-    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
-    const expRows = expSheet.getDataRange().getValues().slice(1);
-    const matSheet = getOrCreateSheet(ss, "Matriculas");
+    const scope = getVerifiedAcademicDepartmentScope_(request, ss, actor);
+    if (!scope || scope.authorized !== true || scope.institutionWide !== true) {
+      throw new Error(scope && scope.code || "INSTITUTION_WIDE_SCOPE_REQUIRED");
+    }
+    const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+    const matSheet = ss.getSheetByName("Matriculas");
+    if (!expSheet || !matSheet) throw new Error("LIFECYCLE_RECONCILIATION_SOURCE_MISSING");
+    const expData = expSheet.getDataRange().getValues();
+    const expRows = expData.slice(1);
     const matRows = matSheet.getDataRange().getValues();
+    const operation = autoFix ? "WRITE" : "READ";
+
+    // Authorize the complete read/write set before changing any enrollment row.
+    expRows.forEach(exp => {
+      const expedienteId = String(exp[0] || "").trim();
+      if (!expedienteId) throw new Error("LIFECYCLE_EXPEDIENTE_ID_INVALID");
+      const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", expedienteId, operation, request);
+      if (!ownership || ownership.authorized !== true) throw new Error(ownership && ownership.code || "RESOURCE_SCOPE_DENIED");
+    });
+
     const inconsistencies = [];
-    let fixedCount = 0;
     expRows.forEach((exp, i) => {
-      const expId = exp[0];
-      const userId = exp[1];
-      const estadoExp = String(exp[7] || "Activo").trim();
+      const expId = exp[0], userId = exp[1], estadoExp = String(exp[7] || "Activo").trim();
       if (estadoExp === "Graduado" || estadoExp === "Retirado" || estadoExp === "Trasladado") {
-        matRows.slice(1).forEach((m, mIdx) => {
-          const mUserId = m[2];
-          const mEstado = m[8];
+        matRows.slice(1).forEach((matricula, mIdx) => {
+          const mUserId = matricula[2], mEstado = matricula[8];
           if (String(mUserId).trim() === String(userId).trim() && (mEstado === "Activa" || mEstado === "Confirmada")) {
             const targetState = estadoExp === "Graduado" ? "Graduada" : (estadoExp === "Retirado" ? "Retirada" : "Trasladada");
             inconsistencies.push({
               expedienteId: expId, userId: userId, estadoExpediente: estadoExp,
-              matriculaId: m[0], estadoMatriculaActual: mEstado, estadoMatriculaSugerido: targetState
+              matriculaId: matricula[0], estadoMatriculaActual: mEstado, estadoMatriculaSugerido: targetState,
+              rowIndex: mIdx + 2
             });
-            if (autoFix) {
-              matSheet.getRange(mIdx + 2, 9).setValue(targetState);
-              fixedCount++;
-            }
           }
         });
       }
+    });
+
+    if (autoFix && inconsistencies.length) {
+      advanceSaceAcademicSourceRevisionLocked_();
+      inconsistencies.forEach(item => {
+        matSheet.getRange(item.rowIndex, 9).setValue(item.estadoMatriculaSugerido);
+        recordEntityChangeLog("Matricula", item.matriculaId, item.estadoMatriculaActual, item.estadoMatriculaSugerido,
+          "LIFECYCLE_RECONCILIATION", actor.userId, "LIFECYCLE-RECONCILE-" + Date.now());
+      });
+    }
+    const details = inconsistencies.map(item => {
+      const copy = Object.assign({}, item);
+      delete copy.rowIndex;
+      return copy;
     });
     return {
       status: "success",
       totalExpedientesAuditados: expRows.length,
       inconsistenciasDetectadas: inconsistencies.length,
-      inconsistenciasCorregidas: fixedCount,
-      detallesInconsistencias: inconsistencies
+      inconsistenciasCorregidas: autoFix ? inconsistencies.length : 0,
+      detallesInconsistencias: details
     };
   } finally {
     if (lockHeld) lock.releaseLock();
