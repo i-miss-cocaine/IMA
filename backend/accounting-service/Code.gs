@@ -12442,8 +12442,6 @@ function assignStudentTransport(payload) {
       return { status: "error", code: studentMatches.length ? "TRANSPORT_STUDENT_AMBIGUOUS" : "TRANSPORT_STUDENT_NOT_FOUND" };
     }
 
-    getOrCreateTransportVehiclesCatalog(ss);
-    const billingSchema = transportEnsureBillingSchema_(ss);
     const asgnSheet = getOrCreateSheet(ss, "TransporteAsignaciones");
     const vehSheet = getOrCreateSheet(ss, "TransporteVehiculos");
     const rutasData = routeValues.slice(1);
