@@ -2010,9 +2010,15 @@ function ensureTaskServiceFileMetadataSheet(ss) {
 }
 
 function findTaskServiceUploadSession(sessionSheet, sessionKey) {
-  const data=sessionSheet.getDataRange().getValues();
-  for(let i=1;i<data.length;i++)if(String(data[i][0])===String(sessionKey))return {rowIndex:i+1,row:data[i]};
-  return null;
+  const data = sessionSheet.getDataRange().getValues();
+  const matches = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0] || "").trim() === String(sessionKey || "").trim()) {
+      matches.push({ rowIndex: i + 1, row: data[i] });
+    }
+  }
+  if (matches.length > 1) throw new Error("UPLOAD_SESSION_AMBIGUOUS");
+  return matches.length === 1 ? matches[0] : null;
 }
 
 function assertTaskServiceUploadSessionOwner(session,payload) {
@@ -3023,7 +3029,33 @@ function getSubmissionVersions(payload) {
   }));
   return { status: "success", data: versions };
 }
+function withTaskUploadSessionLock_(operation) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("TASK_UPLOAD_SESSION_LOCK_TIMEOUT");
+  try {
+    return operation();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function initiateResumableUpload(payload) {
+  return withTaskUploadSessionLock_(() => initiateResumableUploadUnlocked_(payload));
+}
+function uploadChunk(payload) {
+  return withTaskUploadSessionLock_(() => uploadChunkUnlocked_(payload));
+}
+function getUploadProgress(payload) {
+  return withTaskUploadSessionLock_(() => getUploadProgressUnlocked_(payload));
+}
+function cancelUploadSession(payload) {
+  return withTaskUploadSessionLock_(() => cancelUploadSessionUnlocked_(payload));
+}
+function reconstructFileParts(payload) {
+  return withTaskUploadSessionLock_(() => reconstructFilePartsUnlocked_(payload));
+}
+
+function initiateResumableUploadUnlocked_(payload) {
   const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole,tareaId=String(payload&&payload.tareaId||"").trim();
   const fileName=String(payload&&payload.fileName||"").trim(),fileSize=Number(payload&&payload.fileSize),totalChunks=Number(payload&&payload.totalChunks);
   if(!actorId||(role!=="Estudiante"&&role!=="Alumno")||!tareaId||!fileName||!Number.isFinite(fileSize)||fileSize<=0||fileSize>50*1024*1024||!Number.isInteger(totalChunks)||totalChunks<1||totalChunks>100)throw new Error("Parámetros o identidad de carga no válidos.");
@@ -3038,7 +3070,7 @@ function initiateResumableUpload(payload) {
     if(found.row[6]==="COMPLETED")return {status:"success",sessionKey:found.row[0],confirmedChunks:JSON.parse(found.row[5]||"[]"),totalChunks:Number(found.row[4]),folderId:found.row[7],fileId:found.row[13],isCompleted:true,isResume:true};
     if(found.row[6]!=="ACTIVE")throw new Error("La sesión no está activa.");
     const resumeConfirmed=JSON.parse(found.row[5]||"[]");
-    if(resumeConfirmed.length===Number(found.row[4])){const result=reconstructFileParts({_verifiedUserId:actorId,_verifiedRole:role,sessionKey:found.row[0]});if(result.status!=="success")throw new Error(result.message||"No se pudo completar la carga.");return {status:"success",sessionKey:found.row[0],confirmedChunks:resumeConfirmed,totalChunks:Number(found.row[4]),folderId:found.row[7],fileId:result.fileId,isCompleted:true,isResume:true};}
+    if(resumeConfirmed.length===Number(found.row[4])){const result=reconstructFilePartsUnlocked_({_verifiedUserId:actorId,_verifiedRole:role,sessionKey:found.row[0]});if(result.status!=="success")throw new Error(result.message||"No se pudo completar la carga.");return {status:"success",sessionKey:found.row[0],confirmedChunks:resumeConfirmed,totalChunks:Number(found.row[4]),folderId:found.row[7],fileId:result.fileId,isCompleted:true,isResume:true};}
     return {status:"success",sessionKey:found.row[0],confirmedChunks:resumeConfirmed,totalChunks:Number(found.row[4]),folderId:found.row[7],isResume:true};}
   let oldSessionKey="";
   if(payload.replaceSessionKey){const old=findTaskServiceUploadSession(sheet,payload.replaceSessionKey);if(!old||!valid(old.row)||old.row[6]!=="ACTIVE")throw new Error("No se puede reemplazar una sesión ajena o inactiva.");oldSessionKey=String(old.row[0]);sheet.getRange(old.rowIndex,7).setValue("REPLACED_PENDING_CLEANUP");sheet.getRange(old.rowIndex,12).setValue(new Date().toISOString());}
@@ -3097,7 +3129,7 @@ function purgeSecurityCaches(payload) {
   }
 }
 
-function uploadChunk(payload) {
+function uploadChunkUnlocked_(payload) {
   const actorId=payload&&payload._verifiedUserId,role=payload&&payload._verifiedRole,sessionKey=payload&&payload.sessionKey;
   const chunkIndex=Number(payload&&payload.chunkIndex),chunkData=payload&&payload.chunkData;
   if(!sessionKey||!Number.isInteger(chunkIndex)||!chunkData)throw new Error("Fragmento de carga incompleto.");
@@ -3114,18 +3146,18 @@ function uploadChunk(payload) {
     created.push({chunkIndex,fileId:file.getId()});created.sort((a,b)=>a.chunkIndex-b.chunkIndex);
     sheet.getRange(session.rowIndex,10).setValue(JSON.stringify(created));sheet.getRange(session.rowIndex,6).setValue(JSON.stringify(created.map(x=>Number(x.chunkIndex))));sheet.getRange(session.rowIndex,12).setValue(new Date().toISOString());}
   const confirmed=created.map(x=>Number(x.chunkIndex));
-  if(confirmed.length===total){const result=reconstructFileParts({_verifiedUserId:actorId,_verifiedRole:role,sessionKey});if(result.status!=="success")throw new Error(result.message||"No se pudo ensamblar la carga.");
+  if(confirmed.length===total){const result=reconstructFilePartsUnlocked_({_verifiedUserId:actorId,_verifiedRole:role,sessionKey});if(result.status!=="success")throw new Error(result.message||"No se pudo ensamblar la carga.");
     return {status:"success",sessionKey,chunkIndex,confirmedChunks:confirmed,sessionCompleted:true,fileId:result.fileId,fileUrl:result.fileUrl,folderId:session.row[7]};}
   return {status:"success",sessionKey,chunkIndex,confirmedChunks:confirmed,sessionCompleted:false};
 }
 
-function getUploadProgress(payload) {
+function getUploadProgressUnlocked_(payload) {
   const sheet=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"SesionesCargaResumible"),session=findTaskServiceUploadSession(sheet,payload&&payload.sessionKey);
   if(!session)throw new Error("Sesión no encontrada.");assertTaskServiceUploadSessionOwner(session,payload);
   return {status:"success",sessionKey:session.row[0],confirmedChunks:JSON.parse(session.row[5]||"[]"),totalChunks:Number(session.row[4]),isCompleted:session.row[6]==="COMPLETED",folderId:session.row[7],fileId:session.row[13]||""};
 }
 
-function cancelUploadSession(payload) {
+function cancelUploadSessionUnlocked_(payload) {
   const sheet=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"SesionesCargaResumible"),session=findTaskServiceUploadSession(sheet,payload&&payload.sessionKey);
   if(!session)throw new Error("Sesión no encontrada.");assertTaskServiceUploadSessionOwner(session,payload);
   if(session.row[6]==="COMPLETED")throw new Error("No se puede cancelar una sesión completada.");
@@ -3135,7 +3167,7 @@ function cancelUploadSession(payload) {
   return {status:"success",message:"Sesión de carga cancelada."};
 }
 
-function reconstructFileParts(payload) {
+function reconstructFilePartsUnlocked_(payload) {
   const actorId=payload&&payload._verifiedUserId,sessionKey=payload&&payload.sessionKey;
   if(!actorId||!sessionKey)throw new Error("Sesión e identidad verificada son obligatorias.");
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"SesionesCargaResumible"),session=findTaskServiceUploadSession(sheet,sessionKey);
