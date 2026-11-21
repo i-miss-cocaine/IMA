@@ -62,6 +62,7 @@ const rows = {
     ["UserId","Nombre","Grado","Seccion","Email","PasswordHash","Rol","Telefono","NumeroLista","PersonaID","EstadoCuenta","FechaCreacion","UltimoAcceso"],
     ["U-STUDENT","","","","","","Estudiante","","","P-STUDENT","Activo","",""],
     ["U-STUDENT-A","","","","","","Estudiante","","","P-A","Activo","",""],
+    ["U-STUDENT-B","","","","","","Estudiante","","","P-B","Activo","",""],
     ["U-GUARDIAN","","","","","","Tutor","","","P-GUARDIAN","Activo","",""],
     ["U-A","","","","","","Director","","","P-DIRECTOR-A","","",""],
     ["U-B","","","","","","Director","","","P-DIRECTOR-B","","",""],
@@ -225,8 +226,8 @@ assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"guardian",estudianteId:"U-STUDENT-A"}).authorized,true);
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"guardian",estudianteId:"U-A"}).authorized,false);
 
-assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",estudianteId:"P-A"}).authorized,true);
-assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",estudianteId:"P-B"}).authorized,false);
+assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",estudianteId:"U-STUDENT-A"}).authorized,true);
+assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"staffA",estudianteId:"U-STUDENT-B"}).authorized,false);
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"admin"}).authorized,true);
 
 assert.equal(context.validateAcademicResponsibilityAndScopeAccess({sessionToken:"invalid",userId:"U-ADMIN",role:"Administrador"}).authorized,false);
