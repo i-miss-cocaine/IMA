@@ -1016,6 +1016,7 @@ for(const serviceName of ["academic","task","exam"]){
     SpreadsheetApp:{openById:()=>crossSharedSpreadsheet}
   };
   const consumerCode=`
+  ${versionPrelude}
   this.SESSION_REVOCATION_HEADERS_=["SessionID","UserID","RevokedAt","ExpiresAt"];
   this.SESSION_REVOCATION_STATE_HEADERS_=["Key","Value","UpdatedAt"];
   ${extractFunction(consumerSources[serviceName],"isSessionRevokedInSharedLedger_")}
