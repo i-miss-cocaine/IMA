@@ -942,3 +942,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - BETA-FUNC-128 sigue Pendiente de beta. TASK-502 y TASK-506 continúan abiertos.
 - Siguiente: completar bindings action/resource en cinco servicios, comprobar aislamiento institucional y revalidar TASK-506.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.916 — AUD-NG-222 / TASK-502
+- USER: getStudentProcedureNotificationLogs exige identidad y expediente/solicitud identificables; resuelve solicitud a estudiante y expediente únicos, rechaza duplicados/inconsistencias y autoriza por ownership/contexto antes de leer notificaciones.
+- Se elimina la coincidencia parcial de IDs y se evita devolver todos los registros cuando falta target.
+- Contrato Node nuevo y node --check PASS en Department Scope; contratos USER roster/asistencia/revisión y ownership académico PASS. El workflow global conserva únicamente el fallo Phase22/configureSchoolDocumentTemplate.
+- Apps Script/Sheets real, staging y concurrencia interproyecto NOT RUN. BETA-FUNC-128 pendiente.
+- TASK-502 permanece En ejecución; TASK-506 continúa pendiente de integración.
+- Siguiente: auditar otras rutas con expedienteId/solicitudId y comprobar aislamiento/condiciones de carrera en USER/ACADEMIC/ACCOUNTING/TASK/EXAM.
+===============================================================================

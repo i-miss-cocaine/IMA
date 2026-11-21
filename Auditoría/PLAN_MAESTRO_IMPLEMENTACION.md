@@ -6236,3 +6236,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - GitHub Actions en HEAD 78fe2f552e6c5622d4a869fe827ab189ccad0756: Academic-Service single authorization context SUCCESS; Department Scope ejecutó PASS en los contratos focalizados USER (roster, asistencia y review ownership), ownership académico, historial y sintaxis. El agregado falla únicamente en Phase22 porque falta configureSchoolDocumentTemplate; no se atribuye al cambio.
 - Rama base verificada sin cambios. Apps Script/Sheets real y concurrencia entre proyectos NOT RUN; pruebas beta de despliegue siguen pendientes.
 - Estado: incremento USER verificado; AUD-NG-222/TASK-502 y TASK-506 permanecen En ejecución. Siguiente: completar bindings action/resource restantes en USER/ACADEMIC/ACCOUNTING/TASK/EXAM, aislamiento institucional y concurrencia reproducible; después revalidar TASK-506.
+
+
+### Continuidad C1.916 — AUD-NG-222 / TASK-502 (sin cierre)
+- Se corrigió getStudentProcedureNotificationLogs en USER: ya no admite consulta global sin target ni búsquedas por subcadena. Solicitudes se resuelven a estudiante/expediente únicos; estudiantes, tutores, administradores y personal quedan sujetos a su contexto/ámbito y ownership correspondientes.
+- Nuevo contrato Node cubre target ausente, IDs similares, solicitud duplicada/inconsistente, expediente duplicado, aislamiento estudiante, tutor con grant, ownership de Director, scope institucional y hoja ausente. Se añadió al workflow y a su filtro de paths.
+- GitHub Actions run 44948737639: contrato nuevo USER paso 85 PASS; otros contratos USER 82–84 y ownership académico 86–88 PASS; syntax-check 100 PASS. El agregado falla solo en Phase22 por ausencia de configureSchoolDocumentTemplate.
+- Workflows complementarios del commit de código beac5277: Academic-Service, Identity, Accounting Import, Task-Service, SACE, UI y Hierarchical Configuration SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
+- Estado: incremento USER verificado; TASK-502 y TASK-506 siguen En ejecución. Siguiente: auditar endpoints restantes con IDs de expediente/solicitud en los cinco servicios y verificar aislamiento/concurrencia antes de revalidar TASK-506.

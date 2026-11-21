@@ -930,3 +930,36 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 continúa En ejecución y depende de la integración/verificación de TASK-502.
 - Siguiente: continuar el inventario de bindings action/resource restantes en USER/ACADEMIC/ACCOUNTING/TASK/EXAM; probar recursos ausentes/duplicados, relaciones revocadas y aislamiento institucional; añadir pruebas locales deterministas de concurrencia para cambios de relación/asignación. Después revalidar TASK-506.
 ===============================================================================
+
+
+===============================================================================
+### C1.916 — IMA-EXEC-20261121-AUD-NG-222-USER-NOTIFICATION-RESOURCE-87
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.915, commit documental d965fd6e8be435d28452b76bb822752209be4866. HEAD de implementación antes del checkpoint: ab132fb06feb2b0366001b1a75f95294fd58fdde.
+- Commits de esta unidad: beac5277 (cierre contextual de logs de notificación); be07b3aa (contrato Node); c4f59881 (integración inicial al workflow); 8d296fc6 (normalización de array cross-realm en test); ab132fb0 (filtro de rutas del workflow para activar el contrato).
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección
+- Hallazgo confirmado en USER: getStudentProcedureNotificationLogs aceptaba consulta sin expediente/solicitud, coincidencia parcial de IDs y no verificaba ownership/ámbito del recurso. El rol Director tenía la acción en ROLE_PERMISSIONS.
+- Corrección: requiere identidad verificada y target; resuelve solicitud única a estudiante y expediente únicos; valida que expediente y solicitud correspondan; exige expediente propio para estudiante, relación/grant contextual para tutor, ámbito institucional completo para Administrador/Desarrollador y assertRecordOwnership READ para otros actores. La consulta compara IDs exactos/tokens delimitados y evita colisiones como EXP-1 / EXP-10. No escribe datos.
+- Compatibilidad: conserva filtros de estado y la forma de respuesta; permite target por expediente o solicitud única. Sin target devuelve NOTIFICATION_TARGET_REQUIRED.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-student-procedure-notification-logs-ownership.test.js (nuevo)
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- GitHub Actions Department Scope Contract, run 44948737639, Node.js 24.22.3: contrato USER student procedure notification logs ownership (paso 85) PASS; contratos USER roster, attendance grant y absence review (pasos 82–84) PASS; ownership académico e historial/matrícula (pasos 86–88) PASS; syntax-check de servicios (paso 100) PASS.
+- El workflow agregado finaliza FAILURE exclusivamente en Phase22 document management suite: tests/regression/phase22-document-management-suite-contract.test.js reporta que falta configureSchoolDocumentTemplate. El fallo no procede de la ruta de notificaciones ni de los contratos previos, todos los cuales pasan.
+- En el commit de implementación beac5277: UI Accessibility, Academic-Service single authorization context, Identity mapping, Accounting Import, Task-Service, SACE monotonic source revision y Hierarchical Configuration — SUCCESS. Department Scope mantiene el fallo Phase22.
+- No se ejecutó Node CLI local independiente; las pruebas Node.js y node --check se ejecutaron en runners GitHub Actions. Apps Script/Sheets real, staging y concurrencia entre proyectos: NOT RUN. BETA-FUNC-128 sigue pendiente de beta.
+
+### Estado y siguiente acción elegible
+- La ruta USER de consulta de logs de procedimientos ahora valida identidad, target único y ámbito/ownership antes de leer BandejaNotificaciones. El contrato nuevo verifica consulta sin target, aislamiento por expediente, solicitudes duplicadas, target inconsistente, relación tutor, scope institucional, IDs similares y hoja ausente.
+- AUD-NG-222 / TASK-502 continúa En ejecución: falta inventariar bindings action/resource en USER/ACADEMIC/ACCOUNTING/TASK/EXAM, verificar aislamiento institucional completo y condiciones de concurrencia en relaciones/asignaciones.
+- TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
+- Siguiente: continuar el inventario de endpoints que reciben expedienteId/solicitudId u otros identificadores de recurso, priorizar lecturas y mutaciones sin ownership explícito; añadir contratos deterministas y luego revalidar TASK-506.
+===============================================================================
