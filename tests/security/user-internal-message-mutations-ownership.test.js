@@ -26,6 +26,13 @@ function extractFunction(name) {
 function makeHarness(options) {
   const settings = Object.assign({ lockAvailable: true, notificationThrows: false }, options || {});
   const calls = { lockAttempts: 0, releases: 0, notifications: 0, appends: 0, writes: [] };
+  const users = [
+    ["UserID", "PersonaID", "Rol", "EstadoCuenta"],
+    ["USER-A", "PERSON-A", "Estudiante", "Activo"],
+    ["USER-B", "PERSON-B", "Estudiante", "Activo"],
+    ["USER-C", "PERSON-C", "Estudiante", "Activo"],
+    ["USER-D", "PERSON-D", "Estudiante", "Activo"]
+  ];
   const rows = [
     ["MensajeID", "ConversacionID", "RemitenteID", "DestinatarioID", "EstudianteID", "MensajeTexto", "AdjuntoURL", "FechaEnvio", "EstadoLectura"],
     ["MSG-1", "CONV-A", "USER-A", "USER-B", "STU-A", "Mensaje A1", "", "2026-11-20T10:00:00Z", "Enviado"],
@@ -43,7 +50,11 @@ function makeHarness(options) {
   };
   const runtime = {
     SPREADSHEET_ID: "TEST",
-    SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "ConversacionesMensajes" ? sheet : null }) },
+    SpreadsheetApp: { openById: () => ({ getSheetByName: name => {
+      if (name === "ConversacionesMensajes") return sheet;
+      if (name === "Usuarios") return { getLastRow: () => users.length, getDataRange: () => ({ getValues: () => users.map(row => row.slice()) }) };
+      return null;
+    } }) },
     getOrCreateSheet: () => sheet,
     LockService: { getScriptLock: () => lock },
     Utilities: { getUuid: () => "UUID-TEST" },
@@ -56,6 +67,7 @@ function makeHarness(options) {
   };
   vm.createContext(runtime);
   vm.runInContext(
+    extractFunction("getInstitutionalUserRecord_") + "\n" +
     extractFunction("sendInternalMessage") + "\n" +
     extractFunction("closeConversationThread") +
     "\nthis.send = sendInternalMessage; this.close = closeConversationThread;",
@@ -98,6 +110,18 @@ assert.equal(closedThread.send(request("USER-C", {
   remitenteId: "USER-C", destinatarioId: "USER-D", conversacionId: "CONV-C", mensajeTexto: "Después del cierre"
 })).code, "CONVERSATION_CLOSED");
 assert.equal(closedThread.calls.appends, 0);
+
+const unknownRecipient = makeHarness();
+assert.equal(unknownRecipient.send(request("USER-A", {
+  remitenteId: "USER-A", destinatarioId: "USER-X", mensajeTexto: "No existe"
+})).code, "USER_NOT_FOUND");
+assert.equal(unknownRecipient.calls.appends, 0);
+
+const wrongNewStudentContext = makeHarness();
+assert.equal(wrongNewStudentContext.send(request("USER-A", {
+  remitenteId: "USER-A", destinatarioId: "USER-B", estudianteId: "USER-C", mensajeTexto: "Contexto ajeno"
+})).code, "MESSAGE_STUDENT_SCOPE_DENIED");
+assert.equal(wrongNewStudentContext.calls.appends, 0);
 
 const lockBusy = makeHarness({ lockAvailable: false });
 assert.equal(lockBusy.send(request("USER-A", {
