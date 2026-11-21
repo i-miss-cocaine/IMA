@@ -74,6 +74,7 @@ on:
       - tests/security/accounting-payroll-generation-authorization.test.js
       - tests/security/accounting-transport-assignment-ownership.test.js
       - tests/security/accounting-transport-read-permissions.test.js
+      - tests/security/accounting-transport-read-scope-ownership.test.js
       - tests/security/academic-enrollment-billing-integration.test.js
       - tests/security/academic-extracurricular-enrollment.test.js
       - tests/security/accounting-complementary-services.test.js
@@ -377,6 +378,8 @@ jobs:
         run: node --check tests/security/accounting-transport-read-permissions.test.js
       - name: Run transport read action permission contract
         run: node tests/security/accounting-transport-read-permissions.test.js
+      - name: Run transport read scope and ownership contract
+        run: node tests/security/accounting-transport-read-scope-ownership.test.js
       - name: Run academic enrollment billing integration contract
         run: node tests/security/academic-enrollment-billing-integration.test.js
       - name: Run extracurricular capacity, family enrollment and billing contract
@@ -408,6 +411,7 @@ jobs:
           node --check tests/security/accounting-payroll-generation-authorization.test.js
           node --check < backend/accounting-service/Code.gs
           node --check tests/security/accounting-transport-assignment-ownership.test.js
+          node --check tests/security/accounting-transport-read-scope-ownership.test.js
           node --check tests/security/accounting-family-credit-preference.test.js
           node --check js/accounting.js
           node --check js/secretary.js
