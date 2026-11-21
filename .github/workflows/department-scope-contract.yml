@@ -317,6 +317,8 @@ jobs:
         run: node tests/security/user-service-absence-justification-guardian-abac.test.js
       - name: Run USER absence review expediente ownership contract
         run: node tests/security/user-service-absence-review-resource-ownership.test.js
+      - name: Run USER student procedure notification logs ownership contract
+        run: node tests/security/user-student-procedure-notification-logs-ownership.test.js
       - name: Run academic student expediente ownership contract
         run: node tests/security/academic-student-expediente-ownership.test.js
       - name: Run academic student enrollment history ownership contract
@@ -380,6 +382,7 @@ jobs:
           node --check tests/security/user-student-guardian-consolidated-list-abac.test.js
           node --check tests/security/user-service-absence-justification-guardian-abac.test.js
           node --check tests/security/user-service-absence-review-resource-ownership.test.js
+          node --check tests/security/user-student-procedure-notification-logs-ownership.test.js
           node --check tests/regression/phase22-document-management-suite-contract.test.js
           node --check tests/regression/hr-vacation-dashboard-contract.test.js
           node --check js/ui-common.js
