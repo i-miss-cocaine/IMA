@@ -314,9 +314,9 @@ assert.equal(context.getPaymentVoucherFile({sessionToken:"staffA",comprobanteId:
 assert.equal(context.getPaymentVoucherFile({sessionToken:"admin",comprobanteId:"VCH-B"}).status,"success","institution-wide scope may retrieve an authorized voucher");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"invalid",comprobanteId:"VCH-A"}).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.equal(context.validateRolePermission(actor("student"),"uploadPaymentVoucher").authorized,true);
-assert.equal(context.validateRolePermission(actor("student"),"reviewPaymentVoucher").code,"ROLE_NOT_ALLOWED");
+assert.equal(context.validateRolePermission(actor("student"),"reviewPaymentVoucher").code,"ROLE_PERMISSION_DENIED");
 assert.equal(context.validateRolePermission(actor("staffA"),"reviewPaymentVoucher").authorized,true);
-assert.equal(context.validateRolePermission(actor("employee"),"getPaymentVoucherFile").code,"ROLE_NOT_ALLOWED");
+assert.equal(context.validateRolePermission(actor("employee"),"getPaymentVoucherFile").code,"ROLE_PERMISSION_DENIED");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"NO-SUCH-VOUCHER"}).code,"RESOURCE_NOT_FOUND");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-TRASHED"}).code,"VOUCHER_FILE_UNAVAILABLE");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"student",comprobanteId:"VCH-BADTYPE"}).code,"VOUCHER_FILE_TYPE_NOT_ALLOWED");
