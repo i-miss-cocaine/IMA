@@ -148,7 +148,7 @@ test(() => { const x=fixture(); x.sheets.ResourceOwnership.rows[0]=["wrong"]; as
 test(() => {
  const x=fixture({actors:[{authorized:true,userId:"P1",role:"Profesor"},{authorized:false,userId:"",role:""}],permissions:[true,false]});
  assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
- assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock","rbac"]);
+ assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock","rbac","release"]);
  assert.equal(x.stats.permissionCalls,2);
  assert.equal(x.sheets.Examenes.rows.length,1);
  assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
@@ -156,14 +156,14 @@ test(() => {
 test(() => {
  const x=fixture({actors:[{authorized:true,userId:"P1",role:"Profesor"},{authorized:false,userId:"",role:""}],permissions:[true,true]});
  assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
- assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock","rbac","identity"]);
+ assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock","rbac","identity","release"]);
  assert.equal(x.sheets.Examenes.rows.length,1);
  assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
 });
 test(() => {
  const x=fixture({scopes:[{authorized:true,institutionId:"I1",departmentIds:["D1"]},{authorized:false}]});
  assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
- assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock","rbac","identity","sheets","scope"]);
+ assert.deepEqual(x.stats.events,["rbac","identity","sheets","scope","lock","rbac","identity","sheets","scope","release"]);
  assert.equal(x.sheets.Examenes.rows.length,1);
  assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
 });
