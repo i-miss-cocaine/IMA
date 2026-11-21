@@ -4885,18 +4885,18 @@ function getTransportRoutes(payload) {
     var id = String(row[0] || "").trim();
     if (id) routeCounts[id] = (routeCounts[id] || 0) + 1;
   });
-  if (Object.keys(routeCounts).some(function(id) { return routeCounts[id] > 1; })) {
-    return { status: "error", code: "RESOURCE_AMBIGUOUS", rutas: [] };
-  }
   var allowed = scope.management ? null : scope.routeIds || getTransportRouteIdsForScope_(ss, scope);
   var requested = String(input.rutaId || "").trim();
-  if (requested && !scope.management && (!allowed || allowed.indexOf(requested) === -1)) {
+  if (requested && !scope.management && (!allowed || allowed.indexOf(requested) === -1 || routeCounts[requested] > 1)) {
     transportAuditDenied_(actor, "getTransportRoutes", requested);
     return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", rutas: [] };
   }
+  if (scope.management && Object.keys(routeCounts).some(function(id) { return routeCounts[id] > 1; })) {
+    return { status: "error", code: "RESOURCE_AMBIGUOUS", rutas: [] };
+  }
   var routes = snapshot.rows.filter(function(row) {
     var routeId = String(row[0] || "").trim(), state = String(row[6] || "").trim().toLowerCase();
-    return ["active","activo","activa","vigente"].indexOf(state) !== -1 &&
+    return routeCounts[routeId] === 1 && ["active","activo","activa","vigente"].indexOf(state) !== -1 &&
       (!requested || routeId === requested) && (scope.management || allowed.indexOf(routeId) !== -1);
   }).map(function(row) {
     return { rutaId: row[0], nombre: row[1], unidad: row[2],
@@ -4933,7 +4933,8 @@ function getTransportAssignments(payload) {
     var id = String(row[0] || "").trim();
     if (id) assignmentCounts[id] = (assignmentCounts[id] || 0) + 1;
   });
-  if (Object.keys(assignmentCounts).some(function(id) { return assignmentCounts[id] > 1; })) {
+  var hasDuplicateAssignments = Object.keys(assignmentCounts).some(function(id) { return assignmentCounts[id] > 1; });
+  if (hasDuplicateAssignments && scope.management) {
     return { status: "error", code: "RESOURCE_AMBIGUOUS", total: 0, asignaciones: [] };
   }
   var requestedRoute = String(input.rutaId || "").trim(), requestedStudent = String(input.estudianteUserId || "").trim();
@@ -4947,10 +4948,19 @@ function getTransportAssignments(payload) {
     var id = String(row[0] || "").trim();
     if (id) routeCounts[id] = (routeCounts[id] || 0) + 1;
   });
-  if (requestedRoute && routeCounts[requestedRoute] > 1) return { status: "error", code: "RESOURCE_AMBIGUOUS", total: 0, asignaciones: [] };
-  if (scope.management && requestedRoute && !routeCounts[requestedRoute]) return { status: "error", code: "ROUTE_NOT_FOUND", total: 0, asignaciones: [] };
-  var uniqueRouteIds = Object.keys(routeCounts).filter(function(id) { return routeCounts[id] === 1; });
   var allowedRoutes = scope.management ? null : scope.routeIds || getTransportRouteIdsForScope_(ss, scope);
+  if (requestedRoute && !scope.management && (!allowedRoutes || allowedRoutes.indexOf(requestedRoute) === -1 || routeCounts[requestedRoute] > 1)) {
+    transportAuditDenied_(actor, "getTransportAssignments", requestedRoute);
+    return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", total: 0, asignaciones: [] };
+  }
+  if (requestedRoute && scope.management && routeCounts[requestedRoute] > 1) return { status: "error", code: "RESOURCE_AMBIGUOUS", total: 0, asignaciones: [] };
+  if (scope.management && requestedRoute && !routeCounts[requestedRoute]) return { status: "error", code: "ROUTE_NOT_FOUND", total: 0, asignaciones: [] };
+  var activeRouteIds = Object.create(null);
+  routeSnapshot.rows.forEach(function(row) {
+    var id = String(row[0] || "").trim(), state = String(row[6] || "").trim().toLowerCase();
+    if (id && routeCounts[id] === 1 && ["active","activo","activa","vigente"].indexOf(state) !== -1) activeRouteIds[id] = true;
+  });
+  var uniqueRouteIds = Object.keys(activeRouteIds);
   if (requestedRoute && !scope.management && (!allowedRoutes || allowedRoutes.indexOf(requestedRoute) === -1)) {
     transportAuditDenied_(actor, "getTransportAssignments", requestedRoute);
     return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", total: 0, asignaciones: [] };
@@ -4967,6 +4977,7 @@ function getTransportAssignments(payload) {
     var routeId = String(row[1] || "").trim(), studentId = String(row[2] || "").trim();
     var state = String(row[5] || "").trim().toLowerCase();
     if (["activa","active","activo"].indexOf(state) === -1) return false;
+    if (assignmentCounts[String(row[0] || "").trim()] !== 1) return false;
     var start = startIndex < 0 ? { valid: true, date: null } : transportDateBoundary_(row[startIndex]);
     var end = endIndex < 0 ? { valid: true, date: null } : transportDateBoundary_(row[endIndex]);
     if (!start.valid || !end.valid ||
@@ -5017,18 +5028,32 @@ function getTripPassengerManifest(payload) {
   if (!trips.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", manifiestoPasajeros: [] };
   var matches = trips.rows.filter(function(row) { return String(row[0] || "").trim() === tripId; });
   if (!matches.length) return { status: "error", code: "RESOURCE_NOT_FOUND", manifiestoPasajeros: [] };
-  if (matches.length !== 1) return { status: "error", code: "RESOURCE_AMBIGUOUS", manifiestoPasajeros: [] };
+  if (matches.length !== 1) {
+    transportAuditDenied_(actor, "getTripPassengerManifest", tripId);
+    return { status: "error", code: scope.management ? "RESOURCE_AMBIGUOUS" : "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+  }
   var trip = matches[0], role = String(scope.role || "").trim().toLowerCase();
   var routeId = String(trip[1] || "").trim();
+  var allowedRoutes = scope.management ? null : scope.routeIds || getTransportRouteIdsForScope_(ss, scope);
+  if (!scope.management && (!allowedRoutes || allowedRoutes.indexOf(routeId) === -1)) {
+    transportAuditDenied_(actor, "getTripPassengerManifest", tripId);
+    return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+  }
   var routeSnapshot = transportRowsPrefix_(ss, "TransporteRutas", [
     ["RutaID"], ["NombreRuta","Nombre"], ["UnidadCodigo","Unidad"], ["ConductorEmpleadoId","Conductor"],
     ["Capacidad"], ["ParadasJSON","Paradas"], ["Estado"]
   ]);
   if (!routeSnapshot.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", manifiestoPasajeros: [] };
   var routeMatches = routeSnapshot.rows.filter(function(row) { return String(row[0] || "").trim() === routeId; });
-  if (!routeMatches.length) return { status: "error", code: "ROUTE_NOT_FOUND", manifiestoPasajeros: [] };
-  if (routeMatches.length !== 1) return { status: "error", code: "ROUTE_ID_AMBIGUOUS", manifiestoPasajeros: [] };
-  var allowedRoutes = scope.management ? null : scope.routeIds || getTransportRouteIdsForScope_(ss, scope);
+  if (!routeMatches.length) return { status: "error", code: scope.management ? "ROUTE_NOT_FOUND" : "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+  if (routeMatches.length !== 1) {
+    transportAuditDenied_(actor, "getTripPassengerManifest", tripId);
+    return { status: "error", code: scope.management ? "ROUTE_ID_AMBIGUOUS" : "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+  }
+  var routeState = String(routeMatches[0][6] || "").trim().toLowerCase();
+  if (["active","activo","activa","vigente"].indexOf(routeState) === -1) {
+    return { status: "error", code: scope.management ? "ROUTE_NOT_FOUND" : "UNAUTHORIZED_ACCESS_ATTEMPT", manifiestoPasajeros: [] };
+  }
   var authorizedTrip = scope.management === true || (allowedRoutes && allowedRoutes.indexOf(routeId) !== -1);
   if (authorizedTrip && role === "conductor") authorizedTrip = scope.employeeIds.indexOf(String(trip[3] || "").trim()) !== -1;
   if (authorizedTrip && role === "monitor") authorizedTrip = scope.employeeIds.indexOf(String(trip[4] || "").trim()) !== -1;
