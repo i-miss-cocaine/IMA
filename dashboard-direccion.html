@@ -80,6 +80,21 @@
                 <div class="text-center py-8 text-gray-400 font-bold text-xs uppercase">No hay solicitudes pendientes de autorización en este momento.</div>
             </div>
         </div>
+
+        <section id="academic-department-crosswalk-panel" class="mt-8 bg-white p-6 md:p-8 rounded-[2.5rem] border border-indigo-100 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <div><h3 class="text-lg font-black text-gray-900 uppercase">Relación de departamentos académicos y administrativos</h3><p class="text-xs text-gray-500 mt-1">Vínculos explícitos many-to-many. Los catálogos y sus jefaturas permanecen independientes.</p></div>
+                <button id="academic-crosswalk-reload" type="button" class="px-3 py-2 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold">Actualizar</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label class="text-xs font-bold text-gray-700">Departamento académico<select id="academic-crosswalk-academic" class="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm" required><option value="">Cargando…</option></select></label>
+                <label class="text-xs font-bold text-gray-700">Departamento administrativo<select id="academic-crosswalk-administrative" class="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm" required><option value="">Cargando…</option></select></label>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-4"><button id="academic-crosswalk-link" type="button" class="px-4 py-2.5 rounded-xl bg-indigo-700 text-white text-xs font-bold">Vincular departamentos</button></div>
+            <p id="academic-crosswalk-status" class="mt-3 text-xs text-gray-500" role="status" aria-live="polite">Cargando vínculos institucionales…</p>
+            <div class="mt-5 border-t border-gray-100 pt-5"><div class="flex items-center justify-between gap-3 mb-3"><h4 class="text-xs font-black uppercase text-gray-800">Vínculos activos</h4><span id="academic-crosswalk-count" class="text-[10px] text-gray-400 font-bold">0 registros</span></div><ul id="academic-crosswalk-list" class="space-y-2 text-xs text-gray-600"><li>Consultando vínculos…</li></ul><button id="academic-crosswalk-more" type="button" hidden class="mt-3 px-3 py-2 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold">Cargar más vínculos</button></div>
+        </section>
+
     </main>
 
     <script src="js/config.js?v=26"></script>
@@ -180,6 +195,7 @@
     <script src="js/teacher.js?v=26"></script>
     <script src="js/curriculum-admin.js?v=1"></script>
     <script src="js/department-reference-admin.js?v=26"></script>
+    <script src="js/academic-department-crosswalk-admin.js?v=1"></script>
     <script src="js/transport-analytics.js?v=1"></script>
     <script>
         // [TAREA-F4-P2-03] [Fase 4: Gestión de Usuarios] - Vinculación de los botones de gestión de usuarios y seguridad

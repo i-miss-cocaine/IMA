@@ -295,7 +295,7 @@ const ROLE_PERMISSIONS = {
     "getHierarchicalConfigurationCatalog", "resolveHierarchicalConfiguration", "getInstitutionParams", "saveInstitutionParam", "saveTeacherJustificationEvidencePolicy", "saveAbsenceJustificationPolicies", "getAcademicYears", "createAcademicYear", "updateAcademicYearStatus", "prepareNewAcademicYear",
     "getAcademicPeriods", "manageAcademicPeriod", "getSubjectCatalog", "createSubjectCatalogItem", "updateSubjectCatalogItem", "getStudyPlans", "createStudyPlan", "getStudyPlanSubjects", "createStudyPlanSubject", "setStudyPlanSubjectStatus",
     "getAcademicOffers", "createAcademicOffer", "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution",
-    "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getAcademicRules", "saveAcademicRule", "getDepartmentAcademicPlanning", "assignDepartmentHead", "linkInstitutionalDepartment", "getInstitutionalDepartmentLinks", "unlinkInstitutionalDepartment", "getCurricularAnalyticsReport", "getReusableResourceCatalog", "manageReusableResource", "getCurricularEquivalences", "executeCurricularMigration", "registerCurricularAreaExtension", "runCurricularAreaServiceTests", "toggleCurricularAreaStatus", "validateApiContractsTestSuite", "getInstitutionalCatalog", "validateCatalogReference", "generateInstitutionalUUID", "validateInstitutionalIdentifier", "auditInstitutionalIdentifierCollisions", "runConcurrencyAndConsistencySuite", "getPaginatedAcademicHistory", "reconcileRestoredDataIntegrity", "evaluateTransactionalStorageMigrationNeed",
+    "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getAcademicRules", "saveAcademicRule", "getDepartmentAcademicPlanning", "assignDepartmentHead", "getInstitutionalAcademicDepartments", "linkInstitutionalDepartment", "getInstitutionalDepartmentLinks", "getInstitutionalAcademicDepartments", "unlinkInstitutionalDepartment", "getCurricularAnalyticsReport", "getReusableResourceCatalog", "manageReusableResource", "getCurricularEquivalences", "executeCurricularMigration", "registerCurricularAreaExtension", "runCurricularAreaServiceTests", "toggleCurricularAreaStatus", "validateApiContractsTestSuite", "getInstitutionalCatalog", "validateCatalogReference", "generateInstitutionalUUID", "validateInstitutionalIdentifier", "auditInstitutionalIdentifierCollisions", "runConcurrencyAndConsistencySuite", "getPaginatedAcademicHistory", "reconcileRestoredDataIntegrity", "evaluateTransactionalStorageMigrationNeed",
     "getClassroomResources", "saveClassroomResource", "saveClassroomMaintenance", "getStudentSchedule", "getScheduleConflictResolutionAlternatives", "saveScheduleScenario", "getScheduleScenarios", "saveTeacherWorkLoadPreferences", "createSessionException", "getScheduleVersions", "compareScheduleVersions", "restoreScheduleVersion", "getPlanningQualityAndOccupancyReport", "exportBulkClassSchedules", "importBulkClassSchedules", "previewPublishImpact",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "reopenAdmissionRequest", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot", "resolveAdmissionDuplicate", "getAdmissionAnalyticsReport",
     "getStudentFile", "getStudentFileSummary", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents", "mergeStudentFiles", "getMergePreviewComparison", "unmergeStudentFiles", "getStudentFileAdministrativeReports", "initializeDirectionSecretaryDriveStructure",
@@ -1657,6 +1657,7 @@ function doPost(e) {
         result = saveCurricularConstraint(payload);
         break;
       case "assignDepartmentHead": result = assignDepartmentHead(payload); break;
+      case "getInstitutionalAcademicDepartments": result = getInstitutionalAcademicDepartments(payload); break;
       case "linkInstitutionalDepartment": result = linkInstitutionalDepartment(payload); break;
       case "getInstitutionalDepartmentLinks": result = getInstitutionalDepartmentLinks(payload); break;
       case "unlinkInstitutionalDepartment": result = unlinkInstitutionalDepartment(payload); break;
@@ -10799,6 +10800,19 @@ function getAcademicDepartmentCatalogLinkColumnMap_(sheet){
  if(missing.length)throw new Error("DEPARTMENT_LINK_SCHEMA_INVALID:"+missing.join(","));
  return result.map;
 }
+
+function getInstitutionalAcademicDepartments(payload){
+ const input=payload||{},identity=getVerifiedAcademicIdentity_(input);
+ if(!identity||identity.authorized!==true)throw new Error("VERIFIED_IDENTITY_REQUIRED");
+ const permission=validateRolePermission("getInstitutionalAcademicDepartments",input);if(!permission||permission.authorized!==true)throw new Error("AUTH_PERMISSION_DENIED");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),role=identity.role;
+ let allowedIds=null;
+ if(["Administrador","Desarrollador"].indexOf(role)===-1){const scope=getVerifiedAcademicDepartmentScope_(input,ss,identity);if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");if(!scope.institutionWide)allowedIds=(scope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();});}
+ const list=getInstitutionalDepartmentRecords_(ss).filter(function(item){return item.isActive&&(!allowedIds||allowedIds.indexOf(String(item.departmentId).trim().toUpperCase())!==-1);});
+ const limit=Math.min(200,Math.max(1,parseInt(input.limit,10)||100)),offset=Math.max(0,parseInt(input.offset,10)||0),page=list.slice(offset,offset+limit),more=offset+page.length<list.length;
+ return {status:"success",data:page,total:list.length,limit:limit,offset:offset,nextOffset:more?offset+page.length:null,hasMore:more};
+}
+
 function linkInstitutionalDepartment(payload){
  const input=payload||{},identity=getVerifiedAcademicIdentity_(input);
  if(!identity||identity.authorized!==true)throw new Error("VERIFIED_IDENTITY_REQUIRED");

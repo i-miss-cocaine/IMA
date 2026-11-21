@@ -63,6 +63,9 @@ on:
       - tests/contracts/api-response-contract.test.js
       - tests/regression/hr-vacation-dashboard-contract.test.js
       - tests/ui/hr-department-affiliation-ui-contract.test.js
+      - tests/ui/academic-department-crosswalk-ui-contract.test.js
+      - dashboard-direccion.html
+      - js/academic-department-crosswalk-admin.js
       - tests/regression/phase22-document-management-suite-contract.test.js
       - tests/security/user-service-signature-document-integrity.test.js
       - tests/security/accounting-school-document-binary-integrity.test.js
@@ -253,6 +256,8 @@ jobs:
         run: node tests/regression/hr-vacation-dashboard-contract.test.js
       - name: Run HR department affiliation UI contract
         run: node tests/ui/hr-department-affiliation-ui-contract.test.js
+      - name: Run academic department crosswalk UI contract
+        run: node tests/ui/academic-department-crosswalk-ui-contract.test.js
       - name: Run centralized service tariff, versioning and discount contract
         run: node tests/security/accounting-service-tariffs.test.js
       - name: Run accounting payment voucher evidence integrity, versioning and decision binding contract
