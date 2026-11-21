@@ -76,6 +76,7 @@ function fixture(options = {}) {
     getVerifiedExamDepartmentScope_() { stats.events.push("scope"); if (scopeResults) return scopeResults.shift(); return options.invalidScope ? { authorized: false } : { authorized: true, institutionId: "I1", departmentIds: ["D1"] }; },
     SpreadsheetApp: { openById() { stats.events.push("sheets"); stats.opened++; return { getSheetByName: name => sheets[name] || null }; } },
     getSheetOrThrow(ss, name) { const sheet = ss.getSheetByName(name); if (!sheet) throw new Error("missing " + name); return sheet; },
+    clearRequestAuthorizationContext_(payload) { delete payload._imaVerifiedSessionToken; delete payload._imaVerifiedSessionClaims; delete payload._imaAuthorizationCache; delete payload._imaVerifiedExamIdentity; delete payload._verifiedUserId; delete payload._verifiedRole; },
     LockService: { getScriptLock: () => ({
       tryLock() { stats.events.push("lock"); stats.acquired++; if (options.lockTimeout || stats.held) return false; stats.held = true; return true; },
       releaseLock() { stats.events.push("release"); stats.released++; stats.held = false; }
