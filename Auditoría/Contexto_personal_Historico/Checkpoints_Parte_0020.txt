@@ -891,3 +891,42 @@ Continuar el inventario de rutas USER/ACADEMIC que consumen recursos familiares 
 ### Siguiente acción elegible
 Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/ACCOUNTING/TASK/EXAM, verificar aislamiento institucional y concurrencia de cambios de relación/asignación; después revalidar TASK-506. TASK-502 permanece En ejecución.
 ===============================================================================
+
+
+===============================================================================
+### C1.915 — IMA-EXEC-20261121-AUD-NG-222-USER-EXPEDIENTE-OWNERSHIP-86
+===============================================================================
+
+### Continuidad y reconciliación de HEAD
+- HEAD al iniciar esta sesión: 5774958aaf469a9a4dba2cc53dd3e265ba380cd5. El índice C1.914 registraba a8d8b129ea50e018102d5aad50eff38a54b4fff3; compare confirmó 6 commits adelante y 0 atrás. Se inspeccionaron los seis commits y sus diffs antes de continuar.
+- Commits reconciliados: d64123f5 (registro C1.914), fb3f3526 (lectura de roster familiar con ownership de expediente), b67dd9b7 (grant de asistencia para lecturas familiares), e63cbc33 (reconciliación del handler y contexto verificado), 1c6b8b32 (ownership de expediente al revisar justificaciones) y 5774958a (ajuste del fixture de identidad duplicada).
+- La rama autorizada fue la única modificada. HEAD de implementación final de esta unidad: 78fe2f552e6c5622d4a869fe827ab189ccad0756. Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+
+### Alcance consolidado
+- USER: getStudentGuardianConsolidatedList valida identidad verificada, expediente único y ownership del recurso; el estudiante solo consulta su propio expediente, administradores/desarrolladores requieren ámbito institucional completo y los demás actores pasan por assertRecordOwnership. Las relaciones familiares se validan por esquema, unicidad, vigencia y ambigüedad.
+- USER: validateContextualAccess limpia cualquier _verifiedGuardianStudent previo y solo lo vuelve a establecer tras resolver relación y permiso de dominio. getStudentAbsenceJustifications consume ese contexto verificado y exige permiso explícito de asistencia para el tutor; las lecturas de estudiantes permanecen ligadas a la identidad autenticada.
+- USER: reviewAbsenceJustification resuelve el expediente desde una identidad de estudiante activa y única, PersonaID único y expediente único; rechaza solicitudes duplicadas. Administrador/Desarrollador requiere ámbito institucional completo; otros revisores necesitan ownership UPDATE del expediente.
+- Se agregaron contratos de roster familiar, permisos de asistencia y ownership de expediente; se integraron al workflow Department Scope.
+- El harness canónico de justificaciones se actualizó para cargar resolveAbsenceReviewExpedienteId_, disponer de fixtures sintéticos Usuarios/ExpedientesEstudiantes y simular assertRecordOwnership; una aserción confirma el expediente exacto autorizado. No se modificó lógica productiva en los commits de corrección del harness.
+
+### Archivos modificados en la unidad reconciliada
+- backend/user-service/Code.gs
+- .github/workflows/department-scope-contract.yml
+- tests/security/user-student-guardian-consolidated-list-abac.test.js
+- tests/security/user-service-absence-justification-guardian-abac.test.js
+- tests/security/user-service-absence-review-resource-ownership.test.js
+- tests/security/academic-absence-justification-canonical.test.js
+
+### Verificaciones
+- GitHub Actions, Node.js 22.23.5: Academic-Service single authorization context, run 44948046847 — SUCCESS. Incluyó el contrato academic-absence-justification-canonical, ahora PASS.
+- GitHub Actions, Node.js 24.22.3: Department Scope Contract, run 44948046832 — FAILURE en el paso Phase 22 document management suite. Los pasos focalizados USER roster ownership (82), USER attendance grant (83), USER absence review expediente ownership (84), ownership académico (85), historial de matrícula (86) y syntax-check (99) terminaron SUCCESS.
+- El fallo Phase 22 es específico y reproducible: tests/regression/phase22-document-management-suite-contract.test.js no encuentra configureSchoolDocumentTemplate. No se atribuye a los cambios de esta unidad y no se declaró PASS.
+- node --check y contratos ejecutados por los runners de GitHub Actions; no se ejecutó CLI local independiente desde esta sesión. No hay despliegue Apps Script/Sheets ni concurrencia real entre proyectos: NOT RUN.
+- Pruebas beta de permisos y despliegue continúan PENDIENTE DE BETA; no bloquean el cierre local de esta unidad.
+
+### Estado y siguiente acción elegible
+- El incremento USER de ownership de roster/expediente y grants de asistencia queda verificado por sus contratos focalizados.
+- AUD-NG-222 / TASK-502 continúa En ejecución: falta demostrar cobertura action/resource completa en los cinco servicios y aislamiento institucional extremo a extremo.
+- TASK-506 / AUD-NG-226 continúa En ejecución y depende de la integración/verificación de TASK-502.
+- Siguiente: continuar el inventario de bindings action/resource restantes en USER/ACADEMIC/ACCOUNTING/TASK/EXAM; probar recursos ausentes/duplicados, relaciones revocadas y aislamiento institucional; añadir pruebas locales deterministas de concurrencia para cambios de relación/asignación. Después revalidar TASK-506.
+===============================================================================

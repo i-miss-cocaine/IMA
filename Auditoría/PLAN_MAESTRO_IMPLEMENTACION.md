@@ -6228,3 +6228,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - HEAD de código verificado antes del registro: a8d8b129ea50e018102d5aad50eff38a54b4fff3. Rama base NG_beta_0.0.0.1 verificada en 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
 - Estado: TASK-502 continúa En ejecución; no se declara completa la matriz action/resource de los cinco servicios ni TASK-506.
 - Siguiente: Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/ACCOUNTING/TASK/EXAM, verificar aislamiento institucional y concurrencia de cambios de relación/asignación; después revalidar TASK-506. TASK-502 permanece En ejecución.
+
+
+### Continuidad C1.915 — AUD-NG-222 / TASK-502 (sin cierre)
+- Se reconciliaron seis commits posteriores al HEAD registrado en C1.914. USER ahora valida ownership de expediente en roster familiar y revisión de justificaciones; las lecturas familiares de asistencia requieren grant explícito y el contexto del estudiante se deriva de la autorización contextual verificada, sin reutilizar estado residual del payload.
+- Contratos nuevos: roster familiar/expediente, grants de asistencia y revisión de expediente. El harness canónico de justificaciones carga el resolver y los fixtures de identidad/expediente requeridos.
+- GitHub Actions en HEAD 78fe2f552e6c5622d4a869fe827ab189ccad0756: Academic-Service single authorization context SUCCESS; Department Scope ejecutó PASS en los contratos focalizados USER (roster, asistencia y review ownership), ownership académico, historial y sintaxis. El agregado falla únicamente en Phase22 porque falta configureSchoolDocumentTemplate; no se atribuye al cambio.
+- Rama base verificada sin cambios. Apps Script/Sheets real y concurrencia entre proyectos NOT RUN; pruebas beta de despliegue siguen pendientes.
+- Estado: incremento USER verificado; AUD-NG-222/TASK-502 y TASK-506 permanecen En ejecución. Siguiente: completar bindings action/resource restantes en USER/ACADEMIC/ACCOUNTING/TASK/EXAM, aislamiento institucional y concurrencia reproducible; después revalidar TASK-506.
