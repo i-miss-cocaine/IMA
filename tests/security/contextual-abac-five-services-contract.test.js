@@ -197,6 +197,24 @@ familyRows[1][8] = "{\"permisoAcademico\":true,\"permisoFinanciero\":true}";
 assert.equal(guardianPolicyRuntime.check("getPaymentVouchers", { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, true,
   "USER allows financial access only after the financial permission is explicitly granted");
 
+const guardianDomainPermissionFn = extractFunctionFrom(userSource, "hasExplicitGuardianDomainPermission_");
+const guardianDomainPermissionRuntime = {};
+vm.createContext(guardianDomainPermissionRuntime);
+vm.runInContext(guardianDomainPermissionFn + "\\nthis.check = hasExplicitGuardianDomainPermission_;", guardianDomainPermissionRuntime);
+assert.equal(guardianDomainPermissionRuntime.check({ permisos: { permisoFinanciero: true } }, "permisoFinanciero"), true);
+assert.equal(guardianDomainPermissionRuntime.check({ permisos: { permisoFinanciero: false } }, "permisoFinanciero"), false);
+assert.equal(guardianDomainPermissionRuntime.check({ permisos: {} }, "permisoFinanciero"), false,
+  "missing domain permissions must not grant family financial access");
+assert.equal(guardianDomainPermissionRuntime.check({ permisos: { permisoFinanciero: "true" } }, "permisoFinanciero"), false,
+  "string booleans must not grant family financial access");
+assert.equal(guardianDomainPermissionRuntime.check({ permisos: [] }, "permisoFinanciero"), false);
+assert(extractFunctionFrom(userSource, "getFamilyConsolidatedSummary").includes('hasExplicitGuardianDomainPermission_(s, "permisoFinanciero")'),
+  "family summary applies explicit financial permission");
+assert(extractFunctionFrom(userSource, "resolveVerifiedRequestSubmitter_").includes("hasExplicitGuardianDomainPermission_(student, permissionKey)"),
+  "family requests require explicit permission for their domain");
+assert(extractFunctionFrom(userSource, "getAdministrativeRequestAttachment").includes('hasExplicitGuardianDomainPermission_(student, "permisoDocumental")'),
+  "guardian document attachments require explicit document permission");
+
 
 
 const guardianApplicantFn = extractFunction(userSource, "getGuardianApplicants");

@@ -2100,6 +2100,12 @@ function getGuardianPermissionKeyForAction_(action) {
   return "";
 }
 
+function hasExplicitGuardianDomainPermission_(student, permissionKey) {
+  const permissions = student && student.permisos;
+  return !!permissions && typeof permissions === "object" && !Array.isArray(permissions) &&
+    !!permissionKey && permissions[permissionKey] === true;
+}
+
 function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   const verifiedActorId = String(verifiedUserId || "").trim();
   const verifiedActorRole = String(userRole || "").trim();
@@ -5819,7 +5825,7 @@ function getFamilyConsolidatedSummary(payload) {
   let totalPagosRevision = 0;
 
   const studentDetails = students.map(s => {
-    const tienePermisoFinanciero = !s.permisos || s.permisos.permisoFinanciero !== false;
+    const tienePermisoFinanciero = hasExplicitGuardianDomainPermission_(s, "permisoFinanciero");
 
     let studentCargos = 0;
     let studentPagosRev = 0;
@@ -6336,7 +6342,7 @@ function resolveVerifiedRequestSubmitter_(payload, requestedStudentId, requireSt
     const linked = (linkedResult.data || []).some(function(student) {
       const matches = String(student.studentUserId || student.userId || "").trim() === studentId ||
         String(student.expedienteEstudianteId || "").trim() === studentId;
-      return matches && (!permissionKey || !student.permisos || student.permisos[permissionKey] !== false);
+      return matches && (!permissionKey || hasExplicitGuardianDomainPermission_(student, permissionKey));
     });
     if (!linked) throw new Error("GUARDIAN_STUDENT_SCOPE_DENIED");
   }
@@ -6371,7 +6377,7 @@ function getAdministrativeRequestAttachment(payload) {
       const linkedUserId = String(student.studentUserId || student.userId || "").trim();
       const linkedExpedienteId = String(student.expedienteEstudianteId || "").trim();
       return (linkedUserId === targetStudentId || linkedExpedienteId === targetStudentId) &&
-        permissions.permisoDocumental !== false;
+        hasExplicitGuardianDomainPermission_(student, "permisoDocumental");
     });
   }
   if (!authorized && studentRoles.indexOf(normalizedRole) === -1 && guardianRoles.indexOf(normalizedRole) === -1) {
