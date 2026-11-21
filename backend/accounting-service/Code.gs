@@ -8567,7 +8567,7 @@ function assertPayrollEmployeeResourceScope_(ss, scope, employeeRows, operation)
 
 function assertPayrollInstitutionWriteScope_(payload, ss, actor, employeeRows) {
   const scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
-  if (!scope || scope.valid !== true || scope.authorized === false) {
+  if (!scope || scope.valid !== true || scope.authorized !== true) {
     throw new Error(scope && scope.code || "PAYROLL_DEPARTMENT_SCOPE_UNVERIFIED");
   }
   // A payroll period is a single institution-wide accounting cycle; a
@@ -11962,7 +11962,7 @@ function assertMonthlyChargeAccess_(payload, action) {
  const permission=validateRolePermission(actor,action);
  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(input,ss,actor);
- if(!scope||scope.valid!==true||scope.authorized===false)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_UNVERIFIED");
+ if(!scope||scope.valid!==true||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_UNVERIFIED");
  return {actor:actor,ss:ss,scope:scope};
 }
 
@@ -12072,6 +12072,42 @@ function transportBillingActor_(p, action) {
     if (!permission || permission.authorized !== true) throw new Error(permission && permission.code || "ROLE_PERMISSION_DENIED");
   }
   return actor;
+}
+
+function assertTransportStudentWriteAccess_(ss, payload, actor, studentUserId, operation) {
+  var input = payload || {}, studentId = String(studentUserId || "").trim();
+  if (!ss || !actor || actor.authorized !== true || !studentId) throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  var scope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
+  if (!scope || scope.valid !== true || scope.authorized === false) {
+    throw new Error(scope && scope.code || "RESOURCE_SCOPE_DENIED");
+  }
+  var sheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!sheet) throw new Error("STUDENT_RESOURCE_NOT_FOUND");
+  var values = sheet.getDataRange().getValues();
+  if (!values || !values.length) throw new Error("STUDENT_RESOURCE_SCHEMA_INVALID");
+  var headers = values[0].map(function(value) { return String(value || "").trim(); });
+  var idIndexes = [], userIndexes = [];
+  headers.forEach(function(value, index) {
+    if (value === "ExpedienteID") idIndexes.push(index);
+    if (value === "UserId") userIndexes.push(index);
+  });
+  if (idIndexes.length !== 1 || userIndexes.length !== 1) throw new Error("STUDENT_RESOURCE_SCHEMA_INVALID");
+  var matches = values.slice(1).filter(function(row) {
+    return String(row[userIndexes[0]] || "").trim() === studentId;
+  });
+  if (!matches.length) throw new Error("STUDENT_RESOURCE_NOT_FOUND");
+  if (matches.length !== 1) throw new Error("STUDENT_RESOURCE_AMBIGUOUS");
+  var expedienteId = String(matches[0][idIndexes[0]] || "").trim();
+  if (!expedienteId) throw new Error("STUDENT_RESOURCE_SCHEMA_INVALID");
+  if (typeof assertResourceOwnershipForScope_ === "function") {
+    var ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", expedienteId, operation || "WRITE");
+    if (!ownership || ownership.authorized !== true) throw new Error(ownership && ownership.code || "RESOURCE_SCOPE_DENIED");
+  } else if (typeof assertMonthlyChargeStudentOwnership_ === "function") {
+    assertMonthlyChargeStudentOwnership_(ss, scope, [studentId], operation || "WRITE");
+  } else {
+    throw new Error("RESOURCE_OWNERSHIP_UNVERIFIED");
+  }
+  return { scope: scope, expedienteId: expedienteId, studentUserId: studentId };
 }
 
 function transportAssertStudentOwnershipForMutation_(ss, payload, actor, studentUserId, operation) {
@@ -12345,10 +12381,10 @@ function generateTransportMonthlyCharges(payload){
 function cancelStudentTransportAssignment(payload) {
   const p = payload || {}, id = String(p.asignacionTranspId || p.assignmentId || "").trim();
   if (!id) throw new Error("TRANSPORT_ASSIGNMENT_ID_REQUIRED");
+  const actor = transportBillingActor_(p, "cancelStudentTransportAssignment");
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
-    const actor = transportBillingActor_(p, "cancelStudentTransportAssignment");
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const assignmentSheet = ss.getSheetByName("TransporteAsignaciones");
     if (!assignmentSheet) throw new Error("TRANSPORT_ASSIGNMENT_NOT_FOUND");
@@ -12360,7 +12396,7 @@ function cancelStudentTransportAssignment(payload) {
     if (!matches.length) throw new Error("TRANSPORT_ASSIGNMENT_NOT_FOUND");
     if (matches.length !== 1) throw new Error("TRANSPORT_ASSIGNMENT_AMBIGUOUS");
     const idx = matches[0].index, original = matches[0].row.slice();
-    transportAssertStudentOwnershipForMutation_(ss, p, actor, String(original[2] || "").trim(), "WRITE");
+    assertTransportStudentWriteAccess_(ss, p, actor, String(original[2] || "").trim(), "WRITE");
     const routeSheet = ss.getSheetByName("TransporteRutas");
     if (!routeSheet) throw new Error("TRANSPORT_ROUTE_NOT_FOUND");
     const routeMatches = routeSheet.getDataRange().getValues().slice(1).filter(row =>
@@ -12399,6 +12435,7 @@ function cancelStudentTransportAssignment(payload) {
 function assignStudentTransport(payload) {
   const { rutaId, estudianteUserId, paradaNombre, horarioPlan, jornada, diasSemanaJSON, observaciones, modalidadServicio, fechaInicioServicio } = payload || {};
   if (!rutaId || !estudianteUserId) throw new Error("rutaId y estudianteUserId son requeridos.");
+  const actor = transportBillingActor_(payload, "assignStudentTransport");
 
   const lock = LockService.getScriptLock();
   const hasLock = lock.tryLock(15000);
@@ -12411,16 +12448,13 @@ function assignStudentTransport(payload) {
   }
 
   try {
-    const actor = transportBillingActor_(payload, "assignStudentTransport");
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    transportAssertStudentOwnershipForMutation_(ss, payload, actor, String(estudianteUserId).trim(), "WRITE");
-    getOrCreateTransportVehiclesCatalog(ss);
-    const billingSchema=transportEnsureBillingSchema_(ss);
-
+    assertTransportStudentWriteAccess_(ss, payload, actor, String(estudianteUserId).trim(), "WRITE");
     const rutaSheet = ss.getSheetByName("TransporteRutas");
     if (!rutaSheet) return { status: "error", code: "TRANSPORT_RESOURCE_NOT_FOUND" };
     const routeValues = rutaSheet.getDataRange().getValues();
-    const routeMatches = routeValues.slice(1).filter(r => String(r[0] || "").trim() === String(rutaId).trim());
+    const rutasData = routeValues.slice(1);
+    const routeMatches = rutasData.filter(r => String(r[0] || "").trim() === String(rutaId).trim());
     if (routeMatches.length !== 1) {
       return { status: "error", code: routeMatches.length ? "ROUTE_ID_AMBIGUOUS" : "ROUTE_NOT_FOUND" };
     }
@@ -12428,23 +12462,10 @@ function assignStudentTransport(payload) {
     if (["active", "activa"].indexOf(String(targetRuta[6] || "").trim().toLowerCase()) === -1) {
       return { status: "error", code: "ROUTE_NOT_ACTIVE" };
     }
-
-    const studentSheet = ss.getSheetByName("ExpedientesEstudiantes");
-    if (!studentSheet) return { status: "error", code: "TRANSPORT_STUDENT_RESOURCE_NOT_FOUND" };
-    const studentValues = studentSheet.getDataRange().getValues();
-    if (!studentValues || !studentValues.length) return { status: "error", code: "TRANSPORT_STUDENT_SCHEMA_INVALID" };
-    const studentHeaders = studentValues[0].map(value => String(value || "").trim());
-    const studentUserIndex = studentHeaders.indexOf("UserId");
-    if (studentUserIndex < 0) return { status: "error", code: "TRANSPORT_STUDENT_SCHEMA_INVALID" };
-    const studentMatches = studentValues.slice(1).filter(row =>
-      String(row[studentUserIndex] || "").trim() === String(estudianteUserId).trim());
-    if (studentMatches.length !== 1) {
-      return { status: "error", code: studentMatches.length ? "TRANSPORT_STUDENT_AMBIGUOUS" : "TRANSPORT_STUDENT_NOT_FOUND" };
-    }
-
+    getOrCreateTransportVehiclesCatalog(ss);
+    const billingSchema = transportEnsureBillingSchema_(ss);
     const asgnSheet = getOrCreateSheet(ss, "TransporteAsignaciones");
     const vehSheet = getOrCreateSheet(ss, "TransporteVehiculos");
-    const rutasData = routeValues.slice(1);
     const unidadCod = String(targetRuta[2] || "").trim();
     const vehRows = vehSheet.getDataRange().getValues().slice(1);
     const vehicleMatches = vehRows.filter(v => String(v[1] || "").trim() === unidadCod);
