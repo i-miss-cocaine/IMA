@@ -63,9 +63,46 @@ function makeHarness(options) {
   return { schedule: runtime.schedule, audit: runtime.audit, calls };
 }
 
-function request(role, userId) {
-  return { _verifiedRole: role, _verifiedUserId: userId };
+function request(role, userId, values) {
+  return Object.assign({ _verifiedRole: role, _verifiedUserId: userId }, values || {});
 }
 
 const departmental = makeHarness({ institutionWide: false });
-assert.equal(departmental.schedule(request("Director", "DIR-1"), "HOR-1").code, undefined);
+const deniedSchedule = departmental.schedule(request("Director", "DIR-1", { horarioId: "HOR-1" }));
+assert.equal(deniedSchedule.code, "INSTITUTION_WIDE_SCOPE_REQUIRED");
+assert.equal(departmental.calls.reads, 0, "departmental actors cannot read global schedule logs");
+
+const wideSchedule = makeHarness({ institutionWide: true });
+const scheduleOne = wideSchedule.schedule(request("Director", "DIR-WIDE", { horarioId: "HOR-1" }));
+assert.equal(scheduleOne.status, "success");
+assert.deepEqual(Array.from(scheduleOne.data, row => row.notificacionId), ["N-SCHED-1"],
+  "HOR-1 must not match HOR-10");
+const allSchedule = wideSchedule.schedule(request("Director", "DIR-WIDE"));
+assert.deepEqual(Array.from(allSchedule.data, row => row.notificacionId), ["N-SCHED-10", "N-SCHED-1"]);
+
+const noIdentity = makeHarness();
+assert.equal(noIdentity.schedule({ horarioId: "HOR-1" }).code, "VERIFIED_IDENTITY_REQUIRED");
+
+const auditDeniedPermission = makeHarness({ dynamicAuditPermission: false });
+assert.equal(auditDeniedPermission.audit(request("Director", "DIR-1")).code, "AUDIT_PERMISSION_DENIED");
+assert.equal(auditDeniedPermission.calls.reads, 0);
+
+const auditDeniedScope = makeHarness({ dynamicAuditPermission: true, institutionWide: false });
+assert.equal(auditDeniedScope.audit(request("Director", "DIR-1")).code, "INSTITUTION_WIDE_SCOPE_REQUIRED");
+assert.equal(auditDeniedScope.calls.reads, 0);
+
+const auditAllowed = makeHarness({ dynamicAuditPermission: true, institutionWide: true });
+const auditResult = auditAllowed.audit(request("Director", "DIR-WIDE"));
+assert.equal(auditResult.status, "success");
+assert.equal(auditResult.logs.length, 3);
+assert.deepEqual(auditAllowed.calls.dynamic[0], { role: "Director", action: "getNotificationAuditLogs" });
+
+const adminAudit = makeHarness({ dynamicAuditPermission: false, institutionWide: true });
+assert.equal(adminAudit.audit(request("Administrador", "ADMIN-1")).logs.length, 3);
+assert.equal(adminAudit.calls.dynamic.length, 0, "administrator global permission does not depend on a dynamic role entry");
+
+const missingSheet = makeHarness({ notificationSheet: false, institutionWide: true });
+assert.deepEqual(Array.from(missingSheet.schedule(request("Director", "DIR-WIDE")).data), []);
+assert.deepEqual(Array.from(missingSheet.audit(request("Administrador", "ADMIN-1")).logs), []);
+
+console.log("user-global-notification-logs-scope: all assertions passed");
