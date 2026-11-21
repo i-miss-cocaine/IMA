@@ -12462,8 +12462,6 @@ function assignStudentTransport(payload) {
     if (["active", "activa"].indexOf(String(targetRuta[6] || "").trim().toLowerCase()) === -1) {
       return { status: "error", code: "ROUTE_NOT_ACTIVE" };
     }
-    getOrCreateTransportVehiclesCatalog(ss);
-    const billingSchema = transportEnsureBillingSchema_(ss);
     const asgnSheet = getOrCreateSheet(ss, "TransporteAsignaciones");
     const vehSheet = getOrCreateSheet(ss, "TransporteVehiculos");
     const unidadCod = String(targetRuta[2] || "").trim();
