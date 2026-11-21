@@ -602,3 +602,63 @@ Objetivo: cerrar la dependencia AUD-NG-160 y completar TASK-501/AUD-NG-221 antes
 Auditar las implementaciones existentes de validateContextualAccess, validateRolePermission, validateRoleScopeAccess, getGuardianStudents y getAcademicAreaCoordinationScope en los cinco servicios; diseñar el contrato ABAC común fail-closed de TASK-502 sin duplicar reglas ni ampliar privilegios.
 
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.910 — IMA-EXEC-20261121-AUD-NG-222-ABAC-GUARDIAN-AMBIGUITY-81
+===============================================================================
+Fecha: 2026-11-21
+Sesión: IMA-EXEC-20261121-AUD-NG-222-ABAC-GUARDIAN-AMBIGUITY-81
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD inicial de continuación: fb7e3a82240abadcd7c3e335b49ab28d723f77cc
+HEAD final verificado: 0d7fd65a90f567a8a972b943fc5c4ce3e7517ca9
+Objetivo: avanzar AUD-NG-222 / TASK-502, integrando controles ABAC contextuales y denegación fail-closed en USER, ACADEMIC, ACCOUNTING, TASK y EXAM, sin duplicar reglas específicas ya existentes.
+
+### Resultado técnico
+- ACADEMIC: se añadieron comprobaciones de identidad/contexto fail-closed para áreas de coordinación y planificación; el acceso docente a recursos de planificación se vincula a asignaciones activas y ofertas académicas. Se endureció la consulta de relaciones familiares primarias para respetar ventanas de vigencia y permisos académicos, sin reactivar relaciones primarias pendientes/revocadas mediante el esquema legacy.
+- ACCOUNTING: el acceso de tutores a operaciones financieras familiares respeta PermisoFinanciero y vigencia de la relación; se validan las relaciones únicas y se rechazan fechas o estados no válidos.
+- USER, TASK y EXAM: las consultas de estudiantes vinculados a tutores ahora excluyen relaciones activas con ID duplicado o mapeo de estudiante ambiguo. TASK también rechaza intervalos de relación invertidos.
+- ACCOUNTING family-credit: se rechazan relaciones activas con identificador duplicado, además de mantener las validaciones de identidad, estado, fechas, permisos financieros y unicidad de estudiante.
+- Se ampliaron tests/security/contextual-abac-five-services-contract.test.js con casos de relación duplicada para USER, TASK, EXAM y ACCOUNTING. El contrato transversal sigue siendo una integración parcial: no se declara paridad completa de action/resource bindings ni se cierra TASK-502.
+- El documento backend/shared/ContextualAuthorizationContract.md conserva estado Integration in progress y sigue siendo la referencia del contrato funcional ABAC; no se creó una normativa operativa paralela.
+
+### Commits de la continuación
+- 3103849 — docs(audit): checkpoint shared security version propagation.
+- e1c1477, ee91ea0, 9cb55fe, 6a357c3, 9e9119d, c1514d5, 54d5155, ebfcdad, d49ef44, 6b6af7b, 651dd0c, 7082d7c, 9eb7e4d, 04780d6, 9ef03d9, 771b066, 47d4814, f899aad, 4366519 — controles contextuales, relaciones familiares, asignación docente/coordinación, permisos financieros y contratos.
+- 0d7fd65 — security(abac): deny ambiguous guardian relationships.
+- No se reescribió historial ni se publicó en otra rama.
+
+### Archivos de código/pruebas relevantes
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/accounting-service/Code.gs
+- backend/task-service/Code.gs
+- backend/exam-service/Code.gs
+- tests/security/contextual-abac-five-services-contract.test.js
+- tests/security/academic-guardian-primary-relation-abac-contract.test.js
+- tests/security/academic-planning-teacher-abac-contract.test.js
+- tests/security/accounting-family-credit-preference.test.js
+- .github/workflows/department-scope-contract.yml
+- backend/shared/ContextualAuthorizationContract.md
+
+### Verificaciones
+- new Function / parseo JavaScript de los cinco servicios y el contrato transversal: PASS en la revisión del contenido publicado.
+- GitHub Actions Node.js 24, HEAD 0d7fd65: contextual-abac-five-services-contract PASS; Task-Service security local contracts 44937087192 SUCCESS; Academic-Service single authorization context 44937087202 SUCCESS; Accounting Import Preflight 44937087186 SUCCESS; Identity mapping 44937087257 SUCCESS; Department Reference Consumers 44937087358 SUCCESS; Hierarchical Configuration 44937087342 SUCCESS; UI Accessibility 44937087325 SUCCESS; Library Circulation Concurrency 44937087167 SUCCESS; SACE monotonic source revision 44937087225 SUCCESS; Task-Service backup/restore 44937087171 SUCCESS.
+- ACADEMIC contracts adicionales: academic-planning-teacher-abac-contract y academic-guardian-primary-relation-abac-contract PASS en el workflow 44936866136; Academic teacher justification contract PASS en 44936866134.
+- Department Scope 44937087350: FAIL en tests/regression/phase22-document-management-suite-contract.test.js por missing function configureSchoolDocumentTemplate.
+- Exam-Service security 44937087185: FAIL solo al ejecutar la suite global por configureSchoolDocumentTemplate y ensureSchoolDocumentIssuedSchema_ ausentes. Los contratos EXAM específicos, parseo y validaciones previas del job pasaron.
+- Los fallos Phase22/document management ya estaban documentados en C1.909 y no pertenecen al alcance ABAC; no se alteraron esos módulos ni se declararon PASS.
+- Concurrencia de cambios simultáneos en relaciones familiares y Apps Script/Sheets real: NOT RUN. No hubo despliegue, credenciales reales ni datos productivos.
+
+### Estado
+- TASK-502 / AUD-NG-222: En ejecución; integración contextual parcial.
+- BETA-FUNC-124 y las verificaciones de despliegue real permanecen Pendiente beta.
+- TASK-506 / AUD-NG-226 no se cierra: aún debe integrarse la política común y probarse el dispatcher/ámbito completo.
+- TASK-496 / AUD-NG-217 y TASK-685 / AUD-NG-373 conservan sus alcances independientes.
+- Rama base NG_beta_0.0.0.1 no modificada.
+
+### Siguiente acción
+Completar la matriz action/resource por servicio y vincular cada lectura/escritura protegida a su adaptador autoritativo: identidad institucional, propiedad del recurso, relación familiar y permiso de dominio, asignación docente/oferta, coordinación de área y ámbito departamental. Añadir pruebas negativas por omisión de contexto, fuente ausente, duplicados y cruce institucional; después revalidar TASK-506. No declarar TASK-502 completada hasta cubrir la matriz contractual completa.
+
+===============================================================================

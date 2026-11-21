@@ -887,3 +887,15 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502 / AUD-NG-222: pendiente y siguiente tarea elegible; centralizar autorización contextual RBAC/ABAC y denegación fail-closed en los cinco servicios.
 - TASK-496 / AUD-NG-217 y TASK-685 / AUD-NG-373 conservan sus ámbitos y no se declaran completadas por este hito.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.910 — AUD-NG-222 / TASK-502
+- ACADEMIC: autorización contextual para coordinación/planificación, asignación docente activa y relaciones familiares primarias con fechas/permisos; contratos de profesor/tutor PASS.
+- ACCOUNTING: el acceso financiero familiar respeta PermisoFinanciero y vigencia; relaciones ambiguas no conceden acceso.
+- USER/TASK/EXAM/ACCOUNTING: IDs de relación activos duplicados y mapeos ambiguos de estudiante se excluyen en los adaptadores familiares; contrato transversal ampliado y PASS en Node.js CI.
+- HEAD de la iteración: 0d7fd65a90f567a8a972b943fc5c4ce3e7517ca9. TASK-502 continúa En ejecución; no declarar paridad ABAC completa.
+- CI focalizado: Task-Service security, Academic-Service single authorization, Accounting Import Preflight, Identity mapping, Department Reference Consumers, Hierarchical Configuration, UI Accessibility, Library Circulation Concurrency, SACE source revision y Task backup/restore SUCCESS.
+- Department Scope y Exam full Node suite mantienen FAIL ajeno en Phase22 por configureSchoolDocumentTemplate y ensureSchoolDocumentIssuedSchema_, ya documentado en C1.909. Apps Script/Sheets real y concurrencia de relaciones NOT RUN.
+- Siguiente: completar los bindings action/resource y pruebas de propiedad, asignación docente/oferta, relación familiar, coordinación, departamento e institución en los cinco servicios; revalidar TASK-506.
+===============================================================================
