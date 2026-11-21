@@ -57,6 +57,21 @@ function makeHarness(options) {
     ExpedientesLaborales: [headers.ExpedientesLaborales,
       ["LAB-1","DRIVER-1","conductor","active"], ["LAB-2","MONITOR-1","monitor","active"]]
   };
+  if (cfg.canonicalSchema) {
+    data.TransporteRutas = [
+      ["RutaID","NombreRuta","UnidadCodigo","ConductorEmpleadoId","Capacidad","ParadasJSON","Estado","Observaciones","HoraInicio","HoraFin","Jornada"],
+      ["R-1","Ruta 1","BUS-1","LAB-1",10,"[]","active","","06:30","07:30","Matutina"],
+      ["R-2","Ruta 2","BUS-2","LAB-2",8,"[]","active","","07:00","08:00","Matutina"],
+      ["R-3","Ruta inactiva","BUS-3","EMP-3",8,"[]","inactive","","08:00","09:00","Matutina"]
+    ];
+    data.TransporteAsignaciones = [
+      ["AsignacionTranspID","RutaID","EstudianteUserId","ParadaNombre","HorarioPlan","Estado","FechaAsignacion","Jornada","DiasSemanaJSON","Observaciones","FechaInicioServicio","FechaFinServicio","ModalidadServicio","FechaCancelacion","TarifaMensualAplicada","ConceptoTransporteID"],
+      ["A-1","R-1","STU-1","Parada A","06:30","active","2026-11-21","Matutina","[]","","2026-11-21","","COMPLETA","","",""],
+      ["A-2","R-1","STU-2","Parada B","06:40","active","2026-11-21","Matutina","[]","","2026-11-21","","COMPLETA","","",""],
+      ["A-3","R-2","STU-2","Parada C","07:00","active","2026-11-21","Matutina","[]","","2026-11-21","","COMPLETA","","",""],
+      ["A-4","R-1","STU-1","Parada A","06:30","cancelled","2026-11-20","Matutina","[]","","2026-11-20","","COMPLETA","","",""]
+    ];
+  }
   const ss = {
     getSheetByName(name) {
       if (!data[name]) return null;
@@ -143,6 +158,24 @@ const driver = makeHarness({ actor: { authorized: true, userId: "DRIVER-1", role
 assert.deepEqual(Array.from(driver.getRoutes({ sessionToken: "verified" }).rutas, row => row.rutaId), ["R-1"]);
 assert.equal(driver.getManifest({ sessionToken: "verified", viajeId: "T-1" }).status, "success");
 assert.equal(driver.getManifest({ sessionToken: "verified", viajeId: "T-2" }).code, "UNAUTHORIZED_ACCESS_ATTEMPT");
+
+const canonical = makeHarness({ canonicalSchema: true });
+const canonicalManagementRoutes = canonical.getRoutes({ sessionToken: "verified" });
+assert.equal(canonicalManagementRoutes.status, "success");
+assert.deepEqual(Array.from(canonicalManagementRoutes.rutas, row => row.rutaId), ["R-1","R-2"]);
+const canonicalManagementAssignments = canonical.getAssignments({ sessionToken: "verified" });
+assert.equal(canonicalManagementAssignments.total, 3);
+const canonicalManagementManifest = canonical.getManifest({ sessionToken: "verified", viajeId: "T-1" });
+assert.equal(canonicalManagementManifest.status, "success");
+assert.equal(canonicalManagementManifest.manifiestoPasajeros.length, 2);
+
+const canonicalStudent = makeHarness({
+  canonicalSchema: true,
+  actor: { authorized: true, userId: "STU-1", role: "Estudiante", institutionId: "INST-1", membershipId: "MEM-STU" }
+});
+assert.deepEqual(Array.from(canonicalStudent.getRoutes({ sessionToken: "verified" }).rutas, row => row.rutaId), ["R-1"]);
+assert.deepEqual(Array.from(canonicalStudent.getAssignments({ sessionToken: "verified" }).asignaciones, row => row.asignacionId), ["A-1"]);
+assert.deepEqual(Array.from(canonicalStudent.getManifest({ sessionToken: "verified", viajeId: "T-1" }).manifiestoPasajeros, row => row.asignacionId), ["A-1"]);
 
 const duplicateTrip = makeHarness({ duplicateTrip: true });
 duplicateTrip.data.TransporteViajes.push(duplicateTrip.data.TransporteViajes[1].slice());
