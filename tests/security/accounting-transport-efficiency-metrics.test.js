@@ -164,6 +164,45 @@ assert.equal(result.indicadoresNoDisponibles.costoOperativoPorEstudiante.estado,
 assert.equal(result.indicadoresNoDisponibles.demandaGeograficaSinCobertura.estado, "SIN_DATOS");
 assert.equal(JSON.stringify(rows), before, "analytics must not mutate source sheets");
 
+// Legacy route and trip headers remain readable; unavailable planned start is reported as no metric.
+const savedRoutes = rows.TransporteRutas;
+const savedTrips = rows.TransporteViajes;
+rows.TransporteRutas = savedRoutes.map(row => row.slice(0, 7));
+rows.TransporteRutas[0] = ["RutaID","Nombre","Unidad","Conductor","Capacidad","Paradas","Estado"];
+rows.TransporteViajes = savedTrips.map(row => row.slice());
+rows.TransporteViajes[0] = ["ViajeID","RutaID","Unidad","Conductor","Monitor","Fecha","Jornada","Inicio","Fin","Estado"];
+const legacySchema = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
+assert.equal(legacySchema.status, "success", "legacy 7-column route schema must remain supported");
+assert.equal(legacySchema.resumen.viajesAnalizados, 3);
+assert.equal(legacySchema.resumen.puntualidadPct, null, "legacy route schema has no planned start column");
+assert.equal(legacySchema.resumen.duracionPromedioMinutos, 43.33);
+rows.TransporteRutas = savedRoutes;
+rows.TransporteViajes = savedTrips;
+
+const duplicateRouteRows = rows.TransporteRutas.slice();
+rows.TransporteRutas.push(rows.TransporteRutas[1].slice());
+assert.equal(run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" }).code, "RESOURCE_AMBIGUOUS",
+  "duplicate route IDs must fail closed in analytics");
+rows.TransporteRutas = duplicateRouteRows;
+
+const duplicateTripRows = rows.TransporteViajes.slice();
+rows.TransporteViajes.push(rows.TransporteViajes[1].slice());
+assert.equal(run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" }).code, "RESOURCE_AMBIGUOUS",
+  "duplicate trip IDs must fail closed in analytics");
+rows.TransporteViajes = duplicateTripRows;
+
+const duplicateAssignmentRows = rows.TransporteAsignaciones.slice();
+rows.TransporteAsignaciones.push(rows.TransporteAsignaciones[1].slice());
+assert.equal(run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" }).code, "RESOURCE_AMBIGUOUS",
+  "duplicate assignment IDs must fail closed in analytics");
+rows.TransporteAsignaciones = duplicateAssignmentRows;
+
+const duplicateVehicleRows = rows.TransporteVehiculos.slice();
+rows.TransporteVehiculos.push(rows.TransporteVehiculos[1].slice());
+assert.equal(run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" }).code, "RESOURCE_AMBIGUOUS",
+  "duplicate vehicle codes must fail closed in analytics");
+rows.TransporteVehiculos = duplicateVehicleRows;
+
 invalidHeaderSheet = "TransporteViajes";
 const invalidSchema = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
 assert.equal(invalidSchema.code, "TRANSPORT_SCHEMA_INVALID", "malformed source headers must fail closed");
