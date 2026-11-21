@@ -108,10 +108,12 @@ ctx = runtime([primaryHeaders, ["REL-1","EXP-OTHER","GUARD-1","Padre","Verificad
 assert.equal(check(ctx).authorized, false,
   "a primary relationship to another student prevents legacy fallback");
 ctx = runtime([primaryHeaders]);
-assert.equal(check(ctx).authorized, true,
-  "legacy relationship is used only when no primary relationship exists for this guardian");
+assert.equal(check(ctx).authorized, false,
+  "legacy relationship without an explicit domain grant cannot authorize academic access");
 assert.equal(check(ctx, "permisoDocumental").authorized, false,
   "legacy portal links cannot imply document-domain permission");
+assert.equal(contextual(ctx, "getStudentEnrollmentHistory", { userId: "STU-1" }).authorized, false,
+  "ACADEMIC contextual guard does not grant legacy-only guardian access");
 ctx = runtime([primaryHeaders], { legacyRows: [
   legacyRelations[0], legacyRelations[1],
   ["LEG-1","EXP-OTHER","REL-G","Padre","","","","","SI","Verificada"]
@@ -119,8 +121,8 @@ ctx = runtime([primaryHeaders], { legacyRows: [
 assert.equal(check(ctx).authorized, false,
   "duplicate legacy relationship IDs must deny");
 ctx = runtime(null, { missingPrimary: true });
-assert.equal(check(ctx).authorized, true,
-  "legacy relationship remains available when the primary sheet is absent");
+assert.equal(check(ctx).authorized, false,
+  "missing primary relationship source fails closed rather than falling back to legacy data");
 ctx = runtime([primaryHeaders, ["REL-1","EXP-1","GUARD-1","Padre","Revocada","","","",JSON.stringify({ permisoAcademico: true })]]);
 assert.equal(check(ctx).authorized, false,
   "revoked primary relationship must not be bypassed by an active legacy row");

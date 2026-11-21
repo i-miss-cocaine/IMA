@@ -43,7 +43,7 @@ The envelope is internal/audit metadata. Client-provided identity, role, owner, 
 
 The five microservices retain their own data adapters because they execute in separate Apps Script deployments. They must implement the same decision semantics and this versioned contract; they may not create permissive local exceptions.
 
-- **USER:** signed session claims, role membership/version state, `Usuarios`, `ExpedientesEstudiantes`, `RelacionesFamiliares`, `RelacionesEstudianteTutor` (legacy only where no primary relation exists), and resource ownership records.
+- **USER:** signed session claims, role membership/version state, `Usuarios`, `ExpedientesEstudiantes`, `RelacionesFamiliares`, `RelacionesEstudianteTutor` (legacy data for migration/audit only; it cannot grant protected domain access without an explicit domain permission), and resource ownership records.
 - **ACADEMIC:** signed identity, `AsignacionesDocentes` joined to `OfertaAcademica`, `CoordinacionesArea`, active subject/area catalogs, verified department memberships and resource ownership records.
 - **ACCOUNTING:** `getVerifiedAccountingIdentity_`, institution-bound department membership, current family relationship records, account/expediente owner resolution and resource ownership records.
 - **TASK:** signed identity, current guardian relationship, teacher-to-offer assignment, task/offer ownership, and verified department scope.
@@ -67,7 +67,7 @@ A missing action binding is not equivalent to a public action. Public actions mu
 
 The decision is denied when any required attribute is missing, malformed, ambiguous, inactive, expired, future-dated, cross-institutional, inconsistent with the resource, or unavailable. Empty query results may be returned only after the adapter has proved the caller's authorized scope; they must not substitute for failed verification.
 
-Date windows are inclusive at their boundaries. Invalid non-empty dates are rejected. Duplicate primary identities, assignment IDs, offer IDs, relation IDs or ownership mappings are ambiguous and therefore denied. Legacy data is not allowed to reactivate a revoked or pending primary relationship.
+Date windows are inclusive at their boundaries. Invalid non-empty dates are rejected. Duplicate primary identities, assignment IDs, offer IDs, relation IDs or ownership mappings are ambiguous and therefore denied. Legacy data is not allowed to reactivate a revoked or pending primary relationship. Legacy relationship records without an explicit boolean permission for the requested domain never authorize protected access; they are retained for migration/audit only.
 
 ## 6. Audit requirements
 
