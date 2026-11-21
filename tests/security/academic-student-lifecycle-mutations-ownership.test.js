@@ -97,7 +97,7 @@ assert.equal(duplicate.calls.writes.length, 0);
 const updated = makeHarness();
 assert.equal(updated.runtime.update({ expedienteId: "EXP-1", nuevoEstado: "Activo", motivo: "Reingreso autorizado" }).status, "success");
 assert.equal(updated.expRows[1][7], "Activo");
-assert.deepEqual(updated.calls.access[0], { expedienteId: "EXP-1", domain: "permisoAcademico", operation: "UPDATE" });
+assert.deepEqual(JSON.parse(JSON.stringify(updated.calls.access[0])), { expedienteId: "EXP-1", domain: "permisoAcademico", operation: "UPDATE" });
 assert.equal(updated.calls.audit[0][5], "DIR-1");
 assert.equal(updated.calls.releases, 1);
 
