@@ -2107,9 +2107,9 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   if (verifiedActorRole === "Administrador" || verifiedActorRole === "Desarrollador") return { authorized: true };
 
   const targetStudentId = payload && (
-    payload.studentId || payload.estudianteId || payload.targetUserId ||
-    payload.userId || payload.expedienteId || payload.expedienteEstudianteId
+    payload.studentId || payload.estudianteId || payload.targetUserId || payload.userId
   );
+  const targetExpedienteId = payload && (payload.expedienteId || payload.expedienteEstudianteId);
 
   if (verifiedActorRole === "Estudiante" || verifiedActorRole === "Alumno") {
     if (targetStudentId && String(targetStudentId).trim() !== verifiedActorId) {
@@ -2117,8 +2117,9 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
     }
   }
 
+  const guardianTargetStudentId = targetStudentId || targetExpedienteId;
   if (["Padre", "Tutor", "Responsable"].indexOf(verifiedActorRole) !== -1 &&
-      targetStudentId && String(targetStudentId).trim() !== verifiedActorId) {
+      guardianTargetStudentId && String(guardianTargetStudentId).trim() !== verifiedActorId) {
     try {
       const guardianRes = getGuardianStudents({
         userId: verifiedActorId,
@@ -2129,7 +2130,7 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
       if (!guardianRes || guardianRes.status !== "success" || !Array.isArray(guardianRes.data)) {
         return { authorized: false, reason: "GUARDIAN_RELATIONSHIP_UNVERIFIED" };
       }
-      const requested = String(targetStudentId).trim();
+      const requested = String(guardianTargetStudentId).trim();
       const matches = guardianRes.data.filter(function(student) {
         return student && [student.studentUserId, student.userId, student.expedienteEstudianteId]
           .some(function(value) { return String(value || "").trim() === requested; });
