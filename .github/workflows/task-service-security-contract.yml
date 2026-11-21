@@ -17,6 +17,7 @@ on:
       - 'tests/security/task-service-deadline-history.test.js'
       - 'tests/security/task-service-upload-contract.test.js'
       - 'tests/security/task-service-single-auth-context.test.js'
+      - 'tests/security/contextual-abac-five-services-contract.test.js'
       - 'tests/security/task-service-submission-mutation-contract.test.js'
       - 'teacher-dashboard.html'
       - 'js/teacher.js'
@@ -31,6 +32,7 @@ on:
       - 'js/auth.js'
       - 'tests/security/task-service-security-contract.test.js'
       - 'tests/security/task-service-resource-ownership.test.js'
+      - 'tests/security/contextual-abac-five-services-contract.test.js'
       - '.github/workflows/task-service-security-contract.yml'
 jobs:
   local-security-contracts:
@@ -49,4 +51,6 @@ jobs:
       - run: node tests/security/task-service-deadline-history.test.js
       - run: node tests/security/task-service-upload-contract.test.js
       - run: node tests/security/task-service-single-auth-context.test.js
+      - name: Run five-service contextual ABAC and guardian relation contract
+        run: node tests/security/contextual-abac-five-services-contract.test.js
       - run: node --check js/teacher.js
