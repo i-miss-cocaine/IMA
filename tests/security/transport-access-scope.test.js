@@ -484,7 +484,7 @@ const duplicateTripManifest = runEndpoint("getTripPassengerManifest", {
   _verifiedUserId: "DRIVER-1",
   viajeId: "TRIP-1"
 }, duplicateTripData);
-assert.equal(duplicateTripManifest.result.code, "RESOURCE_NOT_FOUND",
+assert.equal(duplicateTripManifest.result.code, "RESOURCE_AMBIGUOUS",
   "duplicate trip identifiers must not resolve to an arbitrary trip");
 
 console.log("TASK-030 transport access scope tests: PASS");
