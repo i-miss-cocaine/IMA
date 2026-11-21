@@ -6854,7 +6854,6 @@ function getPurchaseDossier(payload) {
 }
 
 function doGet() {
-  resetSecurityVersionReadCache_();
   return textResponse({ status: "success", service: "ACCOUNTING",
     configured: !!String(PropertiesService.getScriptProperties().getProperty("SPREADSHEET_ID") || "").trim()
   }, null, "ACCOUNTING");
@@ -7186,7 +7185,6 @@ function reserveLibraryBook(payload) {
 }
 
 function doPost(e) {
-  resetSecurityVersionReadCache_();
   let correlationId = apiResponseCorrelationId_();
   const respond = function(value) { return textResponse(value, correlationId, "ACCOUNTING"); };
   try {

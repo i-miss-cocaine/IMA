@@ -63,7 +63,6 @@ function normalizeString(str) {
 // ---------------------------------------------------------------------------
 
 function doGet() {
-  resetSecurityVersionReadCache_();
   return textResponse({
     status: "success",
     message: "Microservicio de Exámenes operativo"
@@ -622,7 +621,6 @@ function getSaceSafeErrorCode_(error) {
 }
 
 function doPost(e) {
-  resetSecurityVersionReadCache_();
   let saceGradebookRequest = false;
   try {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });

@@ -46,7 +46,6 @@ function getSheetOrThrow(ss, name) {
 
 // --- PUNTOS DE ENTRADA ---
 function doGet(e) {
-  resetSecurityVersionReadCache_();
   return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Microservicio de Tareas funcionando." }))
     .setMimeType(ContentService.MimeType.JSON);
 }
@@ -476,7 +475,6 @@ function hasActiveDelegationForAction(userId, action) {
 }
 
 function doPost(e) {
-  resetSecurityVersionReadCache_();
   let response;
   try {
     if (!e || !e.postData || !e.postData.contents) {

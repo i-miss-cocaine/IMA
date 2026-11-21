@@ -950,7 +950,7 @@ function normalizeSubjectInBackend(name) {
 // ---------------------------------------------------------------------------
 
 function doGet() {
-  resetSecurityVersionReadCache_(); return textResponse({ status: "success", service: "USER", timestamp: new Date().toISOString(), dbConnected: true }); }
+  return textResponse({ status: "success", service: "USER", timestamp: new Date().toISOString(), dbConnected: true }); }
 
 // ---------------------------------------------------------------------------
 // CONTROL DE ACCESO BASADO EN ROLES (RBAC SERVIDOR - REQ-EXP-008 & FASE 2)
@@ -2751,7 +2751,6 @@ function getSaceSafeErrorCode_(error) {
 }
 
 function doPost(e) {
-  resetSecurityVersionReadCache_();
   let trustedSaceIdentityRequest = false;
   try {
     if (!e || !e.postData || !e.postData.contents) return textResponse({ status: "error", message: "No se recibieron datos." });

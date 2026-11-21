@@ -283,7 +283,7 @@ function getOrCreateSheet(ss, name) {
 // ---------------------------------------------------------------------------
 
 function doGet() {
-  resetSecurityVersionReadCache_(); return textResponse({ status: "success", service: "ACADEMIC", timestamp: new Date().toISOString(), dbConnected: true }); }
+  return textResponse({ status: "success", service: "ACADEMIC", timestamp: new Date().toISOString(), dbConnected: true }); }
 
 
 // ---------------------------------------------------------------------------
@@ -1541,7 +1541,6 @@ function handleTrustedMigrationEnvelope_(envelope){
 }
 
 function doPost(e) {
-  resetSecurityVersionReadCache_();
   let correlationId = apiResponseCorrelationId_();
   const respond = function(value) { return textResponse(value, correlationId, "ACADEMIC"); };
   try {

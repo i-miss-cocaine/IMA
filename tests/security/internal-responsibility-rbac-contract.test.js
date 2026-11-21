@@ -45,6 +45,7 @@ const membershipStateFn = extractFunction(source, "getUserRoleMembershipState_")
 const resolveMembershipFn = extractFunction(source, "resolveUserRoleMembership_");
 const configuredRoleFn = extractFunction(source, "isConfiguredRbacRole_");
 const permissionFn = extractFunction(source, "validateRolePermission");
+const versionPrelude = source.slice(source.indexOf("var SECURITY_VERSION_HEADERS_"), source.indexOf("function getDynamicPermissionsForRole"));
 
 const roleHeaders = ["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion","ResponsibilityID"];
 const capabilityHeaders = ["ResponsibilityID","Nombre","Descripcion","ModulosJSON","CapacidadesJSON","Estado","CreadoPor","FechaActualizacion"];
@@ -452,6 +453,7 @@ ${resolveMembershipFn}
 ${extractFunction(source,"resolveUserRoleMembership_")}
 ${extractFunction(source,"isConfiguredRbacRole_")}
 ${extractFunction(source,"getUserVerifiedRole")}
+${versionPrelude}
 ${extractFunction(source,"getDynamicPermissionsForRole")}
 ${extractFunction(source,"validateRolePermission")}
 function verifySessionToken(token) {
