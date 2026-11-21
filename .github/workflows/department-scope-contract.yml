@@ -65,6 +65,7 @@ on:
       - tests/security/academic-student-document-private-storage.test.js
       - tests/security/academic-student-enrollment-history-ownership.test.js
       - tests/security/academic-student-enrollment-write-ownership.test.js
+      - tests/security/academic-student-attendance-summary-ownership.test.js
       - js/accounting.js
       - dashboard-contabilidad.html
       - tests/security/accounting-enrollment-billing-config.test.js
@@ -356,6 +357,8 @@ jobs:
         run: node tests/security/academic-student-enrollment-history-ownership.test.js
       - name: Run academic student enrollment write ownership contract
         run: node tests/security/academic-student-enrollment-write-ownership.test.js
+      - name: Run academic student attendance summary ownership contract
+        run: node tests/security/academic-student-attendance-summary-ownership.test.js
       - name: Run accounting enrollment billing configuration contract
         run: node tests/security/accounting-enrollment-billing-config.test.js
       - name: Run accounting monthly charge period contract
@@ -431,6 +434,7 @@ jobs:
           node --check < backend/task-service/Code.gs
           node --check < backend/exam-service/Code.gs
           node --check < backend/developer-service/Code.gs
+          node --check tests/security/academic-student-attendance-summary-ownership.test.js
       - name: Run Phase 22 document management suite contract
         run: node tests/regression/phase22-document-management-suite-contract.test.js
       - name: Run user-service signature document integrity contract
