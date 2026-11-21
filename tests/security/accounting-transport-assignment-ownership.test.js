@@ -115,6 +115,7 @@ const legacyCapacity = makeHarness({
   routeRows:[["RUT-1","Ruta 1","BUS-1","EMP-1",1,"[]","active","","06:30","","Matutina"]],
   assignmentRows:[["AS-OLD","RUT-1","STU-2","Parada A","06:30","activo","2026-11-01","Matutina","[]","","2026-11-01","","COMPLETA",""]]
 });
+legacyCapacity.data.TransporteVehiculos[1][5]=1;
 assert.equal(legacyCapacity.runAssign(payload()).code,"TRANSPORT_CAPACITY_EXCEEDED",
   "legacy active assignments must count toward capacity");
 const inactiveRoute=makeHarness({routeRows:[["RUT-1","Ruta 1","BUS-1","EMP-1",20,"[]","inactive","","06:30","","Matutina"]]});
