@@ -7,13 +7,13 @@ function extract(source,name){
  throw Error("unbalanced "+name);
 }
 const services=["user","academic","accounting","task","exam"];
-function permissionLookup(service,matrixRows,versionRows,cache){
+function permissionLookup(service,matrixRows,versionRows,cache,throwOnOpen){
  const source=fs.readFileSync(path.resolve(__dirname,"../../backend/"+service+"-service/Code.gs"),"utf8");
  const matrix={getLastRow:()=>matrixRows.length,getDataRange:()=>({getValues:()=>matrixRows.map(r=>r.slice())})};
  const versions={getDataRange:()=>({getValues:()=>versionRows.map(r=>r.slice())})};
  const context={SPREADSHEET_ID:"LOCAL",getIdentityInstitutionId_:()=>"INST-A",PropertiesService:{getScriptProperties:()=>({getProperty:()=>"INST-A"})},
   cache:cache,CacheService:{getScriptCache:()=>({get:k=>cache[k]||null,put:(k,v)=>{cache[k]=v;},remove:k=>{delete cache[k];}})},
-  SpreadsheetApp:{openById:()=>({getSheetByName:n=>n==="VersionesSeguridad"?versions:(n==="MatrizPermisosRoles"?matrix:null)})}};
+  SpreadsheetApp:{openById:()=>{if(throwOnOpen)throw Error("SPREADSHEET_UNAVAILABLE");return{getSheetByName:n=>n==="VersionesSeguridad"?versions:(n==="MatrizPermisosRoles"?matrix:null)};}}};
  const prelude=source.slice(source.indexOf("var SECURITY_VERSION_HEADERS_"),source.indexOf("function getDynamicPermissionsForRole"));
  vm.runInNewContext(prelude+"\n"+extract(source,"getPermissionMatrixInstitutionId_")+"\n"+extract(source,"getDynamicPermissionsForRole")+"\nthis.lookup=getDynamicPermissionsForRole;",context);
  return context.lookup;
@@ -24,6 +24,7 @@ for(const service of services){
  assert.equal(permissionLookup(service,matrix,versions,cache)("Director",module,"readSensitive","INST-A"),true,service+" starts with grant");
  matrix[1][3]=false;versions[1][1]=1;
  assert.equal(permissionLookup(service,matrix,versions,cache)("Director",module,"readSensitive","INST-A"),false,service+" observes cross-service version change");
+ assert.equal(permissionLookup(service,matrix,versions,{},true)("Director",module,"readSensitive","INST-A"),false,service+" spreadsheet read failure fails closed");
  assert.ok(Object.keys(cache).some(k=>k.indexOf("dynamic_permissions_matrix_v3:"+module+":INST-A:1")===0),service+" cache key includes logical version");
 }
 const userSource=fs.readFileSync(path.resolve(__dirname,"../../backend/user-service/Code.gs"),"utf8");

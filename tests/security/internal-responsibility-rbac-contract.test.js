@@ -147,7 +147,7 @@ const permissionCtx = {
   getUserVerifiedRole:()=> "Director",
   validateContextualAccess:()=>({authorized:true}),
   getDynamicPermissionsForRole:()=>null,
-  ROLE_PERMISSIONS:{},
+  ROLE_PERMISSIONS:{Director:["approveFinancialRecords"]},
   hasActiveDelegationForAction:()=>null,
   logStructuredEvent:()=>{}
 };
