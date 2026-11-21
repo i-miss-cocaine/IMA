@@ -140,6 +140,10 @@ vm.runInContext(userGuardianFn + "\nthis.lookup = getGuardianStudents;", userGua
 const userGuardianResult = userGuardianRuntime.lookup({ sessionToken: "signed" });
 assert.deepEqual(Array.from(userGuardianResult.data, row => row.studentUserId), ["STU-1","STU-5"],
   "USER includes current relationships, preserves explicit granular permissions and never falls back to legacy after primary rows exist");
+familyRows.push(["R1","EXP-2","GUARDIAN-1","Madre","Activa","2020-01-01","2099-12-31","","{\"permisoAcademico\":true}"]);
+assert.deepEqual(Array.from(userGuardianRuntime.lookup({ sessionToken: "signed" }).data, row => row.studentUserId), ["STU-5"],
+  "USER excludes a guardian relationship when its ID is duplicated across active records");
+familyRows.pop();
 assert.equal(userGuardianResult.data.find(row => row.studentUserId === "STU-5").permisos.permisoAcademico, false,
   "USER preserves explicit academic denial for downstream contextual checks");
 
@@ -157,6 +161,10 @@ vm.createContext(taskRuntime);
 vm.runInContext(taskGuardianFn + "\nthis.lookup = getTaskServiceGuardianStudentIds;", taskRuntime);
 assert.deepEqual(Array.from(taskRuntime.lookup("GUARDIAN-1")), ["STU-1"],
   "TASK excludes future, expired, malformed and academically restricted family relations");
+familyRows.push(["R1","EXP-2","GUARDIAN-1","Madre","Activa","2020-01-01","2099-12-31","","{\"permisoAcademico\":true}"]);
+assert.deepEqual(Array.from(taskRuntime.lookup("GUARDIAN-1")), [],
+  "TASK denies ambiguous duplicate relationship IDs instead of deduplicating them into a grant");
+familyRows.pop();
 
 const examSource = fs.readFileSync("backend/exam-service/Code.gs", "utf8");
 const examGuardianFn = extractFunction(examSource, "getVerifiedGuardianStudentIds_");
@@ -171,6 +179,10 @@ const examSheets = { getSheetByName: name =>
 };
 assert.deepEqual(Array.from(examRuntime.lookup(examSheets, "GUARDIAN-1")), ["STU-1"],
   "EXAM excludes future, expired and malformed family relations while preserving its documented relation-permission semantics");
+familyRows.push(["R1","EXP-2","GUARDIAN-1","Madre","Activa","2020-01-01","2099-12-31","","{\"permisoAcademico\":true}"]);
+assert.deepEqual(Array.from(examRuntime.lookup(examSheets, "GUARDIAN-1")), [],
+  "EXAM denies ambiguous duplicate relationship IDs instead of deduplicating them into a grant");
+familyRows.pop();
 
 
 const accountingFamilyUsers = [
@@ -201,6 +213,11 @@ const familyCreditSheetSet = {
 };
 assert.deepEqual(Array.from(familyCreditRuntime.lookup(familyCreditSheetSet, "GUARDIAN-1")), ["STU-1"],
   "ACCOUNTING family-credit scope rejects future, expired and malformed relationship windows");
+
+accountingFamilyRelations.push(["R1","PERSON-S2","PERSON-G","Madre","Activo","2020-01-01","2099-12-31","","","Activo"]);
+assert.deepEqual(Array.from(familyCreditRuntime.lookup(familyCreditSheetSet, "GUARD-1")), [],
+  "ACCOUNTING denies duplicate active relationship IDs instead of collapsing them into a grant");
+accountingFamilyRelations.pop();
 
 const transportUsers = [
   ["UserId","","","","","","","","","PersonaID"],

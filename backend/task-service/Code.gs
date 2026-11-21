@@ -1377,19 +1377,22 @@ function getTaskServiceUserProfile(userId) {
 }
 function getTaskServiceGuardianStudentIds(guardianUserId) {
   if (!guardianUserId) return [];
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), ids = [], expMap = {};
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), expMap = {};
   const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
   if (expSheet) expSheet.getDataRange().getValues().slice(1).forEach(row => { if (row[0]) expMap[String(row[0]).trim()] = String(row[1] || row[0]).trim(); });
   const relationSheet = ss.getSheetByName("RelacionesFamiliares");
-  if (relationSheet) relationSheet.getDataRange().getValues().slice(1).forEach(row => {
+  if (!relationSheet) return [];
+  const now = Date.now(), candidates = [];
+  relationSheet.getDataRange().getValues().slice(1).forEach(row => {
     if (String(row[2] || "").trim() !== String(guardianUserId).trim()) return;
     if (["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(String(row[4] || "").trim().toUpperCase()) === -1) return;
-    const startValue = row[5], endValue = row[6], now = Date.now();
+    const startValue = row[5], endValue = row[6];
     const start = startValue === "" || startValue === null || startValue === undefined ? null : new Date(startValue).getTime();
     const end = endValue === "" || endValue === null || endValue === undefined ? null : new Date(endValue).getTime();
     if ((startValue !== "" && startValue !== null && startValue !== undefined && !Number.isFinite(start)) ||
         (endValue !== "" && endValue !== null && endValue !== undefined && !Number.isFinite(end)) ||
-        (start !== null && start > now) || (end !== null && end < now)) return;
+        (start !== null && start > now) || (end !== null && end < now) ||
+        (start !== null && end !== null && start > end)) return;
     let permissions = {};
     if (row[8] !== "" && row[8] !== null && row[8] !== undefined) {
       try {
@@ -1398,10 +1401,17 @@ function getTaskServiceGuardianStudentIds(guardianUserId) {
       } catch (_) { return; }
     }
     if (permissions.permisoAcademico === false) return;
-    const expedienteId = String(row[1] || "").trim(), studentId = expMap[expedienteId] || expedienteId;
-    if (studentId) ids.push(studentId);
+    const relationId = String(row[0] || "").trim(), expedienteId = String(row[1] || "").trim();
+    const studentId = expMap[expedienteId] || expedienteId;
+    if (relationId && studentId) candidates.push({ relationId, studentId });
   });
-  return Array.from(new Set(ids));
+  const relationCounts = Object.create(null), studentCounts = Object.create(null);
+  candidates.forEach(item => {
+    relationCounts[item.relationId] = (relationCounts[item.relationId] || 0) + 1;
+    studentCounts[item.studentId] = (studentCounts[item.studentId] || 0) + 1;
+  });
+  return candidates.filter(item => relationCounts[item.relationId] === 1 && studentCounts[item.studentId] === 1)
+    .map(item => item.studentId);
 }
 
 function isTaskServiceAdministrativeRole(role) { return ["Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role)!==-1; }

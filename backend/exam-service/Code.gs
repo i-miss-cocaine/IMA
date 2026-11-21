@@ -2357,8 +2357,18 @@ function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
         (endValue !== "" && endValue !== null && endValue !== undefined && !Number.isFinite(end))) return false;
     return (start === null || start <= now) && (end === null || end >= now);
   };
-  let studentIds = primaryTutorRows.filter(row => {
-    if (!statusAllowed(row[4]) || !isCurrentRelation(row)) return false;
+  const activePrimaryRows = primaryTutorRows.filter(row => statusAllowed(row[4]) && isCurrentRelation(row));
+  const relationIdCounts = Object.create(null), studentIdCounts = Object.create(null);
+  activePrimaryRows.forEach(row => {
+    const relationId = String(row[0] || "").trim();
+    const studentId = expToUser[String(row[1] || "").trim()] || String(row[1] || "").trim();
+    if (relationId) relationIdCounts[relationId] = (relationIdCounts[relationId] || 0) + 1;
+    if (studentId) studentIdCounts[studentId] = (studentIdCounts[studentId] || 0) + 1;
+  });
+  let studentIds = activePrimaryRows.filter(row => {
+    const relationId = String(row[0] || "").trim();
+    const studentId = expToUser[String(row[1] || "").trim()] || String(row[1] || "").trim();
+    if (!relationId || !studentId || relationIdCounts[relationId] !== 1 || studentIdCounts[studentId] !== 1) return false;
     if (row[8] === "" || row[8] === null || row[8] === undefined) return true;
     try {
       const permissions = typeof row[8] === "string" ? JSON.parse(row[8]) : row[8];

@@ -5631,9 +5631,21 @@ function getGuardianStudents(payload) {
         (endValue !== "" && endValue !== null && endValue !== undefined && !Number.isFinite(end))) return false;
     return (start === null || start <= now) && (end === null || end >= now);
   };
+  const activePrimaryRows = primaryGuardianRows.filter(r =>
+    ["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(String(r[4] || "").trim().toUpperCase()) !== -1 &&
+    isCurrentGuardianRelation(r));
+  const relationIdCounts = Object.create(null), studentExpedienteCounts = Object.create(null);
+  activePrimaryRows.forEach(r => {
+    const relationId = String(r[0] || "").trim(), expedienteId = String(r[1] || "").trim();
+    if (relationId) relationIdCounts[relationId] = (relationIdCounts[relationId] || 0) + 1;
+    if (expedienteId) studentExpedienteCounts[expedienteId] = (studentExpedienteCounts[expedienteId] || 0) + 1;
+  });
   let verifiedStudents = [];
   if (primaryGuardianRows.length > 0) {
     verifiedStudents = primaryGuardianRows.filter(r => {
+      const relationId = String(r[0] || "").trim(), expedienteId = String(r[1] || "").trim();
+      if (!relationId || !expedienteId || relationIdCounts[relationId] !== 1 ||
+          studentExpedienteCounts[expedienteId] !== 1) return false;
       if (["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(String(r[4] || "").trim().toUpperCase()) === -1 ||
           !isCurrentGuardianRelation(r)) return false;
       if (r[8] === "" || r[8] === null || r[8] === undefined) return true;

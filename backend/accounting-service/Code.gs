@@ -3717,7 +3717,7 @@ function familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid){
   var uh=(u[0]||[]).map(String),rh=(r[0]||[]).map(String);
   var ui=uh.indexOf("UserId"),pi=uh.indexOf("PersonaID"),ri=uh.indexOf("Rol"),si=uh.indexOf("Estado");
   var sp=rh.indexOf("PersonaEstudianteID"),gp=rh.indexOf("PersonaResponsableID"),st=rh.indexOf("EstadoAutorizacion"),fi=rh.indexOf("FechaInicio"),ti=rh.indexOf("FechaFin");
-  var permissionsIndex=rh.indexOf("PermisosJSON"),financialPermissionIndex=rh.indexOf("PermisoFinanciero");
+  var permissionsIndex=rh.indexOf("PermisosJSON"),financialPermissionIndex=rh.indexOf("PermisoFinanciero"),relationIdIndex=rh.indexOf("RelacionID");
   if(permissionsIndex<0&&rh.length===8)permissionsIndex=8;
   if([ui,pi,ri,sp,gp,st].some(function(x){return x<0;}))return[];
   var guardians=u.slice(1).filter(function(x){return String(x[ui])===String(gid);});
@@ -3738,11 +3738,15 @@ function familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid){
       (from.date&&to.date&&from.date>to.date))return;
     candidates.push(rel);
   });
-  var relationCounts=Object.create(null);
-  candidates.forEach(function(rel){var studentPerson=String(rel[sp]||"").trim();if(studentPerson)relationCounts[studentPerson]=(relationCounts[studentPerson]||0)+1;});
+  var relationCounts=Object.create(null),relationIdCounts=Object.create(null);
   candidates.forEach(function(rel){
-    var studentPerson=String(rel[sp]||"").trim();
-    if(!studentPerson||relationCounts[studentPerson]!==1)return;
+    var studentPerson=String(rel[sp]||"").trim(),relationId=relationIdIndex>=0?String(rel[relationIdIndex]||"").trim():"";
+    if(studentPerson)relationCounts[studentPerson]=(relationCounts[studentPerson]||0)+1;
+    if(relationId)relationIdCounts[relationId]=(relationIdCounts[relationId]||0)+1;
+  });
+  candidates.forEach(function(rel){
+    var studentPerson=String(rel[sp]||"").trim(),relationId=relationIdIndex>=0?String(rel[relationIdIndex]||"").trim():"";
+    if(!studentPerson||relationCounts[studentPerson]!==1||!relationId||relationIdCounts[relationId]!==1)return;
     if(financialPermissionIndex>=0){
       var directPermission=rel[financialPermissionIndex];
       if(directPermission===false||String(directPermission||"").trim().toLowerCase()==="false")return;
