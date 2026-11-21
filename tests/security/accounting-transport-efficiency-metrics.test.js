@@ -38,7 +38,7 @@ function extractFunction(name) {
 }
 
 const names = [
-  "transportRows_", "transportRowsPrefix_", "transportManagementReadScope_", "transportMetricsDateKey_", "transportMetricsTimeMinutes_", "getTransportEfficiencyMetrics"
+  "transportRows_", "transportRowsPrefix_", "transportMetricsDateKey_", "transportMetricsTimeMinutes_", "getTransportEfficiencyMetrics"
 ];
 const extracted = names.map(extractFunction).join("\n");
 const rows = {
