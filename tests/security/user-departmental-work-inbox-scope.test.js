@@ -95,6 +95,7 @@ const result = departmental.run(request("Director", "DIR-1", {
   departamento: "Direccion", authRole: "Direccion"
 }));
 assert.equal(result.status, "success");
+assert.equal(result.departamento, "Director", "response metadata uses verified role, not client authRole");
 assert.deepEqual(Array.from(result.solicitudes, row => row.solicitudId), ["SOL-1", "SOL-2"],
   "client-supplied department cannot expand the actor's expediente scope");
 assert.deepEqual(departmental.calls.ownership.map(x => x.resourceId).sort(), ["EXP-1", "EXP-1", "EXP-10"]);
