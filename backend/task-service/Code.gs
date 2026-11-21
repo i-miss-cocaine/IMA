@@ -257,8 +257,14 @@ function verifySessionToken(tokenString) {
     const revocationSpreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
     if (isSessionRevokedInSharedLedger_(claims, revocationSpreadsheet)) return null;
 
-    const stateCacheKey = "acct_state_" + claims.userId;
-    const roleCacheKey = "acct_role_" + claims.userId;
+    var currentRoleVersion = getSecurityVersion_("USER_ROLE:" + String(claims.userId || "").trim());
+    if (currentRoleVersion === false) return null;
+    if (claims.roleVersion === undefined) {
+      if (currentRoleVersion !== 0) return null;
+    } else if (!Number.isSafeInteger(claims.roleVersion) || claims.roleVersion !== currentRoleVersion) return null;
+    const versionedUserCacheSuffix = String(claims.userId).trim() + "_" + currentRoleVersion;
+    const stateCacheKey = "acct_state_" + versionedUserCacheSuffix;
+    const roleCacheKey = "acct_role_" + versionedUserCacheSuffix;
     let acctState = cache.get(stateCacheKey);
     let currentRole = cache.get(roleCacheKey);
     if (!acctState || !currentRole) {
@@ -273,16 +279,9 @@ function verifySessionToken(tokenString) {
         currentRole = String(currentUser[6] || "").trim();
         cache.put(stateCacheKey, acctState, 60);
         cache.put(roleCacheKey, currentRole, 60);
-      } catch (error) {
-        return null;
-      }
+      } catch (error) { return null; }
     }
     if (acctState !== "Activa") return null;
-    var currentRoleVersion = getSecurityVersion_("USER_ROLE:" + String(claims.userId || "").trim());
-    if (currentRoleVersion === false) return null;
-    if (claims.roleVersion === undefined) {
-      if (currentRoleVersion !== 0) return null;
-    } else if (!Number.isSafeInteger(claims.roleVersion) || claims.roleVersion !== currentRoleVersion) return null;
     var membershipCheck = verifyUserRoleMembershipClaim_(claims);
     if (membershipCheck === false) return null;
     if (membershipCheck === null && (!currentRole || currentRole !== claims.role.trim())) return null;
@@ -421,47 +420,54 @@ function getDynamicPermissionsForRole(role,moduleOrAction,actionArgument,institu
 
 // [TAREA-F4-P1-01] [Fase 4: Motor de Delegaciones] - Verificación de delegaciones de seguridad activas
 function hasActiveDelegationForAction(userId, action) {
-  if (!userId || !action) return null;
-  const cache = CacheService.getScriptCache();
-  const cacheKey = "active_delegations_" + userId;
-  let cached = null;
+  var targetUserId = String(userId || "").trim();
+  var requestedAction = String(action || "").trim();
+  if (!targetUserId || !requestedAction) return null;
+  var delegationVersion = getSecurityVersion_("USER_DELEGATION:" + targetUserId);
+  if (delegationVersion === false) return null;
+  var cache = null, cacheKey = "active_delegations_" + targetUserId + "_" + delegationVersion;
+  var cached = null, now = new Date().getTime();
   try {
-    const raw = cache.get(cacheKey);
-    if (raw) cached = JSON.parse(raw);
-  } catch (e) {}
-
+    cache = CacheService.getScriptCache();
+    var raw = cache.get(cacheKey);
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.every(function(item) {
+        return item && Number.isFinite(item.startsAt) && Number.isFinite(item.expiresAt) && Array.isArray(item.acciones);
+      })) cached = parsed;
+    }
+  } catch (cacheReadError) { cached = null; }
   if (!cached) {
     try {
-      const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-      const sheet = ss.getSheetByName("DelegacionesSeguridad");
+      var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      var sheet = ss.getSheetByName("DelegacionesSeguridad");
       if (!sheet) return null;
-      const data = sheet.getDataRange().getValues();
-      const now = new Date().getTime();
+      var data = sheet.getDataRange().getValues();
       cached = [];
-      for (let i = 1; i < data.length; i++) {
-        const row = data[i];
-        const delId = String(row[0] || "");
-        const delegante = String(row[1] || "");
-        const delegado = String(row[2] || "");
-        const acciones = String(row[3] || "").split(",").map(s => s.trim());
-        const fInicio = new Date(row[5]).getTime();
-        const fFin = new Date(row[6]).getTime();
-        const estado = String(row[7] || "");
-
-        if (String(delegado).trim() === String(userId).trim() && estado === "Activa" && now >= fInicio && now <= fFin) {
-          cached.push({ delId, delegante, acciones });
+      var nextTransition = now + 300000;
+      for (var i = 1; i < data.length; i++) {
+        var row = data[i] || [];
+        if (String(row[2] || "").trim() !== targetUserId || String(row[7] || "").trim() !== "Activa") continue;
+        var startsAt = new Date(row[5]).getTime();
+        var expiresAt = new Date(row[6]).getTime();
+        if (!Number.isFinite(startsAt) || !Number.isFinite(expiresAt) || expiresAt <= startsAt) continue;
+        if (startsAt > now) nextTransition = Math.min(nextTransition, startsAt);
+        if (expiresAt > now) nextTransition = Math.min(nextTransition, expiresAt);
+        if (now >= startsAt && now <= expiresAt) {
+          cached.push({ delId: String(row[0] || ""), delegante: String(row[1] || ""),
+            acciones: String(row[3] || "").split(",").map(function(value) { return value.trim(); }),
+            startsAt: startsAt, expiresAt: expiresAt });
         }
       }
-      cache.put(cacheKey, JSON.stringify(cached), 300);
-    } catch (err) {
-      return null;
-    }
+      var ttlSeconds = Math.min(300, Math.floor((nextTransition - now) / 1000));
+      if (cache && ttlSeconds >= 1) cache.put(cacheKey, JSON.stringify(cached), ttlSeconds);
+    } catch (sourceReadError) { return null; }
   }
-
-  for (let j = 0; j < cached.length; j++) {
-    const item = cached[j];
-    if (item.acciones.indexOf("*") !== -1 || item.acciones.indexOf(action) !== -1) {
-      return item;
+  for (var j = 0; j < cached.length; j++) {
+    var item = cached[j];
+    if (now < item.startsAt || now > item.expiresAt) continue;
+    if (item.acciones.indexOf("*") !== -1 || item.acciones.indexOf(requestedAction) !== -1) {
+      return { delId: item.delId, delegante: item.delegante, acciones: item.acciones };
     }
   }
   return null;

@@ -14,6 +14,7 @@ on:
       - js/developer.js
       - tests/security/permission-matrix-dimensions-contract.test.js
       - tests/security/security-version-propagation-contract.test.js
+      - tests/security/security-delegation-version-propagation-contract.test.js
       - tests/security/session-token-expiry.test.js
       - backend/academic-service/Code.gs
       - tests/security/academic-multilevel-file-validation.test.js
@@ -159,6 +160,8 @@ jobs:
         run: node tests/security/permission-matrix-dimensions-contract.test.js
       - name: Run security version propagation and stale-session contract
         run: node tests/security/security-version-propagation-contract.test.js
+      - name: Run delegated privilege version propagation and expiry contract
+        run: node tests/security/security-delegation-version-propagation-contract.test.js
       - name: Run session token expiry and role version contract
         run: node tests/security/session-token-expiry.test.js
       - name: Run accounting departmental import scope contract
