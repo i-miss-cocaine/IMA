@@ -70,7 +70,9 @@ function makeAuthContext(data) {
       return { status: "success", authorized: true, userId: claim.userId, role: claim.role,
         institutionId: "I", membershipId: "M-" + claim.userId };
     },
-    PropertiesService: { getScriptProperties: function() { return { getProperty: function(key) { return key === "IMA_INSTITUTION_ID" ? "I" : ""; } }; } }
+    PropertiesService: { getScriptProperties: function() { return { getProperty: function(key) { return key === "IMA_INSTITUTION_ID" ? "I" : ""; } }; } },
+    validateRolePermission: function(actor, action) { return { authorized: true, actor: actor, action: action }; },
+    getVerifiedAccountingDepartmentScope_: function() { return { valid: true, authorized: true, institutionWide: true, institutionId: "I", departmentIds: ["D1"] }; }
   };
 }
 function sessionPayload(payload) {
