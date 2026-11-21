@@ -22,7 +22,7 @@ function extractFunction(name) {
   throw new Error("unclosed function " + name);
 }
 const names = [
-  "transportOptimizationActor_", "transportRowsPrefix_", "transportOptimizationTime_", "transportOptimizationDistanceKm_",
+  "transportOptimizationActor_", "transportRows_", "transportRowsPrefix_", "transportOptimizationTime_", "transportOptimizationDistanceKm_",
   "transportOptimizationNormalizeStops_", "transportOptimizationEvaluate_", "transportOptimizationOrder_",
   "transportOptimizationSheet_", "optimizeRouteStopsSequence", "getRouteOptimizationProposals",
   "approveRouteStopsOptimization", "rejectRouteStopsOptimization"
