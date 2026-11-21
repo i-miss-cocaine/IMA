@@ -7905,35 +7905,94 @@ function extracurricularRoleKey_(value) {
     .replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
 }
 
-function extracurricularGuardianCanManageStudent_(ss, guardianUserId, studentUserId) {
-  const usersSheet = ss.getSheetByName("Usuarios");
-  const relationsSheet = ss.getSheetByName("RelacionesFamiliares");
-  if (!usersSheet || !relationsSheet) return false;
-  const users = usersSheet.getDataRange().getValues().slice(1);
-  const guardian = users.find(row => String(row[0] || "").trim() === String(guardianUserId).trim());
-  const student = users.find(row => String(row[0] || "").trim() === String(studentUserId).trim());
-  if (!guardian || !student) return false;
-  const guardianPersonId = String(guardian[9] || "").trim();
-  const studentPersonId = String(student[9] || "").trim();
-  const guardianRole = extracurricularRoleKey_(guardian[6]);
-  const studentRole = extracurricularRoleKey_(student[6]);
-  const studentState = extracurricularRoleKey_(student[10] || "Activo");
-  if (!guardianPersonId || !studentPersonId ||
-      ["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(guardianRole) === -1 ||
-      ["ESTUDIANTE", "ALUMNO", "STUDENT"].indexOf(studentRole) === -1 ||
-      ["INACTIVO", "INACTIVE", "BAJA"].indexOf(studentState) !== -1) return false;
-  const now = new Date();
-  return relationsSheet.getDataRange().getValues().slice(1).some(function(row) {
-    const state = extracurricularRoleKey_(row[4]);
-    if (String(row[1] || "").trim() !== studentPersonId ||
-        String(row[2] || "").trim() !== guardianPersonId ||
-        ["APROBADO", "AUTORIZADO", "ACTIVO", "ACTIVE"].indexOf(state) === -1) return false;
-    const from = row[5] ? new Date(row[5]) : null;
-    const to = row[6] ? new Date(row[6]) : null;
-    if ((from && (!Number.isFinite(from.getTime()) || from > now)) ||
-        (to && (!Number.isFinite(to.getTime()) || to < now))) return false;
-    return true;
+function extracurricularGuardianStudentUserIds_(ss, guardianUserId) {
+  const usersSheet = ss && ss.getSheetByName("Usuarios");
+  const relationsSheet = ss && ss.getSheetByName("RelacionesFamiliares");
+  if (!usersSheet || !relationsSheet || !String(guardianUserId || "").trim()) return [];
+  const userValues = usersSheet.getDataRange().getValues();
+  const relationValues = relationsSheet.getDataRange().getValues();
+  if (!userValues || userValues.length < 2 || !relationValues || relationValues.length < 2) return [];
+  const headerIndex = function(headers, aliases) {
+    const normalized = (headers || []).map(value => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, ""));
+    for (let i = 0; i < aliases.length; i++) {
+      const index = normalized.indexOf(String(aliases[i]).toLowerCase().replace(/[^a-z0-9]/g, ""));
+      if (index >= 0) return index;
+    }
+    return -1;
+  };
+  const uh = userValues[0] || [], rh = relationValues[0] || [];
+  const ui = headerIndex(uh, ["UserId", "UserID"]), up = headerIndex(uh, ["PersonaID"]);
+  const ur = headerIndex(uh, ["Rol", "Role"]), us = headerIndex(uh, ["EstadoCuenta", "Estado"]);
+  const ri = headerIndex(rh, ["RelacionID", "IDRelacion"]);
+  const rs = headerIndex(rh, ["PersonaEstudianteID", "EstudiantePersonaID"]);
+  const rg = headerIndex(rh, ["PersonaResponsableID", "ResponsablePersonaID"]);
+  const rst = headerIndex(rh, ["EstadoAutorizacion", "Estado"]);
+  const rstart = headerIndex(rh, ["FechaInicio", "Inicio", "StartDate"]);
+  const rend = headerIndex(rh, ["FechaFin", "Fin", "EndDate"]);
+  const rp = headerIndex(rh, ["PermisosJSON"]);
+  if ([ui, up, ur, ri, rs, rg, rst, rp].some(index => index < 0)) return [];
+  const users = userValues.slice(1), relations = relationValues.slice(1);
+  const activeUser = row => !String(row[us] || "").trim() ||
+    ["ACTIVO", "ACTIVE", "HABILITADO"].indexOf(extracurricularRoleKey_(row[us])) !== -1;
+  const guardianRole = row => ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"]
+    .indexOf(extracurricularRoleKey_(row[ur])) !== -1;
+  const studentRole = row => ["ESTUDIANTE", "ALUMNO", "STUDENT"]
+    .indexOf(extracurricularRoleKey_(row[ur])) !== -1;
+  const guardians = users.filter(row => String(row[ui] || "").trim() === String(guardianUserId).trim());
+  if (guardians.length !== 1 || !guardianRole(guardians[0]) || !activeUser(guardians[0])) return [];
+  const guardianPersonId = String(guardians[0][up] || "").trim();
+  if (!guardianPersonId || users.filter(row => String(row[up] || "").trim() === guardianPersonId &&
+      guardianRole(row) && activeUser(row)).length !== 1) return [];
+  const parseBound = value => {
+    if (value === "" || value === null || value === undefined) return { valid: true, date: null };
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isFinite(date.getTime()) ? { valid: true, date: date } : { valid: false, date: null };
+  };
+  const now = new Date(), relationIdCounts = Object.create(null), activePairCounts = Object.create(null);
+  relations.forEach(row => {
+    const id = String(row[ri] || "").trim();
+    if (id) relationIdCounts[id] = (relationIdCounts[id] || 0) + 1;
+    const state = extracurricularRoleKey_(row[rst]);
+    const from = parseBound(rstart >= 0 ? row[rstart] : "");
+    const to = parseBound(rend >= 0 ? row[rend] : "");
+    if (!from.valid || !to.valid || (from.date && from.date > now) ||
+        (to.date && to.date < now) || (from.date && to.date && from.date > to.date) ||
+        ["APROBADO", "AUTORIZADO", "ACTIVO", "ACTIVE"].indexOf(state) === -1) return;
+    const studentPersonId = String(row[rs] || "").trim(), responsiblePersonId = String(row[rg] || "").trim();
+    if (!studentPersonId || !responsiblePersonId) return;
+    const key = studentPersonId + "|" + responsiblePersonId;
+    activePairCounts[key] = (activePairCounts[key] || 0) + 1;
   });
+  const allowed = [];
+  relations.forEach(row => {
+    const relationId = String(row[ri] || "").trim();
+    const studentPersonId = String(row[rs] || "").trim(), responsiblePersonId = String(row[rg] || "").trim();
+    const key = studentPersonId + "|" + responsiblePersonId;
+    if (!relationId || relationIdCounts[relationId] !== 1 || !studentPersonId ||
+        responsiblePersonId !== guardianPersonId || activePairCounts[key] !== 1) return;
+    const state = extracurricularRoleKey_(row[rst]);
+    if (["APROBADO", "AUTORIZADO", "ACTIVO", "ACTIVE"].indexOf(state) === -1) return;
+    const from = parseBound(rstart >= 0 ? row[rstart] : ""), to = parseBound(rend >= 0 ? row[rend] : "");
+    if (!from.valid || !to.valid || (from.date && from.date > now) ||
+        (to.date && to.date < now) || (from.date && to.date && from.date > to.date)) return;
+    let permissions;
+    try { permissions = typeof row[rp] === "string" ? JSON.parse(row[rp]) : row[rp]; }
+    catch (_) { return; }
+    if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) ||
+        permissions.permisoAcademico !== true) return;
+    const studentUsers = users.filter(user => String(user[up] || "").trim() === studentPersonId &&
+      studentRole(user) && activeUser(user));
+    if (studentUsers.length !== 1) return;
+    const studentUserId = String(studentUsers[0][ui] || "").trim();
+    if (!studentUserId || users.filter(user => String(user[ui] || "").trim() === studentUserId).length !== 1) return;
+    if (allowed.indexOf(studentUserId) === -1) allowed.push(studentUserId);
+  });
+  return allowed;
+}
+
+function extracurricularGuardianCanManageStudent_(ss, guardianUserId, studentUserId) {
+  return extracurricularGuardianStudentUserIds_(ss, guardianUserId)
+    .indexOf(String(studentUserId || "").trim()) !== -1;
 }
 
 function ensureExtracurricularChargeSheet_(ss) {
@@ -8228,24 +8287,13 @@ function getStudentExtracurricularEnrollments(payload) {
     const relationsSheet = ss.getSheetByName("RelacionesFamiliares");
     if (!usersSheet || !relationsSheet) return { status: "success", children: [], enrollments: [] };
     const users = usersSheet.getDataRange().getValues();
-    const guardian = users.slice(1).find(row => String(row[0] || "").trim() === guardianId);
-    if (!guardian || ["PADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(extracurricularRoleKey_(guardian[6])) === -1 ||
-        ["INACTIVO", "INACTIVE", "BAJA"].indexOf(extracurricularRoleKey_(guardian[10] || "Activo")) !== -1) {
+    const guardianMatches = users.slice(1).filter(row => String(row[0] || "").trim() === guardianId);
+    if (guardianMatches.length !== 1 || ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(extracurricularRoleKey_(guardianMatches[0][6])) === -1 ||
+        ["INACTIVO", "INACTIVE", "BAJA"].indexOf(extracurricularRoleKey_(guardianMatches[0][10] || "Activo")) !== -1) {
       throw new Error("EXTRACURRICULAR_GUARDIAN_NOT_FOUND_OR_INACTIVE");
     }
-    const guardianPersonId = String(guardian[9] || "").trim(), now = new Date();
-    const studentPersonIds = new Set();
-    relationsSheet.getDataRange().getValues().slice(1).forEach(row => {
-      const state = extracurricularRoleKey_(row[4]);
-      const from = row[5] ? new Date(row[5]) : null, to = row[6] ? new Date(row[6]) : null;
-      if (String(row[2] || "").trim() === guardianPersonId &&
-          ["APROBADO", "AUTORIZADO", "ACTIVO", "ACTIVE"].indexOf(state) !== -1 &&
-          (!from || (Number.isFinite(from.getTime()) && from <= now)) &&
-          (!to || (Number.isFinite(to.getTime()) && to >= now))) studentPersonIds.add(String(row[1] || "").trim());
-    });
-    const children = users.slice(1).filter(row => studentPersonIds.has(String(row[9] || "").trim()) &&
-      ["ESTUDIANTE", "ALUMNO", "STUDENT"].indexOf(extracurricularRoleKey_(row[6])) !== -1 &&
-      ["INACTIVO", "INACTIVE", "BAJA"].indexOf(extracurricularRoleKey_(row[10] || "Activo")) === -1)
+    const permittedStudentIds = new Set(extracurricularGuardianStudentUserIds_(ss, guardianId));
+    const children = users.slice(1).filter(row => permittedStudentIds.has(String(row[0] || "").trim()))
       .map(row => ({ userId: String(row[0] || "").trim(), nombre: String(row[1] || row[0] || "").trim() }));
     const childIds = new Set(children.map(item => item.userId));
     const enrollmentSheet = ss.getSheetByName("ServiciosInscripciones");

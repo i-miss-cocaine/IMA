@@ -75,9 +75,9 @@ const users = [
   ["G2", "Tutor Dos", "", "", "", "", "Padre", "", "", "P-G2", "Activo"]
 ];
 const relations = [
-  ["RelacionID", "EstudiantePersonaID", "ResponsablePersonaID", "Parentesco", "Estado", "FechaInicio", "FechaFin"],
-  ["R1", "P-S1", "P-G1", "Padre", "Aprobado", new Date("2025-01-01"), new Date("2030-01-01")],
-  ["R2", "P-S2", "P-G1", "Padre", "Aprobado", new Date("2025-01-01"), new Date("2030-01-01")]
+  ["RelacionID", "EstudiantePersonaID", "ResponsablePersonaID", "Parentesco", "Estado", "FechaInicio", "FechaFin", "PermisosJSON"],
+  ["R1", "P-S1", "P-G1", "Padre", "Aprobado", new Date("2025-01-01"), new Date("2030-01-01"), JSON.stringify({ permisoAcademico: true })],
+  ["R2", "P-S2", "P-G1", "Padre", "Aprobado", new Date("2025-01-01"), new Date("2030-01-01"), JSON.stringify({ permisoAcademico: true })]
 ];
 const sheets = {
   Usuarios: makeSheet(users),
@@ -113,12 +113,28 @@ const context = {
 };
 const names = [
   "ensureExtracurricularActivitySchema_", "ensureExtracurricularEnrollmentSheet_", "ensureExtracurricularChargeSheet_",
-  "extracurricularRoleKey_", "extracurricularInstitutionalServiceIsActive_", "extracurricularGuardianCanManageStudent_", "extracurricularTransportRouteIsActive_", "reindexExtracurricularWaitlist_", "createExtracurricularCharge_",
+  "extracurricularRoleKey_", "extracurricularInstitutionalServiceIsActive_", "extracurricularGuardianStudentUserIds_", "extracurricularGuardianCanManageStudent_", "extracurricularTransportRouteIsActive_", "reindexExtracurricularWaitlist_", "createExtracurricularCharge_",
   "promoteNextExtracurricularWaitlist_", "saveExtracurricularActivity", "getExtracurricularActivities",
   "enrollStudentInExtracurricular", "getStudentExtracurricularEnrollments", "cancelExtracurricularEnrollment"
 ];
 vm.runInNewContext(names.map(extract).join("\n"), context);
 
+assert.equal(context.extracurricularGuardianCanManageStudent_(ss, "G1", "S1"), true,
+  "an active guardian relationship with explicit academic permission authorizes extracurricular enrollment");
+sheets.RelacionesFamiliares.rows[1][7] = JSON.stringify({ permisoAcademico: false });
+assert.equal(context.extracurricularGuardianCanManageStudent_(ss, "G1", "S1"), false,
+  "an explicit academic permission denial blocks extracurricular access");
+assert.equal(context.extracurricularGuardianCanManageStudent_(ss, "G1", "S2"), true,
+  "one denied child relationship does not alter another child's explicit grant");
+sheets.RelacionesFamiliares.rows[1][7] = "{malformed";
+assert.equal(context.extracurricularGuardianCanManageStudent_(ss, "G1", "S1"), false,
+  "malformed permission JSON fails closed");
+sheets.RelacionesFamiliares.rows[1][7] = JSON.stringify({ permisoAcademico: true });
+const savedRelationHeaders = sheets.RelacionesFamiliares.rows[0].slice();
+sheets.RelacionesFamiliares.rows[0] = savedRelationHeaders.slice(0, 7);
+assert.equal(context.extracurricularGuardianCanManageStudent_(ss, "G1", "S1"), false,
+  "legacy relationship schemas without explicit domain permissions fail closed");
+sheets.RelacionesFamiliares.rows[0] = savedRelationHeaders;
 const activity = context.saveExtracurricularActivity({
   _verifiedRole: "Director", extracurricularId: "EXTRA-1", anoId: "2027",
   nombre: "Fútbol", categoria: "Deportiva", cupoMaximo: 1, tarifa: 500,
@@ -233,6 +249,13 @@ assert.equal(sheets.ServiciosInscripciones.rows.filter(row => ["Confirmada", "Pe
 assert.equal(sheets.CargosEstudiante.rows.length, 3, "repeated cancellation must not create another charge");
 
 sheets.CargosEstudiante.rows[2][7] = "Pagado";
+sheets.RelacionesFamiliares.rows[2][7] = JSON.stringify({ permisoAcademico: false });
+const restrictedFamily = context.getStudentExtracurricularEnrollments({ _verifiedUserId: "G1", _verifiedRole: "Padre" });
+assert.deepEqual(restrictedFamily.children.map(row => row.userId), ["S1"],
+  "family extracurricular listing includes only children with explicit academic permission");
+assert.equal(restrictedFamily.enrollments.length, 1,
+  "family extracurricular listing hides enrollments outside the permitted child set");
+sheets.RelacionesFamiliares.rows[2][7] = JSON.stringify({ permisoAcademico: true });
 const family = context.getStudentExtracurricularEnrollments({ _verifiedUserId: "G1", _verifiedRole: "Padre" });
 assert.equal(family.children.length, 2);
 assert.equal(family.enrollments.length, 2);
@@ -242,6 +265,12 @@ assert.equal(family.enrollments.find(row => row.estudianteUserId === "S2").cargo
 assert.throws(() => context.enrollStudentInExtracurricular({
   _verifiedUserId: "G2", _verifiedRole: "Padre", estudianteUserId: "S1", extracurricularId: "EXTRA-1"
 }), /EXTRACURRICULAR_ACTIVE_FAMILY_RELATION_REQUIRED/);
+sheets.RelacionesFamiliares.rows[2][7] = JSON.stringify({ permisoAcademico: false });
+assert.throws(() => context.cancelExtracurricularEnrollment({
+  _verifiedUserId: "G1", _verifiedRole: "Padre", inscripcionId: cancelled.siguienteEnLista.inscripcionId
+}), /EXTRACURRICULAR_ENROLLMENT_OWNERSHIP_REQUIRED/,
+  "cancellation requires the current explicit academic permission, not only historical enrollment ownership");
+sheets.RelacionesFamiliares.rows[2][7] = JSON.stringify({ permisoAcademico: true });
 assert.throws(() => context.cancelExtracurricularEnrollment({
   _verifiedUserId: "G1", _verifiedRole: "Padre", inscripcionId: cancelled.siguienteEnLista.inscripcionId
 }), /EXTRACURRICULAR_PAID_ENROLLMENT_REFUND_REQUIRED/);
