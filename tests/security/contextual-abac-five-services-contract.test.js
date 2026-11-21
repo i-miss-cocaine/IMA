@@ -172,4 +172,78 @@ const examSheets = { getSheetByName: name =>
 assert.deepEqual(Array.from(examRuntime.lookup(examSheets, "GUARDIAN-1")), ["STU-1"],
   "EXAM excludes future, expired and malformed family relations while preserving its documented relation-permission semantics");
 
+
+const accountingFamilyUsers = [
+  ["UserId","PersonaID","Rol","Estado","Unused5","Unused6","Unused7","Unused8","Unused9","Unused10"],
+  ["GUARDIAN-1","PERSON-G","Padre","Activo","","","","","",""],
+  ["STU-1","PERSON-S1","Estudiante","Activo","","","","","",""],
+  ["STU-2","PERSON-S2","Estudiante","Activo","","","","","",""],
+  ["STU-3","PERSON-S3","Estudiante","Activo","","","","","",""],
+  ["STU-4","PERSON-S4","Estudiante","Activo","","","","","",""]
+];
+const accountingFamilyRelations = [
+  ["RelacionID","PersonaEstudianteID","PersonaResponsableID","TipoRelacion","Estado","FechaInicio","FechaFin","VerificadaPor","FechaVerificacion","EstadoAutorizacion"],
+  ["R1","PERSON-S1","PERSON-G","Madre","Activo","2020-01-01","2099-12-31","","","Activo"],
+  ["R2","PERSON-S2","PERSON-G","Madre","Activo","2099-01-01","2099-12-31","","","Activo"],
+  ["R3","PERSON-S3","PERSON-G","Madre","Activo","2020-01-01","2020-12-31","","","Activo"],
+  ["R4","PERSON-S4","PERSON-G","Madre","Activo","invalid-date","2099-12-31","","","Activo"]
+];
+const familyCreditFn = extractFunction(accountingSource, "familyCreditGetActiveStudentUserIdsForGuardian_");
+const familyCreditRuntime = {
+  institutionalServiceRoleKey_: role => String(role || "").toLowerCase(),
+  Date, String, Number, Object, Array
+};
+vm.createContext(familyCreditRuntime);
+vm.runInContext(familyCreditFn + "\nthis.lookup = familyCreditGetActiveStudentUserIdsForGuardian_;", familyCreditRuntime);
+const familyCreditSheetSet = {
+  getSheetByName: name => name === "Usuarios" ? sheet(accountingFamilyUsers) :
+    (name === "RelacionesFamiliares" ? sheet(accountingFamilyRelations) : null)
+};
+assert.deepEqual(Array.from(familyCreditRuntime.lookup(familyCreditSheetSet, "GUARDIAN-1")), ["STU-1"],
+  "ACCOUNTING family-credit scope rejects future, expired and malformed relationship windows");
+
+const transportUsers = [
+  ["UserId","","","","","","","","","PersonaID"],
+  ["STU-1","","","","","","","","","PERSON-S1"],
+  ["STU-2","","","","","","","","","PERSON-S2"],
+  ["STU-3","","","","","","","","","PERSON-S3"],
+  ["STU-4","","","","","","","","","PERSON-S4"],
+  ["GUARDIAN-1","","","","","","","","","PERSON-G"]
+];
+const transportDateFn = extractFunction(accountingSource, "transportParseDate_");
+const transportGuardianFn = extractFunction(accountingSource, "serviceStudentGuardianIds_");
+const transportRuntime = { Date, String, Number, Object, Array, Set };
+vm.createContext(transportRuntime);
+vm.runInContext(transportDateFn + "\n" + transportGuardianFn + "\nthis.lookup = serviceStudentGuardianIds_;", transportRuntime);
+const transportSheetSet = {
+  getSheetByName: name => name === "Usuarios" ? sheet(transportUsers) :
+    (name === "RelacionesFamiliares" ? sheet(accountingFamilyRelations) : null)
+};
+assert.deepEqual(Array.from(transportRuntime.lookup(transportSheetSet, "STU-1")), ["PERSON-G"],
+  "ACCOUNTING transport guardian scope rejects malformed, future and expired relationships");
+
+const jointFamilyFn = extractFunction(accountingSource, "assertJointFamilyVoucherOwnerAccess_");
+const jointFamilyRuntime = {
+  getVerifiedAccountingIdentity_: () => ({ authorized: true, userId: "GUARDIAN-1", role: "Tutor" }),
+  normalizeVacationRole_: role => String(role || "").toLowerCase(),
+  getAccountingPersonIdForUser_: (_ss, userId) => userId === "GUARDIAN-1" ? "PERSON-G" : (userId === "STU-1" ? "PERSON-S1" : ""),
+  Date, String, Number, Object, Array
+};
+vm.createContext(jointFamilyRuntime);
+vm.runInContext(jointFamilyFn + "\nthis.check = assertJointFamilyVoucherOwnerAccess_;", jointFamilyRuntime);
+const jointRelations = [
+  ["RelacionID","PersonaEstudianteID","PersonaResponsableID","EstadoAutorizacion","FechaInicio","FechaFin"],
+  ["R1","PERSON-S1","PERSON-G","Activo","2020-01-01","2099-12-31"]
+];
+const jointSheetSet = { getSheetByName: () => sheet(jointRelations) };
+assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, true,
+  "ACCOUNTING joint family owner accepts one active linked relationship");
+for (const [start,end] of [["2099-01-01","2099-12-31"],["2020-01-01","2020-12-31"],["invalid-date","2099-12-31"]]) {
+  const invalidSheet = { getSheetByName: () => sheet([
+    jointRelations[0], ["R2","PERSON-S1","PERSON-G","Activo",start,end]
+  ]) };
+  assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, invalidSheet, "STU-1").authorized, false,
+    "ACCOUNTING joint family owner denies invalid or inactive relationship dates");
+}
+
 process.stdout.write("contextual-abac-five-services-contract: all assertions passed\n");

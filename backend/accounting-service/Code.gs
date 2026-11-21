@@ -3710,7 +3710,34 @@ function familyCreditPinDigest_(pin,salt){var message="FAMILY_CREDIT_PIN|"+Strin
 function familyCreditConstantTimeEquals_(a,b){a=String(a||"");b=String(b||"");var d=a.length^b.length,n=Math.max(a.length,b.length);for(var i=0;i<n;i++)d|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);return d===0;}
 function familyCreditEnsureConfigSheet_(ss){var sh=getOrCreateSheet(ss,"CreditoFamiliarConfiguracion"),h=["ConfiguracionID","ResponsableUserID","ModalidadAprobacion","FechaActualizacion","ActualizadoPor","PinSalt","PinHash","PinUpdatedAt","FailedAttempts","LockedUntil"],r=sh.getDataRange().getValues();if(!r.length){sh.appendRow(h);r=[h];}var cur=(r[0]||[]).map(String);h.forEach(function(x){if(cur.indexOf(x)<0){sh.getRange(1,cur.length+1).setValue(x);cur.push(x);}});var m={};cur.forEach(function(x,i){if(x){if(m[x]!==undefined)throw new Error("FAMILY_CREDIT_CONFIGURATION_SCHEMA_INVALID");m[x]=i;}});return{sheet:sh,map:m};}
 function familyCreditEnsureAuthorizationSheet_(ss){var sh=getOrCreateSheet(ss,"CreditoFamiliarAutorizaciones"),h=["AutorizacionID","Fecha","ResponsableUserId","EstudianteUserId","LimiteDiario","LimiteMensual","SaldoUsado","Estado","FechaVencimiento","Observaciones","ModalidadAprobacion","PinApprovedBy","PinApprovedAt"],r=sh.getDataRange().getValues();if(!r.length){sh.appendRow(h);r=[h];}var cur=(r[0]||[]).map(String);h.forEach(function(x){if(cur.indexOf(x)<0){sh.getRange(1,cur.length+1).setValue(x);cur.push(x);}});var m={};cur.forEach(function(x,i){if(x){if(m[x]!==undefined)throw new Error("FAMILY_CREDIT_AUTHORIZATION_SCHEMA_INVALID");m[x]=i;}});return{sheet:sh,map:m};}
-function familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid){var us=ss.getSheetByName("Usuarios"),rs=ss.getSheetByName("RelacionesFamiliares");if(!us||!rs)return[];var u=us.getDataRange().getValues(),r=rs.getDataRange().getValues(),uh=u[0].map(String),rh=r[0].map(String),ui=uh.indexOf("UserId"),pi=uh.indexOf("PersonaID"),ri=uh.indexOf("Rol"),si=uh.indexOf("Estado"),sp=rh.indexOf("PersonaEstudianteID"),gp=rh.indexOf("PersonaResponsableID"),st=rh.indexOf("EstadoAutorizacion"),fi=rh.indexOf("FechaInicio"),ti=rh.indexOf("FechaFin");if([ui,pi,ri,sp,gp,st].some(function(x){return x<0;}))return[];var g=u.slice(1).filter(function(x){return String(x[ui])===String(gid);});if(g.length!==1||!g[0][pi])return[];var person=String(g[0][pi]),now=new Date(),out=[];r.slice(1).forEach(function(rel){var state=String(rel[st]||"").toLowerCase(),from=fi>=0&&rel[fi]?new Date(rel[fi]):null,to=ti>=0&&rel[ti]?new Date(rel[ti]):null;if(String(rel[gp])!==person||["aprobado","autorizado","activo","active","verificada"].indexOf(state)<0||(from&&from>now)||(to&&to<now))return;var students=u.slice(1).filter(function(x){return String(x[pi])===String(rel[sp])&&["estudiante","alumno"].indexOf(institutionalServiceRoleKey_(x[ri]))>=0&&(!x[si]||["activo","active","habilitado"].indexOf(String(x[si]).toLowerCase())>=0);});if(students.length===1&&out.indexOf(String(students[0][ui]))<0)out.push(String(students[0][ui]));});return out;}
+function familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid){
+  var us=ss.getSheetByName("Usuarios"),rs=ss.getSheetByName("RelacionesFamiliares");
+  if(!us||!rs)return[];
+  var u=us.getDataRange().getValues(),r=rs.getDataRange().getValues();
+  var uh=(u[0]||[]).map(String),rh=(r[0]||[]).map(String);
+  var ui=uh.indexOf("UserId"),pi=uh.indexOf("PersonaID"),ri=uh.indexOf("Rol"),si=uh.indexOf("Estado");
+  var sp=rh.indexOf("PersonaEstudianteID"),gp=rh.indexOf("PersonaResponsableID"),st=rh.indexOf("EstadoAutorizacion"),fi=rh.indexOf("FechaInicio"),ti=rh.indexOf("FechaFin");
+  if([ui,pi,ri,sp,gp,st].some(function(x){return x<0;}))return[];
+  var g=u.slice(1).filter(function(x){return String(x[ui])===String(gid);});
+  if(g.length!==1||!g[0][pi])return[];
+  var person=String(g[0][pi]),now=new Date(),out=[];
+  var parseBound=function(value){
+    if(value===""||value===null||value===undefined)return {valid:true,date:null};
+    var date=value instanceof Date?value:new Date(value);
+    return Number.isFinite(date.getTime())?{valid:true,date:date}:{valid:false,date:null};
+  };
+  r.slice(1).forEach(function(rel){
+    var state=String(rel[st]||"").toLowerCase(),from=parseBound(fi>=0?rel[fi]:""),to=parseBound(ti>=0?rel[ti]:"");
+    if(String(rel[gp])!==person||["aprobado","autorizado","activo","active","verificada"].indexOf(state)<0||
+      !from.valid||!to.valid||(from.date&&from.date>now)||(to.date&&to.date<now))return;
+    var students=u.slice(1).filter(function(x){
+      return String(x[pi])===String(rel[sp])&&["estudiante","alumno"].indexOf(institutionalServiceRoleKey_(x[ri]))>=0&&
+        (!x[si]||["activo","active","habilitado"].indexOf(String(x[si]).toLowerCase())>=0);
+    });
+    if(students.length===1&&out.indexOf(String(students[0][ui]))<0)out.push(String(students[0][ui]));
+  });
+  return out;
+}
 function familyCreditGuardianHasActiveStudentRelation_(ss,gid){return familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid).length>0;}
 function familyCreditGuardianCanAuthorizeStudent_(ss,gid,sid){return familyCreditGetActiveStudentUserIdsForGuardian_(ss,gid).indexOf(String(sid))>=0;}
 function familyCreditVerifyPinInConfig_(ss,gid,pin){var s=familyCreditEnsureConfigSheet_(ss),r=s.sheet.getDataRange().getValues(),m=s.map,a=r.slice(1).map(function(row,i){return{row:row,i:i};}).filter(function(x){return String(x.row[m.ResponsableUserID])===String(gid);});if(a.length>1)throw new Error("FAMILY_CREDIT_CONFIGURATION_DUPLICATE");if(!a.length||!a[0].row[m.PinHash])throw new Error("FAMILY_CREDIT_PIN_NOT_CONFIGURED");var row=a[0].row,locked=row[m.LockedUntil];if(locked&&new Date(locked)>new Date())throw new Error("FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED");if(!familyCreditConstantTimeEquals_(familyCreditPinDigest_(pin,row[m.PinSalt]),row[m.PinHash])){var tries=Number(row[m.FailedAttempts]||0)+1;s.sheet.getRange(a[0].i+2,m.FailedAttempts+1).setValue(tries);if(tries>=5){s.sheet.getRange(a[0].i+2,m.LockedUntil+1).setValue(new Date(Date.now()+900000));throw new Error("FAMILY_CREDIT_PIN_TEMPORARILY_LOCKED");}throw new Error("FAMILY_CREDIT_PIN_INVALID");}s.sheet.getRange(a[0].i+2,m.FailedAttempts+1).setValue(0);s.sheet.getRange(a[0].i+2,m.LockedUntil+1).setValue("");return true;}
@@ -4455,7 +4482,19 @@ function assertJointFamilyVoucherOwnerAccess_(payload, ss, targetUserId) {
   if(!rel)return {authorized:false,code:"RESOURCE_NOT_FOUND"};
   var rows=rel.getDataRange().getValues(),h=(rows[0]||[]).map(function(v){return String(v||"").trim();});
   var sp=h.indexOf("PersonaEstudianteID"),gp=h.indexOf("PersonaResponsableID"),st=h.indexOf("EstadoAutorizacion");
-  var matches=rows.slice(1).filter(function(r){return String(r[sp]||"").trim()===studentPerson&&String(r[gp]||"").trim()===guardianPerson&&["aprobado","autorizado","activo"].indexOf(String(r[st]||"").trim().toLowerCase())>=0;});
+  var fi=h.indexOf("FechaInicio"),ti=h.indexOf("FechaFin"),now=new Date();
+  if([sp,gp,st].some(function(index){return index<0;}))return {authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
+  var validDate=function(value){
+    if(value===""||value===null||value===undefined)return {valid:true,date:null};
+    var date=value instanceof Date?value:new Date(value);
+    return Number.isFinite(date.getTime())?{valid:true,date:date}:{valid:false,date:null};
+  };
+  var matches=rows.slice(1).filter(function(r){
+    if(String(r[sp]||"").trim()!==studentPerson||String(r[gp]||"").trim()!==guardianPerson||
+      ["aprobado","autorizado","activo","active","verificada"].indexOf(String(r[st]||"").trim().toLowerCase())<0)return false;
+    var from=validDate(fi<0?"":r[fi]),to=validDate(ti<0?"":r[ti]);
+    return from.valid&&to.valid&&(!from.date||from.date<=now)&&(!to.date||to.date>=now);
+  });
   return matches.length===1?{authorized:true,actor:actor}:{authorized:false,code:"RESOURCE_NOT_FOUND"};
 }
 
@@ -11929,7 +11968,12 @@ function getServiceTariffs(payload){
 function serviceStudentGuardianIds_(ss,userId){
  const users=ss.getSheetByName("Usuarios"),relations=ss.getSheetByName("RelacionesFamiliares");if(!users||!relations)return [];
  const u=users.getDataRange().getValues().slice(1).find(r=>String(r[0]||"").trim()===String(userId).trim()),person=u?String(u[9]||"").trim():"";if(!person)return [];
- const rows=relations.getDataRange().getValues().slice(1),now=new Date(),active=r=>{const state=String(r[4]||"").trim().toLowerCase(),from=transportParseDate_(r[5]),to=transportParseDate_(r[6]);return ["aprobado","autorizado","activo","active"].indexOf(state)!==-1&&(!from||from<=now)&&(!to||to>=now);};
+ const rows=relations.getDataRange().getValues().slice(1),now=new Date(),active=r=>{
+  const state=String(r[4]||"").trim().toLowerCase(),startValue=r[5],endValue=r[6],from=transportParseDate_(startValue),to=transportParseDate_(endValue);
+  const validFrom=startValue===""||startValue===null||startValue===undefined||!!from;
+  const validTo=endValue===""||endValue===null||endValue===undefined||!!to;
+  return validFrom&&validTo&&["aprobado","autorizado","activo","active"].indexOf(state)!==-1&&(!from||from<=now)&&(!to||to>=now);
+ };
  return [...new Set(rows.filter(r=>String(r[1]||"").trim()===person&&active(r)).map(r=>String(r[2]||"").trim()).filter(Boolean))];
 }
 
