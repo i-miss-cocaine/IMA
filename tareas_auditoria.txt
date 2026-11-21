@@ -920,3 +920,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - BETA-FUNC-127 añadido, Pendiente beta. No se ejecutó Apps Script/Sheets real ni concurrencia entre proyectos; el test local cubre lock contention de las operaciones extracurriculares.
 - TASK-502 permanece En ejecución; revisar superficies restantes de USER/ACADEMIC/ACCOUNTING/TASK/EXAM y aislamiento institucional. TASK-506 sigue abierto hasta integrar la política completa.
 ===============================================================================
+
+===============================================================================
+### Seguimiento C1.913 — AUD-NG-222 / TASK-502
+- USER: los resúmenes, solicitudes y adjuntos familiares requieren permiso booleano explícito del dominio. Pagos conjuntos validan relación/permiso antes y bajo lock; revocación durante la operación provoca rollback del adjunto. Becas/descuentos se vinculan al tutor verificado y a estudiantes con permiso financiero único; lecturas ocultan estudiantes sin grant vigente.
+- USER: updateFamilyLinkPermissions valida esquema booleano, rechaza relacionId duplicado y escribe bajo ScriptLock.
+- ACADEMIC: documentos de expediente exigen permiso documental explícito; permiso académico por sí solo no autoriza documentos.
+- TASK/EXAM: selectores de estudiante/expediente se validan contra identidad y relación única; se rechazan expedientes cruzados y legacy sin grant académico explícito.
+- Node.js 24 CI HEAD 8a5d87f5: Accounting Import, Task-Service, Academic-Service, UI Accessibility, Hierarchical Configuration, SACE e Identity SUCCESS. Contratos contextual-abac-five-services y task-exam-guardian-academic-permission PASS. Department Scope FAIL solo por Phase22/configureSchoolDocumentTemplate ausente, ajeno a TASK-502.
+- BETA-FUNC-128 añadido, PENDIENTE DE BETA. Apps Script/Sheets real y concurrencia real entre proyectos NOT RUN.
+- TASK-502 continúa En ejecución; TASK-506 permanece abierto hasta integrar la política completa.
+===============================================================================

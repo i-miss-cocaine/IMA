@@ -776,3 +776,65 @@ Objetivo: continuar AUD-NG-222 / TASK-502 y cerrar brechas de permiso familiar e
 Auditar las rutas restantes de USER/ACADEMIC que resuelven recursos familiares o expedientes, y continuar los bindings action/resource pendientes en ACCOUNTING/TASK/EXAM. Priorizar denegación ante recurso/identidad/ámbito ausente, duplicado o cruzado entre instituciones; agregar pruebas deterministas de concurrencia cuando haya escritores compartidos. Revalidar TASK-506 después de completar TASK-502.
 
 ===============================================================================
+
+### C1.913 — IMA-EXEC-20261121-AUD-NG-222-GUARDIAN-DOMAIN-84
+
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+Checkpoint previo: C1.912 — HEAD 9620f0c4ff62c143fe37156993715862299c17e4
+HEAD observado al reanudar: 9620f0c4ff62c143fe37156993715862299c17e4
+HEAD final verificado: 8a5d87f53cc3a9ca395becec99a67b660496b483
+Objetivo: continuar AUD-NG-222 / TASK-502, cerrar más rutas familiares y bindings de recurso/acción sin declarar completa la matriz ABAC transversal.
+
+### Resultado técnico
+- USER: helper hasExplicitGuardianDomainPermission_ exige objeto permisos válido y valor booleano true para el dominio requerido. Se aplica al resumen familiar financiero, envío de solicitudes familiares por dominio y descarga documental. Ausencia, false, cadenas, arrays y permisos no explícitos deniegan.
+- USER: pagos familiares conjuntos validan relación/estudiante único y permiso financiero explícito antes de crear el adjunto; vuelven a validar bajo ScriptLock antes de persistir. Si el permiso se revoca entre prevalidación y escritura, se revierte el adjunto y se libera el lock.
+- USER: Becas/descuentos familiares se vinculan a la identidad verificada del tutor y a la lista de estudiantes con permiso financiero explícito; lecturas filtran estudiantes que ya no están autorizados. Las solicitudes no aceptan IDs de responsable falsificados ni estudiantes fuera de la relación financiera permitida.
+- USER: updateFamilyLinkPermissions valida tipos booleanos, rechaza IDs de relación duplicados y realiza la escritura bajo ScriptLock.
+- ACADEMIC: acceso a documentos de expediente exige permiso documental explícito, no basta permiso académico. La relación primaria debe ser única, vigente y con el dominio solicitado; legacy no concede permiso documental.
+- TASK/EXAM: validateContextualAccess reconoce selectores estudiante y expediente, resuelve el expediente de forma única, rechaza pares estudiante/expediente discordantes y bloquea que un estudiante sustituya el expediente de otro. Las relaciones familiares primarias exigen permiso académico explícito; EXAM no usa fallback legacy para conceder acceso.
+- Contratos agregados: USER, ACADEMIC, TASK y EXAM incorporan casos de permisos ausentes/falsos/no booleanos, relaciones duplicadas, expediente cruzado, becas familiares y revocación durante pago.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/task-service/Code.gs
+- backend/exam-service/Code.gs
+- tests/security/contextual-abac-five-services-contract.test.js
+- tests/security/task-exam-guardian-academic-permission-contract.test.js
+- tests/security/academic-guardian-primary-relation-abac-contract.test.js
+- tests/security/exam-service-departmental-access.test.js
+- beta_test.txt
+- Auditoria.txt, changueslogs.txt, tareas_auditoria.txt, Plan Maestro, índice y este checkpoint.
+
+### Commits relevantes
+- b12b7eff — permisos familiares explícitos en USER.
+- 0daf73c8 — permisos académicos explícitos en TASK/EXAM.
+- 266552c3 — bindings contextuales de recursos familiares en TASK/EXAM.
+- b68ed2da — permiso financiero explícito para pagos familiares conjuntos.
+- e232aeec — revalidación bajo lock y compensación del adjunto; permisos de relación protegidos contra duplicados.
+- fdd7bcd8 — permiso documental explícito en ACADEMIC.
+- ba772097 — validación de selectores de expediente para estudiantes en TASK/EXAM.
+- 8a5d87f5 — becas/descuentos familiares vinculados a identidad y grants financieros.
+- Se conservaron los commits concurrentes y los cambios de la rama; no hubo force push ni escrituras fuera de la rama autorizada.
+
+### Verificaciones
+- GitHub Actions en HEAD 8a5d87f5: Accounting Import Preflight 44943730252 SUCCESS; Task-Service security 44943730369 SUCCESS; Academic-Service single authorization 44943730309 SUCCESS; UI Accessibility 44943730245 SUCCESS; Hierarchical Configuration 44943730306 SUCCESS; SACE monotonic revision 44943730382 SUCCESS; Identity mapping 44943730328 SUCCESS.
+- Department Scope 44943730287 FAIL únicamente en tests/regression/phase22-document-management-suite-contract.test.js por ausencia de configureSchoolDocumentTemplate. Los contratos contextual-abac-five-services y task-exam-guardian-academic-permission ejecutados antes del fallo: PASS.
+- Contrato TASK/EXAM de permiso académico y expediente: PASS en Node.js 24. Contratos de permisos familiares, becas, revalidación de pagos y actualización de relaciones: PASS en Node.js 24.
+- EXAM full workflow previo en HEAD fdd7bcd8 también se detuvo por el mismo fallo Phase22; no se atribuye al cambio ABAC.
+- node --check de los servicios y contratos editados: PASS en los workflows correspondientes. Parseo adicional de los archivos editados: PASS.
+- La prueba de pago simula revocación entre lecturas y confirma rollback de adjunto y liberación del lock; no equivale a una carrera real entre proyectos Apps Script.
+- Apps Script/Sheets desplegado, staging y datos productivos: NOT RUN.
+
+### Estado y limitaciones
+- AUD-NG-222 / TASK-502: En ejecución. Se cerraron más rutas familiares y selectores de expediente, pero no la matriz action/resource completa de los cinco servicios ni el aislamiento institucional integral.
+- TASK-506 / AUD-NG-226 sigue abierto hasta integrar y probar la autorización contextual completa.
+- BETA-FUNC-128 se añade como pendiente; BETA-FUNC-124/125/126/127 conservan estado pendiente de beta.
+- Phase22/configureSchoolDocumentTemplate permanece como fallo de CI ajeno al alcance; no se corrigió ni se declaró PASS.
+- Rama base NG_beta_0.0.0.1 no modificada.
+
+### Siguiente acción elegible
+Continuar el inventario de rutas USER/ACADEMIC que consumen recursos familiares o documentos; completar bindings de acción/recurso en ACCOUNTING/TASK/EXAM, con pruebas de IDs duplicados, recursos inexistentes, relaciones revocadas y aislamiento institucional. Revalidar TASK-506 solo cuando TASK-502 esté integrado y sus dependencias probadas.
+
+===============================================================================

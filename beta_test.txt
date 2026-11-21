@@ -2292,3 +2292,31 @@ Evidencia requerida: SHA de despliegue USER/ACADEMIC, IDs sintéticos, respuesta
 Tarea vinculada: AUD-NG-222 / TASK-502.
 Responsable: QA/administrador del ambiente beta.
 ===============================================================================
+
+===============================================================================
+BETA-FUNC-128 — Permisos familiares explícitos por dominio y aislamiento de expedientes (USER / ACADEMIC / TASK / EXAM)
+Objetivo: verificar que cada operación familiar o de expediente se autorice por identidad verificada, relación única y permiso explícito del dominio; confirmar que la revocación durante una mutación no produce escritura parcial.
+Precondiciones:
+- Desplegar USER, ACADEMIC, TASK y EXAM en staging con usuarios sintéticos, dos estudiantes, dos tutores y expedientes únicos.
+- Crear relaciones familiares primarias activas con PermisosJSON controlado; preparar becas, cargos, documentos, exámenes y tareas sintéticos.
+Pasos:
+1. Para cada dominio financiero, académico y documental, conceder boolean true y comprobar acceso solo a la operación correspondiente; permiso académico no debe conceder acceso documental ni financiero.
+2. Probar permiso ausente, false, cadena "true", número 1, JSON malformado, relación ausente, revocada, expirada, futura y relación duplicada; todos deben denegar.
+3. Consultar resumen financiero, adjuntos y becas del tutor. Intentar sustituir userIdResponsable por otro tutor y comprobar denegación; las becas solo deben incluir estudiantes con permiso financiero vigente.
+4. Enviar solicitud de beca para un estudiante sin permiso financiero y para una lista mixta; debe denegarse sin crear registro. Probar "Todos": solo incluir estudiantes con grant financiero explícito y relación única.
+5. Enviar pago conjunto con permiso financiero válido, revocar el permiso entre prevalidación y persistencia y comprobar que la segunda validación deniega, el adjunto privado se revierte y el lock se libera.
+6. Actualizar permisos de una relación con relacionId duplicado o valores no booleanos; no debe escribir. Con ID único y booleanos, debe actualizar bajo lock.
+7. En TASK/EXAM, consultar tareas/exámenes usando estudianteUserId, studentUserId, targetStudentId, targetUserId y expedienteId. Permitir solo estudiante propio o tutor con relación/permiso académico explícito; denegar ID ajeno y pares estudiante/expediente discordantes.
+8. En ACADEMIC, intentar leer/descargar documento con solo permiso académico y después con permiso documental explícito; solo el segundo debe autorizar.
+9. Repetir con otro tutor e institución; no debe existir acceso cruzado.
+Resultado esperado:
+- Solo permisos booleanos explícitos del dominio correspondiente autorizan.
+- Identidad, relación, expediente y mapeo ambiguos o ausentes fallan cerrados.
+- Las revocaciones antes de persistir impiden la mutación y dejan compensados los recursos temporales.
+Resultado real: no ejecutado; pendiente despliegue beta.
+Estado: PENDIENTE DE BETA.
+Severidad si falla: Alta — acceso financiero, académico o documental no autorizado y mutaciones familiares indebidas.
+Evidencia requerida: SHA de despliegue, IDs sintéticos, respuestas Allow/Deny, registro antes/después, evidencia de rollback/lock y trazas sin PII/tokens.
+Tarea vinculada: AUD-NG-222 / TASK-502.
+Responsable: QA/administrador del ambiente beta.
+===============================================================================
