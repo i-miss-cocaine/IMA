@@ -208,8 +208,8 @@ const applicantRows = [
 ];
 const applicantUsers = [
   ["UserId","Nombre","","","","","Rol","","","PersonaID","Estado"],
-  ["GUARDIAN-1","Guardian","","","","","Padre","","","PERSON-G1","Activo"],
-  ["OTHER-1","Other","","","","","Padre","","","PERSON-O1","Activo"]
+  ["GUARDIAN-1","Guardian","","","guardian@example.test","","Padre","","","PERSON-G1","Activo"],
+  ["OTHER-1","Other","","","other@example.test","","Padre","","","PERSON-O1","Activo"]
 ];
 const applicantSheets = {
   Usuarios: { getDataRange: () => ({ getValues: () => applicantUsers.map(row => row.slice()) }) },
