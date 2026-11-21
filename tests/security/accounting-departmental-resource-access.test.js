@@ -314,6 +314,8 @@ assert.equal(context.getPaymentVoucherFile({sessionToken:"staffA",comprobanteId:
 assert.equal(context.getPaymentVoucherFile({sessionToken:"admin",comprobanteId:"VCH-B"}).status,"success","institution-wide scope may retrieve an authorized voucher");
 assert.equal(context.getPaymentVoucherFile({sessionToken:"invalid",comprobanteId:"VCH-A"}).code,"VERIFIED_IDENTITY_REQUIRED");
 assert.equal(context.validateRolePermission(actor("student"),"uploadPaymentVoucher").authorized,true);
+assert.equal(context.validateRolePermission(actor("guardian"),"getPaymentVouchers").authorized,true);
+assert.equal(context.validateRolePermission(actor("guardian"),"getPaymentVoucherFile").authorized,true);
 assert.equal(context.validateRolePermission(actor("student"),"reviewPaymentVoucher").code,"ROLE_PERMISSION_DENIED");
 assert.equal(context.validateRolePermission(actor("staffA"),"reviewPaymentVoucher").authorized,true);
 assert.equal(context.validateRolePermission(actor("employee"),"getPaymentVoucherFile").code,"ROLE_PERMISSION_DENIED");
