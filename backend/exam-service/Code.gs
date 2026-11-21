@@ -1539,7 +1539,8 @@ function getAllExamsUnlocked_(payload, context) {
   const filtered = data.filter(row => {
     const examId = String(row[0] || "").trim();
     if (!examId || examIdCounts[examId] !== 1) return false;
-    if (actor.role === "Profesor" && String(row[8] || "").trim() !== actor.userId) return false;
+    if (actor.role === "Profesor" && (String(row[8] || "").trim() !== actor.userId ||
+        !hasExamTeacherActiveOfferAssignment_(ss, actor.userId, row))) return false;
     const access = assertExamResourceOwnershipForScope_(ss, scope, "EXAMEN", examId, "LIST", payload);
     return access && access.authorized === true;
   });
