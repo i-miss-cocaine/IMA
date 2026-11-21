@@ -4868,7 +4868,7 @@ function getTransportAssignments(payload) {
   var managementAccess = transportManagementReadScope_(input, ss, actor, scope);
   if (!managementAccess || managementAccess.authorized !== true) {
     transportAuditDenied_(actor, "getTransportAssignments", input.rutaId || input.viajeId || "");
-    return { status: "error", code: managementAccess && managementAccess.code || "RESOURCE_SCOPE_DENIED", total: [], total: 0 };
+    return { status: "error", code: managementAccess && managementAccess.code || "RESOURCE_SCOPE_DENIED", total: 0, asignaciones: [] };
   }
   var snapshot = transportRowsPrefix_(ss, "TransporteAsignaciones", [
     ["AsignacionTranspID","AsignacionID","ID"], ["RutaID"], ["EstudianteUserId"], ["ParadaNombre","Parada"],
