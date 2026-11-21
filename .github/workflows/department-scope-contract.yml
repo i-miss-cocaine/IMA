@@ -152,7 +152,7 @@ jobs:
         run: node tests/security/department-scope-contract.test.js
       - name: Run contextual ABAC fail-closed policy contract
         run: node tests/security/contextual-abac-policy-contract.test.js
-      - name: Run five-service contextual ABAC identity contract
+      - name: Run five-service contextual ABAC identity, guardian relationship and validity contract
         run: node tests/security/contextual-abac-five-services-contract.test.js
       - name: Run organizational department hierarchy cycle contract
         run: node tests/security/user-service-department-hierarchy-cycle.test.js
