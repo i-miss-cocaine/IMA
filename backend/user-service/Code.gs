@@ -8780,7 +8780,7 @@ function getAdministrativeRequests(payload) {
   let estudianteId = isSelfService
     ? ((normalizedRole === "ESTUDIANTE" || normalizedRole === "ALUMNO") ? actorId : "")
     : String(request.estudianteId || "").trim();
-  if (!userId && !hasScope) userId = actorId;
+  if (!hasScope) userId = actorId;
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName("SolicitudesTramites");
