@@ -66,8 +66,15 @@ assert.deepEqual(Array.from(runtime({relations:[relation("REL-1","PERSON-STU-1",
 assert.deepEqual(Array.from(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31",false)]}).guardians("STU-1")),[],"direct financial permission false denies");
 assert.deepEqual(Array.from(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31",true,'{"permisoFinanciero":false}')]}).guardians("STU-1")),[],"JSON financial permission false denies");
 assert.deepEqual(Array.from(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31",true,"{bad")]}).guardians("STU-1")),[],"malformed permissions JSON denies");
+assert.deepEqual(Array.from(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31","", "")]}).guardians("STU-1")),[],"missing direct and JSON financial grants deny");
+assert.deepEqual(Array.from(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31",true,"")]}).guardians("STU-1")),["PERSON-GUARD-1"],"explicit boolean direct financial grant remains supported");
+assert.deepEqual(Array.from(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31","",'{"permisoFinanciero":true}')]}).guardians("STU-1")),["PERSON-GUARD-1"],"explicit boolean JSON financial grant remains supported");
+assert.deepEqual(Array.from(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31","true",'')]}).guardians("STU-1")),[],"string direct booleans do not grant financial access");
+assert.deepEqual(Array.from(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31","",'{"permisoFinanciero":"true"}')]}).guardians("STU-1")),[],"string JSON booleans do not grant financial access");
+assert.deepEqual(Array.from(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31",false,'{"permisoFinanciero":true}')]}).guardians("STU-1")),[],"explicit direct denial overrides a JSON grant");
+
 assert.equal(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1"),relation("REL-2","PERSON-STU-2","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31",false)]}).siblings("STU-1"),0,"sibling without financial permission is not counted");
 assert.equal(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1"),relation("REL-1","PERSON-STU-2","PERSON-GUARD-1")]}).siblings("STU-1"),0,"duplicate sibling relation ID is not counted");
 assert.equal(runtime({users:[student,sibling,["STU-X","Estudiante","PERSON-STU-2","Activo"],guardian],relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1"),relation("REL-2","PERSON-STU-2","PERSON-GUARD-1")]}).siblings("STU-1"),0,"ambiguous sibling person mapping is not counted");
 
-process.stdout.write("accounting-family-service-guardian-abac-contract: 18 assertions passed\n");
+process.stdout.write("accounting-family-service-guardian-abac-contract: 24 assertions passed\n");

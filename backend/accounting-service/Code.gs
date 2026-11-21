@@ -12014,9 +12014,11 @@ function serviceFamilyRelationIsActive_(row, indexes, now) {
   const end = parseBound(indexes.end >= 0 ? row[indexes.end] : "");
   if (!start.valid || !end.valid || (start.date && start.date > now) ||
       (end.date && end.date < now) || (start.date && end.date && start.date > end.date)) return false;
+  let hasExplicitFinancialGrant = false;
   if (indexes.directPermission >= 0) {
     const direct = row[indexes.directPermission];
     if (direct === false || String(direct || "").trim().toLowerCase() === "false") return false;
+    if (direct === true) hasExplicitFinancialGrant = true;
   }
   if (indexes.permissions >= 0) {
     const raw = row[indexes.permissions];
@@ -12026,9 +12028,10 @@ function serviceFamilyRelationIsActive_(row, indexes, now) {
       if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) ||
           permissions.permisoFinanciero === false ||
           String(permissions.permisoFinanciero || "").trim().toLowerCase() === "false") return false;
+      if (permissions.permisoFinanciero === true) hasExplicitFinancialGrant = true;
     }
   }
-  return true;
+  return hasExplicitFinancialGrant;
 }
 
 function serviceStudentGuardianIds_(ss, userId) {
