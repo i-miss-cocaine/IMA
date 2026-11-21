@@ -16,6 +16,7 @@ const self=setup({role:"Docente",affiliations:[["A","USR-1","DEP-A","CRG-A",new 
 const cg=x.api.manageDepartmentPositions({subAction:"GET_CARGOS",deptId:"DEP-A",limit:1});assert.equal(cg.total,2);assert.equal(cg.hasMore,true);
 assert.throws(()=>setup({lockBusy:true}).api.manageDepartmentPositions({subAction:"ASSIGN_USER",userId:"USR-1",deptId:"DEP-A",cargoId:"CRG-A"}),/AFFILIATION_LOCK_TIMEOUT/);
 assert.throws(()=>setup().api.manageDepartmentPositions({subAction:"CREATE_DEPT",deptId:"DEP-X",deptNombre:"X",jefaturaUserId:"MISSING"}),/USER_NOT_FOUND/);
+const linkProtected=setup({cargos:[],affiliations:[]});linkProtected.sheets.VinculosDepartamentosInstitucionales=sh(["VinculoID","DepartamentoID","DeptId","Estado"],[["LINK-1","ACA-A","DEP-A","Activo"]]);assert.throws(()=>linkProtected.api.manageDepartmentPositions({subAction:"DEACTIVATE_DEPT",deptId:"DEP-A"}),/DEPARTMENT_HAS_ACTIVE_DEPENDENCIES/);
 const hd=setup();hd.api.manageDepartmentPositions({subAction:"ASSIGN_DEPARTMENT_HEAD",deptId:"DEP-A",jefaturaUserId:"USR-1"});assert.equal(hd.sheets.CatalogoDepartamentos._rows[0][2],"USR-1");
 const catalog=setup({departments:[["DEP-A","A","","Activo",new Date(),""],["DEP-B","B","","Activo",new Date(),""]],cargos:[["CRG-B","DEP-B","Jefe",1,"Activo",new Date()]],affiliations:[["ADS-B","USR-1","DEP-B","CRG-B",new Date(),"","Activa","","HR",new Date()]]});
 assert.throws(()=>catalog.api.manageDepartmentPositions({subAction:"DEACTIVATE_CARGO",cargoId:"CRG-B"}),/CARGO_HAS_ACTIVE_AFFILIATIONS/);

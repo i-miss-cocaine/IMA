@@ -295,7 +295,7 @@ const ROLE_PERMISSIONS = {
     "getHierarchicalConfigurationCatalog", "resolveHierarchicalConfiguration", "getInstitutionParams", "saveInstitutionParam", "saveTeacherJustificationEvidencePolicy", "saveAbsenceJustificationPolicies", "getAcademicYears", "createAcademicYear", "updateAcademicYearStatus", "prepareNewAcademicYear",
     "getAcademicPeriods", "manageAcademicPeriod", "getSubjectCatalog", "createSubjectCatalogItem", "updateSubjectCatalogItem", "getStudyPlans", "createStudyPlan", "getStudyPlanSubjects", "createStudyPlanSubject", "setStudyPlanSubjectStatus",
     "getAcademicOffers", "createAcademicOffer", "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution",
-    "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getAcademicRules", "saveAcademicRule", "getDepartmentAcademicPlanning", "assignDepartmentHead", "getCurricularAnalyticsReport", "getReusableResourceCatalog", "manageReusableResource", "getCurricularEquivalences", "executeCurricularMigration", "registerCurricularAreaExtension", "runCurricularAreaServiceTests", "toggleCurricularAreaStatus", "validateApiContractsTestSuite", "getInstitutionalCatalog", "validateCatalogReference", "generateInstitutionalUUID", "validateInstitutionalIdentifier", "auditInstitutionalIdentifierCollisions", "runConcurrencyAndConsistencySuite", "getPaginatedAcademicHistory", "reconcileRestoredDataIntegrity", "evaluateTransactionalStorageMigrationNeed",
+    "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "getAcademicRules", "saveAcademicRule", "getDepartmentAcademicPlanning", "assignDepartmentHead", "linkInstitutionalDepartment", "getInstitutionalDepartmentLinks", "unlinkInstitutionalDepartment", "getCurricularAnalyticsReport", "getReusableResourceCatalog", "manageReusableResource", "getCurricularEquivalences", "executeCurricularMigration", "registerCurricularAreaExtension", "runCurricularAreaServiceTests", "toggleCurricularAreaStatus", "validateApiContractsTestSuite", "getInstitutionalCatalog", "validateCatalogReference", "generateInstitutionalUUID", "validateInstitutionalIdentifier", "auditInstitutionalIdentifierCollisions", "runConcurrencyAndConsistencySuite", "getPaginatedAcademicHistory", "reconcileRestoredDataIntegrity", "evaluateTransactionalStorageMigrationNeed",
     "getClassroomResources", "saveClassroomResource", "saveClassroomMaintenance", "getStudentSchedule", "getScheduleConflictResolutionAlternatives", "saveScheduleScenario", "getScheduleScenarios", "saveTeacherWorkLoadPreferences", "createSessionException", "getScheduleVersions", "compareScheduleVersions", "restoreScheduleVersion", "getPlanningQualityAndOccupancyReport", "exportBulkClassSchedules", "importBulkClassSchedules", "previewPublishImpact",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "reopenAdmissionRequest", "convertAdmissionToStudent", "scheduleAdmissionInterview", "getAdmissionInterviews", "recordInterviewOutcome", "saveAdmissionEvaluation", "getAdmissionEvaluations", "addToWaitlist", "getWaitlist", "reorderWaitlist", "offerWaitlistSlot", "respondToWaitlistSlot", "resolveAdmissionDuplicate", "getAdmissionAnalyticsReport",
     "getStudentFile", "getStudentFileSummary", "updateStudentFile", "getStudentTimeline", "findDuplicateStudents", "mergeStudentFiles", "getMergePreviewComparison", "unmergeStudentFiles", "getStudentFileAdministrativeReports", "initializeDirectionSecretaryDriveStructure",
@@ -309,7 +309,7 @@ const ROLE_PERMISSIONS = {
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog",
     "getAcademicConfig", "getAcademicHistory", "getAsignaturasActivas", "getWhatsAppLink", "getQuestionBank", "registerStudentEnrollment", "getStudentEnrollmentHistory",
     "getHierarchicalConfigurationCatalog", "resolveHierarchicalConfiguration", "getInstitutionParams", "getAcademicYears", "getAcademicPeriods", "getSubjectCatalog", "getStudyPlans", "getAcademicOffers",
-    "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution", "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "copyClassSchedules", "getTeacherTeachingLoad", "generateAutoSchedules", "recordClassSessionOutcome", "getTeachingHoursSummary", "rescheduleCancelledSession", "getPendingSessionRecoveries", "publishClassSchedules", "getIndividualCalendar", "syncAcademicScheduleIntegrity", "getAcademicAuditLogs", "getReusableResourceCatalog", "manageReusableResource",
+    "getTeacherAssignments", "assignTeacherToClass", "createTeacherSubstitution", "getAcademicCalendar", "createCalendarEvent", "getClassSchedules", "createClassSchedule", "deleteClassSchedule", "copyClassSchedules", "getTeacherTeachingLoad", "generateAutoSchedules", "recordClassSessionOutcome", "getTeachingHoursSummary", "rescheduleCancelledSession", "getPendingSessionRecoveries", "publishClassSchedules", "getIndividualCalendar", "syncAcademicScheduleIntegrity", "getAcademicAuditLogs", "getReusableResourceCatalog", "manageReusableResource", "getInstitutionalDepartmentLinks",
     "getClassroomResources", "saveClassroomResource", "getStudentSchedule",
     "createAdmissionRequest", "getAdmissionRequests", "updateAdmissionStatus", "getStudentFile", "getStudentTimeline", "findDuplicateStudents",
     "getStudentGuardians", "getStudentDocuments", "getStudentDocumentFile", "previewStudentDocument", "getStudentEnrollments", "checkEnrollmentCapacity",
@@ -1657,6 +1657,9 @@ function doPost(e) {
         result = saveCurricularConstraint(payload);
         break;
       case "assignDepartmentHead": result = assignDepartmentHead(payload); break;
+      case "linkInstitutionalDepartment": result = linkInstitutionalDepartment(payload); break;
+      case "getInstitutionalDepartmentLinks": result = getInstitutionalDepartmentLinks(payload); break;
+      case "unlinkInstitutionalDepartment": result = unlinkInstitutionalDepartment(payload); break;
       case "getCurricularAnalyticsReport": result = getCurricularAnalyticsReport(payload); break;
       case "getReusableResourceCatalog": result = getReusableResourceCatalog(payload); break;
       case "manageReusableResource": result = manageReusableResource(payload); break;
@@ -10764,30 +10767,118 @@ function copyClassSchedules(payload) {
 }
 
 // [TAREA-13] [Fase 1 - Planificación de Carga Académica] - Motor de asignación de carga docente por departamento, límites lectivos, asignación de responsables y detección de vacantes.
+
+function getAcademicActiveUserForDepartmentHead_(ss,userId){
+ const id=String(userId||"").trim();if(!id)return null;
+ const sheet=ss.getSheetByName("Usuarios");if(!sheet||sheet.getLastRow()<=1)return null;
+ const data=sheet.getDataRange().getValues(),norm=function(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");},headers=(data[0]||[]).map(norm);
+ const userIndex=headers.findIndex(function(v){return v==="userid"||v==="idusuario";}),stateIndex=headers.findIndex(function(v){return v==="estadocuenta"||v==="estado";});
+ const ui=userIndex<0?0:userIndex,si=stateIndex<0?10:stateIndex,matches=[];
+ for(let i=1;i<data.length;i++)if(String(data[i][ui]||"").trim()===id)matches.push({row:data[i],rowNumber:i+1});
+ if(matches.length!==1)return null;
+ const state=String(matches[0].row[si]||"").trim().toLowerCase();
+ if(["activa","activo","active","enabled","vigente"].indexOf(state)===-1)return null;
+ return {userId:id,rowNumber:matches[0].rowNumber,state:state};
+}
+function getAdministrativeDepartmentForAcademicLink_(ss,deptId){
+ const sheet=ss.getSheetByName("CatalogoDepartamentos");if(!sheet||sheet.getLastRow()<=1)return null;
+ const data=sheet.getDataRange().getValues(),norm=function(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");},headers=(data[0]||[]).map(norm);
+ const idIndex=headers.findIndex(function(v){return v==="deptid"||v==="departamentoid";}),stateIndex=headers.findIndex(function(v){return v==="estado"||v==="status";});
+ if(idIndex<0||stateIndex<0)return null;
+ const target=String(deptId||"").trim().toUpperCase(),matches=[];
+ for(let i=1;i<data.length;i++)if(String(data[i][idIndex]||"").trim().toUpperCase()===target)matches.push(data[i]);
+ if(matches.length!==1)return null;
+ const state=String(matches[0][stateIndex]||"").trim().toLowerCase();
+ return ["activo","active","enabled","vigente"].indexOf(state)!==-1?{deptId:target}:null;
+}
+function getAcademicDepartmentCatalogLinkColumnMap_(sheet){
+ const canonical=["VinculoID","DepartamentoID","DeptId","Estado","CreadoPor","FechaCreacion","FechaActualizacion"];
+ const aliases={linkId:["vinculoid","linkid"],academicDepartmentId:["departamentoid"],administrativeDepartmentId:["deptid","departamentoadministrativoid"],estado:["estado","status"],createdBy:["creadopor"],createdAt:["fechacreacion"],updatedAt:["fechaactualizacion"]};
+ const result=getInstitutionalCatalogHeaderMap_(sheet,canonical,aliases,[]);
+ const missing=["linkId","academicDepartmentId","administrativeDepartmentId","estado"].filter(function(k){return result.map[k]<0;});
+ if(missing.length)throw new Error("DEPARTMENT_LINK_SCHEMA_INVALID:"+missing.join(","));
+ return result.map;
+}
+function linkInstitutionalDepartment(payload){
+ const input=payload||{},identity=getVerifiedAcademicIdentity_(input);
+ if(!identity||identity.authorized!==true)throw new Error("VERIFIED_IDENTITY_REQUIRED");
+ const permission=validateRolePermission("linkInstitutionalDepartment",input);if(!permission||permission.authorized!==true)throw new Error("AUTH_PERMISSION_DENIED");
+ const academicId=String(input.departamentoId||"").trim().toUpperCase(),administrativeId=String(input.deptId||"").trim().toUpperCase();
+ if(!academicId||!administrativeId)throw new Error("DEPARTMENT_LINK_IDS_REQUIRED");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),role=identity.role;
+ let scope=null;if(["Administrador","Desarrollador"].indexOf(role)===-1){scope=getVerifiedAcademicDepartmentScope_(input,ss,identity);if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");if(!scope.institutionWide&&(scope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();}).indexOf(academicId)===-1)throw new Error("RESOURCE_SCOPE_DENIED");}
+ const academic= getInstitutionalDepartmentRecords_(ss).filter(function(item){return item.departmentId===academicId&&item.isActive;});
+ if(academic.length!==1)throw new Error("ACADEMIC_DEPARTMENT_NOT_ACTIVE");
+ if(!getAdministrativeDepartmentForAcademicLink_(ss,administrativeId))throw new Error("ADMINISTRATIVE_DEPARTMENT_NOT_ACTIVE");
+ const lock=LockService.getScriptLock();if(!lock.tryLock(10000))throw new Error("DEPARTMENT_LINK_LOCK_TIMEOUT");
+ try{
+  const sheet=getOrCreateSheet(ss,"VinculosDepartamentosInstitucionales"),map=getAcademicDepartmentCatalogLinkColumnMap_(sheet),rows=sheet.getDataRange().getValues(),matches=[];
+  for(let i=1;i<rows.length;i++)if(String(rows[i][map.academicDepartmentId]||"").trim().toUpperCase()===academicId&&String(rows[i][map.administrativeDepartmentId]||"").trim().toUpperCase()===administrativeId)matches.push({row:rows[i],rowNumber:i+1});
+  if(matches.length>1)throw new Error("DEPARTMENT_LINK_DUPLICATE");
+  if(matches.length===1&&String(matches[0].row[map.estado]||"").trim().toLowerCase()==="activo")return {status:"success",linkId:matches[0].row[map.linkId],idempotent:true,departamentoId:academicId,deptId:administrativeId};
+  const now=new Date();
+  if(matches.length===1){const updated=matches[0].row.slice();updated[map.estado]="Activo";if(map.updatedAt>=0)updated[map.updatedAt]=now;sheet.getRange(matches[0].rowNumber,1,1,updated.length).setValues([updated]);return {status:"success",linkId:updated[map.linkId],idempotent:false,departamentoId:academicId,deptId:administrativeId};}
+  const linkId="DPL-"+Utilities.getUuid().replace(/-/g,"").toUpperCase(),row=new Array(sheet.getLastColumn()).fill("");
+  row[map.linkId]=linkId;row[map.academicDepartmentId]=academicId;row[map.administrativeDepartmentId]=administrativeId;row[map.estado]="Activo";if(map.createdBy>=0)row[map.createdBy]=identity.userId;if(map.createdAt>=0)row[map.createdAt]=now;if(map.updatedAt>=0)row[map.updatedAt]=now;
+  sheet.appendRow(row);
+  try{logStructuredEvent("ACADEMIC","linkInstitutionalDepartment","INFO","DEPARTMENT_CATALOG_LINKED","Vínculo explícito entre departamento académico y administrativo registrado",{linkId:linkId,departamentoId:academicId,deptId:administrativeId},role);}catch(e){}
+  return {status:"success",linkId:linkId,idempotent:false,departamentoId:academicId,deptId:administrativeId};
+ }finally{lock.releaseLock();}
+}
+
+function unlinkInstitutionalDepartment(payload){
+ const input=payload||{},identity=getVerifiedAcademicIdentity_(input);if(!identity||identity.authorized!==true)throw new Error("VERIFIED_IDENTITY_REQUIRED");
+ const permission=validateRolePermission("unlinkInstitutionalDepartment",input);if(!permission||permission.authorized!==true)throw new Error("AUTH_PERMISSION_DENIED");
+ const linkId=String(input.linkId||"").trim();if(!linkId)throw new Error("DEPARTMENT_LINK_ID_REQUIRED");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("VinculosDepartamentosInstitucionales");if(!sheet||sheet.getLastRow()<=1)throw new Error("DEPARTMENT_LINK_NOT_FOUND");
+ const map=getAcademicDepartmentCatalogLinkColumnMap_(sheet),rows=sheet.getDataRange().getValues(),matches=[];
+ for(let i=1;i<rows.length;i++)if(String(rows[i][map.linkId]||"").trim()===linkId)matches.push({row:rows[i],rowNumber:i+1});
+ if(matches.length!==1)throw new Error(matches.length?"DEPARTMENT_LINK_ID_AMBIGUOUS":"DEPARTMENT_LINK_NOT_FOUND");
+ const academicId=String(matches[0].row[map.academicDepartmentId]||"").trim().toUpperCase(),role=identity.role;
+ if(["Administrador","Desarrollador"].indexOf(role)===-1){const scope=getVerifiedAcademicDepartmentScope_(input,ss,identity);if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");if(!scope.institutionWide&&(scope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();}).indexOf(academicId)===-1)throw new Error("RESOURCE_SCOPE_DENIED");}
+ const lock=LockService.getScriptLock();if(!lock.tryLock(10000))throw new Error("DEPARTMENT_LINK_LOCK_TIMEOUT");
+ try{const current=sheet.getRange(matches[0].rowNumber,1,1,sheet.getLastColumn()).getValues()[0];if(String(current[map.estado]||"").trim().toLowerCase()!=="activo")return {status:"success",linkId:linkId,idempotent:true,estado:current[map.estado]};current[map.estado]="Inactivo";if(map.updatedAt>=0)current[map.updatedAt]=new Date();sheet.getRange(matches[0].rowNumber,1,1,current.length).setValues([current]);try{logStructuredEvent("ACADEMIC","unlinkInstitutionalDepartment","INFO","DEPARTMENT_CATALOG_UNLINKED","Vínculo explícito entre departamentos desactivado",{linkId:linkId,departamentoId:academicId},role);}catch(e){}return {status:"success",linkId:linkId,idempotent:false,estado:"Inactivo"};}finally{lock.releaseLock();}
+}
+
+function getInstitutionalDepartmentLinks(payload){
+ const input=payload||{},identity=getVerifiedAcademicIdentity_(input);
+ if(!identity||identity.authorized!==true)throw new Error("VERIFIED_IDENTITY_REQUIRED");
+ const permission=validateRolePermission("getInstitutionalDepartmentLinks",input);if(!permission||permission.authorized!==true)throw new Error("AUTH_PERMISSION_DENIED");
+ const ss=SpreadsheetApp.openById(SPREADSHEET_ID),role=identity.role,academicFilter=String(input.departamentoId||"").trim().toUpperCase(),adminFilter=String(input.deptId||"").trim().toUpperCase();
+ let scope=null;if(["Administrador","Desarrollador"].indexOf(role)===-1){scope=getVerifiedAcademicDepartmentScope_(input,ss,identity);if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");const allowed=(scope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();});if(academicFilter&&!scope.institutionWide&&allowed.indexOf(academicFilter)===-1)throw new Error("RESOURCE_SCOPE_DENIED");}
+ const sheet=ss.getSheetByName("VinculosDepartamentosInstitucionales");if(!sheet||sheet.getLastRow()<=1)return {status:"success",data:[],total:0,limit:50,offset:0,nextOffset:null,hasMore:false};
+ const map=getAcademicDepartmentCatalogLinkColumnMap_(sheet),rows=sheet.getDataRange().getValues(),list=[],allowedIds=scope&&!scope.institutionWide?(scope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();}):null,activeAcademicIds=new Set(getInstitutionalDepartmentRecords_(ss).filter(function(item){return item.isActive;}).map(function(item){return item.departmentId;}));
+ for(let i=rows.length-1;i>=1;i--){const row=rows[i],aid=String(row[map.academicDepartmentId]||"").trim().toUpperCase(),did=String(row[map.administrativeDepartmentId]||"").trim().toUpperCase();if(String(row[map.estado]||"").trim().toLowerCase()!=="activo")continue;if(academicFilter&&aid!==academicFilter)continue;if(adminFilter&&did!==adminFilter)continue;if(allowedIds&&allowedIds.indexOf(aid)===-1)continue;if(!activeAcademicIds.has(aid)||!getAdministrativeDepartmentForAcademicLink_(ss,did))continue;list.push({linkId:row[map.linkId],departamentoId:aid,deptId:did,estado:row[map.estado]});}
+ const limit=Math.min(200,Math.max(1,parseInt(input.limit,10)||50)),offset=Math.max(0,parseInt(input.offset,10)||0),page=list.slice(offset,offset+limit),more=offset+page.length<list.length;
+ return {status:"success",data:page,total:list.length,limit:limit,offset:offset,nextOffset:more?offset+page.length:null,hasMore:more};
+}
+
+
 function assignDepartmentHead(payload) {
-  const { departamentoId, jefeUserId, autorizadoPor } = payload || {};
-  if (!departamentoId || !jefeUserId) throw new Error("departamentoId y jefeUserId son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "DepartamentosAcademicos");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["DepartamentoID", "Nombre", "JefeUserId", "Estado", "FechaActualizacion", "AutorizadoPor"]);
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(departamentoId).trim());
-
-  if (idx !== -1) {
-    sheet.getRange(idx + 1, 3).setValue(jefeUserId);
-    sheet.getRange(idx + 1, 5).setValue(new Date());
-    sheet.getRange(idx + 1, 6).setValue(autorizadoPor || "Dirección");
-  } else {
-    sheet.appendRow([departamentoId, departamentoId, jefeUserId, "Activo", new Date(), autorizadoPor || "Dirección"]);
-  }
-
-  logStructuredEvent("ACADEMIC", "assignDepartmentHead", "INFO", "DEPT_HEAD_ASSIGNED", `Jefe de departamento asignado: ${jefeUserId} a ${departamentoId}`, { departamentoId, jefeUserId }, payload && payload.authRole);
-
-  return { status: "success", message: `Jefe asignado al departamento ${departamentoId} exitosamente.` };
+  const input=payload||{},identity=getVerifiedAcademicIdentity_(input);
+  if(!identity||identity.authorized!==true)throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  const permission=validateRolePermission("assignDepartmentHead",input);if(!permission||permission.authorized!==true)throw new Error("AUTH_PERMISSION_DENIED");
+  const departamentoId=String(input.departamentoId||"").trim().toUpperCase(),jefeUserId=String(input.jefeUserId||"").trim();
+  if(!departamentoId||!jefeUserId)throw new Error("departamentoId y jefeUserId son requeridos.");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),role=identity.role;
+  if(["Administrador","Desarrollador"].indexOf(role)===-1){const scope=getVerifiedAcademicDepartmentScope_(input,ss,identity);if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");if(!scope.institutionWide&&(scope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();}).indexOf(departamentoId)===-1)throw new Error("RESOURCE_SCOPE_DENIED");}
+  const activeUser=getAcademicActiveUserForDepartmentHead_(ss,jefeUserId);if(!activeUser)throw new Error("DEPARTMENT_HEAD_USER_NOT_ACTIVE");
+  const lock=LockService.getScriptLock();if(!lock.tryLock(10000))throw new Error("DEPARTMENT_HEAD_LOCK_TIMEOUT");
+  try{
+    const sheet=getOrCreateSheet(ss,"DepartamentosAcademicos"),map=getInstitutionalDepartmentColumnMap_(sheet),data=sheet.getDataRange().getValues(),matches=[];
+    for(let i=1;i<data.length;i++)if(String(data[i][map.departmentId]||"").trim().toUpperCase()===departamentoId)matches.push({row:data[i],rowNumber:i+1});
+    if(matches.length!==1)throw new Error(matches.length?"ACADEMIC_DEPARTMENT_ID_AMBIGUOUS":"ACADEMIC_DEPARTMENT_NOT_FOUND");
+    const record=matches[0],next=record.row.slice();
+    if(!normalizeInstitutionalCatalogStatus_(next[map.estado]))throw new Error("ACADEMIC_DEPARTMENT_NOT_ACTIVE");
+    if(map.headUserId>=0&&String(next[map.headUserId]||"").trim()===jefeUserId)return {status:"success",departamentoId:departamentoId,jefeUserId:jefeUserId,authorizedBy:identity.userId,idempotent:true,message:"La jefatura ya está asignada."};
+    if(map.headUserId<0){const newColumn=sheet.getLastColumn()+1;sheet.getRange(1,newColumn).setValue("JefeUserID");map.headUserId=newColumn-1;}
+    const headers=sheet.getRange(1,1,1,sheet.getLastColumn()).getValues()[0].map(function(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"");});
+    const updatedAtIndex=headers.indexOf("fechaactualizacion"),authorizedByIndex=headers.indexOf("autorizadopor"),now=new Date();
+    next[map.headUserId]=jefeUserId;if(updatedAtIndex>=0)next[updatedAtIndex]=now;if(authorizedByIndex>=0)next[authorizedByIndex]=identity.userId;
+    sheet.getRange(record.rowNumber,1,1,next.length).setValues([next]);
+    try{logStructuredEvent("ACADEMIC","assignDepartmentHead","INFO","DEPT_HEAD_ASSIGNED","Jefe académico asignado a departamento existente",{departamentoId:departamentoId,jefeUserId:jefeUserId,authorizedBy:identity.userId},role);}catch(e){}
+    return {status:"success",departamentoId:departamentoId,jefeUserId:jefeUserId,authorizedBy:identity.userId,message:"Jefatura académica actualizada."};
+  }finally{lock.releaseLock();}
 }
 
 function getDepartmentAcademicPlanning(payload) {
