@@ -198,6 +198,38 @@ assert.equal(guardianPolicyRuntime.check("getPaymentVouchers", { studentId: "STU
   "USER allows financial access only after the financial permission is explicitly granted");
 
 
+
+const guardianApplicantFn = extractFunction(userSource, "getGuardianApplicants");
+const applicantRows = [
+  ["SolicitudID","Fecha","Ano","Grado","Nombres","Apellidos","Identificacion","Nacimiento","Responsable","Telefono","Email","Estado","Canal","Observaciones","ExpedienteID"],
+  ["APP-OWNED",new Date(),"2027","1","Applicant","Owned","","","Guardian G1","","guardian@example.test","Pendiente","Online","",""],
+  ["APP-NAME-SUBSTRING",new Date(),"2027","1","Applicant","Other","","","G1 Household","","other@example.test","Pendiente","Online","",""],
+  ["APP-OTHER",new Date(),"2027","1","Applicant","Other","","","Other Guardian","","other@example.test","Pendiente","Online","",""]
+];
+const applicantUsers = [
+  ["UserId","Nombre","","","","","Rol","","","PersonaID","Estado"],
+  ["GUARDIAN-1","Guardian","","","","","Padre","","","PERSON-G1","Activo"],
+  ["OTHER-1","Other","","","","","Padre","","","PERSON-O1","Activo"]
+];
+const applicantSheets = {
+  Usuarios: { getDataRange: () => ({ getValues: () => applicantUsers.map(row => row.slice()) }) },
+  SolicitudesAdmision: { getDataRange: () => ({ getValues: () => applicantRows.map(row => row.slice()) }) }
+};
+const applicantRuntime = {
+  SPREADSHEET_ID: "TEST",
+  getUserVerifiedRole: () => "Padre",
+  SpreadsheetApp: { openById: () => ({}) },
+  getOrCreateSheet: (_ss, name) => applicantSheets[name],
+  Date, String, Number, Object, Array
+};
+vm.createContext(applicantRuntime);
+vm.runInContext(guardianApplicantFn + "\\nthis.lookup = getGuardianApplicants;", applicantRuntime);
+const ownedApplicants = applicantRuntime.lookup({ _verifiedUserId: "GUARDIAN-1", userId: "OTHER-1" });
+assert.deepEqual(Array.from(ownedApplicants.data, row => row.solicitudId), ["APP-OWNED"],
+  "guardian applicants are filtered by the exact email on the verified account, not a name substring or payload identity");
+applicantRuntime.getUserVerifiedRole = () => "Estudiante";
+assert.throws(() => applicantRuntime.lookup({ _verifiedUserId: "GUARDIAN-1" }), /GUARDIAN_ROLE_REQUIRED/,
+  "non-guardian roles cannot use guardian applicant ownership lookup");
 const taskSource = fs.readFileSync("backend/task-service/Code.gs", "utf8");
 const taskGuardianFn = extractFunction(taskSource, "getTaskServiceGuardianStudentIds");
 const taskRuntime = {
