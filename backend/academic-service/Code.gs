@@ -15954,54 +15954,70 @@ function resolveAdmissionDuplicate(payload) {
 }
 
 function mergeStudentFiles(payload) {
-  const { targetExpedienteId, sourceExpedienteId, motivo } = payload || {};
+  const request = payload || {};
+  const targetExpedienteId = String(request.targetExpedienteId || "").trim();
+  const sourceExpedienteId = String(request.sourceExpedienteId || "").trim();
   if (!targetExpedienteId || !sourceExpedienteId) throw new Error("targetExpedienteId y sourceExpedienteId son requeridos.");
+  if (targetExpedienteId === sourceExpedienteId) throw new Error("EXPEDIENTE_MERGE_TARGET_MUST_DIFFER");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
-  const expData = expSheet.getDataRange().getValues();
+  const permission = validateRolePermission("mergeStudentFiles", request);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true) throw new Error("VERIFIED_IDENTITY_REQUIRED");
 
-  const targetIdx = expData.findIndex(r => String(r[0]).trim() === String(targetExpedienteId).trim());
-  const sourceIdx = expData.findIndex(r => String(r[0]).trim() === String(sourceExpedienteId).trim());
-
-  if (targetIdx === -1 || sourceIdx === -1) throw new Error("Uno o ambos expedientes no fueron encontrados.");
-
-  // Re-vincular documentos y movimientos del expediente origen al expediente destino
-  const docSheet = getOrCreateSheet(ss, "DocumentosEstudiante");
-  const docData = docSheet.getDataRange().getValues();
-  for (let i = 1; i < docData.length; i++) {
-    if (String(docData[i][1]).trim() === String(sourceExpedienteId).trim()) {
-      docSheet.getRange(i + 1, 2).setValue(targetExpedienteId);
-    }
-  }
-
-  const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
-  const movData = movSheet.getDataRange().getValues();
-  for (let i = 1; i < movData.length; i++) {
-    if (String(movData[i][1]).trim() === String(sourceExpedienteId).trim()) {
-      movSheet.getRange(i + 1, 2).setValue(targetExpedienteId);
-    }
-  }
-
-  // Marcar expediente origen como Fusionado/Inactivo
-  expSheet.getRange(sourceIdx + 1, 8).setValue("Fusionado");
-  expSheet.getRange(sourceIdx + 1, 11).setValue(`Fusionado con expediente principal ${targetExpedienteId}. Motivo: ${motivo || 'N/A'}`);
-
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("EXPEDIENTE_MERGE_LOCK_BUSY");
   try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+    if (!expSheet) throw new Error("RESOURCE_NOT_FOUND");
+    const expData = expSheet.getDataRange().getValues();
+    const targetMatches = [], sourceMatches = [];
+    for (let i = 1; i < expData.length; i++) {
+      const id = String(expData[i][0] || "").trim();
+      if (id === targetExpedienteId) targetMatches.push(i);
+      if (id === sourceExpedienteId) sourceMatches.push(i);
+    }
+    if (!targetMatches.length || !sourceMatches.length) throw new Error("RESOURCE_NOT_FOUND");
+    if (targetMatches.length !== 1 || sourceMatches.length !== 1) throw new Error("RESOURCE_AMBIGUOUS");
+    const targetIdx = targetMatches[0], sourceIdx = sourceMatches[0];
+    if (String(expData[sourceIdx][7] || "").trim() === "Fusionado") throw new Error("EXPEDIENTE_ALREADY_MERGED");
+
+    const targetAccess = assertStudentExpedienteScopeAccess_(request, ss, expSheet, expData[targetIdx], "permisoDocumental", "UPDATE");
+    if (!targetAccess || targetAccess.authorized !== true) throw new Error(targetAccess && targetAccess.code || "RESOURCE_SCOPE_DENIED");
+    const sourceAccess = assertStudentExpedienteScopeAccess_(request, ss, expSheet, expData[sourceIdx], "permisoDocumental", "UPDATE");
+    if (!sourceAccess || sourceAccess.authorized !== true) throw new Error(sourceAccess && sourceAccess.code || "RESOURCE_SCOPE_DENIED");
+
+    const docSheet = getOrCreateSheet(ss, "DocumentosEstudiante");
+    const docData = docSheet.getDataRange().getValues();
+    const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
+    const movData = movSheet.getDataRange().getValues();
+    for (let i = 1; i < docData.length; i++) {
+      if (String(docData[i][1] || "").trim() === sourceExpedienteId) {
+        docSheet.getRange(i + 1, 2).setValue(targetExpedienteId);
+      }
+    }
+    for (let i = 1; i < movData.length; i++) {
+      if (String(movData[i][1] || "").trim() === sourceExpedienteId) {
+        movSheet.getRange(i + 1, 2).setValue(targetExpedienteId);
+      }
+    }
+
+    expSheet.getRange(sourceIdx + 1, 8).setValue("Fusionado");
+    expSheet.getRange(sourceIdx + 1, 11).setValue("Fusionado con expediente principal " + targetExpedienteId + ". Motivo: " + (request.motivo || "N/A"));
     const mergeSheet = getOrCreateSheet(ss, "FusionesExpedientes");
     mergeSheet.appendRow([
-      `FUS-${Date.now()}`,
-      targetExpedienteId,
-      sourceExpedienteId,
-      motivo || "Fusión de expedientes duplicados",
-      (payload && payload.authUserId) || "Secretaría",
-      new Date().toISOString()
+      "FUS-" + Date.now(), targetExpedienteId, sourceExpedienteId,
+      request.motivo || "Fusión de expedientes duplicados", actor.userId, new Date().toISOString()
     ]);
-  } catch (_) {}
+    logStructuredEvent("ACADEMIC", "mergeStudentFiles", "WARN", "FILES_MERGED",
+      "Expediente " + sourceExpedienteId + " fusionado en " + targetExpedienteId,
+      { targetExpedienteId, sourceExpedienteId, motivo: request.motivo }, actor.role);
 
-  logStructuredEvent("ACADEMIC", "mergeStudentFiles", "WARN", "FILES_MERGED", `Expediente ${sourceExpedienteId} fusionado en ${targetExpedienteId}`, { targetExpedienteId, sourceExpedienteId, motivo }, payload && payload.authRole);
-
-  return { status: "success", message: `Expedientes fusionados correctamente. ${sourceExpedienteId} se ha consolidado en ${targetExpedienteId}.` };
+    return { status: "success", message: "Expedientes fusionados correctamente. " + sourceExpedienteId + " se ha consolidado en " + targetExpedienteId + "." };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // [TAREA-F6-025] [Fase 6: Expediente Institucional y Ciclo de Vida] - Cuadro comparativo previo a fusión con resaltado de contradicciones e inventario de entidades a transferir
@@ -16059,46 +16075,54 @@ function getMergePreviewComparison(payload) {
 
 // [TAREA-F6-025] [Fase 6: Expediente Institucional y Ciclo de Vida] - Procedimiento administrativo de reversión y desvinculación controlada de expedientes fusionados erróneamente
 function unmergeStudentFiles(payload) {
-  const { mergeId, sourceExpedienteId, motivoJustificado } = payload || {};
+  const request = payload || {};
+  const sourceExpedienteId = String(request.sourceExpedienteId || "").trim();
+  const motivoJustificado = String(request.motivoJustificado || "").trim();
   if (!sourceExpedienteId) throw new Error("sourceExpedienteId es obligatorio para desvincular un expediente.");
-  if (!motivoJustificado || String(motivoJustificado).trim().length < 10) {
-    throw new Error("Debe proporcionar una justificación motivada de al menos 10 caracteres.");
-  }
+  if (motivoJustificado.length < 10) throw new Error("Debe proporcionar una justificación motivada de al menos 10 caracteres.");
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
-  const expData = expSheet.getDataRange().getValues();
+  const permission = validateRolePermission("unmergeStudentFiles", request);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true) throw new Error("VERIFIED_IDENTITY_REQUIRED");
 
-  const sourceIdx = expData.findIndex(r => String(r[0]).trim() === String(sourceExpedienteId).trim());
-  if (sourceIdx === -1) throw new Error(`Expediente origen ${sourceExpedienteId} no encontrado.`);
-
-  // 1. Restituir estado del expediente origen a Activo
-  expSheet.getRange(sourceIdx + 1, 8).setValue("Activo");
-  expSheet.getRange(sourceIdx + 1, 11).setValue(`Desvinculación/Reversión de fusión ejecutada por ${payload && payload.authUserId || 'Secretaría'}. Motivo: ${motivoJustificado}`);
-
-  // 2. Registrar evento en HistorialCambiosEntidad
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("EXPEDIENTE_UNMERGE_LOCK_BUSY");
   try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+    if (!expSheet) throw new Error("RESOURCE_NOT_FOUND");
+    const expData = expSheet.getDataRange().getValues();
+    const matches = [];
+    for (let i = 1; i < expData.length; i++) {
+      if (String(expData[i][0] || "").trim() === sourceExpedienteId) matches.push(i);
+    }
+    if (!matches.length) throw new Error("RESOURCE_NOT_FOUND");
+    if (matches.length !== 1) throw new Error("RESOURCE_AMBIGUOUS");
+    const sourceIdx = matches[0];
+    if (String(expData[sourceIdx][7] || "").trim() !== "Fusionado") throw new Error("EXPEDIENTE_NOT_MERGED");
+
+    const access = assertStudentExpedienteScopeAccess_(request, ss, expSheet, expData[sourceIdx], "permisoDocumental", "UPDATE");
+    if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
+
+    expSheet.getRange(sourceIdx + 1, 8).setValue("Activo");
+    expSheet.getRange(sourceIdx + 1, 11).setValue("Desvinculación/Reversión de fusión ejecutada por " + actor.userId + ". Motivo: " + motivoJustificado);
     const histSheet = getOrCreateSheet(ss, "HistorialCambiosEntidad");
     histSheet.appendRow([
-      `HIST-${Date.now()}`,
-      "ExpedientesEstudiantes",
-      sourceExpedienteId,
-      "ReversionFusion",
-      "Fusionado -> Activo",
-      (payload && payload.authUserId) || "Secretaría",
-      new Date().toISOString(),
-      motivoJustificado
+      "HIST-" + Date.now(), "ExpedientesEstudiantes", sourceExpedienteId,
+      "ReversionFusion", "Fusionado -> Activo", actor.userId, new Date().toISOString(), motivoJustificado
     ]);
-  } catch (_) {}
+    logStructuredEvent("ACADEMIC", "unmergeStudentFiles", "WARN", "FILES_UNMERGED",
+      "Fusión desvinculada para expediente " + sourceExpedienteId,
+      { sourceExpedienteId, mergeId: request.mergeId, motivoJustificado }, actor.role);
 
-  logStructuredEvent("ACADEMIC", "unmergeStudentFiles", "WARN", "FILES_UNMERGED", `Fusión desvinculada para expediente ${sourceExpedienteId}`, { sourceExpedienteId, mergeId, motivoJustificado }, payload && payload.authRole);
-
-  return {
-    status: "success",
-    sourceExpedienteId: sourceExpedienteId,
-    nuevoEstado: "Activo",
-    message: `Expediente ${sourceExpedienteId} restaurado a estado Activo y desvinculado correctamente.`
-  };
+    return {
+      status: "success", sourceExpedienteId, nuevoEstado: "Activo",
+      message: "Expediente " + sourceExpedienteId + " restaurado a estado Activo y desvinculado correctamente."
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // [TAREA-F6-026] [Fase 6: Expediente Institucional y Ciclo de Vida] - Catálogo de informes administrativos con exportación controlada y trazabilidad de descargas PII
