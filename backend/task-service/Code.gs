@@ -1377,11 +1377,16 @@ function getTaskServiceUserProfile(userId) {
 }
 function getTaskServiceGuardianStudentIds(guardianUserId) {
   if (!guardianUserId) return [];
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), expMap = {};
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID), expMap = Object.create(null);
   const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
-  if (expSheet) expSheet.getDataRange().getValues().slice(1).forEach(row => { if (row[0]) expMap[String(row[0]).trim()] = String(row[1] || row[0]).trim(); });
   const relationSheet = ss.getSheetByName("RelacionesFamiliares");
-  if (!relationSheet) return [];
+  if (!expSheet || !relationSheet) return [];
+  expSheet.getDataRange().getValues().slice(1).forEach(row => {
+    const expedienteId = String(row[0] || "").trim();
+    if (!expedienteId) return;
+    if (Object.prototype.hasOwnProperty.call(expMap, expedienteId)) expMap[expedienteId] = null;
+    else expMap[expedienteId] = String(row[1] || "").trim() || null;
+  });
   const now = Date.now(), candidates = [];
   relationSheet.getDataRange().getValues().slice(1).forEach(row => {
     if (String(row[2] || "").trim() !== String(guardianUserId).trim()) return;
@@ -1402,7 +1407,7 @@ function getTaskServiceGuardianStudentIds(guardianUserId) {
     }
     if (permissions.permisoAcademico === false) return;
     const relationId = String(row[0] || "").trim(), expedienteId = String(row[1] || "").trim();
-    const studentId = expMap[expedienteId] || expedienteId;
+    const studentId = expMap[expedienteId];
     if (relationId && studentId) candidates.push({ relationId, studentId });
   });
   const relationCounts = Object.create(null), studentCounts = Object.create(null);

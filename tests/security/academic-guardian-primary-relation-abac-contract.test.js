@@ -33,12 +33,12 @@ const legacyRelations = [
 ];
 const legacyGuardians = [["ResponsableID","PersonaID"],["REL-G","PERSON-G"]];
 function sheet(rows) {
-  return { getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }) };
+  return { getLastRow: () => rows.length, getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }) };
 }
 function runtime(primaryRows, options = {}) {
   const map = {
     RelacionesFamiliares: options.missingPrimary ? null : sheet(primaryRows || [primaryHeaders]),
-    RelacionesEstudianteTutor: options.missingLegacy ? null : sheet(legacyRelations),
+    RelacionesEstudianteTutor: options.missingLegacy ? null : sheet(options.legacyRows || legacyRelations),
     ResponsablesTutores: options.missingLegacy ? null : sheet(legacyGuardians)
   };
   const context = {
@@ -80,12 +80,22 @@ assert.equal(check(ctx).authorized, false,
 ctx = runtime([primaryHeaders, validPrimary, validPrimary]);
 assert.equal(check(ctx).authorized, false,
   "duplicate active primary relationships must deny");
+ctx = runtime([primaryHeaders, validPrimary,
+  ["REL-1","EXP-OTHER","GUARD-1","Padre","Verificada","","","",JSON.stringify({ permisoAcademico: true })]]);
+assert.equal(check(ctx).authorized, false,
+  "duplicate primary relationship IDs across students must deny");
 ctx = runtime([primaryHeaders, ["REL-1","EXP-OTHER","GUARD-1","Padre","Verificada","","","",JSON.stringify({ permisoAcademico: true })]]);
 assert.equal(check(ctx).authorized, false,
   "a primary relationship to another student prevents legacy fallback");
 ctx = runtime([primaryHeaders]);
 assert.equal(check(ctx).authorized, true,
   "legacy relationship is used only when no primary relationship exists for this guardian");
+ctx = runtime([primaryHeaders], { legacyRows: [
+  legacyRelations[0], legacyRelations[1],
+  ["LEG-1","EXP-OTHER","REL-G","Padre","","","","","SI","Verificada"]
+] });
+assert.equal(check(ctx).authorized, false,
+  "duplicate legacy relationship IDs must deny");
 ctx = runtime(null, { missingPrimary: true });
 assert.equal(check(ctx).authorized, true,
   "legacy relationship remains available when the primary sheet is absent");
@@ -93,4 +103,20 @@ ctx = runtime([primaryHeaders, ["REL-1","EXP-1","GUARD-1","Padre","Revocada","",
 assert.equal(check(ctx).authorized, false,
   "revoked primary relationship must not be bypassed by an active legacy row");
 
+
+const identityFn = extractFunction(source, "getStudentPersonIdForUser_");
+const identityRuntime = { ss: { getSheetByName: () => sheet([
+  ["UserId","PersonaID"],["GUARD-1","PERSON-G"]
+]) }, String };
+vm.createContext(identityRuntime);
+vm.runInContext(identityFn + "\nthis.resolve = getStudentPersonIdForUser_;", identityRuntime);
+assert.equal(identityRuntime.resolve(identityRuntime.ss, "GUARD-1"), "PERSON-G",
+  "unique verified user-to-person mapping resolves");
+const duplicateIdentityRuntime = { ss: { getSheetByName: () => sheet([
+  ["UserId","PersonaID"],["GUARD-1","PERSON-G"],["GUARD-1","PERSON-OTHER"]
+]) }, String };
+vm.createContext(duplicateIdentityRuntime);
+vm.runInContext(identityFn + "\nthis.resolve = getStudentPersonIdForUser_;", duplicateIdentityRuntime);
+assert.equal(duplicateIdentityRuntime.resolve(duplicateIdentityRuntime.ss, "GUARD-1"), "",
+  "duplicate user-to-person mappings fail closed");
 process.stdout.write("academic-guardian-primary-relation-abac-contract: all assertions passed\n");

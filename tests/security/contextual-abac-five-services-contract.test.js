@@ -166,6 +166,31 @@ assert.deepEqual(Array.from(taskRuntime.lookup("GUARDIAN-1")), [],
   "TASK denies ambiguous duplicate relationship IDs instead of deduplicating them into a grant");
 familyRows.pop();
 
+const duplicateExpedienteRows = expedienteRows.concat([expedienteRows[1]]);
+const duplicateMappingTaskRuntime = {
+  SPREADSHEET_ID: "TEST",
+  SpreadsheetApp: { openById: () => ({ getSheetByName: name =>
+    name === "ExpedientesEstudiantes" ? sheet(duplicateExpedienteRows) :
+      (name === "RelacionesFamiliares" ? sheet(familyRows) : null)
+  }) },
+  Date, String, Number, Object, Array, JSON
+};
+vm.createContext(duplicateMappingTaskRuntime);
+vm.runInContext(taskGuardianFn + "\nthis.lookup = getTaskServiceGuardianStudentIds;", duplicateMappingTaskRuntime);
+assert.deepEqual(Array.from(duplicateMappingTaskRuntime.lookup("GUARDIAN-1")), [],
+  "TASK denies ambiguous expediente-to-student mappings");
+const missingExpedienteTaskRuntime = {
+  SPREADSHEET_ID: "TEST",
+  SpreadsheetApp: { openById: () => ({ getSheetByName: name =>
+    name === "RelacionesFamiliares" ? sheet(familyRows) : null
+  }) },
+  Date, String, Number, Object, Array, JSON
+};
+vm.createContext(missingExpedienteTaskRuntime);
+vm.runInContext(taskGuardianFn + "\nthis.lookup = getTaskServiceGuardianStudentIds;", missingExpedienteTaskRuntime);
+assert.deepEqual(Array.from(missingExpedienteTaskRuntime.lookup("GUARDIAN-1")), [],
+  "TASK fails closed when expediente ownership source is unavailable");
+
 const examSource = fs.readFileSync("backend/exam-service/Code.gs", "utf8");
 const examGuardianFn = extractFunction(examSource, "getVerifiedGuardianStudentIds_");
 const examRuntime = {
@@ -184,6 +209,32 @@ assert.deepEqual(Array.from(examRuntime.lookup(examSheets, "GUARDIAN-1")), [],
   "EXAM denies ambiguous duplicate relationship IDs instead of deduplicating them into a grant");
 familyRows.pop();
 
+const duplicateExamMappingSheets = {
+  getSheetByName: name => name === "ExpedientesEstudiantes" ? sheet(duplicateExpedienteRows) :
+    (name === "RelacionesFamiliares" ? sheet(familyRows) : null)
+};
+assert.deepEqual(Array.from(examRuntime.lookup(duplicateExamMappingSheets, "GUARDIAN-1")), [],
+  "EXAM denies ambiguous expediente-to-student mappings");
+
+const legacyExamRows = [
+  ["RelacionID","ExpedienteID","ResponsableID","","","","","","Portal","Estado"],
+  ["LEG-1","STU-BLOCKED","GUARDIAN-1","","","","","","NO","Activa"],
+  ["LEG-2","STU-LEGACY","GUARDIAN-1","","","","","","SI","Verificada"]
+];
+const legacyExamSheets = {
+  getSheetByName: name => name === "ExpedientesEstudiantes" ? sheet([expedienteRows[0]]) :
+    (name === "RelacionesFamiliares" ? sheet([familyRows[0]]) :
+      (name === "RelacionesEstudianteTutor" ? sheet(legacyExamRows) : null))
+};
+assert.deepEqual(Array.from(examRuntime.lookup(legacyExamSheets, "GUARDIAN-1")), ["STU-LEGACY"],
+  "EXAM legacy fallback requires active relationship and portal permission");
+const duplicateLegacyExamSheets = {
+  getSheetByName: name => name === "ExpedientesEstudiantes" ? sheet([expedienteRows[0]]) :
+    (name === "RelacionesFamiliares" ? sheet([familyRows[0]]) :
+      (name === "RelacionesEstudianteTutor" ? sheet(legacyExamRows.concat([legacyExamRows[2]])) : null))
+};
+assert.deepEqual(Array.from(examRuntime.lookup(duplicateLegacyExamSheets, "GUARDIAN-1")), [],
+  "EXAM legacy fallback denies duplicate relationship records");
 
 const accountingFamilyUsers = [
   ["UserId","PersonaID","Rol","Estado","Unused5","Unused6","Unused7","Unused8","Unused9","Unused10"],

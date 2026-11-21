@@ -4110,14 +4110,21 @@ function getVerifiedAcademicGuardianDepartmentScope_(payload, ss, guardian, stud
 }
 
 function getStudentPersonIdForUser_(ss, userId) {
-  const sheet = ss.getSheetByName("Usuarios");
-  if (!sheet || sheet.getLastRow() < 2) return "";
-  const values = sheet.getDataRange().getValues();
-  const headers = (values[0] || []).map(function(v) { return String(v || "").trim().toLowerCase(); });
-  const userIdx = headers.indexOf("userid") >= 0 ? headers.indexOf("userid") : 0;
-  const personIdx = headers.indexOf("personaid") >= 0 ? headers.indexOf("personaid") : 9;
-  const row = values.slice(1).find(function(r) { return String(r[userIdx] || "").trim() === String(userId || "").trim(); });
-  return row ? String(row[personIdx] || "").trim() : "";
+  const target = String(userId || "").trim();
+  if (!ss || !target) return "";
+  try {
+    const sheet = ss.getSheetByName("Usuarios");
+    if (!sheet || sheet.getLastRow() < 2) return "";
+    const values = sheet.getDataRange().getValues();
+    const headers = (values[0] || []).map(function(v) { return String(v || "").trim().toLowerCase(); });
+    const userIdx = headers.indexOf("userid") >= 0 ? headers.indexOf("userid") : 0;
+    const personIdx = headers.indexOf("personaid") >= 0 ? headers.indexOf("personaid") : 9;
+    const matches = values.slice(1).filter(function(row) { return String(row[userIdx] || "").trim() === target; });
+    if (matches.length !== 1) return "";
+    return String(matches[0][personIdx] || "").trim();
+  } catch (_) {
+    return "";
+  }
 }
 
 function getStudentIdentityForPerson_(ss, personId) {
@@ -4239,6 +4246,13 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
       });
       if (matchingPrimary.length !== 1) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
       const relation = matchingPrimary[0];
+      const relationId = String(relation[0] || "").trim();
+      const relationIdCounts = Object.create(null);
+      primaryValues.slice(1).forEach(function(row) {
+        const id = String(row[0] || "").trim();
+        if (id) relationIdCounts[id] = (relationIdCounts[id] || 0) + 1;
+      });
+      if (!relationId || relationIdCounts[relationId] !== 1) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
       const relationState = String(relation[4] || "").trim().toUpperCase();
       if (["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(relationState) === -1) {
         return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
@@ -4277,6 +4291,11 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
       if (!relations || !guardians) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
       const relRows = relations.getDataRange().getValues().slice(1);
       const guardianRows = guardians.getDataRange().getValues().slice(1);
+      const legacyRelationIdCounts = Object.create(null);
+      relRows.forEach(function(row) {
+        const id = String(row[0] || "").trim();
+        if (id) legacyRelationIdCounts[id] = (legacyRelationIdCounts[id] || 0) + 1;
+      });
       const legacyMatches = relRows.filter(function(row) {
         if (String(row[1] || "").trim() !== expedienteId) return false;
         const state = String(row[9] || "").trim().toUpperCase();
@@ -4288,7 +4307,11 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
         });
         return guardianMatches.length === 1 && String(guardianMatches[0][1] || "").trim() === actorPersonId;
       });
-      if (legacyMatches.length !== 1) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+      if (legacyMatches.length !== 1 ||
+          !String(legacyMatches[0][0] || "").trim() ||
+          legacyRelationIdCounts[String(legacyMatches[0][0] || "").trim()] !== 1) {
+        return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+      }
     }
     const studentIdentity = getStudentIdentityForPerson_(ss, personId);
     if (!studentIdentity || !studentIdentity.userId || !studentIdentity.role) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };

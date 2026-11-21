@@ -2343,8 +2343,13 @@ function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
   const statusAllowed = value => ["VERIFICADA", "ACTIVA", "APROBADA"].indexOf(String(value || "").trim().toUpperCase()) !== -1;
   const expSheet = ss && ss.getSheetByName("ExpedientesEstudiantes");
   const expRows = expSheet ? expSheet.getDataRange().getValues().slice(1) : [];
-  const expToUser = {};
-  expRows.forEach(row => { if (row[0]) expToUser[String(row[0]).trim()] = String(row[1] || row[0]).trim(); });
+  const expToUser = Object.create(null);
+  expRows.forEach(row => {
+    const expedienteId = String(row[0] || "").trim();
+    if (!expedienteId) return;
+    if (Object.prototype.hasOwnProperty.call(expToUser, expedienteId)) expToUser[expedienteId] = null;
+    else expToUser[expedienteId] = String(row[1] || "").trim() || null;
+  });
   const familySheet = ss && ss.getSheetByName("RelacionesFamiliares");
   const familyRows = familySheet ? familySheet.getDataRange().getValues().slice(1) : [];
   const primaryTutorRows = familyRows.filter(row => String(row[2] || "").trim() === tutorId);
@@ -2361,13 +2366,13 @@ function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
   const relationIdCounts = Object.create(null), studentIdCounts = Object.create(null);
   activePrimaryRows.forEach(row => {
     const relationId = String(row[0] || "").trim();
-    const studentId = expToUser[String(row[1] || "").trim()] || String(row[1] || "").trim();
+    const studentId = expToUser[String(row[1] || "").trim()];
     if (relationId) relationIdCounts[relationId] = (relationIdCounts[relationId] || 0) + 1;
     if (studentId) studentIdCounts[studentId] = (studentIdCounts[studentId] || 0) + 1;
   });
   let studentIds = activePrimaryRows.filter(row => {
     const relationId = String(row[0] || "").trim();
-    const studentId = expToUser[String(row[1] || "").trim()] || String(row[1] || "").trim();
+    const studentId = expToUser[String(row[1] || "").trim()];
     if (!relationId || !studentId || relationIdCounts[relationId] !== 1 || studentIdCounts[studentId] !== 1) return false;
     if (row[8] === "" || row[8] === null || row[8] === undefined) return true;
     try {
@@ -2377,14 +2382,31 @@ function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
     } catch (_) {
       return false;
     }
-  }).map(row => expToUser[String(row[1] || "").trim()] || String(row[1] || "").trim()).filter(Boolean);
+  }).map(row => expToUser[String(row[1] || "").trim()] || "").filter(Boolean);
   // El esquema legado solo se consulta si el tutor no tiene ninguna fila en la fuente primaria.
   // Una relación revocada/pendiente en RelacionesFamiliares nunca se reactiva por fallback.
   if (!primaryTutorRows.length) {
     const legacySheet = ss && ss.getSheetByName("RelacionesEstudianteTutor");
     const legacyRows = legacySheet ? legacySheet.getDataRange().getValues().slice(1) : [];
-    studentIds = legacyRows.filter(row => String(row[2] || "").trim() === tutorId && statusAllowed(row[9]))
-      .map(row => String(row[1] || "").trim()).filter(Boolean);
+    const portalAllowed = value => ["SI", "SÍ", "TRUE", "1", "ACTIVO", "ACTIVA"].indexOf(String(value || "").trim().toUpperCase()) !== -1;
+    const legacyCandidates = legacyRows.filter(row => {
+      if (String(row[2] || "").trim() !== tutorId || !statusAllowed(row[9]) || !portalAllowed(row[8]) || !isCurrentRelation(row)) return false;
+      return true;
+    });
+    const legacyRelationCounts = Object.create(null), legacyStudentCounts = Object.create(null);
+    legacyCandidates.forEach(row => {
+      const relationId = String(row[0] || "").trim(), studentId = String(row[1] || "").trim();
+      if (relationId) legacyRelationCounts[relationId] = (legacyRelationCounts[relationId] || 0) + 1;
+      if (studentId) legacyStudentCounts[studentId] = (legacyStudentCounts[studentId] || 0) + 1;
+    });
+    studentIds = legacyCandidates.filter(row => {
+      const relationId = String(row[0] || "").trim(), studentId = String(row[1] || "").trim();
+      return !!relationId && !!studentId && legacyRelationCounts[relationId] === 1 && legacyStudentCounts[studentId] === 1;
+    }).map(row => {
+      const id = String(row[1] || "").trim();
+      if (Object.prototype.hasOwnProperty.call(expToUser, id)) return expToUser[id] || "";
+      return id;
+    }).filter(Boolean);
   }
   return Array.from(new Set(studentIds));
 }
