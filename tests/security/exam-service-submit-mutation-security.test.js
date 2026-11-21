@@ -87,6 +87,13 @@ test("revoked or changed student context is denied before submission writes", ()
  assert.equal(x.state.workerCalls,0); assert.equal(x.state.releases,1);
  assert.deepEqual(x.events,["permission","identity","lock","permission","identity","context","release"]);
 });
+test("session identity revoked while waiting for lock is denied", () => {
+ const x=submitRuntime({actors:[{authorized:true,userId:"STUDENT-1",role:"Estudiante"},{authorized:false,userId:"",role:""}]});
+ assert.equal(x.error,"RESOURCE_NOT_AVAILABLE");
+ assert.equal(x.state.workerCalls,0); assert.equal(x.state.releases,1);
+ assert.deepEqual(x.events,["permission","identity","lock","permission","identity","release"]);
+ assert.equal(x.state.contextCalls || 0,0);
+});
 test("Alumno remains accepted", () => { const x=submitRuntime({actor:{authorized:true,userId:"A1",role:"Alumno"}}); assert.equal(x.error,undefined); assert.equal(x.state.workerCalls,1); });
 test("lock timeout does not invoke worker or revalidate", () => { const x=submitRuntime({timeout:true}); assert.equal(x.error,"EXAM_SUBMISSION_LOCK_TIMEOUT"); assert.deepEqual(x.events,["permission","identity","lock"]); assert.equal(x.state.workerCalls,0); assert.equal(x.state.releases,0); assert.equal(x.state.permissionCalls,1); assert.equal(x.state.identityCalls,1); });
 test("shared exam context rejects invalid or incomplete identity before Sheets", () => {
