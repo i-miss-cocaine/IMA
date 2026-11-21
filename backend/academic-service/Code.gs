@@ -17492,20 +17492,67 @@ function renewStudentEnrollment(payload) {
 
 // [REQ-EXP-008] [Fase 1: Registro y Expediente de Estudiantes] - Service backend endpoints (changeStudentSection, recordStudentTransfer, recordStudentWithdrawal, processStudentReentry) para la gestión de estados y movilidad estudiantil.
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Cambio de sección con validación de estado del expediente, capacidad y registro inmutable
+function assertAcademicStudentMutationAccess_(action, payload, ss, expedienteId, userId) {
+  const request = payload || {};
+  const permission = validateRolePermission(action, request);
+  if (!permission || permission.authorized !== true) throw new Error("AUTH_PERMISSION_DENIED");
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true) throw new Error("VERIFIED_IDENTITY_REQUIRED");
+
+  const sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesEstudiantes") : null;
+  if (!sheet) throw new Error("RESOURCE_NOT_FOUND");
+  const data = sheet.getDataRange().getValues();
+  const requestedExpedienteId = String(expedienteId || "").trim();
+  const requestedUserId = String(userId || "").trim();
+  if (!requestedExpedienteId && !requestedUserId) throw new Error("STUDENT_RESOURCE_TARGET_REQUIRED");
+  const personId = requestedUserId ? getStudentPersonIdForUser_(ss, requestedUserId) : "";
+  if (requestedUserId && !personId) throw new Error("RESOURCE_OWNER_UNRESOLVED");
+
+  const matches = data.slice(1).filter(row =>
+    (!requestedExpedienteId || String(row[0] || "").trim() === requestedExpedienteId) &&
+    (!personId || String(row[1] || "").trim() === personId)
+  );
+  if (!matches.length) throw new Error("RESOURCE_NOT_FOUND");
+  if (matches.length !== 1) throw new Error("RESOURCE_AMBIGUOUS");
+
+  const row = matches[0];
+  const studentIdentity = getStudentIdentityForPerson_(ss, row[1]);
+  if (!studentIdentity || !studentIdentity.userId || (requestedUserId && studentIdentity.userId !== requestedUserId)) {
+    throw new Error("RESOURCE_OWNER_UNRESOLVED");
+  }
+  const access = assertStudentExpedienteScopeAccess_(request, ss, sheet, row, "permisoAcademico", "UPDATE");
+  if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
+  return {
+    actor: actor,
+    sheet: sheet,
+    data: data,
+    row: row,
+    index: data.indexOf(row),
+    expedienteId: String(row[0] || "").trim(),
+    userId: studentIdentity.userId,
+    personId: String(row[1] || "").trim()
+  };
+}
+
 function changeStudentSection(payload) {
-  const { expedienteId, userId, anolectivo, nuevaSeccion, motivo, fechaEfectiva } = payload || {};
+  const request = payload || {};
+  const { expedienteId: requestedExpedienteId, userId: requestedUserId, anolectivo, nuevaSeccion, motivo, fechaEfectiva } = request;
   if ((!expedienteId && !userId) || !nuevaSeccion) throw new Error("Expediente/userId y nuevaSeccion son requeridos.");
 
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente la reubicación de sección.");
   try {
-    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const resource = assertAcademicStudentMutationAccess_("changeStudentSection", request, ss, requestedExpedienteId, requestedUserId);
+    const actor = resource.actor;
+    const expedienteId = resource.expedienteId;
+    const userId = resource.userId;
+    advanceSaceAcademicSourceRevisionLocked_();
     const targetAno = anolectivo || "2026";
 
-    let sUserId = userId ? String(userId).trim() : "";
-    let sExpId = expedienteId ? String(expedienteId).trim() : "";
+    let sUserId = userId;
+    let sExpId = expedienteId;
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
     const expData = expSheet.getDataRange().getValues();
 
@@ -17559,7 +17606,7 @@ function changeStudentSection(payload) {
       nuevaSeccion,
       fechaEf,
       motivo || "Reubicación de Sección",
-      (payload && payload.userId) || "Secretaría",
+      actor.userId,
       "Confirmado"
     ]);
 
@@ -18031,19 +18078,24 @@ function getAdmissionAnalyticsReport(payload) {
 
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Registro de traslado externo con diferenciación de estado de trámite y actualización de expediente
 function recordStudentTransfer(payload) {
-  const { expedienteId, userId, anolectivo, institucionDestino, motivo, estadoTramite, fechaSalidaEfectiva } = payload || {};
+  const request = payload || {};
+  const { expedienteId: requestedExpedienteId, userId: requestedUserId, anolectivo, institucionDestino, motivo, estadoTramite, fechaSalidaEfectiva } = request;
   if (!expedienteId && !userId) throw new Error("expedienteId o userId requerido.");
 
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente el registro del traslado.");
   try {
-    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const resource = assertAcademicStudentMutationAccess_("recordStudentTransfer", request, ss, requestedExpedienteId, requestedUserId);
+    const actor = resource.actor;
+    const expedienteId = resource.expedienteId;
+    const userId = resource.userId;
+    advanceSaceAcademicSourceRevisionLocked_();
     const targetAno = anolectivo || "2026";
 
-    let sUserId = userId ? String(userId).trim() : "";
-    let sExpId = expedienteId ? String(expedienteId).trim() : "";
+    let sUserId = userId;
+    let sExpId = expedienteId;
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
     const expData = expSheet.getDataRange().getValues();
     const expRowIdx = expData.findIndex(r => (sExpId && String(r[0]).trim() === sExpId) || (sUserId && String(r[1]).trim() === sUserId));
@@ -18070,7 +18122,7 @@ function recordStudentTransfer(payload) {
       expSheet.getRange(expRowIdx + 1, 8).setValue("Trasladado");
       expSheet.getRange(expRowIdx + 1, 10).setValue(now);
       expSheet.getRange(expRowIdx + 1, 11).setValue(`Traslado externo a: ${institucionDestino || 'Otra Institución'}. Motivo: ${motivo || 'N/A'}`);
-      recordEntityChangeLog("ExpedienteEstudiante", sExpId, curState, "Trasladado", "STUDENT_TRANSFER", (payload && payload.userId) || "Secretaría", "MOV-" + Date.now());
+      recordEntityChangeLog("ExpedienteEstudiante", sExpId, curState, "Trasladado", "STUDENT_TRANSFER", actor.userId, "MOV-" + Date.now());
     }
 
     const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
@@ -18086,7 +18138,7 @@ function recordStudentTransfer(payload) {
       institucionDestino || "Otra Institución",
       fechaEfectiva,
       motivo || "Traslado Voluntario",
-      (payload && payload.userId) || "Secretaría",
+      actor.userId,
       estadoTramite || "Completado"
     ]);
 
@@ -18100,19 +18152,24 @@ function recordStudentTransfer(payload) {
 
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Registro de retiro con diferenciación temporal/definitiva y conservación de historial
 function recordStudentWithdrawal(payload) {
-  const { expedienteId, userId, anolectivo, motivo, tipoRetiro, fechaRetiroEfectiva } = payload || {};
+  const request = payload || {};
+  const { expedienteId: requestedExpedienteId, userId: requestedUserId, anolectivo, motivo, tipoRetiro, fechaRetiroEfectiva } = request;
   if (!expedienteId && !userId) throw new Error("expedienteId o userId requerido.");
 
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente el registro de retiro.");
   try {
-    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const resource = assertAcademicStudentMutationAccess_("recordStudentWithdrawal", request, ss, requestedExpedienteId, requestedUserId);
+    const actor = resource.actor;
+    const expedienteId = resource.expedienteId;
+    const userId = resource.userId;
+    advanceSaceAcademicSourceRevisionLocked_();
     const targetAno = anolectivo || "2026";
 
-    let sUserId = userId ? String(userId).trim() : "";
-    let sExpId = expedienteId ? String(expedienteId).trim() : "";
+    let sUserId = userId;
+    let sExpId = expedienteId;
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
     const expData = expSheet.getDataRange().getValues();
     const expRowIdx = expData.findIndex(r => (sExpId && String(r[0]).trim() === sExpId) || (sUserId && String(r[1]).trim() === sUserId));
@@ -18139,7 +18196,7 @@ function recordStudentWithdrawal(payload) {
       expSheet.getRange(expRowIdx + 1, 8).setValue("Retirado");
       expSheet.getRange(expRowIdx + 1, 10).setValue(now);
       expSheet.getRange(expRowIdx + 1, 11).setValue(`Retiro (${tipoRetiro || 'Definitivo'}). Motivo: ${motivo || 'N/A'}`);
-      recordEntityChangeLog("ExpedienteEstudiante", sExpId, curState, "Retirado", "STUDENT_WITHDRAWAL", (payload && payload.userId) || "Secretaría", "MOV-" + Date.now());
+      recordEntityChangeLog("ExpedienteEstudiante", sExpId, curState, "Retirado", "STUDENT_WITHDRAWAL", actor.userId, "MOV-" + Date.now());
     }
 
     const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
@@ -18155,7 +18212,7 @@ function recordStudentWithdrawal(payload) {
       "N/A",
       fechaEfectiva,
       motivo || "Retiro Solicitado por Familia",
-      (payload && payload.userId) || "Secretaría",
+      actor.userId,
       "Confirmado"
     ]);
 
@@ -18169,7 +18226,8 @@ function recordStudentWithdrawal(payload) {
 
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Reincorporación/Reingreso reutilizando expediente existente
 function processStudentReentry(payload) {
-  const { expedienteId, userId, nuevoAnoLectivo, grado, seccion, motivo } = payload || {};
+  const request = payload || {};
+  const { expedienteId: requestedExpedienteId, userId: requestedUserId, nuevoAnoLectivo, grado, seccion, motivo } = request;
   if ((!userId && !expedienteId) || !nuevoAnoLectivo || !grado) throw new Error("userId/expedienteId, nuevoAnoLectivo y grado son requeridos.");
 
   const lock = LockService.getScriptLock();
@@ -18178,8 +18236,12 @@ function processStudentReentry(payload) {
 
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    let sUserId = userId ? String(userId).trim() : "";
-    let sExpId = expedienteId ? String(expedienteId).trim() : "";
+    const resource = assertAcademicStudentMutationAccess_("processStudentReentry", request, ss, requestedExpedienteId, requestedUserId);
+    const actor = resource.actor;
+    const expedienteId = resource.expedienteId;
+    const userId = resource.userId;
+    let sUserId = userId;
+    let sExpId = expedienteId;
 
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
     const expData = expSheet.getDataRange().getValues();
@@ -18191,20 +18253,20 @@ function processStudentReentry(payload) {
       const curState = String(expData[expRowIdx][7] || "Retirado").trim();
       expSheet.getRange(expRowIdx + 1, 8).setValue("Activo");
       expSheet.getRange(expRowIdx + 1, 10).setValue(new Date());
-      recordEntityChangeLog("ExpedienteEstudiante", sExpId, curState, "Activo", "STUDENT_REENTRY", (payload && payload.userId) || "Secretaría", "MOV-" + Date.now());
+      recordEntityChangeLog("ExpedienteEstudiante", sExpId, curState, "Activo", "STUDENT_REENTRY", actor.userId, "MOV-" + Date.now());
     }
 
-    const result = createStudentEnrollment({
-      userId: sUserId,
+    const result = createStudentEnrollment(Object.assign({}, request, {
+      userId: sUserId, expedienteId: sExpId,
       anolectivo: nuevoAnoLectivo,
       grado: grado,
       seccion: seccion || "A",
       tipo: "Reingreso",
       observaciones: motivo || "Reingreso tras período fuera del centro",
       skipLock: true,
-      authRole: payload && payload.authRole,
-      callerUserId: payload && payload.userId
-    });
+      authRole: actor.role,
+      callerUserId: actor.userId
+    }));
 
     const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
     const now = new Date();
@@ -18220,7 +18282,7 @@ function processStudentReentry(payload) {
       seccion || "A",
       now,
       motivo || "Reincorporación institucional",
-      (payload && payload.userId) || "Secretaría",
+      actor.userId,
       "Confirmado"
     ]);
 
@@ -18234,7 +18296,8 @@ function processStudentReentry(payload) {
 
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Promoción o Repitencia basada en resultados de periodo cerrado
 function processStudentPromotion(payload) {
-  const { expedienteId, userId, anoLectivoCerrado, anoLectivoNuevo, nuevoGrado, nuevaSeccion, decisionAdministrativa, motivo } = payload || {};
+  const request = payload || {};
+  const { expedienteId: requestedExpedienteId, userId: requestedUserId, anoLectivoCerrado, anoLectivoNuevo, nuevoGrado, nuevaSeccion, decisionAdministrativa, motivo } = request;
   if ((!userId && !expedienteId) || !anoLectivoNuevo || !nuevoGrado) throw new Error("userId/expedienteId, anoLectivoNuevo y nuevoGrado son requeridos.");
 
   const lock = LockService.getScriptLock();
@@ -18243,8 +18306,12 @@ function processStudentPromotion(payload) {
 
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    let sUserId = userId ? String(userId).trim() : "";
-    let sExpId = expedienteId ? String(expedienteId).trim() : "";
+    const resource = assertAcademicStudentMutationAccess_("processStudentPromotion", request, ss, requestedExpedienteId, requestedUserId);
+    const actor = resource.actor;
+    const expedienteId = resource.expedienteId;
+    const userId = resource.userId;
+    let sUserId = userId;
+    let sExpId = expedienteId;
 
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
     const expData = expSheet.getDataRange().getValues();
@@ -18257,17 +18324,17 @@ function processStudentPromotion(payload) {
 
     const decision = decisionAdministrativa || "Promocionado";
 
-    const result = createStudentEnrollment({
-      userId: sUserId,
+    const result = createStudentEnrollment(Object.assign({}, request, {
+      userId: sUserId, expedienteId: sExpId,
       anolectivo: anoLectivoNuevo,
       grado: nuevoGrado,
       seccion: nuevaSeccion || "A",
       tipo: decision === "Promocionado" ? "Promocion" : "Repitencia",
       observaciones: motivo || `Decisión académica: ${decision}`,
       skipLock: true,
-      authRole: payload && payload.authRole,
-      callerUserId: payload && payload.userId
-    });
+      authRole: actor.role,
+      callerUserId: actor.userId
+    }));
 
     const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
     const now = new Date();
@@ -18283,7 +18350,7 @@ function processStudentPromotion(payload) {
       nuevaSeccion || "A",
       now,
       motivo || `Promoción/Repitencia: ${decision}`,
-      (payload && payload.userId) || "Secretaría",
+      actor.userId,
       "Confirmado"
     ]);
 
@@ -18297,19 +18364,24 @@ function processStudentPromotion(payload) {
 
 // [TAREA-F6-002] [Fase 6: Expediente Institucional y Ciclo de Vida] - Graduación de estudiante y cierre inmutable de matrículas activas
 function processStudentGraduation(payload) {
-  const { expedienteId, userId, anolectivo, programaGraduacion, fechaGraduacion, observaciones } = payload || {};
+  const request = payload || {};
+  const { expedienteId: requestedExpedienteId, userId: requestedUserId, anolectivo, programaGraduacion, fechaGraduacion, observaciones } = request;
   if (!expedienteId && !userId) throw new Error("expedienteId o userId es requerido.");
 
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
   if (!success) throw new Error("Servicio ocupado. Por favor, reintente el registro de graduación.");
   try {
-    advanceSaceAcademicSourceRevisionLocked_();
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const resource = assertAcademicStudentMutationAccess_("processStudentGraduation", request, ss, requestedExpedienteId, requestedUserId);
+    const actor = resource.actor;
+    const expedienteId = resource.expedienteId;
+    const userId = resource.userId;
+    advanceSaceAcademicSourceRevisionLocked_();
     const targetAno = anolectivo || "2026";
 
-    let sUserId = userId ? String(userId).trim() : "";
-    let sExpId = expedienteId ? String(expedienteId).trim() : "";
+    let sUserId = userId;
+    let sExpId = expedienteId;
     const expSheet = getOrCreateSheet(ss, "ExpedientesEstudiantes");
     const expData = expSheet.getDataRange().getValues();
     const expRowIdx = expData.findIndex(r => (sExpId && String(r[0]).trim() === sExpId) || (sUserId && String(r[1]).trim() === sUserId));
@@ -18340,7 +18412,7 @@ function processStudentGraduation(payload) {
     expSheet.getRange(expRowIdx + 1, 10).setValue(now);
     expSheet.getRange(expRowIdx + 1, 11).setValue(`Graduación (${programaGraduacion || 'Educación Secundaria'}). Observaciones: ${observaciones || 'Requisitos concluidos'}`);
 
-    recordEntityChangeLog("ExpedienteEstudiante", sExpId, curState, "Graduado", "STUDENT_GRADUATION", (payload && payload.userId) || "Secretaría", "MOV-" + Date.now());
+    recordEntityChangeLog("ExpedienteEstudiante", sExpId, curState, "Graduado", "STUDENT_GRADUATION", actor.userId, "MOV-" + Date.now());
 
     const movSheet = getOrCreateSheet(ss, "MovimientosEstudiante");
     movSheet.appendRow([
@@ -18355,7 +18427,7 @@ function processStudentGraduation(payload) {
       "N/A",
       fechaGrad,
       observaciones || `Graduación del Programa: ${programaGraduacion || 'General'}`,
-      (payload && payload.userId) || "Secretaría",
+      actor.userId,
       "Confirmado"
     ]);
 
