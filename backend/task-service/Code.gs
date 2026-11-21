@@ -1423,7 +1423,7 @@ function isTaskServiceAdministrativeRole(role) { return ["Administrador","Desarr
 function assertTaskServiceTeacherAssignedToOffer(userId, offerId, classroomContext) {
   const teacherId = String(userId || "").trim(), requestedOfferId = String(offerId || "").trim();
   if (!teacherId || !requestedOfferId) throw new Error("TEACHER_ASSIGNMENT_CONTEXT_REQUIRED");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const ss = spreadsheet || SpreadsheetApp.openById(SPREADSHEET_ID);
   const assignmentSheet = ss && ss.getSheetByName("AsignacionesDocentes");
   const offerSheet = ss && ss.getSheetByName("OfertaAcademica");
   if (!assignmentSheet || !offerSheet) throw new Error("TEACHER_ASSIGNMENT_SOURCE_UNAVAILABLE");
@@ -1598,14 +1598,11 @@ function getTaskServiceAuthorizedClassrooms(payload,verifiedContext) {
   if(!scope||!scope.authorized)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");
   let candidates=rows;
   if(role==="Profesor"){
-   const sh=ss.getSheetByName("AsignacionesDocentes");
-   if(!sh)return [];
-   const now=Date.now(),assignments=sh.getDataRange().getValues().slice(1);
-   const offers=new Set(assignments.filter(r=>String(r[2]||"").trim()===uid&&
-    String(r[6]||"Activo").toLowerCase()==="activo"&&
-    (!r[4]||new Date(r[4]).getTime()<=now)&&(!r[5]||new Date(r[5]).getTime()>=now))
-    .map(r=>String(r[1]||"").trim()));
-   candidates=rows.filter(r=>r[1]&&offers.has(String(r[1]).trim())&&String(r[6]||"").trim()===uid);
+   candidates=rows.filter(row=>{
+    if(!row[1]||String(row[6]||"").trim()!==uid)return false;
+    try{return assertTaskServiceTeacherAssignedToOffer(uid,row[1],row,ss)===true;}
+    catch(_){return false;}
+   });
   }
   return candidates.filter(row=>{
    const ownership=assertTaskServiceResourceOwnership_(payload,"AULA_VIRTUAL",row[0],"READ",ss,actor,scope);

@@ -61,4 +61,6 @@ assert.throws(()=>fixture({subjects:[["SUB-1","Matemáticas","MATH","Inactivo"]]
 assert.throws(()=>fixture({subjects:[["SUB-1","Matemáticas","MATH","Activo"],["SUB-2","Matemáticas","MATH2","Activo"]]}).check({grade:"6",section:"A",subject:"Matemáticas"}),/TEACHER_ASSIGNMENT_OFFER_SCOPE_MISMATCH/);
 assert.throws(()=>fixture({missingOffers:true}).check(),/TEACHER_ASSIGNMENT_SOURCE_UNAVAILABLE/);
 assert.throws(()=>fixture({missingSubjects:true}).check({grade:"6",section:"A",subject:"Matemáticas"}),/ACADEMIC_SUBJECT_SOURCE_UNAVAILABLE/);
+assert.ok(extractFunction(source,"getTaskServiceAuthorizedClassrooms").includes("assertTaskServiceTeacherAssignedToOffer(uid,row[1],row,ss)"),
+  "teacher classroom lists use the same fail-closed active offer binding as task mutations");
 process.stdout.write("task-service-teacher-offer-abac-contract: all assertions passed\n");
