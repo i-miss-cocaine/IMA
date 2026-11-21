@@ -154,7 +154,7 @@ function makeMutationContext(rows, failVersionBump) {
     },
     logStructuredEvent() {}
   };
-  vm.runInNewContext(extract(user, "createSecurityDelegation") + "\\n" +
+  vm.runInNewContext(extract(user, "createSecurityDelegation") + "\n" +
     extract(user, "revokeSecurityDelegation") +
     "\\nthis.create = createSecurityDelegation; this.revoke = revokeSecurityDelegation;", context);
   return { context, rows, bumps, versions, releases: () => releases };

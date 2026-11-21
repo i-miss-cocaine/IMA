@@ -477,7 +477,7 @@ function makeCreationRuntime(options) {
       return { authorized: true, institutionId: "I1", departmentIds, institutionWide,
         userId: actor.userId, role: actor.role };
     },
-    getDynamicPermissionsForRole(role, action) { return role === "Profesor" && action === "createExam"; },
+    getDynamicPermissionsForRole(role, action) { return (role === "Profesor" || role === "Administrador") && action === "createExam"; },
     hasActiveDelegationForAction() { return null; },
     PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
     SpreadsheetApp: { openById() { spreadsheetOpenCount++; return { getSheetByName(name) { return creationSheets[name] || null; } }; } },
