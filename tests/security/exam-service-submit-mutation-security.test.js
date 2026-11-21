@@ -28,8 +28,10 @@ function submitRuntime(options = {}) {
   const actor = options.actor === undefined ? { authorized: true, userId: "STUDENT-1", role: "Estudiante" } : options.actor;
   const actors = options.actors || [actor, options.actorAfterLock === undefined ? actor : options.actorAfterLock];
   const permissions = options.permissions || [options.permission !== false, options.permissionAfterLock !== false];
-  const handler = new Function("validateRolePermission", "getVerifiedExamIdentity_", "getExamReadContext_", "LockService", "submitExamUnlocked_",
+  const clearContext = new Function(extractFunction("clearRequestAuthorizationContext_") + "; return clearRequestAuthorizationContext_;")();
+  const handler = new Function("clearRequestAuthorizationContext_", "validateRolePermission", "getVerifiedExamIdentity_", "getExamReadContext_", "LockService", "submitExamUnlocked_",
     extractFunction("submitExam") + "; return submitExam;")(
+    clearContext,
     () => { events.push("permission"); const result=permissions[state.permissionCalls++]; return { authorized: result === true }; },
     () => { events.push("identity"); return actors[state.identityCalls++]; },
     (payload, requestedStudentId, verifiedActor) => { events.push("context"); state.contextCalls++; return options.contextAfterLock || { actor: verifiedActor, studentActor: true }; },
