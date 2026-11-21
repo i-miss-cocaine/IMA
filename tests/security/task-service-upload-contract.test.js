@@ -12,7 +12,7 @@ assert.match(upload,/50 \* 1024 \* 1024/);
 assert.match(upload,/mp4:"video\/mp4"/);
 assert.match(upload,/application\/octet-stream/);
 const taskRows=[["TaskID","","Title","","Partial","Subject","Grade","Section","","","TeacherID"],["TASK-1","","Lesson 1","","I","Math","6","A","","","TEACHER-1"]];
-let metadata=null,folderCalls=0,studentChecks=0,teacherChecks=0;
+let metadata=null,folderCalls=0,studentChecks=0,teacherChecks=0,adminChecks=0;
 const folder={getId:()=>"FOLDER-1",createFile(blob){return {blob,getId:()=>"FILE-1",getUrl:()=>"drive-file-url",setTrashed(v){this.trashed=v;}};}};
 const context={
  DRIVE_FOLDER_ID:"ROOT",SPREADSHEET_ID:"LOCAL",
@@ -38,6 +38,12 @@ assert.equal(arbitrary.status,"success","non-allowlisted file types are accepted
 assert.equal(arbitrary.data.mimeType,"application/zip");assert.equal(studentChecks,2);
 const teacher=context.run({_verifiedUserId:"TEACHER-1",_verifiedRole:"Profesor",tareaId:"TASK-1",fileName:"teacher.mp4",fileData:"data:video/mp4;base64,"+Buffer.from("video").toString("base64")});
 assert.equal(teacher.status,"success");assert.equal(teacherChecks,1,"teacher uploads retain task ownership validation");
+const administrator=context.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",tareaId:"TASK-1",fileName:"admin.pdf",fileData:"data:application/pdf;base64,"+Buffer.from("pdf").toString("base64")});
+assert.equal(administrator.status,"success");
+assert.equal(adminChecks,1,"administrative uploads must resolve verified task ownership and department scope");
+const deniedAdminContext=Object.assign({},context,{assertTaskServiceTeacherCanManageTask:()=>{throw new Error("RESOURCE_NOT_FOUND");},getOrCreateFolder:()=>{throw new Error("DRIVE_WRITE_MUST_NOT_RUN");}});
+vm.createContext(deniedAdminContext);vm.runInContext(upload+"\\nthis.run=uploadFile;",deniedAdminContext);
+assert.throws(()=>deniedAdminContext.run({_verifiedUserId:"ADMIN-1",_verifiedRole:"Administrador",tareaId:"TASK-1",fileName:"foreign.pdf",fileData:"data:application/pdf;base64,"+Buffer.from("pdf").toString("base64")}),/RESOURCE_NOT_FOUND/);
 assert.throws(()=>context.run({_verifiedUserId:"STUDENT-1",_verifiedRole:"Estudiante",tareaId:"TASK-1",fileName:"bad.pdf.exe",fileData:"data:application/octet-stream;base64,"+Buffer.from("x").toString("base64")}),/DANGEROUS_FILE_EXTENSION/);
 assert.throws(()=>context.run({_verifiedUserId:"STUDENT-1",_verifiedRole:"Estudiante",tareaId:"TASK-1",fileName:"empty.mp4",fileData:"data:video/mp4;base64,"}),/Archivo vacío/);
 assert.throws(()=>context.run({_verifiedUserId:"STUDENT-1",_verifiedRole:"Estudiante",tareaId:"MISSING",fileName:"x.mp4",fileData:"data:video/mp4;base64,"+Buffer.from("x").toString("base64")}),/Tarea no encontrada/);
