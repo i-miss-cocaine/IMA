@@ -15600,41 +15600,41 @@ function updateStudentFile(payload) {
   if (!lock.tryLock(10000)) throw new Error("STUDENT_FILE_UPDATE_LOCK_BUSY");
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = ss.getSheetByName("ExpedientesEstudiantes");
-  if (!sheet) throw new Error("RESOURCE_NOT_FOUND");
-  const data = sheet.getDataRange().getValues();
-  const matches = [];
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0] || "").trim() === String(expedienteId).trim()) matches.push(i);
-  }
-  if (!matches.length) throw new Error("RESOURCE_NOT_FOUND");
-  if (matches.length !== 1) throw new Error("RESOURCE_AMBIGUOUS");
-
-  const idx = matches[0];
-  const access = assertStudentExpedienteScopeAccess_(request, ss, sheet, data[idx], "permisoDocumental", "UPDATE");
-  if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
-
-  const currentState = String(data[idx][7] || "Activo").trim();
-  const nextState = estadoExpediente === undefined ? currentState : String(estadoExpediente || "").trim();
-  if (estadoExpediente !== undefined && nextState !== currentState) {
-    const allowed = ALLOWED_STUDENT_LIFECYCLE_TRANSITIONS[currentState] || [];
-    if (!allowed.includes(nextState)) throw new Error("STUDENT_LIFECYCLE_TRANSITION_DENIED");
-    if (!String(request.motivo || "").trim() || String(request.motivo).trim().length < 5) {
-      throw new Error("STUDENT_LIFECYCLE_REASON_REQUIRED");
+    const sheet = ss.getSheetByName("ExpedientesEstudiantes");
+    if (!sheet) throw new Error("RESOURCE_NOT_FOUND");
+    const data = sheet.getDataRange().getValues();
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0] || "").trim() === String(expedienteId).trim()) matches.push(i);
     }
-  }
+    if (!matches.length) throw new Error("RESOURCE_NOT_FOUND");
+    if (matches.length !== 1) throw new Error("RESOURCE_AMBIGUOUS");
 
-  const now = new Date();
-  if (fechaNacimiento !== undefined) sheet.getRange(idx + 1, 4).setValue(fechaNacimiento);
-  if (nacionalidad !== undefined) sheet.getRange(idx + 1, 5).setValue(nacionalidad);
-  if (direccionResidencia !== undefined) sheet.getRange(idx + 1, 6).setValue(direccionResidencia);
-  if (fotografiaUrl !== undefined) sheet.getRange(idx + 1, 7).setValue(fotografiaUrl);
-  if (estadoExpediente !== undefined && nextState !== currentState) {
-    sheet.getRange(idx + 1, 8).setValue(nextState);
-    recordEntityChangeLog("ExpedienteEstudiante", expedienteId, currentState, nextState, "STATUS_CHANGE", actor.userId, "LIFECYCLE-" + Date.now());
-  }
-  sheet.getRange(idx + 1, 10).setValue(now);
-  if (observaciones !== undefined) sheet.getRange(idx + 1, 11).setValue(observaciones);
+    const idx = matches[0];
+    const access = assertStudentExpedienteScopeAccess_(request, ss, sheet, data[idx], "permisoDocumental", "UPDATE");
+    if (!access || access.authorized !== true) throw new Error(access && access.code || "RESOURCE_SCOPE_DENIED");
+
+    const currentState = String(data[idx][7] || "Activo").trim();
+    const nextState = estadoExpediente === undefined ? currentState : String(estadoExpediente || "").trim();
+    if (estadoExpediente !== undefined && nextState !== currentState) {
+      const allowed = ALLOWED_STUDENT_LIFECYCLE_TRANSITIONS[currentState] || [];
+      if (!allowed.includes(nextState)) throw new Error("STUDENT_LIFECYCLE_TRANSITION_DENIED");
+      if (!String(request.motivo || "").trim() || String(request.motivo).trim().length < 5) {
+        throw new Error("STUDENT_LIFECYCLE_REASON_REQUIRED");
+      }
+    }
+
+    const now = new Date();
+    if (fechaNacimiento !== undefined) sheet.getRange(idx + 1, 4).setValue(fechaNacimiento);
+    if (nacionalidad !== undefined) sheet.getRange(idx + 1, 5).setValue(nacionalidad);
+    if (direccionResidencia !== undefined) sheet.getRange(idx + 1, 6).setValue(direccionResidencia);
+    if (fotografiaUrl !== undefined) sheet.getRange(idx + 1, 7).setValue(fotografiaUrl);
+    if (estadoExpediente !== undefined && nextState !== currentState) {
+      sheet.getRange(idx + 1, 8).setValue(nextState);
+      recordEntityChangeLog("ExpedienteEstudiante", expedienteId, currentState, nextState, "STATUS_CHANGE", actor.userId, "LIFECYCLE-" + Date.now());
+    }
+    sheet.getRange(idx + 1, 10).setValue(now);
+    if (observaciones !== undefined) sheet.getRange(idx + 1, 11).setValue(observaciones);
 
     return { status: "success", message: "Expediente digital actualizado exitosamente." };
   } finally {
