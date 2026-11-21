@@ -15927,7 +15927,7 @@ function resolveAdmissionDuplicate(payload) {
     if (!hasLock) throw new Error("Servicio ocupado. Intente nuevamente.");
     ctx = refreshAcademicAdmissionScopeContext_(payload, "resolveAdmissionDuplicate", requestId, "UPDATE");
     if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
-    const refreshedActorRole = String(ctx.actor.role || "").trim().toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+    const refreshedActorRole = String(ctx.actor.role || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     if (["director","administrador","desarrollador","secretaria"].indexOf(refreshedActorRole) === -1) throw new Error("AUTH_PERMISSION_DENIED");
     // Revalidar propiedad después de obtener el lock para evitar decisiones
     // basadas en una lectura de ownership previa a la sección crítica.
