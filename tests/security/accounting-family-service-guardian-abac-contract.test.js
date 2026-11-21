@@ -50,13 +50,13 @@ function runtime(options={}) {
   return { guardians: id => Array.from(context.guardians(ss,id)), siblings: id => context.siblings(ss,id) };
 }
 
-assert.deepEqual(runtime().guardians("STU-1"),["PERSON-GUARD-1"],"unique active financial relation resolves one guardian person");
+assert.deepEqual(Array.from(runtime().guardians("STU-1")),["PERSON-GUARD-1"],"unique active financial relation resolves one guardian person");
 assert.equal(runtime().siblings("STU-1"),1,"sibling count includes a unique active financial relationship");
-assert.deepEqual(runtime({missingRelations:true}).guardians("STU-1"),[],"missing relation source denies");
-assert.deepEqual(runtime({missingUsers:true}).guardians("STU-1"),[],"missing user source denies");
-assert.deepEqual(runtime({users:[student,student,guardian]}).guardians("STU-1"),[],"duplicate student account identity denies");
-assert.deepEqual(runtime({users:[student,["STU-X","Estudiante","PERSON-STU-1","Activo"],guardian]}).guardians("STU-1"),[],"ambiguous student person mapping denies");
-assert.deepEqual(runtime({users:[student,guardian,["GUARD-X","Tutor","PERSON-GUARD-1","Activo"]]}).guardians("STU-1"),[],"ambiguous guardian person mapping denies");
+assert.deepEqual(Array.from(runtime({missingRelations:true}).guardians("STU-1")),[],"missing relation source denies");
+assert.deepEqual(Array.from(runtime({missingUsers:true}).guardians("STU-1")),[],"missing user source denies");
+assert.deepEqual(Array.from(runtime({users:[student,student,guardian]}).guardians("STU-1")),[],"duplicate student account identity denies");
+assert.deepEqual(Array.from(runtime({users:[student,["STU-X","Estudiante","PERSON-STU-1","Activo"],guardian]}).guardians("STU-1")),[],"ambiguous student person mapping denies");
+assert.deepEqual(Array.from(runtime({users:[student,guardian,["GUARD-X","Tutor","PERSON-GUARD-1","Activo"]]}).guardians("STU-1")),[],"ambiguous guardian person mapping denies");
 assert.deepEqual(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1"),relation("REL-1","PERSON-STU-1","PERSON-GUARD-1")]}).guardians("STU-1"),[],"duplicate relation ID denies");
 assert.deepEqual(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1"),relation("REL-3","PERSON-STU-1","PERSON-GUARD-1")]}).guardians("STU-1"),[],"duplicate active student/guardian pair denies");
 assert.deepEqual(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2020-12-31")]}).guardians("STU-1"),[],"expired relationship denies");
