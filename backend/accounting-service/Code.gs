@@ -13094,19 +13094,26 @@ function optimizeRouteStopsSequence(payload) {
 function getRouteOptimizationProposals(payload) {
  const p=payload||{},action="getRouteOptimizationProposals";
  transportOptimizationActor_(p,action);
- const ss=SpreadsheetApp.openById(SPREADSHEET_ID),actor=transportOptimizationActor_(p,action,ss);
- const routeId=String(p.rutaId||"").trim(),state=String(p.estado||"").trim().toUpperCase();
- if(routeId) {
-  const routeSnapshot=transportRowsPrefix_(ss,"TransporteRutas",[["RutaID"],["NombreRuta","Nombre"],["UnidadCodigo","Unidad"],["ConductorEmpleadoId","Conductor"],["Capacidad"],["ParadasJSON","Paradas"],["Estado"]]);
-  if(!routeSnapshot.valid)throw new Error("TRANSPORT_SCHEMA_INVALID");
-  const routeMatches=routeSnapshot.rows.filter(r=>String(r[0]||"").trim()===routeId);
-  if(routeMatches.length!==1)throw new Error(routeMatches.length?"ROUTE_ID_AMBIGUOUS":"ROUTE_NOT_FOUND");
- }
- const sh=transportOptimizationSheet_(ss,false);
- if(!sh)return {status:"success",propuestas:[],total:0};
- const rows=sh.getDataRange().getValues().slice(1);
- const data=rows.filter(r=>(!routeId||String(r[1])===routeId)&&(!state||String(r[11]||"").toUpperCase()===state)).map(r=>({propuestaId:r[0],rutaId:r[1],fechaCreacion:r[2],creadoPor:r[3],velocidadPromedioKmh:r[4],horaInicio:r[5],distanciaActualKm:r[6],distanciaPropuestaKm:r[7],tiempoEstimadoMinutos:r[8],paradasOriginalesJSON:r[9],paradasPropuestasJSON:r[10],estado:r[11],resueltoPor:r[12],fechaResolucion:r[13],observaciones:r[14]}));
- return {status:"success",propuestas:data,total:data.length};
+ const lock=LockService.getScriptLock();
+ lock.waitLock(10000);
+ try {
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),actor=transportOptimizationActor_(p,action,ss);
+  const routeId=String(p.rutaId||"").trim(),state=String(p.estado||"").trim().toUpperCase();
+  if(routeId) {
+   const routeSnapshot=transportRowsPrefix_(ss,"TransporteRutas",[["RutaID"],["NombreRuta","Nombre"],["UnidadCodigo","Unidad"],["ConductorEmpleadoId","Conductor"],["Capacidad"],["ParadasJSON","Paradas"],["Estado"]]);
+   if(!routeSnapshot.valid)throw new Error("TRANSPORT_SCHEMA_INVALID");
+   const routeMatches=routeSnapshot.rows.filter(r=>String(r[0]||"").trim()===routeId);
+   if(routeMatches.length!==1)throw new Error(routeMatches.length?"ROUTE_ID_AMBIGUOUS":"ROUTE_NOT_FOUND");
+  }
+  const sh=transportOptimizationSheet_(ss,false);
+  if(!sh)return {status:"success",propuestas:[],total:0};
+  const rows=sh.getDataRange().getValues().slice(1);
+  const proposalIds=Object.create(null);
+  rows.forEach(function(row){const id=String(row[0]||"").trim();if(id)proposalIds[id]=(proposalIds[id]||0)+1;});
+  if(Object.keys(proposalIds).some(function(id){return proposalIds[id]>1;}))throw new Error("ROUTE_OPTIMIZATION_PROPOSAL_AMBIGUOUS");
+  const data=rows.filter(r=>(!routeId||String(r[1])===routeId)&&(!state||String(r[11]||"").toUpperCase()===state)).map(r=>({propuestaId:r[0],rutaId:r[1],fechaCreacion:r[2],creadoPor:r[3],velocidadPromedioKmh:r[4],horaInicio:r[5],distanciaActualKm:r[6],distanciaPropuestaKm:r[7],tiempoEstimadoMinutos:r[8],paradasOriginalesJSON:r[9],paradasPropuestasJSON:r[10],estado:r[11],resueltoPor:r[12],fechaResolucion:r[13],observaciones:r[14]}));
+  return {status:"success",propuestas:data,total:data.length};
+ } finally {lock.releaseLock();}
 }
 
 function approveRouteStopsOptimization(payload) {
