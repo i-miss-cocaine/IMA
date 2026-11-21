@@ -1420,7 +1420,7 @@ function getTaskServiceGuardianStudentIds(guardianUserId) {
 }
 
 function isTaskServiceAdministrativeRole(role) { return ["Administrador","Desarrollador","Dirección","Secretaría"].indexOf(role)!==-1; }
-function assertTaskServiceTeacherAssignedToOffer(userId, offerId, classroomContext) {
+function assertTaskServiceTeacherAssignedToOffer(userId, offerId, classroomContext, spreadsheet) {
   const teacherId = String(userId || "").trim(), requestedOfferId = String(offerId || "").trim();
   if (!teacherId || !requestedOfferId) throw new Error("TEACHER_ASSIGNMENT_CONTEXT_REQUIRED");
   const ss = spreadsheet || SpreadsheetApp.openById(SPREADSHEET_ID);
