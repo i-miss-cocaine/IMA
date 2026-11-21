@@ -15,17 +15,21 @@ function permissionLookup(service,matrixRows,versionRows,cache,throwOnOpen){
   cache:cache,CacheService:{getScriptCache:()=>({get:k=>cache[k]||null,put:(k,v)=>{cache[k]=v;},remove:k=>{delete cache[k];}})},
   SpreadsheetApp:{openById:()=>{if(throwOnOpen)throw Error("SPREADSHEET_UNAVAILABLE");return{getSheetByName:n=>n==="VersionesSeguridad"?versions:(n==="MatrizPermisosRoles"?matrix:null)};}}};
  const prelude=source.slice(source.indexOf("var SECURITY_VERSION_HEADERS_"),source.indexOf("function getDynamicPermissionsForRole"));
- vm.runInNewContext(prelude+"\n"+extract(source,"getPermissionMatrixInstitutionId_")+"\n"+extract(source,"getDynamicPermissionsForRole")+"\nthis.lookup=getDynamicPermissionsForRole;",context);
- return { lookup: context.lookup, context };
+ vm.runInNewContext(prelude+"\n"+extract(source,"getPermissionMatrixInstitutionId_")+"\n"+extract(source,"getDynamicPermissionsForRole")+"\nthis.lookup=getDynamicPermissionsForRole;this.readVersion=getSecurityVersion_;",context);
+ return { lookup: context.lookup, readVersion: context.readVersion, context };
 }
 for(const service of services){
  const module=service.toUpperCase(),cache={},matrix=[["rol","modulo","accion","permitido","ambito"],["Director",module,"readSensitive",true,"INST-A"]];
- const versions=[["Clave","Version","UpdatedAt","UpdatedBy"],["PERMISSION_MATRIX",0,"",""]];
+ const versions=[["Clave","Version","UpdatedAt","UpdatedBy"],["PERMISSION_MATRIX",0,"",""],["USER_ROLE:u-1",0,"",""]];
  const warm = permissionLookup(service,matrix,versions,cache);
  assert.equal(warm.lookup("Director",module,"readSensitive","INST-A"),true,service+" hot context starts with grant");
  matrix[1][3]=false; versions[1][1]=1;
  assert.equal(warm.lookup("Director",module,"readSensitive","INST-A"),false,service+" hot context observes shared version change without process restart");
  assert.equal(warm.context.SECURITY_VERSION_READ_CACHE_,undefined,service+" does not retain stale process-local version state");
+ assert.equal(warm.readVersion("USER_ROLE:u-1"),0,service+" reads the shared user privilege version");
+ versions[2][1]=1;
+ assert.equal(warm.readVersion("USER_ROLE:u-1"),1,service+" observes a hot user privilege version change without process restart");
+ versions[2][1]=0;
  const originalOpenById=warm.context.SpreadsheetApp.openById;
  warm.context.SpreadsheetApp.openById=()=>({getSheetByName:()=>null});
  assert.equal(warm.lookup("Director",module,"readSensitive","INST-A"),false,service+" missing shared version sheet fails closed");
