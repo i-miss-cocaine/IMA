@@ -426,6 +426,8 @@ console.log("TASK-636 getStudyMaterials local contract: audience, explicit publi
 
 function verifyTokenWithClaims(sourceText, claims) {
   const payloadB64 = Buffer.from(JSON.stringify(claims)).toString("base64").replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_");
+  const versionRows = [["Clave","Version","UpdatedAt","UpdatedBy"]];
+  const versionSheet = { getDataRange: () => ({ getValues: () => versionRows.map(row => row.slice()) }) };
   const context = {
     SPREADSHEET_ID: "LOCAL",
     getAuthTokenSecret: () => "test-secret",
@@ -438,9 +440,9 @@ function verifyTokenWithClaims(sourceText, claims) {
     },
     CacheService: { getScriptCache: () => ({ get: () => null, put: () => {} }) },
     PropertiesService: { getScriptProperties: () => ({ getProperty: () => null }) },
-    SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "Usuarios" ? {
+    SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "VersionesSeguridad" ? versionSheet : (name === "Usuarios" ? {
       getDataRange: () => ({ getValues: () => [["UserId","","","","","","","","","","Estado"], ["USER-1","","","","","","Estudiante","","","","Activa"]] })
-    } : null }) }
+    } : null) }) }
   };
   const membershipVerifier = sourceText.includes("function verifyUserRoleMembershipClaim_(") ? extractFunctionFrom(sourceText, "verifyUserRoleMembershipClaim_") : "";
   const revocationHelpers = ["parseUserRoleMembershipDate_", "isSessionRevoked_", "isSessionRevokedInSharedLedger_"]

@@ -31,6 +31,8 @@ function runVerifier(source, claims) {
   const fn = extractFunction(source, "verifySessionToken");
   const userRow = new Array(11).fill("");
   userRow[0] = "U1"; userRow[6] = "Estudiante"; userRow[10] = "Activa";
+  const versionRows = [["Clave","Version","UpdatedAt","UpdatedBy"]];
+  const versionSheet = { getDataRange: () => ({ getValues: () => versionRows.map(row => row.slice()) }) };
   const context = {
     getAuthTokenSecret: () => "secret",
     computeHmacSignature: () => "SIG",
@@ -43,7 +45,7 @@ function runVerifier(source, claims) {
     },
     CacheService: { getScriptCache: () => ({ get: () => null, put: () => {} }) },
     SpreadsheetApp: {
-      openById: () => ({ getSheetByName: name => name === "Usuarios" ? ({ getDataRange: () => ({ getValues: () => [[], userRow] }) }) : null })
+      openById: () => ({ getSheetByName: name => name === "VersionesSeguridad" ? versionSheet : (name === "Usuarios" ? ({ getDataRange: () => ({ getValues: () => [[], userRow] }) }) : null) })
     },
     SPREADSHEET_ID: "LOCAL"
   };
