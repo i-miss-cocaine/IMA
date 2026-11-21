@@ -2697,7 +2697,7 @@ function scheduleAdmissionInterview(payload) {
   if (!solicitudId || !fecha || !horaInicio || !horaFin || !evaluadorUserId) {
     throw new Error("solicitudId, fecha, horaInicio, horaFin y evaluadorUserId son obligatorios.");
   }
-  const ctx = getAcademicAdmissionScopeContext_(payload, "scheduleAdmissionInterview", solicitudId, "UPDATE");
+  let ctx = getAcademicAdmissionScopeContext_(payload, "scheduleAdmissionInterview", solicitudId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const evaluatorId = String(evaluadorUserId).trim();
 
@@ -2709,6 +2709,8 @@ function scheduleAdmissionInterview(payload) {
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado programando entrevistas. Por favor reintente.");
+    ctx = refreshAcademicAdmissionScopeContext_(payload, "scheduleAdmissionInterview", solicitudId, "UPDATE");
+    if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
     const currentRequestAccess = assertAcademicAdmissionRequestScopeAccess_(ctx.ss, ctx.scope, solicitudId, payload, "UPDATE");
     if (!currentRequestAccess || currentRequestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
     if (evaluatorId !== String(ctx.actor.userId).trim()) {
@@ -2776,13 +2778,15 @@ function recordInterviewOutcome(payload) {
   const { entrevistaId, estado, observaciones } = payload || {};
   if (!entrevistaId || !estado) throw new Error("entrevistaId y estado son requeridos.");
   // Verificar identidad y ámbito antes de resolver el identificador de entrevista.
-  const ctx = getAcademicAdmissionScopeContext_(payload, "recordInterviewOutcome", null, "UPDATE");
+  let ctx = getAcademicAdmissionScopeContext_(payload, "recordInterviewOutcome", null, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const lock = LockService.getScriptLock();
   let hasLock = false;
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado actualizando entrevistas. Por favor reintente.");
+    ctx = refreshAcademicAdmissionScopeContext_(payload, "recordInterviewOutcome", null, "UPDATE");
+    if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
     const sheet = getOrCreateSheet(ctx.ss, "EntrevistasAdmision");
     const lastRow = sheet.getLastRow();
     if (lastRow < 2) throw new Error("RESOURCE_NOT_FOUND");
@@ -2820,13 +2824,15 @@ function saveAdmissionEvaluation(payload) {
     throw new Error("solicitudId, tipoEvaluacion y dictamen son obligatorios.");
   }
 
-  const ctx = getAcademicAdmissionScopeContext_(payload, "saveAdmissionEvaluation", solicitudId, "UPDATE");
+  let ctx = getAcademicAdmissionScopeContext_(payload, "saveAdmissionEvaluation", solicitudId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const lock = LockService.getScriptLock();
   let hasLock = false;
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado registrando evaluaciones. Por favor reintente.");
+    ctx = refreshAcademicAdmissionScopeContext_(payload, "saveAdmissionEvaluation", solicitudId, "UPDATE");
+    if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
     // Revalidar ownership dentro de la sección crítica para evitar usar una
     // autorización revocada o modificada entre la comprobación inicial y el append.
     const currentRequestAccess = assertAcademicAdmissionRequestScopeAccess_(ctx.ss, ctx.scope, solicitudId, payload, "UPDATE");
@@ -2886,13 +2892,15 @@ function addToWaitlist(payload) {
   const requestId = String(solicitudId || "").trim();
   if (!requestId) throw new Error("solicitudId es requerido.");
 
-  const ctx = getAcademicAdmissionScopeContext_(payload, "addToWaitlist", requestId, "UPDATE");
+  let ctx = getAcademicAdmissionScopeContext_(payload, "addToWaitlist", requestId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const lock = LockService.getScriptLock();
   let hasLock = false;
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado incorporando solicitudes a lista de espera. Por favor reintente.");
+    ctx = refreshAcademicAdmissionScopeContext_(payload, "addToWaitlist", requestId, "UPDATE");
+    if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
     const requestAccess = assertAcademicAdmissionRequestScopeAccess_(
       ctx.ss, ctx.scope, requestId, null, "UPDATE");
     if (!requestAccess || requestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
@@ -3038,13 +3046,15 @@ function reorderWaitlist(payload) {
   if (!Number.isSafeInteger(targetPosition) || targetPosition <= 0) throw new Error("WAITLIST_POSITION_INVALID");
 
   // Validar identidad y permiso antes de resolver IDs o leer datos de espera.
-  const ctx = getAcademicAdmissionScopeContext_(payload, "reorderWaitlist", null, "UPDATE");
+  let ctx = getAcademicAdmissionScopeContext_(payload, "reorderWaitlist", null, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const lock = LockService.getScriptLock();
   let hasLock = false;
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado reordenando la lista de espera. Por favor reintente.");
+    ctx = refreshAcademicAdmissionScopeContext_(payload, "reorderWaitlist", null, "UPDATE");
+    if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
     const sheet = getOrCreateSheet(ctx.ss, "ListaEsperaAdmision");
     const lastRow = sheet.getLastRow();
     if (lastRow < 2) throw new Error("RESOURCE_NOT_FOUND");
@@ -3151,13 +3161,15 @@ function offerWaitlistSlot(payload) {
   if (!Number.isSafeInteger(horas) || horas <= 0) throw new Error("VIGENCIA_OFERTA_INVALIDA");
 
   // Autenticar primero sin resolver ni leer detalles del registro de espera.
-  const ctx = getAcademicAdmissionScopeContext_(payload, "offerWaitlistSlot", null, "UPDATE");
+  let ctx = getAcademicAdmissionScopeContext_(payload, "offerWaitlistSlot", null, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const lock = LockService.getScriptLock();
   let hasLock = false;
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado ofreciendo plazas. Por favor reintente.");
+    ctx = refreshAcademicAdmissionScopeContext_(payload, "offerWaitlistSlot", null, "UPDATE");
+    if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
     const waitSheet = getOrCreateSheet(ctx.ss, "ListaEsperaAdmision");
     const lastRow = waitSheet.getLastRow();
     if (lastRow < 2) throw new Error("RESOURCE_NOT_FOUND");
@@ -3390,7 +3402,7 @@ function reopenAdmissionRequest(payload) {
   const targetState = String(nuevoEstado || "Reabierta").trim();
   if (targetState !== "Reabierta") throw new Error("ESTADO_REAPERTURA_INVALIDO");
 
-  const ctx = getAcademicAdmissionScopeContext_(payload, "reopenAdmissionRequest", requestId, "UPDATE");
+  let ctx = getAcademicAdmissionScopeContext_(payload, "reopenAdmissionRequest", requestId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   if (!isAcademicAdmissionManagerRole_(ctx.actor.role)) throw new Error("RESOURCE_NOT_FOUND");
 
@@ -3399,6 +3411,8 @@ function reopenAdmissionRequest(payload) {
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado reabriendo solicitudes. Por favor reintente.");
+    ctx = refreshAcademicAdmissionScopeContext_(payload, "reopenAdmissionRequest", requestId, "UPDATE");
+    if (!ctx.authorized || !isAcademicAdmissionManagerRole_(ctx.actor.role)) throw new Error("RESOURCE_NOT_FOUND");
     const requestAccess = assertAcademicAdmissionRequestScopeAccess_(
       ctx.ss, ctx.scope, requestId, null, "UPDATE");
     if (!requestAccess || requestAccess.authorized !== true) throw new Error("RESOURCE_NOT_FOUND");
@@ -4241,6 +4255,11 @@ function assertResourceOwnershipForScope_(ss, scope, resourceType, resourceId, o
   } catch (error) {
     return { authorized: false, code: "RESOURCE_OWNERSHIP_CHECK_FAILED" };
   }
+}
+
+function refreshAcademicAdmissionScopeContext_(payload, action, solicitudId, operation) {
+  clearRequestAuthorizationContext_(payload);
+  return getAcademicAdmissionScopeContext_(payload, action, solicitudId, operation);
 }
 
 function assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payload, operation) {
@@ -15886,7 +15905,7 @@ function resolveAdmissionDuplicate(payload) {
   if (validResolutions.indexOf(resolucion) === -1) throw new Error("Resolución no válida.");
   if (resolucion === "VincularExistente" && !destinationId) throw new Error("expedienteDestinoId es requerido para la vinculación.");
 
-  const ctx = getAcademicAdmissionScopeContext_(payload, "resolveAdmissionDuplicate", requestId, "UPDATE");
+  let ctx = getAcademicAdmissionScopeContext_(payload, "resolveAdmissionDuplicate", requestId, "UPDATE");
   if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
   const actorRole = String(ctx.actor.role || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   if (["director","administrador","desarrollador","secretaria"].indexOf(actorRole) === -1) throw new Error("AUTH_PERMISSION_DENIED");
@@ -15896,6 +15915,10 @@ function resolveAdmissionDuplicate(payload) {
   try {
     hasLock = lock.tryLock(10000);
     if (!hasLock) throw new Error("Servicio ocupado. Intente nuevamente.");
+    ctx = refreshAcademicAdmissionScopeContext_(payload, "resolveAdmissionDuplicate", requestId, "UPDATE");
+    if (!ctx.authorized) throw new Error("RESOURCE_NOT_FOUND");
+    const refreshedActorRole = String(ctx.actor.role || "").trim().toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+    if (["director","administrador","desarrollador","secretaria"].indexOf(refreshedActorRole) === -1) throw new Error("AUTH_PERMISSION_DENIED");
     // Revalidar propiedad después de obtener el lock para evitar decisiones
     // basadas en una lectura de ownership previa a la sección crítica.
     const requestAccess = assertAcademicAdmissionRequestScopeAccess_(
