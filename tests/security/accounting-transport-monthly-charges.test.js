@@ -88,9 +88,9 @@ context.getVerifiedAccountingIdentity_=()=>({authorized:false,code:"VERIFIED_IDE
 assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-009"}),/VERIFIED_IDENTITY_REQUIRED/);
 context.getVerifiedAccountingIdentity_=p=>({authorized:true,role:(p&&p._verifiedRole)||"Contador",userId:(p&&p._verifiedUserId)||"ACC-1"});
 assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-009",_verifiedRole:"Estudiante"}),/TRANSPORT_BILLING_ROLE_NOT_ALLOWED/);
-assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-009"}),/MONTHLY_CHARGE_STUDENT_IDENTITY_UNRESOLVED/);
+assert.equal(context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-009"}).code,"TRANSPORT_STUDENT_NOT_FOUND");
 rows.ExpedientesEstudiantes.push(["EXP-DUP","STU-002","PERSON-002"]);
-assert.throws(()=>context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-002"}),/MONTHLY_CHARGE_EXPEDIENTE_AMBIGUOUS/);
+assert.equal(context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-002"}).code,"TRANSPORT_STUDENT_AMBIGUOUS");
 const duplicateRoute=rows.TransporteRutas[1].slice();rows.TransporteRutas.push(duplicateRoute);
 assert.equal(context.assignStudentTransport({rutaId:"R1",estudianteUserId:"STU-DUP"}).code,"ROUTE_ID_AMBIGUOUS");
 rows.TransporteRutas.pop();
