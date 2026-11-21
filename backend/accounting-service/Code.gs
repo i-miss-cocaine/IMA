@@ -12832,6 +12832,12 @@ function getTransportEfficiencyMetrics(payload) {
       transportAuditDenied_("getTransportEfficiencyMetrics", data, initialScope, null);
       return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", message: "La analítica agregada está reservada a Dirección." };
     }
+    const initialManagementAccess = transportManagementReadScope_(data, ss, actor, initialScope);
+    if (!initialManagementAccess || initialManagementAccess.authorized !== true) {
+      transportAuditDenied_(actor, "getTransportEfficiencyMetrics", null);
+      return { status: "error", code: initialManagementAccess && initialManagementAccess.code || "RESOURCE_SCOPE_DENIED",
+        message: "La analítica requiere ámbito institucional completo." };
+    }
   } catch (error) {
     return { status: "error", code: "TRANSPORT_METRICS_READ_FAILED", message: String(error && error.message || error) };
   }
@@ -12862,6 +12868,12 @@ function getTransportEfficiencyMetrics(payload) {
     if (!scope.management || ["Administrador", "Director", "Subdirector"].indexOf(scope.role) === -1) {
       transportAuditDenied_(scope, "getTransportEfficiencyMetrics", null);
       return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", message: "La analítica agregada está reservada a Dirección." };
+    }
+    const lockedManagementAccess = transportManagementReadScope_(data, ss, lockedActor, scope);
+    if (!lockedManagementAccess || lockedManagementAccess.authorized !== true) {
+      transportAuditDenied_(lockedActor, "getTransportEfficiencyMetrics", null);
+      return { status: "error", code: lockedManagementAccess && lockedManagementAccess.code || "RESOURCE_SCOPE_DENIED",
+        message: "El ámbito institucional dejó de estar autorizado." };
     }
 
     const from = data.fechaDesde ? transportMetricsDateKey_(data.fechaDesde) : "";
