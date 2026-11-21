@@ -2096,7 +2096,7 @@ function getGuardianPermissionKeyForAction_(action) {
   if (/(payment|finance|account|billing|voucher|credit|invoice|purchase|receipt|tuition|fee)/.test(value)) return "permisoFinanciero";
   if (/(attendance|absence|justification|check in|checkin)/.test(value)) return "permisoAsistencia";
   if (/(document|file|certificate|expedient|attachment)/.test(value)) return "permisoDocumental";
-  if (/(grade|exam|task|academic|schedule|classroom|enrollment|student records?|report)/.test(value)) return "permisoAcademico";
+  if (/(grade|exam|task|academic|schedule|classroom|enrollment|extracurricular|student records?|report)/.test(value)) return "permisoAcademico";
   return "";
 }
 
@@ -2107,7 +2107,7 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   if (verifiedActorRole === "Administrador" || verifiedActorRole === "Desarrollador") return { authorized: true };
 
   const targetStudentId = payload && (
-    payload.studentId || payload.estudianteId || payload.targetUserId || payload.userId
+    payload.studentId || payload.estudianteId || payload.estudianteUserId || payload.studentUserId || payload.targetStudentId || payload.targetStudentUserId || payload.targetUserId || payload.userId
   );
   const targetExpedienteId = payload && (payload.expedienteId || payload.expedienteEstudianteId);
 
@@ -2118,7 +2118,8 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   }
 
   const explicitGuardianTarget = payload && (
-    payload.studentId || payload.estudianteId || payload.targetUserId ||
+    payload.studentId || payload.estudianteId || payload.estudianteUserId || payload.studentUserId ||
+    payload.targetStudentId || payload.targetStudentUserId || payload.targetUserId ||
     payload.expedienteId || payload.expedienteEstudianteId
   );
   const alternateUserTarget = payload && payload.userId &&

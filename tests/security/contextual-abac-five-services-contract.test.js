@@ -168,6 +168,12 @@ vm.createContext(guardianPolicyRuntime);
 vm.runInContext(guardianPolicyCode + "\nthis.check = validateContextualAccess;", guardianPolicyRuntime);
 assert.equal(guardianPolicyRuntime.check("getStudentAcademicReport", { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, true,
   "USER allows a guardian only when the linked relationship explicitly grants the requested academic domain");
+assert.equal(guardianPolicyRuntime.check("enrollStudentInExtracurricular",
+  { estudianteUserId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, true,
+  "USER maps extracurricular enrollment to the explicit academic relationship permission");
+assert.equal(guardianPolicyRuntime.check("enrollStudentInExtracurricular",
+  { estudianteUserId: "STU-2", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, false,
+  "USER denies extracurricular enrollment for a student outside the verified guardian relationship");
 const unclassifiedGuardianDecision = guardianPolicyRuntime.check("customStudentResourceAction",
   { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre");
 assert.equal(unclassifiedGuardianDecision.authorized, false,
