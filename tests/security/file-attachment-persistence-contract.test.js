@@ -124,6 +124,7 @@ const voucherSheet = {
 };
 const voucherContext = {
   getVerifiedAccountingIdentity_: () => authorized ? ({ authorized: true, userId: "student-1", role: "Estudiante" }) : ({ authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" }),
+  validateRolePermission: () => ({ authorized: true }),
   validateRolePermission: () => authorized ? ({ authorized: true }) : ({ authorized: false, code: "ROLE_PERMISSION_DENIED" }),
   assertPaymentVoucherOwnerAccess_: () => ownerAllowed ? ({ authorized: true }) : ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
   ensurePaymentVoucherEvidenceSchema_:()=>({sheet:voucherSheet,map:voucherMap,headers:voucherHeaders}),
@@ -261,6 +262,7 @@ let voucherBlobReads = 0;
 let voucherOwnerAllowed = true;
 const voucherDownloadContext = {
   getVerifiedAccountingIdentity_: () => ({ authorized: true, userId: "student-1", role: "Estudiante" }),
+  validateRolePermission: () => ({ authorized: true }),
   assertPaymentVoucherOwnerAccess_: () => voucherOwnerAllowed ? ({ authorized: true }) : ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
   extractDriveFileId: () => "legacy-file-id",
   SpreadsheetApp: { openById: () => ({}) },
