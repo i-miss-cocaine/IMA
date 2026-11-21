@@ -8541,31 +8541,66 @@ function getStudentProcedureNotificationLogs(payload) {
 
 // [TAREA-F5-011] Endpoint para consulta de logs de notificaciones de admisiones en Secretaría
 function getAdmissionNotificationLogs(payload) {
-  const { solicitudId, limit } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "BandejaNotificaciones").getDataRange().getValues().slice(1);
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
 
-  let filtered = rows;
-  if (solicitudId) {
-    const searchId = String(solicitudId).trim().toLowerCase();
-    filtered = filtered.filter(r => String(r[4] || "").toLowerCase().includes(searchId) || String(r[9] || "").toLowerCase().includes(searchId));
+  const solicitudId = String(request.solicitudId || "").trim();
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let scope = null;
+  try { scope = getInstitutionalDepartmentScope_(request, role); } catch (_) {}
+  if (!scope || scope.status !== "success") return { status: "error", code: "INSTITUTIONAL_SCOPE_UNVERIFIED" };
+  if (!solicitudId && scope.institutionWide !== true) {
+    return { status: "error", code: "NOTIFICATION_TARGET_REQUIRED" };
   }
 
-  filtered.reverse(); // Ordenar del más reciente al más antiguo
-  const maxRows = parseInt(limit || 50, 10);
-  const mapped = filtered.slice(0, maxRows).map(r => ({
-    notificacionId: r[0],
-    usuarioDestino: r[1],
-    tipo: r[2],
-    titulo: r[3],
-    mensaje: r[4],
-    fechaEnvio: r[5],
-    leido: Boolean(r[6]),
-    categoria: r[7],
-    enlaceAccion: r[8],
-    deduplicationKey: r[9],
-    estadoEntrega: r[10] || "Entregado",
-    emailDestino: r[11] || ""
+  if (solicitudId) {
+    const admissionSheet = ss.getSheetByName("SolicitudesAdmision");
+    if (!admissionSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    const admissionRows = admissionSheet.getDataRange().getValues();
+    const admissionMatches = admissionRows.slice(1).filter(row =>
+      String(row[0] || "").trim() === solicitudId);
+    if (admissionMatches.length !== 1) {
+      return { status: "error", code: admissionMatches.length ? "RESOURCE_AMBIGUOUS" : "RESOURCE_NOT_FOUND" };
+    }
+    if (scope.institutionWide !== true) {
+      const ownership = assertRecordOwnership(request, "SOLICITUD_ADMISION", solicitudId, "READ");
+      if (!ownership || ownership.authorized !== true) {
+        return { status: "error", code: ownership && ownership.code || "RESOURCE_SCOPE_DENIED" };
+      }
+    }
+  }
+
+  const sheet = ss.getSheetByName("BandejaNotificaciones");
+  if (!sheet) return { status: "success", totalNotificaciones: 0, notificaciones: [] };
+  const rows = sheet.getDataRange().getValues().slice(1);
+  const searchId = solicitudId.toLowerCase();
+  let filtered = rows;
+  if (solicitudId) {
+    filtered = rows.filter(row => {
+      const messageTokens = String(row[4] || "").toLowerCase().split(/[^a-z0-9_-]+/).filter(Boolean);
+      const keyTokens = String(row[9] || "").toLowerCase().split(/[^a-z0-9_-]+/).filter(Boolean);
+      return messageTokens.indexOf(searchId) !== -1 || keyTokens.indexOf(searchId) !== -1;
+    });
+  }
+
+  filtered.reverse();
+  const requestedLimit = parseInt(request.limit || 50, 10);
+  const maxRows = Number.isFinite(requestedLimit) && requestedLimit > 0 ? Math.min(requestedLimit, 200) : 50;
+  const mapped = filtered.slice(0, maxRows).map(row => ({
+    notificacionId: row[0],
+    usuarioDestino: row[1],
+    tipo: row[2],
+    titulo: row[3],
+    mensaje: row[4],
+    fechaEnvio: row[5],
+    leido: Boolean(row[6]),
+    categoria: row[7],
+    enlaceAccion: row[8],
+    deduplicationKey: row[9],
+    estadoEntrega: row[10] || "Entregado",
+    emailDestino: row[11] || ""
   }));
 
   return {
