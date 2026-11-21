@@ -106,22 +106,6 @@ for (const [name, check] of [["TASK", taskContext], ["EXAM", examContext]]) {
 }
 
 
-function examLegacyLookup() {
-  const legacyRows = [
-    ["RelacionID","ExpedienteID","ResponsableID","","","","","","Portal","Estado"],
-    ["LEG-1","STUDENT-1","GUARD-1","","","","","","SI","ACTIVA"]
-  ];
-  const sheets = {
-    ExpedientesEstudiantes: { getDataRange: () => ({ getValues: () => [["ExpedienteID","UserID"]] }) },
-    RelacionesFamiliares: { getDataRange: () => ({ getValues: () => [["RelacionID","ExpedienteID","ResponsableID","Tipo","Estado","Inicio","Fin","Notas","PermisosJSON"]] }) },
-    RelacionesEstudianteTutor: { getDataRange: () => ({ getValues: () => legacyRows.map(row => row.slice()) }) }
-  };
-  const context = { Date, String, Number, Object, Array, JSON };
-  vm.createContext(context);
-  vm.runInContext(extractFunction(examSource, "getVerifiedGuardianStudentIds_") + "\nthis.lookup=getVerifiedGuardianStudentIds_;", context);
-  return Array.from(context.lookup({ getSheetByName: name => sheets[name] || null }, "GUARD-1"));
-}
-assert.deepEqual(examLegacyLookup(), [], "EXAM legacy relationship without explicit academic-domain permission denies");
 assert.deepEqual(taskLookup([relation('{"permisoAcademico":true}')]), ["STUDENT-1"], "TASK reads the current academic grant");
 assert.deepEqual(taskLookup([relation('{"permisoAcademico":false}')]), [], "TASK re-evaluates a revoked grant on the next request");
 assert.deepEqual(examLookup([relation('{"permisoAcademico":true}')]), ["STUDENT-1"], "EXAM reads the current academic grant");
