@@ -754,6 +754,7 @@ const tenantSessionCtx = {
 };
 const tenantSessionCode = `
 const USER_ROLE_MEMBERSHIP_HEADERS_ = ${JSON.stringify(membershipHeaders)};
+${versionPrelude}
 const SESSION_REVOCATION_HEADERS_ = ["SessionID","UserID","RevokedAt","ExpiresAt"];
 ${extractFunction(source,"parseUserRoleMembershipDate_")}
 ${extractFunction(source,"isConfiguredRbacRole_")}
