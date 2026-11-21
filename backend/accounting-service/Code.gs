@@ -11993,25 +11993,145 @@ function getServiceTariffs(payload){
  const p=payload||{},lock=LockService.getScriptLock();lock.waitLock(15000);try{transportBillingActor_(p);const sh=serviceEnsureTariffsSheet_(SpreadsheetApp.openById(SPREADSHEET_ID)),rows=sh.getDataRange().getValues().slice(1).filter(r=>(!p.servicio||String(r[1]).toUpperCase()===String(p.servicio).toUpperCase())&&(!p.rutaId||String(r[3])===String(p.rutaId))&&(!p.estado||String(r[13]).toLowerCase()===String(p.estado).toLowerCase()));return {status:"success",tarifas:rows.map(r=>({tarifaServicioId:r[0],servicio:r[1],modalidad:r[2],rutaId:r[3],periodo:r[4],monto:Number(r[5]||0),fechaVigenciaInicio:r[6],fechaVigenciaFin:r[7],descuentoHermanosPct:Number(r[8]||0),descuentoMaximoPct:Number(r[9]===undefined?100:r[9]),prorrateoAlta:r[10]!==false&&String(r[10]).toLowerCase()!=="false",prorrateoBaja:r[11]!==false&&String(r[11]).toLowerCase()!=="false",conceptoId:r[12],estado:r[13]}))};}finally{lock.releaseLock();}
 }
 
-function serviceStudentGuardianIds_(ss,userId){
- const users=ss.getSheetByName("Usuarios"),relations=ss.getSheetByName("RelacionesFamiliares");if(!users||!relations)return [];
- const u=users.getDataRange().getValues().slice(1).find(r=>String(r[0]||"").trim()===String(userId).trim()),person=u?String(u[9]||"").trim():"";if(!person)return [];
- const rows=relations.getDataRange().getValues().slice(1),now=new Date(),active=r=>{
-  const state=String(r[4]||"").trim().toLowerCase(),startValue=r[5],endValue=r[6],from=transportParseDate_(startValue),to=transportParseDate_(endValue);
-  const validFrom=startValue===""||startValue===null||startValue===undefined||!!from;
-  const validTo=endValue===""||endValue===null||endValue===undefined||!!to;
-  return validFrom&&validTo&&["aprobado","autorizado","activo","active"].indexOf(state)!==-1&&(!from||from<=now)&&(!to||to>=now);
- };
- return [...new Set(rows.filter(r=>String(r[1]||"").trim()===person&&active(r)).map(r=>String(r[2]||"").trim()).filter(Boolean))];
+function serviceFamilyHeaderIndex_(headers, aliases) {
+  const normalized = (headers || []).map(value => String(value || "").trim().toLowerCase().replace(/[^a-z0-9]/g, ""));
+  for (let i = 0; i < aliases.length; i++) {
+    const index = normalized.indexOf(String(aliases[i]).toLowerCase().replace(/[^a-z0-9]/g, ""));
+    if (index >= 0) return index;
+  }
+  return -1;
 }
 
-function serviceSiblingCount_(ss,userId){
- const users=ss.getSheetByName("Usuarios"),relations=ss.getSheetByName("RelacionesFamiliares");if(!users||!relations)return 0;
- const userRows=users.getDataRange().getValues().slice(1),own=userRows.find(r=>String(r[0]||"").trim()===String(userId).trim()),person=own?String(own[9]||"").trim():"";if(!person)return 0;
- const guardians=new Set(serviceStudentGuardianIds_(ss,userId));if(!guardians.size)return 0;
- const rows=relations.getDataRange().getValues().slice(1),now=new Date(),active=r=>{const state=String(r[4]||"").trim().toLowerCase(),from=transportParseDate_(r[5]),to=transportParseDate_(r[6]);return ["aprobado","autorizado","activo","active"].indexOf(state)!==-1&&(!from||from<=now)&&(!to||to>=now);};
- const persons=new Set(rows.filter(r=>guardians.has(String(r[2]||"").trim())&&active(r)).map(r=>String(r[1]||"").trim()).filter(x=>x&&x!==person));
- return new Set(userRows.filter(r=>persons.has(String(r[9]||"").trim())&&["estudiante","student","alumno"].indexOf(String(r[6]||"").trim().toLowerCase())!==-1&&String(r[10]||"Activo").toLowerCase()!=="inactivo").map(r=>String(r[9]||"").trim())).size;
+function serviceFamilyRelationIsActive_(row, indexes, now) {
+  const state = String(row[indexes.state] || "").trim().toLowerCase();
+  if (["aprobado", "autorizado", "activo", "active", "verificada"].indexOf(state) === -1) return false;
+  const parseBound = value => {
+    if (value === "" || value === null || value === undefined) return { valid: true, date: null };
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isFinite(date.getTime()) ? { valid: true, date } : { valid: false, date: null };
+  };
+  const start = parseBound(indexes.start >= 0 ? row[indexes.start] : "");
+  const end = parseBound(indexes.end >= 0 ? row[indexes.end] : "");
+  if (!start.valid || !end.valid || (start.date && start.date > now) ||
+      (end.date && end.date < now) || (start.date && end.date && start.date > end.date)) return false;
+  if (indexes.directPermission >= 0) {
+    const direct = row[indexes.directPermission];
+    if (direct === false || String(direct || "").trim().toLowerCase() === "false") return false;
+  }
+  if (indexes.permissions >= 0) {
+    const raw = row[indexes.permissions];
+    if (raw !== "" && raw !== null && raw !== undefined) {
+      let permissions;
+      try { permissions = typeof raw === "string" ? JSON.parse(raw) : raw; } catch (_) { return false; }
+      if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) ||
+          permissions.permisoFinanciero === false ||
+          String(permissions.permisoFinanciero || "").trim().toLowerCase() === "false") return false;
+    }
+  }
+  return true;
+}
+
+function serviceStudentGuardianIds_(ss, userId) {
+  const users = ss && ss.getSheetByName("Usuarios"), relations = ss && ss.getSheetByName("RelacionesFamiliares");
+  if (!users || !relations || !String(userId || "").trim()) return [];
+  const userValues = users.getDataRange().getValues(), relationValues = relations.getDataRange().getValues();
+  if (!userValues || userValues.length < 2 || !relationValues || relationValues.length < 2) return [];
+  const uh = userValues[0] || [], rh = relationValues[0] || [];
+  const ui = serviceFamilyHeaderIndex_(uh, ["UserId", "UserID"]);
+  const up = serviceFamilyHeaderIndex_(uh, ["PersonaID"]);
+  const ur = serviceFamilyHeaderIndex_(uh, ["Rol", "Role"]);
+  const us = serviceFamilyHeaderIndex_(uh, ["Estado", "EstadoCuenta"]);
+  const ri = serviceFamilyHeaderIndex_(rh, ["RelacionID", "IDRelacion"]);
+  const rs = serviceFamilyHeaderIndex_(rh, ["PersonaEstudianteID"]);
+  const rg = serviceFamilyHeaderIndex_(rh, ["PersonaResponsableID"]);
+  const rst = serviceFamilyHeaderIndex_(rh, ["EstadoAutorizacion", "Estado"]);
+  const rstart = serviceFamilyHeaderIndex_(rh, ["FechaInicio", "Inicio", "StartDate"]);
+  const rend = serviceFamilyHeaderIndex_(rh, ["FechaFin", "Fin", "EndDate"]);
+  const rpermissions = serviceFamilyHeaderIndex_(rh, ["PermisosJSON"]);
+  const rfinancial = serviceFamilyHeaderIndex_(rh, ["PermisoFinanciero"]);
+  if ([ui, up, ur, ri, rs, rg, rst].some(index => index < 0)) return [];
+  const userRows = userValues.slice(1), relationRows = relationValues.slice(1);
+  const activeUser = row => us < 0 || !String(row[us] || "").trim() ||
+    ["activo", "active", "habilitado"].indexOf(String(row[us]).trim().toLowerCase()) !== -1;
+  const studentRole = row => ["estudiante", "student", "alumno"].indexOf(institutionalServiceRoleKey_(row[ur])) !== -1;
+  const guardianRole = row => ["padre", "madre", "tutor", "responsable"].indexOf(institutionalServiceRoleKey_(row[ur])) !== -1;
+  const own = userRows.filter(row => String(row[ui] || "").trim() === String(userId).trim());
+  if (own.length !== 1 || !studentRole(own[0]) || !activeUser(own[0])) return [];
+  const studentPerson = String(own[0][up] || "").trim();
+  if (!studentPerson) return [];
+  const studentPersonOwners = userRows.filter(row => String(row[up] || "").trim() === studentPerson &&
+    studentRole(row) && activeUser(row));
+  if (studentPersonOwners.length !== 1) return [];
+
+  const indexes = { state: rst, start: rstart, end: rend, permissions: rpermissions, directPermission: rfinancial };
+  const now = new Date(), relationIdCounts = Object.create(null);
+  relationRows.forEach(row => {
+    const id = String(row[ri] || "").trim();
+    if (id) relationIdCounts[id] = (relationIdCounts[id] || 0) + 1;
+  });
+  const candidates = relationRows.filter(row => String(row[rs] || "").trim() === studentPerson &&
+    serviceFamilyRelationIsActive_(row, indexes, now));
+  const guardianRelationCounts = Object.create(null);
+  candidates.forEach(row => {
+    const guardianPerson = String(row[rg] || "").trim();
+    if (guardianPerson) guardianRelationCounts[guardianPerson] = (guardianRelationCounts[guardianPerson] || 0) + 1;
+  });
+  const result = [];
+  candidates.forEach(row => {
+    const relationId = String(row[ri] || "").trim(), guardianPerson = String(row[rg] || "").trim();
+    if (!relationId || relationIdCounts[relationId] !== 1 || !guardianPerson ||
+        guardianRelationCounts[guardianPerson] !== 1) return;
+    const guardianUsers = userRows.filter(user => String(user[up] || "").trim() === guardianPerson &&
+      guardianRole(user) && activeUser(user));
+    if (guardianUsers.length !== 1) return;
+    if (result.indexOf(guardianPerson) < 0) result.push(guardianPerson);
+  });
+  return result;
+}
+
+function serviceSiblingCount_(ss, userId) {
+  const users = ss && ss.getSheetByName("Usuarios"), relations = ss && ss.getSheetByName("RelacionesFamiliares");
+  if (!users || !relations || !String(userId || "").trim()) return 0;
+  const userValues = users.getDataRange().getValues(), relationValues = relations.getDataRange().getValues();
+  if (!userValues || userValues.length < 2 || !relationValues || relationValues.length < 2) return 0;
+  const uh = userValues[0] || [], rh = relationValues[0] || [];
+  const ui = serviceFamilyHeaderIndex_(uh, ["UserId", "UserID"]), up = serviceFamilyHeaderIndex_(uh, ["PersonaID"]);
+  const ur = serviceFamilyHeaderIndex_(uh, ["Rol", "Role"]), us = serviceFamilyHeaderIndex_(uh, ["Estado", "EstadoCuenta"]);
+  const ri = serviceFamilyHeaderIndex_(rh, ["RelacionID", "IDRelacion"]), rs = serviceFamilyHeaderIndex_(rh, ["PersonaEstudianteID"]);
+  const rg = serviceFamilyHeaderIndex_(rh, ["PersonaResponsableID"]), rst = serviceFamilyHeaderIndex_(rh, ["EstadoAutorizacion", "Estado"]);
+  const rstart = serviceFamilyHeaderIndex_(rh, ["FechaInicio", "Inicio", "StartDate"]), rend = serviceFamilyHeaderIndex_(rh, ["FechaFin", "Fin", "EndDate"]);
+  const rpermissions = serviceFamilyHeaderIndex_(rh, ["PermisosJSON"]), rfinancial = serviceFamilyHeaderIndex_(rh, ["PermisoFinanciero"]);
+  if ([ui, up, ur, ri, rs, rg, rst].some(index => index < 0)) return 0;
+  const userRows = userValues.slice(1), relationRows = relationValues.slice(1);
+  const activeUser = row => us < 0 || !String(row[us] || "").trim() ||
+    ["activo", "active", "habilitado"].indexOf(String(row[us]).trim().toLowerCase()) !== -1;
+  const studentRole = row => ["estudiante", "student", "alumno"].indexOf(institutionalServiceRoleKey_(row[ur])) !== -1;
+  const own = userRows.filter(row => String(row[ui] || "").trim() === String(userId).trim());
+  if (own.length !== 1 || !studentRole(own[0]) || !activeUser(own[0])) return 0;
+  const person = String(own[0][up] || "").trim();
+  if (!person || userRows.filter(row => String(row[up] || "").trim() === person && studentRole(row) && activeUser(row)).length !== 1) return 0;
+  const guardians = new Set(serviceStudentGuardianIds_(ss, userId));
+  if (!guardians.size) return 0;
+  const indexes = { state: rst, start: rstart, end: rend, permissions: rpermissions, directPermission: rfinancial };
+  const now = new Date(), relationIdCounts = Object.create(null), pairCounts = Object.create(null);
+  relationRows.forEach(row => {
+    const id = String(row[ri] || "").trim(), studentPerson = String(row[rs] || "").trim(), guardianPerson = String(row[rg] || "").trim();
+    if (id) relationIdCounts[id] = (relationIdCounts[id] || 0) + 1;
+    if (studentPerson && guardianPerson && serviceFamilyRelationIsActive_(row, indexes, now)) {
+      const key = studentPerson + "|" + guardianPerson;
+      pairCounts[key] = (pairCounts[key] || 0) + 1;
+    }
+  });
+  const siblingPersons = new Set();
+  relationRows.forEach(row => {
+    const relationId = String(row[ri] || "").trim(), studentPerson = String(row[rs] || "").trim(), guardianPerson = String(row[rg] || "").trim();
+    const key = studentPerson + "|" + guardianPerson;
+    if (!relationId || relationIdCounts[relationId] !== 1 || !studentPerson || studentPerson === person ||
+        !guardians.has(guardianPerson) || pairCounts[key] !== 1 || !serviceFamilyRelationIsActive_(row, indexes, now)) return;
+    const studentUsers = userRows.filter(user => String(user[up] || "").trim() === studentPerson && studentRole(user) && activeUser(user));
+    if (studentUsers.length === 1) siblingPersons.add(studentPerson);
+  });
+  return siblingPersons.size;
 }
 
 function serviceApprovedScholarshipDiscount_(ss,userId,concept,base){
