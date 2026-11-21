@@ -12968,16 +12968,20 @@ function getTransportEfficiencyMetrics(payload) {
     const requestedRoute = String(data.rutaId || "").trim();
     const requestedJourney = String(data.jornada || "").trim().toLowerCase();
 
-    const routeSnapshot = transportRows_(ss, "TransporteRutas",
-      ["RutaID","NombreRuta","UnidadCodigo","ConductorEmpleadoId","Capacidad","ParadasJSON","Estado","Observaciones","HoraInicio","HoraFin","Jornada"]);
+    const routeSnapshot = transportRowsPrefix_(ss, "TransporteRutas", [
+      ["RutaID"], ["NombreRuta","Nombre"], ["UnidadCodigo","Unidad"], ["ConductorEmpleadoId","Conductor"],
+      ["Capacidad"], ["ParadasJSON","Paradas"], ["Estado"]
+    ]);
     const vehicleSnapshot = transportRows_(ss, "TransporteVehiculos",
       ["VehiculoID","CodigoUnidad","Placa","Marca","Ano","CapacidadPasajeros"]);
     const assignmentSnapshot = transportRowsPrefix_(ss, "TransporteAsignaciones", [
       ["AsignacionTranspID","AsignacionID","ID"], ["RutaID"], ["EstudianteUserId"], ["ParadaNombre","Parada"],
       ["HorarioPlan","Horario"], ["Estado"], ["FechaAsignacion","Fecha"], ["Jornada"]
     ]);
-    const tripSnapshot = transportRows_(ss, "TransporteViajes",
-      ["ViajeID","RutaID","Unidad","Conductor","Monitor","Fecha","Jornada","HoraInicio","HoraFin","Estado"]);
+    const tripSnapshot = transportRowsPrefix_(ss, "TransporteViajes", [
+      ["ViajeID"], ["RutaID"], ["Unidad"], ["Conductor"], ["Monitor"], ["Fecha"], ["Jornada"],
+      ["HoraInicio","Inicio"], ["HoraFin","Fin"], ["Estado"]
+    ]);
     const attendanceSnapshot = transportRows_(ss, "TransporteAsistenciaViajes",
       ["EventoID","ViajeID","EstudianteUserId","Parada","HoraAbordaje","HoraDescenso","Estado"]);
     const snapshots = [routeSnapshot, vehicleSnapshot, assignmentSnapshot, tripSnapshot, attendanceSnapshot];
@@ -12992,6 +12996,20 @@ function getTransportEfficiencyMetrics(payload) {
     const tripRows = tripSnapshot.rows;
     const attendanceRows = attendanceSnapshot.rows;
 
+    function duplicateKey(rows, index) {
+      const counts = Object.create(null);
+      rows.forEach(function(row) {
+        const key = String(row[index] || "").trim();
+        if (key) counts[key] = (counts[key] || 0) + 1;
+      });
+      return Object.keys(counts).some(function(key) { return counts[key] > 1; });
+    }
+    if (duplicateKey(routeRows, 0) || duplicateKey(assignmentRows, 0) ||
+        duplicateKey(tripRows, 0) || duplicateKey(vehicleRows, 1)) {
+      return { status: "error", code: "RESOURCE_AMBIGUOUS",
+        message: "Los identificadores de rutas, asignaciones, viajes o unidades no son únicos." };
+    }
+
     const routes = Object.create(null);
     routeRows.forEach(function(row) {
       const id = String(row[0] || "").trim();
@@ -13004,7 +13022,7 @@ function getTransportEfficiencyMetrics(payload) {
       if (unit && isFinite(capacity) && capacity > 0) capacityByUnit[unit] = capacity;
     });
 
-    const activeAssignmentStates = ["active", "activa"];
+    const activeAssignmentStates = ["active", "activa", "activo", "vigente"];
     const assignedByGroup = Object.create(null);
     assignmentRows.forEach(function(row) {
       const routeId = String(row[1] || "").trim();
