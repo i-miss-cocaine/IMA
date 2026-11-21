@@ -3598,6 +3598,11 @@ function ensureSecurityVersionSheet_() {
   } catch (error) { return false; }
   finally { try { lock.releaseLock(); } catch (_) {} }
 }
+/**
+ * Read the shared security ledger on every authorization decision. These Apps Script
+ * services are separate projects, so process-local version caches cannot be invalidated
+ * reliably across USER, ACADEMIC, ACCOUNTING, TASK and EXAM.
+ */
 function getSecurityVersion_(key) {
   var versionKey = String(key || "").trim();
   if (!versionKey || versionKey.length > 180) return false;

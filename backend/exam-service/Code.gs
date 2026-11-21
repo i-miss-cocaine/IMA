@@ -533,6 +533,11 @@ function validateRolePermission(action, payload) {
 
 function getPermissionMatrixInstitutionId_(){try{if(typeof getIdentityInstitutionId_==="function"){var v=String(getIdentityInstitutionId_()||"").trim();if(v)return v;}}catch(_){}try{if(typeof PropertiesService!=="undefined"){var p=PropertiesService.getScriptProperties();return String(p.getProperty("IMA_INSTITUTION_ID")||p.getProperty("INSTITUTION_ID")||"").trim();}}catch(_){}return "";}
 var SECURITY_VERSION_HEADERS_ = ["Clave","Version","UpdatedAt","UpdatedBy"];
+/**
+ * Read the shared security ledger on every authorization decision. These Apps Script
+ * services are separate projects, so process-local version caches cannot be invalidated
+ * reliably across USER, ACADEMIC, ACCOUNTING, TASK and EXAM.
+ */
 function getSecurityVersion_(key) {
   var versionKey = String(key || "").trim();
   if (!versionKey || versionKey.length > 180) return false;
