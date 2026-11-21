@@ -12,7 +12,7 @@ function run(service,data,tenant){
   cache:{},CacheService:{getScriptCache:()=>({get:(k)=>context.cache[k]||null,put:(k,v)=>{context.cache[k]=v;},remove:(k)=>{delete context.cache[k];}})},
   SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="VersionesSeguridad"?versionSheet:matrixSheet})}};
  const versionPrelude=source.slice(source.indexOf("var SECURITY_VERSION_HEADERS_"),source.indexOf("function getDynamicPermissionsForRole"));
- vm.runInNewContext('const PERMISSION_MATRIX_SERVICE_="'+service.toUpperCase()+'";\\n'+versionPrelude+"\\n"+extract(source,"getPermissionMatrixInstitutionId_")+"\\n"+extract(source,"getDynamicPermissionsForRole")+"\\nthis.lookup=getDynamicPermissionsForRole;",context);
+ vm.runInNewContext('const PERMISSION_MATRIX_SERVICE_="'+service.toUpperCase()+'";\n'+versionPrelude+"\n"+extract(source,"getPermissionMatrixInstitutionId_")+"\n"+extract(source,"getDynamicPermissionsForRole")+"\nthis.lookup=getDynamicPermissionsForRole;",context);
  return context.lookup;
 }
 for(const service of services){const lookup=run(service,rows,"INST-A");if(service==="user")assert.equal(lookup("Director","readData"),false);if(service==="academic")assert.equal(lookup("Director","readData"),true);if(service==="task")assert.equal(lookup("Director","readData"),false);if(service==="accounting")assert.equal(lookup("Director","readData"),false);if(service==="exam")assert.equal(lookup("Director","readData"),false);}
