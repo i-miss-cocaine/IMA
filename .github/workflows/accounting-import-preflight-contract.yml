@@ -41,6 +41,7 @@ on:
       - tests/security/accounting-migration-import-ui.test.js
       - tests/security/accounting-employee-expediente-scope.test.js
       - tests/security/accounting-family-service-guardian-abac-contract.test.js
+      - tests/security/contextual-abac-five-services-contract.test.js
       - tests/security/session-token-transport.test.js
       - tests/security/identity-mapping-contract.test.js
       - tests/security/accounting-identity-map-snapshot.test.js
@@ -135,6 +136,8 @@ jobs:
         run: node --check tests/security/accounting-family-service-guardian-abac-contract.test.js
       - name: Run family financial guardian ABAC contract
         run: node tests/security/accounting-family-service-guardian-abac-contract.test.js
+      - name: Run cross-service contextual ABAC contract
+        run: node tests/security/contextual-abac-five-services-contract.test.js
       - name: Run identity mapping regression contract
         run: node tests/security/identity-mapping-contract.test.js
       - name: Run trusted USER identity snapshot contract
