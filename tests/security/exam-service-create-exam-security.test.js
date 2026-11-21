@@ -169,6 +169,15 @@ test(() => {
 });
 test(() => {
  const x=fixture({scopes:[
+  {authorized:true,institutionId:"I1",departmentIds:["D1"]},
+  {authorized:true,institutionId:"I1",departmentIds:["D2"]}
+ ]});
+ assert.throws(()=>x.call({departmentId:"D1"}),/RESOURCE_SCOPE_DENIED/);
+ assert.equal(x.sheets.Examenes.rows.length,1);
+ assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
+});
+test(() => {
+ const x=fixture({scopes:[
    {authorized:true,institutionId:"I1",departmentIds:["D1"]},
    {authorized:true,institutionId:"I1",departmentIds:["D2"]}
  ]});
