@@ -35,7 +35,16 @@ assert(previewFn.includes('getTaskServiceSubmissionAccess_(accessPayload,"READ_C
  ];
  const classSheet={getDataRange:()=>({getValues:()=>classroomRows})};
  const assignmentSheet={getDataRange:()=>({getValues:()=>assignmentRows})};
- const ss={getSheetByName:name=>name==="AsignacionesDocentes"?assignmentSheet:null};
+ const offerSheet={getDataRange:()=>({getValues:()=>[
+  ["OfertaID","AnoID","SedeID","Grado","Seccion","AsignaturaID","PlanID","Modalidad","CapacidadMax","Estado","CodigoClase"],
+  ["OFFER-1","2026","","6","A","SUB-1","PLAN-1","","","Activo",""]
+ ]})};
+ const subjectSheet={getDataRange:()=>({getValues:()=>[
+  ["AsignaturaID","NombreOficial","Codigo","Estado"],["SUB-1","Matemáticas","MATH","Activo"]
+ ]})};
+ const ss={getSheetByName:name=>({
+  AsignacionesDocentes:assignmentSheet,OfertaAcademica:offerSheet,CatalogoAsignaturas:subjectSheet
+ })[name]||null};
  const state={identityCalls:0,scopeCalls:0,ownershipCalls:0,openCalls:0};
  const context={
   SPREADSHEET_ID:"LOCAL",
@@ -53,7 +62,7 @@ assert(previewFn.includes('getTaskServiceSubmissionAccess_(accessPayload,"READ_C
   classDepartmentId:"D1",
   Date,String,Error
  };
- const names=["getTaskServiceAuthorizedClassrooms","isTaskServiceTeacherTaskAuthorized_","assertTaskServiceTeacherCanManageTask"];
+ const names=["assertTaskServiceTeacherAssignedToOffer","getTaskServiceAuthorizedClassrooms","isTaskServiceTeacherTaskAuthorized_","assertTaskServiceTeacherCanManageTask"];
  vm.runInNewContext(names.map(extract).join("\n")+"\nthis.guard=assertTaskServiceTeacherCanManageTask;",context);
  const task=["TASK-1","Tarea","Math","","P1","Matemáticas","6","A","","","PROF-1"];
  assert.equal(context.guard({sessionToken:"valid"},task,"UPDATE"),true);
