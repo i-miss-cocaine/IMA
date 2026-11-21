@@ -8542,8 +8542,41 @@ function appendPayrollConceptDetailRows_(ss,rows) {
   return rows.length;
 }
 
+function assertPayrollInstitutionWriteScope_(payload, ss, actor, employeeRows) {
+  const scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
+  if (!scope || scope.valid !== true || scope.authorized !== true) {
+    throw new Error(scope && scope.code || "PAYROLL_DEPARTMENT_SCOPE_UNVERIFIED");
+  }
+  // A payroll period is a single institution-wide accounting cycle; a
+  // department-only actor must not create a partial plan under the same period.
+  if (scope.institutionWide !== true) throw new Error("PAYROLL_INSTITUTION_SCOPE_REQUIRED");
+
+  const sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
+  if (!sheet) throw new Error("PAYROLL_EMPLOYEE_OWNERSHIP_SOURCE_MISSING");
+  const values = sheet.getDataRange().getValues();
+  if (!values || !values.length) throw new Error("PAYROLL_EMPLOYEE_OWNERSHIP_SOURCE_INVALID");
+  const headers = values[0].map(value => String(value || "").trim());
+  const idIndexes = [];
+  headers.forEach((header, index) => { if (header === "ExpedienteID") idIndexes.push(index); });
+  if (idIndexes.length !== 1) throw new Error("PAYROLL_EMPLOYEE_OWNERSHIP_SCHEMA_INVALID");
+  const idIndex = idIndexes[0], seen = Object.create(null);
+  (employeeRows || []).forEach(row => {
+    const expedienteId = String((row || [])[idIndex] || "").trim();
+    if (!expedienteId || seen[expedienteId]) throw new Error("PAYROLL_EMPLOYEE_RESOURCE_AMBIGUOUS");
+    seen[expedienteId] = true;
+    const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", expedienteId, "WRITE");
+    if (!ownership || ownership.authorized !== true) {
+      throw new Error(ownership && ownership.code || "PAYROLL_EMPLOYEE_SCOPE_DENIED");
+    }
+  });
+  return scope;
+}
+
 function calculatePayrollPeriod(payload) {
-  const { periodoMes, idempotencyToken } = payload || {};
+  const request = payload || {};
+  const access = requirePayrollConceptManager_(request);
+  if (!access || access.authorized !== true) throw new Error(access && access.code || "PAYROLL_ACCESS_DENIED");
+  const { periodoMes, idempotencyToken } = request;
   if (!periodoMes) throw new Error("periodoMes requerido.");
 
   const lock = LockService.getScriptLock();
@@ -8572,6 +8605,7 @@ function calculatePayrollPeriod(payload) {
     }
 
     const activeEmployees = expsRows.filter(r => r[8] === "active" || r[8] === "Activo" || r[8] === "EnPeriodoPrueba");
+    assertPayrollInstitutionWriteScope_(request, ss, access.actor, activeEmployees);
     if (activeEmployees.length === 0) {
       throw new Error("No hay empleados activos en estado de nómina elegible.");
     }
@@ -9344,7 +9378,10 @@ function generatePayrollPeriod(payload) {
 }
 
 function calculateExtraordinaryPayroll(payload) {
-  const { tipoBeneficio, anoLectivo, idempotencyToken, authRole } = payload || {};
+  const request = payload || {};
+  const access = requirePayrollConceptManager_(request);
+  if (!access || access.authorized !== true) throw new Error(access && access.code || "PAYROLL_ACCESS_DENIED");
+  const { tipoBeneficio, anoLectivo, idempotencyToken, authRole } = request;
   // tipoBeneficio: "DecimoTercerMes" (Aguinaldo) o "DecimoCuartoMes" (Compensación Social)
   if (!tipoBeneficio || !anoLectivo) {
     throw new Error("tipoBeneficio ('DecimoTercerMes' o 'DecimoCuartoMes') y anoLectivo son requeridos.");
@@ -9385,6 +9422,7 @@ function calculateExtraordinaryPayroll(payload) {
     }
 
     const activeEmployees = expsRows.filter(r => r[8] === "active" || r[8] === "Activo" || r[8] === "EnPeriodoPrueba" || r[8] === "Desvinculado");
+    assertPayrollInstitutionWriteScope_(request, ss, access.actor, activeEmployees);
     if (activeEmployees.length === 0) {
       throw new Error("No hay empleados elegibles para el cálculo del beneficio extraordinario.");
     }
