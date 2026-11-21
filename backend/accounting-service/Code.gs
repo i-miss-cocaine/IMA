@@ -12518,7 +12518,6 @@ function assignStudentTransport(payload) {
       };
     }
 
-    const billingSchema = transportEnsureBillingSchema_(ss);
     const now = new Date(),serviceStart=transportParseDate_(fechaInicioServicio)||now,serviceMode=transportNormalizeMode_(modalidadServicio||"COMPLETA");
     if(fechaInicioServicio&&!transportParseDate_(fechaInicioServicio))throw new Error("TRANSPORT_SERVICE_START_INVALID");
     const asgnId = "TRN-" + now.getTime() + "-" + Utilities.getUuid().slice(0,8);
