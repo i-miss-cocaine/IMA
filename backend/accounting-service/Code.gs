@@ -12508,7 +12508,7 @@ function assignStudentTransport(payload) {
 
     // 3. Control estricto de cupos y aforo vehicular [TASK-029]
     const cuposOcupados = asgnData.filter(r =>
-      String(r[1]).trim() === String(rutaId).trim() && String(r[5] || "").toLowerCase().trim() === "active"
+      String(r[1]).trim() === String(rutaId).trim() && ["active", "activa", "activo"].indexOf(String(r[5] || "").toLowerCase().trim()) !== -1
     ).length;
 
     if (cuposOcupados >= capAutorizada) {
