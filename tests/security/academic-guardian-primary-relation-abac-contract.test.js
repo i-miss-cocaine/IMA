@@ -55,13 +55,15 @@ function runtime(primaryRows, options = {}) {
   vm.runInContext(code + "\nthis.check = assertStudentExpedienteScopeAccess_;", context);
   return context;
 }
-function check(ctx) {
-  return ctx.check({ sessionToken: "verified-token" }, ctx.ss, {}, ["EXP-1","PERSON-S"]);
+function check(ctx, permissionKey) {
+  return ctx.check({ sessionToken: "verified-token" }, ctx.ss, {}, ["EXP-1","PERSON-S"], permissionKey);
 }
 
 let ctx = runtime([primaryHeaders, validPrimary]);
 assert.equal(check(ctx).authorized, true,
   "active primary guardian relationship with academic permission must authorize");
+assert.equal(check(ctx, "permisoDocumental").authorized, false,
+  "academic permission alone must not grant access to student documents");
 ctx = runtime([primaryHeaders, validPrimary.slice(0,8)]);
 assert.equal(check(ctx).authorized, false,
   "primary guardian relationships without an explicit academic permission fail closed");
@@ -77,6 +79,12 @@ assert.equal(check(ctx).authorized, false,
 ctx = runtime([primaryHeaders, validPrimary.slice(0,8).concat(["{malformed"])]);
 assert.equal(check(ctx).authorized, false,
   "malformed primary permission JSON must fail closed");
+ctx = runtime([primaryHeaders, validPrimary.slice(0,8).concat([JSON.stringify({ permisoAcademico: true, permisoDocumental: true })])]);
+assert.equal(check(ctx, "permisoDocumental").authorized, true,
+  "document access requires its own explicit boolean permission");
+ctx = runtime([primaryHeaders, validPrimary.slice(0,8).concat([JSON.stringify({ permisoAcademico: true, permisoDocumental: false })])]);
+assert.equal(check(ctx, "permisoDocumental").authorized, false,
+  "explicit document permission denial overrides academic permission");
 ctx = runtime([primaryHeaders, validPrimary.slice(0,5).concat(["2020-01-01","2020-12-31","",JSON.stringify({ permisoAcademico: true })])]);
 assert.equal(check(ctx).authorized, false,
   "expired primary relationship must deny");
@@ -96,6 +104,8 @@ assert.equal(check(ctx).authorized, false,
 ctx = runtime([primaryHeaders]);
 assert.equal(check(ctx).authorized, true,
   "legacy relationship is used only when no primary relationship exists for this guardian");
+assert.equal(check(ctx, "permisoDocumental").authorized, false,
+  "legacy portal links cannot imply document-domain permission");
 ctx = runtime([primaryHeaders], { legacyRows: [
   legacyRelations[0], legacyRelations[1],
   ["LEG-1","EXP-OTHER","REL-G","Padre","","","","","SI","Verificada"]
@@ -110,6 +120,9 @@ assert.equal(check(ctx).authorized, false,
   "revoked primary relationship must not be bypassed by an active legacy row");
 
 
+const documentScopeFn = extractFunction(source, "assertStudentDocumentScopeAccess_");
+assert(documentScopeFn.includes('assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp, "permisoDocumental")'),
+  "all student-document reads and writes require the explicit document-domain permission");
 const identityFn = extractFunction(source, "getStudentPersonIdForUser_");
 const identityRuntime = { ss: { getSheetByName: () => sheet([
   ["UserId","PersonaID"],["GUARD-1","PERSON-G"]

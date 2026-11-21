@@ -4213,7 +4213,8 @@ function assertAcademicAdmissionRequestScopeAccess_(ss, scope, solicitudId, payl
   return assertResourceOwnershipForScope_(ss,scope,"SOLICITUD_ADMISION",solicitudId,operation||"READ",payload);
 }
 
-function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
+function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow, guardianPermissionKey) {
+  const requiredGuardianPermissionKey = String(guardianPermissionKey || "permisoAcademico").trim();
   const actor = getVerifiedAcademicIdentity_(payload);
   if (!actor.authorized) return actor;
   if (!expRow || !expSheet) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
@@ -4281,10 +4282,13 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
           ? JSON.parse(relation[permissionsIndex]) : relation[permissionsIndex];
       } catch (_) { return { authorized: false, code: "RESOURCE_SCOPE_DENIED" }; }
       if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) ||
-          permissions.permisoAcademico !== true) {
+          permissions[requiredGuardianPermissionKey] !== true) {
         return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
       }
     } else {
+      if (requiredGuardianPermissionKey !== "permisoAcademico") {
+        return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+      }
       const relations = ss.getSheetByName("RelacionesEstudianteTutor");
       const guardians = ss.getSheetByName("ResponsablesTutores");
       if (!relations || !guardians) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
@@ -4359,7 +4363,7 @@ function assertStudentDocumentScopeAccess_(payload, ss, documentSheet, documentR
     const expRows = expSheet.getDataRange().getValues().slice(1);
     const exp = expRows.find(function(r) { return String(r[0] || "").trim() === resolvedExpedienteId; });
     if (!exp) return { authorized: false, code: "RESOURCE_OWNER_UNRESOLVED" };
-    return assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp);
+    return assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp, "permisoDocumental");
   }
   const scope = getVerifiedAcademicDepartmentScope_(payload, ss, actor);
   if (!scope.authorized) return scope;
