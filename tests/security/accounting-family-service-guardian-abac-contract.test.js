@@ -68,6 +68,6 @@ assert.deepEqual(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUA
 assert.deepEqual(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31",true,"{bad")]}).guardians("STU-1"),[],"malformed permissions JSON denies");
 assert.equal(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1"),relation("REL-2","PERSON-STU-2","PERSON-GUARD-1","Activo","2020-01-01","2099-12-31",false)]}).siblings("STU-1"),0,"sibling without financial permission is not counted");
 assert.equal(runtime({relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1"),relation("REL-1","PERSON-STU-2","PERSON-GUARD-1")]}).siblings("STU-1"),0,"duplicate sibling relation ID is not counted");
-assert.equal(runtime({users:[student,["STU-X","Estudiante","PERSON-STU-2","Activo"],guardian],relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1"),relation("REL-2","PERSON-STU-2","PERSON-GUARD-1")]}).siblings("STU-1"),0,"ambiguous sibling person mapping is not counted");
+assert.equal(runtime({users:[student,sibling,["STU-X","Estudiante","PERSON-STU-2","Activo"],guardian],relations:[relation("REL-1","PERSON-STU-1","PERSON-GUARD-1"),relation("REL-2","PERSON-STU-2","PERSON-GUARD-1")]}).siblings("STU-1"),0,"ambiguous sibling person mapping is not counted");
 
 process.stdout.write("accounting-family-service-guardian-abac-contract: 18 assertions passed\n");
