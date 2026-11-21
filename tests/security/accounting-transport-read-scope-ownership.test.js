@@ -179,6 +179,6 @@ assert.deepEqual(Array.from(canonicalStudent.getManifest({ sessionToken: "verifi
 
 const duplicateTrip = makeHarness({ duplicateTrip: true });
 duplicateTrip.data.TransporteViajes.push(duplicateTrip.data.TransporteViajes[1].slice());
-assert.equal(duplicateTrip.getManifest({ sessionToken: "verified", viajeId: "T-1" }).code, "RESOURCE_NOT_FOUND");
+assert.equal(duplicateTrip.getManifest({ sessionToken: "verified", viajeId: "T-1" }).code, "RESOURCE_AMBIGUOUS");
 
 console.log("accounting-transport-read-scope-ownership: all assertions passed");
