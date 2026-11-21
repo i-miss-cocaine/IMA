@@ -4620,7 +4620,11 @@ function transportRows_(ss, sheetName, expectedHeaders) {
   var values = sheet.getDataRange().getValues();
   if (!values || !values.length) return { valid: false, missing: false, code: "TRANSPORT_SCHEMA_INVALID", rows: [], headers: [] };
   var headers = values[0].map(function(value) { return String(value || "").trim(); });
-  if (expectedHeaders && JSON.stringify(headers) !== JSON.stringify(expectedHeaders)) {
+  var expectedSchemas = expectedHeaders && Array.isArray(expectedHeaders[0]) ? expectedHeaders : (expectedHeaders ? [expectedHeaders] : []);
+  if (expectedSchemas.length && !expectedSchemas.some(function(schema) {
+    return Array.isArray(schema) && headers.length === schema.length &&
+      schema.every(function(header, index) { return headers[index] === header; });
+  })) {
     return { valid: false, missing: false, code: "TRANSPORT_SCHEMA_INVALID", rows: [], headers: headers };
   }
   return { valid: true, missing: false, sheet: sheet, headers: headers, rows: values.slice(1) };
@@ -4802,11 +4806,19 @@ function getTransportRouteIdsForScope_(ss, scope) {
       ["HorarioPlan","Horario"], ["Estado"], ["FechaAsignacion","Fecha"], ["Jornada"]
     ]);
     if (!assignments.valid) return [];
+    var startIndex = assignments.headers.indexOf("FechaInicioServicio");
+    var endIndex = assignments.headers.indexOf("FechaFinServicio");
+    var now = Date.now();
     assignments.rows.forEach(function(row) {
       var state = String(row[5] || "").trim().toLowerCase(), routeId = String(row[1] || "").trim();
       if (["activa","active","activo"].indexOf(state) === -1 ||
           scope.studentIds.indexOf(String(row[2] || "").trim()) === -1 ||
           activeRoutes.indexOf(routeId) === -1) return;
+      var start = startIndex < 0 ? { valid: true, date: null } : transportDateBoundary_(row[startIndex]);
+      var end = endIndex < 0 ? { valid: true, date: null } : transportDateBoundary_(row[endIndex]);
+      if (!start.valid || !end.valid ||
+          (start.date && start.date.getTime() > now) ||
+          (end.date && end.date.getTime() < now)) return;
       if (allowed.indexOf(routeId) === -1) allowed.push(routeId);
     });
     return allowed;
@@ -4924,13 +4936,28 @@ function getTransportAssignments(payload) {
   if (Object.keys(assignmentCounts).some(function(id) { return assignmentCounts[id] > 1; })) {
     return { status: "error", code: "RESOURCE_AMBIGUOUS", total: 0, asignaciones: [] };
   }
-  var allowedRoutes = scope.management ? null : scope.routeIds || getTransportRouteIdsForScope_(ss, scope);
   var requestedRoute = String(input.rutaId || "").trim(), requestedStudent = String(input.estudianteUserId || "").trim();
+  var routeSnapshot = transportRowsPrefix_(ss, "TransporteRutas", [
+    ["RutaID"], ["NombreRuta","Nombre"], ["UnidadCodigo","Unidad"], ["ConductorEmpleadoId","Conductor"],
+    ["Capacidad"], ["ParadasJSON","Paradas"], ["Estado"]
+  ]);
+  if (!routeSnapshot.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", total: 0, asignaciones: [] };
+  var routeCounts = Object.create(null);
+  routeSnapshot.rows.forEach(function(row) {
+    var id = String(row[0] || "").trim();
+    if (id) routeCounts[id] = (routeCounts[id] || 0) + 1;
+  });
+  if (requestedRoute && routeCounts[requestedRoute] > 1) return { status: "error", code: "RESOURCE_AMBIGUOUS", total: 0, asignaciones: [] };
+  if (scope.management && requestedRoute && !routeCounts[requestedRoute]) return { status: "error", code: "ROUTE_NOT_FOUND", total: 0, asignaciones: [] };
+  var uniqueRouteIds = Object.keys(routeCounts).filter(function(id) { return routeCounts[id] === 1; });
+  var allowedRoutes = scope.management ? null : scope.routeIds || getTransportRouteIdsForScope_(ss, scope);
   if (requestedRoute && !scope.management && (!allowedRoutes || allowedRoutes.indexOf(requestedRoute) === -1)) {
     transportAuditDenied_(actor, "getTransportAssignments", requestedRoute);
     return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", total: 0, asignaciones: [] };
   }
   var role = String(scope.role || "").trim().toLowerCase();
+  var today = Date.now(), startIndex = snapshot.headers.indexOf("FechaInicioServicio");
+  var endIndex = snapshot.headers.indexOf("FechaFinServicio");
   if (requestedStudent && !scope.management && ["padre","estudiante"].indexOf(role) !== -1 &&
       scope.studentIds.indexOf(requestedStudent) === -1) {
     transportAuditDenied_(actor, "getTransportAssignments", requestedStudent);
@@ -4940,9 +4967,14 @@ function getTransportAssignments(payload) {
     var routeId = String(row[1] || "").trim(), studentId = String(row[2] || "").trim();
     var state = String(row[5] || "").trim().toLowerCase();
     if (["activa","active","activo"].indexOf(state) === -1) return false;
+    var start = startIndex < 0 ? { valid: true, date: null } : transportDateBoundary_(row[startIndex]);
+    var end = endIndex < 0 ? { valid: true, date: null } : transportDateBoundary_(row[endIndex]);
+    if (!start.valid || !end.valid ||
+        (start.date && start.date.getTime() > today) ||
+        (end.date && end.date.getTime() < today)) return false;
     if (requestedRoute && routeId !== requestedRoute) return false;
     if (requestedStudent && studentId !== requestedStudent) return false;
-    if (scope.management) return true;
+    if (scope.management) return uniqueRouteIds.indexOf(routeId) !== -1;
     if (!allowedRoutes || allowedRoutes.indexOf(routeId) === -1) return false;
     if (["padre","estudiante"].indexOf(role) !== -1) return scope.studentIds.indexOf(studentId) !== -1;
     return ["conductor","monitor"].indexOf(role) !== -1;
@@ -4984,10 +5016,19 @@ function getTripPassengerManifest(payload) {
   ]);
   if (!trips.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", manifiestoPasajeros: [] };
   var matches = trips.rows.filter(function(row) { return String(row[0] || "").trim() === tripId; });
-  if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND", manifiestoPasajeros: [] };
+  if (!matches.length) return { status: "error", code: "RESOURCE_NOT_FOUND", manifiestoPasajeros: [] };
+  if (matches.length !== 1) return { status: "error", code: "RESOURCE_AMBIGUOUS", manifiestoPasajeros: [] };
   var trip = matches[0], role = String(scope.role || "").trim().toLowerCase();
-  var allowedRoutes = scope.management ? null : scope.routeIds || getTransportRouteIdsForScope_(ss, scope);
   var routeId = String(trip[1] || "").trim();
+  var routeSnapshot = transportRowsPrefix_(ss, "TransporteRutas", [
+    ["RutaID"], ["NombreRuta","Nombre"], ["UnidadCodigo","Unidad"], ["ConductorEmpleadoId","Conductor"],
+    ["Capacidad"], ["ParadasJSON","Paradas"], ["Estado"]
+  ]);
+  if (!routeSnapshot.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", manifiestoPasajeros: [] };
+  var routeMatches = routeSnapshot.rows.filter(function(row) { return String(row[0] || "").trim() === routeId; });
+  if (!routeMatches.length) return { status: "error", code: "ROUTE_NOT_FOUND", manifiestoPasajeros: [] };
+  if (routeMatches.length !== 1) return { status: "error", code: "ROUTE_ID_AMBIGUOUS", manifiestoPasajeros: [] };
+  var allowedRoutes = scope.management ? null : scope.routeIds || getTransportRouteIdsForScope_(ss, scope);
   var authorizedTrip = scope.management === true || (allowedRoutes && allowedRoutes.indexOf(routeId) !== -1);
   if (authorizedTrip && role === "conductor") authorizedTrip = scope.employeeIds.indexOf(String(trip[3] || "").trim()) !== -1;
   if (authorizedTrip && role === "monitor") authorizedTrip = scope.employeeIds.indexOf(String(trip[4] || "").trim()) !== -1;
@@ -5000,6 +5041,14 @@ function getTripPassengerManifest(payload) {
     ["HorarioPlan","Horario"], ["Estado"], ["FechaAsignacion","Fecha"], ["Jornada"]
   ]);
   if (!assignments.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", manifiestoPasajeros: [] };
+  var assignmentCounts = Object.create(null);
+  assignments.rows.forEach(function(row) {
+    var id = String(row[0] || "").trim();
+    if (id) assignmentCounts[id] = (assignmentCounts[id] || 0) + 1;
+  });
+  if (Object.keys(assignmentCounts).some(function(id) { return assignmentCounts[id] > 1; })) {
+    return { status: "error", code: "RESOURCE_AMBIGUOUS", manifiestoPasajeros: [] };
+  }
   var tripDate = transportDateBoundary_(trip[5]);
   if (!tripDate.valid) return { status: "error", code: "RESOURCE_SCHEMA_INVALID", manifiestoPasajeros: [] };
   var startIndex = assignments.headers.indexOf("FechaInicioServicio");
@@ -13072,8 +13121,10 @@ function getTransportEfficiencyMetrics(payload) {
       ["RutaID"], ["NombreRuta","Nombre"], ["UnidadCodigo","Unidad"], ["ConductorEmpleadoId","Conductor"],
       ["Capacidad"], ["ParadasJSON","Paradas"], ["Estado"]
     ]);
-    const vehicleSnapshot = transportRows_(ss, "TransporteVehiculos",
-      ["VehiculoID","CodigoUnidad","Placa","Marca","Ano","CapacidadPasajeros"]);
+    const vehicleSnapshot = transportRows_(ss, "TransporteVehiculos", [
+      ["VehiculoID","CodigoUnidad","Placa","Marca","Ano","CapacidadPasajeros"],
+      ["VehiculoID","CodigoUnidad","Marca","Modelo","Placa","Capacidad","Estado"]
+    ]);
     const assignmentSnapshot = transportRowsPrefix_(ss, "TransporteAsignaciones", [
       ["AsignacionTranspID","AsignacionID","ID"], ["RutaID"], ["EstudianteUserId"], ["ParadaNombre","Parada"],
       ["HorarioPlan","Horario"], ["Estado"], ["FechaAsignacion","Fecha"], ["Jornada"]
@@ -13122,7 +13173,9 @@ function getTransportEfficiencyMetrics(payload) {
       if (unit && isFinite(capacity) && capacity > 0) capacityByUnit[unit] = capacity;
     });
 
-    const activeAssignmentStates = ["active", "activa", "activo", "vigente"];
+    const activeAssignmentStates = ["active", "activa", "activo"];
+    const assignmentStartIndex = assignmentSnapshot.headers.indexOf("FechaInicioServicio");
+    const assignmentEndIndex = assignmentSnapshot.headers.indexOf("FechaFinServicio");
     const assignedByGroup = Object.create(null);
     assignmentRows.forEach(function(row) {
       const routeId = String(row[1] || "").trim();
@@ -13133,7 +13186,11 @@ function getTransportEfficiencyMetrics(payload) {
       if (!routeId || !studentId || activeAssignmentStates.indexOf(state) === -1) return;
       const key = routeId + "|" + journey;
       if (!assignedByGroup[key]) assignedByGroup[key] = [];
-      if (assignedByGroup[key].indexOf(studentId) === -1) assignedByGroup[key].push(studentId);
+      if (!assignedByGroup[key].some(function(item) { return item.studentId === studentId; })) {
+        assignedByGroup[key].push({ studentId: studentId,
+          start: assignmentStartIndex < 0 ? "" : row[assignmentStartIndex],
+          end: assignmentEndIndex < 0 ? "" : row[assignmentEndIndex] });
+      }
     });
 
     const boardedByTrip = Object.create(null);
@@ -13203,7 +13260,13 @@ function getTransportEfficiencyMetrics(payload) {
         const hasBoardingEvidence = !!(actualBoardings && actualBoardings.length);
         const occupiedSeats = hasBoardingEvidence
           ? actualBoardings.length
-          : ((assignedByGroup[key] || []).length);
+          : ((assignedByGroup[key] || []).filter(function(assignment) {
+              const startDate = assignment.start ? transportMetricsDateKey_(assignment.start) : "";
+              const endDate = assignment.end ? transportMetricsDateKey_(assignment.end) : "";
+              if (assignment.start && !startDate) return false;
+              if (assignment.end && !endDate) return false;
+              return (!startDate || startDate <= dateKey) && (!endDate || endDate >= dateKey);
+            }).length);
         const tripOccupancyPct = occupiedSeats / group.capacidadPasajeros * 100;
         group.ocupacionTotalPct += tripOccupancyPct;
         if (tripOccupancyPct > 100) group.sobrecapacidadDetectada = true;
