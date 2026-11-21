@@ -3668,7 +3668,7 @@ function reviewPaymentVoucher(payload) {
     var verifiedActor = getVerifiedAccountingIdentity_(input);
     if (!verifiedActor || verifiedActor.authorized !== true || String(verifiedActor.userId) !== String(actor.userId) ||
         String(verifiedActor.role) !== String(actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
-    var lockedPermission = validateRolePermission(verifiedActor, "reviewPaymentVoucher");
+    var lockedPermission = validateRolePermission(verifiedActor, "reviewPaymentVoucher", input);
     if (!lockedPermission || lockedPermission.authorized !== true) return { status: "error", code: lockedPermission && lockedPermission.code || "ROLE_PERMISSION_DENIED" };
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID), schema = ensurePaymentVoucherEvidenceSchema_(ss);
     var rows = schema.sheet.getDataRange().getValues();
