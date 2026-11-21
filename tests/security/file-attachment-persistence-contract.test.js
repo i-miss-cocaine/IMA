@@ -124,6 +124,7 @@ const voucherSheet = {
 };
 const voucherContext = {
   getVerifiedAccountingIdentity_: () => authorized ? ({ authorized: true, userId: "student-1", role: "Estudiante" }) : ({ authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" }),
+  validateRolePermission: () => authorized ? ({ authorized: true }) : ({ authorized: false, code: "ROLE_PERMISSION_DENIED" }),
   assertPaymentVoucherOwnerAccess_: () => ownerAllowed ? ({ authorized: true }) : ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
   ensurePaymentVoucherEvidenceSchema_:()=>({sheet:voucherSheet,map:voucherMap,headers:voucherHeaders}),
   createPrivatePaymentAttachmentWithIntegrity_: () => ({file:{getId:()=> "private-file-id"},fileId:"private-file-id",sha256:"a".repeat(64),sizeBytes:3,mimeType:"application/pdf",receivedAt:"2026-11-15T00:00:00.000Z"}),
