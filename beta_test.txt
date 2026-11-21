@@ -2309,6 +2309,8 @@ Pasos:
 7. En TASK/EXAM, consultar tareas/exámenes usando estudianteUserId, studentUserId, targetStudentId, targetUserId y expedienteId. Permitir solo estudiante propio o tutor con relación/permiso académico explícito; denegar ID ajeno y pares estudiante/expediente discordantes.
 8. En ACADEMIC, intentar leer/descargar documento con solo permiso académico y después con permiso documental explícito; solo el segundo debe autorizar.
 9. Repetir con otro tutor e institución; no debe existir acceso cruzado.
+10. En ACADEMIC, consultar getStudentEnrollmentHistory con permiso académico y financiero explícitos; deben aparecer matrículas y cargos. Revocar solo permiso financiero: las matrículas siguen visibles y cargos queda vacío. Revocar permiso académico: la consulta se deniega. Confirmar que flags legacy de RelacionesEstudianteTutor no conceden acceso financiero.
+11. En ACCOUNTING, probar autorización de crédito familiar/conteo de hermanos con PermisoFinanciero boolean true directo o PermisosJSON.permisoFinanciero true. Probar strings "true", números, JSON malformado y conflictos entre columna directa y JSON; todos deben denegar sin contar hermanos ni autorizar compras.
 Resultado esperado:
 - Solo permisos booleanos explícitos del dominio correspondiente autorizan.
 - Identidad, relación, expediente y mapeo ambiguos o ausentes fallan cerrados.

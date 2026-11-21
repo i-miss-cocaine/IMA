@@ -838,3 +838,56 @@ Objetivo: continuar AUD-NG-222 / TASK-502, cerrar más rutas familiares y bindin
 Continuar el inventario de rutas USER/ACADEMIC que consumen recursos familiares o documentos; completar bindings de acción/recurso en ACCOUNTING/TASK/EXAM, con pruebas de IDs duplicados, recursos inexistentes, relaciones revocadas y aislamiento institucional. Revalidar TASK-506 solo cuando TASK-502 esté integrado y sus dependencias probadas.
 
 ===============================================================================
+
+
+===============================================================================
+### C1.914 — IMA-EXEC-20261121-AUD-NG-222-FINANCIAL-RESOURCE-BINDINGS-85
+===============================================================================
+
+### Alcance ejecutado
+- ACCOUNTING: los helpers de relación familiar financiera y propiedad de crédito/pago requieren grants financieros explícitos. Se rechazan strings "true", números, JSON malformado y valores de permiso incompatibles entre columna directa y PermisosJSON. La unicidad de persona/relación y la vigencia temporal siguen siendo obligatorias.
+- ACADEMIC: getStudentEnrollmentHistory exige autorización de expediente para el dominio académico y vuelve a comprobar permisoFinanciero para incluir cargos. La falta/revocación del grant financiero deja las matrículas visibles si el permiso académico continúa vigente, pero la colección cargos queda vacía. La ausencia/revocación del grant académico deniega el historial completo.
+- USER/TASK/EXAM: se mantienen los controles C1.913 de grants familiares, selección de estudiante/expediente, propiedad y revocación; se añadieron fixtures transversales explícitos y pruebas de relación primaria ausente.
+- Se actualizan contratos de ACCOUNTING y ACADEMIC para no simular autorización mediante flags legacy ni identidades de usuario no vinculadas al expediente.
+
+### Archivos y contratos relevantes
+- backend/user-service/Code.gs
+- backend/academic-service/Code.gs
+- backend/accounting-service/Code.gs
+- backend/task-service/Code.gs
+- backend/exam-service/Code.gs
+- tests/security/contextual-abac-five-services-contract.test.js
+- tests/security/departmental-resource-access.test.js
+- tests/security/academic-student-enrollment-history-ownership.test.js
+- tests/security/academic-guardian-primary-relation-abac-contract.test.js
+- tests/security/accounting-family-service-guardian-abac-contract.test.js
+- tests/security/accounting-family-credit-preference.test.js
+- beta_test.txt
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md, índice, Auditoria.txt, changueslogs.txt, tareas_auditoria.txt y este checkpoint.
+
+### Commits relevantes integrados desde C1.913
+- e47c149b / c89f06d3 — grants financieros explícitos en ACCOUNTING.
+- c3c755f0 / c4a76074 — denegación legacy y grant primario en ACADEMIC.
+- 358738cf — separación de permiso académico y financiero en historial de matrícula.
+- 2e1b27b6 / 499103bc — autorización financiera de crédito familiar y fixtures.
+- 44120168 / e3f82512 — validación estricta de grants financieros malformados.
+- 6df8f754 / a8d8b129 — contratos de historial académico, revocación y fuente primaria no disponible.
+- Los commits se integraron en NG_beta_0.0.0.1_work; no se usó force push ni se modificó otra rama.
+
+### Verificaciones
+- Node.js 22.16.0 local: node --check del harness aislado PASS; ejecución conductual PASS para permiso académico + financiero, permiso académico sin permiso financiero y revocación académica.
+- Node.js 24 en GitHub Actions HEAD a8d8b129: contextual-abac-five-services PASS; task-exam-guardian-academic-permission PASS; academic-coordinator-area-abac PASS; academic-planning-teacher-abac PASS; academic-guardian-primary-relation PASS; academic-student-enrollment-history PASS.
+- Workflows en HEAD e3f82512: Task-Service security, Identity Mapping, Hierarchical Configuration, Library Circulation Concurrency, Department Reference Consumers y Accounting Import Preflight SUCCESS.
+- Department Scope 44945197805 FAIL únicamente en tests/regression/phase22-document-management-suite-contract.test.js por ausencia de configureSchoolDocumentTemplate. Los contratos ABAC/financieros focalizados se ejecutan antes del fallo y reportan PASS.
+- Apps Script/Sheets real, staging y concurrencia real entre proyectos: NOT RUN. No se declara prueba de integración productiva.
+
+### Estado y dependencias
+- AUD-NG-222 / TASK-502: En ejecución. Queda pendiente demostrar cobertura completa action/resource en los cinco servicios y aislamiento institucional extremo a extremo.
+- TASK-506 / AUD-NG-226: permanece En ejecución, dependiente de integrar y probar TASK-501/TASK-502.
+- BETA-FUNC-128: PENDIENTE DE BETA; se amplía con historial de matrícula/cargos y crédito familiar.
+- Phase22/configureSchoolDocumentTemplate permanece como fallo de CI ajeno al alcance; no se modificó ni se declaró PASS.
+- HEAD de código verificado: a8d8b129ea50e018102d5aad50eff38a54b4fff3. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+
+### Siguiente acción elegible
+Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/ACCOUNTING/TASK/EXAM, verificar aislamiento institucional y concurrencia de cambios de relación/asignación; después revalidar TASK-506. TASK-502 permanece En ejecución.
+===============================================================================

@@ -931,3 +931,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - BETA-FUNC-128 añadido, PENDIENTE DE BETA. Apps Script/Sheets real y concurrencia real entre proyectos NOT RUN.
 - TASK-502 continúa En ejecución; TASK-506 permanece abierto hasta integrar la política completa.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.914 — AUD-NG-222 / TASK-502
+- ACCOUNTING: grants financieros familiares y de crédito son booleanos explícitos; valores malformed o contradictorios no pueden combinarse para autorizar. Se conserva unicidad de relación/persona y vigencia.
+- ACADEMIC: historial de matrículas usa permiso académico; cargos requieren adicionalmente permiso financiero primario. Sin grant financiero se omiten cargos, sin bloquear matrículas autorizadas; revocación académica deniega el historial.
+- Contratos Node 24: contextual ABAC, Task/Exam guardian, Academic coordinator/planning, primary relation y enrollment-history privacy PASS. Accounting Import, Task-Service, Identity, Hierarchical Configuration, Library Circulation y Department Reference Consumers SUCCESS. Department Scope FAIL solo por Phase22/configureSchoolDocumentTemplate ausente.
+- Node.js 22.16.0 local: harness conductual y sintaxis PASS. Apps Script/Sheets real, staging y concurrencia entre proyectos NOT RUN.
+- BETA-FUNC-128 sigue Pendiente de beta. TASK-502 y TASK-506 continúan abiertos.
+- Siguiente: completar bindings action/resource en cinco servicios, comprobar aislamiento institucional y revalidar TASK-506.
+===============================================================================
