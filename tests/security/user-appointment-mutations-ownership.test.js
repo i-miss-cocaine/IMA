@@ -105,7 +105,7 @@ assert.equal(studentBooking.rows.at(-1)[1], "STU-1");
 assert.equal(studentBooking.calls.releases, 1);
 
 const spoofedRequester = makeHarness();
-assert.equal(spoofedRequester.book(request("STU-1", "STU-1", {
+assert.equal(spoofedRequester.book(request("Estudiante", "STU-1", {
   solicitanteId: "STU-2", solicitadoA: "STAFF-A", motivo: "Consulta", fechaHora: "2026-11-22T10:00:00Z"
 })).code, "APPOINTMENT_REQUESTER_MISMATCH");
 assert.equal(spoofedRequester.calls.appends, 0);
