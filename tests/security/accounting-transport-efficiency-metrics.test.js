@@ -141,7 +141,7 @@ const before = JSON.stringify(rows);
 assert.equal(context.parseTime("6:30:00 a. m."), 390, "Spanish locale AM times must parse");
 assert.equal(context.parseTime("6:45:00 p. m."), 1125, "Spanish locale PM times must parse");
 const result = run({ _verifiedRole: "Director", _verifiedUserId: "DIR-1" });
-assert.equal(result.status, "success");
+assert.equal(result.status, "success", JSON.stringify(result));
 assert.equal(result.resumen.viajesAnalizados, 3, "cancelled trips must be excluded");
 assert.equal(result.resumen.ocupacionPromedioPct, 58.33);
 assert.equal(result.resumen.puntualidadPct, 33.33);
