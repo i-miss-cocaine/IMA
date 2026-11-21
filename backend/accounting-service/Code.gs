@@ -12080,7 +12080,7 @@ function transportAssertStudentOwnershipForMutation_(ss, payload, actor, student
   const studentId = String(studentUserId || "").trim();
   if (!studentId) throw new Error("TRANSPORT_STUDENT_REQUIRED");
   const scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
-  if (!scope || scope.valid !== true || scope.authorized === false) {
+  if (!scope || scope.valid !== true || scope.authorized !== true) {
     throw new Error(scope && scope.code || "RESOURCE_SCOPE_DENIED");
   }
   const sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesEstudiantes") : null;
@@ -12391,10 +12391,10 @@ function cancelStudentTransportAssignment(payload) {
     if (routeMatches.length !== 1) throw new Error(routeMatches.length ? "TRANSPORT_ROUTE_AMBIGUOUS" : "TRANSPORT_ROUTE_NOT_FOUND");
     const schema = transportEnsureBillingSchema_(ss);
     const state = String(original[5] || "").toLowerCase();
-    if (["cancelled", "cancelada"].indexOf(state) !== -1) {
+    if (["cancelled", "cancelada", "cancelado"].indexOf(state) !== -1) {
       return { status: "success", idempotent: true, asignacionTranspId: id };
     }
-    if (state !== "active" && state !== "activa") throw new Error("TRANSPORT_ASSIGNMENT_NOT_ACTIVE");
+    if (state !== "active" && state !== "activa" && state !== "activo") throw new Error("TRANSPORT_ASSIGNMENT_NOT_ACTIVE");
     const date = transportParseDate_(p.fechaCancelacion) || new Date();
     const start = transportParseDate_(original[10] || original[6]);
     if (p.fechaCancelacion && !transportParseDate_(p.fechaCancelacion)) throw new Error("TRANSPORT_CANCELLATION_DATE_INVALID");
@@ -12447,7 +12447,7 @@ function assignStudentTransport(payload) {
       return { status: "error", code: routeMatches.length ? "ROUTE_ID_AMBIGUOUS" : "ROUTE_NOT_FOUND" };
     }
     const targetRuta = routeMatches[0];
-    if (["active", "activa"].indexOf(String(targetRuta[6] || "").trim().toLowerCase()) === -1) {
+    if (["active", "activa", "activo", "vigente"].indexOf(String(targetRuta[6] || "").trim().toLowerCase()) === -1) {
       return { status: "error", code: "ROUTE_NOT_ACTIVE" };
     }
     getOrCreateTransportVehiclesCatalog(ss);
@@ -12459,18 +12459,20 @@ function assignStudentTransport(payload) {
     const vehicleMatches = vehRows.filter(v => String(v[1] || "").trim() === unidadCod);
     if (vehicleMatches.length > 1) return { status: "error", code: "TRANSPORT_VEHICLE_AMBIGUOUS" };
     const targetVeh = vehicleMatches[0];
-    if (targetVeh && targetVeh[6] && ["active", "activa"].indexOf(String(targetVeh[6]).trim().toLowerCase()) === -1) return { status: "error", code: "TRANSPORT_VEHICLE_NOT_ACTIVE" };
+    if (targetVeh && targetVeh[6] && ["active", "activa", "activo", "vigente"].indexOf(String(targetVeh[6]).trim().toLowerCase()) === -1) return { status: "error", code: "TRANSPORT_VEHICLE_NOT_ACTIVE" };
     const capAutorizada = targetVeh ? parseInt(targetVeh[5] || 0, 10) : parseInt(targetRuta[4] || 25, 10);
     if (!Number.isFinite(capAutorizada) || capAutorizada < 1) return { status: "error", code: "TRANSPORT_CAPACITY_INVALID" };
 
     const asgnData = asgnSheet.getDataRange().getValues().slice(1);
+
+    const isActiveAssignment = row => ["active", "activa", "activo"].indexOf(String(row[5] || "").toLowerCase().trim()) !== -1;
 
     // 1. Validar duplicidad de asignación para la misma ruta, estudiante y jornada [TASK-029]
     const targetJornada = String(jornada || targetRuta[10] || "Matutina").toLowerCase().trim();
     const isDuplicate = asgnData.some(r =>
       String(r[2]).trim() === String(estudianteUserId).trim() &&
       String(r[1]).trim() === String(rutaId).trim() &&
-      String(r[5] || "").toLowerCase().trim() === "active" &&
+      isActiveAssignment(r) &&
       String(r[7] || targetJornada).toLowerCase().trim() === targetJornada
     );
 
@@ -12485,11 +12487,14 @@ function assignStudentTransport(payload) {
     // 2. Validar colisión de horarios entre rutas distintas [TASK-029]
     const horaIniTarget = String(targetRuta[8] || "06:30").trim();
     const hasTimeConflict = asgnData.some(a => {
-      if (String(a[2]).trim() !== String(estudianteUserId).trim() || String(a[5] || "").toLowerCase().trim() !== "active") {
+      if (String(a[2]).trim() !== String(estudianteUserId).trim() || !isActiveAssignment(a)) {
         return false;
       }
-      const otherRuta = rutasData.find(r => String(r[0]).trim() === String(a[1]).trim());
-      if (!otherRuta) return false;
+      const otherRoutes = rutasData.filter(r => String(r[0] || "").trim() === String(a[1] || "").trim());
+      if (otherRoutes.length !== 1) return true;
+      const otherRuta = otherRoutes[0];
+      const otherRouteState = String(otherRuta[6] || "").trim().toLowerCase();
+      if (["active", "activa", "activo", "vigente"].indexOf(otherRouteState) === -1) return false;
       const otherHoraIni = String(otherRuta[8] || "06:30").trim();
       const otherJornada = String(otherRuta[10] || "Matutina").toLowerCase().trim();
       return otherHoraIni === horaIniTarget && otherJornada === targetJornada;
@@ -12505,7 +12510,7 @@ function assignStudentTransport(payload) {
 
     // 3. Control estricto de cupos y aforo vehicular [TASK-029]
     const cuposOcupados = asgnData.filter(r =>
-      String(r[1]).trim() === String(rutaId).trim() && String(r[5] || "").toLowerCase().trim() === "active"
+      String(r[1]).trim() === String(rutaId).trim() && isActiveAssignment(r)
     ).length;
 
     if (cuposOcupados >= capAutorizada) {
