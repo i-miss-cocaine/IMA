@@ -4802,7 +4802,7 @@ function manageDepartmentPositions(payload){
    var old=found[0],next=old.row.slice();if(String(next[um.estado]||"").trim().toLowerCase()!=="activo")throw new Error("DEPARTMENT_NOT_ACTIVE");
    if(act==="ASSIGN_DEPARTMENT_HEAD"||input.jefaturaUserId!==undefined){var nh=String(jefaturaUserId||"").trim();if(nh)getInstitutionalUserRecord_(ss,nh);if(um.jefaturaUserId<0)throw new Error("DEPARTMENT_CATALOG_SCHEMA_INVALID:jefaturaUserId");next[um.jefaturaUserId]=nh;}
    var hierarchy=null;if(act==="UPDATE_DEPT"){var np=parentDeptId===undefined?String(next[um.parentDeptId]||"").trim().toUpperCase():String(parentDeptId||"").trim().toUpperCase();hierarchy=validateDepartmentHierarchy_(us,target,np);if(deptNombre!==undefined){var nn=String(deptNombre||"").trim();if(!nn)throw new Error("DEPARTMENT_NAME_REQUIRED");next[um.nombre]=nn;}if(um.parentDeptId>=0)next[um.parentDeptId]=np;if(um.updatedAt>=0)next[um.updatedAt]=new Date();}
-   us.getRange(old.rowNumber,1,1,next.length).setValues([next]);return {status:"success",deptId:target,parentDeptId:hierarchy?hierarchy.parentDeptId:undefined,jefaturaUserId:um.jefaturaUserId>=0?next[um.jefaturaUserId]:""};
+   us.getRange(old.rowNumber,1,1,next.length).setValues([next]);return {status:"success",deptId:target,parentDeptId:hierarchy?hierarchy.parentDeptId:undefined,hierarchyPath:hierarchy?hierarchy.path:undefined,jefaturaUserId:um.jefaturaUserId>=0?next[um.jefaturaUserId]:"",message:act==="UPDATE_DEPT"?"Departamento actualizado; la jerarquía se conserva sin ciclos.":"Jefatura departamental actualizada."};
   }finally{ul.releaseLock();}
  }
  if(act==="CREATE_CARGO"){
