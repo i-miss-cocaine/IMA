@@ -422,6 +422,8 @@ const rbacMatrixRows = [
   ["Auditor","USER","viewAuditLogs",true,"INST-1"],
   ["Director","USER","viewAuditLogs",false,"INST-1"]
 ];
+const rbacVersionRows = [["Clave","Version","UpdatedAt","UpdatedBy"],["PERMISSION_MATRIX",0,new Date(),""]];
+const rbacVersionSheet = { getDataRange:()=>({getValues:()=>rbacVersionRows.map(row=>row.slice())}) };
 const rbacCacheValues = {};
 const rbacCache = {
   get:key=>Object.prototype.hasOwnProperty.call(rbacCacheValues,key)?rbacCacheValues[key]:null,
@@ -436,10 +438,10 @@ const rbacCtx = {
   getIdentityInstitutionId_:()=> "INST-1",
   getDynamicPermissionCacheKey_:()=> "rbac-c1-627",
   CacheService:{getScriptCache:()=>rbacCache},
-  SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="MatrizPermisosRoles"?{
+  SpreadsheetApp:{openById:()=>({getSheetByName:name=>name==="VersionesSeguridad"?rbacVersionSheet:(name==="MatrizPermisosRoles"?{
     getLastRow:()=>rbacMatrixRows.length,
     getDataRange:()=>({getValues:()=>rbacMatrixRows.map(row=>row.slice())})
-  }:lifecycleSheets[name]||null})},
+  }:lifecycleSheets[name]||null)})},
   validateContextualAccess:()=>({authorized:true}),
   hasActiveDelegationForAction:()=>null,
   logStructuredEvent:()=>{}
