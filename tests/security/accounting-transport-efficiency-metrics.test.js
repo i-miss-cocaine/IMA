@@ -122,6 +122,13 @@ const context = {
     }
     return { authorized: true, management: ["Administrador", "Director", "Subdirector"].includes(role), role, userId };
   },
+  getVerifiedAccountingDepartmentScope_(payload, spreadsheet, actor) {
+    managementScopeCalls++;
+    if (!managementScopeValid || (invalidateManagementAfterFirst && managementScopeCalls === 2)) {
+      return { valid: false, authorized: false, code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
+    }
+    return { valid: true, authorized: true, institutionId: actor.institutionId || "INST-1", institutionWide: true, departmentIds: [] };
+  },
   transportManagementReadScope_(payload, spreadsheet, actor, scope) {
     managementScopeCalls++;
     if (!managementScopeValid || (invalidateManagementAfterFirst && managementScopeCalls === 2)) {
