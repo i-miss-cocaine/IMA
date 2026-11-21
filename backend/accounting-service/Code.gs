@@ -3501,6 +3501,8 @@ function assertPaymentVoucherOwnerAccess_(payload,targetUserId,options) {
 function uploadPaymentVoucher(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var permission = validateRolePermission(actor, "uploadPaymentVoucher");
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   if (String(actor.role || "") !== "Estudiante") return { status: "error", code: "ROLE_NOT_ALLOWED" };
   var owner = assertPaymentVoucherOwnerAccess_(input, input.userId || actor.userId);
   if (!owner || owner.authorized !== true || String(input.userId || actor.userId) !== String(actor.userId)) {
@@ -3529,6 +3531,10 @@ function uploadPaymentVoucher(payload) {
     var verified = getVerifiedAccountingIdentity_(input);
     if (!verified || verified.authorized !== true || String(verified.userId) !== String(actor.userId) ||
         String(verified.role) !== String(actor.role)) throw new Error("VERIFIED_IDENTITY_CHANGED");
+    var lockedPermission = validateRolePermission(verified, "uploadPaymentVoucher");
+    if (!lockedPermission || lockedPermission.authorized !== true) throw new Error("ROLE_PERMISSION_CHANGED");
+    var lockedOwner = assertPaymentVoucherOwnerAccess_(input, verified.userId);
+    if (!lockedOwner || lockedOwner.authorized !== true) throw new Error("RESOURCE_SCOPE_DENIED");
     var schema = ensurePaymentVoucherEvidenceSchema_(ss), rows = schema.sheet.getDataRange().getValues(), map = schema.map;
     var matches = groupId ? rows.slice(1).map(function(row,index) { return {row:row,index:index}; })
       .filter(function(item) { return String(item.row[map.ComprobanteGrupoID] || "") === groupId; }) : [];
@@ -3595,6 +3601,8 @@ function uploadPaymentVoucher(payload) {
 function getPaymentVouchers(payload) {
   var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
   if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(actor,"getPaymentVouchers");
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
   var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensurePaymentVoucherEvidenceSchema_(ss);
   var role=String(actor.role||"").trim().toLowerCase(),staffRoles=["secretaría","secretaria","administrador","director","subdirector","recursoshumanos"];
   var requestedUser=String(input.userId||"").trim();
@@ -3620,6 +3628,8 @@ function getPaymentVouchers(payload) {
 function getPaymentVoucherFile(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var permission = validateRolePermission(actor, "getPaymentVoucherFile");
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), schema = ensurePaymentVoucherEvidenceSchema_(ss);
   var rows = schema.sheet.getDataRange().getValues().slice(1), id = String(input.comprobanteId || "").trim();
   var matches = rows.filter(function(row) { return String(row[schema.map.ComprobanteID] || "") === id; });
@@ -3645,6 +3655,8 @@ function getPaymentVoucherFile(payload) {
 function reviewPaymentVoucher(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var permission = validateRolePermission(actor, "reviewPaymentVoucher");
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var staff = assertPaymentVoucherOwnerAccess_(input, "", { requireStaff: true });
   if (!staff || staff.authorized !== true) return { status: "error", code: staff && staff.code || "ROLE_NOT_ALLOWED" };
   var state = String(input.nuevoEstado || "").trim();
@@ -3655,6 +3667,8 @@ function reviewPaymentVoucher(payload) {
     var verifiedActor = getVerifiedAccountingIdentity_(input);
     if (!verifiedActor || verifiedActor.authorized !== true || String(verifiedActor.userId) !== String(actor.userId) ||
         String(verifiedActor.role) !== String(actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
+    var lockedPermission = validateRolePermission(verifiedActor, "reviewPaymentVoucher");
+    if (!lockedPermission || lockedPermission.authorized !== true) return { status: "error", code: lockedPermission && lockedPermission.code || "ROLE_PERMISSION_DENIED" };
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID), schema = ensurePaymentVoucherEvidenceSchema_(ss);
     var rows = schema.sheet.getDataRange().getValues();
     var matches = rows.slice(1).map(function(row,index) { return {row:row,index:index}; })
