@@ -2485,3 +2485,23 @@ BETA-FUNC-129 — Emisión y verificación de documentos escolares privados / SA
 - Evidencia requerida: SHA del despliegue, IDs sintéticos, sharing access, CUV/correlativos, hashes, snapshots antes/después, resultados de fallos inyectados y trazas de concurrencia sin PII/tokens.
 - Tarea vinculada: AUD-NG-065 / AUD-NG-222 / TASK-502.
 ===============================================================================
+
+
+===============================================================================
+BETA-EXAM-116 — AUD-NG-222 / EXAM: revalidación de identidad y scope bajo lock
+===============================================================================
+- Módulo/acciones: EXAM — createExam y submitExam.
+- Objetivo: comprobar en Apps Script/Sheets reales que permisos, identidad firmada, perfil estudiantil y asignación departamental se revalidan después de adquirir ScriptLock; ninguna decisión tomada antes de esperar el lock puede autorizar una escritura con contexto obsoleto.
+- Precondiciones: despliegue beta aislado; departamentos D1/D2; docente con asignación D1; estudiante sintético; sesiones/roles y recursos de examen de prueba; capacidad de coordinar dos ejecuciones concurrentes.
+- Pasos:
+  1. Iniciar createExam con permiso/identidad/scope D1 válidos y mantener ocupado el lock antes de la fase crítica.
+  2. Mientras espera, revocar sesión, cambiar rol o mover la asignación docente de D1 a D2; liberar el lock y permitir que continúe.
+  3. Repetir con departmentId explícito D1 y scope actualizado D2; comprobar RESOURCE_SCOPE_DENIED.
+  4. Iniciar submitExam como estudiante válido y, durante la espera, revocar la sesión o invalidar el perfil/relación académica antes de liberar el lock.
+  5. Verificar que cada solicitud denegada no crea examen, entrega, respuesta ni ownership; comprobar que no se reutilizó contexto previo al lock.
+  6. Repetir solicitudes válidas sin cambios de identidad/scope y comprobar creación/envío exitosos, unicidad y liberación del lock.
+- Resultado esperado: permisos, identidad, perfil y scope actuales se verifican dentro del lock; cualquier revocación/cambio entre preflight y sección crítica falla cerrado sin escrituras; las operaciones válidas conservan su comportamiento; el lock siempre se libera.
+- Resultado real: contratos Node aislados PASS; concurrencia Apps Script/Sheets real no ejecutada.
+- Estado: PENDIENTE DE BETA.
+- Evidencia requerida: SHA desplegado, orden temporal de solicitudes, cambios de rol/sesión/adscripción, filas antes/después de Examenes/EntregasExamen/ResourceOwnership, resultados allow/deny y logs saneados sin tokens ni PII.
+===============================================================================
