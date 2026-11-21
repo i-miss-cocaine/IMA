@@ -90,7 +90,7 @@ function makeHarness(options) {
     "transportRows_",
     "transportRowsPrefix_",
     "transportDateBoundary_",
-    "transportRowsPrefix_",
+    "transportRelationshipIsCurrent_",
     "transportEmployeeIdsForUser_",
     "getTransportRouteIdsForScope_",
     "resolveTransportAccessScope_",
