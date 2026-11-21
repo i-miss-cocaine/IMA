@@ -361,7 +361,18 @@ console.log("TASK-153 staff/student department intersection contract passed.");
   const ownerDepartments = { "AULA-D1":"D1", "AULA-D2":"D2", "AULA-D1B":"D1" };
   const classSheet = { getDataRange: () => ({ getValues: () => classroomRows.map(row => row.slice()) }) };
   const assignmentSheet = { getDataRange: () => ({ getValues: () => assignmentRows.map(row => row.slice()) }) };
-  const ss = { getSheetByName: name => name === "AsignacionesDocentes" ? assignmentSheet : null };
+  const offerSheet = { getDataRange: () => ({ getValues: () => [
+    ["OfertaID","AnoID","SedeID","Grado","Seccion","AsignaturaID","PlanID","Modalidad","CapacidadMax","Estado","CodigoClase"],
+    ["OFFER-1","2026","","6","A","SUB-MATH","PLAN-1","","","Activo",""],
+    ["OFFER-2","2026","","6","A","SUB-MATH","PLAN-1","","","Activo",""],
+    ["OFFER-3","2026","","7","B","SUB-MATH","PLAN-1","","","Activo",""]
+  ] }) };
+  const subjectSheet = { getDataRange: () => ({ getValues: () => [
+    ["AsignaturaID","NombreOficial","Codigo","Estado"],["SUB-MATH","Matemáticas","MATH","Activo"]
+  ] }) };
+  const ss = { getSheetByName: name => ({
+    AsignacionesDocentes: assignmentSheet, OfertaAcademica: offerSheet, CatalogoAsignaturas: subjectSheet
+  })[name] || null };
   const context = {
     SPREADSHEET_ID:"LOCAL",
     SpreadsheetApp:{openById:()=>ss},
@@ -380,7 +391,7 @@ console.log("TASK-153 staff/student department intersection contract passed.");
     isTaskServiceAdministrativeRole:role=>["Administrador","Desarrollador","Dirección","Secretaría"].includes(role),
     normalizeString:value=>String(value||"").trim().toLowerCase()
   };
-  vm.runInNewContext(authorizedFn+"\nthis.list=getTaskServiceAuthorizedClassrooms;",context);
+  vm.runInNewContext(extractFunction("assertTaskServiceTeacherAssignedToOffer")+"\n"+authorizedFn+"\nthis.list=getTaskServiceAuthorizedClassrooms;",context);
   assert.deepEqual(Array.from(context.list({_verifiedRole:"Estudiante",_verifiedUserId:"STU-1"}),row=>row[0]),["AULA-D1"],"student sees only same-department classrooms");
   assert.deepEqual(Array.from(context.list({_verifiedRole:"Padre",_verifiedUserId:"TUTOR-1"}),row=>row[0]),["AULA-D1","AULA-D2"],"guardian sees only classrooms belonging to linked students' departments");
   assert.deepEqual(Array.from(context.list({_verifiedRole:"Profesor",_verifiedUserId:"PROF-1"}),row=>row[0]),["AULA-D1","AULA-D1B"],"teacher sees only assigned classrooms in own departments");
