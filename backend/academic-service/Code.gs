@@ -1344,42 +1344,11 @@ function validateRolePermission(action, payload) {
 }
 
 // [TAREA-F4-P1-03] [Fase 4: Matriz Dinámica de Permisos] - Consulta y caché de la matriz dinámica por rol y acción
-function getDynamicPermissionsForRole(role, action) {
-  if (!role || !action) return null;
-  const cache = CacheService.getScriptCache();
-  const cacheKey = "dynamic_permissions_matrix";
-  let matrix = null;
-  try {
-    const raw = cache.get(cacheKey);
-    if (raw) matrix = JSON.parse(raw);
-  } catch (e) {}
 
-  if (!matrix) {
-    try {
-      const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-      const sheet = ss.getSheetByName("MatrizPermisosRoles");
-      if (!sheet || sheet.getLastRow() <= 1) return null;
-      const data = sheet.getDataRange().getValues();
-      matrix = {};
-      for (let i = 1; i < data.length; i++) {
-        const rRole = String(data[i][0] || "").trim();
-        const rAction = String(data[i][2] || "").trim();
-        const rPermitted = data[i][3] === true || String(data[i][3]).toLowerCase() === "true";
-        if (!matrix[rRole]) matrix[rRole] = {};
-        matrix[rRole][rAction] = rPermitted;
-      }
-      cache.put(cacheKey, JSON.stringify(matrix), 600);
-    } catch (e) {
-      return null;
-    }
-  }
+const PERMISSION_MATRIX_SERVICE_="ACADEMIC";
+function getPermissionMatrixInstitutionId_(){try{if(typeof getIdentityInstitutionId_==="function"){var v=String(getIdentityInstitutionId_()||"").trim();if(v)return v;}}catch(_){}try{if(typeof PropertiesService!=="undefined"){var p=PropertiesService.getScriptProperties();return String(p.getProperty("IMA_INSTITUTION_ID")||p.getProperty("INSTITUTION_ID")||"").trim();}}catch(_){}return "";}
+function getDynamicPermissionsForRole(role,moduleOrAction,actionArgument,institutionArgument){var module=actionArgument===undefined?PERMISSION_MATRIX_SERVICE_:String(moduleOrAction||"").trim().toUpperCase(),action=actionArgument===undefined?String(moduleOrAction||"").trim():String(actionArgument||"").trim(),institutionId=String(institutionArgument||getPermissionMatrixInstitutionId_()||"").trim();if(!role||!module||!action)return false;var cache=null,snapshot=null,key="dynamic_permissions_matrix_v2:"+PERMISSION_MATRIX_SERVICE_+":"+(institutionId||"UNRESOLVED");try{cache=CacheService.getScriptCache();var raw=cache.get(key);if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.schemaVersion===2&&Array.isArray(parsed.rows))snapshot=parsed;}}catch(_){}if(!snapshot){try{var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("MatrizPermisosRoles");if(!sheet||sheet.getLastRow()===0)return null;var values=sheet.getDataRange().getValues(),h=(values[0]||[]).map(function(v){return String(v||"").trim().toLowerCase();}),ix={role:h.indexOf("rol"),module:h.indexOf("modulo"),action:h.indexOf("accion"),allowed:h.indexOf("permitido"),scope:h.indexOf("ambito")};if(Object.keys(ix).some(function(k){return ix[k]<0;}))return false;if(values.length<=1)return null;var rows=values.slice(1).map(function(r){var v=r[ix.allowed],allowed=v===true||String(v).trim().toLowerCase()==="true"?true:(v===false||String(v).trim().toLowerCase()==="false"?false:null);return{role:String(r[ix.role]||"").trim(),module:String(r[ix.module]||"").trim().toUpperCase(),action:String(r[ix.action]||"").trim(),allowed:allowed,scope:String(r[ix.scope]||"").trim()};});snapshot={schemaVersion:2,rows:rows};try{if(cache)cache.put(key,JSON.stringify(snapshot),600);}catch(_){}}catch(_){return false;}}var relevant=snapshot.rows.filter(function(r){return r.role===String(role).trim()&&r.action===action&&r.module!=="__LEGACY_ARCHIVED__";});if(!relevant.length)return null;if(!institutionId||relevant.some(function(r){return (!r.module||r.module===module)&&(r.allowed===null||!r.scope);}))return false;var candidates=relevant.filter(function(r){return r.module===module&&(r.scope==="Global"||r.scope===institutionId);});if(!candidates.length)return false;var seen={};for(var i=0;i<candidates.length;i++){var k=candidates[i].module+"|"+candidates[i].action+"|"+candidates[i].scope;seen[k]=(seen[k]||0)+1;if(seen[k]>1)return false;}return !candidates.some(function(r){return r.allowed!==true;});}
 
-  if (matrix && matrix[role]) {
-    if (matrix[role]["*"] !== undefined) return matrix[role]["*"];
-    if (matrix[role][action] !== undefined) return matrix[role][action];
-  }
-  return null;
-}
 
 // [TAREA-F4-P1-01] [Fase 4: Motor de Delegaciones] - Verificación de delegaciones de seguridad activas
 function hasActiveDelegationForAction(userId, action) {

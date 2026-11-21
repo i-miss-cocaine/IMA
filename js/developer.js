@@ -542,6 +542,51 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+
+    // TASK-501: editor de matriz dinámica. La UI solo facilita la operación; el servidor vuelve a autorizar cada llamada.
+    const permissionMatrixSection=document.getElementById('permission-matrix-section');
+    if(permissionMatrixSection){
+        if(['Administrador','Desarrollador'].indexOf(userRole)===-1)permissionMatrixSection.classList.add('hidden');
+        else{
+            const roleSelect=document.getElementById('permission-matrix-role'),moduleSelect=document.getElementById('permission-matrix-module'),actionSelect=document.getElementById('permission-matrix-action'),scopeSelect=document.getElementById('permission-matrix-scope'),allowedSelect=document.getElementById('permission-matrix-allowed'),rowsBody=document.getElementById('permission-matrix-rows'),statusEl=document.getElementById('permission-matrix-status'),saveBtn=document.getElementById('btn-permission-matrix-save'),reloadBtn=document.getElementById('btn-permission-matrix-reload'),resetBtn=document.getElementById('btn-permission-matrix-reset'),migrateBtn=document.getElementById('btn-permission-matrix-migrate');
+            let matrixState=null;
+            const matrixStatus=(message,error)=>{if(statusEl){statusEl.textContent=message;statusEl.className='text-xs '+(error?'text-rose-300':'text-slate-400');}};
+            const fillMatrixSelect=(select,items,placeholder)=>{if(!select)return;select.replaceChildren();const first=document.createElement('option');first.value='';first.textContent=placeholder;select.appendChild(first);(items||[]).forEach(item=>{const opt=document.createElement('option');opt.value=String(item);opt.textContent=String(item);select.appendChild(opt);});};
+            const updateActionOptions=()=>{const actions=matrixState&&matrixState.actionsByModule&&matrixState.actionsByModule[moduleSelect.value]||[];fillMatrixSelect(actionSelect,actions,'Seleccione una acción');};
+            const resetMatrixForm=()=>{if(roleSelect)roleSelect.value='';if(moduleSelect)moduleSelect.value='';updateActionOptions();if(actionSelect)actionSelect.value='';if(scopeSelect)scopeSelect.value=matrixState&&matrixState.institutionId||'';if(allowedSelect)allowedSelect.value='true';};
+            async function loadPermissionMatrix(){
+                if(reloadBtn)reloadBtn.disabled=true;matrixStatus('Consultando reglas autorizadas…',false);
+                try{
+                    const response=await window.fetchApi('USER','getPermissionMatrix',{});
+                    if(!response||response.status!=='success'||!Array.isArray(response.data)||!Array.isArray(response.modules)||!response.actionsByModule)throw new Error(response&&(response.code||response.message)||'Respuesta de matriz inválida.');
+                    matrixState=response;fillMatrixSelect(roleSelect,response.roles||[],'Seleccione un rol');fillMatrixSelect(moduleSelect,response.modules,'Seleccione un servicio');fillMatrixSelect(scopeSelect,['Global',response.institutionId],'Seleccione un ámbito');updateActionOptions();
+                    if(scopeSelect&&userRole!=='Desarrollador'){const globalOption=Array.from(scopeSelect.options).find(o=>o.value==='Global');if(globalOption)globalOption.disabled=true;scopeSelect.value=response.institutionId;}
+                    rowsBody.replaceChildren();
+                    if(!response.data.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.className='p-4 text-slate-500';td.textContent='No hay reglas explícitas registradas.';tr.appendChild(td);rowsBody.appendChild(tr);}
+                    response.data.forEach(rule=>{const tr=document.createElement('tr');[rule.rol,rule.modulo,rule.accion,rule.archived?'Archivada':(rule.legacy?'General (requiere migración)':(rule.permitido?'Permitido':'Denegado')),rule.ambito,rule.modificadoPor||'—'].forEach((value,index)=>{const td=document.createElement('td');td.className='p-3 '+(index===3?(rule.permitido?'text-emerald-300':'text-rose-300'):'text-slate-300');td.textContent=String(value??'');tr.appendChild(td);});const editTd=document.createElement('td'),edit=document.createElement('button');edit.type='button';edit.textContent='Editar';edit.className='px-2.5 py-1 rounded-lg bg-slate-700 text-slate-200';edit.disabled=!!rule.legacy||!!rule.archived;edit.addEventListener('click',()=>{roleSelect.value=rule.rol;moduleSelect.value=rule.modulo;updateActionOptions();actionSelect.value=rule.accion;scopeSelect.value=rule.ambito;allowedSelect.value=rule.permitido?'true':'false';matrixStatus('Regla cargada para edición.',false);});editTd.appendChild(edit);tr.appendChild(editTd);rowsBody.appendChild(tr);});
+                    if(migrateBtn)migrateBtn.classList.toggle('hidden',!response.data.some(rule=>rule.legacy));
+                    matrixStatus('Matriz cargada. '+response.data.length+' reglas visibles para esta institución.',false);
+                }catch(error){matrixStatus(error.message||'No fue posible cargar la matriz.',true);rowsBody.replaceChildren();const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.className='p-4 text-rose-300';td.textContent=error.message||'Error de consulta';tr.appendChild(td);rowsBody.appendChild(tr);}
+                finally{if(reloadBtn)reloadBtn.disabled=false;}
+            }
+            if(moduleSelect)moduleSelect.addEventListener('change',updateActionOptions);
+            if(reloadBtn)reloadBtn.addEventListener('click',loadPermissionMatrix);
+            if(resetBtn)resetBtn.addEventListener('click',resetMatrixForm);
+            if(saveBtn)saveBtn.addEventListener('click',async()=>{
+                const rule={rol:String(roleSelect.value||''),modulo:String(moduleSelect.value||''),accion:String(actionSelect.value||''),ambito:String(scopeSelect.value||''),permitido:allowedSelect.value==='true'};
+                if(!rule.rol||!rule.modulo||!rule.accion||!rule.ambito){matrixStatus('Seleccione rol, servicio, acción y ámbito.',true);return;}
+                saveBtn.disabled=true;
+                try{const response=await window.fetchApi('USER','savePermissionMatrix',rule);if(!response||response.status!=='success')throw new Error(response&&(response.code||response.message)||'No se pudo guardar la regla.');matrixStatus(response.idempotent?'La regla ya tenía ese valor.':'Regla guardada y auditada.',false);await loadPermissionMatrix();}
+                catch(error){matrixStatus(error.message||'No fue posible guardar la regla.',true);}finally{saveBtn.disabled=false;}
+            });
+            if(migrateBtn)migrateBtn.addEventListener('click',async()=>{
+                if(!window.confirm('Se expandirán las reglas heredadas General a los servicios que contienen cada acción. ¿Desea continuar?'))return;
+                migrateBtn.disabled=true;try{const response=await window.fetchApi('USER','migrateLegacyPermissionMatrix',{});if(!response||response.status!=='success')throw new Error(response&&(response.code||response.message)||'No fue posible migrar reglas heredadas.');matrixStatus('Migración finalizada: '+response.migrated+' reglas; '+response.created+' nuevas combinaciones; '+response.unmapped+' sin correspondencia.',false);await loadPermissionMatrix();}catch(error){matrixStatus(error.message||'Falló la migración.',true);}finally{migrateBtn.disabled=false;}
+            });
+            loadPermissionMatrix();
+        }
+    }
+
     window.DeveloperConsole = {
         executeHealthChecks: executeDevHealthChecks,
         loadStructuredLogs: loadStructuredLogs,
