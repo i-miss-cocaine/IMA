@@ -4650,15 +4650,7 @@ function resolveTransportAccessScope_(payload, ss, identityOverride) {
   var role = String(actor.role || "").trim(), normalizedRole = role.toLowerCase();
   var scope = { authorized: true, role: role, userId: actor.userId, studentIds: [], employeeIds: [], routeIds: [] };
   if (["director","subdirector","administrador"].indexOf(normalizedRole) !== -1) {
-    var institutionalScope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
-    if (!institutionalScope || institutionalScope.valid !== true || institutionalScope.authorized !== true) {
-      return { authorized: false, reason: institutionalScope && institutionalScope.code || "INSTITUTIONAL_SCOPE_UNVERIFIED" };
-    }
-    if (institutionalScope.institutionWide !== true) {
-      return { authorized: false, reason: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
-    }
     scope.management = true;
-    scope.institutionWide = true;
     scope.studentIds = null;
     scope.employeeIds = null;
     scope.routeIds = null;
@@ -4825,6 +4817,11 @@ function getTransportRoutes(payload) {
     transportAuditDenied_(actor, "getTransportRoutes", input.rutaId || "");
     return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", rutas: [] };
   }
+  var managementAccess = transportManagementReadScope_(input, ss, actor, scope);
+  if (!managementAccess || managementAccess.authorized !== true) {
+    transportAuditDenied_(actor, "getTransportRoutes", input.rutaId || input.viajeId || "");
+    return { status: "error", code: managementAccess && managementAccess.code || "RESOURCE_SCOPE_DENIED", rutas: [] };
+  }
   var snapshot = transportRowsPrefix_(ss, "TransporteRutas", [
     ["RutaID"], ["NombreRuta","Nombre"], ["UnidadCodigo","Unidad"], ["ConductorEmpleadoId","Conductor"],
     ["Capacidad"], ["ParadasJSON","Paradas"], ["Estado"]
@@ -4867,6 +4864,11 @@ function getTransportAssignments(payload) {
   if (!scope.authorized) {
     transportAuditDenied_(actor, "getTransportAssignments", input.rutaId || input.estudianteUserId || "");
     return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", total: 0, asignaciones: [] };
+  }
+  var managementAccess = transportManagementReadScope_(input, ss, actor, scope);
+  if (!managementAccess || managementAccess.authorized !== true) {
+    transportAuditDenied_(actor, "getTransportAssignments", input.rutaId || input.viajeId || "");
+    return { status: "error", code: managementAccess && managementAccess.code || "RESOURCE_SCOPE_DENIED", total: [], total: 0 };
   }
   var snapshot = transportRowsPrefix_(ss, "TransporteAsignaciones", [
     ["AsignacionTranspID","AsignacionID","ID"], ["RutaID"], ["EstudianteUserId"], ["ParadaNombre","Parada"],
@@ -4929,6 +4931,11 @@ function getTripPassengerManifest(payload) {
   if (!scope.authorized) {
     transportAuditDenied_(actor, "getTripPassengerManifest", tripId);
     return { status: "error", code: scope.reason || "RESOURCE_SCOPE_DENIED", manifiestoPasajeros: [] };
+  }
+  var managementAccess = transportManagementReadScope_(input, ss, actor, scope);
+  if (!managementAccess || managementAccess.authorized !== true) {
+    transportAuditDenied_(actor, "getTripPassengerManifest", input.rutaId || input.viajeId || "");
+    return { status: "error", code: managementAccess && managementAccess.code || "RESOURCE_SCOPE_DENIED", manifiestoPasajeros: [] };
   }
   var trips = transportRowsPrefix_(ss, "TransporteViajes", [
     ["ViajeID"], ["RutaID"], ["Unidad"], ["Conductor"], ["Monitor"], ["Fecha"], ["Jornada"],
