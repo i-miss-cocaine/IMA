@@ -6581,44 +6581,98 @@ function submitJointFamilyPayment(payload) {
   } finally { lock.releaseLock(); }
   return {status:"success",pagoId:pagoId,tieneComprobante:!!fileId,message:"Pago conjunto familiar registrado y enviado a revisión."};
 }
+function getVerifiedGuardianFinancialStudentIds_(payload) {
+  const submitter = resolveVerifiedRequestSubmitter_(payload, "", false, "permisoFinanciero");
+  const guardianResult = getGuardianStudents({
+    userId: submitter.userId,
+    _verifiedUserId: submitter.userId,
+    sessionToken: payload && (payload.sessionToken || payload.authToken || payload.token)
+  });
+  if (!guardianResult || guardianResult.status !== "success" || !Array.isArray(guardianResult.data)) {
+    throw new Error("FAMILY_RELATIONSHIP_UNVERIFIED");
+  }
+  const counts = Object.create(null), permitted = [];
+  guardianResult.data.forEach(function(student) {
+    if (!student || typeof student !== "object") return;
+    const id = String(student.studentUserId || student.userId || "").trim();
+    if (id) counts[id] = (counts[id] || 0) + 1;
+  });
+  guardianResult.data.forEach(function(student) {
+    if (!student || typeof student !== "object") return;
+    const id = String(student.studentUserId || student.userId || "").trim();
+    if (id && counts[id] === 1 && hasExplicitGuardianDomainPermission_(student, "permisoFinanciero")) {
+      permitted.push(id);
+    }
+  });
+  return { submitter: submitter, studentIds: permitted };
+}
+
+function normalizeGuardianFinancialStudentIds_(requested, permittedIds) {
+  const permitted = Array.from(new Set((permittedIds || []).map(id => String(id || "").trim()).filter(Boolean)));
+  let requestedIds;
+  if (requested === null || requested === undefined || requested === "" ||
+      (typeof requested === "string" && requested.trim().toUpperCase() === "TODOS")) {
+    requestedIds = permitted.slice();
+  } else if (Array.isArray(requested)) {
+    requestedIds = requested.map(id => String(id || "").trim());
+  } else if (typeof requested === "string") {
+    requestedIds = requested.split(",").map(id => id.trim());
+  } else {
+    throw new Error("FAMILY_FINANCIAL_SCOPE_DENIED");
+  }
+  if (!requestedIds.length || requestedIds.some(id => !id) ||
+      new Set(requestedIds).size !== requestedIds.length ||
+      requestedIds.some(id => permitted.indexOf(id) === -1)) {
+    throw new Error("FAMILY_FINANCIAL_SCOPE_DENIED");
+  }
+  return requestedIds;
+}
+
 function getFamilyScholarships(payload) {
-  const { userIdResponsable, userId } = payload || {};
-  const uid = userIdResponsable || userId;
+  const resolved = getVerifiedGuardianFinancialStudentIds_(payload);
+  const allowedIds = resolved.studentIds;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "BecasYDescuentosFamiliares");
   const rows = sheet.getDataRange().getValues().slice(1);
-
-  const list = rows.filter(r => String(r[1]).trim() === String(uid).trim()).map(r => ({
-    solicitudId: r[0],
-    padreId: r[1],
-    estudiantesIds: r[2],
-    tipoBeneficio: r[3],
-    alcance: r[4],
-    motivo: r[5],
-    montoPorcentaje: r[6],
-    estado: r[7],
-    fechaSolicitud: r[8],
-    observaciones: r[9]
-  }));
-
+  const list = rows.filter(row => String(row[1] || "").trim() === resolved.submitter.userId)
+    .map(row => {
+      let studentIds;
+      try { studentIds = normalizeGuardianFinancialStudentIds_(row[2], allowedIds); }
+      catch (_) { return null; }
+      return {
+        solicitudId: row[0],
+        padreId: row[1],
+        estudiantesIds: studentIds.join(", "),
+        tipoBeneficio: row[3],
+        alcance: row[4],
+        motivo: row[5],
+        montoPorcentaje: row[6],
+        estado: row[7],
+        fechaSolicitud: row[8],
+        observaciones: row[9]
+      };
+    }).filter(Boolean);
   return { status: "success", data: list };
 }
 
 function submitFamilyScholarshipApplication(payload) {
   const { userIdResponsable, estudiantesIds, tipoBeneficio, alcance, motivo, montoPorcentaje, documentosUrl } = payload || {};
-  if (!userIdResponsable || !tipoBeneficio || !motivo) {
+  if (!tipoBeneficio || !motivo) {
     throw new Error("Campos obligatorios incompletos para la solicitud de beca/descuento.");
   }
-
+  const resolved = getVerifiedGuardianFinancialStudentIds_(payload);
+  if (userIdResponsable && String(userIdResponsable).trim() !== resolved.submitter.userId) {
+    throw new Error("VERIFIED_IDENTITY_MISMATCH");
+  }
+  const authorizedStudentIds = normalizeGuardianFinancialStudentIds_(estudiantesIds, resolved.studentIds);
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "BecasYDescuentosFamiliares");
   const solId = "BEC-" + Date.now();
   const fecha = new Date().toISOString();
-
   sheet.appendRow([
     solId,
-    userIdResponsable,
-    Array.isArray(estudiantesIds) ? estudiantesIds.join(", ") : (estudiantesIds || "Todos"),
+    resolved.submitter.userId,
+    authorizedStudentIds.join(", "),
     tipoBeneficio,
     alcance || "Familiar",
     motivo,
@@ -6627,7 +6681,6 @@ function submitFamilyScholarshipApplication(payload) {
     fecha,
     documentosUrl || ""
   ]);
-
   return {
     status: "success",
     solicitudId: solId,

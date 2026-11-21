@@ -248,6 +248,59 @@ assert.deepEqual(Array.from(ownedApplicants.data, row => row.solicitudId), ["APP
 applicantRuntime.getUserVerifiedRole = () => "Estudiante";
 assert.throws(() => applicantRuntime.lookup({ _verifiedUserId: "GUARDIAN-1" }), /GUARDIAN_ROLE_REQUIRED/,
   "non-guardian roles cannot use guardian applicant ownership lookup");
+
+const familyScholarshipRuntime = {
+  getUserVerifiedRole: payload => { payload._verifiedUserId = "GUARDIAN-1"; return "Padre"; },
+  getGuardianStudents: () => ({ status: "success", data: [
+    { userId: "STU-1", studentUserId: "STU-1", permisos: { permisoFinanciero: true } },
+    { userId: "STU-2", studentUserId: "STU-2", permisos: { permisoFinanciero: false } },
+    { userId: "STU-3", studentUserId: "STU-3", permisos: { permisoFinanciero: true } }
+  ] }),
+  SpreadsheetApp: { openById: () => ({}) },
+  getOrCreateSheet: () => familyScholarshipSheet,
+  SPREADSHEET_ID: "TEST", Date, String, Number, Object, Array, JSON
+};
+const familyScholarshipRows = [
+  ["SolicitudID","ResponsableID","EstudiantesIDs","Tipo","Alcance","Motivo","Monto","Estado","Fecha","Observaciones"],
+  ["B-1","GUARDIAN-1","STU-1, STU-3","Beca","Familiar","Motivo","Por evaluar","Pendiente",new Date(),""],
+  ["B-2","OTHER-USER","STU-1","Beca","Familiar","Otro","Por evaluar","Pendiente",new Date(),""],
+  ["B-3","GUARDIAN-1","STU-2","Beca","Familiar","No permitido","Por evaluar","Pendiente",new Date(),""],
+  ["B-4","GUARDIAN-1","Todos","Beca","Familiar","Todos","Por evaluar","Pendiente",new Date(),""]
+];
+const familyScholarshipSheet = {
+  getDataRange: () => ({ getValues: () => familyScholarshipRows.map(row => row.slice()) }),
+  appendRow: row => familyScholarshipRows.push(row.slice())
+};
+const familyScholarshipFns = [
+  extractFunction(userSource, "hasExplicitGuardianDomainPermission_"),
+  extractFunction(userSource, "resolveVerifiedRequestSubmitter_"),
+  extractFunction(userSource, "getVerifiedGuardianFinancialStudentIds_"),
+  extractFunction(userSource, "normalizeGuardianFinancialStudentIds_"),
+  extractFunction(userSource, "getFamilyScholarships"),
+  extractFunction(userSource, "submitFamilyScholarshipApplication")
+].join(String.fromCharCode(10));
+vm.createContext(familyScholarshipRuntime);
+vm.runInContext(familyScholarshipFns + "\nthis.read=getFamilyScholarships; this.submit=submitFamilyScholarshipApplication;", familyScholarshipRuntime);
+const scholarshipList = familyScholarshipRuntime.read({ sessionToken: "signed", userIdResponsable: "OTHER-USER" });
+assert.deepEqual(Array.from(scholarshipList.data, row => row.solicitudId), ["B-1","B-4"],
+  "family scholarship reads are owner-bound and hide applications for children without current financial permission");
+assert.equal(scholarshipList.data.find(row => row.solicitudId === "B-4").estudiantesIds, "STU-1, STU-3",
+  "family-wide scholarship reads disclose only currently permitted student IDs");
+assert.throws(() => familyScholarshipRuntime.submit({
+  sessionToken: "signed", userIdResponsable: "OTHER-USER", estudiantesIds: ["STU-1"], tipoBeneficio: "Beca", motivo: "Test"
+}), /VERIFIED_IDENTITY_MISMATCH/,
+  "family scholarship submission cannot spoof another guardian identity");
+assert.throws(() => familyScholarshipRuntime.submit({
+  sessionToken: "signed", estudiantesIds: ["STU-1","STU-2"], tipoBeneficio: "Beca", motivo: "Test"
+}), /FAMILY_FINANCIAL_SCOPE_DENIED/,
+  "family scholarship submission requires explicit financial permission for every student");
+familyScholarshipRuntime.submit({
+  sessionToken: "signed", estudiantesIds: "Todos", tipoBeneficio: "Beca", motivo: "Test"
+});
+assert.equal(familyScholarshipRows[familyScholarshipRows.length-1][1], "GUARDIAN-1",
+  "family scholarship records bind to the verified guardian identity");
+assert.equal(familyScholarshipRows[familyScholarshipRows.length-1][2], "STU-1, STU-3",
+  "family-wide scholarship submission expands only to explicitly permitted students");
 const taskSource = fs.readFileSync("backend/task-service/Code.gs", "utf8");
 const taskGuardianFn = extractFunction(taskSource, "getTaskServiceGuardianStudentIds");
 const taskRuntime = {
