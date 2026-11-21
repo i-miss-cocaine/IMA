@@ -39,20 +39,26 @@ function runtime(primaryRows, options = {}) {
   const map = {
     RelacionesFamiliares: options.missingPrimary ? null : sheet(primaryRows || [primaryHeaders]),
     RelacionesEstudianteTutor: options.missingLegacy ? null : sheet(options.legacyRows || legacyRelations),
-    ResponsablesTutores: options.missingLegacy ? null : sheet(legacyGuardians)
+    ResponsablesTutores: options.missingLegacy ? null : sheet(legacyGuardians),
+    ExpedientesEstudiantes: sheet([["ExpedienteID","PersonaID"],["EXP-1","PERSON-S"],["EXP-2","PERSON-OTHER"]])
   };
+  const ss = { getSheetByName(name) { return map[name] || null; } };
   const context = {
-    Date, String, Array, Object, Number, JSON,
+    Date, String, Array, Object, Number, JSON, SPREADSHEET_ID: "TEST",
+    SpreadsheetApp: { openById: () => ss },
     getVerifiedAcademicIdentity_: () => ({ authorized: true, userId: "GUARD-1", role: "Padre" }),
-    getStudentPersonIdForUser_: () => "PERSON-G",
-    getStudentIdentityForPerson_: () => ({ userId: "STU-1", role: "Estudiante" }),
+    getStudentPersonIdForUser_: (_ss, userId) => userId === "GUARD-1" ? "PERSON-G" : (userId === "STU-1" ? "PERSON-S" : ""),
+    getStudentIdentityForPerson_: (_ss, personId) => personId === "PERSON-S" ? ({ userId: "STU-1", role: "Estudiante" }) : null,
     getVerifiedAcademicGuardianDepartmentScope_: () => ({ authorized: true, departmentId: "DEP-1" }),
     getVerifiedAcademicDepartmentScope_: () => ({ authorized: true, departmentId: "DEP-1" }),
     assertResourceOwnershipForScope_: () => ({ authorized: true, accessType: "OWNER", departmentId: "DEP-1" }),
-    ss: { getSheetByName(name) { return map[name] || null; } }
+    ss
   };
   vm.createContext(context);
   vm.runInContext(code + "\nthis.check = assertStudentExpedienteScopeAccess_;", context);
+  const contextualCode = extractFunction(source, "getAcademicGuardianPermissionKeyForAction_") + "\n" +
+    extractFunction(source, "validateContextualAccess") + "\nthis.contextual = validateContextualAccess;";
+  vm.runInContext(contextualCode, context);
   return context;
 }
 function check(ctx, permissionKey) {
@@ -138,4 +144,27 @@ vm.createContext(duplicateIdentityRuntime);
 vm.runInContext(identityFn + "\nthis.resolve = getStudentPersonIdForUser_;", duplicateIdentityRuntime);
 assert.equal(duplicateIdentityRuntime.resolve(duplicateIdentityRuntime.ss, "GUARD-1"), "",
   "duplicate user-to-person mappings fail closed");
+
+function contextual(ctx, action, payload) {
+  return ctx.contextual(action, payload || {}, "GUARD-1", "Padre");
+}
+ctx = runtime([primaryHeaders, validPrimary]);
+assert.equal(contextual(ctx, "getStudentAttendanceSummary", { userId: "STU-1" }).authorized, false,
+  "academic grant alone cannot authorize attendance summaries");
+assert.equal(contextual(ctx, "getStudentEnrollmentHistory", { userId: "STU-1" }).authorized, true,
+  "academic domain permission authorizes enrollment history");
+ctx = runtime([primaryHeaders, validPrimary.slice(0,8).concat([JSON.stringify({ permisoAcademico: true, permisoAsistencia: true })])]);
+assert.equal(contextual(ctx, "getStudentAttendanceSummary", { userId: "STU-1" }).authorized, true,
+  "attendance endpoints require and accept an explicit attendance-domain grant");
+ctx = runtime([primaryHeaders, validPrimary.slice(0,8).concat([JSON.stringify({ permisoAcademico: true, permisoDocumental: true })])]);
+assert.equal(contextual(ctx, "getStudentDocumentFile", { expedienteId: "EXP-1" }).authorized, true,
+  "document endpoint requires an explicit document-domain grant");
+assert.equal(contextual(ctx, "getStudentDocumentFile", { studentId: "STU-1", expedienteId: "EXP-2" }).authorized, false,
+  "document endpoint rejects mismatched student and expediente selectors");
+assert.equal(contextual(ctx, "unclassifiedGuardianAction", { userId: "STU-1" }).authorized, false,
+  "unclassified guardian resource actions fail closed");
+const studentFileFunction = extractFunction(source, "getStudentFile");
+assert(studentFileFunction.includes('assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp, "permisoDocumental")'),
+  "the complete student-file endpoint requires document-domain permission");
+
 process.stdout.write("academic-guardian-primary-relation-abac-contract: all assertions passed\n");

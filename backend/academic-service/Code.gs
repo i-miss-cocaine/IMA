@@ -1196,11 +1196,54 @@ function verifySessionToken(tokenString) {
 
 // [TAREA-01] [TAREA-F4-P0-01] [Fase 4 - Seguridad RBAC y Token Unificado] - Validar y reforzar la seguridad mediante verificación de credencial de sesión HMAC
 // [TAREA-F6-012] [TAREA-F6-037] [Fase 6: Seguridad, Aislamiento y Gestión Centralizada de Permisos] - Validación de acceso contextual server-side, aislamiento IDOR y ámbito de coordinación por área/rol (RBAC/ABAC)
+function getAcademicGuardianPermissionKeyForAction_(action) {
+  const value = String(action || "").replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+  if (/(attendance|absence|justification|check in|checkin|asistencia|inasistencia|salida anticipada)/.test(value)) return "permisoAsistencia";
+  if (/(document|file|certificate|expedient|attachment|documento|archivo|certificado|expediente)/.test(value)) return "permisoDocumental";
+  if (/(payment|finance|account|billing|voucher|credit|invoice|purchase|receipt|tuition|fee|financ|pago|cobro|factur)/.test(value)) return "permisoFinanciero";
+  if (/(grade|exam|task|academic|schedule|classroom|enrollment|extracurricular|student|report|matricula|calificacion|examen|tarea|academ)/.test(value)) return "permisoAcademico";
+  return "";
+}
+
 function validateContextualAccess(action, payload, verifiedUserId, userRole) {
   const verifiedActorId = String(verifiedUserId || "").trim();
   const verifiedActorRole = String(userRole || "").trim();
   if (!verifiedActorId || !verifiedActorRole) return { authorized: false, reason: "VERIFIED_IDENTITY_REQUIRED" };
   if (verifiedActorRole === "Administrador" || verifiedActorRole === "Desarrollador") return { authorized: true };
+
+  const guardianRoles = ["Padre", "Madre", "Tutor", "Responsable", "ResponsableFamiliar"];
+  const explicitStudentId = payload && (payload.studentId || payload.estudianteId || payload.estudianteUserId ||
+    payload.studentUserId || payload.targetStudentId || payload.targetStudentUserId || payload.targetUserId);
+  const payloadUserId = payload && payload.userId &&
+    String(payload.userId).trim() !== verifiedActorId ? payload.userId : "";
+  const guardianStudentId = String(explicitStudentId || payloadUserId || "").trim();
+  const guardianExpedienteId = String(payload && (payload.expedienteId || payload.expedienteEstudianteId) || "").trim();
+  if (guardianRoles.indexOf(verifiedActorRole) !== -1 && (guardianStudentId || guardianExpedienteId)) {
+    const permissionKey = getAcademicGuardianPermissionKeyForAction_(action);
+    if (!permissionKey) return { authorized: false, reason: "GUARDIAN_DOMAIN_PERMISSION_UNCLASSIFIED" };
+    try {
+      const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
+      if (!expSheet) return { authorized: false, reason: "GUARDIAN_EXPEDIENTE_SOURCE_UNAVAILABLE" };
+      const rows = expSheet.getDataRange().getValues().slice(1);
+      const mappedPersonId = guardianStudentId ? getStudentPersonIdForUser_(ss, guardianStudentId) : "";
+      const matches = rows.filter(function(row) {
+        const rowExpedienteId = String(row[0] || "").trim();
+        const rowPersonId = String(row[1] || "").trim();
+        const studentMatches = !guardianStudentId || rowExpedienteId === guardianStudentId ||
+          rowPersonId === guardianStudentId || (!!mappedPersonId && rowPersonId === mappedPersonId);
+        const expedienteMatches = !guardianExpedienteId || rowExpedienteId === guardianExpedienteId;
+        return studentMatches && expedienteMatches;
+      });
+      if (matches.length !== 1) return { authorized: false, reason: "GUARDIAN_EXPEDIENTE_AMBIGUOUS_OR_MISSING" };
+      const access = assertStudentExpedienteScopeAccess_(payload, ss, expSheet, matches[0], permissionKey);
+      if (!access || access.authorized !== true) {
+        return { authorized: false, reason: String(access && access.code || "GUARDIAN_DOMAIN_PERMISSION_DENIED") };
+      }
+    } catch (_) {
+      return { authorized: false, reason: "GUARDIAN_DOMAIN_PERMISSION_VALIDATION_FAILED" };
+    }
+  }
 
   const targetStudentId = payload && (payload.studentId || payload.estudianteId || payload.targetUserId || payload.userId);
   if ((verifiedActorRole === "Estudiante" || verifiedActorRole === "Alumno") && targetStudentId &&
@@ -4825,7 +4868,7 @@ function getStudentFile(payload) {
     (codigoInstitucional && String(r[2]).trim() === String(codigoInstitucional).trim())
   );
   if (!exp) return { status: "error", message: "Expediente de estudiante no encontrado." };
-  const access = assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp);
+  const access = assertStudentExpedienteScopeAccess_(payload, ss, expSheet, exp, "permisoDocumental");
   if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
 
   const targetExpId = exp[0];
