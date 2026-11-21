@@ -734,6 +734,7 @@ const tenantScopeRows = [
   ["A-TENANT","U-TENANT","Director","DEPARTAMENTO",'["DEP-A"]',"Activo","U-ADMIN","2026-01-01","","","No","","INST-1","MEM-LOCAL","RI-LOCAL"]
 ];
 const tenantCache = {get:()=>null,put:()=>{}};
+const tenantVersionSheet = {getDataRange:()=>({getValues:()=>[["Clave","Version","UpdatedAt","UpdatedBy"]]})};
 const tenantSessionCtx = {
   SPREADSHEET_ID:"LOCAL",
   ROLE_PERMISSIONS:{Director:[],Auditor:[]},
@@ -747,6 +748,7 @@ const tenantSessionCtx = {
     newBlob:value=>({getDataAsString:()=>value})
   },
   SpreadsheetApp:{openById:()=>({getSheetByName:name=>{
+    if(name==="VersionesSeguridad")return tenantVersionSheet;
     if(name==="Usuarios")return {getDataRange:()=>({getValues:()=>tenantUserRows.map(row=>row.slice())})};
     if(name==="MembresiasRolesRBAC")return {getDataRange:()=>({getValues:()=>tenantMembershipRows.map(row=>row.slice())})};
     if(name==="AsignacionesAmbitosRoles")return {getDataRange:()=>({getValues:()=>tenantScopeRows.map(row=>row.slice())})};
