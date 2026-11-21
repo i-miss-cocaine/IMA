@@ -289,7 +289,8 @@ function runEndpoint(name, payload, spreadsheetData) {
     SPREADSHEET_ID: "isolated",
     SpreadsheetApp: { openById: () => makeSpreadsheet(spreadsheetData) },
     logStructuredEvent: (...args) => events.push(args),
-    getOrCreateTransportVehiclesCatalog: () => {}
+    getOrCreateTransportVehiclesCatalog: () => {},
+    validateRolePermission: (actor, action) => ({ authorized: true, actor, action })
   }, makeAuthContext(spreadsheetData));
   vm.runInNewContext(
     helperSource +
