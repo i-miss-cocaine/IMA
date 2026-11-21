@@ -12983,7 +12983,7 @@ function getOrCreateTransportVehiclesCatalog() {
 function transportOptimizationActor_(payload, action, spreadsheet) {
  const input=payload||{},actor=getVerifiedAccountingIdentity_(input);
  if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");
- const role=String(actor.role||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+ const role=String(actor.role||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
  if(["ADMINISTRADOR","DIRECTOR","SUBDIRECTOR"].indexOf(role)===-1)throw new Error("ROUTE_OPTIMIZATION_ROLE_NOT_ALLOWED");
  if(action) {
   const permission=validateRolePermission(actor,action);
