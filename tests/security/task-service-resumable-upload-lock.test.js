@@ -40,7 +40,7 @@ for (const [publicName, internalName] of endpoints) {
 for (const internalName of ["initiateResumableUploadUnlocked_", "uploadChunkUnlocked_"]) {
   const body = extract(internalName);
   assert.match(body, /reconstructFilePartsUnlocked_\(/, "nested completion must reuse the already-held lock");
-  assert.doesNotMatch(body, /reconstructFileParts\(/, "nested completion must not reacquire ScriptLock");
+  assert.doesNotMatch(body, /\\breconstructFileParts\\s*\\(/, "nested completion must not reacquire ScriptLock");
 }
 
 const calls = { attempts: 0, releases: 0, operations: 0 };
