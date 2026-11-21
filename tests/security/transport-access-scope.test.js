@@ -27,7 +27,7 @@ function extractFunction(name) {
   throw new Error("unclosed function " + name);
 }
 const helperNames = [
-  "getVerifiedAccountingIdentity_", "transportRows_", "transportDateBoundary_", "transportRelationshipIsCurrent_",
+  "getVerifiedAccountingIdentity_", "transportRows_", "transportRowsPrefix_", "transportDateBoundary_", "transportRelationshipIsCurrent_",
   "transportEmployeeIdsForUser_", "resolveTransportAccessScope_", "transportManagementReadScope_", "transportAuditDenied_",
   "getTransportRouteIdsForScope_", "getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"
 ];
