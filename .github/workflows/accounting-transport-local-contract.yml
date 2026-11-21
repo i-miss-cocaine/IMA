@@ -1,0 +1,41 @@
+name: ACCOUNTING Transport Local Contracts
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - NG_beta_0.0.0.1_work
+    paths:
+      - backend/accounting-service/Code.gs
+      - tests/security/accounting-transport-*.test.js
+      - .github/workflows/accounting-transport-local-contract.yml
+
+permissions:
+  contents: read
+
+jobs:
+  transport-local-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout authorized work branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Syntax-check ACCOUNTING service
+        run: node --check < backend/accounting-service/Code.gs
+      - name: Syntax-check transport contracts
+        run: |
+          node --check tests/security/accounting-transport-monthly-charges.test.js
+          node --check tests/security/accounting-transport-assignment-ownership.test.js
+      - name: Run transport monthly billing, proration and rollback contract
+        run: node tests/security/accounting-transport-monthly-charges.test.js
+      - name: Run transport assignment ownership and concurrency contract
+        run: node tests/security/accounting-transport-assignment-ownership.test.js
+      - name: Run accounting monthly charge period regression
+        run: node tests/security/accounting-monthly-charge-period.test.js
+      - name: Run accounting payroll generation authorization regression
+        run: node tests/security/accounting-payroll-generation-authorization.test.js
