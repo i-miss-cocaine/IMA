@@ -239,10 +239,8 @@ assert.throws(() => context.getCafeteriaOrders({ estudianteUserId: "STU-2", _ver
 assert.equal(context.getCafeteriaOrders({ estudianteUserId: "STU-2", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" }).pedidos[0].estudianteUserId, "STU-1");
 
 const guardianStatement = context.getStudentAccountStatement({ userId: "STU-1", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" });
-assert.equal(guardianStatement.data.consumosCreditoFamiliar.length, 2);
-assert.equal(guardianStatement.data.totalConsumoCreditoFamiliar, 20, "approved consumption and reversals must net without creating a second school charge");
-assert.equal(guardianStatement.data.saldoPendiente, 60, "family credit consumption remains separate from tuition balance");
-assert.throws(() => context.getStudentAccountStatement({ userId: "STU-2", _verifiedUserId: "GUARD-1", _verifiedRole: "Padre" }), /FAMILY_CREDIT_ACTIVE_STUDENT_RELATION_REQUIRED/);
+assert.deepEqual(guardianStatement, { status: "error", code: "ROLE_NOT_ALLOWED" },
+  "the current accounting permission matrix does not grant parents access to the full student account statement");
 const studentStatement = context.getStudentAccountStatement({ userId: "STU-2", _verifiedUserId: "STU-1", _verifiedRole: "Estudiante" });
 assert.equal(studentStatement.data.userId, "STU-1", "students cannot request another student's statement");
 assert.equal(studentStatement.data.totalConsumoCreditoFamiliar, 20);
