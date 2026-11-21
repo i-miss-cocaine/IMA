@@ -479,6 +479,12 @@ assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet,
 jointRelations[1][6] = false; jointRelations[1][7] = '{"permisoFinanciero":true}';
 assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, false,
   "ACCOUNTING direct financial denial overrides a JSON grant");
+jointRelations[1][6] = "true"; jointRelations[1][7] = '{"permisoFinanciero":true}';
+assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, false,
+  "ACCOUNTING malformed direct grant cannot be masked by a JSON grant");
+jointRelations[1][6] = true; jointRelations[1][7] = '{"permisoFinanciero":"true"}';
+assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, false,
+  "ACCOUNTING malformed JSON grant cannot be masked by a direct grant");
 jointRelations[1].splice(0, jointRelations[1].length, ...jointPermissionRow);
 jointRelations.push(["R1","PERSON-S2","PERSON-G","Activo","2020-01-01","2099-12-31",true,""]);
 assert.equal(jointFamilyRuntime.check({ sessionToken: "signed" }, jointSheetSet, "STU-1").authorized, false,

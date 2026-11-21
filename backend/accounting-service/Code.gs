@@ -4553,18 +4553,19 @@ function assertJointFamilyVoucherOwnerAccess_(payload, ss, targetUserId) {
     var explicitGrant = false;
     if (directPermissionIndex >= 0) {
       var direct = row[directPermissionIndex];
-      if (direct === false || String(direct || "").trim().toLowerCase() === "false") return false;
       if (direct === true) explicitGrant = true;
+      else if (direct !== "" && direct !== null && direct !== undefined) return false;
     }
     if (permissionsIndex >= 0) {
       var raw = row[permissionsIndex];
       if (raw !== "" && raw !== null && raw !== undefined) {
         var permissions;
         try { permissions = typeof raw === "string" ? JSON.parse(raw) : raw; } catch (_) { return false; }
-        if (!permissions || typeof permissions !== "object" || Array.isArray(permissions) ||
-            permissions.permisoFinanciero === false ||
-            String(permissions.permisoFinanciero || "").trim().toLowerCase() === "false") return false;
-        if (permissions.permisoFinanciero === true) explicitGrant = true;
+        if (!permissions || typeof permissions !== "object" || Array.isArray(permissions)) return false;
+        if (Object.prototype.hasOwnProperty.call(permissions, "permisoFinanciero")) {
+          if (permissions.permisoFinanciero !== true) return false;
+          explicitGrant = true;
+        }
       }
     }
     return explicitGrant;
