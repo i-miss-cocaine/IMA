@@ -77,6 +77,10 @@ const rows = {
     ["RelacionID","ExpedienteID","ResponsableID","TipoParentesco","EsRepresentanteLegal","EsContactoEmergencia","EsResponsableFinanciero","AutorizadoPickUp","AccesoPortal","Estado"],
     ["REL-1","EXP-A","RESP-1","Madre","Sí","Sí","Sí","Sí","Sí","Activo"]
   ],
+  RelacionesFamiliares:[
+    ["RelacionID","ExpedienteID","ResponsableID","TipoParentesco","Estado","FechaInicio","FechaFin","VerificadaPor","PermisosJSON"],
+    ["REL-PRIMARY-1","EXP-A","U-GUARDIAN","Madre","Verificada","2020-01-01","2099-12-31","","{\"permisoAcademico\":true,\"permisoDocumental\":true}"]
+  ],
   ResponsablesTutores:[["ResponsableID","PersonaID","Nombres","Apellidos"],["RESP-1","P-GUARDIAN","",""]],
   DocumentosEstudiante:[
     ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones","VersionDocumento","SHA256"],
@@ -126,9 +130,12 @@ assert.equal(context.assertStudentExpedienteScopeAccess_(actor("student"),ss,exp
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("student"),ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"RESOURCE_SCOPE_DENIED");
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[1]).accessType,"GUARDIAN");
 assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[2]).code,"RESOURCE_SCOPE_DENIED");
-rows.ResponsablesTutores.push(["RESP-1","P-OTHER","",""]);
-assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"RESOURCE_SCOPE_DENIED","guardian access must fail closed when ResponsableID maps to multiple people");
-rows.ResponsablesTutores.pop();
+rows.RelacionesFamiliares.push(["REL-PRIMARY-1","EXP-B","U-GUARDIAN","Madre","Verificada","2020-01-01","2099-12-31","","{\"permisoAcademico\":true}"]);
+assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"RESOURCE_SCOPE_DENIED","guardian access must fail closed when a primary relationship ID is duplicated");
+rows.RelacionesFamiliares.pop();
+const primaryRelations = rows.RelacionesFamiliares.splice(1);
+assert.equal(context.assertStudentExpedienteScopeAccess_(actor("guardian"),ss,expSheet,rows.ExpedientesEstudiantes[1]).code,"RESOURCE_SCOPE_DENIED","legacy links cannot authorize access without a primary domain grant");
+rows.RelacionesFamiliares.push(...primaryRelations);
 const guardianOwnership = rows.ResourceOwnership.find(row => row[3] === "EXP-A");
 const originalGuardianOwnership = guardianOwnership.slice();
 guardianOwnership[1] = "INST-OTHER";
