@@ -17537,7 +17537,7 @@ function assertAcademicStudentMutationAccess_(action, payload, ss, expedienteId,
 function changeStudentSection(payload) {
   const request = payload || {};
   const { expedienteId: requestedExpedienteId, userId: requestedUserId, anolectivo, nuevaSeccion, motivo, fechaEfectiva } = request;
-  if ((!expedienteId && !userId) || !nuevaSeccion) throw new Error("Expediente/userId y nuevaSeccion son requeridos.");
+  if ((!requestedExpedienteId && !requestedUserId) || !nuevaSeccion) throw new Error("Expediente/userId y nuevaSeccion son requeridos.");
 
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
@@ -18080,7 +18080,7 @@ function getAdmissionAnalyticsReport(payload) {
 function recordStudentTransfer(payload) {
   const request = payload || {};
   const { expedienteId: requestedExpedienteId, userId: requestedUserId, anolectivo, institucionDestino, motivo, estadoTramite, fechaSalidaEfectiva } = request;
-  if (!expedienteId && !userId) throw new Error("expedienteId o userId requerido.");
+  if (!requestedExpedienteId && !requestedUserId) throw new Error("expedienteId o userId requerido.");
 
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
@@ -18228,7 +18228,7 @@ function recordStudentWithdrawal(payload) {
 function processStudentReentry(payload) {
   const request = payload || {};
   const { expedienteId: requestedExpedienteId, userId: requestedUserId, nuevoAnoLectivo, grado, seccion, motivo } = request;
-  if ((!userId && !expedienteId) || !nuevoAnoLectivo || !grado) throw new Error("userId/expedienteId, nuevoAnoLectivo y grado son requeridos.");
+  if ((!requestedUserId && !requestedExpedienteId) || !nuevoAnoLectivo || !grado) throw new Error("userId/expedienteId, nuevoAnoLectivo y grado son requeridos.");
 
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
@@ -18298,7 +18298,7 @@ function processStudentReentry(payload) {
 function processStudentPromotion(payload) {
   const request = payload || {};
   const { expedienteId: requestedExpedienteId, userId: requestedUserId, anoLectivoCerrado, anoLectivoNuevo, nuevoGrado, nuevaSeccion, decisionAdministrativa, motivo } = request;
-  if ((!userId && !expedienteId) || !anoLectivoNuevo || !nuevoGrado) throw new Error("userId/expedienteId, anoLectivoNuevo y nuevoGrado son requeridos.");
+  if ((!requestedUserId && !requestedExpedienteId) || !anoLectivoNuevo || !nuevoGrado) throw new Error("userId/expedienteId, anoLectivoNuevo y nuevoGrado son requeridos.");
 
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
@@ -18366,7 +18366,7 @@ function processStudentPromotion(payload) {
 function processStudentGraduation(payload) {
   const request = payload || {};
   const { expedienteId: requestedExpedienteId, userId: requestedUserId, anolectivo, programaGraduacion, fechaGraduacion, observaciones } = request;
-  if (!expedienteId && !userId) throw new Error("expedienteId o userId es requerido.");
+  if (!requestedExpedienteId && !requestedUserId) throw new Error("expedienteId o userId es requerido.");
 
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
