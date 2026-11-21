@@ -65,6 +65,7 @@ on:
       - tests/security/academic-student-document-private-storage.test.js
       - tests/security/academic-student-enrollment-history-ownership.test.js
       - tests/security/academic-student-enrollment-write-ownership.test.js
+      - tests/security/academic-student-lifecycle-mutations-ownership.test.js
       - tests/security/academic-student-attendance-summary-ownership.test.js
       - js/accounting.js
       - dashboard-contabilidad.html
@@ -358,6 +359,8 @@ jobs:
         run: node tests/security/academic-student-enrollment-history-ownership.test.js
       - name: Run academic student enrollment write ownership contract
         run: node tests/security/academic-student-enrollment-write-ownership.test.js
+      - name: Run academic student lifecycle mutations ownership contract
+        run: node tests/security/academic-student-lifecycle-mutations-ownership.test.js
       - name: Run academic student attendance summary ownership contract
         run: node tests/security/academic-student-attendance-summary-ownership.test.js
       - name: Run accounting enrollment billing configuration contract
@@ -391,6 +394,7 @@ jobs:
           node --check < backend/accounting-service/Code.gs
           node --check tests/security/academic-update-student-file-ownership.test.js
           node --check tests/security/academic-merge-student-files-ownership.test.js
+          node --check tests/security/academic-student-lifecycle-mutations-ownership.test.js
           node --check tests/security/accounting-monthly-charge-period.test.js
           node --check tests/security/accounting-payroll-generation-authorization.test.js
           node --check tests/security/accounting-family-credit-preference.test.js
