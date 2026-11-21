@@ -12099,14 +12099,10 @@ function transportAssertStudentOwnershipForMutation_(ss, payload, actor, student
   if (matches.length !== 1) return { authorized: false, code: "TRANSPORT_STUDENT_AMBIGUOUS" };
   const expedienteId = String(matches[0][idIndexes[0]] || "").trim();
   if (!expedienteId) throw new Error("TRANSPORT_STUDENT_SCHEMA_INVALID");
-  if (typeof assertResourceOwnershipForScope_ === "function") {
-    const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_ESTUDIANTE", expedienteId, operation || "WRITE");
-    if (!ownership || ownership.authorized !== true) throw new Error(ownership && ownership.code || "RESOURCE_SCOPE_DENIED");
-  } else if (typeof assertMonthlyChargeStudentOwnership_ === "function") {
-    assertMonthlyChargeStudentOwnership_(ss, scope, [studentId], operation || "WRITE");
-  } else {
+  if (typeof assertMonthlyChargeStudentOwnership_ !== "function") {
     throw new Error("RESOURCE_OWNERSHIP_UNVERIFIED");
   }
+  assertMonthlyChargeStudentOwnership_(ss, scope, [studentId], operation || "WRITE");
   return { authorized: true, scope: scope, expedienteId: expedienteId, studentUserId: studentId };
 }
 
