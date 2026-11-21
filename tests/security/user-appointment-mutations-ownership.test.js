@@ -30,7 +30,8 @@ function makeHarness(options) {
     allowedExpedientes: ["EXP-1"],
     lockAvailable: true,
     duplicateAppointment: false,
-    appointmentSheet: true
+    appointmentSheet: true,
+    inactiveRecipient: false
   }, options || {});
   const calls = { lockAttempts: 0, releases: 0, appends: 0, writes: [], ownership: [] };
   const users = [
@@ -40,6 +41,7 @@ function makeHarness(options) {
     ["STAFF-A", "PERSON-A", "Secretaría", "Activo"],
     ["STAFF-B", "PERSON-B", "Secretaría", "Activo"]
   ];
+  if (settings.inactiveRecipient) users[3][3] = "Inactiva";
   const expedientes = [
     ["ExpedienteID", "PersonaID"],
     ["EXP-1", "PERSON-1"],
@@ -175,6 +177,12 @@ assert.equal(unknownRecipient.book(request("Estudiante", "STU-1", {
   solicitanteId: "STU-1", solicitadoA: "STAFF-X", motivo: "Consulta", fechaHora: "2026-11-22T10:00:00Z"
 })).code, "USER_NOT_FOUND");
 assert.equal(unknownRecipient.calls.appends, 0);
+
+const inactiveRecipient = makeHarness({ inactiveRecipient: true });
+assert.equal(inactiveRecipient.book(request("Estudiante", "STU-1", {
+  solicitanteId: "STU-1", solicitadoA: "STAFF-A", motivo: "Consulta", fechaHora: "2026-11-22T10:00:00Z"
+})).code, "USER_NOT_ACTIVE");
+assert.equal(inactiveRecipient.calls.appends, 0);
 
 const noIdentity = makeHarness();
 assert.equal(noIdentity.book({ solicitanteId: "STU-1" }).code, "VERIFIED_IDENTITY_REQUIRED");
