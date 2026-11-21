@@ -309,7 +309,7 @@
   </div>
  </div>
 
- <div class="mt-6 border-t border-gray-100 pt-5"><div class="flex items-center justify-between gap-3 mb-3"><h4 class="text-xs font-black uppercase text-gray-800">Historial de adscripciones del empleado</h4><span id="rrhh-affiliation-history-count" class="text-[10px] text-gray-400 font-bold">0 registros</span></div><ul id="rrhh-affiliation-history" class="space-y-2 text-xs text-gray-600"><li class="text-gray-400">Seleccione un empleado para consultar su historial.</li></ul></div>
+ <div class="mt-6 border-t border-gray-100 pt-5"><div class="flex items-center justify-between gap-3 mb-3"><h4 class="text-xs font-black uppercase text-gray-800">Historial de adscripciones del empleado</h4><span id="rrhh-affiliation-history-count" class="text-[10px] text-gray-400 font-bold">0 registros</span></div><ul id="rrhh-affiliation-history" class="space-y-2 text-xs text-gray-600"><li class="text-gray-400">Seleccione un empleado para consultar su historial.</li></ul><button id="rrhh-affiliation-history-more" type="button" hidden class="mt-3 px-3 py-2 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold">Cargar más historial</button></div>
 </section>
 
     </main>
@@ -2941,6 +2941,7 @@
             const status=document.getElementById('rrhh-affiliation-status');
             const historyList=document.getElementById('rrhh-affiliation-history');
             const historyCount=document.getElementById('rrhh-affiliation-history-count');
+            const historyMoreButton=document.getElementById('rrhh-affiliation-history-more');
             const assignButton=document.getElementById('rrhh-affiliation-assign');
             const headButton=document.getElementById('rrhh-affiliation-head');
             const reloadButton=document.getElementById('rrhh-affiliation-reload');
@@ -2953,7 +2954,7 @@
             const createCargoButton=document.getElementById('rrhh-affiliation-cargo-create');
             const deactivateCargoButton=document.getElementById('rrhh-affiliation-cargo-deactivate');
             if(!userSelect||!departmentSelect||!cargoSelect||!status)return;
-            let cargoRequest=0,historyRequest=0;
+            let cargoRequest=0,historyRequest=0,historyOffset=0,historyHasMore=false;
             const setStatus=(message,error)=>{status.textContent=message;status.className='mt-3 text-xs '+(error?'text-rose-700':'text-gray-500');};
             const fillSelect=(select,items,placeholder,valueOf,labelOf)=>{select.replaceChildren();const empty=document.createElement('option');empty.value='';empty.textContent=placeholder;select.appendChild(empty);items.forEach(item=>{const option=document.createElement('option');option.value=String(valueOf(item)||'');option.textContent=String(labelOf(item)||option.value);select.appendChild(option);});};
             const selectedUserId=()=>String(userSelect.value||'').trim();
@@ -2969,19 +2970,21 @@
                     if(!response.data.length)setStatus('El departamento seleccionado no tiene cargos activos disponibles.',false);
                 }catch(error){if(request===cargoRequest){fillSelect(cargoSelect,[],'Catálogo no disponible',()=>'',()=>'');setStatus(error.message||'No fue posible cargar los cargos.',true);}}
             }
-            async function loadAffiliationHistory(){
+            async function loadAffiliationHistory(reset){
                 const request=++historyRequest,target=selectedUserId();
                 if(!historyList||!historyCount)return;
-                historyList.replaceChildren();
-                if(!target){historyCount.textContent='0 registros';const empty=document.createElement('li');empty.textContent='Seleccione un empleado para consultar su historial.';historyList.appendChild(empty);return;}
+                if(reset!==false){historyOffset=0;historyHasMore=false;historyList.replaceChildren();}
+                if(historyMoreButton)historyMoreButton.hidden=true;
+                if(!target){historyOffset=0;historyCount.textContent='0 registros';const empty=document.createElement('li');empty.textContent='Seleccione un empleado para consultar su historial.';historyList.appendChild(empty);return;}
                 try{
-                    const response=await fetchApi('USER','getUserInstitutionalAffiliations',{userId:target,limit:50,offset:0});
+                    const response=await fetchApi('USER','getUserInstitutionalAffiliations',{userId:target,limit:50,offset:historyOffset});
                     if(request!==historyRequest)return;
                     if(!response||response.status!=='success'||!Array.isArray(response.data))throw Error('No fue posible consultar el historial.');
                     historyCount.textContent=String(response.total||response.data.length)+' registros';
-                    if(!response.data.length){const empty=document.createElement('li');empty.textContent='El empleado no tiene adscripciones registradas.';historyList.appendChild(empty);return;}
+                    if(!response.data.length&&historyOffset===0){const empty=document.createElement('li');empty.textContent='El empleado no tiene adscripciones registradas.';historyList.appendChild(empty);return;}
+                    historyOffset+=response.data.length;historyHasMore=Boolean(response.hasMore);if(historyMoreButton)historyMoreButton.hidden=!historyHasMore;
                     response.data.forEach(record=>{const item=document.createElement('li');item.className='rounded-xl border border-gray-100 bg-gray-50 px-3 py-2';const title=document.createElement('strong');title.className='block text-gray-800';title.textContent=String(record.deptId||'Sin departamento')+' · '+String(record.cargoId||'Sin cargo');const detail=document.createElement('span');detail.className='block mt-1 text-[10px] text-gray-500';detail.textContent=String(record.estado||'Estado no disponible')+' · Inicio: '+String(record.fechaInicio||'No disponible')+(record.fechaFin?' · Fin: '+String(record.fechaFin):' · Vigente o sin fecha de cierre');item.appendChild(title);item.appendChild(detail);if(String(record.estado||'').trim().toLowerCase()==='activa'){const endButton=document.createElement('button');endButton.type='button';endButton.className='mt-2 text-[10px] font-bold text-rose-700';endButton.textContent='Finalizar adscripción';endButton.addEventListener('click',async function(){endButton.disabled=true;try{const ended=await fetchApi('USER','manageDepartmentPositions',{subAction:'END_AFFILIATION',adscripcionId:record.adscripcionId});if(!ended||ended.status!=='success')throw Error(ended&&(ended.message||ended.code)||'No fue posible finalizar la adscripción.');setStatus('Adscripción finalizada; el historial se conservó.',false);await loadAffiliationHistory();}catch(error){setStatus(error.message||'No fue posible finalizar la adscripción.',true);}finally{endButton.disabled=false;}});item.appendChild(endButton);}historyList.appendChild(item);});
-                }catch(error){if(request===historyRequest){historyCount.textContent='—';const item=document.createElement('li');item.className='text-rose-700';item.textContent=error.message||'No fue posible consultar el historial.';historyList.appendChild(item);}}
+                }catch(error){if(request===historyRequest){historyHasMore=false;if(historyMoreButton)historyMoreButton.hidden=true;historyCount.textContent='—';const item=document.createElement('li');item.className='text-rose-700';item.textContent=error.message||'No fue posible consultar el historial.';historyList.appendChild(item);}}
             }
             async function loadCatalogs(){
                 setStatus('Consultando empleados y departamentos…',false);if(reloadButton)reloadButton.disabled=true;
@@ -3001,6 +3004,7 @@
                 finally{if(reloadButton)reloadButton.disabled=false;}
             }
             departmentSelect.addEventListener('change',loadCargoOptions);userSelect.addEventListener('change',loadAffiliationHistory);
+            if(historyMoreButton)historyMoreButton.addEventListener('click',function(){if(historyHasMore)loadAffiliationHistory(false);});
             if(reloadButton)reloadButton.addEventListener('click',loadCatalogs);
             if(assignButton)assignButton.addEventListener('click',async function(){
                 const userId=selectedUserId(),deptId=String(departmentSelect.value||'').trim(),cargoId=String(cargoSelect.value||'').trim();

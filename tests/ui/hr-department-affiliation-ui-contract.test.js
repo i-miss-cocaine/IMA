@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("node:assert/strict"),fs=require("node:fs");
 const html=fs.readFileSync("dashboard-recursos-humanos.html","utf8");
-const ids=["rrhh-affiliation-panel","rrhh-affiliation-user","rrhh-affiliation-department","rrhh-affiliation-cargo","rrhh-affiliation-reason","rrhh-affiliation-assign","rrhh-affiliation-head","rrhh-affiliation-history","rrhh-affiliation-status","rrhh-affiliation-parent","rrhh-affiliation-department-name","rrhh-affiliation-cargo-name","rrhh-affiliation-cargo-level","rrhh-affiliation-department-create","rrhh-affiliation-department-deactivate","rrhh-affiliation-cargo-create","rrhh-affiliation-cargo-deactivate"];
+const ids=["rrhh-affiliation-panel","rrhh-affiliation-user","rrhh-affiliation-department","rrhh-affiliation-cargo","rrhh-affiliation-reason","rrhh-affiliation-assign","rrhh-affiliation-head","rrhh-affiliation-history","rrhh-affiliation-status","rrhh-affiliation-parent","rrhh-affiliation-department-name","rrhh-affiliation-cargo-name","rrhh-affiliation-cargo-level","rrhh-affiliation-department-create","rrhh-affiliation-department-deactivate","rrhh-affiliation-cargo-create","rrhh-affiliation-cargo-deactivate","rrhh-affiliation-history-more"];
 ids.forEach(id=>assert.ok(html.includes('id="'+id+'"'),"missing UI element "+id));
 ["GET_DEPARTMENT_HIERARCHY","GET_CARGOS","CREATE_DEPT","CREATE_CARGO","DEACTIVATE_DEPT","DEACTIVATE_CARGO","END_AFFILIATION","ASSIGN_USER","ASSIGN_DEPARTMENT_HEAD","getUserInstitutionalAffiliations"].forEach(action=>assert.ok(html.includes(action),"missing USER API action "+action));
 assert.ok(html.includes("fetchApi('ACCOUNTING','getEmployeeRecords'"),"employee selector must use current employee records");
@@ -11,4 +11,5 @@ const scriptStart=html.indexOf("<script>",html.indexOf("<!-- [TAREA RH-01]"));
 const scriptEnd=html.lastIndexOf("</script>");
 assert.ok(scriptStart>=0&&scriptEnd>scriptStart,"expected dashboard controller script");
 assert.doesNotThrow(()=>new Function(html.slice(scriptStart+8,scriptEnd)),"dashboard controller script must parse");
+assert.ok(html.includes("offset:historyOffset")&&html.includes("loadAffiliationHistory(false)"),"history UI must consume paginated results without replacing prior pages");
 console.log("HR department affiliation UI contract PASS (catalog selectors, active employee source, assignment/head actions, history and script syntax).");
