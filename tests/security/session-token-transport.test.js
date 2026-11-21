@@ -112,7 +112,7 @@ async function invoke(currentUser, action, payload) {
       return token === "SIGNED_SESSION" ? { userId: "U-REAL", role: "Estudiante" } : null;
     },
     validateContextualAccess: () => ({ authorized: true }),
-    getDynamicPermissionsForRole: () => null,
+    getDynamicPermissionsForRole: (role, action) => role === "Estudiante" && action === "getUserInfo",
     hasActiveDelegationForAction: () => false,
     logStructuredEvent() {},
     checkAndRegisterIdempotencyKey: () => null,

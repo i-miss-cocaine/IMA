@@ -5,7 +5,7 @@ const names=["getVerifiedAccountingIdentity_","getVerifiedAccountingDepartmentSc
 const permissionSourceStart=accounting.indexOf("const ROLE_PERMISSIONS = {"),permissionSourceEnd=accounting.indexOf("\n};",permissionSourceStart);
 assert.ok(permissionSourceStart>=0&&permissionSourceEnd>permissionSourceStart,"ACCOUNTING role permission map must exist");
 const permissionSourceBlock=accounting.slice(permissionSourceStart,permissionSourceEnd+3);
-const code=[permissionSourceBlock,"var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();",names.map(n=>extractFunction(accounting,n)).join("\n")].join("\n");
+const code=[permissionSourceBlock,"function getDynamicPermissionsForRole(role,module,action,institutionId){var permissions=ROLE_PERMISSIONS[role];return module===\"ACCOUNTING\"&&institutionId===\"I\"&&Array.isArray(permissions)&&permissions.indexOf(String(action||\"\"))!==-1;}","var RESOURCE_OWNERSHIP_REQUEST_CACHE_ = new WeakMap();",names.map(n=>extractFunction(accounting,n)).join("\n")].join("\n");
 const claims={"ha":{userId:"U-HA",role:"RecursosHumanos"},"hb":{userId:"U-HB",role:"RecursosHumanos"},"hrGlobal":{userId:"U-HR-GLOBAL",role:"RecursosHumanos"},"emp":{userId:"U-EMP",role:"Empleado"},"prof":{userId:"U-PROF",role:"Profesor"},"parent":{userId:"U-PARENT",role:"Padre"},"dir":{userId:"U-DIR",role:"Director"},"admin":{userId:"U-ADMIN",role:"Administrador"},"bad":null};
 const scopes={"U-HA":{departmentIds:["A"],institutionWide:false},"U-HB":{departmentIds:["B"],institutionWide:false},"U-HR-GLOBAL":{departmentIds:[],institutionWide:true},"U-DIR":{departmentIds:["A"],institutionWide:false},"U-ADMIN":{departmentIds:[],institutionWide:true}};
 const rows={

@@ -62,7 +62,7 @@ const ss={getSheetByName(name){return sheets[name]||null;}};
 const runtime={
  SPREADSHEET_ID:"LOCAL",EXAM_RESOURCE_OWNERSHIP_REQUEST_CACHE_:new WeakMap(),
  ROLE_PERMISSIONS:{Profesor:["manageQuestionBank"],Estudiante:[]},PUBLIC_ACTIONS:[],
- getDynamicPermissionsForRole(){permissionDecisionCalls++;return null;},hasActiveDelegationForAction(){return false;},
+ getDynamicPermissionsForRole(role,action){permissionDecisionCalls++;return role==="Profesor"&&action==="manageQuestionBank";},hasActiveDelegationForAction(){return false;},
  verifySessionToken(token){sessionVerificationCalls++;return claims[token]||null;},validateContextualAccess(){return {authorized:true};},
  getVerifiedDepartmentScopeForSession_(payload,spreadsheet,actor){
   if(!actor||actor.authorized!==true||!actor.userId||!actor.role)return {authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"};
