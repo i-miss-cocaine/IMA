@@ -47,7 +47,7 @@ function runtime(options={}) {
     "serviceStudentGuardianIds_","serviceSiblingCount_"].map(extractFunction).join("\n");
   vm.runInContext(functions + "\nthis.guardians=serviceStudentGuardianIds_;this.siblings=serviceSiblingCount_;",context);
   const ss = { getSheetByName: name => sheets[name] || null };
-  return { guardians: id => context.guardians(ss,id), siblings: id => context.siblings(ss,id) };
+  return { guardians: id => Array.from(context.guardians(ss,id)), siblings: id => context.siblings(ss,id) };
 }
 
 assert.deepEqual(runtime().guardians("STU-1"),["PERSON-GUARD-1"],"unique active financial relation resolves one guardian person");
