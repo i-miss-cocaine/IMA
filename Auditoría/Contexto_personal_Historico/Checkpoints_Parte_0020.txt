@@ -1566,3 +1566,36 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
 - Siguiente: continuar el inventario action/resource en ACADEMIC y revisar los handlers restantes de ACCOUNTING/TASK/EXAM, sin repetir contratos vigentes; mantener BETA-EXAM-116 pendiente de ejecución real.
 ===============================================================================
+
+
+===============================================================================
+### C1.931 — IMA-EXEC-20261121-AUD-NG-222-ACADEMIC-EXPEDIENTE-SELECTORS
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida verificado: C1.930; HEAD inicial de esta unidad: c1bb69c3b37dc92c881f0663ef608f9a79f1fec5.
+- Commit de implementación: 9a824ac26b7ad5f65900b362244a0b3c7827a147.
+- Durante la consolidación, la rama avanzó de forma concurrente con dos commits independientes de pruebas EXAM: 247be22addc3d42475287398aae7e377b552dda3 y 568f8197ca340ae4309d450b44f69813ea4e2f0d. Se inspeccionaron sus diffs; solo modifican tests/security/exam-service-submit-mutation-security.test.js y tests/security/exam-service-create-exam-security.test.js. Se conservaron sin reescritura.
+- Rama exclusiva: NG_beta_0.0.0.1_work. Rama base verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Hallazgo y corrección — ACADEMIC getStudentFile
+- getStudentFile resolvía expedienteId, personaId y codigoInstitucional con una búsqueda OR y first-match. Selectores contradictorios podían devolver un expediente distinto del solicitado; identificadores duplicados no se detectaban.
+- Corrección: cada selector proporcionado debe resolver exactamente una fila y todos deben identificar la misma fila. Duplicados devuelven RESOURCE_AMBIGUOUS; selectores discordantes RESOURCE_SELECTOR_CONFLICT; sin destino RESOURCE_TARGET_REQUIRED. Para estudiantes, personaId continúa derivándose de la identidad firmada y no del userId cliente.
+- La comprobación de ownership/ámbito existente se conserva después de resolver el expediente; no se modificaron las reglas de permisos ni el esquema.
+
+### Archivos de implementación
+- backend/academic-service/Code.gs
+- tests/security/academic-student-expediente-ownership.test.js
+
+### Revisión y verificaciones
+- Revisión del diff del commit 9a824ac: limitada al selector de getStudentFile y al contrato de regresión correspondiente; sin cambios colaterales.
+- Department Scope Contract run 44963762179: SUCCESS, 136/136 pasos; academic-student-expediente-ownership (paso 94) y parseo Apps Script (paso 117) PASS.
+- ACADEMIC and ACCOUNTING Reference Consumer run 44963762194: SUCCESS, 22/22 pasos, incluidos contratos de consumidores y parseo de ambos servicios.
+- Node.js 24 ejecutado en GitHub Actions. CLI local independiente: NOT RUN por ausencia de checkout local; no se presenta como prueba ejecutada.
+- Apps Script/Sheets reales, concurrencia entre despliegues y pruebas beta: no ejecutadas; no son necesarias para aprobar este cambio local.
+
+### Estado y siguiente acción elegible
+- Incremento de lectura de expediente ACADEMIC completado y verificado.
+- AUD-NG-222 / TASK-502 permanece En ejecución: continuar inventario de lecturas/escrituras ACADEMIC (matrículas/documentos) y completar ACCOUNTING (empleados, transporte, documentos y finanzas), reutilizando evidencia vigente.
+- TASK-506 / AUD-NG-226 permanece En ejecución y dependiente de TASK-502.
+===============================================================================

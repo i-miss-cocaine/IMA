@@ -4486,3 +4486,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-21] C1.930 / AUD-NG-222-TASK-502 — EXAM: submitExam y withAuthorizedExamCreation_ ya no reutilizan contexto/scope resuelto antes de ScriptLock. Se revalidan RBAC, identidad, rol, perfil estudiantil, institución y departamento dentro del lock; revocación/cambio de adscripción falla cerrado antes de escribir. Contratos de permiso/identidad/scope revocados, D1→D2, lock timeout y reentrada PASS. Exam-Service local run 44963334570 SUCCESS 42/42; Department Scope 44963151092 SUCCESS 136/136; SACE Monotonic run 44963151083 SUCCESS. BETA-EXAM-116 pendiente de ejecución real.
+
+
+[2026-11-21] C1.931 / AUD-NG-222-TASK-502 — ACADEMIC getStudentFile: se corrige resolución OR/first-match de expedienteId/personaId/codigoInstitucional; cada selector suministrado debe ser único y concordar con los demás. Duplicados y conflictos fallan cerrados; estudiantes siguen resolviendo personaId desde identidad firmada. Contrato academic-student-expediente-ownership y parseo Apps Script PASS; Department Scope run 44963762179 SUCCESS 136/136; ACADEMIC/ACCOUNTING Reference Consumer run 44963762194 SUCCESS 22/22. Node 24 CI; CLI local NOT RUN. Apps Script real Pendiente beta. AUD-NG-222 y TASK-506 continúan abiertos.
