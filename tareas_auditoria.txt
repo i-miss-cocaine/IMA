@@ -1087,3 +1087,15 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502 y TASK-506 permanecen En ejecución.
 - Siguiente: resolver Phase22 document management suite y continuar inventario action/resource restante en ACADEMIC/ACCOUNTING/TASK/EXAM.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.929 — AUD-NG-065 / Phase22
+- Funciones escolares y SACE restauradas/implementadas en ACCOUNTING.
+- PT22-01/PT22-02 usan el mismo ID de plantilla; suite Phase22 12/12 PASS y contrato negativo PT22-09 PASS.
+- PDF privado, HTML escaping, CUV/correlativo, SHA-256, rollback y consulta read-only verificados en contratos Node; SACE conserva AUSENTE/EXENTO.
+- Department Scope 137/137 PASS; ACCOUNTING school document binary integrity PASS; sintaxis Apps Script PASS.
+- BETA-FUNC-129 creado para Apps Script/Sheets/Drive real; estado PENDIENTE DE BETA.
+- AUD-NG-222/TASK-502 y TASK-506 continúan En ejecución.
+- Siguiente: continuar inventario action/resource restante en ACADEMIC/ACCOUNTING/TASK/EXAM.
+===============================================================================

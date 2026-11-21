@@ -6343,3 +6343,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Task-Service security local contracts run 44961081179, ACCOUNTING Transport Local run 44961384630, Identity mapping 44961384530, Hierarchical Configuration 44961384529, Accounting Import Preflight 44961384531 y Department Reference Consumers 44961384527 SUCCESS.
 - Department Scope run 44961542948: pasos 1–117 PASS; falla Phase22 (paso 118) porque falta configureSchoolDocumentTemplate en ACCOUNTING; el contrato requiere más funciones de documentos escolares aún ausentes. Sin Apps Script/Sheets/Drive real ni concurrencia interproyecto.
 - TASK-502 y TASK-506 continúan En ejecución. Siguiente: resolver Phase22 y después continuar el inventario action/resource restante en los cinco servicios.
+
+
+### Continuidad C1.929 — AUD-NG-065 / Phase22
+- Se restauró el conjunto de funciones escolares y SACE requerido por tests/regression/phase22-document-management-suite-contract.test.js. PT22-01 y PT22-02 comparten el ID de plantilla PLANTILLA-TEST-CONSTANCIA.
+- Emisión PDF: valida estructura binaria, escapa valores HTML, usa carpeta/archivo privado, SHA-256, CUV/correlativo, lock y rollback si no persiste DocumentosEscolaresEmitidos. Verificación CUV no crea hojas y detecta archivo ausente, compartido o alterado.
+- SACE: verificación de compatibilidad por columnasReporte/columnasDetectadas; AUSENTE y EXENTO preservados; suite falla explícitamente si algún caso falla.
+- Department Scope run 44962416432 SUCCESS 137/137; PT22 suite (paso 118), binary integrity (120) y syntax-check (117) PASS. Workflows ACCOUNTING Transport, Identity Mapping, Hierarchical Configuration, Department Reference Consumers, Accounting Import Preflight y Library Circulation Concurrency SUCCESS.
+- AUD-NG-065 completado en contratos Node aislados. BETA-FUNC-129 creado y queda pendiente de ejecución en Apps Script/Sheets/Drive reales.
+- AUD-NG-222/TASK-502 y TASK-506 continúan En ejecución. Siguiente: inventario action/resource restante en ACADEMIC/ACCOUNTING/TASK/EXAM y pruebas focalizadas sin repetir evidencia vigente.

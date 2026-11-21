@@ -1448,3 +1448,42 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
 - Siguiente: resolver Phase22 document management suite empezando por la ausencia de configureSchoolDocumentTemplate y las funciones privadas exigidas por el contrato; después continuar el inventario restante de handlers sin repetir evidencia vigente.
 ===============================================================================
+
+
+===============================================================================
+### C1.929 — IMA-EXEC-20261121-AUD-NG-065-PHASE22-RESTORE-100
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.928, HEAD 610275dbf05aa6619f5c9e30f60e20d2830fe396.
+- HEAD de implementación al cerrar esta unidad: c333caabb04a01ce559ccbc1c90342fe54576a0f; documentación beta BETA-FUNC-129 commit 99ff4e8912c2f759f285cc02cd6d333c0c06a2eb.
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### AUD-NG-065 / Phase22 — corrección
+- Se restauraron/implementaron configureSchoolDocumentTemplate, ensureSchoolDocumentIssuedSchema_, getOrCreatePrivateSchoolDocumentFolder_, rollbackPrivateSchoolDocumentFile_, renderFinalSchoolDocumentHtml_, generateSchoolDocument, verifySchoolDocumentByCUV, verifySACETemplateCompatibility, generateSACEReportFile, validateSACETemplateFile y runPhase22DocumentManagementAndSACERegressionSuite.
+- PT22-01 crea la plantilla con ID fijo de fixture PLANTILLA-TEST-CONSTANCIA y PT22-02 consume ese mismo ID; se elimina la referencia inconsistente que hacía fallar la generación.
+- La emisión genera PDF validado, escapa valores HTML, serializa con ScriptLock, asigna correlativo/CUV, calcula SHA-256, guarda metadatos y mantiene carpeta/archivo PRIVATE. Si falla la persistencia, el PDF se manda a papelera y se libera el lock.
+- La consulta CUV es read-only: no crea hojas; verifica existencia, privacidad, estructura binaria y SHA-256; devuelve errores diferenciados para archivo ausente, compartido o alterado.
+- La compatibilidad SACE admite columnasReporte/columnasDetectadas; el reporte conserva AUSENTE y EXENTO sin convertirlos a PENDIENTE ni cero. La envoltura de suite retorna error PHASE22_REGRESSION_FAILED si falla cualquier caso.
+- El contrato aislado incluye rollback por append fallido, archivo/carpeta privada, PDF alterado, archivo compartido, archivo ausente, escape HTML y lock ocupado. Se aisló getAdvancedSignatureProviderConfig con un stub de proveedor sintético.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/regression/phase22-document-management-suite-contract.test.js
+- beta_test.txt (nuevo BETA-FUNC-129)
+
+### Verificaciones
+- Department Scope Contract run 44962416432: SUCCESS, 137/137 pasos; Node.js 24.22.3.
+- Paso 118 Phase22 document management suite contract: PASS (12/12 casos y contrato negativo controlado PT22-09).
+- Paso 120 ACCOUNTING school document binary integrity contract: PASS.
+- Paso 117 syntax-check updated Apps Script services: PASS.
+- En el mismo run: ownership ABAC, referencias interdepartamentales, ACADEMIC/ACCOUNTING department consumers, documentos privados de estudiante y cliente de vouchers: PASS.
+- ACCOUNTING Transport Local run 44962416412, Identity Mapping 44962416421, Hierarchical Configuration 44962416425, Department Reference Consumers 44962416407, Accounting Import Preflight 44962416547 y Library Circulation Concurrency 44962416456: SUCCESS.
+- Pruebas ejecutadas en runner GitHub Actions; Apps Script/Sheets/Drive real, despliegue staging y concurrencia interproyecto NOT RUN.
+
+### Estado y siguiente acción elegible
+- AUD-NG-065: contrato local Phase22 completado; ejecución real queda pendiente en BETA-FUNC-129.
+- AUD-NG-222 / TASK-502 permanece En ejecución; no se declara cerrada la auditoría global de action/resource.
+- TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
+- Siguiente: continuar el inventario action/resource de endpoints restantes en ACADEMIC, ACCOUNTING, TASK y EXAM, sin repetir los contratos ya vigentes; conservar BETA-FUNC-129 pendiente de despliegue y ejecución real.
+===============================================================================
