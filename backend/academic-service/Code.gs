@@ -4230,9 +4230,8 @@ function assertStudentExpedienteScopeAccess_(payload, ss, expSheet, expRow) {
   } else if (isGuardian) {
     if (!actorPersonId || !expedienteId || !personId) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
     const primarySheet = ss.getSheetByName("RelacionesFamiliares");
-    let primaryGuardianRows = [], primaryHeaders = [];
+    let primaryGuardianRows = [], primaryHeaders = [], primaryValues = [];
     if (primarySheet) {
-      let primaryValues;
       try { primaryValues = primarySheet.getDataRange().getValues(); }
       catch (_) { return { authorized: false, code: "RESOURCE_SCOPE_DENIED" }; }
       primaryHeaders = (primaryValues[0] || []).map(function(value) { return String(value || "").trim(); });
