@@ -2096,7 +2096,7 @@ function getGuardianPermissionKeyForAction_(action) {
   if (/(payment|finance|account|billing|voucher|credit|invoice|purchase|receipt|tuition|fee)/.test(value)) return "permisoFinanciero";
   if (/(attendance|absence|justification|check in|checkin)/.test(value)) return "permisoAsistencia";
   if (/(document|file|certificate|expedient|attachment)/.test(value)) return "permisoDocumental";
-  if (/(grade|exam|task|academic|schedule|classroom|enrollment|extracurricular|student records?|report)/.test(value)) return "permisoAcademico";
+  if (/(grade|exam|task|academic|schedule|classroom|enrollment|extracurricular|student records?|report|appointment)/.test(value)) return "permisoAcademico";
   return "";
 }
 
@@ -9815,43 +9815,115 @@ function getAppointmentBookings(payload) {
 }
 
 function bookAppointment(payload) {
-  const { solicitanteId, estudianteId, solicitadoA, motivo, fechaHora, modalidad } = payload || {};
-  if (!solicitanteId || !solicitadoA || !motivo || !fechaHora) throw new Error("Solicitante, Destinatario, Motivo y Fecha/Hora son requeridos.");
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  const solicitanteId = String(request.solicitanteId || actorId).trim();
+  const solicitadoA = String(request.solicitadoA || "").trim();
+  const motivo = String(request.motivo || "").trim();
+  const fechaHora = request.fechaHora;
+  const normalizedRole = role.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  let estudianteId = String(request.estudianteId || "").trim();
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CitasReuniones");
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (!solicitanteId || solicitanteId !== actorId) return { status: "error", code: "APPOINTMENT_REQUESTER_MISMATCH" };
+  if (!solicitadoA || solicitadoA === actorId || !motivo || !fechaHora) {
+    return { status: "error", code: "APPOINTMENT_FIELDS_REQUIRED" };
+  }
+  if (!estudianteId && (normalizedRole === "ESTUDIANTE" || normalizedRole === "ALUMNO")) estudianteId = actorId;
+  if (estudianteId && estudianteId !== actorId) {
+    if (["PADRE", "TUTOR", "RESPONSABLE"].indexOf(normalizedRole) !== -1) {
+      const guardian = request._verifiedGuardianStudent;
+      if (!guardian || (String(guardian.studentUserId || "").trim() !== estudianteId &&
+          String(guardian.expedienteId || "").trim() !== estudianteId)) {
+        return { status: "error", code: "GUARDIAN_STUDENT_SCOPE_DENIED" };
+      }
+    } else {
+      let scope = null;
+      try { scope = getInstitutionalDepartmentScope_(request, role); } catch (_) {}
+      if (!scope || scope.status !== "success") return { status: "error", code: "INSTITUTIONAL_SCOPE_UNVERIFIED" };
+      if (scope.institutionWide !== true) {
+        const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+        const studentResource = resolveAbsenceReviewExpedienteId_(ss, estudianteId);
+        if (!studentResource || studentResource.status !== "success") {
+          return { status: "error", code: studentResource && studentResource.code || "RESOURCE_OWNERSHIP_UNVERIFIED" };
+        }
+        const ownership = assertRecordOwnership(request, "EXPEDIENTE_ESTUDIANTE", studentResource.expedienteId, "READ");
+        if (!ownership || ownership.authorized !== true) {
+          return { status: "error", code: ownership && ownership.code || "RESOURCE_SCOPE_DENIED" };
+        }
+      }
+    }
+  } else if (normalizedRole === "ESTUDIANTE" || normalizedRole === "ALUMNO") {
+    estudianteId = actorId;
+  }
 
-  const citaId = "CITA-" + Date.now();
-
-  sheet.appendRow([
-    citaId,
-    solicitanteId,
-    estudianteId || "",
-    solicitadoA,
-    motivo,
-    fechaHora,
-    modalidad || "Presencial",
-    "Solicitada",
-    ""
-  ]);
-
-  return { status: "success", message: "Solicitud de cita/reunión enviada.", data: { citaId } };
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return { status: "error", code: "APPOINTMENT_LOCK_BUSY" };
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "CitasReuniones");
+    const citaId = "CITA-" + Utilities.getUuid();
+    sheet.appendRow([
+      citaId, solicitanteId, estudianteId || "", solicitadoA, motivo, fechaHora,
+      request.modalidad || "Presencial", "Solicitada", ""
+    ]);
+    return { status: "success", message: "Solicitud de cita/reunión enviada.", data: { citaId } };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function updateAppointmentStatus(payload) {
-  const { citaId, nuevoEstado, comentarios } = payload || {};
-  if (!citaId || !nuevoEstado) throw new Error("citaId y nuevoEstado son requeridos.");
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  const citaId = String(request.citaId || "").trim();
+  const nuevoEstado = String(request.nuevoEstado || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  if (!citaId || !nuevoEstado) return { status: "error", code: "APPOINTMENT_FIELDS_REQUIRED" };
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CitasReuniones");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(citaId).trim());
-  if (idx === -1) throw new Error("Cita no encontrada.");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return { status: "error", code: "APPOINTMENT_LOCK_BUSY" };
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheetByName("CitasReuniones");
+    if (!sheet) return { status: "error", code: "APPOINTMENT_NOT_FOUND" };
+    const data = sheet.getDataRange().getValues();
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0] || "").trim() === citaId) matches.push({ rowIndex: i + 1, values: data[i] });
+    }
+    if (!matches.length) return { status: "error", code: "APPOINTMENT_NOT_FOUND" };
+    if (matches.length !== 1) return { status: "error", code: "APPOINTMENT_AMBIGUOUS" };
 
-  sheet.getRange(idx + 1, 8).setValue(nuevoEstado);
-  if (comentarios) sheet.getRange(idx + 1, 9).setValue(comentarios);
+    const appointment = matches[0].values;
+    const recipientId = String(appointment[3] || "").trim();
+    let authorized = recipientId === actorId;
+    if (!authorized) {
+      let scope = null;
+      try { scope = getInstitutionalDepartmentScope_(request, role); } catch (_) {}
+      if (scope && scope.status === "success" && scope.institutionWide === true) {
+        authorized = true;
+      } else if (scope && scope.status === "success") {
+        const studentId = String(appointment[2] || "").trim();
+        if (studentId) {
+          const studentResource = resolveAbsenceReviewExpedienteId_(ss, studentId);
+          if (studentResource && studentResource.status === "success") {
+            const ownership = assertRecordOwnership(request, "EXPEDIENTE_ESTUDIANTE", studentResource.expedienteId, "UPDATE");
+            authorized = !!ownership && ownership.authorized === true;
+          }
+        }
+      }
+    }
+    if (!authorized) return { status: "error", code: "APPOINTMENT_SCOPE_DENIED" };
 
-  return { status: "success", message: `Estado de la cita cambiado a ${nuevoEstado}.` };
+    sheet.getRange(matches[0].rowIndex, 8).setValue(nuevoEstado);
+    if (request.comentarios) sheet.getRange(matches[0].rowIndex, 9).setValue(request.comentarios);
+    return { status: "success", message: `Estado de la cita cambiado a ${nuevoEstado}.` };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // [F11-Task04] [P1] - Gestión de Noticias, Anuncios, Circulares y Comunicados con Vigencia
