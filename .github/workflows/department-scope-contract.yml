@@ -35,6 +35,7 @@ on:
       - tests/security/department-scope-contract.test.js
       - tests/security/contextual-abac-policy-contract.test.js
       - tests/security/contextual-abac-five-services-contract.test.js
+      - tests/security/task-exam-guardian-academic-permission-contract.test.js
       - tests/security/academic-coordinator-area-abac-contract.test.js
       - tests/security/academic-planning-teacher-abac-contract.test.js
       - tests/security/academic-guardian-primary-relation-abac-contract.test.js
@@ -157,6 +158,8 @@ jobs:
         run: node tests/security/contextual-abac-policy-contract.test.js
       - name: Run five-service contextual ABAC identity, guardian relationship and validity contract
         run: node tests/security/contextual-abac-five-services-contract.test.js
+      - name: Run TASK and EXAM strict guardian academic permission contract
+        run: node tests/security/task-exam-guardian-academic-permission-contract.test.js
       - name: Run academic coordinator area ABAC contract
         run: node tests/security/academic-coordinator-area-abac-contract.test.js
       - name: Run academic planning teacher assignment ABAC contract

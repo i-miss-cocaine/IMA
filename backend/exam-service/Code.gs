@@ -2383,11 +2383,11 @@ function getVerifiedGuardianStudentIds_(ss, tutorUserId) {
     const relationId = String(row[0] || "").trim();
     const studentId = expToUser[String(row[1] || "").trim()];
     if (!relationId || !studentId || relationIdCounts[relationId] !== 1 || studentIdCounts[studentId] !== 1) return false;
-    if (row[8] === "" || row[8] === null || row[8] === undefined) return true;
+    if (row[8] === "" || row[8] === null || row[8] === undefined) return false;
     try {
       const permissions = typeof row[8] === "string" ? JSON.parse(row[8]) : row[8];
       return !!permissions && typeof permissions === "object" && !Array.isArray(permissions) &&
-        permissions.permisoAcademico !== false;
+        permissions.permisoAcademico === true;
     } catch (_) {
       return false;
     }

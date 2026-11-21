@@ -1405,7 +1405,7 @@ function getTaskServiceGuardianStudentIds(guardianUserId) {
         if (!permissions || typeof permissions !== "object" || Array.isArray(permissions)) return;
       } catch (_) { return; }
     }
-    if (permissions.permisoAcademico === false) return;
+    if (permissions.permisoAcademico !== true) return;
     const relationId = String(row[0] || "").trim(), expedienteId = String(row[1] || "").trim();
     const studentId = expMap[expedienteId];
     if (relationId && studentId) candidates.push({ relationId, studentId });
