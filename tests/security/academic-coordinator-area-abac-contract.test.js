@@ -136,7 +136,7 @@ const coordinationRuntime = {
   String, JSON
 };
 vm.createContext(coordinationRuntime);
-vm.runInContext(coordinationFn + "\\nthis.query = getAcademicAreaCoordinationScope;", coordinationRuntime);
+vm.runInContext(coordinationFn + "\nthis.query = getAcademicAreaCoordinationScope;", coordinationRuntime);
 const ownCoordination = coordinationRuntime.query({
   _verifiedRole: "Coordinador", _verifiedUserId: "COORD-1", userId: "VICTIM-1"
 });
