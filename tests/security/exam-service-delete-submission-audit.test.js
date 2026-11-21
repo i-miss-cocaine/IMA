@@ -5,6 +5,8 @@ const path = require("node:path");
 const vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "../../backend/exam-service/Code.gs"), "utf8");
 new vm.Script(source, { filename: "backend/exam-service/Code.gs" });
+// The surrounding test isolates submission mutation; teacher-offer policy has a dedicated ABAC contract.
+globalThis.hasExamTeacherActiveOfferAssignment_ = () => true;
 function extract(name) {
   const start = source.indexOf("function " + name + "(");
   assert.notEqual(start, -1, "function exists: " + name);
