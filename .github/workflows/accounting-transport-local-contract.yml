@@ -43,7 +43,7 @@ jobs:
         run: node tests/security/accounting-transport-read-permissions.test.js
       - name: Run transport read scope and ownership contract
         run: node tests/security/accounting-transport-read-scope-ownership.test.js
-      - name: Run transport read scope and ownership contract
+      - name: Run legacy transport access scope regression
         run: node tests/security/transport-access-scope.test.js
       - name: Run accounting monthly charge period regression
         run: node tests/security/accounting-monthly-charge-period.test.js
