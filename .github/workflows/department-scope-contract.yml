@@ -51,6 +51,7 @@ on:
       - tests/security/user-service-absence-justification-guardian-abac.test.js
       - tests/security/user-service-absence-review-resource-ownership.test.js
       - tests/security/user-student-procedure-notification-logs-ownership.test.js
+      - tests/security/user-admission-notification-logs-ownership.test.js
       - tests/security/academic-student-expediente-ownership.test.js
       - tests/security/academic-student-document-private-storage.test.js
       - tests/security/academic-student-enrollment-history-ownership.test.js
@@ -320,6 +321,8 @@ jobs:
         run: node tests/security/user-service-absence-review-resource-ownership.test.js
       - name: Run USER student procedure notification logs ownership contract
         run: node tests/security/user-student-procedure-notification-logs-ownership.test.js
+      - name: Run USER admission notification logs ownership contract
+        run: node tests/security/user-admission-notification-logs-ownership.test.js
       - name: Run academic student expediente ownership contract
         run: node tests/security/academic-student-expediente-ownership.test.js
       - name: Run academic student enrollment history ownership contract
@@ -384,6 +387,7 @@ jobs:
           node --check tests/security/user-service-absence-justification-guardian-abac.test.js
           node --check tests/security/user-service-absence-review-resource-ownership.test.js
           node --check tests/security/user-student-procedure-notification-logs-ownership.test.js
+          node --check tests/security/user-admission-notification-logs-ownership.test.js
           node --check tests/regression/phase22-document-management-suite-contract.test.js
           node --check tests/regression/hr-vacation-dashboard-contract.test.js
           node --check js/ui-common.js
