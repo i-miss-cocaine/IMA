@@ -909,3 +909,38 @@ console.log("ACADEMIC student enrollment query ResourceOwnership contract passed
     "student cannot substitute a foreign expediente while the signed person selector remains their own");
 }
 console.log("ACADEMIC getStudentFile selector uniqueness and consistency contracts passed.");
+
+
+// updateDocumentStatus must not mutate an arbitrary first row when document IDs collide.
+{
+  const rows = [
+    ["DocumentoID","ExpedienteID","SolicitudID","TipoDocumento","NombreArchivo","DriveFileId","DriveUrl","FechaRecepcion","FechaVencimiento","EstadoRevision","SubidoPor","ValidadoPor","Observaciones"],
+    ["DOC-1","EXP-1","SOL-1","ID","one.pdf","","","","","Pendiente","","",""],
+    ["DOC-2","EXP-2","SOL-2","ID","two.pdf","","","","","Pendiente","","",""]
+  ];
+  let writes = [];
+  const sheet = {
+    getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }),
+    getRange: (row, col) => ({ setValue: value => { writes.push({row,col,value}); rows[row-1][col-1]=value; } })
+  };
+  const context = {
+    SPREADSHEET_ID: "LOCAL",
+    SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "ExpedientesEstudiantes" ? {} : sheet }) },
+    getOrCreateSheet: () => sheet,
+    assertStudentDocumentScopeAccess_: () => ({ authorized: true, accessType: "STAFF" }),
+    getVerifiedAcademicIdentity_: () => ({ authorized: true, userId: "STAFF-1", role: "Secretaría" }),
+    String, Array, Object
+  };
+  vm.runInNewContext(extractFunction("updateDocumentStatus") + "\nthis.run=updateDocumentStatus;", context);
+  assert.equal(context.run({documentoId:"DOC-MISSING",nuevoEstado:"Aprobado"}).code,"RESOURCE_NOT_FOUND");
+  assert.equal(writes.length,0,"missing document IDs do not write");
+  rows.push(["DOC-1","EXP-3","SOL-3","ID","duplicate.pdf","","","","","Pendiente","","",""]);
+  assert.equal(context.run({documentoId:"DOC-1",nuevoEstado:"Aprobado"}).code,"RESOURCE_AMBIGUOUS",
+    "duplicate document IDs fail closed instead of mutating the first row");
+  assert.equal(writes.length,0,"ambiguous document IDs never write");
+  rows.pop();
+  assert.equal(context.run({documentoId:"DOC-2",nuevoEstado:"Aprobado",observaciones:"Validado"}).status,"success");
+  assert.deepEqual(writes.map(write=>[write.row,write.col,write.value]),[[3,10,"Aprobado"],[3,12,"STAFF-1"],[3,13,"Validado"]]);
+  assert.equal(rows[2][9],"Aprobado");
+}
+console.log("ACADEMIC updateDocumentStatus unique resource binding contract passed.");

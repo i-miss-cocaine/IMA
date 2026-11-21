@@ -16856,8 +16856,13 @@ function updateDocumentStatus(payload) {
   const sheet = getOrCreateSheet(ss, "DocumentosEstudiante");
   const data = sheet.getDataRange().getValues();
 
-  const idx = data.findIndex(r => String(r[0]).trim() === String(documentoId).trim());
-  if (idx === -1) throw new Error("Documento no encontrado.");
+  const documentMatches = data.map((row, index) => ({ row: row, index: index }))
+    .filter(item => item.index > 0 && String(item.row[0] || "").trim() === String(documentoId).trim());
+  if (documentMatches.length !== 1) {
+    return { status: "error", code: documentMatches.length ? "RESOURCE_AMBIGUOUS" : "RESOURCE_NOT_FOUND",
+      message: "Documento no disponible." };
+  }
+  const idx = documentMatches[0].index;
   const access = assertStudentDocumentScopeAccess_(payload, ss, sheet, data[idx], ss.getSheetByName("ExpedientesEstudiantes"));
   if (!access.authorized || ["SELF", "GUARDIAN"].indexOf(access.accessType) !== -1) return { status: "error", code: access.code || "RESOURCE_SCOPE_DENIED", message: "Acceso denegado." };
   const actor = getVerifiedAcademicIdentity_(payload);
