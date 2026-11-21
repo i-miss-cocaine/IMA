@@ -18,6 +18,7 @@ on:
       - 'tests/security/task-service-grade-submission-history.test.js'
       - 'tests/security/task-service-deadline-history.test.js'
       - 'tests/security/task-service-upload-contract.test.js'
+      - 'tests/security/task-service-resumable-upload-lock.test.js'
       - 'tests/security/task-service-single-auth-context.test.js'
       - 'tests/security/contextual-abac-five-services-contract.test.js'
       - 'tests/security/task-service-submission-mutation-contract.test.js'
@@ -54,9 +55,11 @@ jobs:
       - run: node tests/security/task-service-submission-resubmit-contract.test.js
       - run: node tests/security/task-service-deadline-history.test.js
       - run: node tests/security/task-service-upload-contract.test.js
+      - run: node tests/security/task-service-resumable-upload-lock.test.js
       - run: node tests/security/task-service-single-auth-context.test.js
       - name: Run five-service contextual ABAC and guardian relation contract
         run: node tests/security/contextual-abac-five-services-contract.test.js
       - run: node --check tests/security/task-service-project-lock-contract.test.js
+      - run: node --check tests/security/task-service-resumable-upload-lock.test.js
       - run: node --check tests/security/task-service-teacher-offer-abac-contract.test.js
       - run: node --check js/teacher.js
