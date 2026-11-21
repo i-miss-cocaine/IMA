@@ -72,6 +72,7 @@ on:
       - tests/security/accounting-enrollment-billing-config.test.js
       - tests/security/accounting-monthly-charge-period.test.js
       - tests/security/accounting-payroll-generation-authorization.test.js
+      - tests/security/accounting-transport-assignment-ownership.test.js
       - tests/security/academic-enrollment-billing-integration.test.js
       - tests/security/academic-extracurricular-enrollment.test.js
       - tests/security/accounting-complementary-services.test.js
@@ -369,6 +370,8 @@ jobs:
         run: node tests/security/accounting-monthly-charge-period.test.js
       - name: Run accounting payroll generation authorization contract
         run: node tests/security/accounting-payroll-generation-authorization.test.js
+      - name: Run accounting transport assignment ownership contract
+        run: node tests/security/accounting-transport-assignment-ownership.test.js
       - name: Run academic enrollment billing integration contract
         run: node tests/security/academic-enrollment-billing-integration.test.js
       - name: Run extracurricular capacity, family enrollment and billing contract
@@ -398,6 +401,7 @@ jobs:
           node --check tests/security/accounting-monthly-charge-period.test.js
           node --check tests/security/accounting-transport-monthly-charges.test.js
           node --check tests/security/accounting-payroll-generation-authorization.test.js
+          node --check tests/security/accounting-transport-assignment-ownership.test.js
           node --check tests/security/accounting-family-credit-preference.test.js
           node --check js/accounting.js
           node --check js/secretary.js
