@@ -1,8 +1,8 @@
-const fs = require("node:fs");
-const cp = require("node:child_process");
+import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 const targetPath = "backend/accounting-service/Code.gs";
 const baseCommit = "2ec4276770de32df94fd2bcf8d3bd48e8315fe7b";
-const original = cp.execFileSync("git", ["show", baseCommit + ":" + targetPath], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+const original = execFileSync("git", ["show", baseCommit + ":" + targetPath], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
 if (original.length < 2000000 || original.split("\n").length < 25000) {
   throw new Error("Base source is incomplete; refusing to patch");
 }
