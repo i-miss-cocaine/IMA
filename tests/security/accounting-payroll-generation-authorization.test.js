@@ -54,7 +54,7 @@ function makeScopeHarness(options) {
 }
 
 const valid = makeScopeHarness();
-assert.equal(valid.run({ sessionToken: "token" }, valid.ss, { userId: "HR-1" }, valid.rows.slice(1)), true);
+assert.equal(valid.run({ sessionToken: "token" }, valid.ss, { userId: "HR-1" }, valid.rows.slice(1)).valid, true);
 assert.deepEqual(valid.calls.ownership.map(x => [x.resourceType, x.resourceId, x.operation]), [
   ["EXPEDIENTE_LABORAL", "EMP-1", "WRITE"], ["EXPEDIENTE_LABORAL", "EMP-2", "WRITE"]
 ]);
