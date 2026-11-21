@@ -2097,9 +2097,10 @@ function saveEnrollmentBillingConfiguration(payload) {
   } finally { lock.releaseLock(); }
 }
 
-function validateRolePermission(actorOrPayload, action) {
+function validateRolePermission(actorOrPayload, action, payloadContext) {
   var actor = actorOrPayload && actorOrPayload.authorized === true
     ? actorOrPayload : getVerifiedAccountingIdentity_(actorOrPayload || {});
+  var requestContext = payloadContext || actorOrPayload || {};
   if (!actor || actor.authorized !== true) return { authorized: false, code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var matrixDecision=typeof getDynamicPermissionsForRole==="function"?getDynamicPermissionsForRole(actor.role,"ACCOUNTING",String(action||""),actor.institutionId):null;if(matrixDecision!==true)return {authorized:false,actor:actor,code:"ROLE_PERMISSION_DENIED"};
   var staffingActions = ["manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution"];
@@ -2120,7 +2121,7 @@ function validateRolePermission(actorOrPayload, action) {
       return { authorized: false, code: "ROLE_NOT_ALLOWED" };
     }
     if (voucherStaffRoles.indexOf(voucherRole) !== -1) {
-      var voucherScope = getVerifiedAccountingDepartmentScope_(actorOrPayload || {}, SpreadsheetApp.openById(SPREADSHEET_ID), actor);
+      var voucherScope = getVerifiedAccountingDepartmentScope_(requestContext, SpreadsheetApp.openById(SPREADSHEET_ID), actor);
       if (!voucherScope || voucherScope.valid !== true) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
       return { authorized: true, actor: actor, scope: voucherScope };
     }
@@ -3601,7 +3602,7 @@ function uploadPaymentVoucher(payload) {
 function getPaymentVouchers(payload) {
   var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
   if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
-  var permission=validateRolePermission(actor,"getPaymentVouchers");
+  var permission=validateRolePermission(actor,"getPaymentVouchers",input);
   if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
   var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensurePaymentVoucherEvidenceSchema_(ss);
   var role=String(actor.role||"").trim().toLowerCase(),staffRoles=["secretaría","secretaria","administrador","director","subdirector","recursoshumanos"];
@@ -3628,7 +3629,7 @@ function getPaymentVouchers(payload) {
 function getPaymentVoucherFile(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
-  var permission = validateRolePermission(actor, "getPaymentVoucherFile");
+  var permission = validateRolePermission(actor, "getPaymentVoucherFile", input);
   if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), schema = ensurePaymentVoucherEvidenceSchema_(ss);
   var rows = schema.sheet.getDataRange().getValues().slice(1), id = String(input.comprobanteId || "").trim();
@@ -3655,7 +3656,7 @@ function getPaymentVoucherFile(payload) {
 function reviewPaymentVoucher(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
-  var permission = validateRolePermission(actor, "reviewPaymentVoucher");
+  var permission = validateRolePermission(actor, "reviewPaymentVoucher", input);
   if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var staff = assertPaymentVoucherOwnerAccess_(input, "", { requireStaff: true });
   if (!staff || staff.authorized !== true) return { status: "error", code: staff && staff.code || "ROLE_NOT_ALLOWED" };
