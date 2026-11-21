@@ -65,7 +65,7 @@ rows.TransporteRutas.push(inactiveRoute);
 assert.equal(context.assignStudentTransport({rutaId:"R-INACTIVE",estudianteUserId:"STU-001"}).code,"ROUTE_NOT_ACTIVE");
 rows.TransporteRutas.push(["R-DUP","Duplicate A","BUS-DUP","EMP-1",5,"[]","active","","06:30","07:30","Matutina"]);
 rows.TransporteRutas.push(["R-DUP","Duplicate B","BUS-DUP","EMP-1",5,"[]","active","","06:30","07:30","Matutina"]);
-assert.equal(context.assignStudentTransport({rutaId:"R-DUP",estudianteUserId:"STU-001"}).code,"ROUTE_AMBIGUOUS");
+assert.equal(context.assignStudentTransport({rutaId:"R-DUP",estudianteUserId:"STU-001"}).code,"ROUTE_ID_AMBIGUOUS");
 const beforeRollbackAssignments=rows.TransporteAsignaciones.length;
 const beforeRollbackCharges=JSON.stringify(rows.CargosEstudiante);
 const originalRecalculate=context.transportRecalculateStudentMonthlyChargeLocked_;
