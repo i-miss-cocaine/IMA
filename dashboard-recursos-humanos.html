@@ -293,6 +293,22 @@
  </div>
  <div class="flex flex-wrap gap-2 mt-4"><button id="rrhh-affiliation-assign" type="button" class="px-4 py-2.5 rounded-xl bg-teal-700 text-white text-xs font-bold">Asignar / reasignar</button><button id="rrhh-affiliation-head" type="button" class="px-4 py-2.5 rounded-xl bg-slate-700 text-white text-xs font-bold">Designar jefatura del departamento</button></div>
  <p id="rrhh-affiliation-status" class="mt-3 text-xs text-gray-500" role="status" aria-live="polite">Cargando catálogos institucionales…</p>
+
+ <div class="mt-5 grid grid-cols-1 xl:grid-cols-2 gap-4 border-t border-gray-100 pt-5">
+  <div class="rounded-2xl border border-gray-100 p-4 space-y-3">
+   <h4 class="text-xs font-black uppercase text-gray-800">Administrar departamentos</h4>
+   <label class="block text-xs font-bold text-gray-700">Nombre del nuevo departamento<input id="rrhh-affiliation-department-name" type="text" maxlength="160" class="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm" placeholder="Nombre del departamento"></label>
+   <label class="block text-xs font-bold text-gray-700">Departamento padre (opcional)<select id="rrhh-affiliation-parent" class="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm"><option value="">Sin departamento padre</option></select></label>
+   <div class="flex flex-wrap gap-2"><button id="rrhh-affiliation-department-create" type="button" class="px-3 py-2 rounded-xl bg-slate-700 text-white text-xs font-bold">Crear departamento</button><button id="rrhh-affiliation-department-deactivate" type="button" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold">Desactivar seleccionado</button></div>
+  </div>
+  <div class="rounded-2xl border border-gray-100 p-4 space-y-3">
+   <h4 class="text-xs font-black uppercase text-gray-800">Administrar cargos</h4>
+   <label class="block text-xs font-bold text-gray-700">Nombre del nuevo cargo<input id="rrhh-affiliation-cargo-name" type="text" maxlength="160" class="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm" placeholder="Nombre del cargo"></label>
+   <label class="block text-xs font-bold text-gray-700">Nivel jerárquico<input id="rrhh-affiliation-cargo-level" type="number" min="1" step="1" value="1" class="mt-1 w-full rounded-xl border border-gray-200 p-2.5 text-sm"></label>
+   <div class="flex flex-wrap gap-2"><button id="rrhh-affiliation-cargo-create" type="button" class="px-3 py-2 rounded-xl bg-slate-700 text-white text-xs font-bold">Crear cargo en departamento</button><button id="rrhh-affiliation-cargo-deactivate" type="button" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold">Desactivar cargo seleccionado</button></div>
+  </div>
+ </div>
+
  <div class="mt-6 border-t border-gray-100 pt-5"><div class="flex items-center justify-between gap-3 mb-3"><h4 class="text-xs font-black uppercase text-gray-800">Historial de adscripciones del empleado</h4><span id="rrhh-affiliation-history-count" class="text-[10px] text-gray-400 font-bold">0 registros</span></div><ul id="rrhh-affiliation-history" class="space-y-2 text-xs text-gray-600"><li class="text-gray-400">Seleccione un empleado para consultar su historial.</li></ul></div>
 </section>
 
@@ -2928,6 +2944,14 @@
             const assignButton=document.getElementById('rrhh-affiliation-assign');
             const headButton=document.getElementById('rrhh-affiliation-head');
             const reloadButton=document.getElementById('rrhh-affiliation-reload');
+            const parentSelect=document.getElementById('rrhh-affiliation-parent');
+            const departmentNameInput=document.getElementById('rrhh-affiliation-department-name');
+            const cargoNameInput=document.getElementById('rrhh-affiliation-cargo-name');
+            const cargoLevelInput=document.getElementById('rrhh-affiliation-cargo-level');
+            const createDepartmentButton=document.getElementById('rrhh-affiliation-department-create');
+            const deactivateDepartmentButton=document.getElementById('rrhh-affiliation-department-deactivate');
+            const createCargoButton=document.getElementById('rrhh-affiliation-cargo-create');
+            const deactivateCargoButton=document.getElementById('rrhh-affiliation-cargo-deactivate');
             if(!userSelect||!departmentSelect||!cargoSelect||!status)return;
             let cargoRequest=0,historyRequest=0;
             const setStatus=(message,error)=>{status.textContent=message;status.className='mt-3 text-xs '+(error?'text-rose-700':'text-gray-500');};
@@ -2956,7 +2980,7 @@
                     if(!response||response.status!=='success'||!Array.isArray(response.data))throw Error('No fue posible consultar el historial.');
                     historyCount.textContent=String(response.total||response.data.length)+' registros';
                     if(!response.data.length){const empty=document.createElement('li');empty.textContent='El empleado no tiene adscripciones registradas.';historyList.appendChild(empty);return;}
-                    response.data.forEach(record=>{const item=document.createElement('li');item.className='rounded-xl border border-gray-100 bg-gray-50 px-3 py-2';const title=document.createElement('strong');title.className='block text-gray-800';title.textContent=String(record.deptId||'Sin departamento')+' · '+String(record.cargoId||'Sin cargo');const detail=document.createElement('span');detail.className='block mt-1 text-[10px] text-gray-500';detail.textContent=String(record.estado||'Estado no disponible')+' · Inicio: '+String(record.fechaInicio||'No disponible')+(record.fechaFin?' · Fin: '+String(record.fechaFin):' · Vigente o sin fecha de cierre');item.appendChild(title);item.appendChild(detail);historyList.appendChild(item);});
+                    response.data.forEach(record=>{const item=document.createElement('li');item.className='rounded-xl border border-gray-100 bg-gray-50 px-3 py-2';const title=document.createElement('strong');title.className='block text-gray-800';title.textContent=String(record.deptId||'Sin departamento')+' · '+String(record.cargoId||'Sin cargo');const detail=document.createElement('span');detail.className='block mt-1 text-[10px] text-gray-500';detail.textContent=String(record.estado||'Estado no disponible')+' · Inicio: '+String(record.fechaInicio||'No disponible')+(record.fechaFin?' · Fin: '+String(record.fechaFin):' · Vigente o sin fecha de cierre');item.appendChild(title);item.appendChild(detail);if(String(record.estado||'').trim().toLowerCase()==='activa'){const endButton=document.createElement('button');endButton.type='button';endButton.className='mt-2 text-[10px] font-bold text-rose-700';endButton.textContent='Finalizar adscripción';endButton.addEventListener('click',async function(){endButton.disabled=true;try{const ended=await fetchApi('USER','manageDepartmentPositions',{subAction:'END_AFFILIATION',adscripcionId:record.adscripcionId});if(!ended||ended.status!=='success')throw Error(ended&&(ended.message||ended.code)||'No fue posible finalizar la adscripción.');setStatus('Adscripción finalizada; el historial se conservó.',false);await loadAffiliationHistory();}catch(error){setStatus(error.message||'No fue posible finalizar la adscripción.',true);}finally{endButton.disabled=false;}});item.appendChild(endButton);}historyList.appendChild(item);});
                 }catch(error){if(request===historyRequest){historyCount.textContent='—';const item=document.createElement('li');item.className='text-rose-700';item.textContent=error.message||'No fue posible consultar el historial.';historyList.appendChild(item);}}
             }
             async function loadCatalogs(){
@@ -2969,6 +2993,7 @@
                     if(!Array.isArray(employeeRows)||!Array.isArray(departmentRows))throw Error('No se pudieron cargar los catálogos institucionales.');
                     const employees=employeeRows.filter(employee=>employee.userId&&['activo','active','vigente'].indexOf(String(employee.estadoLaboral||'').trim().toLowerCase())!==-1);
                     const departments=departmentRows.filter(department=>['activo','active','enabled','vigente'].indexOf(String(department.estado||'').trim().toLowerCase())!==-1);
+                    if(parentSelect)fillSelect(parentSelect,departments,'Sin departamento padre',x=>x.deptId,x=>x.nombre+' · '+x.deptId);
                     fillSelect(userSelect,employees,employees.length?'Seleccione un empleado':'No hay empleados activos con usuario vinculado',x=>x.userId,x=>(x.empleadoNombre||x.nombreCompleto||x.userId)+' · '+x.userId);
                     fillSelect(departmentSelect,departments,departments.length?'Seleccione un departamento':'No hay departamentos activos',x=>x.deptId,x=>x.nombre+' · '+x.deptId);
                     await loadCargoOptions();await loadAffiliationHistory();setStatus('Catálogos actualizados. Las asignaciones se validan nuevamente en el servidor.',false);
@@ -2989,6 +3014,31 @@
                 try{const response=await fetchApi('USER','manageDepartmentPositions',{subAction:'ASSIGN_DEPARTMENT_HEAD',deptId:deptId,jefaturaUserId:userId});if(!response||response.status!=='success')throw Error(response&&(response.message||response.code)||'No fue posible actualizar la jefatura.');setStatus('Jefatura departamental actualizada.',false);}
                 catch(error){setStatus(error.message||'No fue posible actualizar la jefatura.',true);}finally{headButton.disabled=false;}
             });
+
+            if(createDepartmentButton)createDepartmentButton.addEventListener('click',async function(){
+                const name=String(departmentNameInput&&departmentNameInput.value||'').trim();
+                if(!name){setStatus('Ingrese el nombre del departamento.',true);return;}
+                createDepartmentButton.disabled=true;
+                try{const response=await fetchApi('USER','manageDepartmentPositions',{subAction:'CREATE_DEPT',deptNombre:name,parentDeptId:String(parentSelect&&parentSelect.value||'').trim()});if(!response||response.status!=='success')throw Error(response&&(response.message||response.code)||'No fue posible crear el departamento.');if(departmentNameInput)departmentNameInput.value='';await loadCatalogs();departmentSelect.value=String(response.deptId||'');await loadCargoOptions();setStatus('Departamento creado: '+String(response.deptId||''),false);}
+                catch(error){setStatus(error.message||'No fue posible crear el departamento.',true);}finally{createDepartmentButton.disabled=false;}
+            });
+            if(deactivateDepartmentButton)deactivateDepartmentButton.addEventListener('click',async function(){
+                const deptId=String(departmentSelect.value||'').trim();if(!deptId){setStatus('Seleccione el departamento que desea desactivar.',true);return;}deactivateDepartmentButton.disabled=true;
+                try{const response=await fetchApi('USER','manageDepartmentPositions',{subAction:'DEACTIVATE_DEPT',deptId:deptId});if(!response||response.status!=='success')throw Error(response&&(response.message||response.code)||'No fue posible desactivar el departamento.');await loadCatalogs();setStatus('Departamento desactivado.',false);}
+                catch(error){setStatus(error.message||'No fue posible desactivar el departamento. Verifique cargos, adscripciones y subdepartamentos activos.',true);}finally{deactivateDepartmentButton.disabled=false;}
+            });
+            if(createCargoButton)createCargoButton.addEventListener('click',async function(){
+                const deptId=String(departmentSelect.value||'').trim(),name=String(cargoNameInput&&cargoNameInput.value||'').trim(),level=Number(cargoLevelInput&&cargoLevelInput.value||1);
+                if(!deptId||!name){setStatus('Seleccione departamento e ingrese el nombre del cargo.',true);return;}createCargoButton.disabled=true;
+                try{const response=await fetchApi('USER','manageDepartmentPositions',{subAction:'CREATE_CARGO',deptId:deptId,cargoNombre:name,nivelJerarquico:level});if(!response||response.status!=='success')throw Error(response&&(response.message||response.code)||'No fue posible crear el cargo.');if(cargoNameInput)cargoNameInput.value='';await loadCargoOptions();cargoSelect.value=String(response.cargoId||'');setStatus('Cargo creado: '+String(response.cargoId||''),false);}
+                catch(error){setStatus(error.message||'No fue posible crear el cargo.',true);}finally{createCargoButton.disabled=false;}
+            });
+            if(deactivateCargoButton)deactivateCargoButton.addEventListener('click',async function(){
+                const cargoId=String(cargoSelect.value||'').trim();if(!cargoId){setStatus('Seleccione el cargo que desea desactivar.',true);return;}deactivateCargoButton.disabled=true;
+                try{const response=await fetchApi('USER','manageDepartmentPositions',{subAction:'DEACTIVATE_CARGO',cargoId:cargoId});if(!response||response.status!=='success')throw Error(response&&(response.message||response.code)||'No fue posible desactivar el cargo.');await loadCargoOptions();setStatus('Cargo desactivado.',false);}
+                catch(error){setStatus(error.message||'No fue posible desactivar el cargo. Finalice primero las adscripciones activas.',true);}finally{deactivateCargoButton.disabled=false;}
+            });
+
             await loadCatalogs();
         }
         document.addEventListener('DOMContentLoaded',function(){initRrhhDepartmentAffiliationPanel();});

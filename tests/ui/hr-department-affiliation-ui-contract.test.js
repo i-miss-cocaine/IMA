@@ -1,9 +1,9 @@
 "use strict";
 const assert=require("node:assert/strict"),fs=require("node:fs");
 const html=fs.readFileSync("dashboard-recursos-humanos.html","utf8");
-const ids=["rrhh-affiliation-panel","rrhh-affiliation-user","rrhh-affiliation-department","rrhh-affiliation-cargo","rrhh-affiliation-reason","rrhh-affiliation-assign","rrhh-affiliation-head","rrhh-affiliation-history","rrhh-affiliation-status"];
+const ids=["rrhh-affiliation-panel","rrhh-affiliation-user","rrhh-affiliation-department","rrhh-affiliation-cargo","rrhh-affiliation-reason","rrhh-affiliation-assign","rrhh-affiliation-head","rrhh-affiliation-history","rrhh-affiliation-status","rrhh-affiliation-parent","rrhh-affiliation-department-name","rrhh-affiliation-cargo-name","rrhh-affiliation-cargo-level","rrhh-affiliation-department-create","rrhh-affiliation-department-deactivate","rrhh-affiliation-cargo-create","rrhh-affiliation-cargo-deactivate"];
 ids.forEach(id=>assert.ok(html.includes('id="'+id+'"'),"missing UI element "+id));
-["GET_DEPARTMENT_HIERARCHY","GET_CARGOS","ASSIGN_USER","ASSIGN_DEPARTMENT_HEAD","getUserInstitutionalAffiliations"].forEach(action=>assert.ok(html.includes(action),"missing USER API action "+action));
+["GET_DEPARTMENT_HIERARCHY","GET_CARGOS","CREATE_DEPT","CREATE_CARGO","DEACTIVATE_DEPT","DEACTIVATE_CARGO","END_AFFILIATION","ASSIGN_USER","ASSIGN_DEPARTMENT_HEAD","getUserInstitutionalAffiliations"].forEach(action=>assert.ok(html.includes(action),"missing USER API action "+action));
 assert.ok(html.includes("fetchApi('ACCOUNTING','getEmployeeRecords'"),"employee selector must use current employee records");
 assert.ok(html.includes('aria-live="polite"'),"status feedback must be announced");
 assert.ok(!html.includes("rrhh-affiliation-history').innerHTML"),"history rendering must use DOM text nodes");
