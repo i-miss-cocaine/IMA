@@ -12443,8 +12443,6 @@ function assignStudentTransport(payload) {
 
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const studentAccess = transportAssertStudentOwnershipForMutation_(ss, payload, actor, String(estudianteUserId).trim(), "WRITE");
-    if (!studentAccess || studentAccess.authorized !== true) return { status: "error", code: studentAccess && studentAccess.code || "RESOURCE_SCOPE_DENIED" };
     const rutaSheet = ss.getSheetByName("TransporteRutas");
     if (!rutaSheet) return { status: "error", code: "TRANSPORT_RESOURCE_NOT_FOUND" };
     const routeValues = rutaSheet.getDataRange().getValues();
@@ -12457,6 +12455,8 @@ function assignStudentTransport(payload) {
     if (["active", "activa"].indexOf(String(targetRuta[6] || "").trim().toLowerCase()) === -1) {
       return { status: "error", code: "ROUTE_NOT_ACTIVE" };
     }
+    const studentAccess = transportAssertStudentOwnershipForMutation_(ss, payload, actor, String(estudianteUserId).trim(), "WRITE");
+    if (!studentAccess || studentAccess.authorized !== true) return { status: "error", code: studentAccess && studentAccess.code || "RESOURCE_SCOPE_DENIED" };
     getOrCreateTransportVehiclesCatalog(ss);
     const billingSchema = transportEnsureBillingSchema_(ss);
     const asgnSheet = getOrCreateSheet(ss, "TransporteAsignaciones");
