@@ -172,6 +172,6 @@ const unlinkedGuardian = makeHarness({ guardianAllowed: false });
 assert.equal(unlinkedGuardian.run(request("Tutor", "TUTOR-2", { solicitudId: "SOL-10" })).code, "GUARDIAN_DOMAIN_PERMISSION_DENIED");
 
 const missingNotifications = makeHarness({ notificationSheet: false });
-assert.deepEqual(missingNotifications.run(request("Director", "DIR-1", { expedienteId: "EXP-1" })).logs, []);
+assert.deepEqual(Array.from(missingNotifications.run(request("Director", "DIR-1", { expedienteId: "EXP-1" })).logs), []);
 
 console.log("user-student-procedure-notification-logs-ownership: all assertions passed");
