@@ -87,7 +87,9 @@ assert.equal(rollbackRows[1][19],"","failed audit write rolls metadata ownership
 assert.equal(rollbackRows[1][11],"","failed audit write rolls task link back");
 
 
-function makeDeleteFileFixture(fileId, versionRows, failMetadataWrite) {
+function makeDeleteFileFixture(fileId, versionRows, failMetadataWrite, lockAvailable) {
+  const lockCalls = { attempts: 0, releases: 0 };
+  if (lockAvailable === undefined) lockAvailable = true;
   const rows = [metadataHeaders, metaRow("M-DELETE", fileId, "USR-DELETE")];
   const metadata = makeSheet(rows);
   if (failMetadataWrite) {
@@ -111,7 +113,11 @@ function makeDeleteFileFixture(fileId, versionRows, failMetadataWrite) {
     SpreadsheetApp: { openById: () => ss },
     ensureTaskServiceFileMetadataSheet: () => metadata,
     getSheetOrThrow: (_ss, name) => { if (!sheets[name]) throw new Error("missing " + name); return sheets[name]; },
-    DriveApp: { getFileById: () => file }
+    DriveApp: { getFileById: () => file },
+    LockService: { getScriptLock: () => ({
+      tryLock: () => { lockCalls.attempts++; return lockAvailable; },
+      releaseLock: () => { lockCalls.releases++; }
+    }) }
   };
   vm.runInNewContext(
     extractFunction("extractTaskServiceFileId") + String.fromCharCode(10) +
@@ -119,7 +125,7 @@ function makeDeleteFileFixture(fileId, versionRows, failMetadataWrite) {
     "this.run = deleteFile;",
     context
   );
-  return { run: context.run, file, rows };
+  return { run: context.run, file, rows, lockCalls };
 }
 const versionHeaders = ["ID","EntregaID","TareaID","UserID","VersionNum","ArchivoUrl","FileID"];
 const urlOnlyDelete = makeDeleteFileFixture("FILE-URL-ONLY", [
@@ -144,8 +150,16 @@ const successfulDelete = makeDeleteFileFixture("FILE-OWNED", [versionHeaders], f
 assert.equal(successfulDelete.run({_verifiedRole:"Estudiante",_verifiedUserId:"USR-DELETE",fileId:"FILE-OWNED"}).status, "success");
 assert.equal(successfulDelete.file.trashed, true);
 assert.equal(successfulDelete.rows[1][14], "Eliminado");
+assert.equal(successfulDelete.lockCalls.attempts, 1);
+assert.equal(successfulDelete.lockCalls.releases, 1);
 
-console.log("TASK-636 deleteFile local contract: FileID/ArchivoUrl reference guards and metadata rollback passed.");
+const lockBusyDelete = makeDeleteFileFixture("FILE-LOCK-BUSY", [versionHeaders], false, false);
+assert.throws(() => lockBusyDelete.run({_verifiedRole:"Estudiante",_verifiedUserId:"USR-DELETE",fileId:"FILE-LOCK-BUSY"}), /TASK_FILE_DELETE_LOCK_TIMEOUT/);
+assert.equal(lockBusyDelete.file.trashed, false, "file deletion must not proceed without the shared submission lock");
+assert.equal(lockBusyDelete.rows[1][14], "activo");
+assert.equal(lockBusyDelete.lockCalls.releases, 0);
+
+console.log("TASK-636 deleteFile local contract: reference guards, metadata rollback and shared submission lock passed.");
 
 // PUBLIC USER NEWS CONTRACT: anonymous responses are general-only; authenticated audience comes from claims.
 
