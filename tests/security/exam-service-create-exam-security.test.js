@@ -78,7 +78,7 @@ function fixture(options = {}) {
     getSheetOrThrow(ss, name) { const sheet = ss.getSheetByName(name); if (!sheet) throw new Error("missing " + name); return sheet; },
     LockService: { getScriptLock: () => ({
       tryLock() { stats.events.push("lock"); stats.acquired++; if (options.lockTimeout || stats.held) return false; stats.held = true; return true; },
-      releaseLock() { stats.released++; stats.held = false; }
+      releaseLock() { stats.events.push("release"); stats.released++; stats.held = false; }
     })},
     Utilities: { getUuid() { uuid++; return "UUID-" + uuid; } },
     Date
