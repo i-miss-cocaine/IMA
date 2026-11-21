@@ -6339,12 +6339,18 @@ function resolveVerifiedRequestSubmitter_(payload, requestedStudentId, requireSt
     studentId = actorId;
   } else if (guardianRoles.indexOf(normalizedRole) !== -1 && studentId) {
     const linkedResult = getGuardianStudents({ userId: actorId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
-    const linked = (linkedResult.data || []).some(function(student) {
-      const matches = String(student.studentUserId || student.userId || "").trim() === studentId ||
+    const linkedRows = linkedResult && linkedResult.status === "success" && Array.isArray(linkedResult.data)
+      ? linkedResult.data : [];
+    const linkedMatches = linkedRows.filter(function(student) {
+      if (!student || typeof student !== "object") return false;
+      return String(student.studentUserId || student.userId || "").trim() === studentId ||
         String(student.expedienteEstudianteId || "").trim() === studentId;
-      return matches && (!permissionKey || hasExplicitGuardianDomainPermission_(student, permissionKey));
     });
-    if (!linked) throw new Error("GUARDIAN_STUDENT_SCOPE_DENIED");
+    if (linkedMatches.length !== 1) throw new Error("GUARDIAN_STUDENT_SCOPE_DENIED");
+    if (!permissionKey) throw new Error("GUARDIAN_DOMAIN_PERMISSION_UNCLASSIFIED");
+    if (!hasExplicitGuardianDomainPermission_(linkedMatches[0], permissionKey)) {
+      throw new Error("GUARDIAN_DOMAIN_PERMISSION_DENIED");
+    }
   }
   if (requireStudent && !studentId) throw new Error("STUDENT_ID_REQUIRED");
   return { userId: actorId, estudianteId: studentId, role: role };
@@ -6371,14 +6377,17 @@ function getAdministrativeRequestAttachment(payload) {
     (studentRoles.indexOf(normalizedRole) !== -1 && String(row[map.EstudianteID] || "").trim() === actorId);
   if (!authorized && guardianRoles.indexOf(normalizedRole) !== -1) {
     const linkedResult = getGuardianStudents({ userId: actorId, sessionToken: payload.sessionToken || payload.authToken || payload.token });
-    authorized = (linkedResult.data || []).some(function(student) {
-      const permissions = student.permisos || {};
-      const targetStudentId = String(row[map.EstudianteID] || "").trim();
+    const linkedRows = linkedResult && linkedResult.status === "success" && Array.isArray(linkedResult.data)
+      ? linkedResult.data : [];
+    const targetStudentId = String(row[map.EstudianteID] || "").trim();
+    const linkedMatches = linkedRows.filter(function(student) {
+      if (!student || typeof student !== "object") return false;
       const linkedUserId = String(student.studentUserId || student.userId || "").trim();
       const linkedExpedienteId = String(student.expedienteEstudianteId || "").trim();
-      return (linkedUserId === targetStudentId || linkedExpedienteId === targetStudentId) &&
-        hasExplicitGuardianDomainPermission_(student, "permisoDocumental");
+      return linkedUserId === targetStudentId || linkedExpedienteId === targetStudentId;
     });
+    authorized = linkedMatches.length === 1 &&
+      hasExplicitGuardianDomainPermission_(linkedMatches[0], "permisoDocumental");
   }
   if (!authorized && studentRoles.indexOf(normalizedRole) === -1 && guardianRoles.indexOf(normalizedRole) === -1) {
     authorized = !!validateRolePermission("getAdministrativeRequests", payload).authorized;

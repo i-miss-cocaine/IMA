@@ -416,4 +416,108 @@ for (const [start,end] of [["2099-01-01","2099-12-31"],["2020-01-01","2020-12-31
     "ACCOUNTING joint family owner denies invalid or inactive relationship dates");
 }
 
+
+const guardianSubmitterRuntime = {
+  getUserVerifiedRole: () => "Tutor",
+  getGuardianStudents: () => ({ status: "success", data: [
+    { studentUserId: "STU-1", expedienteEstudianteId: "EXP-1", permisos: { permisoAcademico: true } }
+  ] })
+};
+vm.createContext(guardianSubmitterRuntime);
+vm.runInContext(
+  guardianDomainPermissionFn + "\\n" +
+  extractFunctionFrom(userSource, "resolveVerifiedRequestSubmitter_") +
+  "\nthis.resolve = resolveVerifiedRequestSubmitter_;",
+  guardianSubmitterRuntime
+);
+assert.throws(
+  () => guardianSubmitterRuntime.resolve({ _verifiedUserId: "GUARDIAN-1" }, "STU-1", true, "permisoFinanciero"),
+  /GUARDIAN_DOMAIN_PERMISSION_DENIED/,
+  "USER must not infer financial permission from an academic-only guardian grant"
+);
+assert.throws(
+  () => guardianSubmitterRuntime.resolve({ _verifiedUserId: "GUARDIAN-1" }, "STU-1", true, ""),
+  /GUARDIAN_DOMAIN_PERMISSION_UNCLASSIFIED/,
+  "USER guardian request must have an explicit action-to-domain binding"
+);
+guardianSubmitterRuntime.getGuardianStudents = () => ({ status: "success", data: [
+  { studentUserId: "STU-1", expedienteEstudianteId: "EXP-1", permisos: { permisoFinanciero: true } },
+  { studentUserId: "STU-1", expedienteEstudianteId: "EXP-1", permisos: { permisoFinanciero: true } }
+] });
+assert.throws(
+  () => guardianSubmitterRuntime.resolve({ _verifiedUserId: "GUARDIAN-1" }, "STU-1", true, "permisoFinanciero"),
+  /GUARDIAN_STUDENT_SCOPE_DENIED/,
+  "USER must deny duplicate guardian target resolutions"
+);
+guardianSubmitterRuntime.getGuardianStudents = () => ({ status: "success", data: [
+  { studentUserId: "STU-1", expedienteEstudianteId: "EXP-1", permisos: { permisoFinanciero: true } }
+] });
+assert.equal(
+  guardianSubmitterRuntime.resolve({ _verifiedUserId: "GUARDIAN-1" }, "STU-1", true, "permisoFinanciero").estudianteId,
+  "STU-1",
+  "USER allows guardian request when exact target and exact domain are uniquely verified"
+);
+
+const familySummaryRuntime = {
+  getUserVerifiedRole: () => "Tutor",
+  getGuardianStudents: () => ({ status: "success", data: [{
+    userId: "STU-1", studentUserId: "STU-1", nombre: "Student 1", permisos: { permisoAcademico: true }
+  }] }),
+  SpreadsheetApp: { openById: () => ({}) },
+  getOrCreateSheet: (_ss, name) => sheet(name === "CargosEstudiante"
+    ? [["ID","StudentID","","","Monto","","Estado"],["C-1","STU-1","","",250,"","Pendiente"]]
+    : [["ID","StudentID","","","","Monto","","","","Estado"]]),
+  SPREADSHEET_ID: "TEST", Date, String, Number, Object, Array, JSON, parseFloat
+};
+vm.createContext(familySummaryRuntime);
+vm.runInContext(
+  guardianDomainPermissionFn + "\\n" +
+  extractFunctionFrom(userSource, "getFamilyConsolidatedSummary") +
+  "\nthis.summary = getFamilyConsolidatedSummary;",
+  familySummaryRuntime
+);
+const familySummaryResult = familySummaryRuntime.summary({ _verifiedUserId: "GUARDIAN-1", sessionToken: "signed" });
+assert.equal(familySummaryResult.data.estudiantes[0].tienePermisoFinanciero, false,
+  "USER family summary requires an explicit financial permission");
+assert.equal(familySummaryResult.data.estudiantes[0].saldoPendiente, null,
+  "USER family summary hides balances when only academic permission exists");
+assert.equal(familySummaryResult.data.totalCargosPendientes, 0,
+  "USER family summary excludes balances without explicit financial permission");
+
+const attachmentRows = [
+  ["SolicitudID","UserId","EstudianteID","AdjuntoUrl"],
+  ["REQ-1","OTHER-USER","STU-1",""]
+];
+const attachmentRuntime = {
+  getUserVerifiedRole: () => "Tutor",
+  getGuardianStudents: () => ({ status: "success", data: [
+    { userId: "STU-1", studentUserId: "STU-1", expedienteEstudianteId: "EXP-1", permisos: { permisoAcademico: true } }
+  ] }),
+  SpreadsheetApp: { openById: () => ({ getSheetByName: () => sheet(attachmentRows) }) },
+  requestAttachmentHeaderMap_: () => ({ SolicitudID: 0, UserId: 1, EstudianteID: 2, AdjuntoUrl: 3 }),
+  logStructuredEvent: () => {}, SPREADSHEET_ID: "TEST",
+  String, Number, Object, Array, Date
+};
+vm.createContext(attachmentRuntime);
+vm.runInContext(
+  guardianDomainPermissionFn + "\\n" +
+  extractFunctionFrom(userSource, "getAdministrativeRequestAttachment") +
+  "\nthis.download = getAdministrativeRequestAttachment;",
+  attachmentRuntime
+);
+assert.equal(
+  attachmentRuntime.download({ _verifiedUserId: "GUARDIAN-1", solicitudId: "REQ-1" }).code,
+  "RESOURCE_NOT_FOUND",
+  "USER denies document download when guardian has only academic permission"
+);
+attachmentRuntime.getGuardianStudents = () => ({ status: "success", data: [
+  { studentUserId: "STU-1", expedienteEstudianteId: "EXP-1", permisos: { permisoDocumental: true } },
+  { studentUserId: "STU-1", expedienteEstudianteId: "EXP-1", permisos: { permisoDocumental: true } }
+] });
+assert.equal(
+  attachmentRuntime.download({ _verifiedUserId: "GUARDIAN-1", solicitudId: "REQ-1" }).code,
+  "RESOURCE_NOT_FOUND",
+  "USER denies document download when guardian target is ambiguous"
+);
+
 process.stdout.write("contextual-abac-five-services-contract: all assertions passed\n");
