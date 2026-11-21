@@ -7047,8 +7047,15 @@ function getVerifiedAcademicCoordinatorAreaIds_(payload) {
     return { authorized: false, code: "COORDINATOR_IDENTITY_REQUIRED", areaIds: [] };
   }
   let result;
-  try { result = getAcademicAreaCoordinationScope({ userId: actorId }); }
-  catch (_) { return { authorized: false, code: "COORDINATION_SCOPE_VALIDATION_FAILED", areaIds: [] }; }
+  try {
+    result = getAcademicAreaCoordinationScope({
+      _verifiedUserId: actorId,
+      _verifiedRole: "Coordinador",
+      sessionToken: payload && (payload.sessionToken || payload.authToken || payload.token)
+    });
+  } catch (_) {
+    return { authorized: false, code: "COORDINATION_SCOPE_VALIDATION_FAILED", areaIds: [] };
+  }
   if (!result || result.status !== "success" || !Array.isArray(result.scopes)) {
     return { authorized: false, code: "COORDINATION_SCOPE_UNVERIFIED", areaIds: [] };
   }
@@ -7065,10 +7072,10 @@ function getVerifiedAcademicCoordinatorAreaIds_(payload) {
     const from = context.fechaInicio ? new Date(context.fechaInicio).getTime() : null;
     const to = context.fechaFin ? new Date(context.fechaFin).getTime() : null;
     if ((context.fechaInicio && !Number.isFinite(from)) || (context.fechaFin && !Number.isFinite(to)) ||
-        (from !== null && from > now) || (to !== null && to < now) ||
         (from !== null && to !== null && from > to)) {
-      continue;
+      return { authorized: false, code: "COORDINATION_SCOPE_MALFORMED", areaIds: [] };
     }
+    if ((from !== null && from > now) || (to !== null && to < now)) continue;
     const key = areaId.toUpperCase();
     if (seen[key]) return { authorized: false, code: "COORDINATION_SCOPE_AMBIGUOUS", areaIds: [] };
     seen[key] = true;
@@ -7135,37 +7142,60 @@ function assertAcademicCoordinatorAreaAccess_(payload, ss, areaReference, subjec
 }
 
 function getAcademicAreaCoordinationScope(payload) {
-  const { areaId } = payload || {};
-  const callerRole = String(payload && payload._verifiedRole || "").trim();
-  const userId = callerRole === "Coordinador"
-    ? String(payload && payload._verifiedUserId || "").trim()
-    : String(payload && payload.userId || "").trim();
-  if (callerRole === "Coordinador" && !userId) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", scopes: [] };
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CoordinacionesArea");
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["CoordinacionID", "AreaID", "UserId", "NombreCoordinador", "AmbitoJSON", "Estado", "FechaAsignacion"]);
+  const input = payload || {};
+  const callerRole = String(input._verifiedRole || "").trim();
+  const verifiedActorId = String(input._verifiedUserId || "").trim();
+  const requestedUserId = String(input.userId || "").trim();
+  if (!verifiedActorId || !callerRole) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", scopes: [] };
+  const isCoordinator = callerRole === "Coordinador";
+  const isInstitutionalAdmin = ["Administrador", "Desarrollador", "Director"].indexOf(callerRole) !== -1;
+  if (!isCoordinator && !isInstitutionalAdmin) return { status: "error", code: "ROLE_NOT_ALLOWED", scopes: [] };
+  if (isCoordinator && requestedUserId && requestedUserId !== verifiedActorId) {
+    return { status: "error", code: "COORDINATION_IDENTITY_MISMATCH", scopes: [] };
   }
-
-  const rows = sheet.getDataRange().getValues().slice(1);
-  let filtered = rows.filter(r => String(r[5] || 'Activo').trim() === "Activo");
-  if (areaId) filtered = filtered.filter(r => String(r[1]).trim().toUpperCase() === String(areaId).trim().toUpperCase());
-  if (userId) filtered = filtered.filter(r => String(r[2]).trim() === String(userId).trim());
-
-  const mapped = filtered.map(r => {
-    let ambito = {};
-    try { ambito = JSON.parse(r[4] || "{}"); } catch (_) {}
-    return {
-      coordinacionId: r[0],
-      areaId: r[1],
-      userId: r[2],
-      nombreCoordinador: r[3],
+  const userId = isCoordinator ? verifiedActorId : requestedUserId;
+  const areaId = String(input.areaId || "").trim();
+  let ss, sheet;
+  try {
+    ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    sheet = ss && ss.getSheetByName("CoordinacionesArea");
+  } catch (_) {
+    return { status: "error", code: "COORDINATION_SCOPE_SOURCE_UNAVAILABLE", scopes: [] };
+  }
+  if (!sheet) return { status: "error", code: "COORDINATION_SCOPE_SOURCE_UNAVAILABLE", scopes: [] };
+  let data;
+  try { data = sheet.getDataRange().getValues(); }
+  catch (_) { return { status: "error", code: "COORDINATION_SCOPE_SOURCE_UNAVAILABLE", scopes: [] }; }
+  const expectedHeaders = ["CoordinacionID", "AreaID", "UserId", "NombreCoordinador", "AmbitoJSON", "Estado", "FechaAsignacion"];
+  const headers = data && data.length ? data[0].map(value => String(value || "").trim()) : [];
+  if (JSON.stringify(headers) !== JSON.stringify(expectedHeaders)) {
+    return { status: "error", code: "COORDINATION_SCOPE_SCHEMA_INVALID", scopes: [] };
+  }
+  let filtered = data.slice(1).filter(row => String(row[5] || "").trim().toUpperCase() === "ACTIVO");
+  if (areaId) filtered = filtered.filter(row => String(row[1] || "").trim().toUpperCase() === areaId.toUpperCase());
+  if (userId) filtered = filtered.filter(row => String(row[2] || "").trim() === userId);
+  const mapped = [];
+  for (let i = 0; i < filtered.length; i++) {
+    const row = filtered[i] || [];
+    let ambito;
+    try {
+      ambito = typeof row[4] === "string" ? JSON.parse(row[4] || "{}") : row[4];
+    } catch (_) {
+      return { status: "error", code: "COORDINATION_SCOPE_SCHEMA_INVALID", scopes: [] };
+    }
+    if (!ambito || typeof ambito !== "object" || Array.isArray(ambito)) {
+      return { status: "error", code: "COORDINATION_SCOPE_SCHEMA_INVALID", scopes: [] };
+    }
+    mapped.push({
+      coordinacionId: row[0],
+      areaId: row[1],
+      userId: row[2],
+      nombreCoordinador: row[3],
       ambitoSupervision: ambito,
-      estado: r[5],
-      fechaAsignacion: r[6]
-    };
-  });
-
+      estado: row[5],
+      fechaAsignacion: row[6]
+    });
+  }
   return { status: "success", scopes: mapped };
 }
 

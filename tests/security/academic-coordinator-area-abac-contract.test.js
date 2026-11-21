@@ -107,6 +107,12 @@ ctx = runtime({ scopeRows: [{
 }] });
 assert.equal(ctx.scope({ _verifiedUserId: "COORD-1", _verifiedRole: "Coordinador" }).authorized, false,
   "future coordinator assignment must not authorize");
+ctx = runtime({ scopeRows: [{
+  userId: "COORD-1", areaId: "AREA-1",
+  ambitoSupervision: { areaId: "AREA-1", tipoCoordinacion: "Titular", fechaInicio: "not-a-date", fechaFin: "2099-12-31" }
+}] });
+assert.equal(ctx.scope({ _verifiedUserId: "COORD-1", _verifiedRole: "Coordinador" }).authorized, false,
+  "malformed coordinator assignment dates must fail closed");
 ctx = runtime({ subjectRows: subjectRows.concat([subjectRows[1]]) });
 assert.equal(ctx.resolve(ctx.ss, "SUB-1", true), "",
   "ambiguous subject identity must not resolve an authorization area");
@@ -125,22 +131,34 @@ for (const name of ["savePedagogicalPlanning", "getPedagogicalPlannings", "submi
 }
 
 const coordinationFn = extractFunction(source, "getAcademicAreaCoordinationScope");
+const coordinationSheet = sheet([
+  ["CoordinacionID","AreaID","UserId","NombreCoordinador","AmbitoJSON","Estado","FechaAsignacion"],
+  ["C1","AREA-1","COORD-1","Coordinator 1",JSON.stringify({ areaId: "AREA-1", tipoCoordinacion: "Titular" }),"Activo","2026-01-01"],
+  ["C2","AREA-2","VICTIM-1","Coordinator 2",JSON.stringify({ areaId: "AREA-2", tipoCoordinacion: "Titular" }),"Activo","2026-01-01"]
+]);
 const coordinationRuntime = {
   SPREADSHEET_ID: "TEST",
-  SpreadsheetApp: { openById: () => ({}) },
-  getOrCreateSheet: () => sheet([
-    ["CoordinacionID","AreaID","UserId","NombreCoordinador","AmbitoJSON","Estado","FechaAsignacion"],
-    ["C1","AREA-1","COORD-1","Coordinator 1",JSON.stringify({ areaId: "AREA-1", tipoCoordinacion: "Titular" }),"Activo","2026-01-01"],
-    ["C2","AREA-2","VICTIM-1","Coordinator 2",JSON.stringify({ areaId: "AREA-2", tipoCoordinacion: "Titular" }),"Activo","2026-01-01"]
-  ]),
+  SpreadsheetApp: { openById: () => ({ getSheetByName: () => coordinationSheet }) },
   String, JSON
 };
 vm.createContext(coordinationRuntime);
 vm.runInContext(coordinationFn + "\nthis.query = getAcademicAreaCoordinationScope;", coordinationRuntime);
-const ownCoordination = coordinationRuntime.query({
+const spoofedCoordination = coordinationRuntime.query({
   _verifiedRole: "Coordinador", _verifiedUserId: "COORD-1", userId: "VICTIM-1"
 });
-assert.deepEqual(Array.from(ownCoordination.scopes, row => row.userId), ["COORD-1"],
+assert.equal(spoofedCoordination.status, "error");
+assert.equal(spoofedCoordination.code, "COORDINATION_IDENTITY_MISMATCH",
   "coordinator cannot spoof another user's id when reading coordination scopes");
+const ownCoordination = coordinationRuntime.query({
+  _verifiedRole: "Coordinador", _verifiedUserId: "COORD-1"
+});
+assert.deepEqual(Array.from(ownCoordination.scopes, row => row.userId), ["COORD-1"]);
+coordinationRuntime.SpreadsheetApp.openById = () => ({ getSheetByName: () => null });
+const missingCoordinationSheet = coordinationRuntime.query({
+  _verifiedRole: "Coordinador", _verifiedUserId: "COORD-1"
+});
+assert.equal(missingCoordinationSheet.status, "error");
+assert.equal(missingCoordinationSheet.code, "COORDINATION_SCOPE_SOURCE_UNAVAILABLE",
+  "missing coordination source must fail closed without creating a sheet");
 
 process.stdout.write("academic-coordinator-area-abac-contract: all assertions passed\n");

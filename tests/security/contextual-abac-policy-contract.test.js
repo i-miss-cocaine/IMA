@@ -56,11 +56,11 @@ const code = [
   extractFunction(source, "resolveAcademicAreaIdForCoordinator_"),
   extractFunction(source, "assertAcademicCoordinatorAreaAccess_"),
   extractFunction(source, "validateContextualAccess")
-].join("\n");
+].join(String.fromCharCode(10));
 function run(payload, userId, role, overrides) {
   const runtime = makeRuntime(overrides);
   vm.createContext(runtime);
-  vm.runInContext(code + "\nthis.check = validateContextualAccess;", runtime);
+  vm.runInContext(code + String.fromCharCode(10) + "this.check = validateContextualAccess;", runtime);
   const requestPayload = Object.assign({ _verifiedUserId: userId, _verifiedRole: role }, payload || {});
   return runtime.check("testAction", requestPayload, userId, role);
 }
