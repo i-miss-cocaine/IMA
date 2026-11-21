@@ -7412,32 +7412,53 @@ function revokeDepartmentalDocumentDeliveryLink(payload) {
 }
 
 function getDepartmentalWorkInbox(payload) {
-  const { departamento, authRole } = payload || {};
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "SolicitudesTramites");
+  const sheet = ss.getSheetByName("SolicitudesTramites");
+  if (!sheet) return { status: "success", solicitudes: [] };
   const data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status: "success", solicitudes: [] };
 
-  const depTarget = normalizeString(departamento || authRole || "Secretaria");
+  let scope = null;
+  try { scope = getInstitutionalDepartmentScope_(request, role); } catch (_) {}
+  if (!scope || scope.status !== "success") return { status: "error", code: "INSTITUTIONAL_SCOPE_UNVERIFIED" };
+  const institutionWide = scope.institutionWide === true;
+  const requestedDepartment = institutionWide ? normalizeString(request.departamento || "") : "";
 
-  const solicitudes = data.slice(1).filter(r => {
-    const asgn = normalizeString(r[7] || "Secretaria");
-    return asgn.indexOf(depTarget) !== -1 || depTarget.indexOf(asgn) !== -1 || depTarget === "direccion" || depTarget === "administrador";
-  }).map(r => ({
-    solicitudId: r[0],
-    userId: r[1],
-    estudianteId: r[2],
-    tipoTramite: r[3],
-    descripcion: r[4],
-    adjuntoUrl: r[5],
-    estado: r[6] || "Enviada",
-    asignadoA: r[7],
-    observacionesAdmin: r[8],
-    fechaSolicitud: r[9],
-    fechaResolucion: r[10]
+  const solicitudes = data.slice(1).filter(row => {
+    if (institutionWide) {
+      if (!requestedDepartment) return true;
+      const assignedTokens = normalizeString(row[7] || "Secretaria")
+        .split(/[\\/,;|]+/).map(value => normalizeString(value)).filter(Boolean);
+      return assignedTokens.indexOf(requestedDepartment) !== -1;
+    }
+
+    // El parámetro departamento/authRole del cliente no amplía el ámbito asignado.
+    const studentId = String(row[2] || "").trim();
+    if (!studentId) return false;
+    const studentResource = resolveAbsenceReviewExpedienteId_(ss, studentId);
+    if (!studentResource || studentResource.status !== "success") return false;
+    const ownership = assertRecordOwnership(request, "EXPEDIENTE_ESTUDIANTE", studentResource.expedienteId, "READ");
+    return !!ownership && ownership.authorized === true;
+  }).map(row => ({
+    solicitudId: row[0],
+    userId: row[1],
+    estudianteId: row[2],
+    tipoTramite: row[3],
+    descripcion: row[4],
+    adjuntoUrl: row[5],
+    estado: row[6] || "Enviada",
+    asignadoA: row[7],
+    observacionesAdmin: row[8],
+    fechaSolicitud: row[9],
+    fechaResolucion: row[10]
   }));
 
-  return { status: "success", departamento: departamento || authRole, solicitudes: solicitudes };
+  return { status: "success", departamento: institutionWide ? requestedDepartment || "INSTITUCIONAL" : "", solicitudes: solicitudes };
 }
 
 function closeConversationThread(payload) {
