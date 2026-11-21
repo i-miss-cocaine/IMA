@@ -8542,15 +8542,7 @@ function appendPayrollConceptDetailRows_(ss,rows) {
   return rows.length;
 }
 
-function assertPayrollInstitutionWriteScope_(payload, ss, actor, employeeRows) {
-  const scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
-  if (!scope || scope.valid !== true || scope.authorized !== true) {
-    throw new Error(scope && scope.code || "PAYROLL_DEPARTMENT_SCOPE_UNVERIFIED");
-  }
-  // A payroll period is a single institution-wide accounting cycle; a
-  // department-only actor must not create a partial plan under the same period.
-  if (scope.institutionWide !== true) throw new Error("PAYROLL_INSTITUTION_SCOPE_REQUIRED");
-
+function assertPayrollEmployeeResourceScope_(ss, scope, employeeRows, operation) {
   const sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
   if (!sheet) throw new Error("PAYROLL_EMPLOYEE_OWNERSHIP_SOURCE_MISSING");
   const values = sheet.getDataRange().getValues();
@@ -8559,16 +8551,29 @@ function assertPayrollInstitutionWriteScope_(payload, ss, actor, employeeRows) {
   const idIndexes = [];
   headers.forEach((header, index) => { if (header === "ExpedienteID") idIndexes.push(index); });
   if (idIndexes.length !== 1) throw new Error("PAYROLL_EMPLOYEE_OWNERSHIP_SCHEMA_INVALID");
-  const idIndex = idIndexes[0], seen = Object.create(null);
+  const idIndex = idIndexes[0], seen = Object.create(null), action = String(operation || "READ").trim().toUpperCase();
+  if (action !== "READ" && action !== "WRITE") throw new Error("PAYROLL_EMPLOYEE_OPERATION_INVALID");
   (employeeRows || []).forEach(row => {
     const expedienteId = String((row || [])[idIndex] || "").trim();
     if (!expedienteId || seen[expedienteId]) throw new Error("PAYROLL_EMPLOYEE_RESOURCE_AMBIGUOUS");
     seen[expedienteId] = true;
-    const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", expedienteId, "WRITE");
+    const ownership = assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", expedienteId, action);
     if (!ownership || ownership.authorized !== true) {
       throw new Error(ownership && ownership.code || "PAYROLL_EMPLOYEE_SCOPE_DENIED");
     }
   });
+  return true;
+}
+
+function assertPayrollInstitutionWriteScope_(payload, ss, actor, employeeRows) {
+  const scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
+  if (!scope || scope.valid !== true || scope.authorized !== true) {
+    throw new Error(scope && scope.code || "PAYROLL_DEPARTMENT_SCOPE_UNVERIFIED");
+  }
+  // A payroll period is a single institution-wide accounting cycle; a
+  // department-only actor must not create a partial plan under the same period.
+  if (scope.institutionWide !== true) throw new Error("PAYROLL_INSTITUTION_SCOPE_REQUIRED");
+  assertPayrollEmployeeResourceScope_(ss, scope, employeeRows, "WRITE");
   return scope;
 }
 
@@ -10445,6 +10450,7 @@ function getPayrollEmployeePayConfig(payload){
   const allowed=scope.institutionWide?null:(scope.departmentIds||[]).map(String);
   const employeeId=String(p.empleadoId||"").trim();
   const employees=exps.filter(e=>(!employeeId||String(e[0]||"").trim()===employeeId)&&(!allowed||allowed.includes(String(e[4]||"").trim())));
+  assertPayrollEmployeeResourceScope_(ss,scope,employees,"READ");
   return {status:"success",configuraciones:config.rows.filter(r=>employees.some(e=>String(e[0]||"").trim()===String(r[0]||"").trim())).map(r=>({empleadoId:r[0],modalidadPago:r[1],frecuenciaPago:r[2],vigenciaInicio:r[3],vigenciaFin:r[4],estado:r[5]}))};
  }catch(e){return {status:"error",code:"PAYROLL_PAYMENT_CONFIG_READ_FAILED",message:"No fue posible consultar la configuración de pago."};}
 }
@@ -10461,6 +10467,7 @@ function savePayrollEmployeePayConfig(payload){
   if(!scope||!scope.authorized)return {status:"error",code:"DEPARTMENT_SCOPE_NOT_ASSIGNED",message:"No existe un ámbito autorizado."};
   const exps=getOrCreateSheet(ss,"ExpedientesLaborales").getDataRange().getValues().slice(1),employees=exps.filter(e=>String(e[0]||"").trim()===employeeId);
   if(employees.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};
+  assertPayrollEmployeeResourceScope_(ss,scope,employees,"WRITE");
   const dept=String(employees[0][4]||"").trim(),allowed=(scope.departmentIds||[]).map(String);
   if(scope.institutionWide!==true&&!allowed.includes(dept))return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Empleado no disponible."};
   const data=ensurePayrollEmployeePayConfigSheet_(ss),matches=data.rows.map((r,i)=>({row:r,index:i+2})).filter(x=>String(x.row[0]||"").trim()===employeeId);
@@ -10481,6 +10488,7 @@ function getPayrollBatchPreview(payload){
   const allowed=scope.institutionWide?null:(scope.departmentIds||[]).map(String),exps=getOrCreateSheet(ss,"ExpedientesLaborales").getDataRange().getValues().slice(1),contracts=getOrCreateSheet(ss,"ContratosLaborales").getDataRange().getValues().slice(1),config=ensurePayrollEmployeePayConfigSheet_(ss).rows,planRows=getOrCreateSheet(ss,"PlanillasNomenclatura").getDataRange().getValues().slice(1);
   const start=new Date(period+"-01T00:00:00"),end=new Date(Number(period.slice(0,4)),Number(period.slice(5,7)),0,23,59,59,999),parseDate=v=>{if(!v)return null;const d=v instanceof Date?v:new Date(v);return isNaN(d.getTime())?null:d;};
   const active=exps.filter(e=>["ACTIVE","ACTIVO","ENPERIODOPRUEBA"].includes(normalizePayrollBatchValue_(e[8]))&&(!allowed||allowed.includes(String(e[4]||"").trim())));
+  assertPayrollEmployeeResourceScope_(ss,scope,active,"READ");
   const configByEmployee=Object.create(null);config.forEach(r=>{const id=String(r[0]||"").trim();if(id){if(configByEmployee[id])configByEmployee[id].duplicate=true;else configByEmployee[id]=r;}});
   const groups=Object.create(null),excluded=[],included=[];const filters={departamento:String(p.departamento||"").trim(),cargo:String(p.cargo||"").trim(),tipoContrato:String(p.tipoContrato||"").trim(),modalidadPago:String(p.modalidadPago||"").trim(),frecuenciaPago:String(p.frecuenciaPago||"").trim(),search:normalizePayrollBatchValue_(p.search)};
   active.forEach(e=>{
