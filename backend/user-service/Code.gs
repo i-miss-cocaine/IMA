@@ -7560,6 +7560,41 @@ function sendInternalMessage(payload) {
     const existing = data.slice(1).filter(row => String(row[1] || "").trim() === convId);
     let effectiveStudentId = requestedStudentId;
 
+    if (!existing.length) {
+      try {
+        getInstitutionalUserRecord_(ss, recipientId);
+      } catch (error) {
+        return { status: "error", code: error && error.message || "MESSAGE_RECIPIENT_INVALID" };
+      }
+
+      if (requestedStudentId) {
+        const normalizedRole = role.toUpperCase().replace(/[^A-Z0-9]/g, "");
+        if (normalizedRole === "ESTUDIANTE" || normalizedRole === "ALUMNO") {
+          if (requestedStudentId !== actorId) return { status: "error", code: "MESSAGE_STUDENT_SCOPE_DENIED" };
+        } else if (["PADRE", "TUTOR", "RESPONSABLE"].indexOf(normalizedRole) !== -1) {
+          const guardian = request._verifiedGuardianStudent;
+          if (!guardian || (String(guardian.studentUserId || "").trim() !== requestedStudentId &&
+              String(guardian.expedienteId || "").trim() !== requestedStudentId)) {
+            return { status: "error", code: "MESSAGE_STUDENT_SCOPE_DENIED" };
+          }
+        } else {
+          let scope = null;
+          try { scope = getInstitutionalDepartmentScope_(request, role); } catch (_) {}
+          if (!scope || scope.status !== "success") return { status: "error", code: "INSTITUTIONAL_SCOPE_UNVERIFIED" };
+          if (scope.institutionWide !== true) {
+            const studentResource = resolveAbsenceReviewExpedienteId_(ss, requestedStudentId);
+            if (!studentResource || studentResource.status !== "success") {
+              return { status: "error", code: studentResource && studentResource.code || "RESOURCE_OWNERSHIP_UNVERIFIED" };
+            }
+            const ownership = assertRecordOwnership(request, "EXPEDIENTE_ESTUDIANTE", studentResource.expedienteId, "READ");
+            if (!ownership || ownership.authorized !== true) {
+              return { status: "error", code: ownership && ownership.code || "RESOURCE_SCOPE_DENIED" };
+            }
+          }
+        }
+      }
+    }
+
     if (existing.length) {
       const participants = new Set();
       const studentIds = new Set();
@@ -9917,6 +9952,11 @@ function bookAppointment(payload) {
   if (!lock.tryLock(10000)) return { status: "error", code: "APPOINTMENT_LOCK_BUSY" };
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    try {
+      getInstitutionalUserRecord_(ss, solicitadoA);
+    } catch (error) {
+      return { status: "error", code: error && error.message || "APPOINTMENT_RECIPIENT_INVALID" };
+    }
     const sheet = getOrCreateSheet(ss, "CitasReuniones");
     const citaId = "CITA-" + Utilities.getUuid();
     sheet.appendRow([
