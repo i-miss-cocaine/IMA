@@ -3225,3 +3225,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-222 / TASK-502 | C1.917] Hallazgo confirmado: getAdmissionNotificationLogs permitía consulta global sin target y coincidencia parcial de solicitud para roles Director/Subdirector sin scope de recurso. Corrección: institutionWide verificado para consulta global; de lo contrario solicitud única y assertRecordOwnership SOLICITUD_ADMISION/READ. Coincidencia por token exacto; lectura sin creación de hojas; límite máximo 200. Contrato Node y sintaxis PASS; Phase22 continúa fallando por configureSchoolDocumentTemplate ausente. TASK-502 sigue abierto.
+
+
+[2026-11-21 | AUD-NG-222 / TASK-502 | C1.918] Hallazgo: getScheduleChangeNotificationLogs exponía logs globales sin scope y getNotificationAuditLogs usaba allowlist rígida de roles sin verificar alcance institucional. Corrección: ambas rutas requieren institutionWide verificado; getNotificationAuditLogs exige permiso dinámico para roles no administrativos; lecturas no crean hojas y horario usa filtro exacto. Contrato Node y sintaxis PASS; Phase22/configureSchoolDocumentTemplate sigue pendiente.

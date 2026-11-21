@@ -996,3 +996,37 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
 - Siguiente: auditar getScheduleChangeNotificationLogs y getNotificationAuditLogs para determinar si requieren ámbito institucional/recurso; después continuar endpoints de expediente/solicitud y verificar concurrencia.
 ===============================================================================
+
+
+===============================================================================
+### C1.918 — IMA-EXEC-20261121-AUD-NG-222-USER-GLOBAL-NOTIFICATION-SCOPE-89
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.917, commit documental b2ec9071d2abb2e45e3de75455dbb0a26875eb55. HEAD de implementación antes del checkpoint: 08c1c78ea7f53a61a885b98d5c0709a22e88f6e9.
+- Commits de esta unidad: bc11bd22 (scope institucional para logs globales); ecd125b0 (contrato de permisos/scope); 29158b29 (aserciones de IDs de horario exactos); 08c1c78e (workflow, syntax-check y filtro de paths).
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección
+- getScheduleChangeNotificationLogs permitía consultar todos los cambios de horario a roles con permiso de acción sin comprobar alcance institucional; también leía mediante getOrCreateSheet.
+- getNotificationAuditLogs tenía una lista rígida de roles, permitía auditoría global sin verificar institutionWide y también creaba la hoja al leer.
+- Corrección: ambas rutas requieren identidad verificada y scope institucional completo. getScheduleChangeNotificationLogs mantiene filtro por horarioId con prefijo/identificador exacto y no crea hojas. getNotificationAuditLogs usa permiso dinámico para roles no administrativos, mantiene privilegio global de Administrador/Desarrollador y requiere institutionWide.
+- Lecturas sin hoja devuelven colección vacía; no se crean hojas durante consultas.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-global-notification-logs-scope.test.js (nuevo)
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- GitHub Actions Department Scope Contract, run 44949449309, Node.js 24.22.3: contrato global notification logs (paso 87) PASS; USER roster/attendance/review (82–84), logs de procedimientos (85) y admisiones (86) PASS; ownership académico (88–90) PASS; syntax-check (102) PASS.
+- El workflow agregado termina FAILURE únicamente en Phase22 document management suite, paso 103: missing configureSchoolDocumentTemplate. Los contratos de notificación y scope anteriores pasan.
+- En el commit de código bc11bd22: Academic-Service single authorization context, Hierarchical Configuration, Task-Service, SACE monotonic source revision, Identity mapping y Accounting Import Preflight — SUCCESS. Department Scope falla solo en Phase22.
+- Node.js y node --check ejecutados en GitHub Actions; CLI local independiente NOT RUN. Apps Script/Sheets real, staging y concurrencia entre proyectos NOT RUN. BETA-FUNC-128 pendiente de beta.
+
+### Estado y siguiente acción elegible
+- Los endpoints de logs globales de USER ahora requieren scope institucional completo; las consultas de horario usan identificador exacto cuando se filtran.
+- AUD-NG-222 / TASK-502 sigue En ejecución. Falta revisar acceso a conversaciones internas, inbox/outbox departamental, citas/autorizaciones y bindings action/resource en ACADEMIC/ACCOUNTING/TASK/EXAM.
+- TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
+- Siguiente: cerrar IDOR de getInternalMessages/getInternalConversations y revisar remitente/participantes en sendInternalMessage/closeConversationThread; luego inbox departamental.
+===============================================================================

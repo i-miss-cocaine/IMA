@@ -964,3 +964,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502 y TASK-506 permanecen En ejecución.
 - Siguiente: revisar getScheduleChangeNotificationLogs y getNotificationAuditLogs; continuar bindings action/resource y aislamiento institucional en cinco servicios.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.918 — AUD-NG-222 / TASK-502
+- USER: logs globales de cambios de horario y auditoría requieren institutionWide; getNotificationAuditLogs usa permiso dinámico para roles no administrativos.
+- Las lecturas no crean hojas; el filtro por horario usa prefijo/ID exacto y evita colisiones.
+- Contrato Node, contratos USER focalizados y syntax-check PASS. Phase22 continúa fallando por configureSchoolDocumentTemplate ausente.
+- Apps Script/Sheets real, staging y concurrencia interproyecto NOT RUN. BETA-FUNC-128 pendiente.
+- TASK-502/TASK-506 permanecen En ejecución.
+- Siguiente: revisar getInternalMessages/getInternalConversations, sendInternalMessage/closeConversationThread e inbox departamental.
+===============================================================================

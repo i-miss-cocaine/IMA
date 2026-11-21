@@ -6252,3 +6252,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - GitHub Actions run 44949096376: contrato nuevo paso 86 PASS; contratos USER 82–85, ownership académico 87–89 y syntax-check 101 PASS. El agregado falla solo en Phase22 por configureSchoolDocumentTemplate ausente.
 - Workflows complementarios del commit de código 8df84706: Academic-Service, Hierarchical Configuration, Task-Service, SACE, Identity y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
 - Estado: incremento USER verificado; TASK-502 y TASK-506 continúan En ejecución. Siguiente: auditar getScheduleChangeNotificationLogs/getNotificationAuditLogs y luego continuar bindings action/resource en cinco servicios.
+
+
+### Continuidad C1.918 — AUD-NG-222 / TASK-502 (sin cierre)
+- getScheduleChangeNotificationLogs y getNotificationAuditLogs ahora exigen identity/scope institutionWide; auditoría usa permiso dinámico para roles no administrativos y privilegio global Admin/Developer. Las lecturas ya no crean hojas. El filtro de horario usa prefijo/identificador exacto.
+- Contrato Node cubre scope departamental denegado, institutionWide permitido, permiso dinámico denegado/permitido, identidad ausente y colisión HOR-1/HOR-10.
+- GitHub Actions run 44949449309: contratos USER 82–87 y ownership académico 88–90 PASS; syntax-check 102 PASS. El workflow agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
+- Workflows complementarios del commit bc11bd22: Academic-Service, Hierarchical Configuration, Task-Service, SACE, Identity y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
+- Estado: incremento USER verificado; TASK-502/TASK-506 continúan En ejecución. Siguiente: revisar IDOR de getInternalMessages/getInternalConversations y sender/participant scope de sendInternalMessage/closeConversationThread; luego inbox departamental y servicios restantes.
