@@ -120,6 +120,7 @@ function makeIsolatedHarness(options = {}) {
       getFileById:id=>{if(!state.files.has(id))throw new Error("FILE_NOT_FOUND");return state.files.get(id);}},
     HtmlService:{createHtmlOutput:html=>({getAs:()=>({name:"",getBytes:()=>Array.from(Buffer.from("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%"+html+"\nstartxref\n9\n%%EOF\n","utf8")),setName(name){this.name=name;return this;}})})},
     MimeType:{PDF:"application/pdf"},
+    getAdvancedSignatureProviderConfig:()=>({status:"success",proveedores:[{proveedorId:"TEST-PSC",nombre:"Proveedor simulado"}]}),
     enqueueDriveRecovery_:()=>{},logStructuredEvent:()=>{}
   };
   const functions = phase22Functions.map(extractFunction).join("\n\n");
