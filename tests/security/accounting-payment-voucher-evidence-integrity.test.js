@@ -34,6 +34,7 @@ const names = [
 const baseHeaders = ["ComprobanteID","Fecha","UserId","Alumno","CargoID","MontoReportado","MetodoPago","Referencia","ComprobanteUrl","Estado","Observaciones"];
 const rows = { ComprobantesPago: [baseHeaders.slice()] };
 let uuid = 0, lockBusy = false, lockTryCalls = 0, failLockTryAt = -1, tamperOnCreate = false;
+const permissionDeniedActions = new Set(), permissionDeniedOnCall = Object.create(null), permissionCalls = Object.create(null);
 const files = Object.create(null), events = [];
 function makeSheet(name) {
   if (!rows[name]) rows[name] = [];
@@ -123,6 +124,7 @@ const context = {
   assertPaymentVoucherOwnerAccess_(payload,target,options){const actor=context.getVerifiedAccountingIdentity_(payload);if(options&&options.requireStaff)return actor.role==="Secretaría"?{authorized:true}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};return actor.userId===String(target||"")||actor.role==="Secretaría"?{authorized:true}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
   assertJointFamilyVoucherOwnerAccess_(){return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
   getVerifiedAccountingIdentity_(payload){return {authorized:true,userId:String(payload&&payload._verifiedUserId||payload&&payload.userId||"STU-1"),role:String(payload&&payload._verifiedRole||"Estudiante")};},
+  validateRolePermission(actor,action){permissionCalls[action]=(permissionCalls[action]||0)+1;return permissionDeniedActions.has(action)||permissionDeniedOnCall[action]===permissionCalls[action]?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:{authorized:true,actor};},
   assertJointFamilyVoucherOwnerAccess_(){return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
   extractDriveFileId(value){return String(value||"").trim();},
   logStructuredEvent(...args){events.push(args);},
@@ -225,6 +227,29 @@ assert.equal(v3Blocked.code,"VOUCHER_VERSION_IMMUTABLE");
 
 const unauthorized = context.getPaymentVoucherFile({_verifiedUserId:"STU-OTHER",_verifiedRole:"Estudiante",comprobanteId:secondV2.comprobanteId});
 assert.equal(unauthorized.code,"RESOURCE_NOT_FOUND");
+
+permissionDeniedActions.add("getPaymentVouchers");
+assert.equal(context.getPaymentVouchers({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante"}).code,"ROLE_PERMISSION_DENIED");
+permissionDeniedActions.delete("getPaymentVouchers");
+permissionDeniedActions.add("getPaymentVoucherFile");
+assert.equal(context.getPaymentVoucherFile({_verifiedUserId:"STU-1",_verifiedRole:"Estudiante",comprobanteId:secondV2.comprobanteId}).code,"ROLE_PERMISSION_DENIED");
+permissionDeniedActions.delete("getPaymentVoucherFile");
+const filesBeforeDeniedUpload = Object.keys(files).length;
+permissionDeniedActions.add("uploadPaymentVoucher");
+assert.equal(context.uploadPaymentVoucher(voucherPayload({cargoId:"CARGO-DENIED",fileData:pdfData("denied")})).code,"ROLE_PERMISSION_DENIED");
+permissionDeniedActions.delete("uploadPaymentVoucher");
+assert.equal(Object.keys(files).length,filesBeforeDeniedUpload,"permission denial must happen before creating a private file");
+permissionDeniedActions.add("reviewPaymentVoucher");
+assert.equal(context.reviewPaymentVoucher({_verifiedUserId:"SEC-1",_verifiedRole:"Secretaría",comprobanteId:secondV2.comprobanteId,nuevoEstado:"Observado"}).code,"ROLE_PERMISSION_DENIED");
+permissionDeniedActions.delete("reviewPaymentVoucher");
+
+permissionCalls.uploadPaymentVoucher = 0;
+permissionDeniedOnCall.uploadPaymentVoucher = 2;
+const filesBeforePermissionRace = Object.keys(files).length;
+assert.throws(()=>context.uploadPaymentVoucher(voucherPayload({cargoId:"CARGO-PERMISSION-RACE",fileData:pdfData("permission-race")})),/ROLE_PERMISSION_CHANGED/);
+delete permissionDeniedOnCall.uploadPaymentVoucher;
+assert.equal(Object.keys(files).length,filesBeforePermissionRace+1);
+assert.ok(Object.values(files).some(file=>file.trashed),"permission change under lock must roll back the private file");
 
 const rowCountBeforeLockFailure = rows.ComprobantesPago.length;
 lockTryCalls = 0; failLockTryAt = 2;
