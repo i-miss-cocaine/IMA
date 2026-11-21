@@ -28,6 +28,9 @@ let lockBusy=false,uuid=0;
 const spreadsheet={getSheetByName:name=>rows[name]?makeSheet(name):null,insertSheet:name=>{rows[name]=[];return makeSheet(name);}};
 const ctx={SPREADSHEET_ID:"TEST",failAssignmentWrite:false,
  SpreadsheetApp:{openById:()=>spreadsheet},
+ getVerifiedAccountingIdentity_:payload=>({authorized:true,userId:String(payload&&payload._verifiedUserId||"U-1"),role:"Director",institutionId:"INST-1"}),
+ validateRolePermission:()=>({authorized:true}),
+ getVerifiedAccountingDepartmentScope_:()=>({valid:true,authorized:true,institutionWide:true,institutionId:"INST-1",departmentIds:[]}),
  LockService:{getScriptLock:()=>({tryLock:()=>!lockBusy,waitLock:()=>{if(lockBusy)throw Error("LOCK_BUSY");},releaseLock:()=>{}})},
  Utilities:{getUuid:()=>"UUID-"+(++uuid)},
  getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-1",role:"Administrador",institutionId:"INST-1"}),validateRolePermission:()=>({authorized:true}),getVerifiedAccountingDepartmentScope_:()=>({valid:true,authorized:true,institutionWide:true,departmentIds:[]}),
@@ -95,7 +98,7 @@ rows.ActivosPatrimoniales.push(["ACT-LEGACY","PAT-LEGACY","Equipo antiguo","Equi
 assert.throws(()=>ctx.manageAssetItem({codigoPatrimonial:"PAT-NEW-LEGACY",nombre:"Equipo",numeroSerie:"SN-LEGACY"}),/ASSET_SERIAL_ALREADY_EXISTS/);
 const countBefore=rows.ActivosPatrimoniales.length,listed=ctx.getAssetItems({});
 assert.equal(listed.activos.length,3);assert.equal(rows.ActivosPatrimoniales.length,countBefore);
-const absentCtx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:()=>null})}};vm.createContext(absentCtx);vm.runInContext(extract(source,"getAssetItems"),absentCtx);
+const absentCtx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:()=>null})},getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-1",role:"Director",institutionId:"INST-1"}),validateRolePermission:()=>({authorized:true}),getVerifiedAccountingDepartmentScope_:()=>({valid:true,authorized:true,institutionWide:true,institutionId:"INST-1",departmentIds:[]})};vm.createContext(absentCtx);vm.runInContext(extract(source,"getAssetItems"),absentCtx);
 assert.deepEqual(JSON.parse(JSON.stringify(absentCtx.getAssetItems({}))),{status:"success",activos:[]});
 const damagedRows=JSON.parse(JSON.stringify(rows));damagedRows.RecepcionesCompra[1][5]="EnDisputa";
 const damagedSheet={getSheetByName:name=>damagedRows[name]?{getDataRange:()=>({getValues:()=>damagedRows[name]})}:null};
