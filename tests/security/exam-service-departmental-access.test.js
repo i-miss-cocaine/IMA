@@ -71,7 +71,7 @@ const userRows = [
   ["TUTOR-1", "Tutor Uno", "", "", "tutor1@example.invalid", "", "Tutor"]
 ];
 const questionRows = [["PreguntaID", "ExamenID", "Tipo", "Texto", "OpcionesJSON", "RespuestaCorrecta"], ["Q-1", "EXM-1", "opcion_multiple", "Pregunta propia", "{}", "A"], ["Q-2", "EXM-2", "opcion_multiple", "Pregunta otro departamento", "{}", "B"], ["Q-6", "EXM-6", "opcion_multiple", "Pregunta de entrega", "{}", "A"]];
-const familyRows = [["RelacionID", "PersonaEstudianteID", "PersonaResponsableID", "TipoParentesco", "EstadoAutorizacion"], ["REL-1", "EXP-1", "TUTOR-1", "Madre/Padre", "Verificada"], ["REL-2", "EXP-2", "TUTOR-1", "Madre/Padre", "Revocada"]];
+const familyRows = [["RelacionID", "ExpedienteID", "ResponsableID", "TipoParentesco", "EstadoAutorizacion", "FechaInicio", "FechaFin", "VerificadaPor", "PermisosJSON"], ["REL-1", "EXP-1", "TUTOR-1", "Madre/Padre", "Verificada", "2020-01-01", "2099-12-31", "", "{\"permisoAcademico\":true}"], ["REL-2", "EXP-2", "TUTOR-1", "Madre/Padre", "Revocada", "2020-01-01", "2099-12-31", "", "{\"permisoAcademico\":true}"]];
 const studentExpRows = [["ExpedienteID", "UserID"], ["EXP-1", "STUDENT-1"], ["EXP-2", "STUDENT-2"]];
 const legacyGuardianRows = [["RelacionID", "EstudianteID", "TutorID", "", "", "", "", "", "", "Estado"], ["LEG-2", "STUDENT-2", "TUTOR-1", "", "", "", "", "", "", "Activa"]];
 const sheets = { Examenes: examRows, AsignacionesAmbitosRoles: scopeRows, ResourceOwnership: ownershipRows, EntregasExamen: deliveryRows, Usuarios: userRows, PreguntasExamen: questionRows, RelacionesFamiliares: familyRows, ExpedientesEstudiantes: studentExpRows, RelacionesEstudianteTutor: legacyGuardianRows,
