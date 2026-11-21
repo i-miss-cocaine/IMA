@@ -493,6 +493,7 @@ function makeCreationRuntime(options) {
     PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
     SpreadsheetApp: { openById() { spreadsheetOpenCount++; return { getSheetByName(name) { return creationSheets[name] || null; } }; } },
     getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; },
+    clearRequestAuthorizationContext_(payload) { delete payload._imaVerifiedSessionToken; delete payload._imaVerifiedSessionClaims; delete payload._imaAuthorizationCache; delete payload._imaVerifiedExamIdentity; delete payload._verifiedUserId; delete payload._verifiedRole; },
     LockService: { getScriptLock() { lockAcquireCount++; return { tryLock() { return true; }, releaseLock() {} }; } },
     Utilities: { getUuid() { uuid++; return "UUID-" + uuid; } }
   };
