@@ -53,6 +53,7 @@ on:
       - tests/security/user-student-procedure-notification-logs-ownership.test.js
       - tests/security/user-admission-notification-logs-ownership.test.js
       - tests/security/user-global-notification-logs-scope.test.js
+      - tests/security/user-internal-messages-participant-ownership.test.js
       - tests/security/academic-student-expediente-ownership.test.js
       - tests/security/academic-student-document-private-storage.test.js
       - tests/security/academic-student-enrollment-history-ownership.test.js
@@ -326,6 +327,8 @@ jobs:
         run: node tests/security/user-admission-notification-logs-ownership.test.js
       - name: Run USER global notification logs institutional scope contract
         run: node tests/security/user-global-notification-logs-scope.test.js
+      - name: Run USER internal messages participant ownership contract
+        run: node tests/security/user-internal-messages-participant-ownership.test.js
       - name: Run academic student expediente ownership contract
         run: node tests/security/academic-student-expediente-ownership.test.js
       - name: Run academic student enrollment history ownership contract
@@ -392,6 +395,7 @@ jobs:
           node --check tests/security/user-student-procedure-notification-logs-ownership.test.js
           node --check tests/security/user-admission-notification-logs-ownership.test.js
           node --check tests/security/user-global-notification-logs-scope.test.js
+          node --check tests/security/user-internal-messages-participant-ownership.test.js
           node --check tests/regression/phase22-document-management-suite-contract.test.js
           node --check tests/regression/hr-vacation-dashboard-contract.test.js
           node --check js/ui-common.js
