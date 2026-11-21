@@ -184,6 +184,9 @@ assert.equal(missingPermissionResult.data.find(row => row.studentUserId === "STU
   "USER treats an absent permission document as deny, not implicit allow");
 assert.equal(guardianPolicyRuntime.check("getStudentAcademicReport", { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, false,
   "USER denies academic access when the primary relationship has no explicit domain permission");
+assert.equal(guardianPolicyRuntime.check("getStudentAcademicReport",
+  { userId: "GUARDIAN-1", expedienteId: "EXP-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, false,
+  "USER must resolve the student expediente even when payload.userId contains the guardian's own identity");
 familyRows[1][8] = "{\"permisoAcademico\":true,\"permisoFinanciero\":true}";
 assert.equal(guardianPolicyRuntime.check("getPaymentVouchers", { studentId: "STU-1", sessionToken: "signed" }, "GUARDIAN-1", "Padre").authorized, true,
   "USER allows financial access only after the financial permission is explicitly granted");

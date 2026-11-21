@@ -2117,7 +2117,13 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
     }
   }
 
-  const guardianTargetStudentId = targetStudentId || targetExpedienteId;
+  const explicitGuardianTarget = payload && (
+    payload.studentId || payload.estudianteId || payload.targetUserId ||
+    payload.expedienteId || payload.expedienteEstudianteId
+  );
+  const alternateUserTarget = payload && payload.userId &&
+    String(payload.userId).trim() !== verifiedActorId ? payload.userId : "";
+  const guardianTargetStudentId = explicitGuardianTarget || alternateUserTarget;
   if (["Padre", "Tutor", "Responsable"].indexOf(verifiedActorRole) !== -1 &&
       guardianTargetStudentId && String(guardianTargetStudentId).trim() !== verifiedActorId) {
     try {
