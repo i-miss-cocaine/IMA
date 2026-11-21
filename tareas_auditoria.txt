@@ -986,3 +986,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502/TASK-506 permanecen En ejecución.
 - Siguiente: cerrar mutaciones de conversaciones y revisar inbox/citas; continuar cinco servicios.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.920 — AUD-NG-222 / TASK-502
+- USER: sendInternalMessage vincula remitente al actor verificado, comprueba participantes del hilo y estado cerrado; closeConversationThread requiere participante.
+- send/close comparten ScriptLock; test cubre lock ocupado y envío posterior al cierre. Contratos Node y syntax PASS; Phase22 sigue fallando por configureSchoolDocumentTemplate.
+- Concurrencia real Apps Script, Sheets real y staging NOT RUN. BETA-FUNC-128 pendiente.
+- Pendiente: autorización del destinatario/estudiante en conversación nueva; getDepartmentalWorkInbox confía en departamento del payload; getAppointmentBookings permite consulta global sin filtros.
+- TASK-502/TASK-506 permanecen En ejecución.
+- Siguiente: corregir inbox departamental y revisar citas/destinatario.
+===============================================================================

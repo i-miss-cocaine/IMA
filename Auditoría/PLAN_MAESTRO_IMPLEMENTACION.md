@@ -6269,3 +6269,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Workflows complementarios del commit 647365b3: Task-Service, Academic-Service, Identity, SACE, UI, Hierarchical Configuration y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
 - Hallazgos pendientes: sendInternalMessage permite remitenteId falsificado; closeConversationThread no valida participación; getDepartmentalWorkInbox confía en departamento del cliente; getAppointmentBookings puede devolver todas las citas sin filtro.
 - Estado: TASK-502/TASK-506 continúan En ejecución. Siguiente: asegurar mutaciones de conversación y luego inbox departamental/citas; continuar auditoría de ACADEMIC/ACCOUNTING/TASK/EXAM.
+
+
+### Continuidad C1.920 — AUD-NG-222 / TASK-502 (sin cierre)
+- sendInternalMessage exige remitente igual al actor verificado, valida la pareja de participantes para hilos existentes, conserva el estudiante asociado y rechaza hilos cerrados. closeConversationThread exige participación. Ambas mutaciones comparten ScriptLock y serializan envío/cierre; Utilities.getUuid evita colisión de mensaje.
+- Contrato Node integrado: remitente falsificado, destinatario ajeno, hilo cerrado, lock ocupado, cierre por no participante, cierre autorizado, envío posterior al cierre y fallo de notificación después de persistir.
+- GitHub Actions run 44950066951: contratos de conversación pasos 88–89 PASS; USER 82–87 y ownership académico 90–92 PASS; syntax-check 104 PASS. El agregado falla únicamente en Phase22 por configureSchoolDocumentTemplate.
+- Workflows complementarios del commit 708f6681: Academic, UI, Accounting Import, Hierarchical Configuration, SACE, Task e Identity SUCCESS. Lock probado con harness Node; concurrencia real Apps Script NOT RUN.
+- Pendiente: validar destinatario/estudiante al crear conversaciones nuevas; getDepartmentalWorkInbox confía en departamento/authRole del cliente; getAppointmentBookings permite consultas sin filtros.
+- Estado: TASK-502/TASK-506 siguen En ejecución. Siguiente: corregir inbox departamental y revisar citas y autorización del destinatario.

@@ -3231,3 +3231,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-222 / TASK-502 | C1.919] Hallazgo confirmado: getInternalMessages aceptaba conversationId sin validar participación y userId del cliente permitía consultar mensajes de terceros. Corrección: identidad verificada, solo remitente/destinatario, userId ignorado y getInternalConversations hereda control. Contrato Node/sintaxis PASS. Hallazgos pendientes: sendInternalMessage no valida remitenteId; closeConversationThread no valida participantes; getDepartmentalWorkInbox confía en departamento del payload; getAppointmentBookings admite consulta sin filtros.
+
+
+[2026-11-21 | AUD-NG-222 / TASK-502 | C1.920] Hallazgos: sendInternalMessage permitía remitenteId falsificado y reutilización de conversaciones con participantes distintos; closeConversationThread permitía cierre arbitrario. Corrección: sender verificado, pareja de participantes y estado de hilo validados; cierre solo por participante; send/close comparten ScriptLock. Contrato Node y syntax PASS. Pendiente validar destinatario/estudiante al iniciar conversaciones nuevas y ejecutar prueba concurrente real Apps Script.

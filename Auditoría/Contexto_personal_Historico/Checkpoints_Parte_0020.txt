@@ -1069,3 +1069,44 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
 - Siguiente: validar remitente y pareja de participantes en sendInternalMessage; restringir closeConversationThread a participantes autorizados; después corregir inbox departamental.
 ===============================================================================
+
+
+===============================================================================
+### C1.920 — IMA-EXEC-20261121-AUD-NG-222-USER-CONVERSATION-MUTATIONS-91
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.919, commit documental 00fd60e7d2974864e7543ed8851f43751c209811. HEAD de implementación antes del checkpoint: 7f0f62cbe612c45c49cb32b7bf3044a116e3d976.
+- Commits de esta unidad: 708f6681 (ownership de send/close y ScriptLock); db222057 (contrato Node de mutaciones); 7f0f62cb (workflow, syntax-check y filtro de paths).
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección
+- sendInternalMessage aceptaba remitenteId controlado por el cliente, permitía reusar conversaciones con otros participantes y no comprobaba el estado cerrado.
+- closeConversationThread permitía cerrar cualquier conversacionId sin validar participación.
+- Corrección: sender debe coincidir con _verifiedUserId; destinatario no puede ser el propio actor; una conversación existente exige pareja de participantes compatible y no puede estar cerrada; se conserva el estudiante asociado. close exige que el actor sea participante.
+- send/close usan el mismo ScriptLock para serializar append y cierre. Se usa Utilities.getUuid para evitar colisión de IDs. La notificación se emite después de persistir/liberar el lock; un fallo de notificación no revierte el mensaje.
+- La autorización del destinatario y la relación de dominio del estudiante cuando se inicia una conversación nueva siguen pendientes de revisión; no se declara cerrada esa parte del flujo.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-internal-message-mutations-ownership.test.js (nuevo)
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- GitHub Actions Department Scope Contract, run 44950066951, Node.js 24.22.3: contrato USER internal messages participants (paso 88) PASS; mutaciones de conversación (paso 89) PASS; USER logs 82–87 y ownership académico 90–92 PASS; syntax-check (104) PASS.
+- El workflow agregado termina FAILURE únicamente en Phase22 document management suite, paso 105: AssertionError missing function configureSchoolDocumentTemplate en tests/regression/phase22-document-management-suite-contract.test.js. No hay otros pasos fallidos.
+- En el commit de código 708f6681: Academic-Service, UI Accessibility, Accounting Import, Hierarchical Configuration, SACE, Task-Service e Identity mapping — SUCCESS. Department Scope falla solo en Phase22.
+- El contrato Node simula lock ocupado y envío después de cierre; no se ejecutó concurrencia real entre instancias Apps Script. Apps Script/Sheets real, staging y CLI local independiente NOT RUN. BETA-FUNC-128 pendiente de beta.
+
+### Hallazgos abiertos para la siguiente iteración
+- sendInternalMessage aún requiere revisar si destinatario y estudiante asociado están autorizados por la relación/contexto de dominio al crear una conversación nueva.
+- getDepartmentalWorkInbox confía en departamento/authRole del payload.
+- getAppointmentBookings puede devolver todas las citas cuando no se envían filtros.
+- closeConversationThread queda limitado a participantes, pero falta probar escenarios de grupo/hilos históricos con múltiples participantes.
+
+### Estado y siguiente acción elegible
+- Las lecturas y mutaciones básicas de conversaciones están limitadas por identidad/participación y serializadas con ScriptLock.
+- AUD-NG-222 / TASK-502 continúa En ejecución; falta revisar inbox/citas, destinatario/estudiante de mensajes nuevos y bindings en ACADEMIC/ACCOUNTING/TASK/EXAM.
+- TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
+- Siguiente: derivar departamento autorizado en getDepartmentalWorkInbox sin confiar en payload; luego revisar getAppointmentBookings y destinatario/contexto de sendInternalMessage.
+===============================================================================
