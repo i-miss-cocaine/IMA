@@ -99,4 +99,69 @@ const uniqueSheet = { getDataRange: () => ({ getValues: () => [
 assert.equal(finderContext.find(uniqueSheet, "S-1").rowIndex, 2);
 assert.equal(finderContext.find(uniqueSheet, "MISSING"), null);
 
+function uploadHarness(duplicateSession) {
+  const calls = { lockAttempts: 0, releases: 0, createdFiles: 0, writes: 0 };
+  const header = ["SessionKey","UserId","FileName","FileSize","TotalChunks","ConfirmedChunks","Status","FolderId","OldSessionKey","CreatedFilesJson","CreatedAt","UpdatedAt","TareaID","FinalFileID","OwnerRole","FileHash","MimeType"];
+  const row = ["S-1","STU-1","lesson.pdf",2,2,"[]","ACTIVE","FOLDER-1","","[]","created","updated","TASK-1","","Estudiante","","application/pdf"];
+  const rows = [header, row];
+  if (duplicateSession) rows.push(row.slice());
+  const sheet = {
+    getDataRange: () => ({ getValues: () => rows.map(value => value.slice()) }),
+    getRange: (r, col) => ({ setValue: value => { rows[r - 1][col - 1] = value; calls.writes++; } })
+  };
+  const folder = {
+    createFile: blob => {
+      calls.createdFiles++;
+      return { getId: () => "CHUNK-" + calls.createdFiles, blob };
+    }
+  };
+  const runtime = {
+    SPREADSHEET_ID: "TEST",
+    LockService: { getScriptLock: () => ({
+      tryLock: () => { calls.lockAttempts++; return true; },
+      releaseLock: () => { calls.releases++; }
+    }) },
+    SpreadsheetApp: { openById: () => ({}) },
+    getOrCreateSheet: (_ss, name) => { assert.equal(name, "SesionesCargaResumible"); return sheet; },
+    findTaskServiceUploadSession: undefined,
+    DriveApp: { getFolderById: id => { assert.equal(id, "FOLDER-1"); return folder; } },
+    Utilities: {
+      base64Decode: value => Buffer.from(value, "base64"),
+      newBlob: (bytes, mimeType, name) => ({ bytes: Buffer.from(bytes), mimeType, name })
+    },
+    Date, String, Number, Object, Array, JSON, Error
+  };
+  vm.createContext(runtime);
+  vm.runInContext([
+    extract("withTaskUploadSessionLock_"),
+    extract("findTaskServiceUploadSession"),
+    extract("assertTaskServiceUploadSessionOwner"),
+    extract("uploadChunkUnlocked_"),
+    extract("uploadChunk")
+  ].join("\n") + "\nthis.run=uploadChunk;", runtime);
+  return { run: runtime.run, rows, calls };
+}
+const resumable = uploadHarness(false);
+const firstChunk = resumable.run({
+  _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  sessionKey: "S-1", chunkIndex: 0, totalChunks: 2, chunkData: "YQ=="
+});
+assert.equal(firstChunk.status, "success");
+assert.deepEqual(Array.from(firstChunk.confirmedChunks), [0]);
+assert.equal(resumable.calls.createdFiles, 1);
+const retryChunk = resumable.run({
+  _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  sessionKey: "S-1", chunkIndex: 0, totalChunks: 2, chunkData: "YQ=="
+});
+assert.deepEqual(Array.from(retryChunk.confirmedChunks), [0]);
+assert.equal(resumable.calls.createdFiles, 1, "retries of an existing chunk index must not create duplicate Drive files");
+assert.equal(resumable.calls.lockAttempts, 2);
+assert.equal(resumable.calls.releases, 2);
+const ambiguousUpload = uploadHarness(true);
+assert.throws(() => ambiguousUpload.run({
+  _verifiedUserId: "STU-1", _verifiedRole: "Estudiante",
+  sessionKey: "S-1", chunkIndex: 0, totalChunks: 2, chunkData: "YQ=="
+}), /UPLOAD_SESSION_AMBIGUOUS/);
+assert.equal(ambiguousUpload.calls.createdFiles, 0, "ambiguous session IDs must be rejected before Drive writes");
+
 console.log("task-service-resumable-upload-lock: all assertions passed");
