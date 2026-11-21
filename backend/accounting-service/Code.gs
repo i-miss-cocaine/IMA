@@ -13852,46 +13852,41 @@ function verifySACETemplateCompatibility(payload) {
 }
 
 function generateSACEReportFile(payload) {
-  const { anoLectivo, parcial, grado, seccion, asignatura, estudiantesNotas } = payload || {};
+  const input = payload || {};
+  const { anoLectivo, parcial, grado, seccion, asignatura } = input;
   if (!grado || !seccion || !asignatura) throw new Error("grado, seccion y asignatura requeridos para reporte SACE.");
-
-  const list = Array.isArray(estudiantesNotas) ? estudiantesNotas : [];
-
+  const list = Array.isArray(input.estudiantesNotas) ? input.estudiantesNotas : [];
   const mappedSACEData = list.map(item => {
-    const isPending = item.estado === "Pendiente" || item.notaFinal === null || item.notaFinal === undefined;
-    const isExempt = item.estado === "Exento";
-    const isAbsent = item.estado === "Ausente";
-
-    const notaOrd = isPending || isExempt || isAbsent ? null : parseFloat(item.calificacionOrdinaria || item.notaFinal || 0);
-    const notaRec = parseFloat(item.recuperacion || 0);
-    const notaFinalSACE = notaOrd !== null ? Math.max(notaOrd, notaRec) : (notaRec > 0 ? notaRec : null);
-
+    const state = String(item && item.estado || "").trim().toLowerCase();
+    const isExempt = state === "exento";
+    const isAbsent = state === "ausente";
+    const hasOrdinary = item && item.calificacionOrdinaria !== undefined && item.calificacionOrdinaria !== null && item.calificacionOrdinaria !== "";
+    const hasFinal = item && item.notaFinal !== undefined && item.notaFinal !== null && item.notaFinal !== "";
+    const isPending = state === "pendiente" || (!hasOrdinary && !hasFinal && !isExempt && !isAbsent);
+    const ordinaryRaw = hasOrdinary ? item.calificacionOrdinaria : (hasFinal ? item.notaFinal : 0);
+    const ordinary = isPending || isExempt || isAbsent ? null : parseFloat(ordinaryRaw);
+    const recovery = item && item.recuperacion !== undefined && item.recuperacion !== null && item.recuperacion !== ""
+      ? parseFloat(item.recuperacion) : 0;
+    const finalScore = ordinary !== null && !isNaN(ordinary) ? Math.max(ordinary, isNaN(recovery) ? 0 : recovery) : null;
+    const ordinaryLabel = isPending ? "PENDIENTE" : (isExempt ? "EXENTO" : (isAbsent ? "AUSENTE" : ordinary));
+    const finalLabel = isExempt ? "EXENTO" : (isAbsent ? "AUSENTE" : (finalScore !== null ? finalScore : "PENDIENTE"));
     return {
-      identidad: item.identidad || item.userId,
-      nombreAlumno: item.nombre || "Estudiante",
-      grado: grado,
-      seccion: seccion,
-      asignatura: asignatura,
-      parcial: parcial || "Primer Parcial",
-      calificacionOrdinaria: isPending ? "PENDIENTE" : (isExempt ? "EXENTO" : (isAbsent ? "AUSENTE" : notaOrd)),
-      recuperacion: notaRec > 0 ? notaRec : "",
-      resultadoFinalSACE: notaFinalSACE !== null ? notaFinalSACE : "PENDIENTE",
-      estadoAprobacion: notaFinalSACE !== null ? (notaFinalSACE >= 70 ? "APROBADO" : "REPROBADO") : "PENDIENTE"
+      identidad: item && (item.identidad || item.userId) || "",
+      nombreAlumno: item && item.nombre || "Estudiante",
+      grado: grado, seccion: seccion, asignatura: asignatura, parcial: parcial || "Primer Parcial",
+      calificacionOrdinaria: ordinaryLabel,
+      recuperacion: recovery > 0 ? recovery : "",
+      resultadoFinalSACE: finalLabel,
+      estadoAprobacion: finalScore !== null ? (finalScore >= 70 ? "APROBADO" : "REPROBADO") :
+        (isExempt ? "EXENTO" : (isAbsent ? "AUSENTE" : "PENDIENTE"))
     };
   });
-
   return {
-    status: "success",
-    anoLectivo: anoLectivo || new Date().getFullYear(),
-    grado: grado,
-    seccion: seccion,
-    asignatura: asignatura,
-    registrosCompletados: mappedSACEData.length,
-    datosReporteSACE: mappedSACEData,
-    message: "Archivo de calificaciones SACE generado preservando fórmulas, estructura e identidades oficiales."
+    status: "success", anoLectivo: anoLectivo || new Date().getFullYear(), grado: grado, seccion: seccion,
+    asignatura: asignatura, registrosCompletados: mappedSACEData.length, datosReporteSACE: mappedSACEData,
+    message: "Archivo de calificaciones SACE generado preservando pendientes, ausentes y exentos sin convertirlos en cero."
   };
 }
-
 function validateSACETemplateFile(payload) {
   const { nombreArchivo, grado, seccion, asignatura, parcial, columnasData, filasData } = payload || {};
   if (!nombreArchivo) throw new Error("nombreArchivo es requerido para validación SACE.");
