@@ -3240,3 +3240,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-222 / TASK-502 | C1.922] Hallazgos: bookAppointment aceptaba solicitanteId falsificable y updateAppointmentStatus mutaba por citaId sin ownership. Corrección: actor autenticado, solicitante/estudiante contextual, assertRecordOwnership para staff, destinatario o scope para update, cita única y ScriptLock compartido. Contrato Node/sintaxis PASS. Pendiente validar solicitadoA institucional y transiciones de estado.
+
+
+[2026-11-21 | AUD-NG-222 / TASK-502 | C1.923] Hallazgo: getDepartmentalWorkInbox confiaba en departamento/authRole del payload y podía consultar bandejas ajenas. Corrección: identity/scope institucional; institutionWide para consulta global; ámbito departamental exige expediente único y assertRecordOwnership READ; parámetros cliente ignorados en ámbito departamental; metadata de respuesta desde rol verificado. Contrato Node/syntax PASS. Pendiente getAdministrativeRequests y validación de destinatarios.

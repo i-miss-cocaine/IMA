@@ -6298,3 +6298,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Workflows complementarios del commit 95e2ca36: Academic, Task, Identity, UI, Hierarchical, SACE y Accounting Import SUCCESS. Lock probado en harness Node; concurrencia real Apps Script NOT RUN.
 - Pendiente: getDepartmentalWorkInbox confía en departamento/authRole del cliente; getAdministrativeRequests requiere revisión de scope; solicitadoA necesita validación de destinatario institucional; sendInternalMessage requiere relación/recipient para conversaciones nuevas.
 - Estado: TASK-502/TASK-506 siguen En ejecución. Siguiente: corregir inbox departamental y solicitudes administrativas.
+
+
+### Continuidad C1.923 — AUD-NG-222 / TASK-502 (sin cierre)
+- getDepartmentalWorkInbox exige identidad y scope institucional. institutionWide puede listar global o filtrar por asignado exacto; scope departamental ignora departamento/authRole del cliente y exige expediente único + assertRecordOwnership EXPEDIENTE_ESTUDIANTE/READ. Solicitudes sin estudiante verificable quedan fuera. Respuesta conserva forma y devuelve metadata de rol verificado; lectura no crea hojas.
+- Contrato Node integrado: parámetro departamento falsificado, aislamiento por expediente, denegación sin ownership, filtro exacto institutionWide, identidad/scope ausentes y hoja ausente.
+- GitHub Actions run 44951251842: contrato nuevo paso 92 PASS; USER 82–91, academic ownership 93–102, integridad 104–106 y syntax 107 PASS. Workflow agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
+- Workflows complementarios de los commits 50e5b19b/3763344b: Identity, Hierarchical, Accounting Import, SACE, Task, UI y Academic SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
+- Pendiente: getAdministrativeRequests puede ser global sin scope; solicitadoA de citas requiere validación de usuario institucional activo; destinatario/relación en conversación nueva; transiciones de estado.
+- Estado: TASK-502/TASK-506 siguen En ejecución. Siguiente: limitar getAdministrativeRequests con scope/ownership.

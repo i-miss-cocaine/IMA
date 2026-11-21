@@ -1019,3 +1019,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502/TASK-506 permanecen En ejecución.
 - Siguiente: corregir inbox departamental y solicitudes administrativas.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.923 — AUD-NG-222 / TASK-502
+- USER getDepartmentalWorkInbox deriva el ámbito de la identidad/scope verificados; solicitudes departamentales requieren expediente y ownership READ; parámetros departamento/authRole del cliente no amplían permisos.
+- Contrato Node y syntax-check PASS; USER 82–92, academic ownership 93–102 e integridad 104–106 PASS. Phase22 sigue fallando por configureSchoolDocumentTemplate.
+- Apps Script/Sheets real, staging y concurrencia interproyecto NOT RUN. BETA-FUNC-128 pendiente.
+- Pendiente: getAdministrativeRequests sin scope/ownership verificado; solicitadoA de citas y destinatario de mensajes nuevos; transiciones de estado.
+- TASK-502/TASK-506 permanecen En ejecución.
+- Siguiente: revisar getAdministrativeRequests y filtrar por actor/scope/ownership.
+===============================================================================

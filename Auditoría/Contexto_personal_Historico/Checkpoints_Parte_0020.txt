@@ -1190,3 +1190,42 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
 - Siguiente: derivar el ámbito de getDepartmentalWorkInbox desde contexto verificado y revisar getAdministrativeRequests.
 ===============================================================================
+
+
+===============================================================================
+### C1.923 — IMA-EXEC-20261121-AUD-NG-222-USER-DEPARTMENTAL-INBOX-94
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.922, commit documental 53a1811004ed1eeae9ba99956ebe1900ac55f699. HEAD de implementación antes del checkpoint: 7c3edc7fd9dcd8efbf60d323449f4edbf99391f0.
+- Commits de esta unidad: 50e5b19b (scope del inbox departamental); a461e1a0 (contrato Node); 6613b660 (workflow y syntax-check); 3763344b (metadata de respuesta desde rol verificado); 7c3edc7f (assertion de metadata en test).
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección
+- getDepartmentalWorkInbox confiaba en departamento/authRole del cliente y podía devolver solicitudes de otra bandeja; además usaba getOrCreateSheet durante lectura.
+- Corrección: exige identidad verificada y getInstitutionalDepartmentScope_. Con institutionWide puede listar globalmente o filtrar por departamento exacto; con scope departamental ignora departamento/authRole del payload y exige resolver el estudiante a expediente único más assertRecordOwnership EXPEDIENTE_ESTUDIANTE/READ. Solicitudes sin estudiante verificable se excluyen para scope departamental. La metadata departamento de respuesta usa el rol verificado.
+- La lectura usa getSheetByName y no crea SolicitudesTramites.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-departmental-work-inbox-scope.test.js (nuevo)
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- GitHub Actions Department Scope Contract, run 44951251842, Node.js 24.22.3: contrato USER departmental work inbox scope (paso 92) PASS; contratos USER 82–91 PASS; ownership académico 93–102 PASS; integridad binaria/adjuntos 104–106 PASS; syntax-check (107) PASS.
+- El workflow agregado termina FAILURE únicamente en Phase22 document management suite, paso 108: missing function configureSchoolDocumentTemplate en tests/regression/phase22-document-management-suite-contract.test.js.
+- En los commits de código 50e5b19b/3763344b: Identity mapping, Hierarchical Configuration, Accounting Import Preflight, SACE, Task-Service, UI Accessibility y Academic-Service — SUCCESS. Department Scope falla solo en Phase22.
+- Node.js y node --check ejecutados en GitHub Actions; CLI local independiente NOT RUN. Apps Script/Sheets real, staging y concurrencia interproyecto NOT RUN. BETA-FUNC-128 pendiente de beta.
+
+### Hallazgos abiertos para la siguiente iteración
+- getAdministrativeRequests puede permitir listado global de solicitudes a roles staff sin scope/ownership; requiere revisión.
+- bookAppointment no valida todavía que solicitadoA sea un usuario institucional activo/autorizado.
+- sendInternalMessage necesita validar destinatario y relación de estudiante al iniciar una conversación nueva.
+- Las mutaciones de citas ya verifican actor y ownership, pero faltan transiciones de estado permitidas según la normativa de citas.
+
+### Estado y siguiente acción elegible
+- La bandeja departamental queda limitada por expediente/ámbito institucional; los filtros del cliente ya no amplían acceso.
+- AUD-NG-222 / TASK-502 sigue En ejecución; falta revisar getAdministrativeRequests, destinatarios y bindings restantes en ACADEMIC/ACCOUNTING/TASK/EXAM.
+- TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
+- Siguiente: revisar y limitar getAdministrativeRequests mediante scope/ownership, sin confiar en userId/estudianteId del cliente.
+===============================================================================
