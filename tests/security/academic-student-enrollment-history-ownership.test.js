@@ -82,6 +82,7 @@ const context={
    const actor=request.identity||{},role=String(actor.role||"").toUpperCase(),expId=String(exp[0]);
    if(["ESTUDIANTE","ALUMNO"].includes(role))return {authorized:actor.userId=== (expId==="EXP-1"?"STU-1":"STU-2"),accessType:"SELF"};
    if(["TUTOR","PADRE","MADRE","RESPONSABLE"].includes(role)){
+     if(!sheets.RelacionesFamiliares)return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
      const linked=primaryRelationRows.slice(1).filter(row=>row[1]===expId&&row[2]===actor.userId&&row[4]==="Verificada");
      if(linked.length!==1)return {authorized:false,code:"RESOURCE_SCOPE_DENIED"};
      let permissions;
