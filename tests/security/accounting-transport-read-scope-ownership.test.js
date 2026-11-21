@@ -89,6 +89,7 @@ function makeHarness(options) {
   const names = [
     "transportRows_",
     "transportRowsPrefix_",
+    "transportRowsPrefix_",
     "transportEmployeeIdsForUser_",
     "getTransportRouteIdsForScope_",
     "resolveTransportAccessScope_",
