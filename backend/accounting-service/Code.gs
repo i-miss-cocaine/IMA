@@ -12060,7 +12060,26 @@ function transportEnsureBillingSchema_(ss){
  return {assignments:assignments,tariffs:tariffs,concepts:concepts,serviceTariffs:serviceTariffs,charges:charges};
 }
 
-function transportBillingActor_(p){const actor=getVerifiedAccountingIdentity_(p||{});if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");const role=String(actor.role||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(["ADMINISTRADOR","DIRECTOR","SUBDIRECTOR","CONTADOR"].indexOf(role)===-1)throw new Error("TRANSPORT_BILLING_ROLE_NOT_ALLOWED");return actor;}
+function transportBillingActor_(p, action) {
+  const actor = getVerifiedAccountingIdentity_(p || {});
+  if (!actor || actor.authorized !== true) throw new Error(actor && actor.code || "VERIFIED_IDENTITY_REQUIRED");
+  const role = String(actor.role || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (["ADMINISTRADOR", "DIRECTOR", "SUBDIRECTOR", "CONTADOR"].indexOf(role) === -1) {
+    throw new Error("TRANSPORT_BILLING_ROLE_NOT_ALLOWED");
+  }
+  if (action) {
+    const permission = validateRolePermission(actor, String(action));
+    if (!permission || permission.authorized !== true) throw new Error(permission && permission.code || "ROLE_PERMISSION_DENIED");
+  }
+  return actor;
+}
+
+function transportAssertStudentOwnershipForMutation_(ss, payload, actor, studentUserId, operation) {
+  const scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
+  if (!scope || scope.valid !== true) throw new Error(scope && scope.code || "RESOURCE_SCOPE_DENIED");
+  assertMonthlyChargeStudentOwnership_(ss, scope, [studentUserId], operation || "WRITE");
+  return scope;
+}
 
 function transportNormalizeMode_(v){const s=String(v||"COMPLETA").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z]/g,"");if(["COMPLETA","IDAIVUELTA","FULL","FULLROUNDTRIP"].indexOf(s)!==-1)return "COMPLETA";if(["MEDIA","MEDIATARIFA","HALF","IDA","VUELTA"].indexOf(s)!==-1)return "MEDIA";throw new Error("TRANSPORT_BILLING_MODE_INVALID");}
 
@@ -12323,8 +12342,51 @@ function generateTransportMonthlyCharges(payload){
  const p=payload||{},year=p.ano||p.anoLectivo,month=normalizeMonthlyChargeMonth_(p.mesPeriodo||p.mes),lock=LockService.getScriptLock();if(!lock.tryLock(30000))return {status:"error",code:"LOCK_TIMEOUT"};try{transportBillingActor_(p);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),s=transportEnsureBillingSchema_(ss),rows=s.assignments.getDataRange().getValues().slice(1),students=[...new Set(rows.map(r=>String(r[2]||"").trim()).filter(Boolean))],snapshot=s.charges.getDataRange().getValues().map(r=>r.slice());let created=0,adjusted=0,missing=0,total=0;try{students.forEach(id=>{const r=transportRecalculateStudentMonthlyChargeLocked_(ss,id,year,month);if(r.missingTariff){missing+=r.missingTariff;return;}if(r.created)created++;if(r.adjusted)adjusted++;total+=Number(r.importe||0);});}catch(e){if(snapshot.length)s.charges.getRange(1,1,snapshot.length,snapshot[0].length).setValues(snapshot);while(s.charges.getLastRow()>snapshot.length)s.charges.deleteRow(s.charges.getLastRow());throw e;}return {status:missing?"warning":"success",ano:String(year),mesPeriodo:month,estudiantes:students.length,cargosCreados:created,ajustesCreados:adjusted,sinTarifa:missing,totalImporte:Math.round(total*100)/100};}finally{lock.releaseLock();}
 }
 
-function cancelStudentTransportAssignment(payload){
- const p=payload||{},id=String(p.asignacionTranspId||p.assignmentId||"").trim();if(!id)throw new Error("TRANSPORT_ASSIGNMENT_ID_REQUIRED");const lock=LockService.getScriptLock();lock.waitLock(15000);try{transportBillingActor_(p);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),s=transportEnsureBillingSchema_(ss),data=s.assignments.getDataRange().getValues(),idx=data.findIndex((r,i)=>i>0&&String(r[0]||"").trim()===id);if(idx<0)throw new Error("TRANSPORT_ASSIGNMENT_NOT_FOUND");const original=data[idx].slice(),state=String(original[5]||"").toLowerCase();if(["cancelled","cancelada"].indexOf(state)!==-1)return {status:"success",idempotent:true,asignacionTranspId:id};if(state!=="active"&&state!=="activa")throw new Error("TRANSPORT_ASSIGNMENT_NOT_ACTIVE");const date=transportParseDate_(p.fechaCancelacion)||new Date(),start=transportParseDate_(original[10]||original[6]);if(p.fechaCancelacion&&!transportParseDate_(p.fechaCancelacion))throw new Error("TRANSPORT_CANCELLATION_DATE_INVALID");if(start&&date<start)throw new Error("TRANSPORT_CANCELLATION_BEFORE_START");const chargeSnapshot=s.charges.getDataRange().getValues().map(r=>r.slice());try{const updated=original.slice();updated[5]="cancelled";updated[11]=date;updated[13]=date;s.assignments.getRange(idx+1,1,1,updated.length).setValues([updated]);const billing=transportRecalculateStudentMonthlyChargeLocked_(ss,String(original[2]),date.getFullYear(),date.getMonth()+1);return {status:billing.missingTariff?"warning":"success",asignacionTranspId:id,fechaCancelacion:date.toISOString(),facturacion:billing};}catch(e){s.assignments.getRange(idx+1,1,1,original.length).setValues([original]);if(chargeSnapshot.length)s.charges.getRange(1,1,chargeSnapshot.length,chargeSnapshot[0].length).setValues(chargeSnapshot);while(s.charges.getLastRow()>chargeSnapshot.length)s.charges.deleteRow(s.charges.getLastRow());throw e;}}finally{lock.releaseLock();}
+function cancelStudentTransportAssignment(payload) {
+  const p = payload || {}, id = String(p.asignacionTranspId || p.assignmentId || "").trim();
+  if (!id) throw new Error("TRANSPORT_ASSIGNMENT_ID_REQUIRED");
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    const actor = transportBillingActor_(p, "cancelStudentTransportAssignment");
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const schema = transportEnsureBillingSchema_(ss);
+    const data = schema.assignments.getDataRange().getValues();
+    const matches = [];
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0] || "").trim() === id) matches.push({ index: i, row: data[i] });
+    }
+    if (!matches.length) throw new Error("TRANSPORT_ASSIGNMENT_NOT_FOUND");
+    if (matches.length !== 1) throw new Error("TRANSPORT_ASSIGNMENT_AMBIGUOUS");
+    const idx = matches[0].index, original = matches[0].row.slice();
+    transportAssertStudentOwnershipForMutation_(ss, p, actor, String(original[2] || "").trim(), "WRITE");
+    const state = String(original[5] || "").toLowerCase();
+    if (["cancelled", "cancelada"].indexOf(state) !== -1) {
+      return { status: "success", idempotent: true, asignacionTranspId: id };
+    }
+    if (state !== "active" && state !== "activa") throw new Error("TRANSPORT_ASSIGNMENT_NOT_ACTIVE");
+    const date = transportParseDate_(p.fechaCancelacion) || new Date();
+    const start = transportParseDate_(original[10] || original[6]);
+    if (p.fechaCancelacion && !transportParseDate_(p.fechaCancelacion)) throw new Error("TRANSPORT_CANCELLATION_DATE_INVALID");
+    if (start && date < start) throw new Error("TRANSPORT_CANCELLATION_BEFORE_START");
+    const chargeSnapshot = schema.charges.getDataRange().getValues().map(row => row.slice());
+    try {
+      const updated = original.slice();
+      updated[5] = "cancelled";
+      updated[11] = date;
+      updated[13] = date;
+      schema.assignments.getRange(idx + 1, 1, 1, updated.length).setValues([updated]);
+      const billing = transportRecalculateStudentMonthlyChargeLocked_(ss, String(original[2]), date.getFullYear(), date.getMonth() + 1);
+      return { status: billing.missingTariff ? "warning" : "success", asignacionTranspId: id, fechaCancelacion: date.toISOString(), facturacion: billing };
+    } catch (error) {
+      schema.assignments.getRange(idx + 1, 1, 1, original.length).setValues([original]);
+      if (chargeSnapshot.length) schema.charges.getRange(1, 1, chargeSnapshot.length, chargeSnapshot[0].length).setValues(chargeSnapshot);
+      while (schema.charges.getLastRow() > chargeSnapshot.length) schema.charges.deleteRow(schema.charges.getLastRow());
+      throw error;
+    }
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function assignStudentTransport(payload) {
@@ -12342,7 +12404,9 @@ function assignStudentTransport(payload) {
   }
 
   try {
+    const actor = transportBillingActor_(payload, "assignStudentTransport");
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    transportAssertStudentOwnershipForMutation_(ss, payload, actor, String(estudianteUserId).trim(), "WRITE");
     getOrCreateTransportVehiclesCatalog(ss);
     const billingSchema=transportEnsureBillingSchema_(ss);
 
@@ -12351,15 +12415,22 @@ function assignStudentTransport(payload) {
     const vehSheet = getOrCreateSheet(ss, "TransporteVehiculos");
 
     const rutasData = rutaSheet.getDataRange().getValues().slice(1);
-    const targetRuta = rutasData.find(r => String(r[0]).trim() === String(rutaId).trim());
+    const routeMatches = rutasData.filter(r => String(r[0] || "").trim() === String(rutaId).trim());
+    if (routeMatches.length > 1) return { status: "error", code: "ROUTE_AMBIGUOUS" };
+    const targetRuta = routeMatches[0];
     if (!targetRuta) {
       return { status: "error", code: "ROUTE_NOT_FOUND", message: `Ruta de transporte '${rutaId}' no encontrada.` };
     }
 
-    const unidadCod = String(targetRuta[2]).trim();
+    if (["active", "activa"].indexOf(String(targetRuta[6] || "").trim().toLowerCase()) === -1) return { status: "error", code: "ROUTE_NOT_ACTIVE" };
+    const unidadCod = String(targetRuta[2] || "").trim();
     const vehRows = vehSheet.getDataRange().getValues().slice(1);
-    const targetVeh = vehRows.find(v => String(v[1]).trim() === unidadCod);
+    const vehicleMatches = vehRows.filter(v => String(v[1] || "").trim() === unidadCod);
+    if (vehicleMatches.length > 1) return { status: "error", code: "TRANSPORT_VEHICLE_AMBIGUOUS" };
+    const targetVeh = vehicleMatches[0];
+    if (targetVeh && targetVeh[6] && ["active", "activa"].indexOf(String(targetVeh[6]).trim().toLowerCase()) === -1) return { status: "error", code: "TRANSPORT_VEHICLE_NOT_ACTIVE" };
     const capAutorizada = targetVeh ? parseInt(targetVeh[5] || 0, 10) : parseInt(targetRuta[4] || 25, 10);
+    if (!Number.isFinite(capAutorizada) || capAutorizada < 1) return { status: "error", code: "TRANSPORT_CAPACITY_INVALID" };
 
     const asgnData = asgnSheet.getDataRange().getValues().slice(1);
 
