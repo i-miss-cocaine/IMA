@@ -18119,6 +18119,7 @@ function recordStudentTransfer(payload) {
     // Actualizar EstadoExpediente a 'Trasladado'
     if (expRowIdx !== -1) {
       const curState = String(expData[expRowIdx][7] || "Activo").trim();
+      if (curState !== "Trasladado" && !(ALLOWED_STUDENT_LIFECYCLE_TRANSITIONS[curState] || []).includes("Trasladado")) throw new Error("STUDENT_LIFECYCLE_TRANSITION_DENIED");
       expSheet.getRange(expRowIdx + 1, 8).setValue("Trasladado");
       expSheet.getRange(expRowIdx + 1, 10).setValue(now);
       expSheet.getRange(expRowIdx + 1, 11).setValue(`Traslado externo a: ${institucionDestino || 'Otra Institución'}. Motivo: ${motivo || 'N/A'}`);
@@ -18154,7 +18155,7 @@ function recordStudentTransfer(payload) {
 function recordStudentWithdrawal(payload) {
   const request = payload || {};
   const { expedienteId: requestedExpedienteId, userId: requestedUserId, anolectivo, motivo, tipoRetiro, fechaRetiroEfectiva } = request;
-  if (!expedienteId && !userId) throw new Error("expedienteId o userId requerido.");
+  if (!requestedExpedienteId && !requestedUserId) throw new Error("expedienteId o userId requerido.");
 
   const lock = LockService.getScriptLock();
   const success = lock.tryLock(10000);
@@ -18193,6 +18194,7 @@ function recordStudentWithdrawal(payload) {
     // Actualizar EstadoExpediente a 'Retirado'
     if (expRowIdx !== -1) {
       const curState = String(expData[expRowIdx][7] || "Activo").trim();
+      if (curState !== "Retirado" && !(ALLOWED_STUDENT_LIFECYCLE_TRANSITIONS[curState] || []).includes("Retirado")) throw new Error("STUDENT_LIFECYCLE_TRANSITION_DENIED");
       expSheet.getRange(expRowIdx + 1, 8).setValue("Retirado");
       expSheet.getRange(expRowIdx + 1, 10).setValue(now);
       expSheet.getRange(expRowIdx + 1, 11).setValue(`Retiro (${tipoRetiro || 'Definitivo'}). Motivo: ${motivo || 'N/A'}`);
@@ -18251,6 +18253,7 @@ function processStudentReentry(payload) {
       if (!sExpId) sExpId = String(expData[expRowIdx][0]).trim();
       if (!sUserId) sUserId = String(expData[expRowIdx][1]).trim();
       const curState = String(expData[expRowIdx][7] || "Retirado").trim();
+      if (curState !== "Activo" && !(ALLOWED_STUDENT_LIFECYCLE_TRANSITIONS[curState] || []).includes("Activo")) throw new Error("STUDENT_LIFECYCLE_TRANSITION_DENIED");
       expSheet.getRange(expRowIdx + 1, 8).setValue("Activo");
       expSheet.getRange(expRowIdx + 1, 10).setValue(new Date());
       recordEntityChangeLog("ExpedienteEstudiante", sExpId, curState, "Activo", "STUDENT_REENTRY", actor.userId, "MOV-" + Date.now());
@@ -18394,6 +18397,7 @@ function processStudentGraduation(payload) {
     if (curState === "Graduado") {
       return { status: "success", message: "El estudiante ya contaba con la condición de Graduado." };
     }
+    if (!(ALLOWED_STUDENT_LIFECYCLE_TRANSITIONS[curState] || []).includes("Graduado")) throw new Error("STUDENT_LIFECYCLE_TRANSITION_DENIED");
 
     // Actualizar matrículas activas a 'Graduada'
     const matSheet = getOrCreateSheet(ss, "Matriculas");
