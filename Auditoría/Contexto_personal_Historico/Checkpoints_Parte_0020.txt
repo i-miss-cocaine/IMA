@@ -1148,3 +1148,45 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
 - Siguiente: validar solicitante y participante en bookAppointment/updateAppointmentStatus; después derivar el ámbito de getDepartmentalWorkInbox sin confiar en payload.
 ===============================================================================
+
+
+===============================================================================
+### C1.922 — IMA-EXEC-20261121-AUD-NG-222-USER-APPOINTMENT-MUTATIONS-93
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.921, commit documental c052ac369b0faae573f55a669fd48ec428637a1f. HEAD de implementación antes del checkpoint: 9588a205e7ce1dfc69b7a7c39dc381346835a85b.
+- Commits de esta unidad: 95e2ca36 (ownership de booking/update y locks); 6a61c052 (contrato Node); 2a4b2589 (corrección de rol en test); 9588a205 (workflow, syntax-check y filtro de paths).
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección
+- bookAppointment aceptaba solicitanteId controlado por cliente y podía asociar estudiante sin comprobar relación/ownership.
+- updateAppointmentStatus modificaba por citaId sin verificar participante ni scope.
+- Corrección: identidad verificada; solicitanteId se vincula a actor; estudiante propio o relación contextual de tutor con permiso académico; personal departamental requiere expediente único y assertRecordOwnership READ; institutionWide conserva alcance global. updateAppointmentStatus exige ser destinatario de la cita o tener scope institucional/departamental sobre el expediente; citaId debe ser único.
+- bookAppointment y updateAppointmentStatus comparten ScriptLock; UUID evita colisión de cita; update no crea hoja inexistente. getGuardianPermissionKeyForAction_ clasifica appointment como permisoAcademico.
+- Pendiente: validar que solicitadoA sea destinatario institucional autorizado (no solo un ID distinto) y definir transiciones válidas de estado según la normativa de citas.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-appointment-mutations-ownership.test.js (nuevo)
+- tests/security/user-appointment-mutations-ownership.test.js (ajuste de rol de prueba)
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- GitHub Actions Department Scope Contract, run 44950868005, Node.js 24.22.3: contrato USER appointment bookings scope (paso 90) PASS; appointment mutations ownership (paso 91) PASS; contratos USER 82–89 PASS; ownership académico 92–101 PASS; integridad binaria/adjuntos 103–105 PASS; syntax-check (106) PASS.
+- El workflow agregado termina FAILURE únicamente en Phase22 document management suite, paso 107: missing function configureSchoolDocumentTemplate en tests/regression/phase22-document-management-suite-contract.test.js. Los contratos focalizados previos pasan.
+- En el commit de código 95e2ca36: Academic-Service, Task-Service, Identity mapping, UI Accessibility, Hierarchical Configuration, SACE y Accounting Import Preflight — SUCCESS. Department Scope falla solo en Phase22.
+- Node.js y node --check ejecutados en GitHub Actions; CLI local independiente NOT RUN. Lock probado con harness Node, concurrencia real Apps Script NOT RUN. Apps Script/Sheets real y staging NOT RUN. BETA-FUNC-128 pendiente de beta.
+
+### Hallazgos abiertos para la siguiente iteración
+- getDepartmentalWorkInbox confía en departamento/authRole enviados por el cliente.
+- getAdministrativeRequests requiere revisar si el listado global de staff respeta scope institucional/ownership.
+- solicitadoA en bookAppointment requiere validar destinatario institucional activo/autorizado.
+- sendInternalMessage requiere validar destinatario y relación de estudiante al crear una conversación nueva.
+
+### Estado y siguiente acción elegible
+- Lectura, creación y actualización de citas ahora están vinculadas al actor/ownership y serializadas con ScriptLock.
+- AUD-NG-222 / TASK-502 sigue En ejecución; faltan inbox departamental, solicitudes administrativas, destinatario de citas/mensajes y bindings action/resource en ACADEMIC/ACCOUNTING/TASK/EXAM.
+- TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
+- Siguiente: derivar el ámbito de getDepartmentalWorkInbox desde contexto verificado y revisar getAdministrativeRequests.
+===============================================================================

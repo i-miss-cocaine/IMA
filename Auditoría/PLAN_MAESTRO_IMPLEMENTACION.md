@@ -6287,3 +6287,14 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Workflows complementarios del commit 54005cbc: Academic, Task, Identity, UI, Hierarchical, SACE y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
 - Pendiente: bookAppointment y updateAppointmentStatus no validan solicitante/participante; getDepartmentalWorkInbox confía en departamento/authRole del payload; sendInternalMessage necesita revisar destinatario y estudiante asociado.
 - Estado: TASK-502/TASK-506 siguen En ejecución. Siguiente: asegurar mutaciones de citas y luego inbox departamental.
+
+
+### Continuidad C1.922 — AUD-NG-222 / TASK-502 (sin cierre)
+- bookAppointment exige solicitante igual al actor verificado; estudiante asociado requiere ser el propio actor, relación tutor con permiso académico o ownership institucional/departamental. Usa ScriptLock y UUID.
+- updateAppointmentStatus resuelve cita única y exige destinatario asignado o scope institucional/departamental del expediente. Usa el mismo ScriptLock.
+- getGuardianPermissionKeyForAction_ incluye appointment en permisoAcademico.
+- Contrato Node integrado: requester falsificado, estudiante propio/tutor, tutor sin contexto, staff con/sin ownership, lock ocupado, destinatario de cita, requester no autorizado, scope departamental/global y cita duplicada.
+- GitHub Actions run 44950868005: contratos USER citas pasos 90–91 PASS; USER 82–89, ownership académico 92–101, integridad binaria/adjuntos 103–105 y syntax-check 106 PASS. Workflow agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
+- Workflows complementarios del commit 95e2ca36: Academic, Task, Identity, UI, Hierarchical, SACE y Accounting Import SUCCESS. Lock probado en harness Node; concurrencia real Apps Script NOT RUN.
+- Pendiente: getDepartmentalWorkInbox confía en departamento/authRole del cliente; getAdministrativeRequests requiere revisión de scope; solicitadoA necesita validación de destinatario institucional; sendInternalMessage requiere relación/recipient para conversaciones nuevas.
+- Estado: TASK-502/TASK-506 siguen En ejecución. Siguiente: corregir inbox departamental y solicitudes administrativas.
