@@ -4447,3 +4447,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-21] C1.918 / AUD-NG-222-TASK-502 — USER getScheduleChangeNotificationLogs y getNotificationAuditLogs ahora exigen identity/scope institutionWide; auditoría usa permiso dinámico para roles no administrativos. Filtro horario exacto, lectura sin crear hojas. Contrato Node y syntax PASS; contratos USER 82–87 y ownership académico 88–90 PASS. Department Scope agregado sigue FAIL únicamente en Phase22/configureSchoolDocumentTemplate. Workflows Academic, Hierarchical, Task, SACE, Identity y Accounting Import SUCCESS. Sin Apps Script/Sheets real ni concurrencia interproyecto. TASK-502/TASK-506 siguen abiertos.
+
+
+[2026-11-21] C1.919 / AUD-NG-222-TASK-502 — USER getInternalMessages/getInternalConversations ahora exige identidad verificada y limita cada fila a remitente/destinatario; ignora userId del cliente y evita crear la hoja al leer. Contrato Node y syntax PASS; contratos USER 82–88 y ownership académico 89–90 PASS. Department Scope agregado sigue FAIL solo en Phase22/configureSchoolDocumentTemplate. Workflows Task, Academic, Identity, SACE, UI, Hierarchical y Accounting Import SUCCESS. Sin Apps Script/Sheets real ni concurrencia interproyecto. Hallazgos siguientes: sendInternalMessage, closeConversationThread, getDepartmentalWorkInbox y getAppointmentBookings.

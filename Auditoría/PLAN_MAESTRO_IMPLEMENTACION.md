@@ -6260,3 +6260,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - GitHub Actions run 44949449309: contratos USER 82–87 y ownership académico 88–90 PASS; syntax-check 102 PASS. El workflow agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
 - Workflows complementarios del commit bc11bd22: Academic-Service, Hierarchical Configuration, Task-Service, SACE, Identity y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
 - Estado: incremento USER verificado; TASK-502/TASK-506 continúan En ejecución. Siguiente: revisar IDOR de getInternalMessages/getInternalConversations y sender/participant scope de sendInternalMessage/closeConversationThread; luego inbox departamental y servicios restantes.
+
+
+### Continuidad C1.919 — AUD-NG-222 / TASK-502 (sin cierre)
+- getInternalMessages exige identidad verificada y solo devuelve filas donde el actor es remitente o destinatario; ignora userId del cliente. getInternalConversations hereda el control. Lectura no crea hoja.
+- Contrato Node integrado al workflow: consulta de conversación propia, conversación ajena, userId falsificado, listado propio, identidad ausente y hoja ausente.
+- GitHub Actions run 44949766331: contrato nuevo USER paso 88 PASS; contratos USER 82–87, ownership académico 89–90 y syntax-check 103 PASS. Workflow agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
+- Workflows complementarios del commit 647365b3: Task-Service, Academic-Service, Identity, SACE, UI, Hierarchical Configuration y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
+- Hallazgos pendientes: sendInternalMessage permite remitenteId falsificado; closeConversationThread no valida participación; getDepartmentalWorkInbox confía en departamento del cliente; getAppointmentBookings puede devolver todas las citas sin filtro.
+- Estado: TASK-502/TASK-506 continúan En ejecución. Siguiente: asegurar mutaciones de conversación y luego inbox departamental/citas; continuar auditoría de ACADEMIC/ACCOUNTING/TASK/EXAM.

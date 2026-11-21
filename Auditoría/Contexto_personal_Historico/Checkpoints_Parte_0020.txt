@@ -1030,3 +1030,42 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
 - Siguiente: cerrar IDOR de getInternalMessages/getInternalConversations y revisar remitente/participantes en sendInternalMessage/closeConversationThread; luego inbox departamental.
 ===============================================================================
+
+
+===============================================================================
+### C1.919 — IMA-EXEC-20261121-AUD-NG-222-USER-INTERNAL-MESSAGES-90
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.918, commit documental d0c34c8774f5c43c14fe3d3239d3932814c33219. HEAD de implementación antes del checkpoint: a0afcf251337243d4c2c922d4c5912ce0d8f43e3.
+- Commits de esta unidad: 647365b3 (participación obligatoria en mensajes internos); 6f923f2d (contrato Node); a0afcf25 (workflow, syntax-check y filtro de paths).
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección
+- Hallazgo confirmado: getInternalMessages permitía que conversacionId devolviera todos los mensajes de un hilo sin comprobar si el actor era remitente o destinatario. El userId del payload también podía seleccionar mensajes de terceros.
+- Corrección: exige _verifiedUserId y _verifiedRole; ignora userId del cliente; cada mensaje debe incluir al actor verificado como remitente o destinatario; conversacionId solo filtra dentro de ese conjunto. getInternalConversations delega en el mismo control.
+- La lectura usa getSheetByName y no crea ConversacionesMensajes cuando no existe.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-internal-messages-participant-ownership.test.js (nuevo)
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- GitHub Actions Department Scope Contract, run 44949766331, Node.js 24.22.3: contrato USER internal messages participant ownership (paso 88) PASS; USER global notification scope (87), logs de procedimientos/admisiones (85–86), roster/attendance/review (82–84), ownership académico (89–90) PASS; syntax-check (103) PASS.
+- El workflow agregado termina FAILURE únicamente en Phase22 document management suite, paso 104: missing configureSchoolDocumentTemplate. No se reportaron fallos en los contratos focalizados anteriores.
+- En el commit de código 647365b3: Task-Service, Academic-Service, Identity mapping, SACE, UI Accessibility, Hierarchical Configuration y Accounting Import Preflight — SUCCESS. Department Scope falla solo en Phase22.
+- Node.js y node --check ejecutados en GitHub Actions; CLI local independiente NOT RUN. Apps Script/Sheets real, staging y concurrencia entre proyectos NOT RUN. BETA-FUNC-128 pendiente de beta.
+
+### Hallazgos abiertos para la siguiente iteración
+- sendInternalMessage acepta remitenteId del payload sin exigir que coincida con _verifiedUserId y no valida la pareja de participantes de una conversación existente.
+- closeConversationThread permite cerrar cualquier conversacionId sin validar participación/ownership.
+- getDepartmentalWorkInbox confía en departamento/authRole enviados por el cliente para filtrar solicitudes.
+- getAppointmentBookings puede devolver todas las citas cuando no se envían filtros; requiere comprobar permisos y scope antes de decidir si la consulta global es legítima.
+
+### Estado y siguiente acción elegible
+- Lectura de mensajes internos queda limitada a los participantes autenticados.
+- AUD-NG-222 / TASK-502 sigue En ejecución; faltan mutaciones de conversaciones, inbox/outbox/citas y completar action/resource bindings en ACADEMIC/ACCOUNTING/TASK/EXAM.
+- TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
+- Siguiente: validar remitente y pareja de participantes en sendInternalMessage; restringir closeConversationThread a participantes autorizados; después corregir inbox departamental.
+===============================================================================

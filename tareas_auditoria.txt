@@ -975,3 +975,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502/TASK-506 permanecen En ejecución.
 - Siguiente: revisar getInternalMessages/getInternalConversations, sendInternalMessage/closeConversationThread e inbox departamental.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.919 — AUD-NG-222 / TASK-502
+- USER: getInternalMessages/getInternalConversations limita resultados a mensajes donde el actor verificado es remitente o destinatario; userId del payload se ignora.
+- Contrato Node y syntax-check PASS en GitHub Actions; contratos USER 82–88 y ownership académico 89–90 PASS. Phase22 conserva fallo por configureSchoolDocumentTemplate.
+- Apps Script/Sheets real, staging y concurrencia interproyecto NOT RUN. BETA-FUNC-128 pendiente.
+- Hallazgos abiertos: remitente falsificable en sendInternalMessage; closeConversationThread sin ownership; getDepartmentalWorkInbox con departamento del cliente; getAppointmentBookings sin filtros puede ser global.
+- TASK-502/TASK-506 permanecen En ejecución.
+- Siguiente: cerrar mutaciones de conversaciones y revisar inbox/citas; continuar cinco servicios.
+===============================================================================
