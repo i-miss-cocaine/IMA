@@ -1229,3 +1229,45 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
 - Siguiente: revisar y limitar getAdministrativeRequests mediante scope/ownership, sin confiar en userId/estudianteId del cliente.
 ===============================================================================
+
+
+===============================================================================
+### C1.924 — IMA-EXEC-20261121-AUD-NG-222-USER-ADMIN-REQUEST-READ-SCOPE-95
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.923, commit documental 01d8801b6639ab3f7022fa0354652710cf29f047. HEAD de implementación antes del checkpoint: 6e5b456f8983c4f5284110b9a54b92bb126df5f9.
+- Commits de esta unidad: 068f92d0 (scope de solicitudes administrativas); fb0a87a4 (contrato Node); 7f0c133c (no-scope self-only); 2e85af7b (test anti-spoof); 4faab931 (workflow); d5502cf6 (revalidación de sesión); 03f729ef (test scope/session); 4eeef5eb (fixture Academic); 6e5b456f (fixture de lectura).
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección
+- getAdministrativeRequests permitía a roles de revisión consultar la cola completa por allowlist rígida y aceptaba userId/estudianteId del cliente sin scope de recurso.
+- Corrección: getUserVerifiedRole vuelve a verificar sesión y fija _verifiedUserId/_verifiedRole. Sin scope institucional, la consulta queda limitada al actor; para Estudiante/Alumno se fija también estudianteId al actor. Con scope departamental se exige expediente único y assertRecordOwnership EXPEDIENTE_ESTUDIANTE/READ; institutionWide permite cola global. Los filtros cliente solo restringen el conjunto autorizado.
+- La lectura usa getSheetByName y no crea hojas. Se preserva la sanitización de adjuntoUrl y los metadatos de integridad de adjuntos.
+- El test Academic existente se actualizó para representar explícitamente scope institutionWide de Secretaría; el test de persistencia de adjuntos ahora modela getSheetByName, sin restaurar getOrCreateSheet.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-administrative-requests-scope.test.js (nuevo)
+- tests/security/academic-absence-justification-canonical.test.js (fixture de scope institucional)
+- tests/security/file-attachment-persistence-contract.test.js (fixture de hoja existente/read-only)
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- GitHub Actions Department Scope Contract, run 44951918999, Node.js 24.22.3: contrato USER administrative requests scope (paso 93) PASS; USER 82–92 PASS; ownership académico 94–102 PASS; firma/adjuntos 103–107 PASS; syntax-check (108) PASS.
+- El único fallo es Phase22 document management suite, paso 109: configureSchoolDocumentTemplate no está implementada/definida y el contrato la requiere. El paso 110 quedó skipped por la detención del workflow.
+- Academic-Service single authorization context, run 44951745539, SUCCESS. Workflows complementarios del commit d5502cf6: Hierarchical Configuration, UI Accessibility, SACE, Task-Service, Accounting Import e Identity mapping — SUCCESS.
+- Se corrigieron dos fixtures de prueba que inicialmente no simulaban scope institucional ni getSheetByName; el último run confirma PASS de los contratos afectados.
+- Node.js y node --check ejecutados en GitHub Actions; CLI local independiente NOT RUN. Apps Script/Sheets real, staging y concurrencia interproyecto NOT RUN. BETA-FUNC-128 pendiente de beta.
+
+### Hallazgos abiertos para la siguiente iteración
+- bookAppointment no valida aún que solicitadoA sea un usuario institucional activo/autorizado.
+- sendInternalMessage requiere validar destinatario y relación de estudiante al iniciar una conversación nueva.
+- updateAppointmentStatus no valida todavía transiciones de estado permitidas según normativa de citas.
+- TASK-502 sigue requiriendo auditoría de endpoints restantes y action/resource bindings en ACADEMIC/ACCOUNTING/TASK/EXAM.
+
+### Estado y siguiente acción elegible
+- getAdministrativeRequests ahora limita consultas por actor, expediente/ownership o scope institutionWide; userId/estudianteId del cliente no amplían acceso.
+- AUD-NG-222 / TASK-502 continúa En ejecución; TASK-506 / AUD-NG-226 depende de TASK-502 y permanece En ejecución.
+- Siguiente: validar solicitadoA como usuario institucional activo y restringir destinatario/estudiante en sendInternalMessage; luego continuar auditoría de bindings en los otros servicios.
+===============================================================================

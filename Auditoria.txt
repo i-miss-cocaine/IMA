@@ -3243,3 +3243,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-222 / TASK-502 | C1.923] Hallazgo: getDepartmentalWorkInbox confiaba en departamento/authRole del payload y podía consultar bandejas ajenas. Corrección: identity/scope institucional; institutionWide para consulta global; ámbito departamental exige expediente único y assertRecordOwnership READ; parámetros cliente ignorados en ámbito departamental; metadata de respuesta desde rol verificado. Contrato Node/syntax PASS. Pendiente getAdministrativeRequests y validación de destinatarios.
+
+
+[2026-11-21 | AUD-NG-222 / TASK-502 | C1.924] Hallazgo: getAdministrativeRequests permitía listado global por allowlist y filtros userId/estudianteId manipulables. Corrección: sesión verificada; self-only sin scope; ownership EXPEDIENTE_ESTUDIANTE/READ en ámbito departamental; institutionWide para cola global; lectura no crea hojas y adjuntoUrl sigue oculto. Contratos Node y sintaxis PASS. Único fallo CI: Phase22/configureSchoolDocumentTemplate.

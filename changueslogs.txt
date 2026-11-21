@@ -4462,3 +4462,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-21] C1.923 / AUD-NG-222-TASK-502 — USER getDepartmentalWorkInbox ya no confía en departamento/authRole del cliente. Exige identidad y scope; department scope resuelve estudiante/expediente y assertRecordOwnership READ; institutionWide conserva listado global y filtro exacto. Metadata usa rol verificado; lectura no crea hojas. Contrato Node y syntax PASS; USER 82–92, academic 93–102 e integridad 104–106 PASS. Department Scope agregado falla solo en Phase22/configureSchoolDocumentTemplate. Workflows Identity, Hierarchical, Accounting, SACE, Task, UI y Academic SUCCESS. Pendiente getAdministrativeRequests/destinatarios.
+
+
+[2026-11-21] C1.924 / AUD-NG-222-TASK-502 — USER getAdministrativeRequests ahora verifica sesión; sin scope es self-only; scope departamental requiere expediente + assertRecordOwnership READ; institutionWide permite cola global. Filtros cliente no conceden acceso; lectura getSheetByName y adjuntoUrl sanitizado. Contrato Node y syntax PASS; USER 82–93, academic 94–102, firma/adjuntos 103–107 PASS. Department Scope agregado falla solo en Phase22/configureSchoolDocumentTemplate. Academic-Service, Hierarchical, UI, SACE, Task, Accounting e Identity SUCCESS. Pendientes: solicitadoA, destinatario de mensajes y transiciones de cita.

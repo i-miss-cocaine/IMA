@@ -6307,3 +6307,13 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Workflows complementarios de los commits 50e5b19b/3763344b: Identity, Hierarchical, Accounting Import, SACE, Task, UI y Academic SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
 - Pendiente: getAdministrativeRequests puede ser global sin scope; solicitadoA de citas requiere validación de usuario institucional activo; destinatario/relación en conversación nueva; transiciones de estado.
 - Estado: TASK-502/TASK-506 siguen En ejecución. Siguiente: limitar getAdministrativeRequests con scope/ownership.
+
+
+### Continuidad C1.924 — AUD-NG-222 / TASK-502 (sin cierre)
+- getAdministrativeRequests vuelve a verificar sesión con getUserVerifiedRole; sin scope institucional, solo devuelve solicitudes del actor; para Estudiante/Alumno fija estudianteId al actor. Scope departamental exige expediente único y assertRecordOwnership EXPEDIENTE_ESTUDIANTE/READ; institutionWide permite cola global. Filtros cliente no conceden acceso.
+- Lectura con getSheetByName; conserva adjuntoUrl vacío y metadatos de integridad. Fixtures de Academic y persistencia de adjuntos actualizados para representar scope y hoja existente.
+- Contrato Node cubre student/guardian spoof, scope departamental, filtro que solo restringe, ownership denegado, institutionWide, no-scope, identidad ausente y hoja ausente.
+- GitHub Actions run 44951918999: USER 82–93, academic ownership 94–102, firma/adjuntos 103–107 y syntax 108 PASS. El único fallo es Phase22 paso 109 por configureSchoolDocumentTemplate.
+- Academic-Service workflow 44951745539 SUCCESS; Hierarchical, UI, SACE, Task, Accounting e Identity SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN.
+- Pendiente: solicitadoA en bookAppointment no valida usuario institucional activo; sendInternalMessage no valida destinatario/relación de estudiante en conversación nueva; transiciones de estado de citas; completar action/resource bindings en ACADEMIC/ACCOUNTING/TASK/EXAM.
+- Estado: TASK-502/TASK-506 siguen En ejecución. Siguiente: validar destinatarios y luego continuar auditoría cross-service.

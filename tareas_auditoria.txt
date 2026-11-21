@@ -1030,3 +1030,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502/TASK-506 permanecen En ejecución.
 - Siguiente: revisar getAdministrativeRequests y filtrar por actor/scope/ownership.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.924 — AUD-NG-222 / TASK-502
+- USER getAdministrativeRequests limita por actor, expediente ownership o institutionWide; userId/estudianteId cliente no amplían permisos.
+- Contrato Node, syntax-check, USER 82–93, academic ownership 94–102 y firma/adjuntos 103–107 PASS. Phase22 sigue fallando por configureSchoolDocumentTemplate.
+- Academic-Service, Hierarchical, UI, SACE, Task, Accounting e Identity SUCCESS. Apps Script/Sheets real, staging y concurrencia interproyecto NOT RUN. BETA-FUNC-128 pendiente.
+- Pendiente: validar solicitadoA de citas, destinatario/relación de mensajes nuevos y transiciones de estado.
+- TASK-502/TASK-506 permanecen En ejecución.
+- Siguiente: validar destinatarios y continuar action/resource bindings en ACADEMIC/ACCOUNTING/TASK/EXAM.
+===============================================================================
