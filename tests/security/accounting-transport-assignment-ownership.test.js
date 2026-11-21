@@ -118,7 +118,7 @@ const assigned=success.runAssign(payload());
 assert.equal(assigned.status,"success");
 assert.equal(success.data.TransporteAsignaciones.length,2);
 assert.deepEqual(success.calls.permission,["assignStudentTransport"]);
-assert.deepEqual(success.calls.ownership[0],{studentIds:["STU-1"],operation:"WRITE"});
+assert.equal(JSON.stringify(success.calls.ownership[0]),JSON.stringify({studentIds:["STU-1"],operation:"WRITE"}));
 assert.equal(success.calls.releases,1);
 assert.equal(success.calls.events[0][6],"DIRECTOR-1");
 const assignRollback=makeHarness({billingFails:true});
