@@ -390,6 +390,15 @@ const userContext = {
   logStructuredEvent() {},
   Date, Math, JSON, String, Number, Array, Object, Error
 };
+store.Usuarios = [
+  ["UserID","PersonaID","Rol","EstadoCuenta"],
+  ["STU-USER","PERSON-USER","Estudiante","Activo"]
+];
+store.ExpedientesEstudiantes = [
+  ["ExpedienteID","PersonaID"],
+  ["EXP-USER","PERSON-USER"]
+];
+
 const userNames = [
   "requestAttachmentHeaderMap_","ensureRequestAttachmentIntegritySchema_","setRequestAttachmentIntegrity_",
   "ensureEvidenceDocumentSchema_","getEvidenceRecordsForRequest_","getAdministrativeRequestAttachment","registerDocumentEvidence_","getEvidenceSnapshotForDecision_","verifyEvidenceDocumentRecord_","markEvidenceDecision_","computeDocumentSHA256","getEvidenceIntegrityPolicy_","saveEvidenceIntegrityPolicy","logEvidenceTampering_",
