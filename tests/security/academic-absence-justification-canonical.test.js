@@ -351,6 +351,7 @@ attendance.appendRow(["REG-USER","SES-USER","STU-USER","Ausente","","",false,"",
 const evidenceFiles = Object.create(null);
 let userLockBusy = false;
 let userUuid = 0;
+const userOwnershipCalls = [];
 const userContext = {
   SPREADSHEET_ID: "TEST",
   SpreadsheetApp: { openById() { return { getSheetByName(name) { return store[name] ? sheet(name) : null; } }; } },
@@ -376,6 +377,10 @@ const userContext = {
   },
   getOrCreateSheet(_ss, name) { return sheet(name); },
   getUserVerifiedRole(payload) { payload._verifiedUserId = payload._userId; payload._verifiedRole = payload._role; return payload._role; },
+  assertRecordOwnership(payload, resourceType, resourceId, action) {
+    userOwnershipCalls.push({ userId: payload._verifiedUserId, resourceType, resourceId, action });
+    return { authorized: true };
+  },
   resolveVerifiedRequestSubmitter_(payload, requestedStudentId) {
     return { userId: payload._verifiedUserId || payload._userId, estudianteId: requestedStudentId || payload._verifiedUserId || payload._userId, role: payload._verifiedRole || payload._role };
   },
@@ -442,6 +447,9 @@ const userReview = userContext.reviewAbsenceJustification({
   _userId: "SEC-USER", _role: "Secretaría", solicitudId: userSubmit.solicitudId, nuevoEstado: "Aprobada"
 });
 assert.equal(userReview.status, "success");
+assert.deepEqual(userOwnershipCalls[0], {
+  userId: "SEC-USER", resourceType: "EXPEDIENTE_ESTUDIANTE", resourceId: "EXP-USER", action: "UPDATE"
+}, "USER review must authorize the verified expediente, not only the request row");
 regRows = attendance.getDataRange().getValues();
 const userAttendanceRow = regRows.find(row => row[0] === "REG-USER");
 assert.equal(userAttendanceRow[6], true);
