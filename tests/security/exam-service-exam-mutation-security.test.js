@@ -5,6 +5,8 @@ const path = require("node:path");
 const vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "../../backend/exam-service/Code.gs"), "utf8");
 new vm.Script(source, { filename: "backend/exam-service/Code.gs" });
+// The mutation harness tests lock/identity/ownership behavior; offer assignment is covered by its dedicated contract.
+globalThis.hasExamTeacherActiveOfferAssignment_ = () => true;
 
 function extractFunction(name) {
   const match = new RegExp("function\\s+" + name + "\\s*\\([^)]*\\)\\s*\\{").exec(source);
