@@ -112,6 +112,7 @@ const runtime = {
   PropertiesService: { getScriptProperties() { return { getProperty(name) { return name === "IMA_INSTITUTION_ID" ? "I1" : null; } }; } },
   SpreadsheetApp: { openById() { return ss; } },
   getSheetOrThrow(spreadsheet, name) { const sheet = spreadsheet.getSheetByName(name); if (!sheet) throw new Error("Missing sheet " + name); return sheet; },
+  clearRequestAuthorizationContext_(payload) { delete payload._imaVerifiedSessionToken; delete payload._imaVerifiedSessionClaims; delete payload._imaAuthorizationCache; delete payload._imaVerifiedExamIdentity; delete payload._verifiedUserId; delete payload._verifiedRole; },
   withAuthorizedExamRead_(action, payload, reader) {
     const lock = runtime.LockService.getScriptLock();
     if (!lock.tryLock(5000)) throw new Error("EXAM_READ_LOCK_TIMEOUT");
