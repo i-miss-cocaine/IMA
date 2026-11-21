@@ -34,6 +34,7 @@ jobs:
         run: |
           node --check tests/security/accounting-transport-monthly-charges.test.js
           node --check tests/security/accounting-transport-assignment-ownership.test.js
+          node --check tests/security/accounting-transport-route-optimization.test.js
           node --check tests/security/accounting-transport-read-permissions.test.js
           node --check tests/security/accounting-transport-efficiency-metrics.test.js
           node --check tests/security/accounting-transport-read-scope-ownership.test.js
@@ -44,6 +45,8 @@ jobs:
         run: node tests/security/accounting-transport-monthly-charges.test.js
       - name: Run transport assignment ownership and concurrency contract
         run: node tests/security/accounting-transport-assignment-ownership.test.js
+      - name: Run transport route optimization permission and institutional scope contract
+        run: node tests/security/accounting-transport-route-optimization.test.js
       - name: Run transport read action permission contract
         run: node tests/security/accounting-transport-read-permissions.test.js
       - name: Run transport efficiency metrics authorization and legacy schema contract
