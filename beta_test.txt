@@ -2352,3 +2352,68 @@ Evidencia requerida: SHA de despliegue, IDs sintéticos, respuestas de autorizac
 Tarea vinculada: AUD-NG-222 / TASK-502.
 Responsable: QA/administrador del ambiente beta.
 ===============================================================================
+
+
+===============================================================================
+### BETA-AUD-NG-222-ACADEMIC-RESOURCE-001
+Módulo/rol: ACADEMIC — Estudiante, Tutor y personal con ámbito institucional/departamental.
+Tarea/requisito: AUD-NG-222 / TASK-502 — expediente y resumen de asistencia.
+Objetivo: validar en Apps Script/Sheets desplegado que update/merge/unmerge de expedientes y getStudentAttendanceSummary aplican identidad, relación y ownership del expediente.
+Precondiciones:
+- Versión beta con los commits C1.926 desplegada.
+- Usuarios sintéticos Estudiante, Tutor y personal; expedientes con ownership activo, sin ownership, duplicado y de otro departamento.
+Pasos:
+1. Consultar resumen propio como estudiante y falsificar userId de otro estudiante; confirmar que solo se devuelve el propio.
+2. Consultar resumen de estudiante relacionado como tutor con permiso académico; repetir sin relación y con permiso revocado.
+3. Consultar como personal dentro/fuera del ownership departamental y con ámbito institucional completo.
+4. Ejecutar update/merge/unmerge con expedientes únicos, duplicados, idénticos y fuera de scope.
+5. Simular dos mutaciones concurrentes sobre el mismo expediente y verificar serialización, integridad de relaciones y ausencia de escrituras parciales.
+Resultado esperado:
+- Solo targets únicos y autorizados se leen o modifican; estudiantes no pueden sustituir su identidad.
+- Locks se liberan en éxito/error y no se pierden relaciones ni datos ante fallos.
+Resultado real: no ejecutado; requiere despliegue y Sheets real.
+Estado: PENDIENTE DE BETA.
+Evidencia requerida: SHA de despliegue, identidades sintéticas, IDs de expedientes, respuestas y snapshots antes/después sin PII.
+Tarea vinculada: AUD-NG-222 / TASK-502.
+===============================================================================
+
+===============================================================================
+### BETA-AUD-NG-222-ACCOUNTING-PAYROLL-001
+Módulo/rol: ACCOUNTING — Director, Subdirector, Administrador, Contador y Recursos Humanos según permiso.
+Tarea/requisito: AUD-NG-222 / TASK-502 — cargos mensuales y generación/consulta de nómina.
+Objetivo: confirmar en Apps Script/Sheets real que scope y ownership se aplican a cada expediente antes de generar cargos, nómina o devolver datos de empleados.
+Precondiciones:
+- Versión beta con C1.926 desplegada; expedientes laborales/estudiantiles con ResourceOwnership activo por departamento e institución.
+- Actores con scope institucional, departamental, vencido y sin asignación.
+Pasos:
+1. Generar preview/cargos mensuales para estudiantes con ownership autorizado y denegado; verificar que la denegación no escribe.
+2. Generar nómina ordinaria/extraordinaria con scope institucional y denegar scope departamental/inválido.
+3. Consultar preview/configuración de empleados dentro/fuera del ownership; comprobar aislamiento y campos de respuesta.
+4. Repetir requests y verificar idempotencia, locks, rollback y ausencia de duplicados.
+Resultado esperado:
+- Solo acciones autorizadas con scope vigente y ownership válido pueden operar sobre los expedientes; la nómina se genera como ciclo institucional completo.
+Resultado real: no ejecutado; requiere Apps Script/Sheets real.
+Estado: PENDIENTE DE BETA.
+Evidencia requerida: SHA de despliegue, scope/membership sintético, expedientes, filas antes/después, respuestas y auditoría sin PII/tokens.
+Tarea vinculada: AUD-NG-222 / TASK-502.
+===============================================================================
+
+===============================================================================
+### BETA-AUD-NG-222-TASK-PROJECT-LOCKS-001
+Módulo/rol: TASK — Estudiante/Alumno y servicio de entregas.
+Tarea/requisito: AUD-NG-222 / TASK-502 — borrado de archivos y operaciones de proyectos.
+Objetivo: validar en Drive/Sheets desplegados que deleteFile, saveProject y deleteProject no compiten con entregas/versiones ni dejan archivos/metadatos huérfanos.
+Precondiciones:
+- Versión beta con C1.926 desplegada; estudiantes sintéticos con proyectos y entregas/versiones vinculadas.
+Pasos:
+1. Guardar y eliminar proyecto con identificadores coincidentes/no coincidentes; verificar propiedad y metadatos.
+2. Ejecutar deleteFile mientras se registra una entrega o versión; repetir en orden inverso.
+3. Forzar fallo de Drive o Sheets durante eliminación y comprobar rollback de metadatos y estado de archivo.
+4. Verificar liberación de ScriptLock tras éxito, timeout y excepción.
+Resultado esperado:
+- Operaciones serializadas, sin eliminar archivos ajenos, sin romper referencias de entregas y sin metadatos huérfanos.
+Resultado real: no ejecutado; requiere Drive/Sheets real.
+Estado: PENDIENTE DE BETA.
+Evidencia requerida: SHA de despliegue, IDs sintéticos de archivo/proyecto, trazas de concurrencia y snapshots antes/después sin PII.
+Tarea vinculada: AUD-NG-222 / TASK-502.
+===============================================================================

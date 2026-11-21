@@ -1052,3 +1052,15 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - CLI local, Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta registrado en beta_test.txt.
 - TASK-502 y TASK-506 siguen En ejecución. Siguiente: inventario action/resource de ACADEMIC/ACCOUNTING/TASK/EXAM.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.926 — AUD-NG-222 / TASK-502
+- ACADEMIC: ownership en update/merge/unmerge y getStudentAttendanceSummary; contratos de single auth context y attendance PASS.
+- TASK: deleteFile serializado con submission writes; saveProject/deleteProject protegidos por ScriptLock. Task-Service suite y student project lock contract PASS tras actualizar fixture para el lock.
+- ACCOUNTING: cargos mensuales requieren identidad, permiso, scope y ownership; nómina requiere permiso de gestor, scope institucional y ownership READ/WRITE de expedientes laborales. Contratos focalizados y syntax-check PASS.
+- Node local v22.16.0: contrato aislado de attendance summary PASS. CI Node 24: attendance, monthly charges, payroll generation/employee ownership y sintaxis PASS.
+- Department Scope agregador falla solo por Phase22/configureSchoolDocumentTemplate. Suite global de Exam-Service sigue fallando por accounting-school-document-binary-integrity.test.js que requiere ensureSchoolDocumentIssuedSchema_ ausente; triage pendiente.
+- Apps Script/Sheets/Drive reales, staging y concurrencia interproyecto NOT RUN; beta pendiente. TASK-502 y TASK-506 siguen En ejecución.
+- Siguiente: revisar assignStudentTransport/cancelStudentTransportAssignment por identidad, permiso, ownership, ruta única y rollback; luego completar inventario ACADEMIC/ACCOUNTING/TASK/EXAM.
+===============================================================================

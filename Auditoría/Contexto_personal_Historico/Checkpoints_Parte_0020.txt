@@ -1306,3 +1306,49 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 sigue En ejecución y depende de TASK-502.
 - Siguiente: inventariar handlers con IDs de estudiante/expediente/solicitud en ACADEMIC, ACCOUNTING, TASK y EXAM; contrastar cada acción con permisos y ownership/contexto ya existentes, sin añadir validaciones redundantes.
 ===============================================================================
+
+
+===============================================================================
+### C1.926 — IMA-EXEC-20261121-AUD-NG-222-CROSS-SERVICE-RESOURCE-97
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.925 / TASK-502, implementación HEAD e5d6e37d; checkpoint documental 2ca1b9a2. HEAD antes de documentar este hito: e4ae8552c42ae2bf2628a44cad86b255606b33ab.
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base NG_beta_0.0.0.1 verificada en 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+- Cambios agrupados desde C1.925: Academic expediente update/merge ownership; Task file deletion and student project operation locks; Accounting monthly-charge scope, payroll generation scope and payroll employee resource ownership; Academic student attendance summary ownership.
+- Commits de código principales: b415123a (Academic expediente update ownership), ebc4a60f (merge/unmerge), d9e8a507 (Task delete file lock), 289ee77f (Task project save/delete lock), a2b17741 (monthly charge scope), 5dc80d3d (payroll generation scope), 50ed344d (payroll employee scope), cc1d8f06 (attendance summary scope). Contratos/CI asociados: 70287d96, abb9ebc6, 70876f13, 1f35a8f4, e292540a, 60ad6fd2, 100c1c07, 03ce971c, 94423172, b774b41f, e4ae8552, 9cd8b50b, ceabf1bb, cbac6432, ebd18110, 50f59d3f, 187d2d82, 9928e4a7, e639cd6d, 2de7b16d, eca939d5 y 13a56fc8.
+- Este checkpoint agrupa unidades completas que quedaron verificadas después del último checkpoint; no modifica ni publica en otra rama.
+
+### Resultado técnico
+1. ACADEMIC — expediente update / merge / unmerge: las mutaciones validan identidad, permiso y ownership del expediente; update usa lock y las operaciones merge/unmerge resuelven expedientes distintos y únicos antes de persistir. Contratos de ownership y single authorization context PASS.
+2. TASK — archivos y proyectos estudiantiles: deleteFile comparte ScriptLock con escrituras de entregas/versiones; saveProject y deleteProject serializan operaciones y liberan lock en finally. Contrato de concurrencia de proyectos y suite Task-Service PASS después de adaptar el fixture de deleteProject al lock.
+3. ACCOUNTING — cargos mensuales: preview/generation exigen identidad verificada, permiso, scope y ownership del expediente estudiantil antes de leer/escribir cargos.
+4. ACCOUNTING — nómina: cálculo ordinario y extraordinario exigen permiso de gestor de nómina y scope institucional completo; los expedientes laborales elegibles pasan por ownership WRITE. Lecturas/configuración de nómina aplican scope/ownership de expediente laboral con operación READ/WRITE según el endpoint.
+5. ACADEMIC — resumen de asistencia: getStudentAttendanceSummary ya no confía en userId del cliente; estudiantes quedan limitados a su identidad, y cualquier target se resuelve a un expediente único y pasa por assertStudentExpedienteScopeAccess_ con permiso académico READ.
+
+### Archivos principales
+- backend/academic-service/Code.gs
+- backend/accounting-service/Code.gs
+- backend/task-service/Code.gs
+- tests/security/academic-student-attendance-summary-ownership.test.js
+- tests/security/accounting-monthly-charge-period.test.js
+- tests/security/accounting-payroll-generation-authorization.test.js
+- tests/security/task-service-security-contract.test.js
+- tests/security/task-service-project-lock-contract.test.js
+- Workflows de contratos Department Scope, Academic-Service y Task-Service.
+
+### Verificaciones
+- Node.js local v22.16.0: contrato aislado academic-student-attendance-summary-ownership PASS; node --check del fragmento de servicio probado PASS. No se consiguió un checkout local completo por limitación de conectividad; los contratos completos del repositorio se ejecutaron en GitHub Actions.
+- GitHub Actions run 44956770540: attendance summary (paso 99), monthly charge (101), payroll generation (102) y syntax-check (112) PASS; único fallo Phase22 (paso 113), configureSchoolDocumentTemplate ausente.
+- GitHub Actions run 44956882025: employee self-service (33), employee loan ownership (52), payroll generation authorization (102) y syntax-check (112) PASS; único fallo Phase22 por configureSchoolDocumentTemplate.
+- GitHub Actions run 44957051845: Task-Service security suite y student project lock contract (pasos 4–18) PASS.
+- Academic-Service single authorization context: runs 44955779962 y 44955994849 SUCCESS. Department Reference Consumers, Hierarchical Configuration, SACE e Accounting Import asociados: SUCCESS.
+- En runs anteriores de Exam-Service security local contracts, la suite general de Node falló en accounting-school-document-binary-integrity.test.js porque el test requiere ensureSchoolDocumentIssuedSchema_, ausente en backend/accounting-service/Code.gs. Este hallazgo de suite existente no corresponde a los cambios de C1.926 y queda pendiente de triage; no se declara PASS.
+- Fallos recurrentes del workflow Department Scope agregador limitados a Phase22 por ausencia de configureSchoolDocumentTemplate; no son fallos de los contratos focalizados enumerados.
+- Apps Script/Sheets/Drive real, staging y concurrencia entre proyectos: NOT RUN; escenarios registrados como Pendiente beta. No se declaran pruebas remotas aprobadas.
+
+### Estado y siguiente acción elegible
+- Los incrementos locales de esta unidad están implementados y sus contratos focalizados pasan. AUD-NG-222 / TASK-502 continúa En ejecución: falta terminar el inventario action/resource en ACADEMIC, ACCOUNTING, TASK y EXAM.
+- TASK-506 / AUD-NG-226 sigue En ejecución y depende de TASK-502.
+- Siguiente: auditar assignStudentTransport y cancelStudentTransportAssignment en ACCOUNTING; comprobar identidad verificada, permiso dinámico, ownership del expediente estudiantil, ruta única/activa y rollback bajo lock antes de modificar la asignación o su facturación.
+===============================================================================

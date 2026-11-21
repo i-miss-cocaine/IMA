@@ -6317,3 +6317,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Academic-Service workflow 44951745539 SUCCESS; Hierarchical, UI, SACE, Task, Accounting e Identity SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN.
 - Pendiente: solicitadoA en bookAppointment no valida usuario institucional activo; sendInternalMessage no valida destinatario/relación de estudiante en conversación nueva; transiciones de estado de citas; completar action/resource bindings en ACADEMIC/ACCOUNTING/TASK/EXAM.
 - Estado: TASK-502/TASK-506 siguen En ejecución. Siguiente: validar destinatarios y luego continuar auditoría cross-service.
+
+
+### Continuidad C1.926 — AUD-NG-222 / TASK-502 (sin cierre)
+- Se completaron incrementos locales de ownership para ACADEMIC (update/merge/unmerge/attendance summary), locks compartidos en TASK (deleteFile/saveProject/deleteProject) y scope/ownership en ACCOUNTING (cargos mensuales, nómina y expedientes laborales).
+- Contratos focalizados y sintaxis de los cambios pasan en GitHub Actions; Task-Service local contracts y student project lock contract PASS. El workflow Department Scope agregador conserva fallo Phase22 por configureSchoolDocumentTemplate ausente.
+- El workflow Exam-Service que ejecuta toda la suite Node revela un fallo existente en accounting-school-document-binary-integrity.test.js: falta ensureSchoolDocumentIssuedSchema_ en accounting-service/Code.gs. No se considera aprobado ni se atribuye a los cambios de este checkpoint.
+- Attendance summary: contrato aislado Node local v22.16.0 PASS y CI Node 24 PASS. Apps Script/Sheets reales y concurrencia interproyecto quedan Pendiente beta.
+- Siguiente elegible: auditar asignación/cancelación de transporte en ACCOUNTING; después continuar los handlers restantes de ACADEMIC/ACCOUNTING/TASK/EXAM. TASK-502 y TASK-506 siguen En ejecución.
