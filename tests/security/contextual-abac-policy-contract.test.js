@@ -23,9 +23,22 @@ function extractFunction(text, name) {
   throw new Error("unclosed function " + name);
 }
 function makeRuntime(overrides = {}) {
+  const areaRows = [
+    ["AreaID","NombreArea","Codigo","ServiceKey","ServiceUrl","HerramientasJSON","DepartamentoID","Estado","FechaRegistro"],
+    ["AREA-1","Ciencias","SCI","","","[]","DEP-1","Activo","2026-01-01"],
+    ["AREA-2","Humanidades","HUM","","","[]","DEP-1","Activo","2026-01-01"]
+  ];
+  const ss = {
+    getSheetByName(name) {
+      if (name !== "AreasCurricularesExtensiones") return null;
+      return { getLastRow: () => areaRows.length, getDataRange: () => ({ getValues: () => areaRows.map(row => row.slice()) }) };
+    }
+  };
   return Object.assign({
     SPREADSHEET_ID: "TEST",
-    SpreadsheetApp: { openById() { return {}; } },
+    SpreadsheetApp: { openById() { return ss; } },
+    getInstitutionalAreaColumnMap_() { return { areaId: 0, name: 1, estado: 7 }; },
+    getInstitutionalSubjectColumnMap_() { return { asignaturaId: 0, nombreOficial: 1, codigo: 2, areaAcademica: 3, estado: 5, areaId: 6 }; },
     getVerifiedAcademicDepartmentScope_() {
       return { authorized: true, institutionWide: false, scopes: [{ scopeType: "DEPARTAMENTO", scopeValues: ["D-1"] }] };
     },
@@ -38,7 +51,12 @@ function makeRuntime(overrides = {}) {
     Date, Number, String, Object, Array
   }, overrides);
 }
-const code = extractFunction(source, "validateContextualAccess");
+const code = [
+  extractFunction(source, "getVerifiedAcademicCoordinatorAreaIds_"),
+  extractFunction(source, "resolveAcademicAreaIdForCoordinator_"),
+  extractFunction(source, "assertAcademicCoordinatorAreaAccess_"),
+  extractFunction(source, "validateContextualAccess")
+].join("\\n");
 function run(payload, userId, role, overrides) {
   const runtime = makeRuntime(overrides);
   vm.createContext(runtime);

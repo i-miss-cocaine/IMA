@@ -1233,29 +1233,17 @@ function validateContextualAccess(action, payload, verifiedUserId, userRole) {
     }
   }
 
-  if (userRole === "Coordinador" && payload && Object.prototype.hasOwnProperty.call(payload, "areaId")) {
+  const coordinatorAreaActions = [
+    "assignTeacherToAcademicArea", "getTeachersByAcademicArea"
+  ];
+  if (userRole === "Coordinador" && payload &&
+      (Object.prototype.hasOwnProperty.call(payload, "areaId") || coordinatorAreaActions.indexOf(action) !== -1)) {
     const requestedAreaId = String(payload.areaId || "").trim();
     if (!requestedAreaId || !verifiedUserId) return { authorized: false, reason: "COORDINATION_AREA_CONTEXT_REQUIRED" };
     try {
-      const result = getAcademicAreaCoordinationScope({ areaId: requestedAreaId, userId: verifiedUserId });
-      if (!result || result.status !== "success" || !Array.isArray(result.scopes) || result.scopes.length !== 1) {
-        return { authorized: false, reason: "COORDINATION_SCOPE_UNVERIFIED" };
-      }
-      const assignment = result.scopes[0];
-      const context = assignment && assignment.ambitoSupervision;
-      if (!assignment || String(assignment.userId || "").trim() !== String(verifiedUserId).trim() ||
-          String(assignment.areaId || "").trim().toUpperCase() !== requestedAreaId.toUpperCase() ||
-          !context || typeof context !== "object" || Array.isArray(context) ||
-          String(context.areaId || "").trim().toUpperCase() !== requestedAreaId.toUpperCase() ||
-          ["TITULAR", "SUPLENTE"].indexOf(String(context.tipoCoordinacion || "").trim().toUpperCase()) === -1) {
-        return { authorized: false, reason: "COORDINATION_SCOPE_DENIED" };
-      }
-      const now = Date.now();
-      const from = context.fechaInicio ? new Date(context.fechaInicio).getTime() : null;
-      const to = context.fechaFin ? new Date(context.fechaFin).getTime() : null;
-      if ((context.fechaInicio && !Number.isFinite(from)) || (context.fechaFin && !Number.isFinite(to)) ||
-          (from !== null && from > now) || (to !== null && to < now) || (from !== null && to !== null && from > to)) {
-        return { authorized: false, reason: "COORDINATION_ASSIGNMENT_INACTIVE" };
+      const areaAccess = assertAcademicCoordinatorAreaAccess_(payload, SpreadsheetApp.openById(SPREADSHEET_ID), requestedAreaId, false);
+      if (!areaAccess || areaAccess.authorized !== true) {
+        return { authorized: false, reason: String(areaAccess && areaAccess.code || "COORDINATION_SCOPE_DENIED") };
       }
     } catch (_) {
       return { authorized: false, reason: "COORDINATION_SCOPE_VALIDATION_FAILED" };
@@ -6968,8 +6956,107 @@ function getAcademicAreaTemplateCatalog(payload) {
 }
 
 // [TAREA-F6-006] [Fase 6: Reestructuración en microservicios independientes] - Gestión de ámbito de supervisión y coordinaciones académicas parametrizadas por área
+
+function getVerifiedAcademicCoordinatorAreaIds_(payload) {
+  const actorId = String(payload && payload._verifiedUserId || "").trim();
+  if (!actorId || String(payload && payload._verifiedRole || "").trim() !== "Coordinador") {
+    return { authorized: false, code: "COORDINATOR_IDENTITY_REQUIRED", areaIds: [] };
+  }
+  let result;
+  try { result = getAcademicAreaCoordinationScope({ userId: actorId }); }
+  catch (_) { return { authorized: false, code: "COORDINATION_SCOPE_VALIDATION_FAILED", areaIds: [] }; }
+  if (!result || result.status !== "success" || !Array.isArray(result.scopes)) {
+    return { authorized: false, code: "COORDINATION_SCOPE_UNVERIFIED", areaIds: [] };
+  }
+  const now = Date.now(), areaIds = [], seen = Object.create(null);
+  for (let i = 0; i < result.scopes.length; i++) {
+    const item = result.scopes[i] || {}, context = item.ambitoSupervision;
+    const areaId = String(item.areaId || "").trim();
+    if (!areaId || String(item.userId || "").trim() !== actorId ||
+        !context || typeof context !== "object" || Array.isArray(context) ||
+        String(context.areaId || "").trim().toUpperCase() !== areaId.toUpperCase() ||
+        ["TITULAR", "SUPLENTE"].indexOf(String(context.tipoCoordinacion || "").trim().toUpperCase()) === -1) {
+      return { authorized: false, code: "COORDINATION_SCOPE_MALFORMED", areaIds: [] };
+    }
+    const from = context.fechaInicio ? new Date(context.fechaInicio).getTime() : null;
+    const to = context.fechaFin ? new Date(context.fechaFin).getTime() : null;
+    if ((context.fechaInicio && !Number.isFinite(from)) || (context.fechaFin && !Number.isFinite(to)) ||
+        (from !== null && from > now) || (to !== null && to < now) ||
+        (from !== null && to !== null && from > to)) {
+      continue;
+    }
+    const key = areaId.toUpperCase();
+    if (seen[key]) return { authorized: false, code: "COORDINATION_SCOPE_AMBIGUOUS", areaIds: [] };
+    seen[key] = true;
+    areaIds.push(areaId);
+  }
+  return areaIds.length
+    ? { authorized: true, areaIds: areaIds }
+    : { authorized: false, code: "COORDINATION_SCOPE_NOT_ASSIGNED", areaIds: [] };
+}
+
+function resolveAcademicAreaIdForCoordinator_(ss, reference, subjectReference) {
+  const raw = String(reference || "").trim();
+  if (!ss || !raw) return "";
+  let areaReference = raw;
+  if (subjectReference === true) {
+    const subjectSheet = ss.getSheetByName("CatalogoAsignaturas");
+    if (!subjectSheet || subjectSheet.getLastRow() < 2) return "";
+    let subjectMap, subjectRows;
+    try {
+      subjectMap = getInstitutionalSubjectColumnMap_(subjectSheet, false);
+      subjectRows = subjectSheet.getDataRange().getValues().slice(1);
+    } catch (_) { return ""; }
+    const key = raw.toUpperCase();
+    const matches = subjectRows.filter(function(row) {
+      return [row[subjectMap.asignaturaId], row[subjectMap.nombreOficial], row[subjectMap.codigo]]
+        .some(function(value) { return String(value || "").trim().toUpperCase() === key; });
+    });
+    if (matches.length !== 1) return "";
+    const subject = matches[0];
+    const state = String(subject[subjectMap.estado] || "").trim().toUpperCase();
+    if (["ACTIVO", "ACTIVA", "ACTIVE", "TRUE"].indexOf(state) === -1) return "";
+    areaReference = subjectMap.areaId >= 0 ? String(subject[subjectMap.areaId] || "").trim() : "";
+    if (!areaReference) areaReference = String(subject[subjectMap.areaAcademica] || "").trim();
+    if (!areaReference) return "";
+  }
+  const areaSheet = ss.getSheetByName("AreasCurricularesExtensiones");
+  if (!areaSheet || areaSheet.getLastRow() < 2) return "";
+  let areaMap, rows;
+  try {
+    areaMap = getInstitutionalAreaColumnMap_(areaSheet, false);
+    rows = areaSheet.getDataRange().getValues().slice(1);
+  } catch (_) { return ""; }
+  const lookup = areaReference.toUpperCase();
+  const matches = rows.filter(function(row) {
+    return String(row[areaMap.areaId] || "").trim().toUpperCase() === lookup ||
+      String(row[areaMap.name] || "").trim().toUpperCase() === lookup;
+  });
+  if (matches.length !== 1) return "";
+  const area = matches[0], state = String(area[areaMap.estado] || "").trim().toUpperCase();
+  if (["ACTIVO", "ACTIVA", "ACTIVE", "TRUE"].indexOf(state) === -1) return "";
+  return String(area[areaMap.areaId] || "").trim();
+}
+
+function assertAcademicCoordinatorAreaAccess_(payload, ss, areaReference, subjectReference) {
+  if (String(payload && payload._verifiedRole || "").trim() !== "Coordinador") return { authorized: true };
+  const coordinator = getVerifiedAcademicCoordinatorAreaIds_(payload);
+  if (!coordinator.authorized) return { authorized: false, code: coordinator.code };
+  const areaId = resolveAcademicAreaIdForCoordinator_(ss, areaReference, subjectReference === true);
+  if (!areaId) return { authorized: false, code: "COORDINATION_RESOURCE_AREA_UNVERIFIED" };
+  const allowed = coordinator.areaIds.some(function(value) {
+    return String(value).trim().toUpperCase() === areaId.toUpperCase();
+  });
+  return allowed ? { authorized: true, areaId: areaId } : { authorized: false, code: "COORDINATION_SCOPE_DENIED" };
+}
+
 function getAcademicAreaCoordinationScope(payload) {
-  const { areaId, userId } = payload || {};
+  const { areaId } = payload || {};
+  const callerRole = String(payload && payload._verifiedRole || "").trim();
+  const userId = callerRole === "Coordinador"
+    ? String(payload && payload._verifiedUserId || "").trim()
+    : String(payload && payload.userId || "").trim();
+  if (callerRole === "Coordinador" && !userId) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", scopes: [] };
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "CoordinacionesArea");
   if (sheet.getLastRow() === 0) {
@@ -8294,6 +8381,16 @@ function saveSupervisionRubric(payload) {
       }
     }
 
+    const effectiveAreaAcademica = areaAcademica || (foundIdx !== -1 ? data[foundIdx][3] : "");
+    if (verifiedRole === "Coordinador") {
+      const requestedArea = assertAcademicCoordinatorAreaAccess_(payload, ss, effectiveAreaAcademica, false);
+      if (!requestedArea.authorized) return { status: "error", code: requestedArea.code || "COORDINATION_SCOPE_DENIED" };
+      if (foundIdx !== -1) {
+        const existingArea = assertAcademicCoordinatorAreaAccess_(payload, ss, data[foundIdx][3], false);
+        if (!existingArea.authorized) return { status: "error", code: existingArea.code || "COORDINATION_SCOPE_DENIED" };
+      }
+    }
+
     const critJSON = JSON.stringify(criterios || []);
     const escJSON = JSON.stringify(escala || { Excelente: 4, Bueno: 3, Satisfactorio: 2, NecesitaMejora: 1 });
     const est = estado || "Activa";
@@ -8301,7 +8398,7 @@ function saveSupervisionRubric(payload) {
     if (foundIdx !== -1) {
       sheet.getRange(foundIdx + 1, 2).setValue(nombre);
       sheet.getRange(foundIdx + 1, 3).setValue(nivelEducativo || "General");
-      sheet.getRange(foundIdx + 1, 4).setValue(areaAcademica || "General");
+      sheet.getRange(foundIdx + 1, 4).setValue(effectiveAreaAcademica || "General");
       sheet.getRange(foundIdx + 1, 5).setValue(critJSON);
       sheet.getRange(foundIdx + 1, 6).setValue(escJSON);
       sheet.getRange(foundIdx + 1, 7).setValue(est);
@@ -8320,7 +8417,7 @@ function saveSupervisionRubric(payload) {
         targetId,
         nombre,
         nivelEducativo || "General",
-        areaAcademica || "General",
+        effectiveAreaAcademica || "General",
         critJSON,
         escJSON,
         est,
@@ -8358,6 +8455,8 @@ function getSupervisionRubrics(payload) {
 
     if (data.length <= 1) return { status: "success", totalRubricas: 0, rubricas: [] };
 
+    const coordinatorScope = verifiedRole === "Coordinador" ? getVerifiedAcademicCoordinatorAreaIds_(payload) : null;
+    if (coordinatorScope && !coordinatorScope.authorized) return { status: "error", code: "NOT_FOUND" };
     const rubricas = [];
     for (let i = 1; i < data.length; i++) {
       const r = data[i];
@@ -8374,6 +8473,12 @@ function getSupervisionRubrics(payload) {
       const fCreacion = r[8];
       const fAct = r[9];
 
+      if (coordinatorScope) {
+        const areaId = resolveAcademicAreaIdForCoordinator_(ss, area, false);
+        if (!areaId || !coordinatorScope.areaIds.some(function(value) {
+          return String(value).trim().toUpperCase() === areaId.toUpperCase();
+        })) continue;
+      }
       if (rubricaId && rId !== String(rubricaId).trim()) continue;
       if (nivelEducativo && nivel.toLowerCase() !== String(nivelEducativo).toLowerCase().trim()) continue;
       if (areaAcademica && area.toLowerCase() !== String(areaAcademica).toLowerCase().trim()) continue;
@@ -8604,6 +8709,15 @@ function savePedagogicalPlanning(payload) {
       }
     }
 
+    if (verifiedRole === "Coordinador") {
+      const requestedArea = assertAcademicCoordinatorAreaAccess_(payload, ss, asignatura, true);
+      if (!requestedArea.authorized) return { status: "error", code: requestedArea.code || "COORDINATION_SCOPE_DENIED" };
+      if (foundIdx !== -1) {
+        const existingArea = assertAcademicCoordinatorAreaAccess_(payload, ss, data[foundIdx][4], true);
+        if (!existingArea.authorized) return { status: "error", code: existingArea.code || "COORDINATION_SCOPE_DENIED" };
+      }
+    }
+
     const compJSON = JSON.stringify(competencias || []);
     const contJSON = JSON.stringify(contenidos || []);
     const recJSON = JSON.stringify(recursosActividades || []);
@@ -8685,6 +8799,8 @@ function getPedagogicalPlannings(payload) {
 
     if (data.length <= 1) return { status: "success", totalPlanificaciones: 0, planificaciones: [] };
 
+    const coordinatorScope = verifiedRole === "Coordinador" ? getVerifiedAcademicCoordinatorAreaIds_(payload) : null;
+    if (coordinatorScope && !coordinatorScope.authorized) return { status: "error", code: "NOT_FOUND" };
     const planificaciones = [];
     for (let i = 1; i < data.length; i++) {
       const r = data[i];
@@ -8706,6 +8822,13 @@ function getPedagogicalPlannings(payload) {
       const est = String(r[12] || "").trim();
       const fCreacion = r[13];
       const fAct = r[14];
+
+      if (coordinatorScope) {
+        const areaId = resolveAcademicAreaIdForCoordinator_(ss, pAsig, true);
+        if (!areaId || !coordinatorScope.areaIds.some(function(value) {
+          return String(value).trim().toUpperCase() === areaId.toUpperCase();
+        })) continue;
+      }
 
       // Restricción: un profesor general solo puede ver sus propias planificaciones a menos que se trate de coordinación/dirección
       if (verifiedRole === "Profesor" && docId !== callerId && callerId !== "") {
@@ -8783,6 +8906,10 @@ function submitPlanningForReview(payload) {
     }
 
     const docId = String(targetRow[1]).trim();
+    if (verifiedRole === "Coordinador") {
+      const areaAccess = assertAcademicCoordinatorAreaAccess_(payload, ss, targetRow[4], true);
+      if (!areaAccess.authorized) return { status: "error", code: "NOT_FOUND" };
+    }
     if (verifiedRole === "Profesor" && docId !== callerId && callerId !== "") {
       return { status: "error", code: "FORBIDDEN", message: "No tiene permisos para entregar la planificación de otro docente." };
     }
@@ -8861,6 +8988,10 @@ function reviewPedagogicalPlanning(payload) {
       return { status: "error", code: "NOT_FOUND", message: `Planificación ${planificacionId} no encontrada.` };
     }
 
+    if (verifiedRole === "Coordinador") {
+      const areaAccess = assertAcademicCoordinatorAreaAccess_(payload, ss, targetRow[4], true);
+      if (!areaAccess.authorized) return { status: "error", code: "NOT_FOUND" };
+    }
     const currentVer = Number(targetRow[11] || 1);
     const now = new Date();
     const nowISO = now.toISOString();
@@ -8914,6 +9045,14 @@ function getPlanningReviewHistory(payload) {
     }
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    if (verifiedRole === "Coordinador") {
+      const plans = getOrCreateSheet(ss, "PlanificacionesPedagogicas").getDataRange().getValues();
+      const matchingPlans = plans.slice(1).filter(function(row) { return String(row[0] || "").trim() === String(planificacionId).trim(); });
+      if (matchingPlans.length !== 1 ||
+          !assertAcademicCoordinatorAreaAccess_(payload, ss, matchingPlans[0][4], true).authorized) {
+        return { status: "error", code: "NOT_FOUND" };
+      }
+    }
     const revSheet = getOrCreateSheet(ss, "RevisionesPlanificacion");
     const data = revSheet.getDataRange().getValues();
 
@@ -20184,10 +20323,16 @@ function getAcademicAreasByTeacher(payload) {
     const sheet = getOrCreateSheet(ss, "DocentesAreasAcademicas");
     const rows = sheet.getDataRange().getValues().slice(1);
     const cleanDocId = String(docenteId).trim();
+    const verifiedRole = String(payload && payload._verifiedRole || "").trim();
+    const coordinatorScope = verifiedRole === "Coordinador" ? getVerifiedAcademicCoordinatorAreaIds_(payload) : null;
+    if (coordinatorScope && !coordinatorScope.authorized) return { status: "error", code: "NOT_FOUND" };
 
     const filtered = rows.filter(r => {
       if (String(r[1]).trim() !== cleanDocId) return false;
       if (soloActivas && String(r[10]).trim() !== "Activo") return false;
+      if (coordinatorScope && !coordinatorScope.areaIds.some(function(value) {
+        return String(value).trim().toUpperCase() === String(r[3] || "").trim().toUpperCase();
+      })) return false;
       return true;
     }).map(r => ({
       asignacionId: r[0],
@@ -20239,6 +20384,10 @@ function removeTeacherFromAcademicArea(payload) {
 
     if (idx === -1) {
       throw new Error("Asignación de docente a área académica no encontrada.");
+    }
+    if (String(payload && payload._verifiedRole || "").trim() === "Coordinador") {
+      const areaAccess = assertAcademicCoordinatorAreaAccess_(payload, ss, data[idx][3], false);
+      if (!areaAccess.authorized) throw new Error("RESOURCE_NOT_FOUND");
     }
 
     const nowStr = new Date().toISOString();
