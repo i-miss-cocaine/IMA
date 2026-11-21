@@ -8414,43 +8414,128 @@ function dispatchWorkflowStatusNotification_(context) {
 }
 // [TAREA-F6-024] [Fase 6: Expediente Institucional y Ciclo de Vida] - Consulta del historial de notificaciones y seguimiento de trámites del expediente
 function getStudentProcedureNotificationLogs(payload) {
-  const { expedienteId, solicitudId, estadoFilter } = payload || {};
+  const request = payload || {};
+  const actorId = String(request._verifiedUserId || "").trim();
+  const role = String(request._verifiedRole || "").trim();
+  if (!actorId || !role || role === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+
+  const requestedExpedienteId = String(request.expedienteId || request.expedienteEstudianteId || "").trim();
+  const solicitudId = String(request.solicitudId || "").trim();
+  if (!requestedExpedienteId && !solicitudId) return { status: "error", code: "NOTIFICATION_TARGET_REQUIRED" };
+
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let targetExpedienteId = requestedExpedienteId;
+  let targetStudentId = "";
+  let resolvedRequestStudent = null;
+
+  if (solicitudId) {
+    const requestSheet = ss.getSheetByName("SolicitudesTramites");
+    if (!requestSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    const requestRows = requestSheet.getDataRange().getValues();
+    const requestHeaders = requestRows.length
+      ? requestRows[0].map(value => String(value || "").trim().toUpperCase()) : [];
+    const requestIdIndex = requestHeaders.indexOf("SOLICITUDID");
+    const studentIdIndex = requestHeaders.indexOf("ESTUDIANTEID");
+    if (requestIdIndex < 0 || studentIdIndex < 0) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+    const requestMatches = requestRows.slice(1).filter(row =>
+      String(row[requestIdIndex] || "").trim() === solicitudId);
+    if (requestMatches.length !== 1) {
+      return { status: "error", code: requestMatches.length ? "RESOURCE_AMBIGUOUS" : "RESOURCE_NOT_FOUND" };
+    }
+    targetStudentId = String(requestMatches[0][studentIdIndex] || "").trim();
+    if (!targetStudentId) return { status: "error", code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    resolvedRequestStudent = resolveAbsenceReviewExpedienteId_(ss, targetStudentId);
+    if (!resolvedRequestStudent || resolvedRequestStudent.status !== "success") {
+      return { status: "error", code: resolvedRequestStudent && resolvedRequestStudent.code || "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    }
+    if (targetExpedienteId && targetExpedienteId !== resolvedRequestStudent.expedienteId) {
+      return { status: "error", code: "NOTIFICATION_TARGET_MISMATCH" };
+    }
+    targetExpedienteId = resolvedRequestStudent.expedienteId;
+  }
+  if (!targetExpedienteId) return { status: "error", code: "NOTIFICATION_TARGET_REQUIRED" };
+
+  const expedienteSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!expedienteSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  const expedienteRows = expedienteSheet.getDataRange().getValues();
+  const expedienteHeaders = expedienteRows.length
+    ? expedienteRows[0].map(value => String(value || "").trim().toUpperCase()) : [];
+  const expedienteIdIndex = expedienteHeaders.indexOf("EXPEDIENTEID");
+  const personIdIndex = expedienteHeaders.indexOf("PERSONAID");
+  if (expedienteIdIndex < 0 || personIdIndex < 0) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
+  const expedienteMatches = expedienteRows.slice(1).filter(row =>
+    String(row[expedienteIdIndex] || "").trim() === targetExpedienteId);
+  if (expedienteMatches.length !== 1 || !String(expedienteMatches[0][personIdIndex] || "").trim()) {
+    return { status: "error", code: expedienteMatches.length ? "RESOURCE_OWNERSHIP_AMBIGUOUS" : "RESOURCE_NOT_FOUND" };
+  }
+
+  const normalizedRole = role.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (normalizedRole === "ESTUDIANTE" || normalizedRole === "ALUMNO") {
+    const ownResource = resolvedRequestStudent && targetStudentId === actorId
+      ? resolvedRequestStudent : resolveAbsenceReviewExpedienteId_(ss, actorId);
+    if (!ownResource || ownResource.status !== "success" || ownResource.expedienteId !== targetExpedienteId ||
+        (targetStudentId && targetStudentId !== actorId)) {
+      return { status: "error", code: "RESOURCE_SCOPE_DENIED" };
+    }
+  } else if (["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(normalizedRole) !== -1) {
+    let guardianContext = request._verifiedGuardianStudent;
+    if (!guardianContext) {
+      const guardianPayload = Object.assign({}, request);
+      if (targetStudentId) guardianPayload.studentId = targetStudentId;
+      else guardianPayload.expedienteId = targetExpedienteId;
+      const contextual = validateContextualAccess("getStudentProcedureNotificationLogs", guardianPayload, actorId, role);
+      if (!contextual || contextual.authorized !== true) {
+        return { status: "error", code: contextual && contextual.reason || "GUARDIAN_DOMAIN_PERMISSION_DENIED" };
+      }
+      guardianContext = guardianPayload._verifiedGuardianStudent;
+    }
+    if (!guardianContext || String(guardianContext.expedienteId || "").trim() !== targetExpedienteId ||
+        (targetStudentId && String(guardianContext.studentUserId || "").trim() !== targetStudentId)) {
+      return { status: "error", code: "GUARDIAN_RESOURCE_SCOPE_DENIED" };
+    }
+  } else if (normalizedRole === "ADMINISTRADOR" || normalizedRole === "DESARROLLADOR") {
+    let institutionScope = null;
+    try { institutionScope = getInstitutionalDepartmentScope_(request, role); } catch (_) {}
+    if (!institutionScope || institutionScope.status !== "success" || institutionScope.institutionWide !== true) {
+      return { status: "error", code: "RESOURCE_SCOPE_DENIED" };
+    }
+  } else {
+    const ownership = assertRecordOwnership(request, "EXPEDIENTE_ESTUDIANTE", targetExpedienteId, "READ");
+    if (!ownership || ownership.authorized !== true) {
+      return { status: "error", code: ownership && ownership.code || "RESOURCE_SCOPE_DENIED" };
+    }
+  }
+
   const sheet = ss.getSheetByName("BandejaNotificaciones");
   if (!sheet) return { status: "success", logs: [] };
-
   const rows = sheet.getDataRange().getValues().slice(1);
-  const targetId = String(expedienteId || solicitudId || "").trim().toLowerCase();
+  const targetIds = [targetExpedienteId, solicitudId].filter(Boolean).map(value => String(value).trim().toLowerCase());
 
-  const filtered = rows.filter(r => {
-    const userTarget = String(r[1] || "").trim().toLowerCase();
-    const tipo = String(r[2] || "").trim();
-    const dedupKey = String(r[9] || "").trim().toLowerCase();
-    const delivery = String(r[10] || "").trim();
-
-    const matchesTarget = !targetId || userTarget.indexOf(targetId) !== -1 || dedupKey.indexOf(targetId) !== -1;
-    const matchesEstado = !estadoFilter || delivery.toLowerCase() === String(estadoFilter).toLowerCase();
-
+  const filtered = rows.filter(row => {
+    const userTarget = String(row[1] || "").trim().toLowerCase();
+    const dedupKey = String(row[9] || "").trim().toLowerCase();
+    const delivery = String(row[10] || "").trim();
+    const keyParts = dedupKey.split(/[^a-z0-9_-]+/).filter(Boolean);
+    const matchesTarget = targetIds.some(target => userTarget === target || keyParts.indexOf(target) !== -1);
+    const matchesEstado = !request.estadoFilter || delivery.toLowerCase() === String(request.estadoFilter).toLowerCase();
     return matchesTarget && matchesEstado;
   });
 
-  const mapped = filtered.map(r => ({
-    notificacionId: r[0],
-    destinatario: r[1],
-    tipo: r[2],
-    titulo: r[3],
-    mensaje: r[4],
-    fechaEmision: r[5],
-    leido: r[6],
-    categoria: r[7],
-    enlaceAccion: r[8],
-    deduplicationKey: r[9],
-    estadoEntrega: r[10] || "Entregado",
-    emailDestino: r[11] || ""
+  const mapped = filtered.map(row => ({
+    notificacionId: row[0],
+    destinatario: row[1],
+    tipo: row[2],
+    titulo: row[3],
+    mensaje: row[4],
+    fechaEmision: row[5],
+    leido: row[6],
+    categoria: row[7],
+    enlaceAccion: row[8],
+    deduplicationKey: row[9],
+    estadoEntrega: row[10] || "Entregado",
+    emailDestino: row[11] || ""
   }));
-
   mapped.sort((a, b) => new Date(b.fechaEmision) - new Date(a.fechaEmision));
-
   return { status: "success", totalLogs: mapped.length, logs: mapped };
 }
 
