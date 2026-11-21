@@ -88,7 +88,7 @@ test("revoked or changed student context is denied before submission writes", ()
  assert.deepEqual(x.events,["permission","identity","lock","permission","identity","context","release"]);
 });
 test("Alumno remains accepted", () => { const x=submitRuntime({actor:{authorized:true,userId:"A1",role:"Alumno"}}); assert.equal(x.error,undefined); assert.equal(x.state.workerCalls,1); });
-test("lock timeout does not invoke worker or revalidate", () => { const x=submitRuntime({timeout:true}); assert.equal(x.error,"EXAM_SUBMISSION_LOCK_TIMEOUT"); assert.deepEqual(x.events,["permission","identity","context","lock"]); assert.equal(x.state.workerCalls,0); assert.equal(x.state.releases,0); assert.equal(x.state.permissionCalls,1); assert.equal(x.state.identityCalls,1); });
+test("lock timeout does not invoke worker or revalidate", () => { const x=submitRuntime({timeout:true}); assert.equal(x.error,"EXAM_SUBMISSION_LOCK_TIMEOUT"); assert.deepEqual(x.events,["permission","identity","lock"]); assert.equal(x.state.workerCalls,0); assert.equal(x.state.releases,0); assert.equal(x.state.permissionCalls,1); assert.equal(x.state.identityCalls,1); });
 test("shared exam context rejects invalid or incomplete identity before Sheets", () => {
  const context=new Function("getVerifiedExamIdentity_","SpreadsheetApp","SPREADSHEET_ID","getExamStudentProfile_","getVerifiedGuardianStudentIds_","getVerifiedExamDepartmentScope_",extractFunction("getExamReadContext_")+"; return getExamReadContext_;");
  let opens=0; const api={openById(){opens++;return {};}};
