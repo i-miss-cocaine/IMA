@@ -38,7 +38,7 @@ function extractFunction(name) {
 }
 
 const names = [
-  "transportRows_", "transportMetricsDateKey_", "transportMetricsTimeMinutes_", "getTransportEfficiencyMetrics"
+  "getVerifiedAccountingIdentity_", "transportRows_", "transportMetricsDateKey_", "transportMetricsTimeMinutes_", "getTransportEfficiencyMetrics"
 ];
 const extracted = names.map(extractFunction).join("\n");
 const rows = {
@@ -100,6 +100,8 @@ const ss = {
 };
 const context = {
   SPREADSHEET_ID: "TEST",
+  getVerifiedAccountingIdentity_(payload) { return { authorized: true, userId: payload._verifiedUserId, role: payload._verifiedRole, institutionId: "INST-1" }; },
+  validateRolePermission(actor, action) { return { authorized: true, actor, action }; },
   SpreadsheetApp: { openById: () => ss },
   LockService: { getScriptLock: () => ({
     tryLock: () => { lockCalls++; return lockAvailable; },
