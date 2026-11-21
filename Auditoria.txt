@@ -3261,3 +3261,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-065 / Phase22 | C1.929] Hallazgo: faltaban funciones escolares/SACE en ACCOUNTING y PT22-02 referenciaba una plantilla distinta de la creada en PT22-01. Corrección: funciones restauradas/implementadas, fixture de plantilla coherente, PDF privado con SHA-256/rollback, consulta CUV read-only, compatibilidad SACE y preservación de AUSENTE/EXENTO. Contratos Phase22 y school-document-binary-integrity PASS en Node 24.22.3; Department Scope 137/137 PASS. Apps Script/Sheets/Drive real pendiente BETA-FUNC-129.
+
+
+[2026-11-21 | AUD-NG-222 / TASK-502 | C1.930] EXAM: hallazgo de carrera en createExam: permisos/identidad/adscripción se resolvían antes de esperar ScriptLock. Se revalida RBAC, userId/role y ámbito dentro del lock antes de mutar; el lock se libera por finally. Contrato Node cubre permiso revocado, actor cambiado, departamento cambiado, timeout, reentrada y liberación. Exam-Service run 44963334570 SUCCESS, incluido all repository Node.js tests. CLI local NOT RUN por ausencia de checkout; no cerrar auditoría global ACADEMIC/ACCOUNTING.

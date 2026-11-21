@@ -1487,3 +1487,46 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
 - Siguiente: continuar el inventario action/resource de endpoints restantes en ACADEMIC, ACCOUNTING, TASK y EXAM, sin repetir los contratos ya vigentes; conservar BETA-FUNC-129 pendiente de despliegue y ejecución real.
 ===============================================================================
+
+
+===============================================================================
+### C1.930 — IMA-EXEC-20261121-AUD-NG-222-EXAM-CREATE-LOCK-89
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida verificado: C1.929. HEAD antes de la unidad: f62b14a428bf05fac7765ce40bc3ce666848e676; durante la ejecución el branch avanzó a 9fe9f6c7 con el cambio de autorización EXAM. Se inspeccionó el commit y se continuó desde su descendencia sin reescribir historia.
+- Commits de la unidad: 9fe9f6c7 (revalidación de permisos/identidad/departamento de createExam bajo lock); 738422c3, a4365a42, 5065cd61, 88757f01, 3bb73cb6 y e8f013e9 (contratos y aserciones de revalidación, cambios de actor/departamento y liberación del lock).
+- Rama exclusiva: NG_beta_0.0.0.1_work. Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+
+### Hallazgo y corrección
+- En withAuthorizedExamCreation_ la autorización y el ámbito se resolvían antes de esperar ScriptLock; si cambiaban permisos, identidad o adscripción durante la espera, se podía escribir con contexto obsoleto.
+- Corrección: preflight RBAC/identidad/ámbito; adquisición del lock; revalidación RBAC, identidad (incluye userId y role) y ámbito dentro del lock; validación de nuevo del departamento solicitado antes de ejecutar la mutación; finally libera el lock ante éxito o denegación.
+- La creación no continúa si cambia el actor o si el departamento seleccionado deja de estar en su ámbito actual.
+
+### Archivos modificados en esta unidad
+- backend/exam-service/Code.gs
+- tests/security/exam-service-create-exam-security.test.js
+
+### Verificaciones
+- GitHub Actions Exam-Service security local contracts run 44963334570: SUCCESS.
+- Paso 25 create-exam security regression: PASS.
+- Paso 35 Apps Script exam backend syntax: PASS.
+- Paso 36 complete Exam-Service Node.js contract suite: PASS.
+- Paso 38 repository JavaScript syntax: PASS.
+- Paso 39 all repository Node.js tests: PASS.
+- Department Scope Contract run 44963151092 en commit 9fe9f6c7: SUCCESS; SACE monotonic source revision run 44963151083: SUCCESS.
+- Varias ejecuciones intermedias fallaron por expectativas obsoletas/incompletas del test (contadores de RBAC, eventos de release); se corrigió el fixture y las expectativas sin debilitar aserciones. La ejecución final pasó.
+- Node.js se ejecutó en GitHub Actions (runner Node 24); CLI local independiente NOT RUN porque no había checkout local del repositorio disponible en esta sesión. Apps Script/Sheets real y concurrencia entre despliegues: NOT RUN; corresponden a validación beta cuando el entorno exista.
+
+### Revisión transversal realizada
+- USER: getScheduleChangeNotificationLogs y getNotificationAuditLogs requieren identidad, ámbito institucional completo y, para auditoría, permiso explícito; contrato user-global-notification-logs-scope.test.js ya cubre ámbito, permiso, identidad y filtros HOR-1/HOR-10. Sin defecto nuevo confirmado.
+- TASK: getStudentTasks/getAllTasks/getTeacherActivity filtran ResourceOwnership y ámbito; assertTaskServiceTeacherCanManageTask exige ownership y asignación de aula; mutaciones/entregas cuentan con wrappers y contratos de locks/ownership vigentes. Sin cambio nuevo en este tramo.
+- ACCOUNTING: contratos vigentes de asignaciones de transporte cubren ownership, duplicados, cancelación, rollback y lecturas/manifiesto con aislamiento por viaje; no se repitieron cambios ya cubiertos.
+- EXAM: endpoints de lectura usan withAuthorizedExamRead_ / wrappers de resultado; mutaciones de entrega usan wrapper autorizado con lock. La corrección de creación cierra el riesgo de contexto stale bajo lock.
+
+### Estado y siguiente acción elegible
+- El subflujo de creación de exámenes tiene revalidación de autorización dentro del lock y cobertura local automatizada en CI PASS.
+- AUD-NG-222 / TASK-502 continúa En ejecución: el inventario action/resource de ACADEMIC y ACCOUNTING todavía requiere terminarse; no declarar cerrada la auditoría transversal.
+- TASK-506 / AUD-NG-226 continúa En ejecución y depende de TASK-502.
+- Próximo paso: continuar el inventario focalizado ACADEMIC/ACCOUNTING (lecturas y mutaciones con IDs de expediente/empleado/transporte), reutilizando contratos vigentes; ejecutar CLI local cuando exista checkout local. Mantener BETA-FUNC-129 pendiente de entorno Apps Script/Drive.
+===============================================================================
