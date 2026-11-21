@@ -12343,38 +12343,39 @@ function generateTransportMonthlyCharges(payload){
 }
 
 function cancelStudentTransportAssignment(payload) {
-  const input = payload || {};
-  const id = String(input.asignacionTranspId || input.assignmentId || "").trim();
+  const p = payload || {}, id = String(p.asignacionTranspId || p.assignmentId || "").trim();
   if (!id) throw new Error("TRANSPORT_ASSIGNMENT_ID_REQUIRED");
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
-    const access = assertMonthlyChargeAccess_(input, "cancelStudentTransportAssignment");
-    const ss = access.ss;
-    const schema = transportEnsureBillingSchema_(ss);
-    const data = schema.assignments.getDataRange().getValues();
+    const actor = transportBillingActor_(p, "cancelStudentTransportAssignment");
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const assignmentSheet = ss.getSheetByName("TransporteAsignaciones");
+    if (!assignmentSheet) throw new Error("TRANSPORT_ASSIGNMENT_NOT_FOUND");
+    const data = assignmentSheet.getDataRange().getValues();
     const matches = [];
-    data.forEach((row, index) => {
-      if (index > 0 && String(row[0] || "").trim() === id) matches.push({ row: row, index: index });
-    });
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0] || "").trim() === id) matches.push({ index: i, row: data[i] });
+    }
     if (!matches.length) throw new Error("TRANSPORT_ASSIGNMENT_NOT_FOUND");
     if (matches.length !== 1) throw new Error("TRANSPORT_ASSIGNMENT_AMBIGUOUS");
-    const original = matches[0].row.slice();
-    const idx = matches[0].index;
-    const studentId = String(original[2] || "").trim();
-    if (!studentId) throw new Error("TRANSPORT_ASSIGNMENT_STUDENT_REQUIRED");
-    assertMonthlyChargeStudentOwnership_(ss, access.scope, [studentId], "WRITE");
-
+    const idx = matches[0].index, original = matches[0].row.slice();
+    transportAssertStudentOwnershipForMutation_(ss, p, actor, String(original[2] || "").trim(), "WRITE");
+    const routeSheet = ss.getSheetByName("TransporteRutas");
+    if (!routeSheet) throw new Error("TRANSPORT_ROUTE_NOT_FOUND");
+    const routeMatches = routeSheet.getDataRange().getValues().slice(1).filter(row =>
+      String(row[0] || "").trim() === String(original[1] || "").trim());
+    if (routeMatches.length !== 1) throw new Error(routeMatches.length ? "TRANSPORT_ROUTE_AMBIGUOUS" : "TRANSPORT_ROUTE_NOT_FOUND");
+    const schema = transportEnsureBillingSchema_(ss);
     const state = String(original[5] || "").toLowerCase();
     if (["cancelled", "cancelada"].indexOf(state) !== -1) {
       return { status: "success", idempotent: true, asignacionTranspId: id };
     }
-    if (state !== "active" && state !== "activa" && state !== "activo") throw new Error("TRANSPORT_ASSIGNMENT_NOT_ACTIVE");
-    const date = transportParseDate_(input.fechaCancelacion) || new Date();
+    if (state !== "active" && state !== "activa") throw new Error("TRANSPORT_ASSIGNMENT_NOT_ACTIVE");
+    const date = transportParseDate_(p.fechaCancelacion) || new Date();
     const start = transportParseDate_(original[10] || original[6]);
-    if (input.fechaCancelacion && !transportParseDate_(input.fechaCancelacion)) throw new Error("TRANSPORT_CANCELLATION_DATE_INVALID");
+    if (p.fechaCancelacion && !transportParseDate_(p.fechaCancelacion)) throw new Error("TRANSPORT_CANCELLATION_DATE_INVALID");
     if (start && date < start) throw new Error("TRANSPORT_CANCELLATION_BEFORE_START");
-
     const chargeSnapshot = schema.charges.getDataRange().getValues().map(row => row.slice());
     try {
       const updated = original.slice();
@@ -12382,13 +12383,8 @@ function cancelStudentTransportAssignment(payload) {
       updated[11] = date;
       updated[13] = date;
       schema.assignments.getRange(idx + 1, 1, 1, updated.length).setValues([updated]);
-      const billing = transportRecalculateStudentMonthlyChargeLocked_(ss, studentId, date.getFullYear(), date.getMonth() + 1);
-      return {
-        status: billing.missingTariff ? "warning" : "success",
-        asignacionTranspId: id,
-        fechaCancelacion: date.toISOString(),
-        facturacion: billing
-      };
+      const billing = transportRecalculateStudentMonthlyChargeLocked_(ss, String(original[2]), date.getFullYear(), date.getMonth() + 1);
+      return { status: billing.missingTariff ? "warning" : "success", asignacionTranspId: id, fechaCancelacion: date.toISOString(), facturacion: billing };
     } catch (error) {
       schema.assignments.getRange(idx + 1, 1, 1, original.length).setValues([original]);
       if (chargeSnapshot.length) schema.charges.getRange(1, 1, chargeSnapshot.length, chargeSnapshot[0].length).setValues(chargeSnapshot);
@@ -12401,134 +12397,165 @@ function cancelStudentTransportAssignment(payload) {
 }
 
 function assignStudentTransport(payload) {
-  const input = payload || {};
-  const rutaId = String(input.rutaId || "").trim();
-  const estudianteUserId = String(input.estudianteUserId || "").trim();
-  const { paradaNombre, horarioPlan, jornada, diasSemanaJSON, observaciones, modalidadServicio, fechaInicioServicio } = input;
+  const { rutaId, estudianteUserId, paradaNombre, horarioPlan, jornada, diasSemanaJSON, observaciones, modalidadServicio, fechaInicioServicio } = payload || {};
   if (!rutaId || !estudianteUserId) throw new Error("rutaId y estudianteUserId son requeridos.");
 
   const lock = LockService.getScriptLock();
   const hasLock = lock.tryLock(15000);
-  if (!hasLock) return {
-    status: "error",
-    code: "LOCK_TIMEOUT",
-    message: "Operación de asignación de transporte bloqueada por concurrencia. Por favor reintente."
-  };
+  if (!hasLock) {
+    return {
+      status: "error",
+      code: "LOCK_TIMEOUT",
+      message: "Operación de asignación de transporte bloqueada por concurrencia. Por favor reintente."
+    };
+  }
 
   try {
-    const access = assertMonthlyChargeAccess_(input, "assignStudentTransport");
-    const ss = access.ss;
-    assertMonthlyChargeStudentOwnership_(ss, access.scope, [estudianteUserId], "WRITE");
-
+    const actor = transportBillingActor_(payload, "assignStudentTransport");
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    transportAssertStudentOwnershipForMutation_(ss, payload, actor, String(estudianteUserId).trim(), "WRITE");
     getOrCreateTransportVehiclesCatalog(ss);
-    const billingSchema = transportEnsureBillingSchema_(ss);
-    const rutaSheet = getOrCreateSheet(ss, "TransporteRutas");
-    const asgnSheet = getOrCreateSheet(ss, "TransporteAsignaciones");
-    const vehSheet = getOrCreateSheet(ss, "TransporteVehiculos");
-    const rutasData = rutaSheet.getDataRange().getValues().slice(1);
-    const routeMatches = rutasData.filter(row => String(row[0] || "").trim() === rutaId);
-    if (!routeMatches.length) return { status: "error", code: "ROUTE_NOT_FOUND", message: "Ruta de transporte no encontrada." };
-    if (routeMatches.length !== 1) return { status: "error", code: "ROUTE_AMBIGUOUS" };
+    const billingSchema=transportEnsureBillingSchema_(ss);
+
+    const rutaSheet = ss.getSheetByName("TransporteRutas");
+    if (!rutaSheet) return { status: "error", code: "TRANSPORT_RESOURCE_NOT_FOUND" };
+    const routeValues = rutaSheet.getDataRange().getValues();
+    const routeMatches = routeValues.slice(1).filter(r => String(r[0] || "").trim() === String(rutaId).trim());
+    if (routeMatches.length !== 1) {
+      return { status: "error", code: routeMatches.length ? "ROUTE_ID_AMBIGUOUS" : "ROUTE_NOT_FOUND" };
+    }
     const targetRuta = routeMatches[0];
-    const routeState = String(targetRuta[6] || "").trim().toLowerCase();
-    if (["active", "activo", "activa", "vigente"].indexOf(routeState) === -1) {
+    if (["active", "activa"].indexOf(String(targetRuta[6] || "").trim().toLowerCase()) === -1) {
       return { status: "error", code: "ROUTE_NOT_ACTIVE" };
     }
 
-    const unidadCod = String(targetRuta[2] || "").trim();
-    const vehRows = vehSheet.getDataRange().getValues().slice(1);
-    const vehicleMatches = vehRows.filter(row => String(row[1] || "").trim() === unidadCod);
-    if (vehicleMatches.length > 1) return { status: "error", code: "TRANSPORT_VEHICLE_AMBIGUOUS" };
-    const targetVeh = vehicleMatches[0] || null;
-    const capAutorizada = targetVeh ? parseInt(targetVeh[5] || 0, 10) : parseInt(targetRuta[4] || 25, 10);
-    if (!Number.isInteger(capAutorizada) || capAutorizada < 1) throw new Error("TRANSPORT_CAPACITY_INVALID");
-
-    const asgnData = asgnSheet.getDataRange().getValues().slice(1);
-    const isActive = row => ["active", "activa", "activo"].indexOf(String(row[5] || "").toLowerCase().trim()) !== -1;
-    const targetJornada = String(jornada || targetRuta[10] || "Matutina").toLowerCase().trim();
-    const isDuplicate = asgnData.some(row =>
-      String(row[2] || "").trim() === estudianteUserId &&
-      String(row[1] || "").trim() === rutaId &&
-      isActive(row) &&
-      String(row[7] || targetJornada).toLowerCase().trim() === targetJornada
-    );
-    if (isDuplicate) return {
-      status: "error",
-      code: "DUPLICATE_TRANSPORT_ASSIGNMENT",
-      message: "El estudiante ya cuenta con una asignación activa en esta ruta y jornada."
-    };
-
-    const horaIniTarget = String(targetRuta[8] || "06:30").trim();
-    const hasTimeConflict = asgnData.some(row => {
-      if (String(row[2] || "").trim() !== estudianteUserId || !isActive(row)) return false;
-      const otherRouteId = String(row[1] || "").trim();
-      const otherRoutes = rutasData.filter(route => String(route[0] || "").trim() === otherRouteId);
-      if (otherRoutes.length !== 1) return false;
-      const otherRoute = otherRoutes[0];
-      const otherState = String(otherRoute[6] || "").trim().toLowerCase();
-      if (["active", "activo", "activa", "vigente"].indexOf(otherState) === -1) return false;
-      const otherTime = String(otherRoute[8] || "06:30").trim();
-      const otherJornada = String(otherRoute[10] || "Matutina").toLowerCase().trim();
-      return otherTime === horaIniTarget && otherJornada === targetJornada;
-    });
-    if (hasTimeConflict) return {
-      status: "error",
-      code: "TRANSPORT_SCHEDULE_CONFLICT",
-      message: "El estudiante ya está asignado a otra ruta activa en el mismo horario."
-    };
-
-    const cuposOcupados = asgnData.filter(row =>
-      String(row[1] || "").trim() === rutaId && isActive(row)
-    ).length;
-    if (cuposOcupados >= capAutorizada) return {
-      status: "error",
-      code: "TRANSPORT_CAPACITY_EXCEEDED",
-      capacidadMaxima: capAutorizada,
-      cuposOcupados: cuposOcupados,
-      message: "Capacidad vehicular agotada en la ruta."
-    };
-
-    const now = new Date();
-    const serviceStart = transportParseDate_(fechaInicioServicio) || now;
-    const serviceMode = transportNormalizeMode_(modalidadServicio || "COMPLETA");
-    if (fechaInicioServicio && !transportParseDate_(fechaInicioServicio)) throw new Error("TRANSPORT_SERVICE_START_INVALID");
-    const asgnId = "TRN-" + now.getTime() + "-" + Utilities.getUuid().slice(0, 8);
-    const chargeSnapshot = billingSchema.charges.getDataRange().getValues().map(row => row.slice());
-    const assignmentStartRow = asgnSheet.getLastRow() + 1;
-
-    asgnSheet.appendRow([
-      asgnId, rutaId, estudianteUserId, paradaNombre || "Parada Principal",
-      horarioPlan || targetRuta[8] || "06:30 AM", "active", now.toISOString(),
-      targetJornada,
-      diasSemanaJSON ? (Array.isArray(diasSemanaJSON) ? JSON.stringify(diasSemanaJSON) : diasSemanaJSON) : "[\"Lun\",\"Mar\",\"Mie\",\"Jue\",\"Vie\"]",
-      observaciones || "", serviceStart, "", serviceMode, "", "", ""
-    ]);
-    let billing = { status: "success", created: false, missingTariff: 0 };
-    try {
-      billing = transportRecalculateStudentMonthlyChargeLocked_(ss, estudianteUserId, now.getFullYear(), now.getMonth() + 1);
-    } catch (billingError) {
-      asgnSheet.deleteRow(assignmentStartRow);
-      const charges = billingSchema.charges;
-      if (chargeSnapshot.length) charges.getRange(1, 1, chargeSnapshot.length, chargeSnapshot[0].length).setValues(chargeSnapshot);
-      while (charges.getLastRow() > chargeSnapshot.length) charges.deleteRow(charges.getLastRow());
-      throw billingError;
+    const studentSheet = ss.getSheetByName("ExpedientesEstudiantes");
+    if (!studentSheet) return { status: "error", code: "TRANSPORT_STUDENT_RESOURCE_NOT_FOUND" };
+    const studentValues = studentSheet.getDataRange().getValues();
+    if (!studentValues || !studentValues.length) return { status: "error", code: "TRANSPORT_STUDENT_SCHEMA_INVALID" };
+    const studentHeaders = studentValues[0].map(value => String(value || "").trim());
+    const studentUserIndex = studentHeaders.indexOf("UserId");
+    if (studentUserIndex < 0) return { status: "error", code: "TRANSPORT_STUDENT_SCHEMA_INVALID" };
+    const studentMatches = studentValues.slice(1).filter(row =>
+      String(row[studentUserIndex] || "").trim() === String(estudianteUserId).trim());
+    if (studentMatches.length !== 1) {
+      return { status: "error", code: studentMatches.length ? "TRANSPORT_STUDENT_AMBIGUOUS" : "TRANSPORT_STUDENT_NOT_FOUND" };
     }
 
-    logStructuredEvent(
-      "TRANSPORT", "assignStudentTransport", "INFO", "TRANSPORT_ASSIGNMENT_CREATED",
-      "Asignación de transporte creada para estudiante " + estudianteUserId + " en ruta " + rutaId,
-      { asignacionTranspId: asgnId, rutaId: rutaId, estudianteUserId: estudianteUserId,
-        capAutorizada: capAutorizada, cuposOcupadosDespues: cuposOcupados + 1 },
-      access.actor.userId
+    getOrCreateTransportVehiclesCatalog(ss);
+    const billingSchema = transportEnsureBillingSchema_(ss);
+    const asgnSheet = getOrCreateSheet(ss, "TransporteAsignaciones");
+    const vehSheet = getOrCreateSheet(ss, "TransporteVehiculos");
+    const rutasData = routeValues.slice(1);
+    const unidadCod = String(targetRuta[2] || "").trim();
+    const vehRows = vehSheet.getDataRange().getValues().slice(1);
+    const vehicleMatches = vehRows.filter(v => String(v[1] || "").trim() === unidadCod);
+    if (vehicleMatches.length > 1) return { status: "error", code: "TRANSPORT_VEHICLE_AMBIGUOUS" };
+    const targetVeh = vehicleMatches[0];
+    if (targetVeh && targetVeh[6] && ["active", "activa"].indexOf(String(targetVeh[6]).trim().toLowerCase()) === -1) return { status: "error", code: "TRANSPORT_VEHICLE_NOT_ACTIVE" };
+    const capAutorizada = targetVeh ? parseInt(targetVeh[5] || 0, 10) : parseInt(targetRuta[4] || 25, 10);
+    if (!Number.isFinite(capAutorizada) || capAutorizada < 1) return { status: "error", code: "TRANSPORT_CAPACITY_INVALID" };
+
+    const asgnData = asgnSheet.getDataRange().getValues().slice(1);
+
+    // 1. Validar duplicidad de asignación para la misma ruta, estudiante y jornada [TASK-029]
+    const targetJornada = String(jornada || targetRuta[10] || "Matutina").toLowerCase().trim();
+    const isDuplicate = asgnData.some(r =>
+      String(r[2]).trim() === String(estudianteUserId).trim() &&
+      String(r[1]).trim() === String(rutaId).trim() &&
+      String(r[5] || "").toLowerCase().trim() === "active" &&
+      String(r[7] || targetJornada).toLowerCase().trim() === targetJornada
     );
+
+    if (isDuplicate) {
+      return {
+        status: "error",
+        code: "DUPLICATE_TRANSPORT_ASSIGNMENT",
+        message: `El estudiante '${estudianteUserId}' ya cuenta con una asignación activa en la ruta '${rutaId}' para la jornada '${targetJornada}'.`
+      };
+    }
+
+    // 2. Validar colisión de horarios entre rutas distintas [TASK-029]
+    const horaIniTarget = String(targetRuta[8] || "06:30").trim();
+    const hasTimeConflict = asgnData.some(a => {
+      if (String(a[2]).trim() !== String(estudianteUserId).trim() || String(a[5] || "").toLowerCase().trim() !== "active") {
+        return false;
+      }
+      const otherRuta = rutasData.find(r => String(r[0]).trim() === String(a[1]).trim());
+      if (!otherRuta) return false;
+      const otherHoraIni = String(otherRuta[8] || "06:30").trim();
+      const otherJornada = String(otherRuta[10] || "Matutina").toLowerCase().trim();
+      return otherHoraIni === horaIniTarget && otherJornada === targetJornada;
+    });
+
+    if (hasTimeConflict) {
+      return {
+        status: "error",
+        code: "TRANSPORT_SCHEDULE_CONFLICT",
+        message: `Conflicto de horario: El estudiante '${estudianteUserId}' ya está asignado a otra ruta activa en el mismo horario (${horaIniTarget}, jornada: ${targetJornada}).`
+      };
+    }
+
+    // 3. Control estricto de cupos y aforo vehicular [TASK-029]
+    const cuposOcupados = asgnData.filter(r =>
+      String(r[1]).trim() === String(rutaId).trim() && String(r[5] || "").toLowerCase().trim() === "active"
+    ).length;
+
+    if (cuposOcupados >= capAutorizada) {
+      return {
+        status: "error",
+        code: "TRANSPORT_CAPACITY_EXCEEDED",
+        capacidadMaxima: capAutorizada,
+        cuposOcupados: cuposOcupados,
+        message: `Capacidad vehicular agotada en la ruta '${rutaId}'. Cupos autorizados: ${capAutorizada}, Cupos ocupados: ${cuposOcupados}. No es posible admitir sobrecupo.`
+      };
+    }
+
+    const now = new Date(),serviceStart=transportParseDate_(fechaInicioServicio)||now,serviceMode=transportNormalizeMode_(modalidadServicio||"COMPLETA");
+    if(fechaInicioServicio&&!transportParseDate_(fechaInicioServicio))throw new Error("TRANSPORT_SERVICE_START_INVALID");
+    const asgnId = "TRN-" + now.getTime() + "-" + Utilities.getUuid().slice(0,8);
+    const chargeSnapshot=billingSchema.charges.getDataRange().getValues().map(r=>r.slice()),assignmentStartRow=asgnSheet.getLastRow()+1;
+
+    asgnSheet.appendRow([
+      asgnId,
+      String(rutaId).trim(),
+      String(estudianteUserId).trim(),
+      paradaNombre || "Parada Principal",
+      horarioPlan || targetRuta[8] || "06:30 AM",
+      "active",
+      now.toISOString(),
+      targetJornada,
+      diasSemanaJSON ? (Array.isArray(diasSemanaJSON) ? JSON.stringify(diasSemanaJSON) : diasSemanaJSON) : "[\"Lun\",\"Mar\",\"Mie\",\"Jue\",\"Vie\"]",
+      observaciones || "",
+      serviceStart,
+      "",
+      serviceMode,
+      "",
+      "",
+      ""
+    ]);
+    let billing={status:"success",created:false,missingTariff:0};
+    try{billing=transportRecalculateStudentMonthlyChargeLocked_(ss,String(estudianteUserId).trim(),now.getFullYear(),now.getMonth()+1);}
+    catch(billingError){asgnSheet.deleteRow(assignmentStartRow);const sh=billingSchema.charges;if(chargeSnapshot.length)sh.getRange(1,1,chargeSnapshot.length,chargeSnapshot[0].length).setValues(chargeSnapshot);while(sh.getLastRow()>chargeSnapshot.length)sh.deleteRow(sh.getLastRow());throw billingError;}
+
+    logStructuredEvent(
+      "TRANSPORT",
+      "assignStudentTransport",
+      "INFO",
+      "TRANSPORT_ASSIGNMENT_CREATED",
+      `Asignación de transporte creada para estudiante ${estudianteUserId} en ruta ${rutaId}`,
+      { asignacionTranspId: asgnId, rutaId, estudianteUserId, capAutorizada, cuposOcupadosDespues: cuposOcupados + 1 },
+      (payload && payload.authUserId) || "System"
+    );
+
     return {
       status: "success",
       asignacionTranspId: asgnId,
       rutaId: rutaId,
       cuposRestantes: capAutorizada - (cuposOcupados + 1),
-      facturacion: billing,
-      billingStatus: billing.missingTariff ? "PENDIENTE_TARIFA" : "PROCESADA",
-      message: billing.missingTariff ? "Estudiante asignado; configure la tarifa para generar el cargo." : "Estudiante asignado y cargo mensual sincronizado."
+      facturacion:billing,
+      billingStatus:billing.missingTariff?"PENDIENTE_TARIFA":"PROCESADA",
+      message: billing.missingTariff?"Estudiante asignado; configure la tarifa para generar el cargo.":"Estudiante asignado y cargo mensual sincronizado."
     };
   } finally {
     lock.releaseLock();
