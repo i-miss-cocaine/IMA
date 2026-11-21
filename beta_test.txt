@@ -2461,3 +2461,27 @@ Estado: PENDIENTE DE BETA.
 Evidencia requerida: SHA de despliegue, IDs sintéticos, permisos/scope, respuestas, snapshots de asignación/cargos y trazas de concurrencia sin PII/tokens.
 Tarea vinculada: AUD-NG-222 / TASK-502.
 ===============================================================================
+
+
+===============================================================================
+BETA-FUNC-129 — Emisión y verificación de documentos escolares privados / SACE
+===============================================================================
+- Módulo/roles: ACCOUNTING / Secretaría, Dirección, Administrador; consulta pública de CUV.
+- Requisito/tarea: AUD-NG-065 / Phase 22 — Document Management and SACE.
+- Objetivo: verificar en Apps Script, Sheets y Drive reales la emisión de documentos escolares con plantilla publicada, correlativo/CUV únicos, archivo PDF privado, SHA-256, persistencia atómica y verificación pública de solo lectura; validar preservación de AUSENTE/EXENTO en reportes SACE.
+- Prioridad: Alta.
+- Precondiciones: despliegue aislado de ACCOUNTING con plantilla sintética; cuenta de servicio de prueba; carpeta de documentos privada; hojas PlantillasEscolares, DocumentosEscolaresEmitidos y PlantillasSACEVerificadas; estudiantes/solicitudes sintéticos sin PII real.
+- Pasos:
+  1. Configurar una plantilla sintética con campos HTML y campos personalizables; verificar que PT22-02 usa exactamente el ID creado en PT22-01.
+  2. Emitir dos documentos concurrentes para el mismo año; comprobar correlativos y CUV únicos, lock liberado y persistencia de una fila por PDF.
+  3. Verificar que carpeta y archivo mantienen acceso PRIVATE y que DriveURL no expone un enlace compartido.
+  4. Consultar CUV existente, inexistente y duplicado; confirmar que la consulta no crea hojas ni modifica filas y que solo devuelve integridad verificada.
+  5. Alterar bytes del PDF, cambiar su sharing a ANYONE_WITH_LINK y eliminar el archivo; comprobar denegación con DOCUMENT_INTEGRITY_MISMATCH, DOCUMENT_FILE_NOT_PRIVATE y DOCUMENT_FILE_UNAVAILABLE.
+  6. Inyectar fallo al persistir DocumentosEscolaresEmitidos; comprobar rollback (PDF a papelera), ninguna fila fantasma y lock liberado.
+  7. Verificar plantilla SACE compatible/incompatible y generar reporte con nota cero, PENDIENTE, AUSENTE y EXENTO; confirmar que AUSENTE/EXENTO nunca se convierten en cero ni PENDIENTE.
+- Resultado esperado: archivos y carpetas privados; CUV/correlativo únicos; verificación CUV estrictamente de lectura; SHA-256 detecta cualquier alteración; rollback elimina artefactos huérfanos; estados SACE preservados.
+- Resultado real: contratos Node aislados PASS; Apps Script/Sheets/Drive real no ejecutado.
+- Estado: PENDIENTE DE BETA.
+- Evidencia requerida: SHA del despliegue, IDs sintéticos, sharing access, CUV/correlativos, hashes, snapshots antes/después, resultados de fallos inyectados y trazas de concurrencia sin PII/tokens.
+- Tarea vinculada: AUD-NG-065 / AUD-NG-222 / TASK-502.
+===============================================================================
