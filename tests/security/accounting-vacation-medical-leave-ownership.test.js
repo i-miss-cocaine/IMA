@@ -39,8 +39,8 @@ assert.equal(Array.from(ctx.getEmployeeRecords(p("ha")).expedientes,r=>r.expedie
 assert.equal(Array.from(ctx.getEmployeeRecords(p("hb")).expedientes,r=>r.expedienteId).join(","),"EB");
 assert.equal(Array.from(ctx.getEmployeeRecords(p("admin")).expedientes,r=>r.expedienteId).sort().join(","),"EA,EB,EP");
 assert.equal(ctx.getEmployeeRecords(p("bad")).code,"VERIFIED_IDENTITY_REQUIRED");
-assert.equal(ctx.getEmployeeRecords(p("parent")).code,"ROLE_PERMISSION_DENIED");
-assert.equal(ctx.getVacationRequests(p("parent")).code,"ROLE_PERMISSION_DENIED");
+assert.equal(ctx.getEmployeeRecords(p("parent")).code,"ROLE_NOT_ALLOWED");
+assert.equal(ctx.getVacationRequests(p("parent")).code,"ROLE_NOT_ALLOWED");
 assert.equal(Array.from(ctx.getEmployeeRecords(p("ha")).expedientes,r=>r.expedienteId).join(","),"EA,EP");
 assert.equal(ctx.getEmployeeRecords(p("ha")).expedientes[0].observaciones,"Nota interna A","authorized HR scope retains its permitted record details");
 assert.equal(Array.from(ctx.getEmployeeRecords(p("hrGlobal")).expedientes,r=>r.expedienteId).sort().join(","),"EA,EB,EP","institution-wide HR scope may view the full authorized institution");
