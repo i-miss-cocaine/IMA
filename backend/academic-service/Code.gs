@@ -15406,46 +15406,54 @@ function auditAssistantDelegatedAction(payload) {
 }
 
 function getStudentAttendanceSummary(payload) {
-  const { userId } = payload || {};
-  if (!userId) throw new Error("userId es requerido.");
+  const request = payload || {};
+  const permission = validateRolePermission("getStudentAttendanceSummary", request);
+  if (!permission || permission.authorized !== true) return { status: "error", code: "AUTH_PERMISSION_DENIED" };
+
+  const actor = getVerifiedAcademicIdentity_(request);
+  if (!actor || actor.authorized !== true || !actor.userId || !actor.role) {
+    return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  }
+
+  const role = String(actor.role).toUpperCase().replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E").replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O").replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N").replace(/[^A-Z0-9]/g, "");
+  const isStudent = role === "ESTUDIANTE" || role === "ALUMNO";
+  const requestedUserId = String(request.userId || request.studentId || request.estudianteId || "").trim();
+  const targetUserId = isStudent ? String(actor.userId).trim() : requestedUserId;
+  if (!targetUserId) return { status: "error", code: "STUDENT_TARGET_REQUIRED" };
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const targetPersonId = getStudentPersonIdForUser_(ss, targetUserId);
+  if (!targetPersonId) return { status: "error", code: "STUDENT_IDENTITY_UNRESOLVED" };
+  const expedienteSheet = ss.getSheetByName("ExpedientesEstudiantes");
+  if (!expedienteSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  const expedienteRows = expedienteSheet.getDataRange().getValues().slice(1);
+  const expedienteMatches = expedienteRows.filter(row => String(row[1] || "").trim() === targetPersonId);
+  if (expedienteMatches.length !== 1) {
+    return { status: "error", code: expedienteMatches.length ? "RESOURCE_AMBIGUOUS" : "RESOURCE_NOT_FOUND" };
+  }
+  const access = assertStudentExpedienteScopeAccess_(request, ss, expedienteSheet, expedienteMatches[0], "permisoAcademico", "READ");
+  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "RESOURCE_SCOPE_DENIED" };
+
   const regSheet = getOrCreateSheet(ss, "RegistrosAsistencia");
   const regData = regSheet.getDataRange().getValues();
+  const userRegs = regData.length > 1 ? regData.slice(1).filter(row => String(row[2] || "").trim() === targetUserId) : [];
 
-  const userRegs = regData.length > 1 ? regData.slice(1).filter(r => String(r[2]).trim() === String(userId).trim()) : [];
-
-  let presentes = 0;
-  let ausentes = 0;
-  let tardanzas = 0;
-  let salidasAnticipadas = 0;
-  let justificadas = 0;
-
-  userRegs.forEach(r => {
-    const st = String(r[3]).toLowerCase();
-    if (st === "presente") presentes++;
-    else if (st === "ausente") ausentes++;
-    else if (st === "tardanza") tardanzas++;
-    else if (st === "salidaanticipada") salidasAnticipadas++;
-
-    if (r[6] === true || String(r[6]).toLowerCase() === "true") justificadas++;
+  let presentes = 0, ausentes = 0, tardanzas = 0, salidasAnticipadas = 0, justificadas = 0;
+  userRegs.forEach(row => {
+    const status = String(row[3] || "").toLowerCase();
+    if (status === "presente") presentes++;
+    else if (status === "ausente") ausentes++;
+    else if (status === "tardanza") tardanzas++;
+    else if (status === "salidaanticipada") salidasAnticipadas++;
+    if (row[6] === true || String(row[6]).toLowerCase() === "true") justificadas++;
   });
 
   const total = userRegs.length;
   const porcentajeAsistencia = total > 0 ? (((presentes + tardanzas) / total) * 100).toFixed(1) : "100.0";
-
   return {
     status: "success",
-    data: {
-      userId,
-      totalSesiones: total,
-      presentes,
-      ausentes,
-      tardanzas,
-      salidasAnticipadas,
-      justificadas,
-      porcentajeAsistencia: parseFloat(porcentajeAsistencia)
-    }
+    data: { userId: targetUserId, totalSesiones: total, presentes, ausentes, tardanzas, salidasAnticipadas,
+      justificadas, porcentajeAsistencia: parseFloat(porcentajeAsistencia) }
   };
 }
 
