@@ -2520,6 +2520,9 @@ function saveProject(payload) {
   const fileName = payload && payload.fileName, code = payload && payload.code, editor = payload && payload.editor;
   if (!userId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Acceso denegado: se requiere el estudiante autenticado.");
   if (!userId || !fileName) throw new Error("ID de usuario y nombre de archivo requeridos.");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("TASK_PROJECT_LOCK_TIMEOUT");
+  try {
 
   const alumnoFolder = getStudentFolder(userId);
   const projectsFolder = getOrCreateFolder(alumnoFolder, "Proyectos_PSeInt");
@@ -2562,6 +2565,9 @@ function saveProject(payload) {
   }
 
   return { status: "success", message: "Proyecto guardado.", data: { fileId: fileId } };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function listProjects(payload) {
@@ -2606,6 +2612,9 @@ function deleteProject(payload) {
     throw new Error("Acceso denegado: solo el estudiante autenticado puede eliminar sus proyectos.");
   }
   if (!requestedFileId && !requestedName) throw new Error("Identificador de proyecto requerido.");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("TASK_PROJECT_LOCK_TIMEOUT");
+  try {
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const pseudocodeSheet = getSheetOrThrow(ss, "pseudocode");
@@ -2644,22 +2653,34 @@ function deleteProject(payload) {
   }
 
   return { status: "success", message: "Proyecto eliminado." };
+  } finally {
+    lock.releaseLock();
+  }
 }
 function loadProject(payload) {
   const userId = payload && payload._verifiedUserId;
   const role = payload && payload._verifiedRole;
   const fileId = payload && payload.fileId;
   if (!userId || (role !== "Estudiante" && role !== "Alumno") || !fileId) throw new Error("Acceso denegado: se requiere identidad del propietario y proyecto.");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("TASK_PROJECT_LOCK_TIMEOUT");
+  try {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const data = getSheetOrThrow(ss, "pseudocode").getDataRange().getValues();
   const row = data.slice(1).find(item => String(item[0]).trim() === String(userId).trim() &&
     (String(item[1]) === String(fileId) || extractTaskServiceFileId(item[2]) === extractTaskServiceFileId(fileId)));
   if (!row) throw new Error("Acceso denegado: el proyecto no pertenece al estudiante autenticado.");
   return { status:"success", data:{ name:row[1], code:row[3] } };
+  } finally {
+    lock.releaseLock();
+  }
 }
 function getAllStudentProjects(payload) {
   const role = payload && payload._verifiedRole, userId = payload && payload._verifiedUserId;
   if (!userId || (role !== "Estudiante" && role !== "Alumno")) throw new Error("Solo el estudiante autenticado puede consultar sus proyectos.");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) throw new Error("TASK_PROJECT_LOCK_TIMEOUT");
+  try {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const rows = getSheetOrThrow(ss, "pseudocode").getDataRange().getValues().slice(1);
   const projects = rows.filter(row => String(row[0]).trim() === String(userId).trim()).map(row => {
@@ -2670,6 +2691,9 @@ function getAllStudentProjects(payload) {
   });
   projects.sort((a,b)=>new Date(b.lastUpdated||0)-new Date(a.lastUpdated||0));
   return { status:"success", data:projects };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // [TAREA-06] [Fase 1 - Gestión Documental] - Módulo institucional de gestión de carpetas, identificadores estables y permisos documentales.
