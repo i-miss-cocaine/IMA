@@ -249,7 +249,12 @@ applicantRuntime.getUserVerifiedRole = () => "Estudiante";
 assert.throws(() => applicantRuntime.lookup({ _verifiedUserId: "GUARDIAN-1" }), /GUARDIAN_ROLE_REQUIRED/,
   "non-guardian roles cannot use guardian applicant ownership lookup");
 
+let familyScholarshipLockAvailable = true, familyScholarshipLockReleases = 0;
 const familyScholarshipRuntime = {
+  LockService: { getScriptLock: () => ({
+    tryLock: () => familyScholarshipLockAvailable,
+    releaseLock: () => { familyScholarshipLockReleases++; }
+  }) },
   getUserVerifiedRole: payload => { payload._verifiedUserId = "GUARDIAN-1"; return "Padre"; },
   getGuardianStudents: () => ({ status: "success", data: [
     { userId: "STU-1", studentUserId: "STU-1", permisos: { permisoFinanciero: true } },
@@ -673,5 +678,32 @@ const permissionUpdateResult = permissionUpdateRuntime.update({ relacionId: "REL
 assert.equal(permissionUpdateResult.status, "success", "unique family permission update remains available");
 assert.equal(permissionUpdateWritten, true, "unique family permission update writes under the lock");
 assert.equal(permissionUpdateReleased, true, "successful family permission update releases its lock");
+
+
+familyScholarshipRuntime.getGuardianStudents = () => ({ status: "success", data: [
+  { userId: "STU-1", studentUserId: "STU-1", permisos: { permisoFinanciero: false } },
+  { userId: "STU-3", studentUserId: "STU-3", permisos: { permisoFinanciero: false } }
+] });
+const scholarshipRowsBeforeRevocation = familyScholarshipRows.length;
+const scholarshipReleasesBeforeRevocation = familyScholarshipLockReleases;
+assert.throws(() => familyScholarshipRuntime.submit({
+  sessionToken: "signed", estudiantesIds: ["STU-1"], tipoBeneficio: "Beca", motivo: "Revoked"
+}), /FAMILY_FINANCIAL_SCOPE_DENIED/,
+  "family scholarship submission denies after financial permission revocation");
+assert.equal(familyScholarshipRows.length, scholarshipRowsBeforeRevocation,
+  "revoked family scholarship submission performs no append");
+assert.equal(familyScholarshipLockReleases, scholarshipReleasesBeforeRevocation + 1,
+  "family scholarship submission releases its lock after authorization denial");
+assert.deepEqual(Array.from(familyScholarshipRuntime.read({ sessionToken: "signed" }).data), [],
+  "family scholarship read hides historical applications after all financial grants are revoked");
+familyScholarshipLockAvailable = false;
+const scholarshipRowsBeforeLockTimeout = familyScholarshipRows.length;
+assert.throws(() => familyScholarshipRuntime.submit({
+  sessionToken: "signed", estudiantesIds: ["STU-1"], tipoBeneficio: "Beca", motivo: "Busy"
+}), /FAMILY_SCHOLARSHIP_LOCK_TIMEOUT/,
+  "family scholarship submission fails closed when the shared permission lock is busy");
+assert.equal(familyScholarshipRows.length, scholarshipRowsBeforeLockTimeout,
+  "family scholarship lock timeout performs no write");
+familyScholarshipLockAvailable = true;
 
 process.stdout.write("contextual-abac-five-services-contract: all assertions passed\n");

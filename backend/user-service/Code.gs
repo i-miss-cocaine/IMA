@@ -6629,30 +6629,36 @@ function normalizeGuardianFinancialStudentIds_(requested, permittedIds) {
 }
 
 function getFamilyScholarships(payload) {
-  const resolved = getVerifiedGuardianFinancialStudentIds_(payload);
-  const allowedIds = resolved.studentIds;
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "BecasYDescuentosFamiliares");
-  const rows = sheet.getDataRange().getValues().slice(1);
-  const list = rows.filter(row => String(row[1] || "").trim() === resolved.submitter.userId)
-    .map(row => {
-      let studentIds;
-      try { studentIds = normalizeGuardianFinancialStudentIds_(row[2], allowedIds); }
-      catch (_) { return null; }
-      return {
-        solicitudId: row[0],
-        padreId: row[1],
-        estudiantesIds: studentIds.join(", "),
-        tipoBeneficio: row[3],
-        alcance: row[4],
-        motivo: row[5],
-        montoPorcentaje: row[6],
-        estado: row[7],
-        fechaSolicitud: row[8],
-        observaciones: row[9]
-      };
-    }).filter(Boolean);
-  return { status: "success", data: list };
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("FAMILY_SCHOLARSHIP_LOCK_TIMEOUT");
+  try {
+    const resolved = getVerifiedGuardianFinancialStudentIds_(payload);
+    const allowedIds = resolved.studentIds;
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "BecasYDescuentosFamiliares");
+    const rows = sheet.getDataRange().getValues().slice(1);
+    const list = rows.filter(row => String(row[1] || "").trim() === resolved.submitter.userId)
+      .map(row => {
+        let studentIds;
+        try { studentIds = normalizeGuardianFinancialStudentIds_(row[2], allowedIds); }
+        catch (_) { return null; }
+        return {
+          solicitudId: row[0],
+          padreId: row[1],
+          estudiantesIds: studentIds.join(", "),
+          tipoBeneficio: row[3],
+          alcance: row[4],
+          motivo: row[5],
+          montoPorcentaje: row[6],
+          estado: row[7],
+          fechaSolicitud: row[8],
+          observaciones: row[9]
+        };
+      }).filter(Boolean);
+    return { status: "success", data: list };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function submitFamilyScholarshipApplication(payload) {
@@ -6660,32 +6666,38 @@ function submitFamilyScholarshipApplication(payload) {
   if (!tipoBeneficio || !motivo) {
     throw new Error("Campos obligatorios incompletos para la solicitud de beca/descuento.");
   }
-  const resolved = getVerifiedGuardianFinancialStudentIds_(payload);
-  if (userIdResponsable && String(userIdResponsable).trim() !== resolved.submitter.userId) {
-    throw new Error("VERIFIED_IDENTITY_MISMATCH");
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("FAMILY_SCHOLARSHIP_LOCK_TIMEOUT");
+  try {
+    const resolved = getVerifiedGuardianFinancialStudentIds_(payload);
+    if (userIdResponsable && String(userIdResponsable).trim() !== resolved.submitter.userId) {
+      throw new Error("VERIFIED_IDENTITY_MISMATCH");
+    }
+    const authorizedStudentIds = normalizeGuardianFinancialStudentIds_(estudiantesIds, resolved.studentIds);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = getOrCreateSheet(ss, "BecasYDescuentosFamiliares");
+    const solId = "BEC-" + Date.now();
+    const fecha = new Date().toISOString();
+    sheet.appendRow([
+      solId,
+      resolved.submitter.userId,
+      authorizedStudentIds.join(", "),
+      tipoBeneficio,
+      alcance || "Familiar",
+      motivo,
+      montoPorcentaje || "Por evaluar",
+      "Pendiente",
+      fecha,
+      documentosUrl || ""
+    ]);
+    return {
+      status: "success",
+      solicitudId: solId,
+      message: "Solicitud de beneficio familiar enviada exitosamente para revisión."
+    };
+  } finally {
+    lock.releaseLock();
   }
-  const authorizedStudentIds = normalizeGuardianFinancialStudentIds_(estudiantesIds, resolved.studentIds);
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "BecasYDescuentosFamiliares");
-  const solId = "BEC-" + Date.now();
-  const fecha = new Date().toISOString();
-  sheet.appendRow([
-    solId,
-    resolved.submitter.userId,
-    authorizedStudentIds.join(", "),
-    tipoBeneficio,
-    alcance || "Familiar",
-    motivo,
-    montoPorcentaje || "Por evaluar",
-    "Pendiente",
-    fecha,
-    documentosUrl || ""
-  ]);
-  return {
-    status: "success",
-    solicitudId: solId,
-    message: "Solicitud de beneficio familiar enviada exitosamente para revisión."
-  };
 }
 
 function getInstitutionalAnnouncements(payload) {
