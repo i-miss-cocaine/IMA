@@ -4974,7 +4974,8 @@ function getTransportRoutes(payload) {
   });
   var allowed = scope.management ? null : scope.routeIds || getTransportRouteIdsForScope_(ss, scope);
   var requested = String(input.rutaId || "").trim();
-  if (requested && !scope.management && (!allowed || allowed.indexOf(requested) === -1 || routeCounts[requested] > 1)) {
+  if (requested && routeCounts[requested] > 1) return { status: "error", code: "RESOURCE_AMBIGUOUS", rutas: [] };
+  if (requested && !scope.management && (!allowed || allowed.indexOf(requested) === -1)) {
     transportAuditDenied_(actor, "getTransportRoutes", requested);
     return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", rutas: [] };
   }
@@ -5036,7 +5037,8 @@ function getTransportAssignments(payload) {
     if (id) routeCounts[id] = (routeCounts[id] || 0) + 1;
   });
   var allowedRoutes = scope.management ? null : scope.routeIds || getTransportRouteIdsForScope_(ss, scope);
-  if (requestedRoute && !scope.management && (!allowedRoutes || allowedRoutes.indexOf(requestedRoute) === -1 || routeCounts[requestedRoute] > 1)) {
+  if (requestedRoute && routeCounts[requestedRoute] > 1) return { status: "error", code: "RESOURCE_AMBIGUOUS", total: 0, asignaciones: [] };
+  if (requestedRoute && !scope.management && (!allowedRoutes || allowedRoutes.indexOf(requestedRoute) === -1)) {
     transportAuditDenied_(actor, "getTransportAssignments", requestedRoute);
     return { status: "error", code: "UNAUTHORIZED_ACCESS_ATTEMPT", total: 0, asignaciones: [] };
   }
