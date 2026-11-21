@@ -172,7 +172,7 @@ assert.equal(scopedPayroll.result.status, "success");
 assert.deepEqual(Array.from(scopedPayroll.result.empleados, row => row.empleadoId), ["E-1"]);
 assert.equal(scopedPayroll.result.resumen.totalBruto, 1000);
 assert.equal(JSON.stringify(scopedPayroll.events.ownership[0]), JSON.stringify({ employeeIds: ["E-1"], operation: "READ" }));
-assert.deepEqual(JSON.parse(JSON.stringify(scopedPayroll.events.planillaIds)), [["PAY-1"], ["PAY-3"]],
+assert.equal(JSON.stringify(scopedPayroll.events.planillaIds), JSON.stringify([["PAY-1"], ["PAY-3"]]),
   "comparison reads must not include another department's payroll batch");
 const crossDepartmentPayroll = runPayroll({ periodoMes: "2026-11", employeeId: "E-2" });
 assert.equal(crossDepartmentPayroll.result.code, "RESOURCE_NOT_FOUND");
