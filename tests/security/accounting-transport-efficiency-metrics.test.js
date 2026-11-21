@@ -134,6 +134,13 @@ const context = {
     if (!managementScopeValid || (invalidateManagementAfterFirst && managementScopeCalls === 2)) {
       return { authorized: false, code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
     }
+    return { authorized: true };
+  },
+  transportManagementReadScope_(payload, spreadsheet, actor, scope) {
+    managementScopeCalls++;
+    if (!managementScopeValid || (invalidateManagementAfterFirst && managementScopeCalls === 2)) {
+      return { authorized: false, code: "INSTITUTION_WIDE_SCOPE_REQUIRED" };
+    }
     return { authorized: true, scope: scope };
   },
   transportAuditDenied_(...args) { deniedEvents.push(args); },
