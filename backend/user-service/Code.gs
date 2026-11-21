@@ -8764,8 +8764,9 @@ function createUserNotification(payload) {
 // [TAREA-F4-P0-02] [Fase 4: Protección IDOR y ABAC] - Aislamiento de solicitudes administrativas
 function getAdministrativeRequests(payload) {
   const request = payload || {};
+  let callerRole = "";
+  try { callerRole = String(getUserVerifiedRole(request) || "").trim(); } catch (_) {}
   const actorId = String(request._verifiedUserId || "").trim();
-  const callerRole = String(request._verifiedRole || "").trim();
   if (!actorId || !callerRole || callerRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
 
   const normalizedRole = callerRole.toUpperCase().replace(/[^A-Z0-9]/g, "");
