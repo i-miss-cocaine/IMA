@@ -10820,7 +10820,7 @@ function linkInstitutionalDepartment(payload){
  const academicId=String(input.departamentoId||"").trim().toUpperCase(),administrativeId=String(input.deptId||"").trim().toUpperCase();
  if(!academicId||!administrativeId)throw new Error("DEPARTMENT_LINK_IDS_REQUIRED");
  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),role=identity.role;
- let scope=null;if(["Administrador","Desarrollador"].indexOf(role)===-1){scope=getVerifiedAcademicDepartmentScope_(input,ss,identity);if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");if(!scope.institutionWide&&(scope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();}).indexOf(academicId)===-1)throw new Error("RESOURCE_SCOPE_DENIED");}
+ let scope=null;if(["Administrador","Desarrollador"].indexOf(role)===-1){scope=getVerifiedAcademicDepartmentScope_(input,ss,identity);if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");if(!scope.institutionWide)throw new Error("INSTITUTION_WIDE_SCOPE_REQUIRED");}
  const academic= getInstitutionalDepartmentRecords_(ss).filter(function(item){return item.departmentId===academicId&&item.isActive;});
  if(academic.length!==1)throw new Error("ACADEMIC_DEPARTMENT_NOT_ACTIVE");
  if(!getAdministrativeDepartmentForAcademicLink_(ss,administrativeId))throw new Error("ADMINISTRATIVE_DEPARTMENT_NOT_ACTIVE");
@@ -10849,7 +10849,7 @@ function unlinkInstitutionalDepartment(payload){
  for(let i=1;i<rows.length;i++)if(String(rows[i][map.linkId]||"").trim()===linkId)matches.push({row:rows[i],rowNumber:i+1});
  if(matches.length!==1)throw new Error(matches.length?"DEPARTMENT_LINK_ID_AMBIGUOUS":"DEPARTMENT_LINK_NOT_FOUND");
  const academicId=String(matches[0].row[map.academicDepartmentId]||"").trim().toUpperCase(),role=identity.role;
- if(["Administrador","Desarrollador"].indexOf(role)===-1){const scope=getVerifiedAcademicDepartmentScope_(input,ss,identity);if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");if(!scope.institutionWide&&(scope.departmentIds||[]).map(function(v){return String(v).trim().toUpperCase();}).indexOf(academicId)===-1)throw new Error("RESOURCE_SCOPE_DENIED");}
+ if(["Administrador","Desarrollador"].indexOf(role)===-1){const scope=getVerifiedAcademicDepartmentScope_(input,ss,identity);if(!scope||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED");if(!scope.institutionWide)throw new Error("INSTITUTION_WIDE_SCOPE_REQUIRED");}
  const lock=LockService.getScriptLock();if(!lock.tryLock(10000))throw new Error("DEPARTMENT_LINK_LOCK_TIMEOUT");
  try{const current=sheet.getRange(matches[0].rowNumber,1,1,sheet.getLastColumn()).getValues()[0];if(String(current[map.estado]||"").trim().toLowerCase()!=="activo")return {status:"success",linkId:linkId,idempotent:true,estado:current[map.estado]};current[map.estado]="Inactivo";if(map.updatedAt>=0)current[map.updatedAt]=new Date();sheet.getRange(matches[0].rowNumber,1,1,current.length).setValues([current]);try{logStructuredEvent("ACADEMIC","unlinkInstitutionalDepartment","INFO","DEPARTMENT_CATALOG_UNLINKED","Vínculo explícito entre departamentos desactivado",{linkId:linkId,departamentoId:academicId},role);}catch(e){}return {status:"success",linkId:linkId,idempotent:false,estado:"Inactivo"};}finally{lock.releaseLock();}
 }
