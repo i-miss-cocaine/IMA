@@ -1,0 +1,14 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const html=fs.readFileSync("dashboard-recursos-humanos.html","utf8");
+const ids=["rrhh-affiliation-panel","rrhh-affiliation-user","rrhh-affiliation-department","rrhh-affiliation-cargo","rrhh-affiliation-reason","rrhh-affiliation-assign","rrhh-affiliation-head","rrhh-affiliation-history","rrhh-affiliation-status"];
+ids.forEach(id=>assert.ok(html.includes('id="'+id+'"'),"missing UI element "+id));
+["GET_DEPARTMENT_HIERARCHY","GET_CARGOS","ASSIGN_USER","ASSIGN_DEPARTMENT_HEAD","getUserInstitutionalAffiliations"].forEach(action=>assert.ok(html.includes(action),"missing USER API action "+action));
+assert.ok(html.includes("fetchApi('ACCOUNTING','getEmployeeRecords'"),"employee selector must use current employee records");
+assert.ok(html.includes('aria-live="polite"'),"status feedback must be announced");
+assert.ok(!html.includes("rrhh-affiliation-history').innerHTML"),"history rendering must use DOM text nodes");
+const scriptStart=html.indexOf("<script>",html.indexOf("<!-- [TAREA RH-01]"));
+const scriptEnd=html.lastIndexOf("</script>");
+assert.ok(scriptStart>=0&&scriptEnd>scriptStart,"expected dashboard controller script");
+assert.doesNotThrow(()=>new Function(html.slice(scriptStart+8,scriptEnd)),"dashboard controller script must parse");
+console.log("HR department affiliation UI contract PASS (catalog selectors, active employee source, assignment/head actions, history and script syntax).");
