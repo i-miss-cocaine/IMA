@@ -425,8 +425,8 @@ const guardianSubmitterRuntime = {
 };
 vm.createContext(guardianSubmitterRuntime);
 vm.runInContext(
-  guardianDomainPermissionFn + "\\n" +
-  extractFunctionFrom(userSource, "resolveVerifiedRequestSubmitter_") +
+  guardianDomainPermissionFn + "\n" +
+  extractFunction(userSource, "resolveVerifiedRequestSubmitter_") +
   "\nthis.resolve = resolveVerifiedRequestSubmitter_;",
   guardianSubmitterRuntime
 );
@@ -471,8 +471,8 @@ const familySummaryRuntime = {
 };
 vm.createContext(familySummaryRuntime);
 vm.runInContext(
-  guardianDomainPermissionFn + "\\n" +
-  extractFunctionFrom(userSource, "getFamilyConsolidatedSummary") +
+  guardianDomainPermissionFn + "\n" +
+  extractFunction(userSource, "getFamilyConsolidatedSummary") +
   "\nthis.summary = getFamilyConsolidatedSummary;",
   familySummaryRuntime
 );
@@ -500,8 +500,8 @@ const attachmentRuntime = {
 };
 vm.createContext(attachmentRuntime);
 vm.runInContext(
-  guardianDomainPermissionFn + "\\n" +
-  extractFunctionFrom(userSource, "getAdministrativeRequestAttachment") +
+  guardianDomainPermissionFn + "\n" +
+  extractFunction(userSource, "getAdministrativeRequestAttachment") +
   "\nthis.download = getAdministrativeRequestAttachment;",
   attachmentRuntime
 );
