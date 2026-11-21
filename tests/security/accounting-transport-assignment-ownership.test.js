@@ -32,20 +32,27 @@ const headers = {
 function makeHarness(options) {
   const cfg = Object.assign({
     permission:true, identity:{authorized:true,userId:"DIRECTOR-1",role:"Director",institutionId:"INST-1"},
-    scopeValid:true, ownershipDenied:false, routeRows:[["RUT-1","Ruta 1","BUS-1","EMP-1",20,"[]","active","","06:30","","Matutina"]],
+    scopeValid:true, ownershipDenied:false, concurrentAttempt:false, vehicleCapacity:20, routeRows:[["RUT-1","Ruta 1","BUS-1","EMP-1",20,"[]","active","","06:30","","Matutina"]],
     assignmentRows:[], lockAvailable:true, billingFails:false, duplicateStudent:false
   }, options || {});
   const calls = { permission:[], ownership:[], scope:0, locks:0, releases:0, billing:0, events:[] };
+  let lockHeld = false, runAssign = null, concurrentResult = null, concurrentTriggered = false;
   const data = {
     ExpedientesEstudiantes:[headers.ExpedientesEstudiantes,["EXP-1","STU-1"],["EXP-2","STU-2"]],
     TransporteRutas:[headers.TransporteRutas,...cfg.routeRows],
     TransporteAsignaciones:[headers.TransporteAsignaciones,...cfg.assignmentRows.map(row=>row.slice())],
-    TransporteVehiculos:[headers.TransporteVehiculos,["V-1","BUS-1","Bus","","",20,"active"]],
+    TransporteVehiculos:[headers.TransporteVehiculos,["V-1","BUS-1","Bus","","",cfg.vehicleCapacity,"active"]],
     CargosTransporte:[headers.CargosTransporte,["C-1","STU-1",10]]
   };
   if (cfg.duplicateStudent) data.ExpedientesEstudiantes.push(["EXP-3","STU-1"]);
   const sheet = name => ({
-    getDataRange:()=>({getValues:()=>data[name].map(row=>row.slice())}),
+    getDataRange:()=>{
+      if(name==="TransporteRutas"&&cfg.concurrentAttempt&&!concurrentTriggered&&runAssign){
+        concurrentTriggered=true;
+        concurrentResult=runAssign(payload());
+      }
+      return {getValues:()=>data[name].map(row=>row.slice())};
+    },
     getLastRow:()=>data[name].length,
     appendRow:row=>data[name].push(row.slice()),
     deleteRow:row=>data[name].splice(row-1,1),
@@ -66,9 +73,9 @@ function makeHarness(options) {
     },
     SpreadsheetApp:{openById:()=>ss},
     LockService:{getScriptLock:()=>({
-      tryLock:()=>{calls.locks++;return cfg.lockAvailable;},
-      waitLock:()=>{calls.locks++;if(!cfg.lockAvailable)throw new Error("LOCK_TIMEOUT");},
-      releaseLock:()=>{calls.releases++;}
+      tryLock:()=>{calls.locks++;if(!cfg.lockAvailable||lockHeld)return false;lockHeld=true;return true;},
+      waitLock:()=>{calls.locks++;if(!cfg.lockAvailable||lockHeld)throw new Error("LOCK_TIMEOUT");lockHeld=true;},
+      releaseLock:()=>{lockHeld=false;calls.releases++;}
     })},
     getOrCreateTransportVehiclesCatalog:()=>{},
     transportEnsureBillingSchema_:()=>({charges:sheet("CargosTransporte"),assignments:sheet("TransporteAsignaciones")}),
@@ -83,7 +90,8 @@ function makeHarness(options) {
   vm.createContext(runtime);
   const names=["transportBillingActor_","transportAssertStudentOwnershipForMutation_","assignStudentTransport","cancelStudentTransportAssignment"];
   vm.runInContext(names.map(extractFunction).join("\n")+"\nthis.assign=assignStudentTransport;this.cancel=cancelStudentTransportAssignment;",runtime);
-  return {runAssign:runtime.assign,runCancel:runtime.cancel,calls,data};
+  runAssign=runtime.assign;
+  return {runAssign:runtime.assign,runCancel:runtime.cancel,calls,data,concurrentResult:()=>concurrentResult};
 }
 const payload=(extra)=>Object.assign({sessionToken:"verified",rutaId:"RUT-1",estudianteUserId:"STU-1"},extra||{});
 const noIdentity=makeHarness({identity:{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"}});
@@ -134,6 +142,12 @@ for (const activeState of ["activo","activa","vigente"]) {
 const lockBusy=makeHarness({lockAvailable:false});
 assert.equal(lockBusy.runAssign(payload()).code,"LOCK_TIMEOUT");
 assert.equal(lockBusy.data.TransporteAsignaciones.length,1);
+const concurrent=makeHarness({concurrentAttempt:true,vehicleCapacity:1});
+const concurrentOuter=concurrent.runAssign(payload());
+assert.equal(concurrentOuter.status,"success");
+assert.equal(concurrent.concurrentResult().code,"LOCK_TIMEOUT","a competing assignment must fail while the first holds the script lock");
+assert.equal(concurrent.data.TransporteAsignaciones.length,2,"concurrent assignment must not overbook the single available seat");
+assert.equal(concurrent.calls.releases,1,"the successful writer must release the lock exactly once");
 const success=makeHarness();
 const assigned=success.runAssign(payload());
 assert.equal(assigned.status,"success");
