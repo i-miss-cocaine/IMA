@@ -167,6 +167,24 @@ test(() => {
  assert.equal(x.sheets.Examenes.rows.length,1);
  assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
 });
+test(() => {
+ const x=fixture({scopes:[
+   {authorized:true,institutionId:"I1",departmentIds:["D1"]},
+   {authorized:true,institutionId:"I1",departmentIds:["D2"]}
+ ]});
+ assert.throws(()=>x.call(),/RESOURCE_SCOPE_DENIED/);
+ assert.equal(x.sheets.Examenes.rows.length,1,"a department reassignment while waiting for the lock must prevent creation");
+ assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
+});
+test(() => {
+ const x=fixture({actors:[
+   {authorized:true,userId:"P1",role:"Profesor"},
+   {authorized:true,userId:"P2",role:"Profesor"}
+ ],permissions:[true,true]});
+ assert.throws(()=>x.call(),/RESOURCE_NOT_AVAILABLE/);
+ assert.equal(x.sheets.Examenes.rows.length,1,"an actor identity change while waiting for the lock must prevent creation");
+ assert.deepEqual([x.stats.acquired,x.stats.released,x.stats.held],[1,1,false]);
+});
 for (const point of ["ownershipAppend", "examAppend", "questionWrite"]) {
   test(() => {
     const x = fixture({ reenterAt: point });
