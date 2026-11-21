@@ -14099,7 +14099,7 @@ function runPhase22DocumentManagementAndSACERegressionSuite(payload) {
       id: "PT22-06",
       name: "Seguridad Binaria: Detección de Magic Bytes válidos en PDF",
       execute: function() {
-        const dummyPdf = "data:application/pdf;base64," + Utilities.base64Encode("%PDF-1.4 header dummy valid content for testing");
+        const dummyPdf = "data:application/pdf;base64," + Utilities.base64Encode("%PDF-1.4\\n1 0 obj\\n<< /Type /Catalog >>\\nendobj\\n%%EOF\\n");
         const res = validateFileBinaryIntegrity(dummyPdf, "comprobante.pdf");
         const pass = res && res.valid === true && res.detectedFormat === "pdf";
         return { pass, expected: "pdf", actual: res ? res.detectedFormat : null, details: res };
