@@ -447,7 +447,8 @@ function verifyTokenWithClaims(sourceText, claims) {
     .filter(name => sourceText.includes("function " + name + "("))
     .map(name => extractFunctionFrom(sourceText, name)).join(String.fromCharCode(10));
   const revocationConstants = 'const SESSION_REVOCATION_HEADERS_ = ["SessionID","UserID","RevokedAt","ExpiresAt"]; const SESSION_REVOCATION_STATE_HEADERS_ = ["Key","Value","UpdatedAt"]; const USER_ROLE_MEMBERSHIP_HEADERS_ = ["MembershipID","UserID","RoleID","InstitutionID","Status","StartAt","EndAt","CreatedBy","CreatedAt","UpdatedAt","RevokedBy","RevokedAt"];';
-  vm.runInNewContext(revocationConstants + String.fromCharCode(10) + revocationHelpers + String.fromCharCode(10) + membershipVerifier + String.fromCharCode(10) + extractFunctionFrom(sourceText, "verifySessionToken") + String.fromCharCode(10) + "this.verify = verifySessionToken;", context);
+  const versionPrelude = sourceText.includes("var SECURITY_VERSION_HEADERS_") ? sourceText.slice(sourceText.indexOf("var SECURITY_VERSION_HEADERS_"), sourceText.indexOf("function getDynamicPermissionsForRole")) : "";
+  vm.runInNewContext(versionPrelude + String.fromCharCode(10) + revocationConstants + String.fromCharCode(10) + revocationHelpers + String.fromCharCode(10) + membershipVerifier + String.fromCharCode(10) + extractFunctionFrom(sourceText, "verifySessionToken") + String.fromCharCode(10) + "this.verify = verifySessionToken;", context);
   const signature = sourceText.includes("const rawSig = Utilities.computeHmacSignature") ? "7369676e6564" : "signed";
   return context.verify(payloadB64 + "." + signature);
 }

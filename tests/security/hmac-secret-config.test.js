@@ -38,6 +38,9 @@ function createContext(source, initialSecret, claims) {
   let secretValue = initialSecret, propertyFailure = false;
   const userRow = new Array(11).fill("");
   userRow[0] = "U1"; userRow[6] = "Estudiante"; userRow[10] = "Activa";
+  const versionRows = [["Clave","Version","UpdatedAt","UpdatedBy"],["USER_ROLE:U1",0,new Date(),""]];
+  const versionSheet = { getDataRange: () => ({ getValues: () => versionRows.map(r => r.slice()) }) };
+  const userSheet = { getDataRange: () => ({ getValues: () => [[], userRow] }) };
   const context = {
     PropertiesService: {
       getScriptProperties() {
@@ -61,14 +64,13 @@ function createContext(source, initialSecret, claims) {
     getUserRoleMembershipState_: () => ({ hasRecords: false }),
     resolveUserRoleMembership_: () => null,
     getIdentityInstitutionId_: () => "INST-1",
-    SpreadsheetApp: {
-      openById: () => ({ getSheetByName: name => name === "Usuarios" ? ({ getDataRange: () => ({ getValues: () => [[], userRow] }) }) : null })
-    },
+    SpreadsheetApp: { openById: () => ({ getSheetByName: name => name === "VersionesSeguridad" ? versionSheet : (name === "Usuarios" ? userSheet : null) }) },
     SPREADSHEET_ID: "LOCAL"
   };
   const secretFn = extractFunction(source, "getAuthTokenSecret");
   const verifyFn = extractFunction(source, "verifySessionToken");
-  vm.runInNewContext(secretFn + "\n" + verifyFn + "\nthis.getSecret = getAuthTokenSecret; this.verify = verifySessionToken;", context);
+  const versionPrelude = source.includes("var SECURITY_VERSION_HEADERS_") ? source.slice(source.indexOf("var SECURITY_VERSION_HEADERS_"), source.indexOf("function getDynamicPermissionsForRole")) : "";
+  vm.runInNewContext(versionPrelude + "\n" + secretFn + "\n" + verifyFn + "\nthis.getSecret = getAuthTokenSecret; this.verify = verifySessionToken;", context);
   return {
     context,
     setSecret(value) { secretValue = value; },
@@ -104,11 +106,14 @@ const userSource = fs.readFileSync(path.join(root, "backend/user-service/Code.gs
 const genFn = extractFunction(userSource, "generateSessionToken");
 let currentSecret = "OLD_SECRET_012345678901234567890123456789";
 const genContext = {
+  SPREADSHEET_ID: "LOCAL",
+  SpreadsheetApp: { openById: () => ({ getSheetByName: () => null }) },
   getAuthTokenSecret: () => currentSecret,
   computeHmacSignature: (_payload, secret) => "SIG-" + secret,
   Utilities: { base64EncodeWebSafe: () => "payload", getUuid: () => "S1" }
 };
-vm.runInNewContext(genFn + "\nthis.generate = generateSessionToken;", genContext);
+const versionPrelude = userSource.slice(userSource.indexOf("var SECURITY_VERSION_HEADERS_"), userSource.indexOf("function getDynamicPermissionsForRole"));
+vm.runInNewContext(versionPrelude + "\n" + genFn + "\nthis.generate = generateSessionToken;", genContext);
 const oldToken = genContext.generate({ userId: "U1", email: "u@example.test", role: "Estudiante" });
 currentSecret = "NEW_SECRET_012345678901234567890123456789";
 const newToken = genContext.generate({ userId: "U1", email: "u@example.test", role: "Estudiante" });
