@@ -8567,7 +8567,7 @@ function assertPayrollEmployeeResourceScope_(ss, scope, employeeRows, operation)
 
 function assertPayrollInstitutionWriteScope_(payload, ss, actor, employeeRows) {
   const scope = getVerifiedAccountingDepartmentScope_(payload || {}, ss, actor);
-  if (!scope || scope.valid !== true || scope.authorized !== true) {
+  if (!scope || scope.valid !== true || scope.authorized === false) {
     throw new Error(scope && scope.code || "PAYROLL_DEPARTMENT_SCOPE_UNVERIFIED");
   }
   // A payroll period is a single institution-wide accounting cycle; a
@@ -11962,7 +11962,7 @@ function assertMonthlyChargeAccess_(payload, action) {
  const permission=validateRolePermission(actor,action);
  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(input,ss,actor);
- if(!scope||scope.valid!==true||scope.authorized!==true)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_UNVERIFIED");
+ if(!scope||scope.valid!==true||scope.authorized===false)throw new Error(scope&&scope.code||"DEPARTMENT_SCOPE_UNVERIFIED");
  return {actor:actor,ss:ss,scope:scope};
 }
 
