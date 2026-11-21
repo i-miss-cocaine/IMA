@@ -899,3 +899,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Department Scope y Exam full Node suite mantienen FAIL ajeno en Phase22 por configureSchoolDocumentTemplate y ensureSchoolDocumentIssuedSchema_, ya documentado en C1.909. Apps Script/Sheets real y concurrencia de relaciones NOT RUN.
 - Siguiente: completar los bindings action/resource y pruebas de propiedad, asignación docente/oferta, relación familiar, coordinación, departamento e institución en los cinco servicios; revalidar TASK-506.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.911 — AUD-NG-222 / TASK-502
+- TASK: las aulas autorizadas y las operaciones sobre tareas verifican una oferta activa/única, catálogo de asignaturas, asignación docente activa única, ID único, fechas y coincidencia grado/sección/asignatura.
+- EXAM: listados, actividad docente, preguntas, resultados, analítica y mutaciones/reprogramación verifican la asignación activa y la oferta correspondiente.
+- ACCOUNTING: las relaciones familiares financieras requieren identidad/persona única, relación única, estado/fechas vigentes y permiso financiero directo/JSON; el conteo de hermanos excluye personas ambiguas.
+- CI: Task-Service security 44939724841 SUCCESS; Accounting Import Preflight 44939984204 SUCCESS; Exam Service 44939086866 FAIL global solo por Phase22 configureSchoolDocumentTemplate y accounting ensureSchoolDocumentIssuedSchema_ ausentes, con contratos EXAM específicos PASS; Department Scope 44939724799 mantiene Phase22 FAIL.
+- Node.js 24.22.3. Apps Script/Sheets real, beta y concurrencia de cambios de asignación entre proyectos NOT RUN.
+- BETA-FUNC-125/126 añadidos, pendientes de staging. TASK-502 y TASK-506 continúan abiertos.
+===============================================================================

@@ -2215,3 +2215,53 @@ Evidencia requerida: SHA de despliegue de cada proyecto, confirmación enmascara
 Incidencia/tarea derivada: registrar una incidencia vinculada a AUD-NG-160/TASK-501 si cualquier servicio conserva acceso obsoleto o no comparte el ledger.
 Responsable: QA/administrador del ambiente beta.
 ===============================================================================
+
+
+===============================================================================
+BETA-FUNC-125 — Autorización docente por oferta activa (TASK / EXAM)
+Objetivo: verificar en staging que un docente solo puede consultar/administrar aulas, tareas y recursos de examen vinculados a una asignación docente activa y única, sobre una oferta académica activa y única, con grado, sección y asignatura coincidentes.
+Precondiciones:
+- Desplegar en staging las versiones identificadas de TASK y EXAM de la rama autorizada, sin publicar a producción.
+- Disponer de un docente de prueba, una oferta activa, una asignación activa, catálogo de asignaturas y aula asociada.
+- Usar datos sintéticos y registrar los IDs de despliegue y request IDs sin tokens ni PII.
+Pasos:
+1. Confirmar que el docente puede listar el aula y consultar/administrar únicamente los recursos de la oferta asignada.
+2. Revocar la asignación docente y repetir las consultas y mutaciones; deben denegarse.
+3. Reactivar la asignación y duplicar el ID de asignación; el acceso debe denegarse.
+4. Duplicar el ID de oferta o crear dos ofertas activas para la misma combinación de asignatura/grado/sección; el acceso debe denegarse.
+5. Probar asignación expirada, futura, fecha malformada, intervalo invertido y oferta inactiva.
+6. Probar aula con grado, sección o asignatura distinta, catálogo duplicado, catálogo ausente y hoja OfertaAcademica/AsignacionesDocentes ausente.
+7. Repetir con otro docente y otra institución para comprobar que no hay acceso cruzado.
+Resultado esperado:
+- Solo se permite acceso con identidad verificada, asignación activa única, oferta activa única y contexto académico exacto.
+- Fuentes ausentes, duplicadas, incompletas o contradictorias producen denegación segura.
+Resultado real: no ejecutado; pendiente despliegue beta.
+Estado: PENDIENTE DE BETA.
+Severidad si falla: Alta — acceso docente fuera de asignación académica o exposición de recursos de otro ámbito.
+Evidencia requerida: SHA de despliegue TASK/EXAM, IDs de oferta/asignación sintéticos, respuestas Allow/Deny, request IDs y trazas sin tokens/PII.
+Tarea vinculada: AUD-NG-222 / TASK-502; revalidar TASK-506 tras completar la matriz contextual.
+Responsable: QA/administrador del ambiente beta.
+
+===============================================================================
+BETA-FUNC-126 — Relaciones familiares y permisos financieros (ACCOUNTING)
+Objetivo: verificar que el acceso a créditos, descuentos y conteo de hermanos exige una relación familiar financiera única, vigente y con permiso explícito.
+Precondiciones:
+- Desplegar ACCOUNTING en staging con hojas Usuarios y RelacionesFamiliares de prueba.
+- Crear estudiante, responsable y segundo estudiante sintéticos con IDs/personas controlados.
+Pasos:
+1. Crear una relación familiar activa, vigente y única con PermisoFinanciero=true y PermisosJSON.permisoFinanciero=true; verificar que la operación familiar autorizada funciona.
+2. Cambiar PermisoFinanciero a false; verificar denegación.
+3. Mantener el permiso directo pero establecer PermisosJSON.permisoFinanciero=false o JSON malformado; verificar denegación.
+4. Probar relación pendiente, revocada, expirada, futura, con fechas malformadas o intervalo invertido.
+5. Duplicar RelacionID, duplicar el par estudiante/responsable, duplicar el mapeo persona-estudiante o persona-responsable; verificar denegación y conteo de hermanos igual a cero para personas ambiguas.
+6. Restaurar datos válidos y comprobar que el descuento de hermanos solo se calcula con relaciones financieras únicas y vigentes.
+Resultado esperado:
+- Ninguna relación ambigua o sin permiso financiero concede acceso, genera crédito o produce descuento.
+- El conteo de hermanos excluye estudiantes/personas con mapeo ambiguo.
+Resultado real: no ejecutado; pendiente despliegue beta.
+Estado: PENDIENTE DE BETA.
+Severidad si falla: Alta — acceso financiero no autorizado o descuentos indebidos.
+Evidencia requerida: SHA de despliegue, IDs sintéticos, respuestas Allow/Deny, cálculo antes/después y trazas sin PII.
+Tarea vinculada: AUD-NG-222 / TASK-502.
+Responsable: QA/administrador del ambiente beta.
+===============================================================================

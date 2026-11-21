@@ -662,3 +662,55 @@ Objetivo: avanzar AUD-NG-222 / TASK-502, integrando controles ABAC contextuales 
 Completar la matriz action/resource por servicio y vincular cada lectura/escritura protegida a su adaptador autoritativo: identidad institucional, propiedad del recurso, relación familiar y permiso de dominio, asignación docente/oferta, coordinación de área y ámbito departamental. Añadir pruebas negativas por omisión de contexto, fuente ausente, duplicados y cruce institucional; después revalidar TASK-506. No declarar TASK-502 completada hasta cubrir la matriz contractual completa.
 
 ===============================================================================
+
+
+===============================================================================
+CHECKPOINT C1.911 — IMA-EXEC-20261121-AUD-NG-222-ABAC-OFFER-82
+===============================================================================
+Fecha: 2026-11-21
+Sesión: IMA-EXEC-20261121-AUD-NG-222-ABAC-OFFER-82
+Repositorio: i-miss-cocaine/IMA
+Rama autorizada: NG_beta_0.0.0.1_work
+HEAD inicial de continuación: 0d7fd65a90f567a8a972b943fc5c4ce3e7517ca9
+HEAD final verificado: 2a02c91554c765ff5823a03216f48e9fedfc5170
+Objetivo: continuar AUD-NG-222 / TASK-502 con autorización docente contextual por oferta activa en TASK/EXAM y controles familiares financieros fail-closed en ACCOUNTING.
+
+### Resultado técnico
+- TASK: assertTaskServiceTeacherAssignedToOffer ahora exige fuente de asignaciones, oferta académica y catálogo de asignaturas; esquema completo; oferta activa y única; asignación activa única con ID no duplicado; fechas válidas y vigentes; y coincidencia exacta de grado, sección y asignatura. Se conectó la comprobación con la creación/consulta de aulas y con getTaskServiceAuthorizedClassrooms, de modo que la lista de aulas y las operaciones sobre tareas comparten el mismo guard.
+- EXAM: hasExamTeacherActiveOfferAssignment_ valida la resolución única de asignatura, oferta activa, oferta única, asignación docente activa única, ID de asignación único y ventana de fechas. Se integró en la lista de exámenes, actividad docente, preguntas, resultados, analítica, contexto de mutaciones y rutas de reprogramación/lectura pertinentes. Se deniega cuando falta cualquiera de las fuentes autoritativas o la oferta no puede resolverse sin ambigüedad.
+- ACCOUNTING: serviceStudentGuardianIds_ y serviceSiblingCount_ aplican unicidad de cuenta/persona estudiante, persona responsable, relación, par estudiante-responsable, estado, vigencia y permiso financiero directo/JSON. Las relaciones ambiguas no otorgan acceso ni generan descuento por hermanos.
+- USER/TASK/EXAM/ACCOUNTING: se mantiene la denegación de relaciones familiares activas con identificadores duplicados o mapeos ambiguos ya documentada en C1.910.
+- Se agregaron contratos dedicados para asignación docente/oferta en TASK y EXAM; se ampliaron fixtures de integración para simular OfertaAcademica, CatalogoAsignaturas y AsignacionesDocentes. Se corrigieron los fixtures que no normalizaban arrays entre VM y Node y un caso de sibling mapping que inicialmente no incluía realmente un duplicado.
+- Se estabilizó la prueba de iat futuro usando margen de 120 segundos, evitando flakiness en el límite de tolerancia de 60 segundos; no se relajó la validación productiva.
+- TASK-502 permanece parcial: no se declara completa la matriz action/resource de los cinco servicios ni el aislamiento institucional integral.
+
+### Commits de implementación/pruebas destacados
+- f871504 — TASK vincula aulas a ofertas activas y asignaciones docentes únicas.
+- 731bdb4, 5e747a2, 3a3d992, ca2df69, 6874805 — EXAM exige asignación docente/oferta activa en flujos protegidos de listado, actividad, lectura, resultados, analítica y mutación/reprogramación; contratos de integración actualizados.
+- e4386fc, d7691ef, cdf684d — TASK usa el mismo guard al resolver aulas autorizadas y al administrar tareas; contratos de seguridad y autenticación contextual actualizados.
+- b482223, b45a1e7, 93bfd44, 2a02c91 — ACCOUNTING endurece relaciones familiares financieras y conteo de hermanos; contratos y fixtures corregidos.
+- a7d6fac — test de iat futuro sin flakiness de frontera temporal.
+- Se conservaron los commits intermedios de pruebas y adaptadores; no se reescribió historial ni se publicó en otra rama.
+
+### Verificaciones
+- Task-Service security local contracts, workflow 44939724841: SUCCESS. Incluye task-service-teacher-offer-abac-contract (all assertions passed), task-service-resource-ownership y task-service-single-auth-context (5/5 PASS).
+- Accounting Import Preflight, workflow 44939984204: SUCCESS. Incluye accounting-family-service-guardian-abac-contract tras corregir comparación cross-realm y fixture de sibling ambiguo.
+- Exam-Service security local contracts, workflow 44939086866: workflow global FAIL por dos contratos ajenos al alcance: Phase22 no encuentra configureSchoolDocumentTemplate y Accounting document binary integrity no encuentra ensureSchoolDocumentIssuedSchema_. Los contratos EXAM específicos ejecutados pasaron, incluidos teacher-offer-abac, read-endpoints, question bank, rubrics, student reports, grade rectification y security-contract.
+- Department Scope, workflow 44939724799: FAIL por configureSchoolDocumentTemplate ausente en Phase22; incidencia preexistente ya registrada en C1.909, sin modificaciones en ese módulo.
+- Task-Service backup/restore, workflow 44939328470: SUCCESS.
+- Future-iat: el flujo Exam posterior al cambio ejecutó la suite y ya no reprodujo el fallo temporal.
+- Los workflows usan Node.js v24.22.3. Parseo/sintaxis de Code.gs y contratos nuevos: PASS en Node y en revisión de sintaxis.
+- Concurrencia real entre proyectos Apps Script/Sheets, despliegue beta y pruebas con datos productivos: NOT RUN. No se publicaron despliegues ni se usaron credenciales reales.
+
+### Estado y pendientes
+- TASK-502 / AUD-NG-222: En ejecución; integración docente/oferta y financiera/familiar avanzada, matriz completa de acción/recurso aún pendiente.
+- BETA-FUNC-125 y BETA-FUNC-126: definidos y pendientes de ejecución en staging.
+- TASK-506 / AUD-NG-226 permanece abierto hasta integrar y validar el dispatcher/ámbito común en los cinco servicios.
+- BETA-FUNC-124 (ledger de versiones compartido) sigue pendiente de despliegue/validación real.
+- TASK-496 / AUD-NG-217 y TASK-685 / AUD-NG-373 conservan sus alcances independientes.
+- Rama base NG_beta_0.0.0.1 no modificada.
+
+### Siguiente acción
+Completar la matriz action/resource de USER y ACADEMIC y revisar las operaciones restantes de ACCOUNTING, TASK y EXAM que aún no pasan por los adaptadores contextuales. Probar omisión de contexto, fuentes ausentes, IDs duplicados, cambios de asignación concurrentes, cruce de institución/departamento y regresiones de permisos. Después revalidar TASK-506. No cerrar TASK-502 hasta cubrir el contrato completo.
+
+===============================================================================
