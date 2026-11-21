@@ -1120,24 +1120,43 @@ function createExam(p) {
   return withAuthorizedExamCreation_(p, context => createExamUnlocked_(p, context));
 }
 function withAuthorizedExamCreation_(p, mutation) {
-  // Autorizar una sola vez en el límite de la acción y reutilizar el contexto
-  // durante la escritura; el lock protege la integridad de datos, no reautoriza.
+  // Preflight de RBAC, identidad y departamento antes de competir por el lock.
   const permission = validateRolePermission("createExam", p);
   if (!permission || permission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const actor = getVerifiedExamIdentity_(p);
   if (!actor || actor.authorized !== true || !String(actor.userId || "").trim()) throw new Error("RESOURCE_NOT_AVAILABLE");
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const scope = getVerifiedExamDepartmentScope_(p, ss, actor);
-  if (!scope || scope.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
   const requestedDepartmentId = String(p.departmentId || p.departamentoId || "").trim();
-  const departmentId = requestedDepartmentId || ((scope.departmentIds || []).length === 1 ? String(scope.departmentIds[0] || "").trim() : "");
-  const departmentAllowed = !!departmentId && (scope.departmentIds || []).some(value => String(value || "").trim() === departmentId);
-  if (!departmentAllowed) throw new Error("RESOURCE_SCOPE_DENIED");
-  const context = { ss, scope, actor, departmentId };
+  const preflightSs = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const preflightScope = getVerifiedExamDepartmentScope_(p, preflightSs, actor);
+  if (!preflightScope || preflightScope.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+  const preflightDepartmentId = requestedDepartmentId ||
+    ((preflightScope.departmentIds || []).length === 1 ? String(preflightScope.departmentIds[0] || "").trim() : "");
+  if (!preflightDepartmentId || !(preflightScope.departmentIds || []).some(value =>
+      String(value || "").trim() === preflightDepartmentId)) {
+    throw new Error("RESOURCE_SCOPE_DENIED");
+  }
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) throw new Error("EXAM_CREATE_LOCK_TIMEOUT");
   try {
-    return mutation(context);
+    // Revalidar dentro del lock: el rol, la identidad o la adscripción pudieron cambiar mientras esperaba.
+    const currentPermission = validateRolePermission("createExam", p);
+    if (!currentPermission || currentPermission.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const currentActor = getVerifiedExamIdentity_(p);
+    if (!currentActor || currentActor.authorized !== true ||
+        String(currentActor.userId || "").trim() !== String(actor.userId).trim() ||
+        String(currentActor.role || "").trim() !== String(actor.role || "").trim()) {
+      throw new Error("RESOURCE_NOT_AVAILABLE");
+    }
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const scope = getVerifiedExamDepartmentScope_(p, ss, currentActor);
+    if (!scope || scope.authorized !== true) throw new Error("RESOURCE_NOT_AVAILABLE");
+    const departmentId = requestedDepartmentId ||
+      ((scope.departmentIds || []).length === 1 ? String(scope.departmentIds[0] || "").trim() : "");
+    const departmentAllowed = !!departmentId && (scope.departmentIds || []).some(value =>
+      String(value || "").trim() === departmentId);
+    if (!departmentAllowed) throw new Error("RESOURCE_SCOPE_DENIED");
+    return mutation({ ss, scope, actor: currentActor, departmentId });
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
