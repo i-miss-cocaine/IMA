@@ -396,6 +396,7 @@ jobs:
           node --check tests/security/academic-merge-student-files-ownership.test.js
           node --check tests/security/academic-student-lifecycle-mutations-ownership.test.js
           node --check tests/security/accounting-monthly-charge-period.test.js
+          node --check tests/security/accounting-transport-monthly-charges.test.js
           node --check tests/security/accounting-payroll-generation-authorization.test.js
           node --check tests/security/accounting-family-credit-preference.test.js
           node --check js/accounting.js
