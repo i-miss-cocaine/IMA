@@ -6244,3 +6244,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - GitHub Actions run 44948737639: contrato nuevo USER paso 85 PASS; otros contratos USER 82–84 y ownership académico 86–88 PASS; syntax-check 100 PASS. El agregado falla solo en Phase22 por ausencia de configureSchoolDocumentTemplate.
 - Workflows complementarios del commit de código beac5277: Academic-Service, Identity, Accounting Import, Task-Service, SACE, UI y Hierarchical Configuration SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
 - Estado: incremento USER verificado; TASK-502 y TASK-506 siguen En ejecución. Siguiente: auditar endpoints restantes con IDs de expediente/solicitud en los cinco servicios y verificar aislamiento/concurrencia antes de revalidar TASK-506.
+
+
+### Continuidad C1.917 — AUD-NG-222 / TASK-502 (sin cierre)
+- USER getAdmissionNotificationLogs ya no expone todos los logs a roles departamentales: requiere solicitud única y assertRecordOwnership SOLICITUD_ADMISION/READ; la consulta global queda limitada a actores con institutionWide verificado. La búsqueda por solicitud usa tokens exactos y no crea hojas.
+- Contrato Node incorporado al workflow y filtro de paths; cubre ausencia de target, aislamiento de solicitud, colisiones SOL-1/SOL-10, duplicados, ownership denegado y consulta global institucional.
+- GitHub Actions run 44949096376: contrato nuevo paso 86 PASS; contratos USER 82–85, ownership académico 87–89 y syntax-check 101 PASS. El agregado falla solo en Phase22 por configureSchoolDocumentTemplate ausente.
+- Workflows complementarios del commit de código 8df84706: Academic-Service, Hierarchical Configuration, Task-Service, SACE, Identity y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
+- Estado: incremento USER verificado; TASK-502 y TASK-506 continúan En ejecución. Siguiente: auditar getScheduleChangeNotificationLogs/getNotificationAuditLogs y luego continuar bindings action/resource en cinco servicios.

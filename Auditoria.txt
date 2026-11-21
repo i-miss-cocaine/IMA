@@ -3222,3 +3222,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-222 / TASK-502 | C1.916] Hallazgo confirmado: getStudentProcedureNotificationLogs aceptaba consultas sin target, coincidencias parciales de expediente/solicitud y no verificaba ownership del expediente. La acción estaba disponible para Director. Corrección en USER: exige target, resuelve solicitud/expediente únicos, comprueba identidad del estudiante o relación/grant del tutor, ámbito institucional para Administrador/Desarrollador y ResourceOwnership READ para el resto. Filtro por ID exacto/tokens delimitados. Contrato Node y sintaxis PASS en GitHub Actions; Phase22 sigue fallando por configureSchoolDocumentTemplate ausente. TASK-502 continúa abierto.
+
+
+[2026-11-21 | AUD-NG-222 / TASK-502 | C1.917] Hallazgo confirmado: getAdmissionNotificationLogs permitía consulta global sin target y coincidencia parcial de solicitud para roles Director/Subdirector sin scope de recurso. Corrección: institutionWide verificado para consulta global; de lo contrario solicitud única y assertRecordOwnership SOLICITUD_ADMISION/READ. Coincidencia por token exacto; lectura sin creación de hojas; límite máximo 200. Contrato Node y sintaxis PASS; Phase22 continúa fallando por configureSchoolDocumentTemplate ausente. TASK-502 sigue abierto.

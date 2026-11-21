@@ -953,3 +953,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502 permanece En ejecución; TASK-506 continúa pendiente de integración.
 - Siguiente: auditar otras rutas con expedienteId/solicitudId y comprobar aislamiento/condiciones de carrera en USER/ACADEMIC/ACCOUNTING/TASK/EXAM.
 ===============================================================================
+
+
+===============================================================================
+### Seguimiento C1.917 — AUD-NG-222 / TASK-502
+- USER: getAdmissionNotificationLogs limita la consulta global a institutionWide verificado; ámbito departamental exige solicitud única y ownership READ sobre SOLICITUD_ADMISION.
+- Se eliminan filtros por subcadena que podían mezclar SOL-1, SOL-10 y SOL-100; lectura no crea hojas y limita salida a 200.
+- Contrato Node, contratos USER focalizados y syntax-check PASS en GitHub Actions. Phase22 sigue fallando únicamente por configureSchoolDocumentTemplate ausente.
+- Apps Script/Sheets real, staging y concurrencia interproyecto NOT RUN. BETA-FUNC-128 pendiente.
+- TASK-502 y TASK-506 permanecen En ejecución.
+- Siguiente: revisar getScheduleChangeNotificationLogs y getNotificationAuditLogs; continuar bindings action/resource y aislamiento institucional en cinco servicios.
+===============================================================================

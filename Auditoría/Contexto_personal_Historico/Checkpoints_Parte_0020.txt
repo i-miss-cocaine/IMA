@@ -963,3 +963,36 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
 - Siguiente: continuar el inventario de endpoints que reciben expedienteId/solicitudId u otros identificadores de recurso, priorizar lecturas y mutaciones sin ownership explícito; añadir contratos deterministas y luego revalidar TASK-506.
 ===============================================================================
+
+
+===============================================================================
+### C1.917 — IMA-EXEC-20261121-AUD-NG-222-USER-ADMISSION-LOGS-88
+===============================================================================
+
+### Continuidad y HEAD
+- Punto de partida: C1.916, commit documental 9d23c423d9c72ef4ef9bc11634b196301b777d62. HEAD de implementación antes del checkpoint: 3e4b2c5b763778fd9f9b5e32322351003eba437e.
+- Commits de esta unidad: 8df84706 (cierre contextual de logs de admisión); 4e7fab7f (contrato Node); 3e4b2c5b (integración del contrato, syntax-check y filtro de paths).
+- Rama autorizada: NG_beta_0.0.0.1_work. Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin cambios.
+
+### Hallazgo y corrección
+- Hallazgo confirmado: getAdmissionNotificationLogs permitía devolver todas las notificaciones sin target y filtraba solicitudes por subcadena en mensaje/deduplicationKey. Director/Subdirector tenían la acción en ROLE_PERMISSIONS, pero el handler no verificaba scope ni ownership.
+- Corrección: identidad verificada; consulta global únicamente cuando getInstitutionalDepartmentScope_ confirma institutionWide; actores departamentales requieren solicitud identificable, registro único en SolicitudesAdmision y assertRecordOwnership SOLICITUD_ADMISION/READ. El filtro usa tokens exactos para evitar SOL-1/SOL-10/SOL-100. La lectura ya no crea hojas y el límite de salida queda acotado a 200.
+- Se conserva la respuesta y el comportamiento global para actores con ámbito institucional completo.
+
+### Archivos modificados
+- backend/user-service/Code.gs
+- tests/security/user-admission-notification-logs-ownership.test.js (nuevo)
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- GitHub Actions Department Scope Contract, run 44949096376, Node.js 24.22.3: contrato USER admission notification logs (paso 86) PASS; USER student procedure notification logs (85), roster/attendance/review (82–84) PASS; contratos de ownership académico (87–89) PASS; syntax-check (101) PASS.
+- El workflow agregado termina FAILURE únicamente en Phase22 document management suite, paso 102: tests/regression/phase22-document-management-suite-contract.test.js reporta missing function configureSchoolDocumentTemplate. El fallo es independiente de los contratos USER recién ejecutados.
+- En el commit de código 8df84706: Academic-Service single authorization context, Hierarchical Configuration, Task-Service, SACE monotonic source revision, Identity mapping y Accounting Import Preflight — SUCCESS. Department Scope vuelve a fallar solo en Phase22.
+- Node.js y node --check se ejecutaron en GitHub Actions; CLI local independiente NOT RUN. Apps Script/Sheets real, staging y concurrencia entre proyectos NOT RUN. BETA-FUNC-128 pendiente de beta.
+
+### Estado y siguiente acción elegible
+- La lectura de logs de admisión ya no permite exposición global a actores departamentales ni coincidencias parciales de IDs.
+- AUD-NG-222 / TASK-502 sigue En ejecución: falta revisar las demás rutas de notificación/recursos y completar bindings action/resource en USER/ACADEMIC/ACCOUNTING/TASK/EXAM.
+- TASK-506 / AUD-NG-226 permanece En ejecución y depende de TASK-502.
+- Siguiente: auditar getScheduleChangeNotificationLogs y getNotificationAuditLogs para determinar si requieren ámbito institucional/recurso; después continuar endpoints de expediente/solicitud y verificar concurrencia.
+===============================================================================
