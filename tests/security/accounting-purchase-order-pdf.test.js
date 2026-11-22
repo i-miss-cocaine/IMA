@@ -60,7 +60,7 @@ function makeHarness(options={}){
     purchaseQuotationAccess_:()=>({authorized:options.authorized!==false,code:"ROLE_NOT_ALLOWED",actor:{authorized:true,userId:actorUserId,role:"Director"},scope:{institutionWide:scopeActive,departmentIds:scopeActive?[]:["OTHER"]}}),
     validateRolePermission:(_actor,action)=>!permissionActive?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:
       (["createPurchaseOrder","getPurchaseOrders"].includes(action)?{authorized:true}:{authorized:false}),
-    purchaseOrderScopeAccess_:()=>options.scopeDenied?{authorized:false,code:"RESOURCE_NOT_FOUND"}:{authorized:true},
+    purchaseOrderScopeAccess_:()=>!scopeActive?{authorized:false,code:"RESOURCE_NOT_FOUND"}:{authorized:true,access:{actor:{authorized:true,userId:actorUserId,role:"Director"}}},
     purchaseQuotationJsonArray_:value=>{try{const parsed=Array.isArray(value)?value:JSON.parse(String(value||"[]"));return Array.isArray(parsed)?parsed:[];}catch(_){return[];}},
     getOrCreateSheet:(ss,name)=>ss.getSheetByName(name),
     supplierEnsureActiveForOrder_:()=>true,
