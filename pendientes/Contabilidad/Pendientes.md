@@ -9,7 +9,7 @@
 ---
 
 <!-- ID: F11-TASK02 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [F11-TASK02] Asegurar la integridad de los asientos contables y las autorizaciones multinivel
+### [x] [F11-TASK02] Asegurar la integridad de los asientos contables y las autorizaciones multinivel
 
 **Otros títulos originales:**
 - Garantizar la integridad de los registros contables y el flujo de autorizaciones financieras
@@ -20,8 +20,8 @@
 - **Dependencias/riesgos:** catálogo contable, identidad/roles, concurrencia y persistencia transaccional; riesgo de asientos desbalanceados o autorizaciones indebidas.
 - **Alcance:** integridad del asiento y autorización multinivel; no modificar el historial de pagos/recibos sin migración y respaldo verificables.
 - **Criterios de aceptación:** se rechazan asientos no balanceados; no hay escrituras parciales ante error; cada aprobación corresponde a un rol autorizado y queda trazada; pruebas de concurrencia y rechazo cubren los casos críticos.
-- **Prioridad:** P0. **Estado:** Pendiente (estado original del backlog).
-- **Evidencia de cierre:** pendiente. **Discrepancia:** la sección 4.C.1 afirma que la partida doble está completa y verificada, pero la conclusión mantiene un riesgo P0. No se toma la afirmación general como evidencia suficiente de autorizaciones multinivel.
+- **Prioridad:** P0. **Estado:** Completada (C1.951).
+- **Evidencia de cierre:** C1.951; `recordAccountingJournalEntry` exige identidad/permiso dinámico, revalida actor bajo ScriptLock y fuerza `CreadoPor` verificado; el núcleo valida cuentas activas del `PlanCuentas`, partidas individuales, equilibrio exacto a centavos, idempotencia y rollback de escritura. Lecturas del libro protegidas. `approvePurchaseOrder` queda expuesto por router, segregado por rol/umbral, exige justificación y persiste aprobador/fecha/motivo/rol atómicamente. Contratos Node.js 24 y sintaxis Apps Script: Department Scope run 44991489881 SUCCESS.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área IV (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Integridad contable, prevención de fraude)
@@ -32,7 +32,7 @@
   Asegurar el principio de partida doble, validar el equilibrio entre débitos y créditos en cada asiento contable e implementar autorizaciones financieras multinivel según límites de monto antes de la afectación presupuestaria.
 - **Criterios de Aceptación:**
   - Todo asiento desequilibrado es rechazado y las compras mayores al umbral requieren aprobación formal de Dirección.
-- **Estado:** Pendiente
+- **Estado:** Completada
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 234-248; clave F11-Task13; asignación única: Contabilidad -->
 

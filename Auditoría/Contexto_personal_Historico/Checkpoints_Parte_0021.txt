@@ -102,3 +102,75 @@
 - Mantener AUD-NG-222/TASK-502 y AUD-NG-226/TASK-506 como trabajos independientes abiertos; no se cierran por F18-TASK06.
 
 ===============================================================================
+
+
+===============================================================================
+### C1.951 — IMA-EXEC-20261122-F11-TASK02-ACCOUNTING-INTEGRITY-CLOSE
+===============================================================================
+
+### Continuidad, rama y estado Git
+- Sesión: ejecución de continuidad posterior a C1.950.
+- Repositorio: i-miss-cocaine/IMA.
+- Rama exclusiva de trabajo: NG_beta_0.0.0.1_work.
+- HEAD inicial de esta tarea verificado: e83c6066053d1aea96bfeb6d169e016335f3298e.
+- HEAD de implementación verificado antes del cierre documental: 7a3a170fcd39b1a7419dafd534b7e1846733435b.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- No se modificó ninguna otra rama.
+
+### Objetivo y resultado
+- Tarea: F11-TASK02 — asegurar la integridad de los asientos contables y las autorizaciones multinivel.
+- Estado: Completada.
+- El endpoint público recordAccountingJournalEntry ahora verifica identidad y permiso dinámico, adquiere ScriptLock, revalida identidad/rol y asigna CreadoPor desde el actor verificado; no acepta suplantación del creador enviada por el cliente.
+- Se separó el núcleo interno recordAccountingJournalEntryCore_ para los flujos de nómina y activos que ya tienen autorización y lock propios.
+- Cada línea exige cuenta activa en PlanCuentas, código y nombre canónicos, importe finito/positivo y un solo lado (Debe o Haber). Se rechazan líneas vacías, cuentas inexistentes/inactivas, montos inválidos y asientos no equilibrados a centavos.
+- AsientosContables incorpora IdempotencyKey y PayloadHash mediante migración append-only; el reintento idéntico devuelve el asiento existente y una clave reutilizada con contenido distinto se rechaza. El append es una sola escritura bajo lock y se revierte una fila si la operación reporta fallo después de escribir.
+- getAccountingJournalEntries y getPaginatedJournalEntries exigen identidad y permiso; se corrigió el cálculo de montoDebe/montoHaber de la vista paginada, que antes tomaba columnas de referencia y JSON.
+- Se mantuvo la compatibilidad del módulo de depreciación con columnas de metadatos añadidas al final de AsientosContables, validando el prefijo histórico del esquema.
+- approvePurchaseOrder quedó conectado al router. La capacidad de aprobar se limita a Subdirector/Director/Administrador; las compras superiores a L 50,000 requieren Director/Administrador. Se bloquea la autoaprobación y se exige justificación; aprobador, rol, fecha, motivo y estado se guardan en una sola actualización de fila con rollback ante error.
+- La UI solicita la justificación y envía el dato al backend. La capacidad se oculta para roles sin atribución de aprobación.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-journal-entry-integrity.test.js (nuevo)
+- tests/security/accounting-asset-depreciation.test.js
+- tests/security/accounting-payroll-journal-integration.test.js
+- tests/security/accounting-payroll-loan-amortization.test.js
+- tests/security/accounting-purchase-order-pdf.test.js
+- tests/security/accounting-purchase-console-capabilities.test.js
+- .github/workflows/department-scope-contract.yml
+- pendientes/Contabilidad/Pendientes.md
+- changueslogs.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt
+
+### Revisión técnica y pruebas
+- Contrato de integridad de asientos: SUCCESS (balance, catálogo activo, actor verificado, permisos, idempotencia, conflicto, concurrencia, rollback y lectura).
+- Contrato de integración de diario de nómina: SUCCESS.
+- Contrato de amortización/reversión de préstamos de nómina: SUCCESS.
+- Contrato de depreciación y doble partida de activos: SUCCESS.
+- Contrato de matriz de cotizaciones/adjudicación: SUCCESS.
+- Contrato de capacidades de consola de compras: SUCCESS.
+- Contrato de ciclo de PDF y aprobación de órdenes: SUCCESS.
+- Department Scope Contract run 44991489881: SUCCESS; Node.js 24 y todos los pasos, incluido syntax-check de servicios Apps Script, completados correctamente.
+- CLI local independiente: NOT RUN; no hay checkout local disponible en esta sesión.
+- Google Apps Script/Sheets/Drive reales: NOT RUN; no se afirma prueba de despliegue ni escritura en producción.
+- No se ejecutaron pagos, transferencias ni movimientos financieros reales.
+
+### Commits de implementación
+- 1bc7f69b882d292a6aabc2d6885bc4f2356e3fc2 — autorización, validación y persistencia idempotente de asientos.
+- bf5108891058bbe017d1fc6158bbf17f87e506b8 — actualización de contratos de llamadas internas al núcleo protegido.
+- c0d5f157f40f5f91627c4882e02c1b121b1165f0 — ruta de aprobación de órdenes y justificación en UI.
+- b0479141e10a8bc4d244808fff6f57837e7b6916 — contratos de aprobación, metadatos y segregación por rol.
+- d82f2ffa6d0206958ea661d2fd7f4fad4f7fa5ce — contrato nuevo de integridad del diario y ejecución en GitHub Actions.
+- 626bc2423a9e07de18ce07c3fcbb39949ba33599 — compatibilidad de depreciación con metadatos append-only.
+- 7a3a170fcd39b1a7419dafd534b7e1846733435b — corrección del contrato de amortización de préstamos de nómina.
+
+### Hallazgos y continuidad
+- F11-TASK02 queda Completada.
+- La siguiente tarea elegible es F11-TASK14 (P1): control presupuestario y alertas de sobregiro por centro de costo. Su dependencia F11-TASK02 está satisfecha.
+- Antes de implementar F11-TASK14 se debe recuperar el contrato histórico de getBudgets, saveBudgetPlan, getBudgetExecutionReport, checkBudgetAvailability y PresupuestosInstitucionales. Esos símbolos/esquema no aparecen en la rama de trabajo actual; no se debe inventar estructura de partidas, centros de costo ni saldos.
+- F18-TASK07 / Plan Maestro TASK-017 permanece downstream de F11-TASK14.
+- AUD-NG-222/TASK-502 y AUD-NG-226/TASK-506 continúan abiertos e independientes.
+
+===============================================================================
