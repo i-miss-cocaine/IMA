@@ -7198,7 +7198,7 @@ function generatePurchaseOrderPDF(payload) {
     if(!bytes||!bytes.length)return{status:"error",code:"PURCHASE_ORDER_PDF_EMPTY"};
     var mime=String(blob.getContentType?blob.getContentType():"").toLowerCase();
     var signature=bytes.slice(0,5).map(function(value){return String.fromCharCode((Number(value)+256)%256);}).join("");
-    if(mime!=="application/pdf"||signature!=="%PDF-"||bytes.length>10*1024*1024)return{status:"error",code:"PURCHASE_ORDER_PDF_INVALID",mimeType:mime,pdfSignature:signature,fileSizeBytes:bytes.length};
+    if(mime!=="application/pdf"||signature!=="%PDF-"||bytes.length>10*1024*1024)return{status:"error",code:"PURCHASE_ORDER_PDF_INVALID"};
     var hash=computeDocumentSHA256(bytes);
     if(!hash||hash.length!==64)return{status:"error",code:"PURCHASE_ORDER_PDF_HASH_FAILED"};
     var folder=getOrCreatePrivatePurchaseOrderFolder_();
