@@ -4495,3 +4495,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-22] C1.933 / AUD-NG-222-TASK-502 — ACCOUNTING uploadEmployeeDocument ahora revalida identidad firmada, RBAC dinámico y scope de expediente tras obtener ScriptLock; auditoría CargadoPor usa actor revalidado. Tests cubren revocación de permiso/scope y cambio de actor sin escrituras ante denegación. Se integra el contrato en department-scope-contract.yml (trigger path, ejecución y sintaxis). Department Scope run 44964790070 SUCCESS, 137 pasos; employee document contract PASS; Apps Script syntax y node --check PASS. CLI local y Apps Script/Sheets/Drive reales NOT RUN. Próximo: auditoría TOCTOU de vacaciones/incapacidades, asistencia, incidentes y capacitación.
+
+
+[2026-11-22] C1.934 / AUD-NG-222-TASK-502 — ACCOUNTING: submitVacationRequestCore_ revalida identidad firmada, RBAC, rol y expediente tras lock; recordMedicalLeave revalida identidad HR, permiso y expediente; reviewVacationRequest revalida identidad/rol/permiso antes de mutar. Tests de revocación de sesión durante lock y cambio de rol. Department Scope run 44964976451 SUCCESS; vacation/medical ownership contract PASS; syntax PASS. CLI y Apps Script/Sheets/Drive reales NOT RUN. Próximo: submit/reviewAttendanceCorrection, incidentes y capacitación.

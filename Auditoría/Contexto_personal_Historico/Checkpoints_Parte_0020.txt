@@ -1682,3 +1682,37 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Continuar AUD-NG-222/TASK-502 con auditoría TOCTOU de otros handlers de escritura ACCOUNTING que precalculan identidad o acceso antes de ScriptLock; priorizar vacaciones/incapacidades, correcciones de asistencia, incidentes laborales y capacitación.
 - TASK-506 / AUD-NG-226 permanece dependiente de TASK-502.
 ===============================================================================
+
+
+===============================================================================
+### C1.934 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-LEAVE-TOCTOU
+===============================================================================
+
+### Continuidad, commit y HEAD
+- Continuación desde C1.933, rama NG_beta_0.0.0.1_work.
+- Commit de implementación: 09ef1a1c41a552e170b7cf8fb1c2b92c56d83fb5.
+- HEAD verificado antes del checkpoint: 09ef1a1c41a552e170b7cf8fb1c2b92c56d83fb5.
+- Rama base sin modificar.
+
+### Hallazgos y correcciones
+- submitVacationRequestCore_ validaba actor/rol/expediente antes del lock y luego usaba ese contexto para crear solicitudes. Ahora revalida identidad firmada, permiso dinámico, rol permitido y expediente bajo lock.
+- recordMedicalLeave ahora revalida identidad HR, permiso dinámico y alcance del expediente dentro del lock.
+- reviewVacationRequest ahora revalida identidad, rol y permiso dinámico dentro del lock antes de resolver el recurso y escribir.
+- Se conserva el comportamiento de lock timeout y los contratos previos de ownership; denegaciones post-lock no escriben filas ni cambian estados.
+- Se agregaron pruebas de revocación de sesión durante la espera del lock y de cambio de rol del revisor.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-vacation-medical-leave-ownership.test.js
+
+### Verificaciones
+- Department Scope Contract run 44964976451: SUCCESS.
+- Contrato ACCOUNTING vacation and medical leave ownership: PASS con los nuevos casos de revocación y cambio de rol.
+- Sintaxis del servicio Apps Script y pruebas del workflow: PASS.
+- Los workflows asociados a este commit (Library Circulation Concurrency, Department Reference Consumers, Identity Mapping/Transport, Accounting Import Preflight, ACCOUNTING Transport, Hierarchical Configuration y Department Scope) finalizaron SUCCESS.
+- No se ejecutó CLI local ni Apps Script/Sheets/Drive reales.
+
+### Siguiente tarea elegible
+- Continuar AUD-NG-222/TASK-502 revisando handlers de corrección de asistencia, incidentes laborales y capacitación que reutilizan identidad o scope calculados antes de ScriptLock. Priorizar submitAttendanceCorrection y reviewAttendanceCorrection.
+- TASK-506 / AUD-NG-226 permanece dependiente de TASK-502.
+===============================================================================
