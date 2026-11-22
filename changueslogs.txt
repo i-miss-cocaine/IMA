@@ -4501,3 +4501,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-22] C1.935 / AUD-NG-222-TASK-502 — ACCOUNTING: submitAttendanceCorrection y reviewAttendanceCorrection revalidan identidad firmada, permiso dinámico, rol y scope dentro del lock. Pruebas cubren revocación de sesión y cambio de rol HR; no escrituras ante denegación. CI inicial falló por estado pendiente residual del fixture; corregido cerrando la solicitud de prueba. Department Scope run 44965191324 SUCCESS; contrato attendance correction PASS; syntax PASS. CLI/Apps Script real NOT RUN. Próximo: incidentes laborales/medidas disciplinarias y capacitación.
+
+
+[2026-11-22] C1.936 / AUD-NG-222-TASK-502 — ACCOUNTING: manageLaborIncident y manageDisciplinaryMeasure revalidan actor, permiso dinámico y expediente tras ScriptLock; las lecturas de snapshot y escritura quedan dentro del lock. Contratos cubren revocación de sesión y cambio de rol sin escrituras. CI Department Scope run 44965475145 SUCCESS; labor incident/disciplinary ownership PASS; syntax PASS. CI encontró y permitió corregir orden de validación de ID duplicado manteniendo contrato preexistente. CLI/Apps Script real NOT RUN. Próximo: capacitación.

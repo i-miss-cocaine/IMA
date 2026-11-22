@@ -1750,3 +1750,38 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Continuar AUD-NG-222/TASK-502 revisando incidentes laborales/medidas disciplinarias y capacitación, con foco en autorización de recurso calculada antes de ScriptLock.
 - TASK-506 / AUD-NG-226 permanece dependiente de TASK-502.
 ===============================================================================
+
+
+===============================================================================
+### C1.936 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-LABOR-INCIDENT-TOCTOU
+===============================================================================
+
+### Continuidad, commits y HEAD
+- Continuación desde C1.935, rama NG_beta_0.0.0.1_work.
+- Commit de implementación inicial: 5ddc6fcd37c925fb4b55ad58923643a4c483c116.
+- Commit de ajuste del stub de permisos del test: bfb63b73c5b0231354b18c14deb9a3255dd04de9.
+- Commit de corrección del orden de validación de colisión: 91bf3e14d97ff48d11ec538a17c3b59e0df93d48.
+- HEAD verificado antes del checkpoint: 91bf3e14d97ff48d11ec538a17c3b59e0df93d48.
+
+### Hallazgos y correcciones
+- manageLaborIncident: ahora revalida identidad, permiso dinámico y acceso al expediente dentro de ScriptLock; mueve la lectura/creación de hoja y snapshot a la sección crítica para evitar usar filas/índices previos.
+- manageDisciplinaryMeasure: ahora revalida identidad, permiso y expediente bajo lock; valida la incidencia relacionada y lee/crea snapshot de medidas dentro de la sección crítica.
+- Se conservó el orden contractual de detección de ID generado duplicado antes de exigir la incidencia asociada, pero toda esa validación ocurre bajo lock.
+- Pruebas agregadas para revocación de sesión y cambio de rol durante espera; verifican cero escrituras ante denegación.
+- CI detectó primero una incompatibilidad de orden en el código de colisión; se corrigió preservando el contrato existente, sin relajar pruebas.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-labor-incident-write-ownership.test.js
+
+### Verificaciones
+- Department Scope Contract run 44965475145: SUCCESS.
+- Contrato ACCOUNTING labor incident and disciplinary measure ownership: PASS.
+- Syntax-check updated Apps Script services: PASS.
+- Otros workflows asociados a la iteración finalizaron SUCCESS.
+- No se ejecutó CLI local ni Apps Script/Sheets/Drive reales.
+
+### Siguiente tarea elegible
+- Continuar AUD-NG-222/TASK-502 con capacitación: manageTrainingEnrollment, manageTrainingCourse y manageProfessionalDevelopmentPlan; verificar autorización/ownership y datos de curso dentro de lock.
+- TASK-506 / AUD-NG-226 permanece dependiente de TASK-502.
+===============================================================================

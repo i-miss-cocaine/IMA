@@ -3282,3 +3282,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-22 | AUD-NG-222 / TASK-502 | C1.935] ACCOUNTING: TOCTOU corregido en submitAttendanceCorrection y reviewAttendanceCorrection. Revalidación de sesión, permiso dinámico, rol y ownership bajo lock; tests de revocación y cambio de rol. Se detectó y corrigió fixture residual que bloqueaba prueba rollback. CI Department Scope SUCCESS 44965191324; syntax PASS. Siguiente: incidentes laborales/medidas disciplinarias y capacitación.
+
+
+[2026-11-22 | AUD-NG-222 / TASK-502 | C1.936] ACCOUNTING: corregido TOCTOU en incidentes laborales y medidas disciplinarias; revalidación de identidad/RBAC/scope bajo lock, snapshots actualizados y validación de incidencia bajo sección crítica. Test de revocación/cambio de rol. CI Department Scope SUCCESS 44965475145; sintaxis PASS. Siguiente: inscripciones/cursos/planes de capacitación.
