@@ -6204,6 +6204,18 @@ function recordPurchaseReceipt(payload) {
     if (!orderRows || !orderRows.length || !receiptRows || !receiptRows.length) throw new Error("PURCHASE_RECEIPT_SCHEMA_INVALID");
     var orderHeaders = orderRows[0].map(function(v) { return String(v || "").trim(); });
     var receiptHeaders = receiptRows[0].map(function(v) { return String(v || "").trim(); });
+    var idempotencyKeyIndex = receiptHeaders.indexOf("IdempotencyKey");
+    if (idempotencyKeyIndex < 0) {
+      idempotencyKeyIndex = receiptHeaders.length;
+      receiptSheet.getRange(1, idempotencyKeyIndex + 1).setValue("IdempotencyKey");
+      receiptHeaders.push("IdempotencyKey");
+    }
+    var idempotencyHashIndex = receiptHeaders.indexOf("IdempotencyHash");
+    if (idempotencyHashIndex < 0) {
+      idempotencyHashIndex = receiptHeaders.length;
+      receiptSheet.getRange(1, idempotencyHashIndex + 1).setValue("IdempotencyHash");
+      receiptHeaders.push("IdempotencyHash");
+    }
     function indexOfHeader(headers, name, fallback) {
       var index = headers.indexOf(name);
       return index >= 0 ? index : fallback;
@@ -6233,6 +6245,24 @@ function recordPurchaseReceipt(payload) {
       if (scope.institutionWide !== true && departmentIds.indexOf(requestDepartment) === -1) throw new Error("RESOURCE_NOT_FOUND");
     } else if (scope.institutionWide !== true) {
       throw new Error("RESOURCE_NOT_FOUND");
+    }
+    var idempotencyKey = String(input.idempotencyKey || "").trim();
+    if (idempotencyKey && !/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey)) throw new Error("PURCHASE_RECEIPT_IDEMPOTENCY_KEY_INVALID");
+    var idempotencyHash = idempotencyKey ? computeDocumentSHA256(JSON.stringify({
+      ordenCompraId: String(input.ordenCompraId || ""), detalleRecibido: input.detalleRecibido || [],
+      estadoConformidad: String(input.estadoConformidad || "Conforme"),
+      registrarEnInventario: input.registrarEnInventario === true, facturaId: String(input.facturaId || ""),
+      observaciones: String(input.observaciones || ""), actorUserId: String(access.actor.userId || "")
+    })) : "";
+    if (idempotencyKey) {
+      var idempotencyMatches = receiptRows.slice(1).filter(function(row) { return String(row[idempotencyKeyIndex] || "").trim() === idempotencyKey; });
+      if (idempotencyMatches.length > 1) throw new Error("PURCHASE_RECEIPT_IDEMPOTENCY_AMBIGUOUS");
+      if (idempotencyMatches.length === 1) {
+        if (String(idempotencyMatches[0][idempotencyHashIndex] || "") !== idempotencyHash) throw new Error("PURCHASE_RECEIPT_IDEMPOTENCY_CONFLICT");
+        return { status: "success", idempotente: true,
+          recepcionId: String(idempotencyMatches[0][indexOfHeader(receiptHeaders, "RecepcionID", 0)] || ""),
+          ordenCompraId: String(input.ordenCompraId), estadoOrden: String(order[orderStateIndex] || ""), movimientosInventario: 0 };
+      }
     }
     var orderState = String(order[orderStateIndex] || "").trim().toLowerCase();
     if (["aprobada","recibidaparcial"].indexOf(orderState) === -1) throw new Error("PURCHASE_ORDER_NOT_RECEIVABLE");
@@ -6342,6 +6372,10 @@ function recordPurchaseReceipt(payload) {
     receiptRow[indexOfHeader(receiptHeaders, "RegistrarInventario", 6)] = registrarInventario && inventoryResults.length > 0;
     receiptRow[indexOfHeader(receiptHeaders, "AsientoID", 7)] = "";
     receiptRow[indexOfHeader(receiptHeaders, "Observaciones", 8)] = String(input.observaciones || "").slice(0, 500);
+    if (idempotencyKey) {
+      receiptRow[idempotencyKeyIndex] = idempotencyKey;
+      receiptRow[idempotencyHashIndex] = idempotencyHash;
+    }
     var receiptWidth = Math.max(receiptHeaders.length, receiptRow.length);
     for (var i = 0; i < receiptWidth; i++) if (receiptRow[i] === undefined) receiptRow[i] = "";
     receiptSheet.appendRow(receiptRow);
