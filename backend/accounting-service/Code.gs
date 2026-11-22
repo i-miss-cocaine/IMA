@@ -7480,6 +7480,8 @@ function recordPurchaseOrderConfirmation(payload) {
     var orderMatches=orders.filter(function(row){return String(row[0])===String(input.ordenCompraId||"");});
     if(orderMatches.length!==1)return {status:"error",code:orderMatches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
     var order=orderMatches[0];
+    var orderScope=purchaseOrderScopeAccess_(input,ss,order,true);
+    if(!orderScope||orderScope.authorized!==true)return {status:"error",code:orderScope&&orderScope.code||"RESOURCE_NOT_FOUND"};
     if(String(order[9]||"").toLowerCase()==="cancelada")return {status:"error",code:"PURCHASE_ORDER_CANCELLED"};
     orderRows=purchaseDossierRows_(ss,"OrdenesCompra");
     order=orderRows.slice(1).filter(function(row){return String(row[0])===String(input.ordenCompraId||"");})[0];
