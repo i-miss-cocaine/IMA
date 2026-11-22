@@ -5558,7 +5558,7 @@ function getOrCreateSheet(ss, name) {
     "AnticiposPrestamosEmpleado": ["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],
     "BoletasPago": ["BoletaID","PlanillaID","FechaEmision","EmpleadoId","EmpleadoNombre","PeriodoMes","TotalDevengado","TotalDeducciones","NetoAPagar","EstadoBoleta","DriveFileId"],
     "PlanCuentas": ["CuentaID","CodigoCuenta","NombreCuenta","TipoCuenta","Naturaleza","Estado","Observaciones"],
-    "AsientosContables": ["AsientoID","Fecha","Descripcion","OrigenModulo","ReferenciaID","LineasJSON","Estado","CreadoPor"],
+    "AsientosContables": ["AsientoID","Fecha","Descripcion","OrigenModulo","ReferenciaID","LineasJSON","Estado","CreadoPor","IdempotencyKey","PayloadHash"],
     "HorariosLaborales": ["HorarioID","NombreHorario","JornadaTipo","HoraEntrada","HoraSalida","ToleranciaMinutos","DiasLaboralesJSON","Estado","Observaciones"],
     "CorreccionesAsistencia": ["CorreccionID","AsistenciaID","EmpleadoId","FechaIncidencia","HoraOriginal","HoraSolicitada","Motivo","EvidenciaUrl","EstadoAprobacion","AprobadoPor","Observaciones"],
     "DocumentosLaborales": ["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"],
@@ -7931,7 +7931,7 @@ function calculateAssetDepreciation(payload) {
     if(input.post===true){
       var lines=[{codigoCuenta:String(profile[17]),nombreCuenta:assetDeprAccount_(ss,profile[17]).name,debe:totalPeriod,haber:0},
         {codigoCuenta:String(profile[16]),nombreCuenta:assetDeprAccount_(ss,profile[16]).name,debe:0,haber:totalPeriod}];
-      journal=recordAccountingJournalEntry({descripcion:"Depreciación "+input.activoId+" "+period,origenModulo:"ActivosFijos",
+      journal=recordAccountingJournalEntryCore_({descripcion:"Depreciación "+input.activoId+" "+period,origenModulo:"ActivosFijos",
         referenciaId:"DEPRECIACION:"+input.activoId+":"+period,lineas:lines,creadoPor:actor.userId});
       var id="DEP-"+String(input.activoId)+"-"+period;
       sheet.appendRow([id,String(input.activoId),period,new Date(),method,totalCost,totalPeriod,totalAccum,net,
@@ -8029,7 +8029,7 @@ function reverseAssetDepreciationEntry(payload) {
     if(!original)throw new Error("DEPRECIATION_JOURNAL_NOT_FOUND");
     var originalLines=JSON.parse(String(original[5]||"[]"));
     var reversed=originalLines.map(function(line){return {codigoCuenta:line.codigoCuenta,nombreCuenta:line.nombreCuenta,debe:Number(line.haber||0),haber:Number(line.debe||0)};});
-    var journal=recordAccountingJournalEntry({descripcion:"Reversión depreciación "+input.activoId+" "+input.periodo,
+    var journal=recordAccountingJournalEntryCore_({descripcion:"Reversión depreciación "+input.activoId+" "+input.periodo,
       origenModulo:"ActivosFijos",referenciaId:"REVERSA_DEPRECIACION:"+input.activoId+":"+input.periodo,
       lineas:reversed,creadoPor:actor.userId});
     row[12]="Revertida";row[10]=JSON.stringify({componentes:JSON.parse(String(row[10]||"[]")),asientoReversionId:journal.asientoId,motivo:String(input.motivo||"")});
@@ -8060,7 +8060,7 @@ function registerDepreciableAssetDisposal_(payload) {
       {codigoCuenta:profile[15],nombreCuenta:assetAccount.name,debe:0,haber:cost}];
     if(sale>0)lines.push({codigoCuenta:String(input.cuentaBancos||"1101"),nombreCuenta:"Bancos",debe:sale,haber:0});
     if(gain>0)lines.push({codigoCuenta:String(profile[15]),nombreCuenta:"Ganancia por baja",debe:0,haber:gain});
-    var journal=recordAccountingJournalEntry({descripcion:"Baja de activo "+input.activoId,origenModulo:"ActivosFijos",
+    var journal=recordAccountingJournalEntryCore_({descripcion:"Baja de activo "+input.activoId,origenModulo:"ActivosFijos",
       referenciaId:"BAJA_ACTIVO:"+input.activoId,lineas:lines,creadoPor:actor.userId});
     var disposalSheet=assetDeprSheet_(ss,"BajasBienes",["BajaID","Fecha","TipoBien","BienIDCodigo","NombreBien","MotivoBaja","ValorLibros","AutorizadoPorUserId","DocumentoActaUrl","Estado","Observaciones"]);
     disposalSheet.appendRow(["BAJA-"+String(Utilities.getUuid()).replace(/-/g,"").slice(0,20),date,String(input.tipoBien||"ActivoFijo"),
@@ -10551,7 +10551,7 @@ function recordPayrollJournalEntry_(ss,planillaId,planRows,conceptSummary,actorI
  if(existing.length>1)throw new Error("PAYROLL_JOURNAL_DUPLICATE_REQUIRES_RECONCILIATION");
  if(ids.length){const entry=getPayrollJournalEntryById_(ss,ids[0]);if(!entry)throw new Error("PAYROLL_JOURNAL_LINK_ORPHANED");const valid=validatePayrollJournalEntry_(entry,planillaId,"Planillas");if(existing.length!==1||String(existing[0][0])!==ids[0])throw new Error("PAYROLL_JOURNAL_LINK_CONFLICT");return valid;}
  if(existing.length===1){const valid=validatePayrollJournalEntry_(existing[0],planillaId,"Planillas");matches.forEach(x=>sheet.getRange(x.index,col).setValue(valid.asientoId));return valid;}
- const built=buildPayrollJournalLines_(planRows,conceptSummary,getPayrollLoanAppliedAmountForPlanilla_(ss,planillaId)),result=recordAccountingJournalEntry({descripcion:"Contabilización integral de planilla "+planillaId+" - salarios, retenciones y obligaciones patronales",origenModulo:"Planillas",referenciaId:planillaId,creadoPor:actorId||"SYSTEM_PAYROLL",lineas:built.lineas});
+ const built=buildPayrollJournalLines_(planRows,conceptSummary,getPayrollLoanAppliedAmountForPlanilla_(ss,planillaId)),result=recordAccountingJournalEntryCore_({descripcion:"Contabilización integral de planilla "+planillaId+" - salarios, retenciones y obligaciones patronales",origenModulo:"Planillas",referenciaId:planillaId,creadoPor:actorId||"SYSTEM_PAYROLL",lineas:built.lineas});
  if(!result||result.status!=="success"||!result.asientoId)throw new Error("PAYROLL_JOURNAL_POST_FAILED");matches.forEach(x=>sheet.getRange(x.index,col).setValue(result.asientoId));return {status:"success",asientoId:result.asientoId,totalDebe:built.totalDebe,totalHaber:built.totalHaber,estado:result.estado,idempotent:false};
 }
 function recordPayrollJournalAdjustment(payload){
@@ -10581,7 +10581,7 @@ function recordPayrollJournalAdjustment(payload){
   if(prior.length===1&&(String(prior[0].row[2]||"").trim()!==originalId||String(prior[0].row[5]||"")!==reason||String(prior[0].row[6]||"")!==JSON.stringify(lines)))return {status:"error",code:"PAYROLL_ADJUSTMENT_REFERENCE_CONFLICT",message:"La referencia de ajuste ya existe con otros datos."};
   if(prior.length===1&&String(prior[0].row[3]||"").trim()&&!found.length)return {status:"error",code:"PAYROLL_ADJUSTMENT_LINK_ORPHANED",message:"El asiento de ajuste vinculado no existe."};
   if(found.length===1){let stored=[];try{stored=JSON.parse(found[0][5]||"[]");}catch(e){}if(JSON.stringify(stored)!==JSON.stringify(lines))return {status:"error",code:"PAYROLL_ADJUSTMENT_REFERENCE_CONFLICT",message:"El asiento de ajuste ya existe con otras líneas."};}
-  let posted;if(found.length===1)posted=validatePayrollJournalEntry_(found[0],journalRef,"PlanillasAjuste");else posted=recordAccountingJournalEntry({descripcion:"Ajuste compensatorio de planilla "+id+"; asiento original "+originalId+"; motivo: "+reason,origenModulo:"PlanillasAjuste",referenciaId:journalRef,creadoPor:actor.userId,lineas:lines});
+  let posted;if(found.length===1)posted=validatePayrollJournalEntry_(found[0],journalRef,"PlanillasAjuste");else posted=recordAccountingJournalEntryCore_({descripcion:"Ajuste compensatorio de planilla "+id+"; asiento original "+originalId+"; motivo: "+reason,origenModulo:"PlanillasAjuste",referenciaId:journalRef,creadoPor:actor.userId,lineas:lines});
   if(!posted||posted.status!=="success"||!posted.asientoId)return {status:"error",code:"PAYROLL_ADJUSTMENT_POST_FAILED",message:"No se pudo registrar el asiento de ajuste."};
   if(prior.length===1){if(String(prior[0].row[3]||"").trim()&&String(prior[0].row[3]||"").trim()!==posted.asientoId)return {status:"error",code:"PAYROLL_ADJUSTMENT_LINK_CONFLICT",message:"Referencia de ajuste vinculada a otro asiento."};if(!String(prior[0].row[3]||"").trim())adj.getRange(prior[0].index,4).setValue(posted.asientoId);return {status:"success",ajusteId:prior[0].row[0],asientoId:posted.asientoId,asientoOriginalId:originalId,idempotent:true,message:"Ajuste compensatorio recuperado sin duplicar el asiento."};}
   const ajusteId="PAJ-"+Utilities.getUuid();adj.appendRow([ajusteId,id,originalId,posted.asientoId,ref,reason,JSON.stringify(lines),actor.userId,new Date(),"Registrado"]);
@@ -11754,49 +11754,100 @@ function processPayrollReceiptDistribution(payload) {
   return {status:"success",planillaId:planillaId,modo:mode,procesados:claimed.length,enviados:sent,reintentables:retryable,fallidos:failed,actualizacionesFallidas:updateFailures,pendientesRestantes:count("PENDIENTE"),reintentosRestantes:count("REINTENTABLE"),enProceso:count("PROCESANDO"),message:"Lote de distribución procesado. Los envíos exitosos no se vuelven a enviar."};
 }
 
-function recordAccountingJournalEntry(payload) {
-  const { descripcion, origenModulo, referenciaId, lineas, creadoPor } = payload || {};
-  if (!descripcion || !Array.isArray(lineas) || lineas.length === 0) {
-    throw new Error("Descripción y líneas contables son requeridas.");
-  }
-
-  let totalDebe = 0;
-  let totalHaber = 0;
-
-  lineas.forEach(l => {
-    totalDebe += parseFloat(l.debe || 0);
-    totalHaber += parseFloat(l.haber || 0);
+function ensureAccountingJournalSheet_(ss) {
+  var sheet=getOrCreateSheet(ss,"AsientosContables");
+  if(!sheet||typeof sheet.getDataRange!=="function")throw new Error("ACCOUNTING_JOURNAL_SCHEMA_INVALID");
+  var values=sheet.getDataRange().getValues();
+  if(!values||!values.length)throw new Error("ACCOUNTING_JOURNAL_SCHEMA_INVALID");
+  var base=["AsientoID","Fecha","Descripcion","OrigenModulo","ReferenciaID","LineasJSON","Estado","CreadoPor"];
+  var headers=values[0].map(function(value){return String(value||"").trim();});
+  for(var i=0;i<base.length;i++)if(headers[i]!==base[i])throw new Error("ACCOUNTING_JOURNAL_SCHEMA_INVALID");
+  var extra=["IdempotencyKey","PayloadHash"];
+  extra.forEach(function(name){
+    if(headers.indexOf(name)<0){sheet.getRange(1,headers.length+1).setValue(name);headers.push(name);}
+    if(headers.indexOf(name)!==headers.lastIndexOf(name))throw new Error("ACCOUNTING_JOURNAL_SCHEMA_INVALID");
   });
-
-  if (Math.abs(totalDebe - totalHaber) > 0.01) {
-    logStructuredEvent("ACCOUNTING", "recordAccountingJournalEntry", "WARN", "UNBALANCED_JOURNAL_ENTRY_REJECTED", `Asiento desequilibrado rechazado. Debe: ${totalDebe}, Haber: ${totalHaber}`, { descripcion, totalDebe, totalHaber }, creadoPor || "SISTEMA");
-    throw new Error(`Asiento contable desequilibrado. Debe: ${totalDebe}, Haber: ${totalHaber}. La partida doble exige igualdad.`);
+  var map={};headers.forEach(function(name,index){if(name)map[name]=index;});
+  return{valid:true,sheet:sheet,headers:headers,map:map};
+}
+function recordAccountingJournalEntryCore_(payload) {
+  var input=payload||{},description=String(input.descripcion||"").trim().slice(0,500);
+  if(!description||!Array.isArray(input.lineas)||input.lineas.length<2||input.lineas.length>100)
+    throw new Error("ACCOUNTING_JOURNAL_INPUT_INVALID");
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),chart=ss.getSheetByName("PlanCuentas");
+  if(!chart)throw new Error("ACCOUNTING_CHART_NOT_CONFIGURED");
+  var chartData=chart.getDataRange().getValues();
+  if(!chartData||chartData.length<2)throw new Error("ACCOUNTING_CHART_NOT_CONFIGURED");
+  var chartHeaders=chartData[0].map(function(value){return String(value||"").trim();});
+  var idIndex=chartHeaders.indexOf("CuentaID"),codeIndex=chartHeaders.indexOf("CodigoCuenta"),nameIndex=chartHeaders.indexOf("NombreCuenta"),stateIndex=chartHeaders.indexOf("Estado");
+  if(idIndex<0||codeIndex<0||nameIndex<0||stateIndex<0)throw new Error("ACCOUNTING_CHART_SCHEMA_INVALID");
+  var normalized=[],totalDebitCents=0,totalCreditCents=0;
+  input.lineas.forEach(function(line){
+    if(!line||typeof line!=="object"||Array.isArray(line))throw new Error("ACCOUNTING_JOURNAL_LINE_INVALID");
+    var requestedCode=String(line.codigoCuenta||line.cuenta||line.cuentaId||"").trim();
+    if(!requestedCode)throw new Error("ACCOUNTING_JOURNAL_ACCOUNT_REQUIRED");
+    var matches=chartData.slice(1).filter(function(row){return String(row[codeIndex]||"").trim()===requestedCode||String(row[idIndex]||"").trim()===requestedCode;});
+    if(matches.length!==1)throw new Error(matches.length?"ACCOUNTING_ACCOUNT_AMBIGUOUS":"ACCOUNTING_ACCOUNT_NOT_FOUND");
+    var account=matches[0],accountState=String(account[stateIndex]||"").trim().toLowerCase();
+    if(["activo","activa","active","vigente","1","true"].indexOf(accountState)===-1)throw new Error("ACCOUNTING_ACCOUNT_INACTIVE");
+    var accountCode=String(account[codeIndex]||"").trim(),accountName=String(account[nameIndex]||"").trim();
+    if(!accountCode||!accountName)throw new Error("ACCOUNTING_CHART_SCHEMA_INVALID");
+    var debit=Number(line.debe===undefined||line.debe===null||line.debe===""?0:line.debe);
+    var credit=Number(line.haber===undefined||line.haber===null||line.haber===""?0:line.haber);
+    if(!Number.isFinite(debit)||!Number.isFinite(credit)||debit<0||credit<0||(debit>0&&credit>0)||(debit===0&&credit===0))
+      throw new Error("ACCOUNTING_JOURNAL_LINE_AMOUNT_INVALID");
+    var debitCents=Math.round(debit*100),creditCents=Math.round(credit*100);
+    if((debit>0&&debitCents<=0)||(credit>0&&creditCents<=0))throw new Error("ACCOUNTING_JOURNAL_LINE_AMOUNT_INVALID");
+    totalDebitCents+=debitCents;totalCreditCents+=creditCents;
+    var normalizedLine=Object.assign({},line,{cuenta:accountCode,codigoCuenta:accountCode,nombre:accountName,nombreCuenta:accountName,debe:debitCents/100,haber:creditCents/100});
+    normalized.push(normalizedLine);
+  });
+  if(totalDebitCents<=0||totalDebitCents!==totalCreditCents)throw new Error("ACCOUNTING_JOURNAL_UNBALANCED");
+  var origin=String(input.origenModulo||"General").trim().slice(0,80)||"General";
+  var referenceId=String(input.referenciaId||"N/A").trim().slice(0,160)||"N/A";
+  var idempotencyKey=String(input.idempotencyKey||"").trim();
+  if(!idempotencyKey&&referenceId!=="N/A")idempotencyKey=origin+":"+referenceId;
+  if(!idempotencyKey||idempotencyKey.length>220)throw new Error("ACCOUNTING_JOURNAL_IDEMPOTENCY_KEY_REQUIRED");
+  var payloadHash=migrationHash_(migrationStableJson_({descripcion:description,origenModulo:origin,referenciaId:referenceId,lineas:normalized}));
+  var schema=ensureAccountingJournalSheet_(ss),sheet=schema.sheet,map=schema.map,rows=sheet.getDataRange().getValues();
+  var duplicates=rows.slice(1).filter(function(row){return String(row[map.IdempotencyKey]||"")===idempotencyKey;});
+  if(duplicates.length>1)throw new Error("ACCOUNTING_JOURNAL_IDEMPOTENCY_AMBIGUOUS");
+  if(duplicates.length===1){
+    if(String(duplicates[0][map.PayloadHash]||"")!==payloadHash)throw new Error("ACCOUNTING_JOURNAL_IDEMPOTENCY_CONFLICT");
+    return{status:"success",idempotente:true,asientoId:String(duplicates[0][map.AsientoID]||""),totalDebe:totalDebitCents/100,totalHaber:totalCreditCents/100,estado:String(duplicates[0][map.Estado]||"Asentado")};
   }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "AsientosContables");
-  const now = new Date();
-  const asientoId = "AST-" + now.getTime();
-
-  sheet.appendRow([
-    asientoId,
-    now,
-    descripcion,
-    origenModulo || "General",
-    referenciaId || "N/A",
-    JSON.stringify(lineas),
-    "Asentado",
-    creadoPor || "SISTEMA"
-  ]);
-
-  return {
-    status: "success",
-    asientoId: asientoId,
-    totalDebe: totalDebe,
-    totalHaber: totalHaber,
-    estado: "Asentado",
-    message: "Asiento contable equilibrado por partida doble registrado exitosamente."
-  };
+  var now=new Date(),asientoId="AST-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"");
+  var row=[asientoId,now,description,origin,referenceId,JSON.stringify(normalized),"Asentado",String(input.creadoPor||"SISTEMA"),idempotencyKey,payloadHash];
+  var before=typeof sheet.getLastRow==="function"?sheet.getLastRow():rows.length;
+  try{sheet.appendRow(row);}catch(writeError){
+    try{if(typeof sheet.getLastRow==="function"&&typeof sheet.deleteRow==="function"&&sheet.getLastRow()>before)sheet.deleteRow(sheet.getLastRow());}catch(rollbackError){}
+    throw new Error("ACCOUNTING_JOURNAL_WRITE_FAILED");
+  }
+  return{status:"success",asientoId:asientoId,totalDebe:totalDebitCents/100,totalHaber:totalCreditCents/100,estado:"Asentado",message:"Asiento contable equilibrado por partida doble registrado exitosamente."};
+}
+function recordAccountingJournalEntry(payload) {
+  var input=payload||{},identity=getVerifiedAccountingIdentity_(input);
+  if(!identity||identity.authorized!==true)return{status:"error",code:identity&&identity.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(identity,"recordAccountingJournalEntry",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  try{
+    var verified=getVerifiedAccountingIdentity_(input);
+    if(!verified||verified.authorized!==true)return{status:"error",code:verified&&verified.code||"VERIFIED_IDENTITY_REQUIRED"};
+    if(String(verified.userId||"")!==String(identity.userId||"")||String(verified.role||"")!==String(identity.role||""))
+      return{status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
+    permission=validateRolePermission(verified,"recordAccountingJournalEntry",input);
+    if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    return recordAccountingJournalEntryCore_(Object.assign({},input,{creadoPor:String(verified.userId)}));
+  }catch(error){return{status:"error",code:String(error&&error.message||"ACCOUNTING_JOURNAL_WRITE_FAILED")};}
+  finally{lock.releaseLock();}
+}
+function accountingJournalLines_(raw) {
+  if(Array.isArray(raw))return raw;
+  if(raw===null||raw===undefined||raw==="")return[];
+  if(typeof raw==="string")return JSON.parse(raw);
+  throw new Error("ACCOUNTING_JOURNAL_LINES_CORRUPT");
 }
 
 function getAdvancedDashboardAnalytics(payload) {
@@ -11824,78 +11875,47 @@ function getAdvancedDashboardAnalytics(payload) {
   };
 }
 
+
 function getPaginatedJournalEntries(payload) {
-  const { page, pageSize, searchQuery, sortBy, sortOrder } = payload || {};
-  const pageNum = parseInt(page) || 1;
-  const size = parseInt(pageSize) || 15;
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "AsientosContables");
-  const rows = sheet.getDataRange().getValues().slice(1);
-
-  const cleanQuery = searchQuery ? String(searchQuery).trim().toLowerCase() : "";
-
-  let filtered = rows.filter(r => {
-    if (!cleanQuery) return true;
-    const id = String(r[0] || "").toLowerCase();
-    const concepto = String(r[2] || "").toLowerCase();
-    return id.includes(cleanQuery) || concepto.includes(cleanQuery);
-  }).map(r => ({
-    asientoId: r[0],
-    fecha: r[1],
-    concepto: r[2],
-    origenModulo: r[3] || "General",
-    montoDebe: r[4],
-    montoHaber: r[5],
-    estado: r[6] || "Registrado"
-  }));
-
-  const totalRecords = filtered.length;
-  const totalPages = Math.ceil(totalRecords / size) || 1;
-
-  if (sortBy) {
-    const isAsc = sortOrder === "ASC";
-    filtered.sort((a, b) => {
-      const valA = String(a[sortBy] || "").toLowerCase();
-      const valB = String(b[sortBy] || "").toLowerCase();
-      if (valA < valB) return isAsc ? -1 : 1;
-      if (valA > valB) return isAsc ? 1 : -1;
-      return 0;
-    });
+  var input=payload||{},identity=getVerifiedAccountingIdentity_(input);
+  if(!identity||identity.authorized!==true)return{status:"error",code:identity&&identity.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(identity,"getPaginatedJournalEntries",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var pageNum=Math.max(1,parseInt(input.page,10)||1),size=Math.min(100,Math.max(1,parseInt(input.pageSize,10)||15));
+  var rows=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"AsientosContables").getDataRange().getValues().slice(1);
+  var query=String(input.searchQuery||"").trim().toLowerCase();
+  var filtered=rows.map(function(row){
+    var lines=accountingJournalLines_(row[5]),debit=0,credit=0;
+    lines.forEach(function(line){debit+=Number(line.debe||0);credit+=Number(line.haber||0);});
+    return{asientoId:String(row[0]||""),fecha:row[1],concepto:String(row[2]||""),origenModulo:String(row[3]||"General"),
+      referenciaId:String(row[4]||""),montoDebe:Math.round(debit*100)/100,montoHaber:Math.round(credit*100)/100,
+      estado:String(row[6]||"Registrado"),creadoPor:String(row[7]||"")};
+  }).filter(function(item){return !query||item.asientoId.toLowerCase().indexOf(query)>=0||item.concepto.toLowerCase().indexOf(query)>=0||item.referenciaId.toLowerCase().indexOf(query)>=0;});
+  var totalRecords=filtered.length,totalPages=Math.ceil(totalRecords/size)||1;
+  if(input.sortBy&&["asientoId","fecha","concepto","origenModulo","referenciaId","montoDebe","montoHaber","estado","creadoPor"].indexOf(input.sortBy)>=0){
+    var asc=String(input.sortOrder||"").toUpperCase()==="ASC";
+    filtered.sort(function(a,b){var av=a[input.sortBy],bv=b[input.sortBy];if(av instanceof Date||bv instanceof Date){av=new Date(av||0).getTime();bv=new Date(bv||0).getTime();}if(typeof av==="number"&&typeof bv==="number")return asc?av-bv:bv-av;av=String(av||"").toLowerCase();bv=String(bv||"").toLowerCase();return av<bv?(asc?-1:1):av>bv?(asc?1:-1):0;});
   }
-
-  const startIndex = (pageNum - 1) * size;
-  const pageData = filtered.slice(startIndex, startIndex + size);
-
-  return {
-    status: "success",
-    data: pageData,
-    pagination: {
-      page: pageNum,
-      pageSize: size,
-      totalRecords: totalRecords,
-      totalPages: totalPages
-    }
-  };
+  return{status:"success",data:filtered.slice((pageNum-1)*size,pageNum*size),pagination:{page:pageNum,pageSize:size,totalRecords:totalRecords,totalPages:totalPages}};
 }
+
+
 
 function getAccountingJournalEntries(payload) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "AsientosContables").getDataRange().getValues().slice(1);
-
-  const entries = rows.map(r => ({
-    asientoId: r[0],
-    fecha: r[1] ? new Date(r[1]).toISOString() : null,
-    descripcion: r[2],
-    origenModulo: r[3] || "General",
-    referenciaId: r[4],
-    lineas: r[5] ? (typeof r[5] === 'string' ? JSON.parse(r[5]) : r[5]) : [],
-    estado: r[6] || "Contabilizado",
-    creadoPor: r[7]
-  }));
-
-  return { status: "success", data: entries };
+  var input=payload||{},identity=getVerifiedAccountingIdentity_(input);
+  if(!identity||identity.authorized!==true)return{status:"error",code:identity&&identity.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(identity,"getAccountingJournalEntries",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var rows=getOrCreateSheet(SpreadsheetApp.openById(SPREADSHEET_ID),"AsientosContables").getDataRange().getValues().slice(1);
+  var entries=rows.map(function(row){
+    var lines=accountingJournalLines_(row[5]),debit=0,credit=0;
+    lines.forEach(function(line){debit+=Number(line.debe||0);credit+=Number(line.haber||0);});
+    return{asientoId:row[0],fecha:row[1]?new Date(row[1]).toISOString():null,descripcion:row[2],origenModulo:row[3]||"General",
+      referenciaId:row[4],lineas:lines,estado:row[6]||"Contabilizado",creadoPor:row[7],totalDebe:Math.round(debit*100)/100,totalHaber:Math.round(credit*100)/100};
+  });
+  return{status:"success",data:entries};
 }
+
 
 function getPayrollEmployeePayConfigHeaders_(){return ["EmpleadoId","ModalidadPago","FrecuenciaPago","VigenciaInicio","VigenciaFin","Estado","ActualizadoPor","ActualizadoEn"];}
 
