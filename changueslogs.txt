@@ -4504,3 +4504,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-22] C1.936 / AUD-NG-222-TASK-502 — ACCOUNTING: manageLaborIncident y manageDisciplinaryMeasure revalidan actor, permiso dinámico y expediente tras ScriptLock; las lecturas de snapshot y escritura quedan dentro del lock. Contratos cubren revocación de sesión y cambio de rol sin escrituras. CI Department Scope run 44965475145 SUCCESS; labor incident/disciplinary ownership PASS; syntax PASS. CI encontró y permitió corregir orden de validación de ID duplicado manteniendo contrato preexistente. CLI/Apps Script real NOT RUN. Próximo: capacitación.
+
+
+[2026-11-22] C1.937 / AUD-NG-222-TASK-502 — ACCOUNTING manageTrainingEnrollment revalida identidad HR, permiso dinámico, ownership y curso activo tras ScriptLock; snapshot de inscripciones se actualiza dentro de lock. Test de sesión revocada sin escritura. Department Scope run 44965658665 SUCCESS; contrato training enrollment PASS; syntax PASS. CLI/Apps Script real NOT RUN. Próximo: catálogo de cursos y plan profesional.

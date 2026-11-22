@@ -1785,3 +1785,35 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Continuar AUD-NG-222/TASK-502 con capacitación: manageTrainingEnrollment, manageTrainingCourse y manageProfessionalDevelopmentPlan; verificar autorización/ownership y datos de curso dentro de lock.
 - TASK-506 / AUD-NG-226 permanece dependiente de TASK-502.
 ===============================================================================
+
+
+===============================================================================
+### C1.937 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-TRAINING-ENROLLMENT-TOCTOU
+===============================================================================
+
+### Continuidad, commit y HEAD
+- Continuación desde C1.936 en NG_beta_0.0.0.1_work.
+- Commit de implementación: fe3728001877fc226e0aa68a78be3b4883bba9d0.
+- HEAD verificado antes del checkpoint: fe3728001877fc226e0aa68a78be3b4883bba9d0.
+
+### Hallazgos y correcciones
+- manageTrainingEnrollment validaba empleado y curso antes de ScriptLock y usaba snapshot previo a la espera.
+- Ahora revalida identidad HR, permiso dinámico, ownership del expediente y curso activo dentro del lock.
+- La validación del curso y la lectura/creación del snapshot de inscripciones se realizan dentro de la sección crítica, evitando usar estado obsoleto.
+- Se agregó contrato de revocación de sesión durante la espera, verificando ausencia de nuevas filas.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-training-enrollment-ownership.test.js
+
+### Verificaciones
+- Department Scope Contract run 44965658665: SUCCESS.
+- Contrato ACCOUNTING training enrollment ownership: PASS.
+- Syntax-check updated Apps Script services: PASS.
+- Workflows relacionados del commit finalizaron SUCCESS.
+- No se ejecutó CLI local ni Apps Script/Sheets/Drive reales.
+
+### Siguiente tarea elegible
+- Continuar con manageTrainingCourse y manageProfessionalDevelopmentPlan, revalidando identidad, permiso y scope bajo lock y refrescando los snapshots.
+- TASK-502 y TASK-506 siguen abiertos.
+===============================================================================
