@@ -32,10 +32,10 @@ const q2=ctx.submitPurchaseQuotation({...payload,proveedorId:"S2",precioTotal:90
 assert.equal(q2.status,"success");
 const q3=ctx.submitPurchaseQuotation({...payload,proveedorId:"S3",precioTotal:30,detalleItems:[{itemId:"ITEM-A",cantidadCotizada:2,precioUnitario:15,especificacionesCumplidas:true,cumplimientoTecnico:"Cumple"}]});
 assert.equal(q3.status,"success");
-const q4=ctx.submitPurchaseQuotation({...payload,proveedorId:"S4",precioTotal:150,detalleItems:makeLines(20,25),plazoEntregaDias:7,condicionesPago:"Contado"});assert.equal(q4.status,"success");
-const q5=ctx.submitPurchaseQuotation({...payload,proveedorId:"S5",precioTotal:220,detalleItems:makeLines(30,35),plazoEntregaDias:10,condicionesPago:"Crédito 15 días"});assert.equal(q5.status,"success");
+const quote4Limit=ctx.submitPurchaseQuotation({...payload,proveedorId:"S4",precioTotal:150,detalleItems:makeLines(20,25),plazoEntregaDias:7,condicionesPago:"Contado"});assert.equal(quote4Limit.status,"success");
+const quote5Limit=ctx.submitPurchaseQuotation({...payload,proveedorId:"S5",precioTotal:220,detalleItems:makeLines(30,35),plazoEntregaDias:10,condicionesPago:"Crédito 15 días"});assert.equal(quote5Limit.status,"success");
 const quoteCountAtLimit=rows.CotizacionesCompra.length;
-const q6=ctx.submitPurchaseQuotation({...payload,proveedorId:"S6",precioTotal:300,detalleItems:makeLines(40,50)});assert.equal(q6.code,"PURCHASE_QUOTATION_LIMIT_REACHED");assert.equal(rows.CotizacionesCompra.length,quoteCountAtLimit,"sixth active quotation must not be persisted");
+const quote6Limit=ctx.submitPurchaseQuotation({...payload,proveedorId:"S6",precioTotal:300,detalleItems:makeLines(40,50)});assert.equal(quote6Limit.code,"PURCHASE_QUOTATION_LIMIT_REACHED");assert.equal(rows.CotizacionesCompra.length,quoteCountAtLimit,"sixth active quotation must not be persisted");
 rows.CotizacionesCompra.find(r=>r[0]===q3.cotizacionId)[3]=new Date(Date.now()-10*86400000);rows.CotizacionesCompra.find(r=>r[0]===q3.cotizacionId)[4]="1 día";
 const matrix=ctx.getPurchaseQuotationMatrix(payload);
 assert.equal(matrix.status,"success");assert.equal(matrix.cotizaciones.length,5);assert.equal(matrix.partidas[0].ofertas.length,5);
