@@ -3339,6 +3339,9 @@ function approveEmployeeLoanAdvance(payload){
   if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED",message:"Acceso denegado."};
   const data=sh.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({r,i:i+1})).filter(x=>String(x.r[0]||"").trim()===id);
   if(matches.length!==1||matches[0].r.length!==h.length)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
+  const lockedAccess=resolveEmployeeLoanAdvanceAccess_(Object.assign({},p),ss,String(matches[0].r[2]||"").trim(),true);
+  if(!lockedAccess||!lockedAccess.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
+  actor=lockedAccess.actor;
   const row=matches[0].r.slice(),rowIndex=matches[0].i;if(String(row[9]||"").trim().toUpperCase()!=="PENDIENTEAPROBACION")return {status:"error",code:"LOAN_ALREADY_REVIEWED",message:"La solicitud ya fue revisada."};
   const requested=Number(row[4]),terms=Number(row[6]);if(!Number.isFinite(requested)||requested<=0||!Number.isInteger(terms)||terms<1||terms>120)return {status:"error",code:"LOAN_DATA_INVALID",message:"Los datos de la solicitud no son válidos."};
   let approved=0;if(status==="APROBADO"){approved=p.montoAprobado==null||p.montoAprobado===""?requested:Number(p.montoAprobado);if(!Number.isFinite(approved)||approved<=0||approved>requested)return {status:"error",code:"LOAN_APPROVED_AMOUNT_INVALID",message:"El monto aprobado debe ser positivo y no superar el solicitado."};approved=Math.round(approved*100)/100;}
