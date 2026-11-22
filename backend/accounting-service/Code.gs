@@ -5607,12 +5607,12 @@ const ROLE_PERMISSIONS = {
   "Conductor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "Monitor": ["getTransportRoutes", "getTransportAssignments", "getTripPassengerManifest"],
   "RecursosHumanos": [ "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch", "getPurchaseInvoiceTolerances", "recordAccountsPayableExpense", "getPurchaseReceipts", "getPurchaseOrders", "getPurchaseRequests",  "recordPurchaseReceipt", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitLeaveVacationRequest", "submitVacationRequest", "reviewVacationRequest", "reviewLeaveVacationRequest", "calculateVacationBalances", "recordMedicalLeave", "manageLaborIncident", "manageDisciplinaryMeasure", "manageTrainingEnrollment", "manageTrainingCourse", "manageProfessionalDevelopmentPlan", "getTrainingAnalyticsReport", "recordStaffCheckIn", "recordStaffAttendance", "getStaffAttendanceLogs", "getEmployeeSelfServicePortal", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageStaffingNeeds", "getStaffingNeedsPlanning", "manageWorkShiftAndSubstitution"],
-  "Director": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch", "getPurchaseInvoiceTolerances", "savePurchaseInvoiceTolerance", "recordAccountsPayableExpense", "getPurchaseReceipts", "getPurchaseOrders", "getPurchaseRequests",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "getFamilyCreditSalesReconciliation", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getInstitutionalComplementaryServices", "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus","getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailability"],
+  "Director": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch", "getPurchaseInvoiceTolerances", "savePurchaseInvoiceTolerance", "recordAccountsPayableExpense", "getPurchaseReceipts", "getPurchaseOrders", "getPurchaseRequests",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "submitVacationRequest", "reviewVacationRequest", "calculateVacationBalances", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "getFamilyCreditSalesReconciliation", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getInstitutionalComplementaryServices", "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus","getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailability","cancelPurchaseOrder"],
   "Subdirector": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch", "getPurchaseInvoiceTolerances", "recordAccountsPayableExpense", "getPurchaseReceipts", "getPurchaseOrders", "getPurchaseRequests",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics", "getEnrollmentBillingConfiguration", "getInstitutionalComplementaryServices", "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus","getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailability"],
   "Contador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch", "getPurchaseInvoiceTolerances", "recordAccountsPayableExpense", "getPurchaseReceipts", "getPurchaseOrders", "getPurchaseRequests",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "configurePaymentConcept", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "getStaffPayrollReceipt", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "getFamilyCreditSalesReconciliation", "getEnrollmentBillingConfiguration", "getInstitutionalComplementaryServices", "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus","getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailability"],
   "EncargadoTienda": ["getStoreOrders","updateStoreOrderStatus","getFamilyCreditSalesReconciliation"],
   "Secretaría": ["getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher"],
-  "Administrador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch", "getPurchaseInvoiceTolerances", "savePurchaseInvoiceTolerance", "recordAccountsPayableExpense", "getPurchaseReceipts", "getPurchaseOrders", "getPurchaseRequests",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "getFamilyCreditSalesReconciliation", "getStaffingNeedsPlanning", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getInstitutionalComplementaryServices", "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus","getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailability"],
+  "Administrador": [ "getPurchaseDossier", "recordPurchaseOrderConfirmation",  "getSuppliers", "registerSupplier", "manageSupplierContact", "manageSupplierAddress", "manageSupplierCommercialTerms", "manageSupplierBankAccount", "getSupplierBankAccount",  "saveAssetDepreciationPolicy", "configureAssetDepreciationProfile", "registerCapitalizableAssetImprovement", "calculateAssetDepreciation", "getAssetDepreciationSchedule", "registerDepreciableAssetDisposal", "reverseAssetDepreciationEntry",  "getPurchaseReceiptAssetCandidates", "registerAssetsFromPurchaseReceipt", "getAssetItems", "manageAssetItem", "createPurchaseRequest", "createPurchaseOrder", "verifyThreeWayMatch", "getPurchaseInvoiceTolerances", "savePurchaseInvoiceTolerance", "recordAccountsPayableExpense", "getPurchaseReceipts", "getPurchaseOrders", "getPurchaseRequests",  "recordPurchaseReceipt", "submitPurchaseQuotation", "getPurchaseQuotations", "getPurchaseQuotationMatrix", "adjudicatePurchaseQuotations", "getEmployeeRecords", "getLeaveVacationRequests", "getVacationRequests", "reviewVacationRequest", "calculateVacationBalances", "submitAttendanceCorrection", "reviewAttendanceCorrection", "requestEmployeeLoanAdvance", "getEmployeeLoansAdvances", "approveEmployeeLoanAdvance", "manageEmployeeLoanAdvance", "getLoanAmortizationSchedule", "calculatePayrollPeriod", "calculateExtraordinaryPayroll", "updatePayrollPeriodStatus", "getPayrollPeriodSummary", "generatePayrollPeriod", "generatePayrollReceiptPDF", "getPayrollReceiptPDFFile", "getStaffPayrollReceipt", "previewPayrollReceiptDistribution", "processPayrollReceiptDistribution", "getPayrollConceptCatalog", "savePayrollConcept", "setPayrollConceptStatus", "assignPayrollConcept", "getPayrollConceptAssignments", "setPayrollConceptAssignmentStatus", "recordAccountingJournalEntry", "getAccountingJournalEntries", "getPaginatedJournalEntries", "recordPayrollJournalAdjustment", "getAdvancedDashboardAnalytics", "getPayrollBatchPreview", "getPayrollEmployeePayConfig", "savePayrollEmployeePayConfig", "recalculatePayrollEmployees", "manageCatalogCategory", "getCatalogCategories", "manageCatalogUnit", "getCatalogUnits", "manageCatalogItem", "getCatalogItems", "importCatalogItems", "exportCatalogItems", "configureInventoryValuationPolicy", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "getInventoryKardex", "transferInventoryStock", "getInventoryTransfers", "createMaterialRequisition", "getMaterialRequisitions", "manageMaterialRequisition", "manageInventoryReplenishmentPolicy", "getInventoryReplenishmentSuggestions", "deliverMaterialRequisition", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders", "confirmTransferReceipt", "manageServiceTariff", "getServiceTariffs", "manageTransportTariff", "generateTransportMonthlyCharges", "cancelStudentTransportAssignment", "assignStudentTransport", "optimizeRouteStopsSequence", "getRouteOptimizationProposals", "approveRouteStopsOptimization", "rejectRouteStopsOptimization", "getTransportEfficiencyMetrics", "getPaymentVouchers", "getPaymentVoucherFile", "reviewPaymentVoucher", "getFamilyCreditSalesReconciliation", "getStaffingNeedsPlanning", "getEnrollmentBillingConfiguration", "saveEnrollmentBillingConfiguration", "getInstitutionalComplementaryServices", "saveInstitutionalComplementaryService", "setInstitutionalComplementaryServiceStatus","getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailability","cancelPurchaseOrder"],
   "Almacenista": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders"],
   "Bodeguero": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders"],
   "Encargado de Bodega": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders"]
@@ -7156,7 +7156,7 @@ function getPurchaseOrders(payload) {
   var requestRows=getOrCreateSheet(ss,"SolicitudesCompra").getDataRange().getValues(),orderRows=getOrCreateSheet(ss,"OrdenesCompra").getDataRange().getValues();
   if(!requestRows.length||!orderRows.length)return{status:"success",ordenes:[]};
   var rh=requestRows[0].map(function(v){return String(v||"").trim();}),oh=orderRows[0].map(function(v){return String(v||"").trim();});
-  var ri={id:rh.indexOf("SolicitudID"),department:rh.indexOf("Departamento")},oi={id:oh.indexOf("OrdenCompraID"),request:oh.indexOf("SolicitudID"),quote:oh.indexOf("CotizacionID"),supplier:oh.indexOf("ProveedorID"),date:oh.indexOf("FechaEmision"),eta:oh.indexOf("FechaEntregaEstimada"),items:oh.indexOf("DetalleItemsJSON"),amount:oh.indexOf("MontoTotal"),cost:oh.indexOf("CentroCosto"),state:oh.indexOf("EstadoOrden"),approved:oh.indexOf("AprobadoPor"),approvalDate:oh.indexOf("FechaAprobacion"),approvalReason:oh.indexOf("JustificacionAprobacion"),approverRole:oh.indexOf("AprobadorRol"),budgetAlerts:oh.indexOf("AlertaPresupuestariaJSON"),budgetValidationDate:oh.indexOf("FechaValidacionPresupuestaria"),notes:oh.indexOf("Observaciones"),requester:oh.indexOf("SolicitanteUserId"),version:oh.indexOf("VersionDocumental"),pdf:oh.indexOf("ArchivoPdfUrl"),pdfSequence:oh.indexOf("CorrelativoPDF"),pdfFileId:oh.indexOf("DriveFileIdPDF"),pdfDate:oh.indexOf("FechaGeneracionPDF")};
+  var ri={id:rh.indexOf("SolicitudID"),department:rh.indexOf("Departamento")},oi={id:oh.indexOf("OrdenCompraID"),request:oh.indexOf("SolicitudID"),quote:oh.indexOf("CotizacionID"),supplier:oh.indexOf("ProveedorID"),date:oh.indexOf("FechaEmision"),eta:oh.indexOf("FechaEntregaEstimada"),items:oh.indexOf("DetalleItemsJSON"),amount:oh.indexOf("MontoTotal"),cost:oh.indexOf("CentroCosto"),state:oh.indexOf("EstadoOrden"),approved:oh.indexOf("AprobadoPor"),approvalDate:oh.indexOf("FechaAprobacion"),approvalReason:oh.indexOf("JustificacionAprobacion"),approverRole:oh.indexOf("AprobadorRol"),budgetAlerts:oh.indexOf("AlertaPresupuestariaJSON"),budgetValidationDate:oh.indexOf("FechaValidacionPresupuestaria"),budgetCommitments:oh.indexOf("CompromisosPresupuestariosJSON"),budgetCommitmentDate:oh.indexOf("FechaCompromisoPresupuestario"),budgetCommitmentState:oh.indexOf("EstadoCompromisoPresupuestario"),cancelledBy:oh.indexOf("CanceladaPor"),cancellationDate:oh.indexOf("FechaCancelacion"),cancellationReason:oh.indexOf("JustificacionCancelacion"),notes:oh.indexOf("Observaciones"),requester:oh.indexOf("SolicitanteUserId"),version:oh.indexOf("VersionDocumental"),pdf:oh.indexOf("ArchivoPdfUrl"),pdfSequence:oh.indexOf("CorrelativoPDF"),pdfFileId:oh.indexOf("DriveFileIdPDF"),pdfDate:oh.indexOf("FechaGeneracionPDF")};
   if(Object.keys(ri).some(function(k){return ri[k]<0;})||["id","request","supplier","date","items","amount","state"].some(function(k){return oi[k]<0;}))return{status:"error",code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   var requestCounts=Object.create(null),requestById=Object.create(null),allowed=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
   requestRows.slice(1).forEach(function(row){var id=String(row[ri.id]||"").trim();if(!id)return;requestCounts[id]=(requestCounts[id]||0)+1;requestById[id]=row;});
@@ -7195,7 +7195,7 @@ function getPurchaseOrders(payload) {
     return{ordenId:orderId,ordenCompraId:orderId,solicitudId:requestId,cotizacionId:String(row[oi.quote]||""),
       proveedorId:String(row[oi.supplier]||""),fechaEmision:row[oi.date],fechaEntregaEstimada:oi.eta>=0?row[oi.eta]:"",
       detalleItems:detail,montoTotal:Number(row[oi.amount]||0),centroCosto:oi.cost>=0?String(row[oi.cost]||""):"",
-      estadoOrden:String(row[oi.state]||""),aprobadoPor:oi.approved>=0?String(row[oi.approved]||""):"",fechaAprobacion:oi.approvalDate>=0?row[oi.approvalDate]:"",justificacionAprobacion:oi.approvalReason>=0?String(row[oi.approvalReason]||""):"",aprobadorRol:oi.approverRole>=0?String(row[oi.approverRole]||""):"",alertasPresupuestarias:oi.budgetAlerts>=0?(function(){try{return JSON.parse(String(row[oi.budgetAlerts]||"[]"));}catch(e){return[];}})():[],fechaValidacionPresupuestaria:oi.budgetValidationDate>=0?row[oi.budgetValidationDate]:"",
+      estadoOrden:String(row[oi.state]||""),aprobadoPor:oi.approved>=0?String(row[oi.approved]||""):"",fechaAprobacion:oi.approvalDate>=0?row[oi.approvalDate]:"",justificacionAprobacion:oi.approvalReason>=0?String(row[oi.approvalReason]||""):"",aprobadorRol:oi.approverRole>=0?String(row[oi.approverRole]||""):"",alertasPresupuestarias:oi.budgetAlerts>=0?(function(){try{return JSON.parse(String(row[oi.budgetAlerts]||"[]"));}catch(e){return[];}})():[],fechaValidacionPresupuestaria:oi.budgetValidationDate>=0?row[oi.budgetValidationDate]:"",compromisosPresupuestarios:oi.budgetCommitments>=0?(function(){try{return JSON.parse(String(row[oi.budgetCommitments]||"[]"));}catch(e){return[];}})():[],fechaCompromisoPresupuestario:oi.budgetCommitmentDate>=0?row[oi.budgetCommitmentDate]:"",estadoCompromisoPresupuestario:oi.budgetCommitmentState>=0?String(row[oi.budgetCommitmentState]||""):"",canceladaPor:oi.cancelledBy>=0?String(row[oi.cancelledBy]||""):"",fechaCancelacion:oi.cancellationDate>=0?row[oi.cancellationDate]:"",justificacionCancelacion:oi.cancellationReason>=0?String(row[oi.cancellationReason]||""):"",
       observaciones:oi.notes>=0?String(row[oi.notes]||""):"",solicitanteUserId:oi.requester>=0?String(row[oi.requester]||""):"",
       versionDocumental:oi.version>=0?String(row[oi.version]||""):"",archivoPdfUrl:oi.pdf>=0?String(row[oi.pdf]||""):"",
       numeroCorrelativoPDF:oi.pdfSequence>=0?String(row[oi.pdfSequence]||""):"",tienePdf:oi.pdfFileId>=0?!!String(row[oi.pdfFileId]||"").trim():false,
@@ -7233,17 +7233,18 @@ function getPurchaseActionCapabilities(payload) {
     "createPurchaseRequest","submitPurchaseQuotation","adjudicatePurchaseQuotations","createPurchaseOrder",
     "recordPurchaseReceipt","recordPurchaseOrderConfirmation","recordAccountsPayableExpense","verifyThreeWayMatch",
     "savePurchaseInvoiceTolerance","getAccountsPayablePortfolio","approveAccountsPayableInvoice","recordAccountsPayablePayment","recordAccountsPayableCreditNote","registerAssetsFromPurchaseReceipt","registerSupplier","manageSupplierContact",
-    "manageSupplierAddress","manageSupplierCommercialTerms","manageSupplierBankAccount","getSupplierBankAccount"];
+    "manageSupplierAddress","manageSupplierCommercialTerms","manageSupplierBankAccount","getSupplierBankAccount","cancelPurchaseOrder"];
   var capabilities=Object.create(null);
   actions.forEach(function(action){var result=validateRolePermission(access.actor,action,input);capabilities[action]=!!(result&&result.authorized===true);});
   var approvalRole=normalizePurchaseAwardRole_(access.actor.role);
   capabilities.approvePurchaseOrder=capabilities.createPurchaseOrder===true&&["subdirector","director","administrador"].indexOf(approvalRole)!==-1;
+  capabilities.cancelPurchaseOrder=capabilities.cancelPurchaseOrder===true&&["director","administrador"].indexOf(approvalRole)!==-1;
   capabilities.generatePurchaseOrderPDF=capabilities.createPurchaseOrder===true;
   capabilities.getPurchaseOrderPDFFile=capabilities.getPurchaseOrders===true;
   return{status:"success",actions:capabilities};
 }
 
-const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol","AlertaPresupuestariaJSON","FechaValidacionPresupuestaria"];
+const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol","AlertaPresupuestariaJSON","FechaValidacionPresupuestaria","CompromisosPresupuestariosJSON","FechaCompromisoPresupuestario","EstadoCompromisoPresupuestario","CanceladaPor","FechaCancelacion","JustificacionCancelacion"];
 function ensurePurchaseOrderPdfSchema_(ss, createMissing) {
   var sheet=ss&&ss.getSheetByName?ss.getSheetByName("OrdenesCompra"):null;
   if(!sheet)return{valid:false,code:"PURCHASE_ORDER_NOT_FOUND"};
@@ -7281,6 +7282,156 @@ function purchaseOrderPdfEscape_(value) {
   return String(value===null||value===undefined?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
 
+
+function restoreReleasedBudgetCommitmentsLocked_(ss,rollbackState) {
+  if(!rollbackState)return true;
+  var budgetSchema=ensureBudgetSchema_(ss),ledgerSchema=ensureBudgetCommitmentSchema_(ss),ok=true;
+  (rollbackState.budgetRows||[]).forEach(function(snapshot){
+    try{budgetSchema.sheet.getRange(snapshot.rowIndex,1,1,budgetSchema.headers.length).setValues([snapshot.row]);}
+    catch(error){ok=false;}
+  });
+  (rollbackState.ledgerRows||[]).forEach(function(snapshot){
+    try{ledgerSchema.sheet.getRange(snapshot.rowIndex,1,1,ledgerSchema.headers.length).setValues([snapshot.row]);}
+    catch(error){ok=false;}
+  });
+  return ok;
+}
+function releaseBudgetCommitmentLocked_(ss,ordenCompraId,reason,actorId) {
+  var orderId=String(ordenCompraId||"").trim(),why=String(reason||"").trim().slice(0,300);
+  if(!orderId||why.length<5)return{status:"error",code:"BUDGET_COMMITMENT_RELEASE_INPUT_INVALID"};
+  var budgetSchema=ensureBudgetSchema_(ss),ledgerSchema=ensureBudgetCommitmentSchema_(ss),bm=budgetSchema.map,lm=ledgerSchema.map;
+  var ledgerValues=ledgerSchema.sheet.getDataRange().getValues(),active=[];
+  ledgerValues.slice(1).forEach(function(row,index){
+    if(String(row[lm.OrdenCompraID]||"").trim()===orderId&&String(row[lm.Estado]||"").trim()==="Comprometido")
+      active.push({row:row,index:index+2});
+  });
+  if(!active.length)return{status:"success",idempotente:true,released:[],rollbackState:{budgetRows:[],ledgerRows:[]}};
+  var rollbackState={budgetRows:[],ledgerRows:[]},budgetSnapshots=Object.create(null),released=[],failedCode="";
+  try{
+    active.forEach(function(entry){
+      var budgetValues=budgetSchema.sheet.getDataRange().getValues();
+      var budgetMatches=budgetValues.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){
+        return String(item.row[bm.PresupuestoID]||"").trim()===String(entry.row[lm.PresupuestoID]||"").trim();
+      });
+      if(budgetMatches.length!==1)throw new Error(budgetMatches.length?"BUDGET_RECORD_AMBIGUOUS":"BUDGET_COMMITMENT_BUDGET_MISSING");
+      var budget=budgetMatches[0],budgetRow=budget.row.slice(),ledgerRow=entry.row.slice();
+      while(budgetRow.length<budgetSchema.headers.length)budgetRow.push("");
+      while(ledgerRow.length<ledgerSchema.headers.length)ledgerRow.push("");
+      var amount=Number(ledgerRow[lm.Monto]),committed=Number(budgetRow[bm.MontoComprometido]||0);
+      if(!Number.isFinite(amount)||amount<=0||!Number.isFinite(committed)||committed<amount)
+        throw new Error("BUDGET_COMMITMENT_BALANCE_INVALID");
+      if(!budgetSnapshots[budget.index]){
+        budgetSnapshots[budget.index]=budgetRow.slice();
+        rollbackState.budgetRows.push({rowIndex:budget.index,row:budgetRow.slice()});
+      }
+      rollbackState.ledgerRows.push({rowIndex:entry.index,row:ledgerRow.slice()});
+      var updatedBudget=budgetRow.slice(),updatedLedger=ledgerRow.slice(),now=new Date(),actor=String(actorId||"SISTEMA");
+      updatedBudget[bm.MontoComprometido]=Math.round((committed-amount)*100)/100;
+      updatedBudget[bm.FechaActualizacion]=now;updatedBudget[bm.ActualizadoPor]=actor;
+      updatedBudget[bm.Version]=Math.max(0,Number(updatedBudget[bm.Version]||0))+1;
+      updatedLedger[lm.Estado]="Liberado";updatedLedger[lm.FechaLiberacion]=now;updatedLedger[lm.MotivoLiberacion]=why;
+      updatedLedger[lm.ActualizadoPor]=actor;updatedLedger[lm.Version]=Math.max(0,Number(updatedLedger[lm.Version]||0))+1;
+      budgetSchema.sheet.getRange(budget.index,1,1,budgetSchema.headers.length).setValues([updatedBudget]);
+      ledgerSchema.sheet.getRange(entry.index,1,1,ledgerSchema.headers.length).setValues([updatedLedger]);
+      released.push({compromisoId:String(updatedLedger[lm.CompromisoID]||""),presupuestoId:String(updatedLedger[lm.PresupuestoID]||""),
+        partidaCodigo:String(updatedLedger[lm.PartidaCodigo]||""),monto:amount,estado:"Liberado",fechaLiberacion:now});
+    });
+  }catch(error){
+    failedCode=String(error&&error.message||"BUDGET_COMMITMENT_RELEASE_FAILED");
+    if(!restoreReleasedBudgetCommitmentsLocked_(ss,rollbackState))return{status:"error",code:"BUDGET_COMMITMENT_RELEASE_ROLLBACK_FAILED",cause:failedCode};
+    return{status:"error",code:failedCode};
+  }
+  budgetLogEvent_("releaseBudgetCommitmentLocked_","INFO","BUDGET_COMMITMENT_RELEASED","Compromisos presupuestarios liberados",{ordenCompraId:orderId,justificacion:why,compromisos:released},actorId);
+  return{status:"success",idempotente:false,released:released,rollbackState:rollbackState};
+}
+function reservePurchaseOrderBudgetCommitmentsLocked_(ss,ordenCompraId,anoId,centroCosto,budgetTotals,budgetChecksByPart,actorId) {
+  var orderId=String(ordenCompraId||"").trim(),year=String(anoId||"").trim(),center=String(centroCosto||"").trim();
+  var parts=Object.keys(budgetTotals||{}).sort(),reservations=[];
+  if(!orderId||!year||!center||!parts.length)return{status:"error",code:"BUDGET_COMMITMENT_INPUT_INVALID"};
+  for(var i=0;i<parts.length;i++){
+    var part=parts[i],check=(budgetChecksByPart||{})[part],amountCents=Number(budgetTotals[part]);
+    if(!check||!check.presupuestoId||!Number.isSafeInteger(amountCents)||amountCents<=0){
+      var invalidRollback=releaseBudgetCommitmentLocked_(ss,orderId,"Rollback de reserva presupuestaria incompleta",actorId);
+      return{status:"error",code:invalidRollback.status==="success"?"BUDGET_COMMITMENT_INPUT_INVALID":"BUDGET_COMMITMENT_ROLLBACK_FAILED"};
+    }
+    var result=reserveBudgetCommitmentLocked_(ss,{presupuestoId:check.presupuestoId,ordenCompraId:orderId,anoId:year,centroCosto:center,
+      partidaCodigo:part,monto:amountCents/100,idempotencyKey:"PO:"+orderId+":"+check.presupuestoId},actorId);
+    if(!result||result.status!=="success"){
+      var rollback=releaseBudgetCommitmentLocked_(ss,orderId,"Rollback de reserva presupuestaria incompleta",actorId);
+      return{status:"error",code:rollback.status==="success"?(result&&result.code||"BUDGET_COMMITMENT_RESERVATION_FAILED"):"BUDGET_COMMITMENT_ROLLBACK_FAILED"};
+    }
+    reservations.push({compromisoId:result.compromisoId,presupuestoId:check.presupuestoId,partidaCodigo:part,monto:amountCents/100,idempotente:result.idempotente===true});
+  }
+  return{status:"success",reservations:reservations};
+}
+function cancelPurchaseOrder(payload) {
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=purchaseQuotationAccess_(input,ss,true);
+  if(!initial||initial.authorized!==true)return{status:"error",code:initial&&initial.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(initial.actor,"cancelPurchaseOrder",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var role=normalizePurchaseAwardRole_(initial.actor.role);
+  if(["director","administrador"].indexOf(role)===-1)return{status:"error",code:"PURCHASE_ORDER_CANCELLATION_ROLE_REQUIRED"};
+  var reason=String(input.justificacion||input.motivo||"").trim().slice(0,300);
+  if(reason.length<5)return{status:"error",code:"PURCHASE_ORDER_CANCELLATION_REASON_REQUIRED"};
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  try{
+    var access=purchaseQuotationAccess_(input,ss,true);
+    if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"VERIFIED_IDENTITY_REQUIRED"};
+    if(String(access.actor.userId||"")!==String(initial.actor.userId||"")||String(access.actor.role||"")!==String(initial.actor.role||""))
+      return{status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
+    permission=validateRolePermission(access.actor,"cancelPurchaseOrder",input);
+    if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    role=normalizePurchaseAwardRole_(access.actor.role);
+    if(["director","administrador"].indexOf(role)===-1)return{status:"error",code:"PURCHASE_ORDER_CANCELLATION_ROLE_REQUIRED"};
+    var schema=ensurePurchaseOrderPdfSchema_(ss);
+    if(!schema.valid)return{status:"error",code:schema.code};
+    var map=schema.map,values=schema.sheet.getDataRange().getValues(),orderId=String(input.ordenCompraId||"").trim();
+    var matches=values.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[map.OrdenCompraID]||"").trim()===orderId;});
+    if(!orderId||matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
+    var record=matches[0],order=record.row,scope=purchaseOrderScopeAccess_(input,ss,order,true);
+    if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
+    var actorId=String(access.actor.userId||"").trim(),state=String(order[map.EstadoOrden]||"").trim().toLowerCase();
+    if(state==="cancelada"){
+      if(String(order[map.CanceladaPor]||"")===actorId&&String(order[map.JustificacionCancelacion]||"")===reason)
+        return{status:"success",idempotente:true,ordenCompraId:orderId,estadoOrden:"Cancelada",compromisosLiberados:(function(){try{return JSON.parse(String(order[map.CompromisosPresupuestariosJSON]||"[]"));}catch(e){return[];}})()};
+      return{status:"error",code:"PURCHASE_ORDER_ALREADY_CANCELLED"};
+    }
+    if(["borrador","aprobada"].indexOf(state)===-1)return{status:"error",code:"PURCHASE_ORDER_CANCELLATION_STATE_BLOCKED"};
+    var receiptSheet=ss.getSheetByName("RecepcionesCompra");
+    if(receiptSheet){
+      var receiptRows=receiptSheet.getDataRange().getValues(),receiptHeaders=receiptRows.length?receiptRows[0].map(function(v){return String(v||"").trim();}):[];
+      var receiptOrderIndex=receiptHeaders.indexOf("OrdenCompraID");
+      if(receiptOrderIndex>=0&&receiptRows.slice(1).some(function(row){return String(row[receiptOrderIndex]||"").trim()===orderId;}))
+        return{status:"error",code:"PURCHASE_ORDER_CANCELLATION_HAS_RECEIPT"};
+    }
+    var invoiceSheet=ss.getSheetByName("CuentasPorPagarGastos");
+    if(invoiceSheet){
+      var invoiceRows=invoiceSheet.getDataRange().getValues(),invoiceHeaders=invoiceRows.length?invoiceRows[0].map(function(v){return String(v||"").trim();}):[];
+      var invoiceOrderIndex=invoiceHeaders.indexOf("OrdenCompraID");
+      if(invoiceOrderIndex>=0&&invoiceRows.slice(1).some(function(row){return String(row[invoiceOrderIndex]||"").trim()===orderId;}))
+        return{status:"error",code:"PURCHASE_ORDER_CANCELLATION_HAS_INVOICE"};
+    }
+    var release=releaseBudgetCommitmentLocked_(ss,orderId,reason,actorId);
+    if(!release||release.status!=="success")return{status:"error",code:release&&release.code||"BUDGET_COMMITMENT_RELEASE_FAILED"};
+    var original=order.slice(),updated=order.slice();
+    while(original.length<schema.headers.length)original.push("");
+    while(updated.length<schema.headers.length)updated.push("");
+    updated[map.EstadoOrden]="Cancelada";updated[map.CanceladaPor]=actorId;updated[map.FechaCancelacion]=new Date();
+    updated[map.JustificacionCancelacion]=reason;updated[map.EstadoCompromisoPresupuestario]=release.released.length?"Liberado":"SinCompromiso";
+    updated[map.CompromisosPresupuestariosJSON]=JSON.stringify(release.released);
+    try{schema.sheet.getRange(record.index,1,1,schema.headers.length).setValues([updated]);}
+    catch(writeError){
+      var restored=restoreReleasedBudgetCommitmentsLocked_(ss,release.rollbackState);
+      try{schema.sheet.getRange(record.index,1,1,schema.headers.length).setValues([original]);}catch(orderRollbackError){restored=false;}
+      return{status:"error",code:restored?"PURCHASE_ORDER_CANCELLATION_WRITE_FAILED":"PURCHASE_ORDER_CANCELLATION_ROLLBACK_FAILED"};
+    }
+    budgetLogEvent_("cancelPurchaseOrder","INFO","PURCHASE_ORDER_CANCELLED","Orden cancelada y compromisos presupuestarios liberados",{ordenCompraId:orderId,compromisosLiberados:release.released,justificacion:reason},access.actor.role);
+    return{status:"success",ordenCompraId:orderId,estadoOrden:"Cancelada",compromisosLiberados:release.released,justificacionCancelacion:reason};
+  }catch(error){return{status:"error",code:String(error&&error.message||"PURCHASE_ORDER_CANCELLATION_FAILED")};}
+  finally{lock.releaseLock();}
+}
+
 function approvePurchaseOrder(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=purchaseQuotationAccess_(input,ss,true);
   if(!initial||initial.authorized!==true)return{status:"error",code:initial&&initial.code||"ROLE_NOT_ALLOWED"};
@@ -7308,7 +7459,7 @@ function approvePurchaseOrder(payload) {
     var actorId=String(access.actor.userId||"").trim(),state=String(order[map.EstadoOrden]||"").trim().toLowerCase();
     if(state==="aprobada"){
       if(String(order[map.AprobadoPor]||"")===actorId&&String(order[map.JustificacionAprobacion]||"")===reason)
-        return{status:"success",idempotente:true,ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:actorId,fechaAprobacion:order[map.FechaAprobacion]||"",aprobadorRol:String(order[map.AprobadorRol]||approverRole),alertasPresupuestarias:(function(){try{return JSON.parse(String(order[map.AlertaPresupuestariaJSON]||"[]"));}catch(e){return[];}})()};
+        return{status:"success",idempotente:true,ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:actorId,fechaAprobacion:order[map.FechaAprobacion]||"",aprobadorRol:String(order[map.AprobadorRol]||approverRole),alertasPresupuestarias:(function(){try{return JSON.parse(String(order[map.AlertaPresupuestariaJSON]||"[]"));}catch(e){return[];}})(),compromisosPresupuestarios:(function(){try{return JSON.parse(String(order[map.CompromisosPresupuestariosJSON]||"[]"));}catch(e){return[];}})(),estadoCompromisoPresupuestario:String(order[map.EstadoCompromisoPresupuestario]||"SinCompromiso")};
       return{status:"error",code:"PURCHASE_ORDER_ALREADY_APPROVED"};
     }
     if(state!=="borrador")return{status:"error",code:"PURCHASE_ORDER_STATE_INVALID"};
@@ -7331,7 +7482,7 @@ function approvePurchaseOrder(payload) {
     if(!Array.isArray(orderItems)||!orderItems.length)return{status:"error",code:"PURCHASE_ORDER_ITEMS_INVALID"};
     var costCenter=String(order[map.CentroCosto]||"").trim(),orderDate=new Date(order[map.FechaEmision]);
     if(!costCenter||!Number.isFinite(orderDate.getTime()))return{status:"error",code:"BUDGET_ORDER_CONTEXT_REQUIRED"};
-    var budgetYear=String(orderDate.getFullYear()),budgetTotals=Object.create(null),itemsTotalCents=0;
+    var budgetYear=String(orderDate.getFullYear()),budgetTotals=Object.create(null),budgetChecksByPart=Object.create(null),itemsTotalCents=0;
     for(var itemIndex=0;itemIndex<orderItems.length;itemIndex++){
       var item=orderItems[itemIndex]||{},partCode=String(item.partidaCodigo||item.PartidaCodigo||"").trim();
       if(!partCode)return{status:"error",code:"PURCHASE_REQUEST_PARTIDA_REQUIRED"};
@@ -7343,32 +7494,37 @@ function approvePurchaseOrder(payload) {
       if(!Number.isSafeInteger(itemsTotalCents)||!Number.isSafeInteger(budgetTotals[partCode]))return{status:"error",code:"PURCHASE_ORDER_AMOUNT_INVALID"};
     }
     if(Math.abs(itemsTotalCents-Math.round(orderAmount*100))>0)return{status:"error",code:"PURCHASE_ORDER_AMOUNT_MISMATCH"};
-    var budgetWarnings=[];
-    Object.keys(budgetTotals).forEach(function(partCode){
-      var budgetCheck=checkBudgetAvailabilityCore_(ss,{anoId:budgetYear,centroCosto:costCenter,partidaCodigo:partCode,montoSolicitado:budgetTotals[partCode]/100},access.scope);
-      if(!budgetCheck||budgetCheck.disponible!==true){budgetLogEvent_("approvePurchaseOrder","WARNING",budgetCheck&&budgetCheck.code||"BUDGET_OVERRUN_BLOCKED","Aprobación bloqueada por disponibilidad presupuestaria",{ordenCompraId:orderId,centroCosto:costCenter,partidaCodigo:partCode,montoSolicitado:budgetTotals[partCode]/100,budgetCheck:budgetCheck},access.actor.role);throw new Error(budgetCheck&&budgetCheck.code||"BUDGET_OVERRUN_BLOCKED");}
-      if(budgetCheck.alertaUmbral===true){budgetWarnings.push(budgetCheck);budgetLogEvent_("approvePurchaseOrder","WARNING","BUDGET_THRESHOLD_ALERT","La aprobación alcanza el umbral de alerta presupuestaria",{ordenCompraId:orderId,centroCosto:costCenter,partidaCodigo:partCode,budgetCheck:budgetCheck},access.actor.role);}
-    });
-    if(budgetWarnings.length&&input.confirmarAlertaPresupuestaria!==true)
-      return{status:"warning",code:"BUDGET_THRESHOLD_CONFIRMATION_REQUIRED",alertasPresupuestarias:budgetWarnings,message:"La orden alcanza uno o más umbrales de alerta presupuestaria. Confirme para continuar."};
     if(orderAmount>50000&&["director","administrador"].indexOf(approverRole)===-1)return{status:"error",code:"HIGH_VALUE_APPROVAL_REQUIRED"};
     if(["subdirector","director","administrador"].indexOf(approverRole)===-1)return{status:"error",code:"PURCHASE_ORDER_APPROVER_ROLE_REQUIRED"};
     var departments=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
     if(access.scope.institutionWide!==true&&departments.indexOf(String(request[departmentIndex]||"").trim())===-1)
       return{status:"error",code:"RESOURCE_NOT_FOUND"};
     if(!supplierEnsureActiveForOrder_(ss,String(order[map.ProveedorID]||"")))return{status:"error",code:"PURCHASE_SUPPLIER_NOT_ACTIVE"};
+    var budgetWarnings=[];
+    Object.keys(budgetTotals).forEach(function(partCode){
+      var budgetCheck=checkBudgetAvailabilityCore_(ss,{anoId:budgetYear,centroCosto:costCenter,partidaCodigo:partCode,montoSolicitado:budgetTotals[partCode]/100},access.scope);
+      budgetChecksByPart[partCode]=budgetCheck;
+      if(!budgetCheck||budgetCheck.disponible!==true){budgetLogEvent_("approvePurchaseOrder","WARNING",budgetCheck&&budgetCheck.code||"BUDGET_OVERRUN_BLOCKED","Aprobación bloqueada por disponibilidad presupuestaria",{ordenCompraId:orderId,centroCosto:costCenter,partidaCodigo:partCode,montoSolicitado:budgetTotals[partCode]/100,budgetCheck:budgetCheck},access.actor.role);throw new Error(budgetCheck&&budgetCheck.code||"BUDGET_OVERRUN_BLOCKED");}
+      if(budgetCheck.alertaUmbral===true){budgetWarnings.push(budgetCheck);budgetLogEvent_("approvePurchaseOrder","WARNING","BUDGET_THRESHOLD_ALERT","La aprobación alcanza el umbral de alerta presupuestaria",{ordenCompraId:orderId,centroCosto:costCenter,partidaCodigo:partCode,budgetCheck:budgetCheck},access.actor.role);}
+    });
+    if(budgetWarnings.length&&input.confirmarAlertaPresupuestaria!==true)
+      return{status:"warning",code:"BUDGET_THRESHOLD_CONFIRMATION_REQUIRED",alertasPresupuestarias:budgetWarnings,message:"La orden alcanza uno o más umbrales de alerta presupuestaria. Confirme para continuar."};
+    var reservation=reservePurchaseOrderBudgetCommitmentsLocked_(ss,orderId,budgetYear,costCenter,budgetTotals,budgetChecksByPart,actorId);
+    if(!reservation||reservation.status!=="success")return{status:"error",code:reservation&&reservation.code||"BUDGET_COMMITMENT_RESERVATION_FAILED"};
     var original=order.slice(),updated=order.slice();
     while(original.length<schema.headers.length)original.push("");
     while(updated.length<schema.headers.length)updated.push("");
     updated[map.AprobadoPor]=actorId;updated[map.EstadoOrden]="Aprobada";updated[map.FechaAprobacion]=new Date();
     updated[map.JustificacionAprobacion]=reason;updated[map.AprobadorRol]=String(access.actor.role||approverRole);
     updated[map.AlertaPresupuestariaJSON]=JSON.stringify(budgetWarnings);updated[map.FechaValidacionPresupuestaria]=new Date();
+    updated[map.CompromisosPresupuestariosJSON]=JSON.stringify(reservation.reservations);updated[map.FechaCompromisoPresupuestario]=new Date();updated[map.EstadoCompromisoPresupuestario]="Comprometido";
     try{schema.sheet.getRange(record.index,1,1,schema.headers.length).setValues([updated]);}
     catch(writeError){
+      var releaseRollback=releaseBudgetCommitmentLocked_(ss,orderId,"Rollback de aprobación de orden",actorId);
       try{schema.sheet.getRange(record.index,1,1,schema.headers.length).setValues([original]);}catch(rollbackError){}
-      return{status:"error",code:"PURCHASE_ORDER_APPROVAL_WRITE_FAILED"};
+      return{status:"error",code:releaseRollback&&releaseRollback.status==="success"?"PURCHASE_ORDER_APPROVAL_WRITE_FAILED":"PURCHASE_ORDER_APPROVAL_ROLLBACK_FAILED"};
     }
-    return{status:"success",ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:actorId,fechaAprobacion:updated[map.FechaAprobacion],justificacionAprobacion:reason,aprobadorRol:updated[map.AprobadorRol],alertasPresupuestarias:budgetWarnings};
+    return{status:"success",ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:actorId,fechaAprobacion:updated[map.FechaAprobacion],justificacionAprobacion:reason,aprobadorRol:updated[map.AprobadorRol],alertasPresupuestarias:budgetWarnings,compromisosPresupuestarios:reservation.reservations};
   }catch(error){return{status:"error",code:String(error&&error.message||"PURCHASE_ORDER_APPROVAL_FAILED")};}
   finally{lock.releaseLock();}
 }
@@ -9096,6 +9252,7 @@ function doPost(e) {
     if (request.action === "createPurchaseRequest") return respond(createPurchaseRequest(actionPayload));
     if (request.action === "createPurchaseOrder") return respond(createPurchaseOrder(actionPayload));
     if (request.action === "approvePurchaseOrder") return respond(approvePurchaseOrder(actionPayload));
+    if (request.action === "cancelPurchaseOrder") return respond(cancelPurchaseOrder(actionPayload));
     if (request.action === "getEnrollmentBillingConfiguration") return respond(getEnrollmentBillingConfiguration(actionPayload));
     if (request.action === "saveEnrollmentBillingConfiguration") return respond(saveEnrollmentBillingConfiguration(actionPayload));
     if (request.action === "verifyThreeWayMatch") return respond(verifyThreeWayMatch(actionPayload));
