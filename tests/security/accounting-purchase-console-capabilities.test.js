@@ -46,6 +46,8 @@ async function test(){
   assert.doesNotThrow(()=>new vm.Script(uiSource),"accounting UI syntax");
   assert.doesNotThrow(()=>new vm.Script(backendSource),"accounting backend syntax");
   assert.ok(uiSource.includes("window.openPurchaseInvoiceModal = async function"));
+  assert.ok(uiSource.includes('window.prompt("Ingrese la justificación de aprobación'));
+  assert.ok(uiSource.includes('justificacion: String(justification).trim()'));
   assert.ok(uiSource.includes('fetchBackendAccounting("recordAccountsPayableExpense"'));
   const controls=[makeControl("createPurchaseRequest"),makeControl("registerSupplier"),makeControl("manageSupplierBankAccount")];
   const ui=makeUiContext(async action=>{
@@ -85,11 +87,12 @@ async function test(){
   assert.equal(failControl.disabled,true);
 
   const capabilityFunction=extractFunction(backendSource,"getPurchaseActionCapabilities");
+  const normalizeRoleFunction=extractFunction(backendSource,"normalizePurchaseAwardRole_");
   const calls=[],allowed=new Set(["registerSupplier","manageSupplierContact","getSupplierBankAccount","createPurchaseOrder","getPurchaseOrders"]);
-  const backendContext={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({})},
-    purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"DIRECTOR-1",role:"Director"}}),
+  const backendContext={SPREADSHEET_ID:"TEST",actorRole:"Director",SpreadsheetApp:{openById:()=>({})},
+    purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"DIRECTOR-1",role:backendContext.actorRole}}),
     validateRolePermission:(_actor,action)=>{calls.push(action);return {authorized:allowed.has(action)};},Object};
-  vm.runInNewContext(capabilityFunction+String.fromCharCode(10)+"this.run=getPurchaseActionCapabilities;",backendContext);
+  vm.runInNewContext(normalizeRoleFunction+String.fromCharCode(10)+capabilityFunction+String.fromCharCode(10)+"this.run=getPurchaseActionCapabilities;",backendContext);
   const response=backendContext.run({});
   assert.equal(response.status,"success");
   for(const action of ["registerSupplier","manageSupplierContact","manageSupplierAddress","manageSupplierCommercialTerms","manageSupplierBankAccount","getSupplierBankAccount"])
@@ -100,6 +103,9 @@ async function test(){
   assert.equal(response.actions.manageSupplierAddress,false);
   assert.ok(calls.includes("getPurchaseRequests"));
   assert.equal(response.actions.approvePurchaseOrder,true);
+  backendContext.actorRole="Contador";
+  const contadorResponse=backendContext.run({});
+  assert.equal(contadorResponse.actions.approvePurchaseOrder,false,"accounting staff cannot approve purchase orders");
   assert.equal(response.actions.generatePurchaseOrderPDF,true);
   assert.equal(response.actions.getPurchaseOrderPDFFile,true);
   console.log("Purchase console capability loading, fail-closed visibility, stale-response race and supplier action contracts passed.");

@@ -7004,7 +7004,7 @@ function ensurePurchaseOrderPdfSchema_(ss, createMissing) {
   var values=sheet.getDataRange().getValues();
   if(!values||!values.length)return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   var headers=values[0].map(function(v){return String(v||"").trim();});
-  var required=["OrdenCompraID","SolicitudID","ProveedorID","DetalleItemsJSON","MontoTotal","EstadoOrden"];
+  var required=["OrdenCompraID","SolicitudID","ProveedorID","DetalleItemsJSON","MontoTotal","EstadoOrden","AprobadoPor","SolicitanteUserId"];
   if(required.some(function(name){return headers.indexOf(name)<0||headers.indexOf(name)!==headers.lastIndexOf(name);}))
     return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   if(PURCHASE_ORDER_PDF_COLUMNS_.some(function(name){return headers.indexOf(name)>=0&&headers.indexOf(name)!==headers.lastIndexOf(name);}))
@@ -7040,8 +7040,6 @@ function approvePurchaseOrder(payload) {
   if(!initial||initial.authorized!==true)return{status:"error",code:initial&&initial.code||"ROLE_NOT_ALLOWED"};
   var permission=validateRolePermission(initial.actor,"createPurchaseOrder",input);
   if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
-  var initialRole=normalizePurchaseAwardRole_(initial.actor.role);
-  if(["subdirector","director","administrador"].indexOf(initialRole)===-1)return{status:"error",code:"PURCHASE_ORDER_APPROVER_ROLE_REQUIRED"};
   var reason=String(input.justificacion||"").trim().slice(0,300);
   if(reason.length<5)return{status:"error",code:"PURCHASE_ORDER_APPROVAL_REASON_REQUIRED"};
   var lock=LockService.getScriptLock();
@@ -7054,7 +7052,6 @@ function approvePurchaseOrder(payload) {
     permission=validateRolePermission(access.actor,"createPurchaseOrder",input);
     if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
     var approverRole=normalizePurchaseAwardRole_(access.actor.role);
-    if(["subdirector","director","administrador"].indexOf(approverRole)===-1)return{status:"error",code:"PURCHASE_ORDER_APPROVER_ROLE_REQUIRED"};
     var schema=ensurePurchaseOrderPdfSchema_(ss);
     if(!schema.valid)return{status:"error",code:schema.code};
     var map=schema.map,values=schema.sheet.getDataRange().getValues(),orderId=String(input.ordenCompraId||"").trim();
@@ -7084,6 +7081,7 @@ function approvePurchaseOrder(payload) {
     var orderAmount=Number(order[map.MontoTotal]);
     if(!Number.isFinite(orderAmount)||orderAmount<0)return{status:"error",code:"PURCHASE_ORDER_AMOUNT_INVALID"};
     if(orderAmount>50000&&["director","administrador"].indexOf(approverRole)===-1)return{status:"error",code:"HIGH_VALUE_APPROVAL_REQUIRED"};
+    if(["subdirector","director","administrador"].indexOf(approverRole)===-1)return{status:"error",code:"PURCHASE_ORDER_APPROVER_ROLE_REQUIRED"};
     var departments=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
     if(access.scope.institutionWide!==true&&departments.indexOf(String(request[departmentIndex]||"").trim())===-1)
       return{status:"error",code:"RESOURCE_NOT_FOUND"};
@@ -11810,7 +11808,7 @@ function recordAccountingJournalEntryCore_(payload) {
     if(!Number.isFinite(debit)||!Number.isFinite(credit)||debit<0||credit<0||(debit>0&&credit>0)||(debit===0&&credit===0))
       throw new Error("ACCOUNTING_JOURNAL_LINE_AMOUNT_INVALID");
     var debitCents=Math.round(debit*100),creditCents=Math.round(credit*100);
-    if((debit>0&&debitCents<=0)||(credit>0&&creditCents<=0))throw new Error("ACCOUNTING_JOURNAL_LINE_AMOUNT_INVALID");
+    if((debit>0&&debitCents<=0)||(credit>0&&creditCents<=0)||!Number.isSafeInteger(debitCents)||!Number.isSafeInteger(creditCents)||!Number.isSafeInteger(totalDebitCents+debitCents)||!Number.isSafeInteger(totalCreditCents+creditCents))throw new Error("ACCOUNTING_JOURNAL_LINE_AMOUNT_INVALID");
     totalDebitCents+=debitCents;totalCreditCents+=creditCents;
     var normalizedLine=Object.assign({},line,{cuenta:accountCode,codigoCuenta:accountCode,nombre:accountName,nombreCuenta:accountName,debe:debitCents/100,haber:creditCents/100});
     normalized.push(normalizedLine);
@@ -11830,7 +11828,10 @@ function recordAccountingJournalEntryCore_(payload) {
     return{status:"success",idempotente:true,asientoId:String(duplicates[0][map.AsientoID]||""),totalDebe:totalDebitCents/100,totalHaber:totalCreditCents/100,estado:String(duplicates[0][map.Estado]||"Asentado")};
   }
   var now=new Date(),asientoId="AST-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"");
-  var row=[asientoId,now,description,origin,referenceId,JSON.stringify(normalized),"Asentado",String(input.creadoPor||"SISTEMA"),idempotencyKey,payloadHash];
+  var row=new Array(schema.headers.length).fill("");
+  row[map.AsientoID]=asientoId;row[map.Fecha]=now;row[map.Descripcion]=description;row[map.OrigenModulo]=origin;row[map.ReferenciaID]=referenceId;
+  row[map.LineasJSON]=JSON.stringify(normalized);row[map.Estado]="Asentado";row[map.CreadoPor]=String(input.creadoPor||"SISTEMA");
+  row[map.IdempotencyKey]=idempotencyKey;row[map.PayloadHash]=payloadHash;
   var before=typeof sheet.getLastRow==="function"?sheet.getLastRow():rows.length;
   try{sheet.appendRow(row);}catch(writeError){
     try{if(typeof sheet.getLastRow==="function"&&typeof sheet.deleteRow==="function"&&sheet.getLastRow()>before)sheet.deleteRow(sheet.getLastRow());}catch(rollbackError){}

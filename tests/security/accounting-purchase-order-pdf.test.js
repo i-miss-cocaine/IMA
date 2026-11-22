@@ -67,31 +67,37 @@ function makeHarness(options={}){
     Object,Array,String,Number,Date,Math,JSON,Intl,Error,RegExp,isFinite
   };
   vm.createContext(context);
-  vm.runInContext('const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF"];',context);
+  vm.runInContext('const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol"];',context);
   ["normalizePurchaseAwardRole_","ensurePurchaseOrderPdfSchema_","getOrCreatePrivatePurchaseOrderFolder_","rollbackPrivatePurchaseOrderFile_","purchaseOrderPdfEscape_","approvePurchaseOrder","generatePurchaseOrderPDF","getPurchaseOrderPDFFile"].forEach(name=>vm.runInContext(extract(name),context));
   return {context,sheets,files,folder,stats:()=>({created,trashed,lockCalls,lockReleases})};
 }
 async function main(){
   assert.doesNotThrow(()=>new vm.Script(source),"ACCOUNTING backend syntax");
+  assert.ok(source.includes('request.action === "approvePurchaseOrder"'),"purchase order approval route is exposed");
   const draft=makeHarness({state:"Borrador"});
-  const approved=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1"});
+  const approved=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"});
   assert.equal(approved.status,"success");
   assert.equal(draft.sheets.OrdenesCompra.rows[1][9],"Aprobada");
   assert.equal(draft.sheets.OrdenesCompra.rows[1][10],"U-1");
-  const approvalRetry=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1"});
+  assert.ok(draft.sheets.OrdenesCompra.rows[1][20] instanceof Date);
+  assert.equal(draft.sheets.OrdenesCompra.rows[1][21],"Validación de aprobación de compra");
+  assert.equal(draft.sheets.OrdenesCompra.rows[1][22],"Director");
+  const approvalRetry=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"});
   assert.equal(approvalRetry.idempotente,true);
-  assert.equal(makeHarness({state:"Borrador",requestState:"Pendiente"}).context.approvePurchaseOrder({ordenCompraId:"OC-1"}).code,"PURCHASE_REQUEST_NOT_APPROVED");
+  assert.equal(makeHarness({state:"Borrador",requestState:"Pendiente"}).context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"PURCHASE_REQUEST_NOT_APPROVED");
   const selfApproval=makeHarness({state:"Borrador"});
   selfApproval.sheets.OrdenesCompra.rows[1][12]="U-1";
-  assert.equal(selfApproval.context.approvePurchaseOrder({ordenCompraId:"OC-1"}).code,"AUTO_APPROVAL_BLOCKED");
+  assert.equal(selfApproval.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"AUTO_APPROVAL_BLOCKED");
   assert.equal(selfApproval.sheets.OrdenesCompra.rows[1][9],"Borrador","self-approval must not change order state");
+  const lowValueContador=makeHarness({state:"Borrador",actorRole:"Contador"});
+  assert.equal(lowValueContador.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"PURCHASE_ORDER_APPROVER_ROLE_REQUIRED");
   const highValueContador=makeHarness({state:"Borrador",actorRole:"Contador"});
   highValueContador.sheets.OrdenesCompra.rows[1][7]=50000.01;
-  assert.equal(highValueContador.context.approvePurchaseOrder({ordenCompraId:"OC-1"}).code,"HIGH_VALUE_APPROVAL_REQUIRED");
+  assert.equal(highValueContador.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"HIGH_VALUE_APPROVAL_REQUIRED");
   assert.equal(highValueContador.sheets.OrdenesCompra.rows[1][9],"Borrador","low-level role must not approve a high-value order");
   const highValueDirector=makeHarness({state:"Borrador",actorRole:"Administrador"});
   highValueDirector.sheets.OrdenesCompra.rows[1][7]=50000.01;
-  const highValueDirectorResult=highValueDirector.context.approvePurchaseOrder({ordenCompraId:"OC-1"});assert.equal(highValueDirectorResult.status,"success",JSON.stringify(highValueDirectorResult));
+  const highValueDirectorResult=highValueDirector.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"});assert.equal(highValueDirectorResult.status,"success",JSON.stringify(highValueDirectorResult));
   const missingPdf=makeHarness();
   const originalHeaderWidth=missingPdf.sheets.OrdenesCompra.rows[0].length;
   assert.equal(missingPdf.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"PURCHASE_ORDER_PDF_NOT_FOUND");
