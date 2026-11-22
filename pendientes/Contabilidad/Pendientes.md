@@ -1441,7 +1441,7 @@
 - **Severidad:** Alta. **Objetivo:** prevenir sobregiros por órdenes concurrentes.
 - **Acción ejecutable:** al aprobar/emitar una orden, reservar el monto en `montoComprometido` de la partida y centro de costo; impedir duplicación de reservas y definir liberación ante cancelación.
 - **Archivos/módulos:** `backend/accounting-service/Code.gs` (`checkBudgetAvailability`), `PresupuestosInstitucionales`, `OrdenesCompra`.
-- **Dependencias/riesgos:** autorización de órdenes y consistencia concurrente; riesgo de sobregiro o doble compromiso.
+- **Dependencias/riesgos:** F11-TASK14 (control presupuestario, PresupuestosInstitucionales y checkBudgetAvailability), autorización de órdenes y consistencia concurrente; riesgo de sobregiro o doble compromiso.
 - **Alcance:** reserva presupuestaria vinculada a la orden; no sustituye el registro contable del gasto.
 - **Criterios de aceptación:** aprobación actualiza el compromiso una sola vez; órdenes concurrentes no exceden el disponible; cancelación libera la reserva según estado y reglas auditables.
 - **Prioridad:** P1. **Estado:** Pendiente.

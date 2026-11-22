@@ -97,9 +97,8 @@
 ### Hallazgos y continuidad
 - Se corrigió una contradicción documental previa: F18-TASK02 tenía encabezado [x] y evidencia C1.945, pero el campo de estado decía Pendiente; ahora queda como Completada (C1.945).
 - F18-TASK06 queda Completada (C1.950).
-- La tarea siguiente es F18-TASK07: registrar compromisos presupuestarios al aprobar órdenes de compra.
-- El Plan Maestro también identifica el requisito equivalente como TASK-017 P0. El backlog F18 lo registra como F18-TASK07 P1.
-- Hallazgo de preparación para F18-TASK07: el audit y el Plan Maestro mencionan checkBudgetAvailability, getBudgets y PresupuestosInstitucionales, pero esas funciones/hojas no aparecen en el código ni en el esquema actual de la rama autorizada. Antes de implementar, recuperar evidencia histórica y confirmar el contrato de presupuesto/partida/centro de costo; no inferir una partida a partir de texto libre ni reservar contra un esquema supuesto.
+- La siguiente tarea elegible es F11-TASK02 (P0): endurecer integridad de asientos, autorización y trazabilidad de decisiones financieras. La revisión de dependencias confirma que F11-TASK14 (control presupuestario) depende de F11-TASK02; F18-TASK07/Plan Maestro TASK-017 depende a su vez de la infraestructura presupuestaria de F11-TASK14.
+- Hallazgo de preparación para F11-TASK14/F18-TASK07: el audit y el Plan Maestro mencionan checkBudgetAvailability, getBudgets y PresupuestosInstitucionales, pero esas funciones/hojas no aparecen en el código ni en el esquema actual de la rama autorizada. Antes de implementar presupuesto, recuperar evidencia histórica y confirmar el contrato de presupuesto/partida/centro de costo; no inferir una partida a partir de texto libre ni reservar contra un esquema supuesto.
 - Mantener AUD-NG-222/TASK-502 y AUD-NG-226/TASK-506 como trabajos independientes abiertos; no se cierran por F18-TASK06.
 
 ===============================================================================
