@@ -38,7 +38,7 @@ const ctx={SPREADSHEET_ID:"TEST",failAssignmentWrite:false,permissionActive:true
  catalogActor_:()=>({userId:"U-1"}),catalogFindItem_:()=>({id:"CAT-ITEM",code:"ITEM-C",name:"Papel",baseUnit:"Unidad",unit:"Unidad"}),catalogFindUnit_:()=>({name:"Unidad",base:"Unidad",factor:1}),catalogNormalizeText_:v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(),purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"U-1",role:"Contador"},scope:{institutionWide:true,departmentIds:[]}}),supplierEnsureActiveForOrder_:()=>true
 };
 vm.createContext(ctx);
-vm.runInContext('function getVerifiedAccountingIdentity_(payload){return {authorized:true,userId:String(payload&&payload._verifiedUserId||"U-1"),role:"Director",institutionId:"INST-1"};} function validateRolePermission(_actor,action){return permissionActive&&action==="registerAssetsFromPurchaseReceipt"?{authorized:true}:{authorized:false,code:"ROLE_PERMISSION_DENIED"};}',ctx);
+vm.runInContext('function getVerifiedAccountingIdentity_(payload){return {authorized:true,userId:String(payload&&payload._verifiedUserId||"U-1"),role:"Director",institutionId:"INST-1"};} function validateRolePermission(_actor,action){return permissionActive&&["registerAssetsFromPurchaseReceipt","createPurchaseRequest","createPurchaseOrder","verifyThreeWayMatch"].includes(action)?{authorized:true}:{authorized:false,code:"ROLE_PERMISSION_DENIED"};}',ctx);
 vm.runInContext(constants[0],ctx);
 ["normalizePurchaseAwardRole_","purchaseQuotationItemKey_","purchaseQuotationJsonArray_","normalizePurchaseAssetClassification_","ensureAssetAcquisitionSchema_","purchaseAssetReceiptContext_","getPurchaseReceiptAssetCandidates","registerAssetsFromPurchaseReceipt","getAssetItems","manageAssetItem","createPurchaseRequest","createPurchaseOrder"].forEach(name=>vm.runInContext(extract(source,name),ctx));
 assert.equal(ctx.normalizePurchaseAssetClassification_({tipoBien:"Bienes Capitalizables / Activos Fijos"}),"ActivoFijo");
@@ -48,7 +48,11 @@ rows.SolicitudesCompra[1][6]=JSON.stringify([{itemId:"IT-1",descripcion:"Laptop"
 assert.equal(ctx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"}).candidatos.length,0,"request classification overrides an altered order classification");
 rows.SolicitudesCompra[1][6]=sourceClassBefore;
 const createdRequest=ctx.createPurchaseRequest({departamento:"Finanzas",justificacion:"Material de oficina",detalleItems:[{itemId:"ITEM-C",descripcion:"Papel",cantidad:2,clasificacionInventario:"Consumible"}]});
+assert.equal(createdRequest.status,"success");
 assert.equal(JSON.parse(rows.SolicitudesCompra.at(-1)[6])[0].clasificacionInventario,"Consumible");
+// createPurchaseOrder correctly requires an approved source request; model that prerequisite in this fixture.
+rows.SolicitudesCompra.at(-1)[9]="Aprobada";
+ctx.purchaseOrderScopeAccess_=()=>({authorized:true});
 const directOrder=ctx.createPurchaseOrder({solicitudId:createdRequest.solicitudId,proveedorId:"SUP-1",montoTotal:100,detalleItems:[{itemId:"ITEM-C",descripcion:"Papel",cantidad:2,clasificacionInventario:"ActivoFijo"}]});
 const directOrderRow=rows.OrdenesCompra.at(-1),directOrderLine=JSON.parse(directOrderRow[6])[0];
 assert.equal(directOrderLine.clasificacionInventario,"Consumible","direct order must inherit the request classification, not a client override");
