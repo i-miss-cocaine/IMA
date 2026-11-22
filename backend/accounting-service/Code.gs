@@ -11523,6 +11523,10 @@ function getInventoryKardex(payload) {
 // [TAREA 3] [Fase Proveedores y Compromisos] - Registro y actualización de contratos de proveedores con fecha de inicio, vencimiento y días de aviso.
 
 function transferInventoryStock(payload) {
+  const input=payload||{},actor=catalogActor_(input,true);
+  if(!actor||!actor.userId)throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  const permission=validateRolePermission(actor,"transferInventoryStock",input);
+  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
   const {
     itemCodigo,
     itemNombre,
@@ -11555,6 +11559,10 @@ function transferInventoryStock(payload) {
   lock.waitLock(15000);
 
   try {
+    const verifiedActor=catalogActor_(input,true);
+    if(!verifiedActor||String(verifiedActor.userId)!==String(actor.userId)||String(verifiedActor.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
+    const lockedPermission=validateRolePermission(verifiedActor,"transferInventoryStock",input);
+    if(!lockedPermission||lockedPermission.authorized!==true)throw new Error(lockedPermission&&lockedPermission.code||"ROLE_PERMISSION_DENIED");
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const catalogItem = catalogFindItem_(ss, itemCodigo, true);
     const canonicalCode = catalogItem.code;
@@ -11591,7 +11599,7 @@ function transferInventoryStock(payload) {
 
     const now = new Date();
     const transferBatchId = "TRF-" + now.getFullYear() + "-" + String(now.getTime()).slice(-6);
-    const solicitanteId = responsableUserId || (payload && (payload.authenticatedUserId || payload.userId)) || "Administración";
+    const solicitanteId = verifiedActor.userId;
 
     // Determinar si pasa a EnTransito o recepción automática directa
     const esperaConfirmacion = requiereConfirmacionFisica !== false; // por defecto requiere recepción física en destino
@@ -12178,7 +12186,10 @@ function manageMaintenanceOrder(payload) {
 }
 
 function confirmTransferReceipt(payload) {
-  catalogActor_(payload || {}, false);
+  const input=payload||{},actor=catalogActor_(input,true);
+  if(!actor||!actor.userId)throw new Error("VERIFIED_IDENTITY_REQUIRED");
+  const permission=validateRolePermission(actor,"confirmTransferReceipt",input);
+  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
   const {
     transferBatchId,
     cantidadRecibida,
@@ -12193,39 +12204,19 @@ function confirmTransferReceipt(payload) {
   lock.waitLock(15000);
 
   try {
+    const verifiedActor=catalogActor_(input,true);
+    if(!verifiedActor||String(verifiedActor.userId)!==String(actor.userId)||String(verifiedActor.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
+    const lockedPermission=validateRolePermission(verifiedActor,"confirmTransferReceipt",input);
+    if(!lockedPermission||lockedPermission.authorized!==true)throw new Error(lockedPermission&&lockedPermission.code||"ROLE_PERMISSION_DENIED");
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const trfSheet = getOrCreateSheet(ss, "TransferenciasInventario");
     const trfData = trfSheet.getDataRange().getValues();
 
-    let foundIdx = -1;
-    for (let i = 1; i < trfData.length; i++) {
-      if (String(trfData[i][0]).trim() === String(transferBatchId).trim()) {
-        foundIdx = i;
-        break;
-      }
-    }
-
-    if (foundIdx === -1) {
-      return { status: "error", code: "NOT_FOUND", message: `Transferencia '${transferBatchId}' no encontrada.` };
-    }
-
-    const trfRow = trfData[foundIdx];
-    const estadoActual = String(trfRow[8] || "").trim();
-
-    if (estadoActual === "RecibidaTotal" || estadoActual === "RecibidaParcial") {
-      return {
-        status: "error",
-        code: "TRANSFER_ALREADY_RECEIVED",
-        message: `La transferencia '${transferBatchId}' ya fue recibida previamente con estado '${estadoActual}'.`
-      };
-    }
-    if (estadoActual === "Cancelada" || estadoActual === "Rechazada") {
-      return {
-        status: "error",
-        code: "TRANSFER_INACTIVE",
-        message: `No se puede recibir la transferencia '${transferBatchId}' porque se encuentra '${estadoActual}'.`
-      };
-    }
+    const matches=[];
+    for (let i=1;i<trfData.length;i++)if(String(trfData[i][0]||"").trim()===String(transferBatchId).trim())matches.push(i);
+    if(matches.length!==1)return {status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"NOT_FOUND",message:"Transferencia no disponible."};
+    const foundIdx=matches[0],trfRow=trfData[foundIdx],estadoActual=String(trfRow[8]||"").trim();
+    if(estadoActual!=="EnTransito")return {status:"error",code:estadoActual==="Cancelada"||estadoActual==="Rechazada"?"TRANSFER_INACTIVE":"TRANSFER_NOT_IN_TRANSIT",message:"La transferencia no está pendiente de recepción."};
 
     const itemCodigo = String(trfRow[2]).trim();
     const itemNombre = String(trfRow[3] || itemCodigo).trim();
@@ -12233,8 +12224,10 @@ function confirmTransferReceipt(payload) {
     const uOrigen = String(trfRow[5]).trim();
     const uDestino = String(trfRow[6]).trim();
 
+    if(!itemCodigo||!Number.isFinite(cantDespachada)||cantDespachada<=0||!uOrigen||!uDestino||uOrigen.toLowerCase()===uDestino.toLowerCase())
+      return {status:"error",code:"TRANSFER_RECORD_INVALID"};
     const cantRec = cantidadRecibida !== undefined ? parseFloat(cantidadRecibida) : cantDespachada;
-    if (isNaN(cantRec) || cantRec < 0) {
+    if (!Number.isFinite(cantRec) || cantRec < 0) {
       throw new Error("La cantidad recibida no puede ser negativa.");
     }
     if (cantRec > cantDespachada + 0.000001) {
@@ -12244,36 +12237,39 @@ function confirmTransferReceipt(payload) {
     const discrepancia = parseFloat((cantDespachada - cantRec).toFixed(2));
     const nuevoEstado = discrepancia === 0 ? "RecibidaTotal" : (cantRec > 0 ? "RecibidaParcial" : "Rechazada");
     const now = new Date();
-    const receptor = receptorUserId || (payload && (payload.authenticatedUserId || payload.userId)) || "ReceptorBodega";
-
-    // 1. Ingresar en Kardex únicamente las unidades físicas efectivamente recibidas en destino
+    const receptor = verifiedActor.userId;
+    const kardexSheet=getOrCreateSheet(ss,"InventariosKardex"),movementStart=kardexSheet.getLastRow()+1;
+    const valuationSnapshot=inventoryValuationSnapshot_(ss),originalTransferRow=trfRow.slice();
     let entradaRes = null;
-    if (cantRec > 0) {
-      entradaRes = recordInventoryMovementLocked_(ss,{
-        itemCodigo,
-        itemNombre,
-        tipoMovimiento: "Entrada",
-        cantidad: cantRec,
-        cantidadBase: true,
-        capasTransferencia: inventoryValuationSliceLayers_(inventoryValuationTransferLayers_(ss,transferBatchId),cantRec),
-        ubicacionResponsable: uDestino,
-        documentOrigen: transferBatchId,
-        referenciaMovimiento: `Recepción desde ${uOrigen} [Discrepancia: ${discrepancia}]`,
-        observaciones: `Recepción física de transferencia '${transferBatchId}'. ${observaciones || ""}`
-      });
+    try {
+      if (cantRec > 0) {
+        entradaRes = recordInventoryMovementLocked_(ss,{
+          itemCodigo,
+          itemNombre,
+          tipoMovimiento: "Entrada",
+          cantidad: cantRec,
+          cantidadBase: true,
+          capasTransferencia: inventoryValuationSliceLayers_(inventoryValuationTransferLayers_(ss,transferBatchId),cantRec),
+          ubicacionResponsable: uDestino,
+          documentOrigen: transferBatchId,
+          referenciaMovimiento: `Recepción desde ${uOrigen} [Discrepancia: ${discrepancia}]`,
+          observaciones: `Recepción física de transferencia '${transferBatchId}'. ${observaciones || ""}`
+        });
+        if(!entradaRes||entradaRes.status!=="success")throw new Error(entradaRes&&entradaRes.code||"TRANSFER_RECEIPT_INVENTORY_WRITE_FAILED");
+      }
+      const updatedTransferRow=trfRow.slice();
+      updatedTransferRow[8]=nuevoEstado;updatedTransferRow[9]=receptor;updatedTransferRow[10]=now;
+      updatedTransferRow[11]=cantRec;updatedTransferRow[12]=discrepancia;
+      let obsFin=String(trfRow[13]||"");
+      if(discrepancia!==0)obsFin+=` | [DISCREPANCIA:${discrepancia}] [MOTIVO:${justificacionDiscrepancia||"No especificado"}]`;
+      updatedTransferRow[13]=obsFin.trim();
+      trfSheet.getRange(foundIdx+1,1,1,updatedTransferRow.length).setValues([updatedTransferRow]);
+    } catch(writeError) {
+      while(kardexSheet.getLastRow()>=movementStart)kardexSheet.deleteRow(kardexSheet.getLastRow());
+      inventoryValuationRestore_(ss,valuationSnapshot);
+      try{trfSheet.getRange(foundIdx+1,1,1,originalTransferRow.length).setValues([originalTransferRow]);}catch(_){}
+      throw new Error("INVENTORY_TRANSFER_RECEIPT_ATOMIC_FAILURE:"+String(writeError&&writeError.message||writeError));
     }
-
-    // 2. Actualizar registro en TransferenciasInventario
-    trfSheet.getRange(foundIdx + 1, 9).setValue(nuevoEstado);
-    trfSheet.getRange(foundIdx + 1, 10).setValue(receptor);
-    trfSheet.getRange(foundIdx + 1, 11).setValue(now);
-    trfSheet.getRange(foundIdx + 1, 12).setValue(cantRec);
-    trfSheet.getRange(foundIdx + 1, 13).setValue(discrepancia);
-    let obsFin = String(trfRow[13] || "");
-    if (discrepancia !== 0) {
-      obsFin += ` | [DISCREPANCIA:${discrepancia}] [MOTIVO:${justificacionDiscrepancia || 'No especificado'}]`;
-    }
-    trfSheet.getRange(foundIdx + 1, 14).setValue(obsFin.trim());
 
     logStructuredEvent(
       "ACCOUNTING",
