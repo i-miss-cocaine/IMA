@@ -285,6 +285,8 @@ jobs:
         run: node tests/security/accounting-payroll-receipt-distribution.test.js
       - name: Run accounting payroll journal integration contract
         run: node tests/security/accounting-payroll-journal-integration.test.js
+      - name: Run accounting journal integrity contract
+        run: node tests/security/accounting-journal-entry-integrity.test.js
       - name: Run accounting payroll batch and variance contract
         run: node tests/security/accounting-payroll-batch-variance.test.js
       - name: Run accounting purchase quotation matrix and split award contract
