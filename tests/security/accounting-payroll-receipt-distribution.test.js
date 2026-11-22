@@ -21,7 +21,7 @@ revokeManagerOnLock=2;
 const revoked=ctx.processPayrollReceiptDistribution({...manager,modo:"ENVIAR"});
 assert.equal(revoked.code,"SESSION_REVOKED");
 assert.equal(emails.length,0,"revoked manager cannot send payroll receipts");
-assert.ok(rows.DistribucionBoletasPago.slice(1).every(r=>r[5]==="PENDIENTE"),"revoked manager may leave a prepared preview but cannot claim or send any receipt");
+assert.ok(rows.DistribucionBoletasPago.slice(1).every(r=>r[5]!=="PROCESANDO"&&Number(r[6]||0)===0),"revoked manager may leave a prepared preview but cannot claim or send any receipt");
 managerActive=true;revokeManagerOnLock=0;lockCount=0;
 const preview=ctx.previewPayrollReceiptDistribution(manager);
 assert.equal(preview.status,"success");assert.equal(preview.totalEmpleados,5);assert.equal(preview.empleadosEnAmbito,4);assert.equal(preview.fueraDeAmbito,1);assert.equal(preview.correosValidos,2);assert.equal(preview.correosInvalidos,1);assert.equal(preview.correosFaltantes,1);assert.equal(preview.pendientes,2);assert.equal(preview.fallidos,2);
