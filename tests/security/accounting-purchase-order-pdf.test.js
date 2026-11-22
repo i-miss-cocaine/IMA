@@ -66,6 +66,7 @@ function makeHarness(options={}){
     getOrCreateSheet:(ss,name)=>ss.getSheetByName(name),
     supplierEnsureActiveForOrder_:()=>true,
     checkBudgetAvailabilityCore_:(ss,input,scope)=>{budgetChecks.push({input,scope});return options.budgetCheck||{status:"success",disponible:true,alertaUmbral:false,centroCosto:input.centroCosto,partidaCodigo:input.partidaCodigo};},
+    budgetLogEvent_:()=>{},
     Object,Array,String,Number,Date,Math,JSON,Intl,Error,RegExp,isFinite
   };
   vm.createContext(context);

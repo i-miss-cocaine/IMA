@@ -6789,6 +6789,10 @@ function createPurchaseRequest(payload) {
   }
 }
 
+function budgetLogEvent_(fnName,severity,errorCode,message,payload,userRole) {
+  try { if(typeof logStructuredEvent==="function")logStructuredEvent("ACCOUNTING",fnName||"budget",severity||"INFO",errorCode||"OK",message||"",payload||{},userRole||"Sistema"); }
+  catch(error) { try { console.error("Budget audit log failed",error); } catch(ignored) {} }
+}
 function budgetAccess_(payload,action,ss) {
   var actor=getVerifiedAccountingIdentity_(payload||{});
   if(!actor||actor.authorized!==true)return{authorized:false,code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
@@ -6898,6 +6902,7 @@ function saveBudgetPlan(payload) {
       updated[map.ActualizadoPor]=actorId;updated[map.Version]=Math.max(0,Number(updated[map.Version]||0))+1;
       try{schema.sheet.getRange(found.index,1,1,schema.headers.length).setValues([updated]);}
       catch(writeError){try{schema.sheet.getRange(found.index,1,1,schema.headers.length).setValues([old]);}catch(rollbackError){}return{status:"error",code:"BUDGET_WRITE_FAILED"};}
+      budgetLogEvent_("saveBudgetPlan","INFO","BUDGET_PLAN_UPDATED","Plan presupuestario actualizado",{presupuestoId:String(updated[map.PresupuestoID]),anoId:year,centroCosto:center,partidaCodigo:part,montoAprobado:amountCents/100,version:updated[map.Version]},access.actor.role);
       return{status:"success",presupuestoId:String(updated[map.PresupuestoID]),actualizado:true,version:updated[map.Version]};
     }
     if(budgetId)return{status:"error",code:"BUDGET_NOT_FOUND"};
@@ -6908,6 +6913,7 @@ function saveBudgetPlan(payload) {
     var before=schema.sheet.getLastRow();
     try{schema.sheet.appendRow(row);}
     catch(writeError){try{if(schema.sheet.getLastRow()>before)schema.sheet.deleteRow(schema.sheet.getLastRow());}catch(rollbackError){}return{status:"error",code:"BUDGET_WRITE_FAILED"};}
+    budgetLogEvent_("saveBudgetPlan","INFO","BUDGET_PLAN_CREATED","Plan presupuestario creado",{presupuestoId:newId,anoId:year,centroCosto:center,partidaCodigo:part,montoAprobado:amountCents/100,version:1},access.actor.role);
     return{status:"success",presupuestoId:newId,actualizado:false,version:1};
   }catch(error){return{status:"error",code:String(error&&error.message||"BUDGET_SAVE_FAILED")};}
   finally{lock.releaseLock();}
@@ -6963,7 +6969,9 @@ function checkBudgetAvailability(payload) {
     if(!access.authorized)return{status:"error",code:access.code};
     if(String(access.actor.userId||"")!==String(initial.actor.userId||"")||String(access.actor.role||"")!==String(initial.actor.role||""))
       return{status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
-    return checkBudgetAvailabilityCore_(ss,input,access.scope);
+    var result=checkBudgetAvailabilityCore_(ss,input,access.scope);
+    if(result.status==="warning"||result.status==="error")budgetLogEvent_("checkBudgetAvailability","WARNING",result.code||"BUDGET_ALERT",result.message||"Budget availability warning",{anoId:input.anoId||input.anioFiscal,centroCosto:input.centroCosto,partidaCodigo:input.partidaCodigo,montoSolicitado:input.montoSolicitado,montoDisponible:result.montoDisponible,presupuestoId:result.presupuestoId},access.actor.role);
+    return result;
   }catch(error){return{status:"error",code:String(error&&error.message||"BUDGET_CHECK_FAILED")};}
   finally{lock.releaseLock();}
 }
@@ -7013,6 +7021,7 @@ function reserveBudgetCommitmentLocked_(ss,input,actorId) {
     try{budgetSchema.sheet.getRange(budgetMatches[0].index,1,1,budgetSchema.headers.length).setValues([oldBudget]);}catch(rollbackError){}
     return{status:"error",code:"BUDGET_COMMITMENT_WRITE_FAILED"};
   }
+  budgetLogEvent_("reserveBudgetCommitmentLocked_","INFO","BUDGET_COMMITMENT_RESERVED","Compromiso presupuestario reservado",{compromisoId:commitmentId,presupuestoId:budgetRecord.presupuestoId,ordenCompraId:orderId,monto:amountCents/100,centroCosto:budgetRecord.centroCosto,partidaCodigo:budgetRecord.partidaCodigo},actorId);
   return{status:"success",compromisoId:commitmentId,presupuestoId:budgetRecord.presupuestoId,ordenCompraId:orderId,monto:amountCents/100};
 }
 
@@ -7337,8 +7346,8 @@ function approvePurchaseOrder(payload) {
     var budgetWarnings=[];
     Object.keys(budgetTotals).forEach(function(partCode){
       var budgetCheck=checkBudgetAvailabilityCore_(ss,{anoId:budgetYear,centroCosto:costCenter,partidaCodigo:partCode,montoSolicitado:budgetTotals[partCode]/100},access.scope);
-      if(!budgetCheck||budgetCheck.disponible!==true)throw new Error(budgetCheck&&budgetCheck.code||"BUDGET_OVERRUN_BLOCKED");
-      if(budgetCheck.alertaUmbral===true)budgetWarnings.push(budgetCheck);
+      if(!budgetCheck||budgetCheck.disponible!==true){budgetLogEvent_("approvePurchaseOrder","WARNING",budgetCheck&&budgetCheck.code||"BUDGET_OVERRUN_BLOCKED","Aprobación bloqueada por disponibilidad presupuestaria",{ordenCompraId:orderId,centroCosto:costCenter,partidaCodigo:partCode,montoSolicitado:budgetTotals[partCode]/100,budgetCheck:budgetCheck},access.actor.role);throw new Error(budgetCheck&&budgetCheck.code||"BUDGET_OVERRUN_BLOCKED");}
+      if(budgetCheck.alertaUmbral===true){budgetWarnings.push(budgetCheck);budgetLogEvent_("approvePurchaseOrder","WARNING","BUDGET_THRESHOLD_ALERT","La aprobación alcanza el umbral de alerta presupuestaria",{ordenCompraId:orderId,centroCosto:costCenter,partidaCodigo:partCode,budgetCheck:budgetCheck},access.actor.role);}
     });
     if(budgetWarnings.length&&input.confirmarAlertaPresupuestaria!==true)
       return{status:"warning",code:"BUDGET_THRESHOLD_CONFIRMATION_REQUIRED",alertasPresupuestarias:budgetWarnings,message:"La orden alcanza uno o más umbrales de alerta presupuestaria. Confirme para continuar."};

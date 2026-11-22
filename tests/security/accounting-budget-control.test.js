@@ -63,6 +63,8 @@ function makeHarness(options={}){
     getVerifiedAccountingDepartmentScope_:()=>options.scopeDenied?{valid:false,code:"DEPARTMENT_SCOPE_UNVERIFIED"}:
       {valid:true,institutionWide:options.institutionWide===true,departmentIds:options.departmentIds||["D1"]},
     migrationStableJson_:value=>JSON.stringify(value),
+    logs:[],
+    logStructuredEvent:(service,fn,severity,code,message,payload,role)=>context.logs.push({service,fn,severity,code,message,payload,role}),
     migrationHash_:value=>crypto.createHash("sha256").update(String(value)).digest("hex"),
     Object,Array,String,Number,Date,Math,JSON,Error,RegExp,isFinite,parseInt
   };
@@ -101,6 +103,7 @@ function main(){
   assert.equal(threshold.status,"warning");
   assert.equal(threshold.code,"BUDGET_THRESHOLD_ALERT");
   assert.equal(threshold.alertaUmbral,true);
+  assert.ok(h.stats().lockReleases>=1);
   const overrun=h.api.check({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoSolicitado:1001});
   assert.equal(overrun.disponible,false);
   assert.equal(overrun.code,"BUDGET_OVERRUN_BLOCKED");
