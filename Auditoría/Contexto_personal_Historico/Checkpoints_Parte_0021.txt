@@ -1,0 +1,42 @@
+===============================================================================
+### C1.949 — IMA-EXEC-20261122-F18-TASK05-QUOTATION-MATRIX-CLOSE
+===============================================================================
+
+### Continuidad, rama y estado Git
+- Repositorio: i-miss-cocaine/IMA.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- HEAD inicial verificado: 51f57f063eeff551bc8cafe919577c034573e451.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Se rota el archivo de checkpoints: Parte_0020 supera el límite normativo de 180.000 caracteres; se conserva íntegro y este checkpoint inicia Parte_0021.
+- El HEAD final se confirma mediante la verificación posterior de la referencia de la rama al publicar este commit.
+
+### Objetivo y resultado
+- Verificar y cerrar F18-TASK05: matriz comparativa de hasta cinco cotizaciones y adjudicación por partidas.
+- Resultado: Completada. La implementación funcional y sus contratos ya estaban presentes en la rama; esta iteración verificó UI, escenarios de backend y ejecución CI, y actualizó el estado del backlog sin reimplementar capacidades existentes.
+
+### Evidencia revisada
+- UI: js/accounting.js, líneas 1386–1553. Incluye registro detallado; matriz de ofertas lado a lado; precio, plazo, condiciones y estado de cada oferta; comparación por partida; selección y cantidad adjudicada por partida; justificación y motivos de descarte; acta y órdenes por proveedor.
+- Contrato: tests/security/accounting-purchase-quotation-adjudication.test.js. Incluye máximo de cinco cotizaciones y rechazo de la sexta; ofertas completas/parciales y vencidas; snapshot inmutable; adjudicación dividida; justificación de oferta no menor; idempotencia; RBAC; cantidades máximas; rollback de escritura parcial y lock contention.
+- Workflow Department Scope Contract: run 44986422407, push sobre la rama autorizada y HEAD inicial, conclusión SUCCESS. Node.js 24, contrato de matriz/adjudicación y pasos de sintaxis SUCCESS.
+- Estado combinado de commit: ima/department-scope-contract SUCCESS.
+- CLI local independiente: NOT RUN (no hay checkout local disponible en esta sesión).
+- Apps Script/Sheets/Drive reales: NOT RUN; no se afirma verificación de despliegue.
+
+### Archivos modificados en este checkpoint
+- pendientes/Contabilidad/Pendientes.md — F18-TASK05 pasa de Pendiente a Completada con evidencia.
+- changueslogs.txt — registro de cierre y resultado CI.
+- Auditoría/INDICE_CHECKPOINTS.md — entrada C1.949.
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt — nuevo checkpoint tras rotación.
+- No se modificaron backend, UI ni pruebas en esta iteración; el código probado ya estaba comprometido en la rama.
+
+### Hallazgos, límites y decisiones
+- No se repitió trabajo de implementación que ya contaba con evidencia vigente.
+- La comparación y adjudicación quedan separadas de la aprobación de órdenes de compra.
+- La lectura completa del Plan Maestro no estuvo disponible por el límite de recuperación del archivo; la secuencia inmediata se corroboró con el último checkpoint, su índice y el backlog departamental.
+- No se ejecutó CLI local ni entorno real Apps Script/Sheets/Drive; se conserva esa limitación explícita.
+
+### Estado y siguiente tarea elegible
+- F18-TASK05: Completada.
+- Siguiente: F18-TASK06 — abonos parciales a facturas, notas de crédito por devoluciones y consulta de cartera por vencimiento. Dependencia técnica disponible: facturas conciliadas F18-TASK02 y ciclo de órdenes/recepciones ya implementado. Debe revisarse el contrato financiero, los permisos y la idempotencia antes de modificar saldos.
+- Mantener AUD-NG-222/TASK-502 y AUD-NG-226/TASK-506 como trabajos independientes aún abiertos; no declararlos cerrados por esta tarea.
+===============================================================================

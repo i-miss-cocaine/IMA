@@ -1399,7 +1399,7 @@
 ---
 
 <!-- ID: F18-TASK05 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [ ] [F18-TASK05] Implementar matriz comparativa de cotizaciones y adjudicación por partidas
+### [x] [F18-TASK05] Implementar matriz comparativa de cotizaciones y adjudicación por partidas
 - **Severidad:** Alta (Optimización de costos y transparencia en adjudicaciones)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `js/accounting.js`, `CotizacionesCompra`.
 - **Solución Propuesta:** Vista comparativa que evalúe simultáneamente hasta 5 cotizaciones por precio unitario, plazo, impuestos y condiciones, permitiendo adjudicar partidas a diferentes proveedores.
@@ -1410,8 +1410,8 @@
 - **Dependencias/riesgos:** cotizaciones vinculadas a una misma solicitud y permisos de adjudicación; riesgo de comparar ofertas no equivalentes.
 - **Alcance:** comparación y adjudicación; no reemplaza aprobación de la orden.
 - **Criterios de aceptación:** ofertas comparables aparecen lado a lado; criterios y adjudicación por partida quedan trazables; solo roles autorizados adjudican.
-- **Prioridad:** P1. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; no se aportan pruebas de esta capacidad.
+- **Prioridad:** P1. **Estado:** Completada (C1.949).
+- **Evidencia de cierre:** `tests/security/accounting-purchase-quotation-adjudication.test.js` ejecutado en Node.js 24 mediante GitHub Actions; Department Scope Contract run `44986422407` SUCCESS en HEAD `51f57f063eeff551bc8cafe919577c034573e451`. El contrato cubre límite de cinco cotizaciones, comparación por partida, ofertas parciales/vencidas, adjudicación dividida, justificación, ofertas descartadas, snapshot inmutable, idempotencia, RBAC, sobreasignación, rollback y contención del lock. UI verificada en `js/accounting.js`: registro detallado y matriz lado a lado con plazo/condiciones, selección por partida/cantidad y emisión de acta/órdenes.
 
 ---
 
