@@ -3316,7 +3316,7 @@ function requestEmployeeLoanAdvance(payload){
  }catch(e){return {status:"error",code:"LOAN_REQUEST_WRITE_FAILED",message:"No fue posible registrar la solicitud."};}finally{lock.releaseLock();}
 }
 function approveEmployeeLoanAdvance(payload){
- const p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+ const p=payload||{};let actor=getVerifiedAccountingIdentity_(p);if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
  let role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
  if(!["RECURSOSHUMANOS","ADMINISTRADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
  let permission=validateRolePermission(actor,"approveEmployeeLoanAdvance",p);
