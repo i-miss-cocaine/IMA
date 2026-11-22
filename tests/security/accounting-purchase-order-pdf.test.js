@@ -27,7 +27,7 @@ function makeHarness(options={}){
     const sheet={rows,failCell:"",getDataRange(){return{getValues:()=>sheet.rows.map(row=>row.slice())};},
       getRange(row,col,numRows,numCols){return{
         setValue:value=>{if(sheet.failCell===row+":"+col){sheet.failCell="";throw new Error("SHEET_WRITE_FAILED");}while(sheet.rows.length<row)sheet.rows.push([]);while(sheet.rows[row-1].length<col)sheet.rows[row-1].push("");sheet.rows[row-1][col-1]=value;},
-        setValues:values=>{for(let i=0;i<values.length;i++){while(sheet.rows.length<row+i)sheet.rows.push([]);while(sheet.rows[row-1+i].length<col-1+values[i].length)sheet.rows[row-1+i].push("");for(let j=0;j<values[i].length;j++)sheet.rows[row-1+i][col-1+j]=values[i][j];}}
+        setValues:values=>{if(sheet.failValues){sheet.failValues=false;throw new Error("SHEET_WRITE_FAILED");}for(let i=0;i<values.length;i++){while(sheet.rows.length<row+i)sheet.rows.push([]);while(sheet.rows[row-1+i].length<col-1+values[i].length)sheet.rows[row-1+i].push("");for(let j=0;j<values[i].length;j++)sheet.rows[row-1+i][col-1+j]=values[i][j];}}
       };},getLastRow(){return sheet.rows.length;}};
     return sheet;
   }
@@ -36,7 +36,8 @@ function makeHarness(options={}){
     SolicitudesCompra:makeSheet([requestHeaders,request]),
     ProveedoresActivos:makeSheet([supplierHeaders,supplier])
   };
-  const files=Object.create(null);let nextFile=0,created=0,trashed=0,lockCalls=0,lockReleases=0;
+  sheets.OrdenesCompra.failValues=options.failApprovalWrite===true;
+  const files=Object.create(null);let nextFile=0,created=0,trashed=0,lockCalls=0,lockReleases=0,reservationCalls=0,releaseCalls=0;
   let permissionActive=options.permissionDenied!==true,scopeActive=options.scopeDenied!==true,actorUserId="U-1",actorRole=options.actorRole||"Director";
   const budgetChecks=[];
   const folder={access:options.folderPublic? "ANYONE":"PRIVATE",files,
@@ -67,12 +68,14 @@ function makeHarness(options={}){
     supplierEnsureActiveForOrder_:()=>true,
     checkBudgetAvailabilityCore_:(ss,input,scope)=>{budgetChecks.push({input,scope});return options.budgetCheck||{status:"success",disponible:true,alertaUmbral:false,centroCosto:input.centroCosto,partidaCodigo:input.partidaCodigo};},
     budgetLogEvent_:()=>{},
+    reservePurchaseOrderBudgetCommitmentsLocked_:(ss,orderId,year,center,totals,checks,actorId)=>{reservationCalls++;return options.reservationFailure?{status:"error",code:"BUDGET_COMMITMENT_RESERVATION_FAILED"}:{status:"success",reservations:[{compromisoId:"CMP-1",presupuestoId:"PRE-1",partidaCodigo:"5101",monto:100,idempotente:false}]};},
+    releaseBudgetCommitmentLocked_:(ss,orderId,reason,actorId)=>{releaseCalls++;return options.releaseFailure?{status:"error",code:"BUDGET_COMMITMENT_RELEASE_FAILED"}:{status:"success",released:[{compromisoId:"CMP-1",estado:"Liberado"}]};},
     Object,Array,String,Number,Date,Math,JSON,Intl,Error,RegExp,isFinite
   };
   vm.createContext(context);
-  vm.runInContext('const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol","AlertaPresupuestariaJSON","FechaValidacionPresupuestaria"];',context);
+  vm.runInContext('const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol","AlertaPresupuestariaJSON","FechaValidacionPresupuestaria","CompromisosPresupuestariosJSON","FechaCompromisoPresupuestario","EstadoCompromisoPresupuestario","CanceladaPor","FechaCancelacion","JustificacionCancelacion"];',context);
   ["normalizePurchaseAwardRole_","ensurePurchaseOrderPdfSchema_","getOrCreatePrivatePurchaseOrderFolder_","rollbackPrivatePurchaseOrderFile_","purchaseOrderPdfEscape_","approvePurchaseOrder","generatePurchaseOrderPDF","getPurchaseOrderPDFFile"].forEach(name=>vm.runInContext(extract(name),context));
-  return {context,sheets,files,folder,budgetChecks,stats:()=>({created,trashed,lockCalls,lockReleases})};
+  return {context,sheets,files,folder,budgetChecks,stats:()=>({created,trashed,lockCalls,lockReleases,reservationCalls,releaseCalls})};
 }
 async function main(){
   assert.doesNotThrow(()=>new vm.Script(source),"ACCOUNTING backend syntax");
@@ -85,6 +88,10 @@ async function main(){
   assert.ok(draft.sheets.OrdenesCompra.rows[1][20] instanceof Date);
   assert.equal(draft.sheets.OrdenesCompra.rows[1][21],"Validación de aprobación de compra");
   assert.equal(draft.sheets.OrdenesCompra.rows[1][22],"Director");
+  assert.equal(JSON.parse(draft.sheets.OrdenesCompra.rows[1][25]).length,1);
+  assert.ok(draft.sheets.OrdenesCompra.rows[1][26] instanceof Date);
+  assert.equal(draft.sheets.OrdenesCompra.rows[1][27],"Comprometido");
+  assert.equal(draft.stats().reservationCalls,1);
   const approvalRetry=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"});
   assert.equal(approvalRetry.idempotente,true);
   assert.equal(makeHarness({state:"Borrador",requestState:"Pendiente"}).context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"PURCHASE_REQUEST_NOT_APPROVED");
@@ -117,6 +124,13 @@ async function main(){
   assert.equal(threshold.budgetChecks[0].input.montoSolicitado,100);
   const overrun=makeHarness({state:"Borrador",budgetCheck:{status:"warning",disponible:false,alertaUmbral:false,code:"BUDGET_OVERRUN_BLOCKED"}});
   assert.equal(overrun.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"BUDGET_OVERRUN_BLOCKED");
+  const reservationFailure=makeHarness({state:"Borrador",reservationFailure:true});
+  assert.equal(reservationFailure.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"BUDGET_COMMITMENT_RESERVATION_FAILED");
+  assert.equal(reservationFailure.sheets.OrdenesCompra.rows[1][9],"Borrador");
+  const writeFailure=makeHarness({state:"Borrador",failApprovalWrite:true});
+  assert.equal(writeFailure.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"PURCHASE_ORDER_APPROVAL_WRITE_FAILED");
+  assert.equal(writeFailure.stats().releaseCalls,1,"approval write failure must release its reservation");
+  assert.equal(writeFailure.sheets.OrdenesCompra.rows[1][9],"Borrador");
   const missingPart=makeHarness({state:"Borrador"});
   const missingPartItems=JSON.parse(missingPart.sheets.OrdenesCompra.rows[1][6]);delete missingPartItems[0].partidaCodigo;missingPart.sheets.OrdenesCompra.rows[1][6]=JSON.stringify(missingPartItems);
   assert.equal(missingPart.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"PURCHASE_REQUEST_PARTIDA_REQUIRED");
