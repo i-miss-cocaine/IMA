@@ -121,6 +121,7 @@ on:
       - tests/security/accounting-staffing-needs-ownership.test.js
       - tests/security/accounting-staff-attendance-ownership.test.js
       - tests/security/accounting-employee-self-service-portal.test.js
+      - tests/security/accounting-employee-expediente-scope.test.js
       - tests/security/accounting-attendance-correction-ownership.test.js
       - tests/security/academic-absence-justification-canonical.test.js
       - tests/security/academic-teacher-justification-abac.test.js
@@ -232,6 +233,8 @@ jobs:
         run: node tests/security/accounting-staff-attendance-ownership.test.js
       - name: Run accounting employee self-service portal ownership and XSS contract
         run: node tests/security/accounting-employee-self-service-portal.test.js
+      - name: Run accounting employee expediente and document ownership, privacy and concurrency contract
+        run: node tests/security/accounting-employee-expediente-scope.test.js
       - name: Run accounting attendance correction ownership, integrity and concurrency contract
         run: node tests/security/accounting-attendance-correction-ownership.test.js
       - name: Run canonical academic absence justification and reconciliation contract
@@ -407,6 +410,7 @@ jobs:
           node --check tests/security/academic-merge-student-files-ownership.test.js
           node --check tests/security/academic-student-lifecycle-mutations-ownership.test.js
           node --check tests/security/accounting-monthly-charge-period.test.js
+          node --check tests/security/accounting-employee-expediente-scope.test.js
           node --check tests/security/accounting-transport-monthly-charges.test.js
           node --check tests/security/accounting-payroll-generation-authorization.test.js
           node --check < backend/accounting-service/Code.gs
