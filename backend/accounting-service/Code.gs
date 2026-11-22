@@ -3282,7 +3282,11 @@ function resolveEmployeeLoanAdvanceAccess_(payload,ss,targetUserId,requireManage
 }
 function requestEmployeeLoanAdvance(payload){
  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
- const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,""),self=["EMPLEADO","TRABAJADOR","PERSONAL"].includes(role),target=self?actor.userId:String(p.empleadoId||actor.userId||"").trim();
+ const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,""),self=["EMPLEADO","TRABAJADOR","PERSONAL"].includes(role),manager=["RECURSOSHUMANOS","ADMINISTRADOR"].includes(role);
+ let target=self?actor.userId:String(p.empleadoId||actor.userId||"").trim();
+ if(!self&&!manager)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+ let permission=validateRolePermission(actor,"requestEmployeeLoanAdvance",p);
+ if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED",message:"Acceso denegado."};
  const amount=Number(p.montoSolicitado),terms=p.plazoCuotas==null||p.plazoCuotas===""?1:Number(p.plazoCuotas);
  if(!Number.isFinite(amount)||amount<=0||!Number.isInteger(terms)||terms<1||terms>120)return {status:"error",code:"LOAN_REQUEST_VALUES_INVALID",message:"El monto y el plazo de cuotas deben ser válidos."};
  const safe=(v,n)=>{let x=String(v||"").trim().slice(0,n);return /^[=+@-]/.test(x)?"'"+x:x;},type=safe(p.tipo||"AnticipoSalario",80),reason=safe(p.motivo||p.observaciones||"Solicitud formal de anticipo/préstamo",500);
@@ -3291,7 +3295,17 @@ function requestEmployeeLoanAdvance(payload){
  if(!pre.authorized)return {status:"error",code:pre.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
  const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está ocupada. Intente nuevamente."};
  try{
-  if(!resolveEmployeeLoanAdvanceAccess_(Object.assign({},p),ss,target,false).authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
+  const refreshedActor=getVerifiedAccountingIdentity_(p);
+  if(!refreshedActor||!refreshedActor.authorized)return {status:"error",code:refreshedActor&&refreshedActor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  const refreshedRole=String(refreshedActor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  const refreshedSelf=["EMPLEADO","TRABAJADOR","PERSONAL"].includes(refreshedRole),refreshedManager=["RECURSOSHUMANOS","ADMINISTRADOR"].includes(refreshedRole);
+  if(!refreshedSelf&&!refreshedManager)return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  permission=validateRolePermission(refreshedActor,"requestEmployeeLoanAdvance",p);
+  if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED",message:"Acceso denegado."};
+  target=refreshedSelf?refreshedActor.userId:String(p.empleadoId||refreshedActor.userId||"").trim();
+  const lockedAccess=resolveEmployeeLoanAdvanceAccess_(Object.assign({},p),ss,target,false);
+  if(!lockedAccess||!lockedAccess.authorized)return {status:"error",code:lockedAccess&&lockedAccess.code||"RESOURCE_NOT_FOUND",message:"No existe un expediente laboral disponible."};
+  target=lockedAccess.userId;
   const h=["PrestamoID","Fecha","EmpleadoId","Tipo","MontoSolicitado","MontoAprobado","PlazoCuotas","CuotaMensual","SaldoPendiente","EstadoAprobacion","AprobadoPor","Observaciones"],sh=ss.getSheetByName("AnticiposPrestamosEmpleado")||getOrCreateSheet(ss,"AnticiposPrestamosEmpleado");
   let v=sh.getDataRange().getValues();if(!v.length||!Array.isArray(v[0])||!v[0].length){sh.appendRow(h);v=[h];}
   if(v[0].length!==h.length||h.some((x,i)=>String(v[0][i]||"").trim().toUpperCase()!==x.toUpperCase()))return {status:"error",code:"RESOURCE_SCHEMA_INVALID",message:"La estructura de anticipos y préstamos no es válida."};
@@ -3303,8 +3317,10 @@ function requestEmployeeLoanAdvance(payload){
 }
 function approveEmployeeLoanAdvance(payload){
  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor.authorized)return {status:"error",code:actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
- const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+ let role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
  if(!["RECURSOSHUMANOS","ADMINISTRADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+ let permission=validateRolePermission(actor,"approveEmployeeLoanAdvance",p);
+ if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED",message:"Acceso denegado."};
  const id=String(p.prestamoId||"").trim(),status=String(p.nuevoEstado||"").trim().toUpperCase();
  if(!id||!["APROBADO","RECHAZADO"].includes(status))return {status:"error",code:"LOAN_REVIEW_INVALID",message:"La solicitud y el estado de revisión son obligatorios."};
  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=ss.getSheetByName("AnticiposPrestamosEmpleado");if(!sh)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
@@ -3315,7 +3331,12 @@ function approveEmployeeLoanAdvance(payload){
  const target=String(found[0].r[2]||"").trim();if(!resolveEmployeeLoanAdvanceAccess_(p,ss,target,true).authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
  const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está ocupada. Intente nuevamente."};
  try{
-  if(!resolveEmployeeLoanAdvanceAccess_(Object.assign({},p),ss,target,true).authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
+  actor=getVerifiedAccountingIdentity_(p);
+  if(!actor||!actor.authorized)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+  role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+  if(!["RECURSOSHUMANOS","ADMINISTRADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  permission=validateRolePermission(actor,"approveEmployeeLoanAdvance",p);
+  if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED",message:"Acceso denegado."};
   const data=sh.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({r,i:i+1})).filter(x=>String(x.r[0]||"").trim()===id);
   if(matches.length!==1||matches[0].r.length!==h.length)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Solicitud de préstamo no disponible."};
   const row=matches[0].r.slice(),rowIndex=matches[0].i;if(String(row[9]||"").trim().toUpperCase()!=="PENDIENTEAPROBACION")return {status:"error",code:"LOAN_ALREADY_REVIEWED",message:"La solicitud ya fue revisada."};
