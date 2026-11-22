@@ -20,15 +20,16 @@ function makeHarness(options={}){
   const order=["OC-1","REQ-1","COT-1","SUP-1",new Date("2026-11-20"),new Date("2026-11-30"),
     JSON.stringify([{itemId:"ITEM-1",descripcion:"Silla escolar",unidad:"Unidad",cantidad:2,precioUnitario:50,total:100}]),100,"CC-1",options.state||"Aprobada","U-APPROVER","Adjudicación","U-REQUESTER","1",""];
   const requestHeaders=["SolicitudID","Fecha","Departamento","SolicitanteUserId","Justificacion","Categoria","DetalleItemsJSON","MontoEstimado","CentroCosto","EstadoAprobacion","Observaciones"];
-  const request=["REQ-1",new Date(),"DEP-1","U-REQUESTER","Necesidad institucional","Mobiliario","[]",100,"CC-1","Adjudicada",""];
+  const request=["REQ-1",new Date(),"DEP-1","U-REQUESTER","Necesidad institucional","Mobiliario","[]",100,"CC-1",options.requestState||"Adjudicada",""];
   const supplierHeaders=["ProveedorID","FechaRegistro","NombreProveedor","RTN","Telefono","Email","RubroServicio","Estado","Observaciones"];
   const supplier=["SUP-1",new Date(),"Proveedor Escolar S.A.","08011999123456","2222-0000","ventas@example.test","Mobiliario","Activo",""];
   function makeSheet(rows){
-    return {rows,failNextWrite:false,getDataRange(){return{getValues:()=>this.rows.map(row=>row.slice())};},
+    const sheet={rows,failCell:"",getDataRange(){return{getValues:()=>sheet.rows.map(row=>row.slice())};},
       getRange(row,col,numRows,numCols){return{
-        setValue:value=>{if(this.failNextWrite){this.failNextWrite=false;throw new Error("SHEET_WRITE_FAILED");}while(this.rows.length<row)this.rows.push([]);while(this.rows[row-1].length<col)this.rows[row-1].push("");this.rows[row-1][col-1]=value;},
+        setValue:value=>{if(sheet.failCell===row+":"+col){sheet.failCell="";throw new Error("SHEET_WRITE_FAILED");}while(sheet.rows.length<row)sheet.rows.push([]);while(sheet.rows[row-1].length<col)sheet.rows[row-1].push("");sheet.rows[row-1][col-1]=value;},
         setValues:values=>{for(let i=0;i<values.length;i++){while(this.rows.length<row+i)this.rows.push([]);for(let j=0;j<values[i].length;j++)this.rows[row-1+i][col-1+j]=values[i][j];}}
-      };},getLastRow(){return this.rows.length;}};
+      };},getLastRow(){return sheet.rows.length;}};
+    return sheet;
   }
   const sheets={
     OrdenesCompra:makeSheet([headers,order]),
@@ -61,15 +62,24 @@ function makeHarness(options={}){
     purchaseOrderScopeAccess_:()=>options.scopeDenied?{authorized:false,code:"RESOURCE_NOT_FOUND"}:{authorized:true},
     purchaseQuotationJsonArray_:value=>{try{const parsed=Array.isArray(value)?value:JSON.parse(String(value||"[]"));return Array.isArray(parsed)?parsed:[];}catch(_){return[];}},
     getOrCreateSheet:(ss,name)=>ss.getSheetByName(name),
+    supplierEnsureActiveForOrder_:()=>true,
     Object,Array,String,Number,Date,Math,JSON,Intl,Error,RegExp,isFinite
   };
   vm.createContext(context);
   vm.runInContext('const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF"];',context);
-  ["ensurePurchaseOrderPdfSchema_","getOrCreatePrivatePurchaseOrderFolder_","rollbackPrivatePurchaseOrderFile_","purchaseOrderPdfEscape_","generatePurchaseOrderPDF","getPurchaseOrderPDFFile"].forEach(name=>vm.runInContext(extract(name),context));
+  ["ensurePurchaseOrderPdfSchema_","getOrCreatePrivatePurchaseOrderFolder_","rollbackPrivatePurchaseOrderFile_","purchaseOrderPdfEscape_","approvePurchaseOrder","generatePurchaseOrderPDF","getPurchaseOrderPDFFile"].forEach(name=>vm.runInContext(extract(name),context));
   return {context,sheets,files,folder,stats:()=>({created,trashed})};
 }
 async function main(){
   assert.doesNotThrow(()=>new vm.Script(source),"ACCOUNTING backend syntax");
+  const draft=makeHarness({state:"Borrador"});
+  const approved=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1"});
+  assert.equal(approved.status,"success");
+  assert.equal(draft.sheets.OrdenesCompra.rows[1][9],"Aprobada");
+  assert.equal(draft.sheets.OrdenesCompra.rows[1][10],"U-1");
+  const approvalRetry=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1"});
+  assert.equal(approvalRetry.idempotente,true);
+  assert.equal(makeHarness({state:"Borrador",requestState:"Pendiente"}).context.approvePurchaseOrder({ordenCompraId:"OC-1"}).code,"PURCHASE_REQUEST_NOT_APPROVED");
   const h=makeHarness();
   const generated=h.context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"});
   assert.equal(generated.status,"success");
@@ -89,6 +99,7 @@ async function main(){
   assert.equal(download.status,"success");
   assert.equal(download.encoding,"base64");
   assert.equal(download.sha256Hash,"a".repeat(64));
+  assert.equal(makeHarness({scopeDenied:true}).context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"RESOURCE_NOT_FOUND");
 
   assert.equal(makeHarness({state:"Borrador"}).context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"}).code,"PURCHASE_ORDER_NOT_APPROVED");
   assert.equal(makeHarness({permissionDenied:true}).context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"}).code,"ROLE_PERMISSION_DENIED");
@@ -96,7 +107,7 @@ async function main(){
   assert.equal(makeHarness({folderPublic:true,existingFolder:true}).context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"}).code,"PURCHASE_ORDER_FOLDER_NOT_PRIVATE");
   const duplicate=makeHarness();duplicate.sheets.OrdenesCompra.rows.push(duplicate.sheets.OrdenesCompra.rows[1].slice());
   assert.equal(duplicate.context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"}).code,"RESOURCE_AMBIGUOUS");
-  const rollback=makeHarness();rollback.sheets.OrdenesCompra.failNextWrite=true;
+  const rollback=makeHarness();rollback.sheets.OrdenesCompra.failCell="2:10";
   const failed=rollback.context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"});
   assert.equal(failed.status,"error");
   assert.equal(rollback.stats().created,1);

@@ -99,6 +99,9 @@ async function test(){
   assert.equal(response.actions.getSupplierBankAccount,true);
   assert.equal(response.actions.manageSupplierAddress,false);
   assert.ok(calls.includes("getPurchaseRequests"));
+  assert.equal(response.actions.approvePurchaseOrder,true);
+  assert.equal(response.actions.generatePurchaseOrderPDF,true);
+  assert.equal(response.actions.getPurchaseOrderPDFFile,true);
   console.log("Purchase console capability loading, fail-closed visibility, stale-response race and supplier action contracts passed.");
 }
 test().catch(error=>{console.error(error);process.exitCode=1;});
