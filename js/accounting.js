@@ -1603,6 +1603,9 @@ function renderComprasOrdenesView(container) {
       if (stateLower === "emitida") {
         actions += '<button onclick="registerPurchaseOrderConfirmationUI(' + arg + ')" data-purchase-action="recordPurchaseOrderConfirmation" hidden class="px-2 py-1 rounded bg-amber-50 text-amber-700 font-bold">Confirmación</button>';
       }
+      if (stateLower === "borrador" || stateLower === "aprobada") {
+        actions += '<button onclick="cancelPurchaseOrderUI(' + arg + ')" data-purchase-action="cancelPurchaseOrder" hidden class="px-2 py-1 rounded bg-rose-50 text-rose-700 font-bold">Cancelar</button> ';
+      }
       return '<tr class="hover:bg-gray-50"><td class="p-3 font-bold text-gray-900">' + safeId + '</td>' +
         '<td class="p-3">' + escapePurchaseAssetHtml(o.proveedorId) + '</td>' +
         '<td class="p-3 font-bold text-gray-900">' + window.IMARegionalFormatters.formatCurrency(o.montoTotal) + '</td>' +
@@ -1633,6 +1636,17 @@ window.approvePurchaseOrderUI = async function(ordenCompraId) {
   alert(result.alertasPresupuestarias && result.alertasPresupuestarias.length
     ? "Orden aprobada con alerta presupuestaria registrada. Ya puede emitirse el PDF oficial."
     : "Orden aprobada. Ya puede emitirse el PDF oficial.");
+  const host = document.getElementById("compras-subtab-container");
+  if (host) renderComprasOrdenesView(host);
+};
+window.cancelPurchaseOrderUI = async function(ordenCompraId) {
+  if (!window.hasPurchaseActionCapability("cancelPurchaseOrder")) { alert("No tiene permisos para cancelar órdenes de compra."); return; }
+  const justification = window.prompt("Ingrese la justificación de cancelación (mínimo 5 caracteres):");
+  if (!justification || String(justification).trim().length < 5) { alert("La justificación de cancelación es obligatoria."); return; }
+  const result = await fetchBackendAccounting("cancelPurchaseOrder", {ordenCompraId:String(ordenCompraId || ""),justificacion:String(justification).trim()});
+  if (!result || result.status !== "success") { alert("No se pudo cancelar la orden: " + String(result && result.code || "ERROR")); return; }
+  const released = Array.isArray(result.compromisosLiberados) ? result.compromisosLiberados.length : 0;
+  alert("Orden cancelada. Compromisos presupuestarios liberados: " + released + ".");
   const host = document.getElementById("compras-subtab-container");
   if (host) renderComprasOrdenesView(host);
 };
