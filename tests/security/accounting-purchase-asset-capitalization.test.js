@@ -44,10 +44,10 @@ vm.runInContext(constants[0],ctx);
 assert.equal(ctx.normalizePurchaseAssetClassification_({tipoBien:"Bienes Capitalizables / Activos Fijos"}),"ActivoFijo");
 assert.equal(ctx.normalizePurchaseAssetClassification_({clasificacionInventario:"Consumible"}),"Consumible");
 const sourceClassBefore=rows.SolicitudesCompra[1][6];
-rows.SolicitudesCompra[1][6]=JSON.stringify([{itemId:"IT-1",descripcion:"Laptop",cantidad:2,clasificacionInventario:"Consumible"}]);
+rows.SolicitudesCompra[1][6]=JSON.stringify([{itemId:"IT-1",descripcion:"Laptop",cantidad:2,clasificacionInventario:"Consumible",partidaCodigo:"5101"}]);
 assert.equal(ctx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"}).candidatos.length,0,"request classification overrides an altered order classification");
 rows.SolicitudesCompra[1][6]=sourceClassBefore;
-const createdRequest=ctx.createPurchaseRequest({departamento:"Finanzas",justificacion:"Material de oficina",detalleItems:[{itemId:"ITEM-C",descripcion:"Papel",cantidad:2,clasificacionInventario:"Consumible"}]});
+const createdRequest=ctx.createPurchaseRequest({departamento:"Finanzas",justificacion:"Material de oficina",detalleItems:[{itemId:"ITEM-C",descripcion:"Papel",cantidad:2,clasificacionInventario:"Consumible",partidaCodigo:"5101"}]});
 assert.equal(createdRequest.status,"success");
 assert.equal(JSON.parse(rows.SolicitudesCompra.at(-1)[6])[0].clasificacionInventario,"Consumible");
 // createPurchaseOrder correctly requires an approved source request; model that prerequisite in this fixture.
