@@ -18,7 +18,7 @@ function extract(name){
 function makeHarness(options={}){
   const headers=["OrdenCompraID","SolicitudID","CotizacionID","ProveedorID","FechaEmision","FechaEntregaEstimada","DetalleItemsJSON","MontoTotal","CentroCosto","EstadoOrden","AprobadoPor","Observaciones","SolicitanteUserId","VersionDocumental","ArchivoPdfUrl"];
   const order=["OC-1","REQ-1","COT-1","SUP-1",new Date("2026-11-20"),new Date("2026-11-30"),
-    JSON.stringify([{itemId:"ITEM-1",descripcion:"Silla escolar",unidad:"Unidad",cantidad:2,precioUnitario:50,total:100}]),100,"CC-1",options.state||"Aprobada","U-APPROVER","Adjudicación","U-REQUESTER","1",""];
+    JSON.stringify([{itemId:"ITEM-1",descripcion:"Silla escolar",unidad:"Unidad",cantidad:2,precioUnitario:50,total:100,partidaCodigo:"5101"}]),100,"CC-1",options.state||"Aprobada","U-APPROVER","Adjudicación","U-REQUESTER","1",""];
   const requestHeaders=["SolicitudID","Fecha","Departamento","SolicitanteUserId","Justificacion","Categoria","DetalleItemsJSON","MontoEstimado","CentroCosto","EstadoAprobacion","Observaciones"];
   const request=["REQ-1",new Date(),"DEP-1","U-REQUESTER","Necesidad institucional","Mobiliario","[]",100,"CC-1",options.requestState||"Adjudicada",""];
   const supplierHeaders=["ProveedorID","FechaRegistro","NombreProveedor","RTN","Telefono","Email","RubroServicio","Estado","Observaciones"];
@@ -38,6 +38,7 @@ function makeHarness(options={}){
   };
   const files=Object.create(null);let nextFile=0,created=0,trashed=0,lockCalls=0,lockReleases=0;
   let permissionActive=options.permissionDenied!==true,scopeActive=options.scopeDenied!==true,actorUserId="U-1",actorRole=options.actorRole||"Director";
+  const budgetChecks=[];
   const folder={access:options.folderPublic? "ANYONE":"PRIVATE",files,
     getSharingAccess(){return this.access;},setSharing(access){this.access=access;},
     createFile(blob){created++;const id="FILE-"+(++nextFile);const file={id,name:blob.name,access:"PRIVATE",trashed:false,
@@ -64,12 +65,13 @@ function makeHarness(options={}){
     purchaseQuotationJsonArray_:value=>{try{const parsed=Array.isArray(value)?value:JSON.parse(String(value||"[]"));return Array.isArray(parsed)?parsed:[];}catch(_){return[];}},
     getOrCreateSheet:(ss,name)=>ss.getSheetByName(name),
     supplierEnsureActiveForOrder_:()=>true,
+    checkBudgetAvailabilityCore_:(ss,input,scope)=>{budgetChecks.push({input,scope});return options.budgetCheck||{status:"success",disponible:true,alertaUmbral:false,centroCosto:input.centroCosto,partidaCodigo:input.partidaCodigo};},
     Object,Array,String,Number,Date,Math,JSON,Intl,Error,RegExp,isFinite
   };
   vm.createContext(context);
-  vm.runInContext('const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol"];',context);
+  vm.runInContext('const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol","AlertaPresupuestariaJSON","FechaValidacionPresupuestaria"];',context);
   ["normalizePurchaseAwardRole_","ensurePurchaseOrderPdfSchema_","getOrCreatePrivatePurchaseOrderFolder_","rollbackPrivatePurchaseOrderFile_","purchaseOrderPdfEscape_","approvePurchaseOrder","generatePurchaseOrderPDF","getPurchaseOrderPDFFile"].forEach(name=>vm.runInContext(extract(name),context));
-  return {context,sheets,files,folder,stats:()=>({created,trashed,lockCalls,lockReleases})};
+  return {context,sheets,files,folder,budgetChecks,stats:()=>({created,trashed,lockCalls,lockReleases})};
 }
 async function main(){
   assert.doesNotThrow(()=>new vm.Script(source),"ACCOUNTING backend syntax");
@@ -92,12 +94,31 @@ async function main(){
   const lowValueContador=makeHarness({state:"Borrador",actorRole:"Contador"});
   assert.equal(lowValueContador.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"PURCHASE_ORDER_APPROVER_ROLE_REQUIRED");
   const highValueContador=makeHarness({state:"Borrador",actorRole:"Contador"});
+  highValueContador.sheets.OrdenesCompra.rows[1][6]=JSON.stringify([{itemId:"ITEM-1",descripcion:"Silla",unidad:"Unidad",cantidad:1,precioUnitario:50000.01,total:50000.01,partidaCodigo:"5101"}]);
   highValueContador.sheets.OrdenesCompra.rows[1][7]=50000.01;
   assert.equal(highValueContador.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"HIGH_VALUE_APPROVAL_REQUIRED");
   assert.equal(highValueContador.sheets.OrdenesCompra.rows[1][9],"Borrador","low-level role must not approve a high-value order");
   const highValueDirector=makeHarness({state:"Borrador",actorRole:"Administrador"});
+  highValueDirector.sheets.OrdenesCompra.rows[1][6]=JSON.stringify([{itemId:"ITEM-1",descripcion:"Silla",unidad:"Unidad",cantidad:1,precioUnitario:50000.01,total:50000.01,partidaCodigo:"5101"}]);
   highValueDirector.sheets.OrdenesCompra.rows[1][7]=50000.01;
   const highValueDirectorResult=highValueDirector.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"});assert.equal(highValueDirectorResult.status,"success",JSON.stringify(highValueDirectorResult));
+  const thresholdCheck={status:"warning",disponible:true,alertaUmbral:true,centroCosto:"CC-1",partidaCodigo:"5101",porcentajeProyectado:85};
+  const threshold=makeHarness({state:"Borrador",budgetCheck:thresholdCheck});
+  const thresholdWarning=threshold.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"});
+  assert.equal(thresholdWarning.status,"warning");
+  assert.equal(thresholdWarning.code,"BUDGET_THRESHOLD_CONFIRMATION_REQUIRED");
+  assert.equal(threshold.sheets.OrdenesCompra.rows[1][9],"Borrador","threshold alert must be confirmed before approval");
+  const thresholdConfirmed=threshold.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra",confirmarAlertaPresupuestaria:true});
+  assert.equal(thresholdConfirmed.status,"success");
+  assert.equal(JSON.parse(threshold.sheets.OrdenesCompra.rows[1][23]).length,1);
+  assert.ok(threshold.sheets.OrdenesCompra.rows[1][24] instanceof Date);
+  assert.equal(threshold.budgetChecks[0].input.partidaCodigo,"5101");
+  assert.equal(threshold.budgetChecks[0].input.montoSolicitado,100);
+  const overrun=makeHarness({state:"Borrador",budgetCheck:{status:"warning",disponible:false,alertaUmbral:false,code:"BUDGET_OVERRUN_BLOCKED"}});
+  assert.equal(overrun.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"BUDGET_OVERRUN_BLOCKED");
+  const missingPart=makeHarness({state:"Borrador"});
+  const missingPartItems=JSON.parse(missingPart.sheets.OrdenesCompra.rows[1][6]);delete missingPartItems[0].partidaCodigo;missingPart.sheets.OrdenesCompra.rows[1][6]=JSON.stringify(missingPartItems);
+  assert.equal(missingPart.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"}).code,"PURCHASE_REQUEST_PARTIDA_REQUIRED");
   const missingPdf=makeHarness();
   const originalHeaderWidth=missingPdf.sheets.OrdenesCompra.rows[0].length;
   assert.equal(missingPdf.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"PURCHASE_ORDER_PDF_NOT_FOUND");

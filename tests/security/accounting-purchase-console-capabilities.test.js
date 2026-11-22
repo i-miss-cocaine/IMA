@@ -48,6 +48,9 @@ async function test(){
   assert.ok(uiSource.includes("window.openPurchaseInvoiceModal = async function"));
   assert.ok(uiSource.includes('window.prompt("Ingrese la justificación de aprobación'));
   assert.ok(uiSource.includes('justificacion: String(justification).trim()'));
+  assert.ok(uiSource.includes('window.confirm("Advertencia presupuestaria'));
+  assert.ok(uiSource.includes('confirmarAlertaPresupuestaria:true'));
+  assert.ok(uiSource.includes('window.prompt("Ingrese el código de partida presupuestaria'));
   assert.ok(uiSource.includes('fetchBackendAccounting("recordAccountsPayableExpense"'));
   const controls=[makeControl("createPurchaseRequest"),makeControl("registerSupplier"),makeControl("manageSupplierBankAccount")];
   const ui=makeUiContext(async action=>{
