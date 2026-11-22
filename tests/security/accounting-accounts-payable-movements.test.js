@@ -27,7 +27,7 @@ const first=ctx.recordAccountsPayablePayment(payment);assert.equal(first.status,
 const movementCount=rows.MovimientosCuentasPorPagar.length,replay=ctx.recordAccountsPayablePayment(payment);assert.equal(replay.status,"success");assert.equal(replay.idempotente,true);assert.equal(rows.MovimientosCuentasPorPagar.length,movementCount);
 const duplicatePaymentReference=ctx.recordAccountsPayablePayment({...payment,monto:50,idempotencyKey:"PAY-CXP-DUPREF"});assert.equal(duplicatePaymentReference.code,"ACCOUNTS_PAYABLE_PAYMENT_REFERENCE_DUPLICATE");
 const conflict=ctx.recordAccountsPayablePayment({...payment,monto:301});assert.equal(conflict.code,"ACCOUNTS_PAYABLE_IDEMPOTENCY_CONFLICT");
-const overpay=ctx.recordAccountsPayablePayment({...payment,idempotencyKey:"PAY-CXP-0002",monto:501});assert.equal(overpay.code,"ACCOUNTS_PAYABLE_BALANCE_EXCEEDED");
+const overpay=ctx.recordAccountsPayablePayment({...payment,idempotencyKey:"PAY-CXP-0002",monto:501,referencia:"TR-002"});assert.equal(overpay.code,"ACCOUNTS_PAYABLE_BALANCE_EXCEEDED");
 const missingReference=ctx.recordAccountsPayablePayment({...payment,idempotencyKey:"PAY-CXP-0003",referencia:""});assert.equal(missingReference.code,"ACCOUNTS_PAYABLE_PAYMENT_REFERENCE_REQUIRED");
 rows.CuentasPorPagarGastos.push(["CXP-3","SUP-1","FAC-3",100,10,"","Aprobado","Pendiente Pago","","","",110,0,new Date(),new Date(),"ORD-1","Conciliada","[]","HASH-3","","","","","",""]);
 const credit={obligacionId:"CXP-1",monto:100,numeroNotaCredito:"NC-001",referenciaDevolucion:"DEV-REC-01",motivo:"Devolución parcial de materiales",fechaMovimiento:new Date().toISOString(),idempotencyKey:"NC-CXP-0001"};
