@@ -3288,3 +3288,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-22 | AUD-NG-222 / TASK-502 | C1.937] ACCOUNTING: TOCTOU corregido en manageTrainingEnrollment; identidad, RBAC, expediente y curso activo revalidados bajo lock, sin escritura tras revocación. CI Department Scope SUCCESS 44965658665; sintaxis PASS. Siguiente: catálogo de cursos y plan profesional.
+
+
+[2026-11-22 | AUD-NG-222 / TASK-502 | C1.938] ACCOUNTING: TOCTOU corregido en catálogo de cursos y planes de desarrollo profesional; revalidación post-lock y snapshots dentro de sección crítica. CI Department Scope SUCCESS 44965808684; ambos contratos y sintaxis PASS. Siguiente: préstamos/planilla/pagos/compras/transporte.

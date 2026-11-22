@@ -4507,3 +4507,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-22] C1.937 / AUD-NG-222-TASK-502 — ACCOUNTING manageTrainingEnrollment revalida identidad HR, permiso dinámico, ownership y curso activo tras ScriptLock; snapshot de inscripciones se actualiza dentro de lock. Test de sesión revocada sin escritura. Department Scope run 44965658665 SUCCESS; contrato training enrollment PASS; syntax PASS. CLI/Apps Script real NOT RUN. Próximo: catálogo de cursos y plan profesional.
+
+
+[2026-11-22] C1.938 / AUD-NG-222-TASK-502 — ACCOUNTING: manageTrainingCourse y manageProfessionalDevelopmentPlan revalidan identidad, permiso dinámico y scope/ownership tras ScriptLock; snapshots bajo lock. Tests de revocación de sesión sin escritura. Department Scope run 44965808684 SUCCESS; training course catalog y professional development ownership PASS; syntax PASS. CLI/Apps Script real NOT RUN. Próximo: handlers restantes de préstamos, planilla, pagos, compras y transporte.

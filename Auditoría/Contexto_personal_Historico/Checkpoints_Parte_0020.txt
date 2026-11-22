@@ -1817,3 +1817,37 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Continuar con manageTrainingCourse y manageProfessionalDevelopmentPlan, revalidando identidad, permiso y scope bajo lock y refrescando los snapshots.
 - TASK-502 y TASK-506 siguen abiertos.
 ===============================================================================
+
+
+===============================================================================
+### C1.938 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-TRAINING-CATALOG-PLAN-TOCTOU
+===============================================================================
+
+### Continuidad, commit y HEAD
+- Continuación desde C1.937 en NG_beta_0.0.0.1_work.
+- Commit de implementación: d0dc814264232f5c53b70c2a8725ec25c7e60e55.
+- HEAD verificado antes del checkpoint: d0dc814264232f5c53b70c2a8725ec25c7e60e55.
+
+### Hallazgos y correcciones
+- manageTrainingCourse: revalida identidad HR, permiso dinámico y scope institucional bajo lock; recrea snapshot del catálogo dentro de la sección crítica.
+- manageProfessionalDevelopmentPlan: revalida identidad, permiso y ownership del expediente bajo lock; recrea snapshot del plan dentro de la sección crítica.
+- Se eliminaron lecturas/snapshots previos al lock que podían quedar obsoletos mientras se esperaba.
+- Se agregaron pruebas de revocación de sesión durante la espera para catálogo y plan profesional; ambas verifican ausencia de filas nuevas.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-training-course-catalog-ownership.test.js
+- tests/security/accounting-professional-development-analytics-ownership.test.js
+
+### Verificaciones
+- Department Scope Contract run 44965808684: SUCCESS.
+- Training course catalog ownership: PASS.
+- Professional development and training analytics ownership: PASS.
+- Syntax-check updated Apps Script services: PASS.
+- Workflows relacionados del commit finalizaron SUCCESS.
+- No se ejecutó CLI local ni Apps Script/Sheets/Drive reales.
+
+### Siguiente tarea elegible
+- Continuar AUD-NG-222/TASK-502 con inventario de handlers ACCOUNTING restantes: préstamos/anticipos, recibos de planilla, pagos, compras y órdenes de transporte, revisando identidad, permisos, scope y datos leídos antes de lock.
+- TASK-506 / AUD-NG-226 permanece dependiente de TASK-502.
+===============================================================================
