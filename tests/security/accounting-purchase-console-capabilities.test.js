@@ -85,7 +85,7 @@ async function test(){
   assert.equal(failControl.disabled,true);
 
   const capabilityFunction=extractFunction(backendSource,"getPurchaseActionCapabilities");
-  const calls=[],allowed=new Set(["registerSupplier","manageSupplierContact","getSupplierBankAccount"]);
+  const calls=[],allowed=new Set(["registerSupplier","manageSupplierContact","getSupplierBankAccount","createPurchaseOrder","getPurchaseOrders"]);
   const backendContext={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({})},
     purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"DIRECTOR-1",role:"Director"}}),
     validateRolePermission:(_actor,action)=>{calls.push(action);return {authorized:allowed.has(action)};},Object};
