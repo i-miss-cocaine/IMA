@@ -136,7 +136,7 @@
 ---
 
 <!-- ID: F18-TASK03 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [ ] [F18-TASK03] Construir la consola interactiva de compras y proveedores
+### [x] [F18-TASK03] Construir la consola interactiva de compras y proveedores
 - **Severidad:** Crítica (Operatividad de la gestión de compras y eliminación de carga en Sheets)
 - **Componentes Afectados:** `js/accounting.js` (`renderComprasModule`), `dashboard-contabilidad.html`.
 - **Problema:** La pestaña `compras` es actualmente un texto estático sin controles interactivos.
@@ -149,8 +149,8 @@
 - **Dependencias/riesgos:** contratos backend, permisos por rol y tareas F18-Task01/02; riesgo de exponer operaciones sin autorización.
 - **Alcance:** interfaz de gestión de compras; no duplicar reglas de negocio en el cliente.
 - **Criterios de aceptación:** usuarios autorizados pueden consultar y ejecutar las operaciones habilitadas; errores y estados se reflejan desde respuestas backend; no se habilitan acciones fuera del rol.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; el informe describe la pestaña como estática.
+- **Prioridad:** P0. **Estado:** Completada en C1.946.
+- **Evidencia de cierre:** consola de compras conectada con submódulos de solicitudes, cotizaciones, órdenes, recepciones, conciliación documental, expediente 360° y proveedores. Se implementó carga de capacidades del servidor con cierre seguro ante error y protección contra respuestas asíncronas obsoletas; los controles de proveedor y las acciones dinámicas se muestran únicamente con permisos concedidos. Se agregó el modal de registro de factura vinculado a orden, partidas y recepciones, con clave idempotente; las discrepancias se envían al backend para persistirse bloqueadas, sin impedir que la UI registre diferencias para conciliación. Contrato de capacidades, carreras y fail-closed PASS; Department Scope run 44982602781 SUCCESS (139 pasos), Regional Formatting 44982602811 SUCCESS, UI Accessibility 44982602793 SUCCESS y Accounting Import Preflight 44982602789 SUCCESS.
 
 ---
 

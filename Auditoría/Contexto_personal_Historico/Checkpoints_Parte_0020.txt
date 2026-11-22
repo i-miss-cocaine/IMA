@@ -2135,3 +2135,51 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Siguiente tarea elegible del ciclo F18: F18-TASK03 — consola interactiva de compras/proveedores; después F18-TASK04 — PDF oficial de órdenes.
 - AUD-NG-222/TASK-502 continúa abierto por el inventario transversal de acciones/contextos en los demás servicios. AUD-NG-226 continúa pendiente de sus dependencias.
 ===============================================================================
+
+
+===============================================================================
+### C1.946 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-PURCHASE-CONSOLE
+===============================================================================
+
+### Continuidad, rama y commits
+- Continuación desde C1.945 en NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 permanece sin cambios.
+- Commits de implementación/verificación de esta continuación:
+  - ee7335bc1a36360eacfc81ec8c2de440ee015d7f — lecturas de solicitudes, órdenes y recepciones con scope.
+  - 1039339f1f90b99c672d6906304d3278a0360c08 — contrato de lecturas de compras.
+  - 06078c39cae5784293f80815d5c9b24d567205e8 — endpoint backend de capacidades de acciones.
+  - d50847d21370197ec8ffed91c52b8bedf5fcc684 — integración inicial de capacidades en UI.
+  - 66ebc8291ad64115b1abb615c55080cf85d1976a — carga fail-closed de capacidades, control de respuestas obsoletas y gating de acciones de proveedores.
+  - 92ba6552f02770bf3f2dd909cad125c0ee8bc8de — contrato Node de capacidades.
+  - 32e57fd6def36e90d23a0d73d2da9beb0f5bbfb0 — corrige harness del contrato.
+  - 8d34c267d6bf538989c2365081293f61c8a0412c — modal de registro de factura y workflow.
+  - 5447a8661c14302361f1df5c101461758f05d6ca — compatibilidad con contrato de formato regional.
+  - 4431fe20203a76a1c2062117cd92edcefe5c01c3 — permite registrar cantidades discrepantes para que el servidor las marque en disputa.
+- HEAD de implementación verificado antes del checkpoint: 4431fe20203a76a1c2062117cd92edcefe5c01c3.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Hallazgos y correcciones
+1. El UI invocaba loadPurchaseActionCapabilities/applyPurchaseActionVisibility sin definiciones; los botones ocultos no podían habilitarse aunque el servidor concediera permiso. Se implementó carga de capacidades del backend, fail-closed y protección contra respuestas fuera de orden.
+2. El mapa de capacidades ahora contempla lecturas y acciones de proveedores (alta, contactos, direcciones, términos comerciales, cuentas bancarias), y los botones dinámicos se filtran por el permiso exacto. El servidor conserva la autorización definitiva.
+3. Se agregó el modal faltante para registrar facturas de proveedor contra una orden y sus partidas; el importe se calcula desde las líneas y los impuestos se ingresan aparte. Usa idempotencyKey estable por intento de modal y envía las partidas al cotejo documental del backend.
+4. Se permite introducir diferencias de cantidad/precio para que el backend las persista como EnDisputa y bloquee el pago; el formulario muestra cantidades ordenadas y recibidas para comparación.
+5. La validación de UI incluye carreras entre respuestas de capacidades, fail-closed cuando el endpoint falla y verificación de que el modal invoice invoca la operación backend autorizada.
+
+### Archivos
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-purchase-console-capabilities.test.js
+- .github/workflows/department-scope-contract.yml
+- pendientes/Contabilidad/Pendientes.md
+
+### Verificaciones
+- Department Scope Contract run 44982602781: SUCCESS, 139 pasos; contrato nuevo de capacidades y respuestas obsoletas PASS.
+- Regional Formatting Contract run 44982602811: SUCCESS.
+- UI Accessibility and Metadata Contract run 44982602793: SUCCESS.
+- Accounting Import Preflight Contract run 44982602789: SUCCESS; sintaxis del servicio y cliente PASS.
+- Node.js 24 ejecutó los contratos focalizados de compras y el contrato nuevo. No se ejecutó CLI local independiente, navegador real ni Apps Script/Sheets/Drive de producción.
+
+### Estado y siguiente tarea elegible
+- F18-TASK03: Completada y evidenciada en pendientes/Contabilidad/Pendientes.md.
+- Siguiente tarea elegible del ciclo F18: F18-TASK04 — generar órdenes de compra oficiales PDF y ciclo de estados.
+- AUD-NG-222/TASK-502 continúa abierto por inventario transversal de acciones/contextos de los demás servicios; AUD-NG-226/TASK-506 continúa según sus dependencias.
+===============================================================================
