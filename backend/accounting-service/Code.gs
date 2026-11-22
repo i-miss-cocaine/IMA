@@ -5840,7 +5840,8 @@ function purchaseQuotationAccess_(payload, ss, write) {
   return { authorized: true, actor: actor, role: role, scope: scope, write: write === true };
 }
 function purchaseQuotationRequest_(payload, ss, access, allowAdjudicated) {
-  var sheet = getOrCreateSheet(ss, "SolicitudesCompra");
+  var sheet = readOnly === true ? ss.getSheetByName("SolicitudesCompra") : getOrCreateSheet(ss, "SolicitudesCompra");
+  if (!sheet) throw new Error("PURCHASE_REQUEST_NOT_FOUND");
   var rows = sheet.getDataRange().getValues();
   var id = String(payload && payload.solicitudId || "").trim();
   if (!id) throw new Error("PURCHASE_REQUEST_NOT_FOUND");
@@ -5960,7 +5961,7 @@ function getPurchaseQuotations(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID), access = purchaseQuotationAccess_(input, ss, false);
   if (!access.authorized) return { status: "error", code: access.code };
   var request;
-  try { request = purchaseQuotationRequest_(input, ss, access, true); } catch (error) { return { status: "error", code: String(error.message || "PURCHASE_REQUEST_INVALID") }; }
+  try { request = purchaseQuotationRequest_(input, ss, access, true, true); } catch (error) { return { status: "error", code: String(error.message || "PURCHASE_REQUEST_INVALID") }; }
   var sheet = getOrCreateSheet(ss, "CotizacionesCompra");
   var rows = sheet.getDataRange().getValues().slice(1).filter(function(row) { return String(row[1] || "").trim() === request.solicitudId; });
   return { status: "success", cotizaciones: rows.map(function(row) { return { cotizacionId: row[0], solicitudId: row[1],
@@ -5973,12 +5974,14 @@ function getPurchaseQuotationMatrix(payload) {
   if (!access.authorized) return { status: "error", code: access.code };
   var request;
   try { request = purchaseQuotationRequest_(input, ss, access, true); } catch (error) { return { status: "error", code: String(error.message || "PURCHASE_REQUEST_INVALID") }; }
-  var quoteSheet = getOrCreateSheet(ss, "CotizacionesCompra");
-  var detailSheet = getOrCreateSheet(ss, "DetalleCotizacionesCompra");
-  var supplierSheet = getOrCreateSheet(ss, "ProveedoresActivos");
+  var quoteSheet = ss.getSheetByName("CotizacionesCompra");
+  var detailSheet = ss.getSheetByName("DetalleCotizacionesCompra");
+  var supplierSheet = ss.getSheetByName("ProveedoresActivos");
+  if (!quoteSheet || !detailSheet || !supplierSheet) return { status: "error", code: "PURCHASE_QUOTATION_SCHEMA_INVALID" };
   var quoteRows = quoteSheet.getDataRange().getValues().slice(1).filter(function(row) { return String(row[1] || "").trim() === request.solicitudId; }).slice(0,5);
   var details = detailSheet.getDataRange().getValues().slice(1), suppliers = supplierSheet.getDataRange().getValues().slice(1), now = new Date();
-  var awardSheet = getOrCreateSheet(ss, "ActasAdjudicacionCompra");
+  var awardSheet = ss.getSheetByName("ActasAdjudicacionCompra");
+  if (!awardSheet) return { status: "error", code: "PURCHASE_QUOTATION_SCHEMA_INVALID" };
   var awardRows = awardSheet.getDataRange().getValues().slice(1).filter(function(row) { return String(row[1] || "").trim() === request.solicitudId && String(row[10] || "").trim() === "Aprobada"; });
   var latestAward = awardRows.length ? awardRows[awardRows.length - 1] : null;
   var snapshot = latestAward ? purchaseQuotationJsonObject_(latestAward[9]) : {};
