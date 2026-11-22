@@ -3090,6 +3090,8 @@ function resolveAttendanceCorrectionEmployeeAccess_(payload, ss, attendanceId, r
 function submitAttendanceCorrection(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+  var permission = validateRolePermission(actor, "submitAttendanceCorrection", input);
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), attendanceId = String(input.asistenciaId || "").trim();
   var access = resolveAttendanceCorrectionEmployeeAccess_(input, ss, attendanceId, input.empleadoId, actor);
   if (!access.authorized) return { status: "error", code: access.code };
@@ -3122,6 +3124,10 @@ function submitAttendanceCorrection(payload) {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   try {
+    actor = getVerifiedAccountingIdentity_(input);
+    if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+    permission = validateRolePermission(actor, "submitAttendanceCorrection", input);
+    if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
     access = resolveAttendanceCorrectionEmployeeAccess_(input, ss, attendanceId, input.empleadoId, actor);
     if (!access.authorized) return { status: "error", code: access.code };
     var headers = ["CorreccionID","AsistenciaID","EmpleadoId","FechaIncidencia","HoraOriginal","HoraSolicitada","Motivo","EvidenciaUrl","EstadoAprobacion","AprobadoPor","Observaciones"];
@@ -3153,6 +3159,8 @@ function reviewAttendanceCorrection(payload) {
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var role = String(actor.role || "").trim().toLowerCase().replace(/\s+/g, "");
   if (["recursoshumanos","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var permission = validateRolePermission(actor, "reviewAttendanceCorrection", input);
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var newState = String(input.nuevoEstado || "").trim();
   if (["Aprobado","Rechazado"].indexOf(newState) === -1) return { status: "error", code: "ATTENDANCE_CORRECTION_STATE_INVALID" };
   var correctionId = String(input.correccionId || "").trim();
@@ -3160,6 +3168,12 @@ function reviewAttendanceCorrection(payload) {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   try {
+    actor = getVerifiedAccountingIdentity_(input);
+    if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+    role = String(actor.role || "").trim().toLowerCase().replace(/\s+/g, "");
+    if (["recursoshumanos","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+    permission = validateRolePermission(actor, "reviewAttendanceCorrection", input);
+    if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var headers = ["CorreccionID","AsistenciaID","EmpleadoId","FechaIncidencia","HoraOriginal","HoraSolicitada","Motivo","EvidenciaUrl","EstadoAprobacion","AprobadoPor","Observaciones"];
     var sheet = getOrCreateSheet(ss, "CorreccionesAsistencia"), values = sheet.getDataRange().getValues();
