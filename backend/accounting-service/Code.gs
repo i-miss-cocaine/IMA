@@ -10673,12 +10673,12 @@ function getPayrollReceiptDistributionSummary_(ss,context) {
 }
 
 function previewPayrollReceiptDistribution(payload) {
-  const p=payload||{},access=requirePayrollReceiptDistributionManager_(p,"processPayrollReceiptDistribution");
+  const p=payload||{},access=requirePayrollReceiptDistributionManager_(p,"previewPayrollReceiptDistribution");
   if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
   const planillaId=String(p.planillaId||"").trim();if(!planillaId)return {status:"error",code:"PLANILLA_SELECTION_REQUIRED",message:"Seleccione una planilla."};
   const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La distribución está ocupada."};
   try{
-    const refreshedAccess=requirePayrollReceiptDistributionManager_(p,"processPayrollReceiptDistribution");
+    const refreshedAccess=requirePayrollReceiptDistributionManager_(p,"previewPayrollReceiptDistribution");
     if(!refreshedAccess.authorized)return {status:"error",code:refreshedAccess.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
     const ss=SpreadsheetApp.openById(SPREADSHEET_ID),context=getPayrollReceiptDistributionContext_(p,ss,planillaId);
     if(context.error)return {status:"error",code:context.error,message:context.message};
@@ -10714,7 +10714,7 @@ function updatePayrollReceiptDistributionRow_(ss,distributionId,changes) {
 }
 
 function processPayrollReceiptDistribution(payload) {
-  const p=payload||{},access=requirePayrollReceiptDistributionManager_(p,"previewPayrollReceiptDistribution");
+  const p=payload||{},access=requirePayrollReceiptDistributionManager_(p,"processPayrollReceiptDistribution");
   if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
   const planillaId=String(p.planillaId||"").trim(),mode=String(p.modo||"ENVIAR").trim().toUpperCase();
   if(!planillaId||!["ENVIAR","REINTENTAR"].includes(mode))return {status:"error",code:"PAYROLL_DISTRIBUTION_REQUEST_INVALID",message:"Planilla o modo de distribución no válido."};
@@ -10725,7 +10725,7 @@ function processPayrollReceiptDistribution(payload) {
   let claimed=[];
   try{
     // Revalidate the manager session and role after acquiring the batch-claim lock.
-    const refreshedAccess=requirePayrollReceiptDistributionManager_(p,"previewPayrollReceiptDistribution");
+    const refreshedAccess=requirePayrollReceiptDistributionManager_(p,"processPayrollReceiptDistribution");
     if(!refreshedAccess.authorized)return {status:"error",code:refreshedAccess.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
     const context=getPayrollReceiptDistributionContext_(p,ss,planillaId);if(context.error)return {status:"error",code:context.error,message:context.message};
     const dist=ensurePayrollReceiptDistributionSheet_(ss),byEmployee=Object.create(null);
