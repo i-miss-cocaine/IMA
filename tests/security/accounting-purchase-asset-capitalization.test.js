@@ -59,7 +59,7 @@ const directOrderRow=rows.OrdenesCompra.at(-1),directOrderLine=JSON.parse(direct
 assert.equal(directOrderRow[7],100,"order total is derived from approved line quantity and price, not a client total");
 assert.equal(directOrderLine.total,100,"client-provided line totals are recalculated");
 const orderCountBeforeMismatch=rows.OrdenesCompra.length;
-const mismatchedTotal=ctx.createPurchaseOrder({solicitudId:createdRequest.solicitudId,proveedorId:"SUP-1",montoTotal:999,detalleItems:[{itemId:"ITEM-C",cantidad:2,precioUnitario:50}]});
+const mismatchedTotal=ctx.createPurchaseOrder({solicitudId:createdRequest.solicitudId,cotizacionId:"Q-MISMATCH",proveedorId:"SUP-1",montoTotal:999,detalleItems:[{itemId:"ITEM-C",cantidad:2,precioUnitario:50}]});
 assert.equal(mismatchedTotal.code,"PURCHASE_ORDER_AMOUNT_MISMATCH");assert.equal(rows.OrdenesCompra.length,orderCountBeforeMismatch,"mismatched amount must not create an order");
 assert.equal(directOrderLine.clasificacionInventario,"Consumible","direct order must inherit the request classification, not a client override");
 assert.equal(directOrderLine.capitalizable,false);
