@@ -1756,7 +1756,7 @@ window.openPurchaseInvoiceModal = async function() {
   modal.querySelector("#purchase-invoice-close").addEventListener("click", close);
   modal.querySelector("#purchase-invoice-cancel").addEventListener("click", close);
   const ordersById = Object.create(null);
-  const money = value => (Math.round((Number(value) + Number.EPSILON) * 100) / 100).toFixed(2);
+  const money = value => String(Math.round((Number(value) + Number.EPSILON) * 100) / 100);
   const recalculate = () => {
     let subtotal = 0;
     linesHost.querySelectorAll("tr[data-invoice-item]").forEach(row => {
