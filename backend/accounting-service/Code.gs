@@ -2641,6 +2641,11 @@ function manageDisciplinaryMeasure(payload) {
     if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "RESOURCE_NOT_FOUND" };
     permission = validateRolePermission(access.actor, "manageDisciplinaryMeasure", input);
     if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
+    var id = String(input.medidaId||"").trim();
+    var existingSheet = ss.getSheetByName("MedidasDisciplinarias");
+    var existingValues = existingSheet ? existingSheet.getDataRange().getValues().slice(1) : [];
+    var proposedId = id || "MED-DISC-" + String(Utilities.getUuid()).replace(/-/g,"");
+    if (!id && existingValues.some(function(row){return String(row[0]||"")===proposedId;})) return { status: "error", code: "DISCIPLINARY_MEASURE_ID_COLLISION" };
     var incidentSheet = ss.getSheetByName("IncidenciasLaborales");
     if (!incidentSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
     var incidentValues = incidentSheet.getDataRange().getValues();
@@ -2648,11 +2653,11 @@ function manageDisciplinaryMeasure(payload) {
     if (incidentMatches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
     var snapshot = ensureLaborWriteSheet_(ss,"MedidasDisciplinarias",headers);
     if (!snapshot.valid) return { status: "error", code: snapshot.code };
-    var id = String(input.medidaId||"").trim(), matches = snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return id && String(item.row[0]||"")===id;});
+    var matches = snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return id && String(item.row[0]||"")===id;});
     if (id && matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
     var now = new Date();
     if (!id) {
-      id = "MED-DISC-" + String(Utilities.getUuid()).replace(/-/g,"");
+      id = proposedId;
       if (snapshot.rows.some(function(row){return String(row[0]||"")===id;})) return { status: "error", code: "DISCIPLINARY_MEASURE_ID_COLLISION" };
       snapshot.sheet.appendRow([id,input.incidenciaId,access.employeeId,String(input.tipoMedida),String(input.fundamentoDocumentado),input.fechaEfectiva||now,
         access.actor.userId,"Pendiente",days,String(input.actaFirmadaDriveUrl||""),access.actor.userId,now,""]);
