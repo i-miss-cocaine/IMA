@@ -93,10 +93,11 @@ async function main(){
   assert.equal(order[9],"Emitida");
   assert.equal(order[15],generated.numeroCorrelativo);
   assert.equal(order[16],"FILE-1");
+  assert.equal(order[17],"a".repeat(64),"stored PDF hash");
   assert.equal(h.folder.access,"PRIVATE");
   assert.equal(h.stats().created,1);
   const repeated=h.context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"});
-  assert.equal(repeated.status,"success");
+  assert.equal(repeated.status,"success",JSON.stringify(repeated));
   assert.equal(repeated.idempotente,true);
   assert.equal(h.stats().created,1);
   const download=h.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"});
