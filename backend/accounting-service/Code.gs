@@ -7133,6 +7133,11 @@ function assetDeprSheet_(ss,name,headers) {
   if (JSON.stringify(actualHeaders) !== JSON.stringify(headers)) throw new Error("ASSET_DEPR_SCHEMA_INVALID");
   return sheet;
 }
+const ASSET_DEPR_POLICY_HEADERS_=["PolicyID","Categoria","Metodo","VidaUtilMeses","ValorResidualPorcentaje","TasaAnual","CuentaActivo","CuentaDepreciacionAcumulada","CuentaGastoDepreciacion","Estado","FechaActualizacion"];
+const ASSET_DEPR_PROFILE_HEADERS_=["ProfileID","ActivoID","CategoriaContable","FechaPuestaFuncionamiento","FechaInicioDepreciacion","FechaCorteApertura","CostoCapitalizado","ValorResidual","VidaUtilMeses","Metodo","TasaAnual","UnidadesTotales","UnidadesAcumuladas","DepreciacionAcumuladaInicial","ValorNetoApertura","CuentaActivo","CuentaDepreciacionAcumulada","CuentaGastoDepreciacion","CuentaPerdidaBaja","CentroCosto","Moneda","RegistradoPor","FechaRegistro","Estado"];
+const ASSET_DEPR_IMPROVEMENT_HEADERS_=["MejoraID","ActivoID","FechaCapitalizacion","Descripcion","Importe","ValorResidual","VidaUtilMeses","Metodo","TasaAnual","RegistradoPor","FechaRegistro","Estado","IdempotencyKey"];
+const ASSET_DEPR_HEADERS_=["DepreciacionID","ActivoID","Periodo","FechaCalculo","Metodo","BaseCosto","DepreciacionPeriodo","DepreciacionAcumulada","ValorNetoLibros","UnidadesPeriodo","ComponentesJSON","AsientoID","Estado","IdempotencyKey","RegistradoPor"];
+
 function assetDeprActor_(payload) {
   var actor = getVerifiedAccountingIdentity_(payload || {});
   if (!actor || actor.authorized !== true) throw new Error(actor && actor.code || "VERIFIED_IDENTITY_REQUIRED");
