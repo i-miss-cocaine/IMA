@@ -92,7 +92,7 @@ async function main(){
   assert.equal(highValueContador.sheets.OrdenesCompra.rows[1][9],"Borrador","low-level role must not approve a high-value order");
   const highValueDirector=makeHarness({state:"Borrador",actorRole:"Administrador"});
   highValueDirector.sheets.OrdenesCompra.rows[1][7]=50000.01;
-  assert.equal(highValueDirector.context.approvePurchaseOrder({ordenCompraId:"OC-1"}).status,"success");
+  const highValueDirectorResult=highValueDirector.context.approvePurchaseOrder({ordenCompraId:"OC-1"});assert.equal(highValueDirectorResult.status,"success",JSON.stringify(highValueDirectorResult));
   const missingPdf=makeHarness();
   const originalHeaderWidth=missingPdf.sheets.OrdenesCompra.rows[0].length;
   assert.equal(missingPdf.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"PURCHASE_ORDER_PDF_NOT_FOUND");
