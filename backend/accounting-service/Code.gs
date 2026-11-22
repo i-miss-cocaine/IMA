@@ -6988,7 +6988,7 @@ function getPurchaseActionCapabilities(payload) {
 }
 
 const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF"];
-function ensurePurchaseOrderPdfSchema_(ss) {
+function ensurePurchaseOrderPdfSchema_(ss, createMissing) {
   var sheet=ss&&ss.getSheetByName?ss.getSheetByName("OrdenesCompra"):null;
   if(!sheet)return{valid:false,code:"PURCHASE_ORDER_NOT_FOUND"};
   var values=sheet.getDataRange().getValues();
@@ -6999,6 +6999,8 @@ function ensurePurchaseOrderPdfSchema_(ss) {
     return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   if(PURCHASE_ORDER_PDF_COLUMNS_.some(function(name){return headers.indexOf(name)>=0&&headers.indexOf(name)!==headers.lastIndexOf(name);}))
     return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
+  if(createMissing===false&&PURCHASE_ORDER_PDF_COLUMNS_.some(function(name){return headers.indexOf(name)<0;}))
+    return{valid:false,code:"PURCHASE_ORDER_PDF_NOT_FOUND"};
   PURCHASE_ORDER_PDF_COLUMNS_.forEach(function(name){
     if(headers.indexOf(name)<0){sheet.getRange(1,headers.length+1).setValue(name);headers.push(name);}
   });
@@ -7046,7 +7048,7 @@ function approvePurchaseOrder(payload) {
     var record=matches[0],order=record.row,scope=purchaseOrderScopeAccess_(input,ss,order,true);
     if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
     var state=String(order[map.EstadoOrden]||"").trim().toLowerCase();
-    if(state==="aprobada")return{status:"success",idempotente:true,ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:String(order[map.AprobadoPor]||"")};
+    if(state==="aprobada"){var existingApprover=String(order[map.AprobadoPor]||"").trim();return existingApprover?{status:"success",idempotente:true,ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:existingApprover}:{status:"error",code:"PURCHASE_ORDER_APPROVER_MISSING"};}
     if(state!=="borrador")return{status:"error",code:"PURCHASE_ORDER_STATE_INVALID"};
     if(map.AprobadoPor===undefined)return{status:"error",code:"PURCHASE_ORDER_SCHEMA_INVALID"};
     var requestSheet=ss.getSheetByName("SolicitudesCompra");
@@ -7206,7 +7208,7 @@ function generatePurchaseOrderPDF(payload) {
     if(!file)throw new Error("PURCHASE_ORDER_PDF_DRIVE_CREATE_FAILED");
     file.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
     if(file.getSharingAccess()!==DriveApp.Access.PRIVATE)throw new Error("PURCHASE_ORDER_PDF_NOT_PRIVATE");
-    previous={state:order[map.EstadoOrden],sequence:order[map.CorrelativoPDF],fileId:order[map.DriveFileIdPDF],hash:order[map.SHA256PDF],date:order[map.FechaGeneracionPDF],generatedBy:order[map.GeneradoPorPDF]};
+    previous={state:order[map.EstadoOrden],sequence:String(order[map.CorrelativoPDF]||""),fileId:String(order[map.DriveFileIdPDF]||""),hash:String(order[map.SHA256PDF]||""),date:order[map.FechaGeneracionPDF]||"",generatedBy:String(order[map.GeneradoPorPDF]||"")};
     schema.sheet.getRange(record.index,map.EstadoOrden+1).setValue("Emitida");
     schema.sheet.getRange(record.index,map.CorrelativoPDF+1,1,4).setValues([[correlative,String(file.getId()),hash,now]]);
     schema.sheet.getRange(record.index,map.GeneradoPorPDF+1).setValue(String(access.actor.userId||""));
@@ -7227,7 +7229,7 @@ function getPurchaseOrderPDFFile(payload) {
   if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
   var permission=validateRolePermission(access.actor,"getPurchaseOrders",input);
   if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
-  var schema=ensurePurchaseOrderPdfSchema_(ss);
+  var schema=ensurePurchaseOrderPdfSchema_(ss,false);
   if(!schema.valid)return{status:"error",code:schema.code};
   var map=schema.map,values=schema.sheet.getDataRange().getValues(),orderId=String(input.ordenCompraId||"").trim();
   var matches=values.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[map.OrdenCompraID]||"").trim()===orderId;});
