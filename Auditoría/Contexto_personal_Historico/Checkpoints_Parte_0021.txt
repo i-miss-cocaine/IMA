@@ -40,3 +40,66 @@
 - Siguiente: F18-TASK06 — abonos parciales a facturas, notas de crédito por devoluciones y consulta de cartera por vencimiento. Dependencia técnica disponible: facturas conciliadas F18-TASK02 y ciclo de órdenes/recepciones ya implementado. Debe revisarse el contrato financiero, los permisos y la idempotencia antes de modificar saldos.
 - Mantener AUD-NG-222/TASK-502 y AUD-NG-226/TASK-506 como trabajos independientes aún abiertos; no declararlos cerrados por esta tarea.
 ===============================================================================
+
+
+===============================================================================
+### C1.950 — IMA-EXEC-20261122-F18-TASK06-ACCOUNTS-PAYABLE-CLOSE
+===============================================================================
+
+### Continuidad, rama y estado Git
+- Repositorio: i-miss-cocaine/IMA.
+- Rama exclusiva de trabajo: NG_beta_0.0.0.1_work.
+- HEAD inicial verificado: e37922c1f6f282fe0c37aeffd19d8ebe932197c2.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Se continuó desde C1.949; no se reiniciaron ni repitieron las tareas F18-TASK01/F18-TASK05.
+- El HEAD final se confirma mediante la verificación posterior de la referencia de la rama al publicar este checkpoint.
+
+### Objetivo y resultado
+- Tarea: F18-TASK06 — completar la gestión de cuentas por pagar.
+- Resultado: Completada.
+- Se implementó un libro de movimientos independiente MovimientosCuentasPorPagar para conservar pagos parciales y notas de crédito sin confundirlos con conciliación bancaria.
+- Se incorporó aprobación de facturas porque el flujo existente las creaba en PendienteAprobacion y no existía una acción de aprobación de factura; el control evita que un abono pueda saltarse esa etapa.
+- La aprobación queda restringida a Director/Administrador; requiere factura conciliada, justificación y registra usuario/fecha/motivo en columnas añadidas al final del esquema. La migración conserva las columnas históricas.
+- Los abonos y notas de crédito requieren factura aprobada y conciliada, importe positivo y no superior al saldo; el sistema previene repetición por idempotency key, referencia de pago por obligación y número de nota por proveedor.
+- La escritura del saldo y del movimiento se protege con ScriptLock y rollback si falla una de las escrituras. La lectura de cartera comparte el lock para no exponer un estado intermedio.
+- La cartera presenta vencimiento, rangos de antigüedad, saldo, abonos, créditos y movimientos; permite buscar y filtrar por fecha de vencimiento y respeta el ámbito departamental.
+
+### Archivos y alcance modificado
+- backend/accounting-service/Code.gs — acciones de aprobación, abonos, notas de crédito, cartera, ledger, permisos, router y migración append-only del esquema.
+- js/accounting.js — pestaña de cuentas por pagar, filtros de vencimiento, historial y formularios de aprobación/abono/nota de crédito.
+- tests/security/accounting-accounts-payable-movements.test.js — aprobación, pagos parciales, idempotencia, referencias duplicadas, límites de saldo, notas de crédito, aging, alcance, permisos, lock y rollback.
+- tests/ui/accounting-accounts-payable-ui.test.js — integración de cartera, aprobación y movimientos.
+- tests/security/accounting-purchase-dossier.test.js — expectativa de migración de esquema actualizada.
+- .github/workflows/department-scope-contract.yml — ejecución de los contratos nuevos de cuentas por pagar.
+
+### Revisión técnica y pruebas
+- Revisión de sintaxis de Apps Script y JavaScript: SUCCESS en GitHub Actions.
+- Contrato de movimientos de cuentas por pagar: SUCCESS.
+- Contrato de UI de cuentas por pagar: SUCCESS.
+- Contrato de expediente de compras: SUCCESS.
+- Contrato de metadatos de ayuda de fechas: SUCCESS.
+- Department Scope Contract run 44990212024: SUCCESS.
+- Node.js 24: ejecutado en el runner de GitHub Actions.
+- CLI local independiente: NOT RUN; no hay checkout local disponible en esta sesión.
+- Google Apps Script/Sheets/Drive reales: NOT RUN; no se afirma prueba de despliegue.
+- No se declara conciliación bancaria ni ejecución de pagos reales.
+
+### Commits de implementación y endurecimiento
+- 625c7c0b1db0057be114ed93b12977e9e7957beb — ciclo inicial de cuentas por pagar.
+- e032163cab78d066723cc01a0bcf83a48a40d8fa — endurecimiento de saldos, fechas, duplicidad de notas y cartera.
+- be6e0da019b414b4874d72dcb54e744528ee70a8 — aprobación controlada de facturas.
+- 638d86151f30b4d40695f6ef4101742fe5385cc1 — lock de lectura de cartera y filtros por vencimiento.
+- a28b2e266fbc2e4357d3e98573220fa0a2994750 — metadatos de ayuda para controles de fecha.
+- a3c43875c712e61305d01d6d14bca79e7bb3222e — prevención de referencias de pago duplicadas.
+- 7e68a54f5f27f9f1c4cfc8714bbcbdc708cccb90 — coherencia del esquema y del estado de conciliación.
+- e37922c1f6f282fe0c37aeffd19d8ebe932197c2 — corrección de fixture de sobrepago para aislar la validación probada.
+
+### Hallazgos y continuidad
+- Se corrigió una contradicción documental previa: F18-TASK02 tenía encabezado [x] y evidencia C1.945, pero el campo de estado decía Pendiente; ahora queda como Completada (C1.945).
+- F18-TASK06 queda Completada (C1.950).
+- La tarea siguiente es F18-TASK07: registrar compromisos presupuestarios al aprobar órdenes de compra.
+- El Plan Maestro también identifica el requisito equivalente como TASK-017 P0. El backlog F18 lo registra como F18-TASK07 P1.
+- Hallazgo de preparación para F18-TASK07: el audit y el Plan Maestro mencionan checkBudgetAvailability, getBudgets y PresupuestosInstitucionales, pero esas funciones/hojas no aparecen en el código ni en el esquema actual de la rama autorizada. Antes de implementar, recuperar evidencia histórica y confirmar el contrato de presupuesto/partida/centro de costo; no inferir una partida a partir de texto libre ni reservar contra un esquema supuesto.
+- Mantener AUD-NG-222/TASK-502 y AUD-NG-226/TASK-506 como trabajos independientes abiertos; no se cierran por F18-TASK06.
+
+===============================================================================

@@ -129,7 +129,7 @@
 - **Dependencias/riesgos:** F18-Task01 y contratos de factura/recepción; riesgo de sobreprecio o pago por mercancía no recibida.
 - **Alcance:** conciliación documental previa a aprobación; no sustituye autorización de pagos ni conciliación bancaria.
 - **Criterios de aceptación:** ninguna factura con diferencia no justificada pasa a aprobada para pago; discrepancias quedan identificadas y sujetas a aprobación autorizada; coincidencias verificables permiten continuar el flujo.
-- **Prioridad:** P0. **Estado:** Pendiente.
+- **Prioridad:** P0. **Estado:** Completada (C1.945).
 - **Estado:** Completada en C1.945.
 - **Evidencia de cierre:** recordAccountsPayableExpense registra facturas con snapshot de partidas, hash e idempotencia; verifyThreeWayMatch compara orden, recepciones conformes, proveedor, precios y montos y persiste EstadoConciliacion/DiferenciasJSON, bloqueando el pago ante discrepancias. Permisos, ámbito y lock revalidados; CI Department Scope run 44979718178 SUCCESS (138 pasos), incluidos contratos de cotización, recepción parcial, capitalización, expediente de compras, catálogo y sintaxis Apps Script.
 
@@ -1416,7 +1416,7 @@
 ---
 
 <!-- ID: F18-TASK06 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [ ] [F18-TASK06] Completar gestión de cuentas por pagar
+### [x] [F18-TASK06] Completar gestión de cuentas por pagar
 - **Severidad:** Alta (Tesorería institucional y control de flujo de caja)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `CuentasPorPagarGastos`.
 - **Solución Propuesta:** Permitir registrar abonos parciales a facturas de proveedores, registrar notas de crédito por devoluciones y consultar la cartera por fecha de vencimiento.
@@ -1427,8 +1427,8 @@
 - **Dependencias/riesgos:** facturas conciliadas (F18-Task02), permisos financieros y consistencia de saldos; riesgo de pagos duplicados o flujo de caja incorrecto.
 - **Alcance:** ciclo de cuentas por pagar; no incluye conciliación bancaria.
 - **Criterios de aceptación:** abonos reducen saldo sin excederlo; notas de crédito se aplican una sola vez; vencimientos y saldos pendientes se consultan correctamente.
-- **Prioridad:** P1. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; no se acredita prueba funcional.
+- **Prioridad:** P1. **Estado:** Completada (C1.950).
+- **Evidencia de cierre:** MovimientosCuentasPorPagar conserva pagos y notas de crédito con referencia, actor, fecha, hash e idempotencia; recordAccountsPayablePayment y recordAccountsPayableCreditNote validan aprobación/conciliación, saldo y duplicados; approveAccountsPayableInvoice registra aprobación autorizada y motivo; getAccountsPayablePortfolio consulta vencimientos, saldos y movimientos con filtro por fecha y ámbito. Migración append-only agrega metadatos de aprobación. Contratos Node 24, UI, expediente, ayuda de fechas y sintaxis pasan en Department Scope run 44990212024 SUCCESS. CLI local independiente y Apps Script/Sheets reales: NOT RUN.
 
 ---
 
