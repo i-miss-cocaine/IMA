@@ -4510,3 +4510,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-22] C1.938 / AUD-NG-222-TASK-502 — ACCOUNTING: manageTrainingCourse y manageProfessionalDevelopmentPlan revalidan identidad, permiso dinámico y scope/ownership tras ScriptLock; snapshots bajo lock. Tests de revocación de sesión sin escritura. Department Scope run 44965808684 SUCCESS; training course catalog y professional development ownership PASS; syntax PASS. CLI/Apps Script real NOT RUN. Próximo: handlers restantes de préstamos, planilla, pagos, compras y transporte.
+
+
+[2026-11-22] C1.939 / AUD-NG-222-TASK-502 — ACCOUNTING préstamos laborales: requestEmployeeLoanAdvance, approveEmployeeLoanAdvance y manageEmployeeLoanAdvance revalidan identidad, rol, permiso dinámico y ownership dentro del lock; actor de aprobación y ledger se derivan del actor fresco. Contratos cubren revocación y cambio de rol sin escrituras. Department Scope run 44966149341 SUCCESS (138 pasos); loan request/approval y payroll loan amortization PASS; syntax PASS. CLI/Apps Script real NOT RUN. Próximo: recibos de planilla, vouchers, compras y transporte.

@@ -1851,3 +1851,42 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Continuar AUD-NG-222/TASK-502 con inventario de handlers ACCOUNTING restantes: préstamos/anticipos, recibos de planilla, pagos, compras y órdenes de transporte, revisando identidad, permisos, scope y datos leídos antes de lock.
 - TASK-506 / AUD-NG-226 permanece dependiente de TASK-502.
 ===============================================================================
+
+
+===============================================================================
+### C1.939 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-EMPLOYEE-LOAN-TOCTOU
+===============================================================================
+
+### Continuidad, commits y HEAD
+- Continuación desde C1.938 en NG_beta_0.0.0.1_work.
+- Commits de implementación y pruebas:
+  - 51017311a928e2db93b01c9ca276f9ad5aefdc63 — revalidación de solicitudes y aprobaciones.
+  - 20fb3bb254fc619f5d7445983d6b43386928d5e5 — identidad de revisor mutable para refresh.
+  - db009c8c155139a38f0618232a46feb1919edd57 — revalidación de ownership después de leer fila bajo lock.
+  - 389611c1c7310c5294abeb0c743cbd12ecc6c6b4 — conserva actor verificado tras recheck.
+  - 6367bfe00f892368a50a3d0e6385a91d9e978472 — revalidación de administración de préstamos bajo lock.
+  - 2f3439e684c9c95d636ee4333be0fe2a4b922a30 — contrato de sesión revocada.
+- HEAD verificado antes del checkpoint: 2f3439e684c9c95d636ee4333be0fe2a4b922a30.
+
+### Hallazgos y correcciones
+- requestEmployeeLoanAdvance: ahora vuelve a verificar identidad, rol y permiso dinámico bajo lock; recalcula si el actor sigue siendo empleado propio o gerente y vuelve a resolver el expediente antes de escribir.
+- approveEmployeeLoanAdvance: vuelve a verificar sesión, rol, permiso y ownership del expediente del préstamo bajo lock; usa el actor verificado para AprobadoPor.
+- manageEmployeeLoanAdvance: vuelve a verificar identidad, rol y permiso bajo lock y revalida ownership antes de generar ledger y actualizar saldo/estado.
+- Pruebas cubren revocación de sesión al solicitar y al administrar, cambio de rol del revisor durante espera y ausencia de escrituras/ledger ante denegación.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-employee-loan-advance-ownership.test.js
+- tests/security/accounting-payroll-loan-amortization.test.js
+
+### Verificaciones
+- Department Scope Contract run 44966149341: SUCCESS, 138 pasos.
+- Employee loan request and approval ownership contract: PASS.
+- Payroll loan amortization and reversal contract: PASS, incluyendo revocación de sesión en administración.
+- Syntax-check updated Apps Script services: PASS.
+- No se ejecutó CLI local ni Apps Script/Sheets/Drive reales.
+
+### Siguiente tarea elegible
+- Continuar inventario ACCOUNTING: revisar payroll receipt distribution, pago de comprobantes, purchase quotations/receipts y transporte para confirmar refresh de actor/scope y snapshots tras lock.
+- TASK-502 y TASK-506 permanecen abiertos.
+===============================================================================
