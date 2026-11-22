@@ -2046,3 +2046,41 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Después revisar transporte (asignaciones, rutas, pasajeros, cargos y reportes) y cualquier hallazgo abierto de ACCOUNTING.
 - TASK-502 y AUD-NG-226 permanecen abiertos.
 ===============================================================================
+
+
+===============================================================================
+### C1.944 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-PURCHASE-RECEIPT-IDEMPOTENCY
+===============================================================================
+
+### Continuidad, commits y HEAD
+- Continuación desde C1.943; rama exclusiva NG_beta_0.0.0.1_work.
+- Commits:
+  - c1c0f2ac247602afc87b15c9528fbe2473498c77 — clave y hash idempotentes persistentes para recepciones.
+  - a003354f3361b84575df23b99e04bc4ce6d29b27 — corrige aserción de conflicto de clave en el fixture.
+  - f31dd7f48239155f1eff435de371531f56410da3 — rollback transaccional de movimientos, valoración, recepción y estado de orden.
+  - 50b09abef24f88753a4dafe4bff86ff135715eac — completa estado de inyección de fallos en fixture.
+  - ceed0e3233afa3ce11af2b6f699d9e119d977911 — corrige índice de fila de la orden del escenario de rollback.
+- HEAD verificado: ceed0e3233afa3ce11af2b6f699d9e119d977911.
+- Rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Hallazgos y correcciones
+1. recordPurchaseReceipt podía procesar una repetición de la misma solicitud como una recepción nueva, duplicando entradas parciales de inventario. Ahora acepta idempotencyKey, persiste IdempotencyKey e IdempotencyHash (migración append-only) y detecta reintentos idénticos antes de validar el estado ya actualizado de la orden.
+2. Una misma clave con payload distinto se rechaza como PURCHASE_RECEIPT_IDEMPOTENCY_CONFLICT; claves duplicadas preexistentes fallan cerradas como ambiguas.
+3. El hash del payload incluye orden, detalle recibido, conformidad, indicador de inventario, factura, observaciones y actor autenticado.
+4. Se incorporó rollback transaccional: si falla cualquier movimiento o persistencia final, se eliminan movimientos Kardex agregados, se restauran capas/movimientos de valoración, se elimina la fila de recepción y se revierte el estado de la orden.
+5. La clave es opcional por compatibilidad de API. Los clientes deben enviar una clave única y estable para obtener deduplicación de reintentos; sin ella, se conserva el comportamiento legacy y no se garantiza deduplicación.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-purchase-receipt-partial.test.js
+
+### Verificaciones
+- Department Scope Contract run 44968525211: SUCCESS, 137 pasos; partial purchase receipt/quantity integrity contract PASS, incluido replay idempotente, conflicto de clave y rollback multi-línea; syntax check Apps Script PASS.
+- Dos ejecuciones iniciales fallaron por fixtures: hash de prueba con colisión por semilla de cadena y posición de fila de PO-6; ambos fixtures corregidos y ejecución final PASS.
+- CLI local independiente: NOT RUN. No se ejecutaron Apps Script/Sheets/Kardex reales.
+
+### Siguiente tarea elegible
+- Continuar AUD-NG-222/TASK-502 con revisión del ciclo de compras y pagos: conciliación de factura, tres vías, cuentas por pagar y asiento de recepción; asegurar permiso, scope, idempotencia y atomicidad.
+- Después completar transporte (asignaciones, rutas, pasajeros, cargos, liquidaciones y reportes).
+- TASK-502 y AUD-NG-226 permanecen abiertos.
+===============================================================================
