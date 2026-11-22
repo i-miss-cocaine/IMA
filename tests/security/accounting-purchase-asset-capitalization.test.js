@@ -26,7 +26,7 @@ function makeSheet(name){
 }
 let lockBusy=false,uuid=0,permissionActive=true,onLock=null;
 const spreadsheet={getSheetByName:name=>rows[name]?makeSheet(name):null,insertSheet:name=>{rows[name]=[];return makeSheet(name);}};
-const ctx={SPREADSHEET_ID:"TEST",failAssignmentWrite:false,
+const ctx={SPREADSHEET_ID:"TEST",failAssignmentWrite:false,permissionActive:true,
  SpreadsheetApp:{openById:()=>spreadsheet},
  getVerifiedAccountingIdentity_:payload=>({authorized:true,userId:String(payload&&payload._verifiedUserId||"U-1"),role:"Director",institutionId:"INST-1"}),
  validateRolePermission:()=>({authorized:true}),
@@ -112,7 +112,7 @@ assert.ok(source.includes("clasificacionInventario:a.clasificacionInventario"));
 assert.ok(source.includes("item.itemId || item.ItemId"));
 assert.ok(client.includes("registerAssetsFromPurchaseReceipt")&&client.includes("submitNewPurchaseRequest")&&client.includes("purchaseAssetJsArg"));
 const assetsBeforePermissionRevocation=rows.ActivosPatrimoniales.length,assignmentsBeforePermissionRevocation=rows.AsignacionesActivos.length;
-onLock=()=>{permissionActive=false;};
+onLock=()=>{ctx.permissionActive=false;};
 const revokedAssetRegistration=ctx.registerAssetsFromPurchaseReceipt({ordenCompraId:"ORD-1",recepcionId:"REC-1",numeroFactura:"INV-001",activos:[{itemId:"IT-1",codigoPatrimonial:"PAT-REVOKED",numeroSerie:"SN-REVOKED",nombre:"Laptop"}]});
 assert.equal(revokedAssetRegistration.code,"ROLE_PERMISSION_DENIED");
 assert.equal(rows.ActivosPatrimoniales.length,assetsBeforePermissionRevocation);
