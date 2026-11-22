@@ -6143,7 +6143,7 @@ function adjudicatePurchaseQuotations(payload) {
         condicionesPago: String(group.quote[7] || ""), plazoEntregaDias: Number(group.quote[6] || 0),
         proveedorId: group.supplierId, proveedorNombre: String(suppliers[quoteId][2] || "") }); });
       orderSheet.appendRow([orderId, request.solicitudId, quoteId, group.supplierId, now, eta, JSON.stringify(orderLineItems),
-        group.amount, request.centroCosto, "Borrador", "", "Adjudicación " + request.solicitudId,
+        group.amount, request.centroCosto, "Aprobada", String(actor.userId || ""), "Adjudicación " + request.solicitudId,
         request.solicitanteUserId, "1", ""]);
       createdOrders.push(orderSheet.getLastRow());
       orderIds.push({ ordenCompraId: orderId, cotizacionId: quoteId, proveedorId: group.supplierId, montoTotal: group.amount });
@@ -6265,7 +6265,7 @@ function recordPurchaseReceipt(payload) {
       }
     }
     var orderState = String(order[orderStateIndex] || "").trim().toLowerCase();
-    if (["aprobada","recibidaparcial"].indexOf(orderState) === -1) throw new Error("PURCHASE_ORDER_NOT_RECEIVABLE");
+    if (["aprobada","emitida","confirmada","recibidaparcial"].indexOf(orderState) === -1) throw new Error("PURCHASE_ORDER_NOT_RECEIVABLE");
     var orderItems;
     try { orderItems = JSON.parse(String(order[orderItemsIndex] || "[]")); } catch (ignored) { throw new Error("PURCHASE_ORDER_ITEMS_INVALID"); }
     if (!Array.isArray(orderItems) || !orderItems.length) throw new Error("PURCHASE_ORDER_ITEMS_INVALID");
@@ -6825,7 +6825,7 @@ function createPurchaseOrder(payload) {
     var total=calculatedTotal;
     if(input.montoTotal!==undefined&&input.montoTotal!==null&&String(input.montoTotal).trim()!==""&&(!Number.isFinite(Number(input.montoTotal))||Math.abs(Number(input.montoTotal)-calculatedTotal)>=0.01))return{status:"error",code:"PURCHASE_ORDER_AMOUNT_MISMATCH"};
     orderSheet.appendRow([id,String(input.solicitudId),String(input.cotizacionId||""),String(input.proveedorId),new Date(),"",
-      JSON.stringify(prepared),total,String(request[8]||""),"Borrador","", "",String(request[3]||""),"1",""]);
+      JSON.stringify(prepared),total,String(request[8]||""),"Aprobada",String(access.actor.userId||""), "",String(request[3]||""),"1",""]);
     return{status:"success",ordenCompraId:id};
   } finally {lock.releaseLock();}
 }
@@ -6901,7 +6901,7 @@ function getPurchaseOrders(payload) {
   var requestRows=getOrCreateSheet(ss,"SolicitudesCompra").getDataRange().getValues(),orderRows=getOrCreateSheet(ss,"OrdenesCompra").getDataRange().getValues();
   if(!requestRows.length||!orderRows.length)return{status:"success",ordenes:[]};
   var rh=requestRows[0].map(function(v){return String(v||"").trim();}),oh=orderRows[0].map(function(v){return String(v||"").trim();});
-  var ri={id:rh.indexOf("SolicitudID"),department:rh.indexOf("Departamento")},oi={id:oh.indexOf("OrdenCompraID"),request:oh.indexOf("SolicitudID"),quote:oh.indexOf("CotizacionID"),supplier:oh.indexOf("ProveedorID"),date:oh.indexOf("FechaEmision"),eta:oh.indexOf("FechaEntregaEstimada"),items:oh.indexOf("DetalleItemsJSON"),amount:oh.indexOf("MontoTotal"),cost:oh.indexOf("CentroCosto"),state:oh.indexOf("EstadoOrden"),approved:oh.indexOf("AprobadoPor"),notes:oh.indexOf("Observaciones"),requester:oh.indexOf("SolicitanteUserId"),version:oh.indexOf("VersionDocumental"),pdf:oh.indexOf("ArchivoPdfUrl")};
+  var ri={id:rh.indexOf("SolicitudID"),department:rh.indexOf("Departamento")},oi={id:oh.indexOf("OrdenCompraID"),request:oh.indexOf("SolicitudID"),quote:oh.indexOf("CotizacionID"),supplier:oh.indexOf("ProveedorID"),date:oh.indexOf("FechaEmision"),eta:oh.indexOf("FechaEntregaEstimada"),items:oh.indexOf("DetalleItemsJSON"),amount:oh.indexOf("MontoTotal"),cost:oh.indexOf("CentroCosto"),state:oh.indexOf("EstadoOrden"),approved:oh.indexOf("AprobadoPor"),notes:oh.indexOf("Observaciones"),requester:oh.indexOf("SolicitanteUserId"),version:oh.indexOf("VersionDocumental"),pdf:oh.indexOf("ArchivoPdfUrl"),pdfSequence:oh.indexOf("CorrelativoPDF"),pdfFileId:oh.indexOf("DriveFileIdPDF"),pdfDate:oh.indexOf("FechaGeneracionPDF")};
   if(Object.keys(ri).some(function(k){return ri[k]<0;})||["id","request","supplier","date","items","amount","state"].some(function(k){return oi[k]<0;}))return{status:"error",code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   var requestCounts=Object.create(null),requestById=Object.create(null),allowed=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
   requestRows.slice(1).forEach(function(row){var id=String(row[ri.id]||"").trim();if(!id)return;requestCounts[id]=(requestCounts[id]||0)+1;requestById[id]=row;});
@@ -6943,7 +6943,8 @@ function getPurchaseOrders(payload) {
       estadoOrden:String(row[oi.state]||""),aprobadoPor:oi.approved>=0?String(row[oi.approved]||""):"",
       observaciones:oi.notes>=0?String(row[oi.notes]||""):"",solicitanteUserId:oi.requester>=0?String(row[oi.requester]||""):"",
       versionDocumental:oi.version>=0?String(row[oi.version]||""):"",archivoPdfUrl:oi.pdf>=0?String(row[oi.pdf]||""):"",
-      departamento:String(request[ri.department]||"")};
+      numeroCorrelativoPDF:oi.pdfSequence>=0?String(row[oi.pdfSequence]||""):"",tienePdf:oi.pdfFileId>=0?!!String(row[oi.pdfFileId]||"").trim():false,
+      fechaGeneracionPDF:oi.pdfDate>=0?row[oi.pdfDate]:"",departamento:String(request[ri.department]||"")};
   });
   return{status:"success",ordenes:orders};
 }
@@ -6980,7 +6981,209 @@ function getPurchaseActionCapabilities(payload) {
     "manageSupplierAddress","manageSupplierCommercialTerms","manageSupplierBankAccount","getSupplierBankAccount"];
   var capabilities=Object.create(null);
   actions.forEach(function(action){var result=validateRolePermission(access.actor,action,input);capabilities[action]=!!(result&&result.authorized===true);});
+  capabilities.generatePurchaseOrderPDF=capabilities.createPurchaseOrder===true;
+  capabilities.getPurchaseOrderPDFFile=capabilities.getPurchaseOrders===true;
   return{status:"success",actions:capabilities};
+}
+
+const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF"];
+function ensurePurchaseOrderPdfSchema_(ss) {
+  var sheet=ss&&ss.getSheetByName?ss.getSheetByName("OrdenesCompra"):null;
+  if(!sheet)return{valid:false,code:"PURCHASE_ORDER_NOT_FOUND"};
+  var values=sheet.getDataRange().getValues();
+  if(!values||!values.length)return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
+  var headers=values[0].map(function(v){return String(v||"").trim();});
+  var required=["OrdenCompraID","SolicitudID","ProveedorID","DetalleItemsJSON","MontoTotal","EstadoOrden"];
+  if(required.some(function(name){return headers.indexOf(name)<0||headers.indexOf(name)!==headers.lastIndexOf(name);}))
+    return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
+  PURCHASE_ORDER_PDF_COLUMNS_.forEach(function(name){
+    if(headers.indexOf(name)<0){sheet.getRange(1,headers.length+1).setValue(name);headers.push(name);}
+  });
+  var map={};headers.forEach(function(name,index){if(name)map[name]=index;});
+  return{valid:true,sheet:sheet,headers:headers,map:map};
+}
+function getOrCreatePrivatePurchaseOrderFolder_() {
+  var root=DriveApp.getRootFolder(),name="IMA_ORDENES_COMPRA_PRIVADAS",iterator=root.getFoldersByName(name);
+  var exists=iterator&&iterator.hasNext(),folder=exists?iterator.next():root.createFolder(name);
+  if(!folder||typeof folder.getSharingAccess!=="function")throw new Error("PURCHASE_ORDER_FOLDER_UNVERIFIABLE");
+  if(folder.getSharingAccess()!==DriveApp.Access.PRIVATE){
+    if(exists)throw new Error("PURCHASE_ORDER_FOLDER_NOT_PRIVATE");
+    folder.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+  }
+  if(folder.getSharingAccess()!==DriveApp.Access.PRIVATE)throw new Error("PURCHASE_ORDER_FOLDER_NOT_PRIVATE");
+  return folder;
+}
+function rollbackPrivatePurchaseOrderFile_(file,reason) {
+  if(!file)return true;
+  try{file.setTrashed(true);if(file.isTrashed&&file.isTrashed()!==true)throw new Error("TRASH_CONFIRMATION_FAILED");return true;}
+  catch(error){try{if(typeof enqueueDriveRecovery_==="function")enqueueDriveRecovery_({fileId:file.getId?file.getId():"",reason:String(reason||error.message||"PURCHASE_ORDER_PDF_ROLLBACK_FAILED")});}catch(ignored){}return false;}
+}
+function purchaseOrderPdfEscape_(value) {
+  return String(value===null||value===undefined?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function generatePurchaseOrderPDF(payload) {
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=purchaseQuotationAccess_(input,ss,true);
+  if(!initial||initial.authorized!==true)return{status:"error",code:initial&&initial.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(initial.actor,"createPurchaseOrder",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  var file=null,previous=null;
+  try{
+    var access=purchaseQuotationAccess_(input,ss,true);
+    if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"VERIFIED_IDENTITY_REQUIRED"};
+    if(String(access.actor.userId||"")!==String(initial.actor.userId||"")||String(access.actor.role||"")!==String(initial.actor.role||""))
+      return{status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
+    permission=validateRolePermission(access.actor,"createPurchaseOrder",input);
+    if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var schema=ensurePurchaseOrderPdfSchema_(ss);
+    if(!schema.valid)return{status:"error",code:schema.code};
+    var map=schema.map,values=schema.sheet.getDataRange().getValues(),orderId=String(input.ordenCompraId||"").trim();
+    if(!orderId)return{status:"error",code:"PURCHASE_ORDER_ID_REQUIRED"};
+    var matches=values.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[map.OrdenCompraID]||"").trim()===orderId;});
+    if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
+    var record=matches[0],order=record.row,scope=purchaseOrderScopeAccess_(input,ss,order,true);
+    if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
+    var fileId=String(order[map.DriveFileIdPDF]||"").trim(),storedHash=String(order[map.SHA256PDF]||"").trim();
+    if(fileId){
+      try{
+        var existing=DriveApp.getFileById(fileId);
+        if(existing&&!existing.isTrashed()&&existing.getSharingAccess()===DriveApp.Access.PRIVATE&&storedHash){
+          return{status:"success",idempotente:true,ordenCompraId:orderId,numeroCorrelativo:String(order[map.CorrelativoPDF]||""),
+            fileName:String(existing.getName()||""),sha256Hash:storedHash,estadoOrden:String(order[map.EstadoOrden]||""),integridadVerificada:true};
+        }
+      }catch(existingError){return{status:"error",code:"PURCHASE_ORDER_PDF_UNAVAILABLE"};}
+      return{status:"error",code:"PURCHASE_ORDER_PDF_UNAVAILABLE"};
+    }
+    if(String(order[map.EstadoOrden]||"").trim().toLowerCase()!=="aprobada")return{status:"error",code:"PURCHASE_ORDER_NOT_APPROVED"};
+    var requestSheet=ss.getSheetByName("SolicitudesCompra");
+    if(!requestSheet)return{status:"error",code:"PURCHASE_REQUEST_NOT_FOUND"};
+    var requestRows=requestSheet.getDataRange().getValues(),requestHeaders=requestRows[0].map(function(v){return String(v||"").trim();});
+    var requestIdIndex=requestHeaders.indexOf("SolicitudID"),requestDepartmentIndex=requestHeaders.indexOf("Departamento"),requestStateIndex=requestHeaders.indexOf("EstadoAprobacion");
+    if(requestIdIndex<0||requestDepartmentIndex<0||requestStateIndex<0)return{status:"error",code:"PURCHASE_REQUEST_SCHEMA_INVALID"};
+    var requestId=String(order[map.SolicitudID]||"").trim(),requestMatches=requestRows.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[requestIdIndex]||"").trim()===requestId;});
+    if(requestMatches.length!==1)return{status:"error",code:requestMatches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_REQUEST_NOT_FOUND"};
+    var request=requestMatches[0].row,requestState=String(request[requestStateIndex]||"").trim().toLowerCase();
+    if(["aprobada","adjudicada"].indexOf(requestState)===-1)return{status:"error",code:"PURCHASE_REQUEST_NOT_APPROVED"};
+    var scopeDepartments=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
+    if(access.scope.institutionWide!==true&&scopeDepartments.indexOf(String(request[requestDepartmentIndex]||"").trim())===-1)
+      return{status:"error",code:"RESOURCE_NOT_FOUND"};
+    var supplierSheet=ss.getSheetByName("ProveedoresActivos");
+    if(!supplierSheet)return{status:"error",code:"PURCHASE_SUPPLIER_NOT_FOUND"};
+    var supplierRows=supplierSheet.getDataRange().getValues(),supplierHeaders=supplierRows[0].map(function(v){return String(v||"").trim();});
+    var supplierIdIndex=supplierHeaders.indexOf("ProveedorID"),supplierNameIndex=supplierHeaders.indexOf("NombreProveedor"),supplierRtnIndex=supplierHeaders.indexOf("RTN");
+    var supplierPhoneIndex=supplierHeaders.indexOf("Telefono"),supplierEmailIndex=supplierHeaders.indexOf("Email"),supplierStatusIndex=supplierHeaders.indexOf("Estado");
+    if([supplierIdIndex,supplierNameIndex,supplierRtnIndex,supplierStatusIndex].some(function(index){return index<0;}))
+      return{status:"error",code:"PURCHASE_SUPPLIER_SCHEMA_INVALID"};
+    var supplierMatches=supplierRows.slice(1).filter(function(row){return String(row[supplierIdIndex]||"").trim()===String(order[map.ProveedorID]||"").trim();});
+    if(supplierMatches.length!==1||String(supplierMatches[0][supplierStatusIndex]||"").trim().toLowerCase()!=="activo")
+      return{status:"error",code:supplierMatches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_SUPPLIER_NOT_ACTIVE"};
+    var supplier=supplierMatches[0],items=purchaseQuotationJsonArray_(order[map.DetalleItemsJSON]);
+    if(!items.length)return{status:"error",code:"PURCHASE_ORDER_ITEMS_INVALID"};
+    var seen=Object.create(null),prepared=[],subtotal=0,discount=0,taxes=0,freight=0,total=0;
+    for(var i=0;i<items.length;i++){
+      var item=items[i]||{},itemId=String(item.itemId||item.codigoItem||item.ItemId||item.codigo||"").trim();
+      var quantity=Number(item.cantidad===undefined?item.Cantidad:item.cantidad);
+      var price=Number(item.precioUnitario===undefined?item.costoUnitario:item.precioUnitario);
+      if(!itemId||seen[itemId]||!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(price)||price<0)
+        return{status:"error",code:"PURCHASE_ORDER_ITEMS_INVALID"};
+      seen[itemId]=true;
+      var lineSubtotal=Number(item.subtotal===undefined?quantity*price:item.subtotal);
+      var lineDiscount=Number(item.descuento||0),lineTax=Number(item.impuestos||0),lineFreight=Number(item.flete||0);
+      var computedLine=lineSubtotal-lineDiscount+lineTax+lineFreight;
+      var lineTotal=Number(item.total===undefined?computedLine:item.total);
+      if([lineSubtotal,lineDiscount,lineTax,lineFreight,lineTotal].some(function(value){return !Number.isFinite(value)||value<0;})||
+        Math.abs(lineTotal-computedLine)>0.01)return{status:"error",code:"PURCHASE_ORDER_LINE_TOTAL_INVALID"};
+      subtotal+=lineSubtotal;discount+=lineDiscount;taxes+=lineTax;freight+=lineFreight;total+=lineTotal;
+      prepared.push({itemId:itemId,descripcion:String(item.descripcion||item.nombre||itemId),unidad:String(item.unidad||item.unidadMedida||"Unidad"),
+        cantidad:quantity,precioUnitario:price,subtotal:lineSubtotal,descuento:lineDiscount,impuestos:lineTax,flete:lineFreight,total:lineTotal});
+    }
+    var authorizedTotal=Number(order[map.MontoTotal]);
+    if(!Number.isFinite(authorizedTotal)||authorizedTotal<0||Math.abs(total-authorizedTotal)>0.01)
+      return{status:"error",code:"PURCHASE_ORDER_AMOUNT_MISMATCH"};
+    var approvedBy=String(order[map.AprobadoPor]||"").trim();
+    if(!approvedBy)return{status:"error",code:"PURCHASE_ORDER_APPROVER_MISSING"};
+    var year=(new Date()).getFullYear(),prefix="OC-"+year+"-",maxSequence=0,correlativeCounts=Object.create(null);
+    values.slice(1).forEach(function(row){var value=String(row[map.CorrelativoPDF]||"").trim();if(!value)return;
+      correlativeCounts[value]=(correlativeCounts[value]||0)+1;
+      if(value.indexOf(prefix)===0){var sequence=Number(value.slice(prefix.length));if(Number.isInteger(sequence)&&sequence>maxSequence)maxSequence=sequence;}
+    });
+    if(Object.keys(correlativeCounts).some(function(key){return correlativeCounts[key]>1;}))return{status:"error",code:"PURCHASE_ORDER_PDF_CORRELATIVE_AMBIGUOUS"};
+    var sequence=maxSequence+1,correlative=prefix+String(sequence).padStart(6,"0");
+    var now=new Date(),dateFormat=function(value){var date=value instanceof Date?value:new Date(value);return isNaN(date.getTime())?String(value||""):date.toLocaleDateString("es-HN");};
+    var money=function(value){return "L "+new Intl.NumberFormat("es-HN",{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(value||0));};
+    var e=purchaseOrderPdfEscape_,rowsHtml=prepared.map(function(item){return"<tr><td>"+e(item.itemId)+"</td><td>"+e(item.descripcion)+"</td><td>"+e(item.unidad)+"</td><td class='num'>"+item.cantidad+"</td><td class='num'>"+money(item.precioUnitario)+"</td><td class='num'>"+money(item.total)+"</td></tr>";}).join("");
+    var properties=typeof PropertiesService!=="undefined"?PropertiesService.getScriptProperties():null;
+    var institutionName=properties&&properties.getProperty("INSTITUTION_NAME")||"New Generation Christian Academy";
+    var institutionRtn=properties&&properties.getProperty("INSTITUTION_RTN")||"";
+    var approverHtml="<p><strong>Aprobado por:</strong> "+e(approvedBy)+"</p>";
+    var actaSheet=ss.getSheetByName("ActasAdjudicacionCompra"),actaIds=[];
+    if(actaSheet){var actas=actaSheet.getDataRange().getValues().slice(1).filter(function(row){return String(row[1]||"").trim()===requestId&&String(row[10]||"").trim().toLowerCase()==="aprobada";});
+      actas.forEach(function(row){var awarded=purchaseQuotationJsonArray_(row[13]);if(awarded.some(function(item){return String(item.ordenCompraId||"").trim()===orderId;}))actaIds.push(String(row[0]||""));});
+    }
+    if(actaIds.length>1)return{status:"error",code:"PURCHASE_AWARD_AMBIGUOUS"};
+    var actaText=actaIds.length?actaIds[0]:"Aprobación de solicitud "+requestId;
+    var html="<html><head><meta charset='utf-8'><style>@page{size:A4;margin:18mm}body{font-family:Arial,sans-serif;color:#1f2937;font-size:10pt}h1{font-size:19pt;margin:0}h2{font-size:12pt;margin:4px 0}p{margin:4px 0}.muted{color:#6b7280}.header{border-bottom:3px solid #1e3a8a;padding-bottom:12px;margin-bottom:16px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.panel{border:1px solid #d1d5db;padding:9px;border-radius:4px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #d1d5db;padding:6px;text-align:left}th{background:#eff6ff;font-size:8pt}.num{text-align:right}.totals{width:42%;margin-left:auto}.signatures{display:grid;grid-template-columns:1fr 1fr;gap:35px;margin-top:48px}.signature{border-top:1px solid #374151;padding-top:6px;text-align:center}.footer{margin-top:26px;border-top:1px solid #d1d5db;padding-top:8px;font-size:8pt}</style></head><body>";
+    html+="<div class='header'><h1>"+e(institutionName)+"</h1><p class='muted'>"+(institutionRtn?"RTN: "+e(institutionRtn)+" · ":"")+"Documento institucional de adquisición</p><h2>ORDEN DE COMPRA</h2><strong>"+e(correlative)+"</strong></div>";
+    html+="<div class='meta'><div class='panel'><strong>Proveedor</strong><p>"+e(supplier[supplierNameIndex])+"</p><p>RTN: "+e(supplier[supplierRtnIndex])+"</p><p>Tel.: "+e(supplierPhoneIndex>=0?supplier[supplierPhoneIndex]:"")+"</p><p>Correo: "+e(supplierEmailIndex>=0?supplier[supplierEmailIndex]:"")+"</p></div>";
+    html+="<div class='panel'><strong>Datos de la orden</strong><p>Orden: "+e(orderId)+"</p><p>Solicitud: "+e(requestId)+"</p><p>Fecha: "+e(dateFormat(now))+"</p><p>Entrega estimada: "+e(dateFormat(order[map.FechaEntregaEstimada]||""))+"</p><p>Centro de costo: "+e(order[map.CentroCosto]||"")+"</p><p>Acta/Autorización: "+e(actaText)+"</p></div></div>";
+    html+="<table><thead><tr><th>Item</th><th>Descripción</th><th>Unidad</th><th>Cantidad</th><th>Precio unitario</th><th>Total línea</th></tr></thead><tbody>"+rowsHtml+"</tbody></table>";
+    html+="<table class='totals'><tbody><tr><td>Subtotal</td><td class='num'>"+money(subtotal)+"</td></tr><tr><td>Descuentos</td><td class='num'>"+money(discount)+"</td></tr><tr><td>Impuestos</td><td class='num'>"+money(taxes)+"</td></tr><tr><td>Transporte</td><td class='num'>"+money(freight)+"</td></tr><tr><th>Total autorizado</th><th class='num'>"+money(total)+"</th></tr></tbody></table>";
+    html+="<div class='panel' style='margin-top:18px'><strong>Firmas de autorización</strong>"+approverHtml+"<p>La emisión corresponde a la orden aprobada en el flujo institucional. La firma manuscrita o electrónica se completa conforme al procedimiento institucional.</p></div>";
+    html+="<div class='signatures'><div class='signature'>Firma y sello de autorización<br>"+e(approvedBy)+"</div><div class='signature'>Aceptación del proveedor<br>"+e(supplier[supplierNameIndex])+"</div></div>";
+    html+="<div class='footer'>Documento generado por IMA. Correlativo único: "+e(correlative)+" · Fecha de emisión: "+e(dateFormat(now))+"</div></body></html>";
+    var fileName="OrdenCompra-"+correlative+".pdf",blob=HtmlService.createHtmlOutput(html).getAs(MimeType.PDF);
+    if(blob&&blob.setName)blob.setName(fileName);
+    var bytes=blob&&blob.getBytes?blob.getBytes():null;
+    if(!bytes||!bytes.length)return{status:"error",code:"PURCHASE_ORDER_PDF_EMPTY"};
+    var base64=Utilities.base64Encode(bytes),integrity=validateFileBinaryIntegrity("data:application/pdf;base64,"+base64,fileName,{allowedExtensions:[".pdf"]});
+    if(!integrity||integrity.valid!==true||integrity.detectedFormat!=="pdf")return{status:"error",code:"PURCHASE_ORDER_PDF_INVALID"};
+    var hash=computeDocumentSHA256(bytes);
+    if(!hash||hash.length!==64)return{status:"error",code:"PURCHASE_ORDER_PDF_HASH_FAILED"};
+    var folder=getOrCreatePrivatePurchaseOrderFolder_();
+    file=folder.createFile(blob);
+    if(!file)throw new Error("PURCHASE_ORDER_PDF_DRIVE_CREATE_FAILED");
+    file.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);
+    if(file.getSharingAccess()!==DriveApp.Access.PRIVATE)throw new Error("PURCHASE_ORDER_PDF_NOT_PRIVATE");
+    previous={state:order[map.EstadoOrden],sequence:order[map.CorrelativoPDF],fileId:order[map.DriveFileIdPDF],hash:order[map.SHA256PDF],date:order[map.FechaGeneracionPDF],generatedBy:order[map.GeneradoPorPDF]};
+    schema.sheet.getRange(record.index,map.EstadoOrden+1).setValue("Emitida");
+    schema.sheet.getRange(record.index,map.CorrelativoPDF+1,1,4).setValues([[correlative,String(file.getId()),hash,now]]);
+    schema.sheet.getRange(record.index,map.GeneradoPorPDF+1).setValue(String(access.actor.userId||""));
+    return{status:"success",ordenCompraId:orderId,numeroCorrelativo:correlative,fileName:fileName,sha256Hash:hash,fileSizeBytes:bytes.length,estadoOrden:"Emitida",integridadVerificada:true};
+  }catch(error){
+    if(file){
+      if(previous){
+        try{schema.sheet.getRange(record.index,map.EstadoOrden+1).setValue(previous.state);}catch(ignoredState){}
+        try{schema.sheet.getRange(record.index,map.CorrelativoPDF+1,1,4).setValues([[previous.sequence,previous.fileId,previous.hash,previous.date]]);schema.sheet.getRange(record.index,map.GeneradoPorPDF+1).setValue(previous.generatedBy);}catch(ignoredMeta){}
+      }
+      rollbackPrivatePurchaseOrderFile_(file,error.message);
+    }
+    return{status:"error",code:String(error&&error.message||"PURCHASE_ORDER_PDF_FAILED")};
+  }finally{lock.releaseLock();}
+}
+function getPurchaseOrderPDFFile(payload) {
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(input,ss,false);
+  if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(access.actor,"getPurchaseOrders",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var schema=ensurePurchaseOrderPdfSchema_(ss);
+  if(!schema.valid)return{status:"error",code:schema.code};
+  var map=schema.map,values=schema.sheet.getDataRange().getValues(),orderId=String(input.ordenCompraId||"").trim();
+  var matches=values.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[map.OrdenCompraID]||"").trim()===orderId;});
+  if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
+  var order=matches[0].row,scope=purchaseOrderScopeAccess_(input,ss,order,false);
+  if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
+  var fileId=String(order[map.DriveFileIdPDF]||"").trim(),expectedHash=String(order[map.SHA256PDF]||"").trim();
+  if(!fileId||!expectedHash)return{status:"error",code:"PURCHASE_ORDER_PDF_NOT_FOUND"};
+  try{
+    var file=DriveApp.getFileById(fileId);
+    if(!file||file.isTrashed()||file.getSharingAccess()!==DriveApp.Access.PRIVATE)return{status:"error",code:"PURCHASE_ORDER_PDF_NOT_PRIVATE"};
+    var blob=file.getBlob(),bytes=blob.getBytes(),mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase(),name=String(file.getName()||"");
+    if(!bytes||!bytes.length||bytes.length>10*1024*1024||mime!=="application/pdf"||!/\\.pdf$/i.test(name))return{status:"error",code:"PURCHASE_ORDER_PDF_INVALID"};
+    var signature=bytes.slice(0,5).map(function(value){return String.fromCharCode((Number(value)+256)%256);}).join("");
+    if(signature!=="%PDF-"||computeDocumentSHA256(bytes)!==expectedHash)return{status:"error",code:"PURCHASE_ORDER_PDF_INTEGRITY_FAILED"};
+    return{status:"success",ordenCompraId:orderId,numeroCorrelativo:String(order[map.CorrelativoPDF]||""),fileName:name,mimeType:mime,encoding:"base64",fileData:Utilities.base64Encode(bytes),fileSizeBytes:bytes.length,sha256Hash:expectedHash};
+  }catch(error){return{status:"error",code:"PURCHASE_ORDER_PDF_UNAVAILABLE"};}
 }
 
 function getPurchaseInvoiceTolerance_(ss, concept) {
@@ -7758,10 +7961,20 @@ function recordPurchaseOrderConfirmation(payload) {
     if(!values||!values.length||!values[0].length)sheet.appendRow(PURCHASE_ORDER_CONFIRMATION_HEADERS_);
     else if(JSON.stringify(values[0].map(String))!==JSON.stringify(PURCHASE_ORDER_CONFIRMATION_HEADERS_))throw new Error("PURCHASE_CONFIRMATION_SCHEMA_INVALID");
     var id="CONF-"+String(Utilities.getUuid()).replace(/-/g,"").slice(0,20);
+    var confirmationRow=sheet.getLastRow()+1;
     sheet.appendRow([id,String(input.ordenCompraId),new Date(),String(input.contactoProveedor||""),
       String(input.canal||""),String(input.estadoConfirmacion||"Confirmada"),purchaseDossierSafeUrl_(input.documentoUrl),
       String(input.observaciones||""),access.actor.userId]);
-    return {status:"success",confirmacionId:id};
+    try {
+      var confirmationState=String(input.estadoConfirmacion||"Confirmada").trim().toLowerCase();
+      if(["emitida","aprobada"].indexOf(String(order[9]||"").trim().toLowerCase())!==-1&&confirmationState==="confirmada"){
+        var orderSheet=ss.getSheetByName("OrdenesCompra"),orderValues=orderSheet.getDataRange().getValues(),orderHeaders=orderValues[0].map(function(v){return String(v||"").trim();});
+        var stateIndex=orderHeaders.indexOf("EstadoOrden"),matches=orderValues.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[0]||"")===String(input.ordenCompraId||"");});
+        if(stateIndex<0||matches.length!==1)throw new Error("PURCHASE_ORDER_SCHEMA_INVALID");
+        orderSheet.getRange(matches[0].index,stateIndex+1).setValue("Confirmada");
+      }
+    } catch(stateError) { try{sheet.deleteRow(confirmationRow);}catch(ignoredRollback){} throw stateError; }
+    return {status:"success",confirmacionId:id,estadoOrden:confirmationState==="confirmada"&&["emitida","aprobada"].indexOf(String(order[9]||"").trim().toLowerCase())!==-1?"Confirmada":String(order[9]||"")};
   } finally {lock.releaseLock();}
 }
 function getPurchaseDossier(payload) {
