@@ -6904,7 +6904,7 @@ function savePurchaseInvoiceTolerance(payload) {
   var access = purchaseQuotationAccess_(input, ss, true);
   if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
   var actor = access.actor, role = normalizePurchaseAwardRole_(actor && actor.role);
-  if (["Director","Administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  if (["director","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
   var permission = validateRolePermission(actor, "savePurchaseInvoiceTolerance", input);
   if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var concept = String(input.concepto || "").trim().toUpperCase();
@@ -6917,7 +6917,7 @@ function savePurchaseInvoiceTolerance(payload) {
     access = purchaseQuotationAccess_(input, ss, true);
     if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "VERIFIED_IDENTITY_REQUIRED" };
     actor = access.actor; role = normalizePurchaseAwardRole_(actor && actor.role);
-    if (["Director","Administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+    if (["director","administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
     permission = validateRolePermission(actor, "savePurchaseInvoiceTolerance", input);
     if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
     var expected = ["Concepto","ToleranciaAbsoluta","ToleranciaPorcentual","Estado","ActualizadoPor","FechaActualizacion"];
