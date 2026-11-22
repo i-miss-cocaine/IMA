@@ -101,7 +101,7 @@ async function main(){
   assert.equal(repeated.idempotente,true);
   assert.equal(h.stats().created,1);
   const download=h.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"});
-  assert.equal(download.status,"success");
+  assert.equal(download.status,"success",JSON.stringify(download));
   assert.equal(download.encoding,"base64");
   assert.equal(download.sha256Hash,"a".repeat(64));
   assert.equal(makeHarness({scopeDenied:true}).context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"RESOURCE_NOT_FOUND");
