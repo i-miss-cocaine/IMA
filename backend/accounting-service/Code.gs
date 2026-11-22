@@ -4565,6 +4565,15 @@ function uploadEmployeeDocument(payload) {
   if(!lock.tryLock(5000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
   var createdFile=null;
   try{
+    // Revalidate the session, dynamic permission and employee resource scope
+    // after lock acquisition; the preflight authorization may have gone stale.
+    var refreshedActor=getVerifiedAccountingIdentity_(input);
+    if(!refreshedActor||refreshedActor.authorized!==true)return{status:"error",code:refreshedActor&&refreshedActor.code||"VERIFIED_IDENTITY_REQUIRED"};
+    var refreshedPermission=validateRolePermission(refreshedActor,"uploadEmployeeDocument");
+    if(!refreshedPermission||refreshedPermission.authorized!==true)return{status:"error",code:refreshedPermission&&refreshedPermission.code||"AUTH_PERMISSION_DENIED"};
+    var refreshedAccess=assertEmployeeExpedienteScopeAccess_(input,ss,expedienteId);
+    if(!refreshedAccess||refreshedAccess.authorized!==true)return{status:"error",code:refreshedAccess&&refreshedAccess.code==="VERIFIED_IDENTITY_REQUIRED"?"VERIFIED_IDENTITY_REQUIRED":"RESOURCE_SCOPE_DENIED"};
+    actor=refreshedActor;
     var headers=["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"];
     var sheet=ss.getSheetByName("DocumentosLaborales");
     if(!sheet){sheet=getOrCreateSheet(ss,"DocumentosLaborales");sheet.appendRow(headers);}

@@ -101,3 +101,50 @@ employeeActor = { authorized: true, userId: "EMP-2", role: "Empleado", instituti
 actor = employeeActor;
 assert.equal(employeeDocumentContext.getEmployeeDocuments({ expedienteId: "EXP-1", sessionToken: "EMP-2-SESSION" }).code,
   "RESOURCE_NOT_FOUND", "cross-employee document metadata remains concealed");
+
+
+// Employee document uploads must revalidate authorization after waiting for ScriptLock.
+{
+  function makeUploadHarness({revokePermission=false,revokeScope=false,changeActor=false}={}) {
+    let actor={authorized:true,userId:"EMP-1",role:"Empleado",institutionId:"INST-1"};
+    let permissionActive=true,scopeActive=true,permissionCalls=0,scopeCalls=0,lockReleases=0,sheetCreations=0,writes=0;
+    const rows=[["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"]];
+    const sheet={
+      getDataRange:()=>({getValues:()=>rows.map(row=>row.slice())}),
+      appendRow:row=>{writes++;rows.push(row.slice());}
+    };
+    const ss={getSheetByName:name=>name==="DocumentosLaborales"?sheet:null};
+    const context={
+      SPREADSHEET_ID:"IN_MEMORY",
+      SpreadsheetApp:{openById:()=>ss},
+      getVerifiedAccountingIdentity_:()=>actor,
+      validateRolePermission:(_actor,action)=>{assert.equal(action,"uploadEmployeeDocument");permissionCalls++;return permissionActive?{authorized:true}:{authorized:false,code:"AUTH_PERMISSION_DENIED"};},
+      assertEmployeeExpedienteScopeAccess_:()=>{scopeCalls++;return scopeActive?{authorized:true}:{authorized:false,code:"RESOURCE_SCOPE_DENIED"};},
+      LockService:{getScriptLock:()=>({tryLock:()=>{if(revokePermission)permissionActive=false;if(revokeScope)scopeActive=false;if(changeActor)actor={authorized:true,userId:"EMP-2",role:"Empleado",institutionId:"INST-1"};return true;},releaseLock:()=>{lockReleases++;}})},
+      getOrCreateSheet:()=>{sheetCreations++;return sheet;},
+      Utilities:{getUuid:()=>"UPLOAD-UNIQUE-123456789"},
+      String,Array,Object,Date
+    };
+    vm.runInNewContext(extractAccountingFunction("uploadEmployeeDocument")+"\nthis.run=uploadEmployeeDocument;",context);
+    return {run:payload=>context.run(payload),state:()=>({permissionCalls,scopeCalls,lockReleases,sheetCreations,writes,rows})};
+  }
+  const revokedPermission=makeUploadHarness({revokePermission:true});
+  const permissionResult=revokedPermission.run({sessionToken:"SESSION-1",expedienteId:"EXP-1",tituloDocumento:"Contrato"});
+  assert.equal(permissionResult.code,"AUTH_PERMISSION_DENIED");
+  assert.deepEqual(revokedPermission.state(),{permissionCalls:2,scopeCalls:1,lockReleases:1,sheetCreations:0,writes:0,rows:[["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"]]});
+
+  const revokedScope=makeUploadHarness({revokeScope:true});
+  const scopeResult=revokedScope.run({sessionToken:"SESSION-1",expedienteId:"EXP-1",tituloDocumento:"Contrato"});
+  assert.equal(scopeResult.code,"RESOURCE_SCOPE_DENIED");
+  assert.deepEqual(revokedScope.state(),{permissionCalls:2,scopeCalls:2,lockReleases:1,sheetCreations:0,writes:0,rows:[["DocumentoID","ExpedienteID","CategoriaDoc","TituloDocumento","ArchivoUrl","FechaCarga","CargadoPor","EstadoVisibilidad","Observaciones"]]});
+
+  const refreshed=makeUploadHarness({changeActor:true});
+  const success=refreshed.run({sessionToken:"SESSION-1",expedienteId:"EXP-1",tituloDocumento:"Contrato"});
+  assert.equal(success.status,"success");
+  assert.equal(refreshed.state().scopeCalls,2);
+  assert.equal(refreshed.state().permissionCalls,2);
+  assert.equal(refreshed.state().rows[1][6],"EMP-2","the document audit actor must use the identity refreshed under lock");
+  assert.equal(refreshed.state().writes,1);
+  assert.equal(refreshed.state().lockReleases,1);
+}
+console.log("ACCOUNTING uploadEmployeeDocument post-lock identity, permission and scope revalidation contracts passed.");
