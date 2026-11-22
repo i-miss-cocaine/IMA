@@ -7016,7 +7016,7 @@ function recordAccountsPayableExpense(payload) {
   var number=String(invoice.numeroFactura||input.numeroFactura||"").trim(),supplierId=String(invoice.proveedorId||input.proveedorId||"").trim();
   var items=Array.isArray(invoice.partidasFacturadas)?invoice.partidasFacturadas:[];
   if(!orderId||!number||!supplierId||!items.length)return{status:"error",code:"PURCHASE_INVOICE_REQUEST_INVALID"};
-  ["importe","impuestos","totalMonto"].forEach(function(key){if(invoice[key]!==undefined&&invoice[key]!==null&&String(invoice[key]).trim()!==""&&(!Number.isFinite(Number(invoice[key]))||Number(invoice[key])<0))throw new Error("PURCHASE_INVOICE_AMOUNT_INVALID");});
+  if(["importe","impuestos","totalMonto"].some(function(key){return invoice[key]!==undefined&&invoice[key]!==null&&String(invoice[key]).trim()!==""&&(!Number.isFinite(Number(invoice[key]))||Number(invoice[key])<0);}))return{status:"error",code:"PURCHASE_INVOICE_AMOUNT_INVALID"};
   var idempotencyKey=String(input.idempotencyKey||invoice.idempotencyKey||"").trim();
   if(idempotencyKey&&!/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey))return{status:"error",code:"PURCHASE_INVOICE_IDEMPOTENCY_KEY_INVALID"};
   var lock=LockService.getScriptLock();if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
