@@ -3701,7 +3701,16 @@ function getPaymentVouchers(payload) {
   if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
   var permission=validateRolePermission(actor,"getPaymentVouchers",input);
   if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
-  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensurePaymentVoucherEvidenceSchema_(ss);
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000))return{status:"error",code:"LOCK_TIMEOUT"};
+  try{
+    var verifiedActor=getVerifiedAccountingIdentity_(input);
+    if(!verifiedActor||verifiedActor.authorized!==true||String(verifiedActor.userId)!==String(actor.userId)||String(verifiedActor.role)!==String(actor.role))
+      return{status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
+    var lockedPermission=validateRolePermission(verifiedActor,"getPaymentVouchers",input);
+    if(!lockedPermission||lockedPermission.authorized!==true)return{status:"error",code:lockedPermission&&lockedPermission.code||"ROLE_PERMISSION_DENIED"};
+    actor=verifiedActor;
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensurePaymentVoucherEvidenceSchema_(ss);
   var role=String(actor.role||"").trim().toLowerCase(),staffRoles=["secretaría","secretaria","administrador","director","subdirector","recursoshumanos"];
   var requestedUser=String(input.userId||"").trim();
   if(requestedUser&&staffRoles.indexOf(role)!==-1){
@@ -3721,6 +3730,7 @@ function getPaymentVouchers(payload) {
     metodoPago:String(item.MetodoPago||""),referencia:String(item.Referencia||""),estado:String(item.Estado||""),
     comprobanteUrl:"",tieneComprobante:!!String(item.ComprobanteUrl||""),versionNumero:Number(item.VersionNumero||1),esVersionActual:item.EsVersionActual===true,estadoIntegridad:String(item.EstadoIntegridad||"")
   };})};
+  }finally{lock.releaseLock();}
 }
 
 function getPaymentVoucherFile(payload) {
@@ -3728,7 +3738,16 @@ function getPaymentVoucherFile(payload) {
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var permission = validateRolePermission(actor, "getPaymentVoucherFile", input);
   if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), schema = ensurePaymentVoucherEvidenceSchema_(ss);
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return { status: "error", code: "LOCK_TIMEOUT" };
+  try {
+    var verifiedActor = getVerifiedAccountingIdentity_(input);
+    if (!verifiedActor || verifiedActor.authorized !== true || String(verifiedActor.userId) !== String(actor.userId) ||
+        String(verifiedActor.role) !== String(actor.role)) return { status: "error", code: "VERIFIED_IDENTITY_CHANGED" };
+    var lockedPermission = validateRolePermission(verifiedActor, "getPaymentVoucherFile", input);
+    if (!lockedPermission || lockedPermission.authorized !== true) return { status: "error", code: lockedPermission && lockedPermission.code || "ROLE_PERMISSION_DENIED" };
+    actor = verifiedActor;
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID), schema = ensurePaymentVoucherEvidenceSchema_(ss);
   var rows = schema.sheet.getDataRange().getValues().slice(1), id = String(input.comprobanteId || "").trim();
   var matches = rows.filter(function(row) { return String(row[schema.map.ComprobanteID] || "") === id; });
   if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
@@ -3748,6 +3767,7 @@ function getPaymentVoucherFile(payload) {
     result.mimeType = verified.mimeType;
   }
   return result;
+  } finally { lock.releaseLock(); }
 }
 
 function reviewPaymentVoucher(payload) {
