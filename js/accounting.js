@@ -1736,7 +1736,7 @@ window.openPurchaseInvoiceModal = async function() {
     "<div class=\"grid grid-cols-1 md:grid-cols-3 gap-3 text-xs\"><label class=\"font-bold\">Orden de compra *<select id=\"purchase-invoice-order\" required class=\"mt-1 w-full p-2 border rounded-lg\"><option value=\"\">Cargando órdenes autorizadas...</option></select></label>" +
     "<label class=\"font-bold\">Número de factura *<input id=\"purchase-invoice-number\" required maxlength=\"100\" class=\"mt-1 w-full p-2 border rounded-lg\"></label>" +
     "<label class=\"font-bold\">Vencimiento<input id=\"purchase-invoice-due\" type=\"date\" class=\"mt-1 w-full p-2 border rounded-lg\"></label></div>" +
-    "<div class=\"overflow-x-auto border rounded-xl\"><table class=\"w-full text-left text-xs\"><thead class=\"bg-gray-50\"><tr><th class=\"p-2\">Partida</th><th class=\"p-2\">Recibido conforme</th><th class=\"p-2\">Cantidad facturada</th><th class=\"p-2\">Precio unitario</th><th class=\"p-2\">Importe</th></tr></thead><tbody id=\"purchase-invoice-lines\"><tr><td colspan=\"5\" class=\"p-4 text-center text-gray-400\">Seleccione una orden.</td></tr></tbody></table></div>" +
+    "<div class=\"overflow-x-auto border rounded-xl\"><table class=\"w-full text-left text-xs\"><thead class=\"bg-gray-50\"><tr><th class=\"p-2\">Partida</th><th class=\"p-2\">Cantidad ordenada</th><th class=\"p-2\">Recibido conforme</th><th class=\"p-2\">Cantidad facturada</th><th class=\"p-2\">Precio unitario</th><th class=\"p-2\">Importe</th></tr></thead><tbody id=\"purchase-invoice-lines\"><tr><td colspan=\"6\" class=\"p-4 text-center text-gray-400\">Seleccione una orden.</td></tr></tbody></table></div>" +
     "<div class=\"grid grid-cols-1 md:grid-cols-3 gap-3 text-xs\"><label class=\"font-bold\">Subtotal (calculado)<input id=\"purchase-invoice-subtotal\" readonly class=\"mt-1 w-full p-2 border rounded-lg bg-gray-50\" value=\"0.00\"></label>" +
     "<label class=\"font-bold\">Impuestos<input id=\"purchase-invoice-tax\" type=\"number\" min=\"0\" step=\"0.01\" value=\"0\" class=\"mt-1 w-full p-2 border rounded-lg\"></label>" +
     "<label class=\"font-bold\">Total (calculado)<input id=\"purchase-invoice-total\" readonly class=\"mt-1 w-full p-2 border rounded-lg bg-gray-50\" value=\"0.00\"></label></div>" +
@@ -1773,7 +1773,7 @@ window.openPurchaseInvoiceModal = async function() {
     linesHost.replaceChildren();
     const order = ordersById[orderSelect.value];
     if (!order) {
-      linesHost.innerHTML = "<tr><td colspan=\"5\" class=\"p-4 text-center text-gray-400\">Seleccione una orden.</td></tr>";
+      linesHost.innerHTML = "<tr><td colspan=\"6\" class=\"p-4 text-center text-gray-400\">Seleccione una orden.</td></tr>";
       recalculate();
       return;
     }
@@ -1785,6 +1785,9 @@ window.openPurchaseInvoiceModal = async function() {
       const label = document.createElement("td");
       label.className = "p-2";
       label.textContent = String(item.descripcion || item.nombre || itemId) + " · " + itemId;
+      const ordered = document.createElement("td");
+      ordered.className = "p-2";
+      ordered.textContent = String(Number(item.cantidadSolicitada || 0));
       const received = document.createElement("td");
       received.className = "p-2";
       received.textContent = String(Number(item.cantidadRecibidaConforme || 0));
@@ -1792,7 +1795,7 @@ window.openPurchaseInvoiceModal = async function() {
       quantityCell.className = "p-2";
       const quantity = document.createElement("input");
       quantity.type = "number"; quantity.min = "0";
-      quantity.max = String(Number(item.cantidadSolicitada || 0)); quantity.step = "0.01";
+      quantity.step = "0.01";
       quantity.value = String(Number(item.cantidadRecibidaConforme || 0));
       quantity.dataset.invoiceQuantity = "true"; quantity.className = "w-24 p-1 border rounded";
       quantity.addEventListener("input", recalculate); quantityCell.appendChild(quantity);
@@ -1806,7 +1809,7 @@ window.openPurchaseInvoiceModal = async function() {
       const totalCell = document.createElement("td");
       totalCell.className = "p-2 text-right font-bold";
       totalCell.dataset.invoiceTotal = "true"; totalCell.textContent = "0.00";
-      row.append(label, received, quantityCell, priceCell, totalCell);
+      row.append(label, ordered, received, quantityCell, priceCell, totalCell);
       linesHost.appendChild(row);
     });
     recalculate();

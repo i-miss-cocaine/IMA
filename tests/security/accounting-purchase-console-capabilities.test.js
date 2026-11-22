@@ -45,6 +45,8 @@ function makeUiContext(fetcher){
 async function test(){
   assert.doesNotThrow(()=>new vm.Script(uiSource),"accounting UI syntax");
   assert.doesNotThrow(()=>new vm.Script(backendSource),"accounting backend syntax");
+  assert.ok(uiSource.includes("window.openPurchaseInvoiceModal = async function"));
+  assert.ok(uiSource.includes('fetchBackendAccounting("recordAccountsPayableExpense"'));
   const controls=[makeControl("createPurchaseRequest"),makeControl("registerSupplier"),makeControl("manageSupplierBankAccount")];
   const ui=makeUiContext(async action=>{
     assert.equal(action,"getPurchaseActionCapabilities");
