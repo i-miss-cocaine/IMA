@@ -86,6 +86,8 @@ on:
       - tests/security/user-service-request-attachment-integrity.test.js
       - tests/security/accounting-departmental-resource-access.test.js
       - tests/security/accounting-purchase-quotation-adjudication.test.js
+      - tests/security/accounting-accounts-payable-movements.test.js
+      - tests/ui/accounting-accounts-payable-ui.test.js
       - tests/security/accounting-purchase-asset-capitalization.test.js
       - tests/security/accounting-asset-depreciation.test.js
       - tests/security/accounting-catalog.test.js
@@ -287,6 +289,10 @@ jobs:
         run: node tests/security/accounting-payroll-batch-variance.test.js
       - name: Run accounting purchase quotation matrix and split award contract
         run: node tests/security/accounting-purchase-quotation-adjudication.test.js
+      - name: Run accounts payable partial payments, credit notes and aging portfolio contract
+        run: node tests/security/accounting-accounts-payable-movements.test.js
+      - name: Run accounts payable portfolio and movement UI contract
+        run: node tests/ui/accounting-accounts-payable-ui.test.js
       - name: Run partial purchase receipt and quantity integrity contract
         run: node tests/security/accounting-purchase-receipt-partial.test.js
       - name: Run purchase receipt to fixed asset capitalization contract

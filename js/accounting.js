@@ -1223,6 +1223,7 @@ function renderComprasModule(container) {
           <button onclick="switchComprasSubtab('threeway')" id="btn-cmp-threeway" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Three-Way Match</button>
           <button onclick="switchComprasSubtab('expediente')" id="btn-cmp-expediente" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Expediente 360°</button>
           <button onclick="switchComprasSubtab('proveedores')" id="btn-cmp-proveedores" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Proveedores</button>
+          <button onclick="switchComprasSubtab('cuentas-pagar')" id="btn-cmp-cuentas-pagar" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Cuentas por pagar</button>
         </div>
       </div>
 
@@ -1259,7 +1260,7 @@ function renderComprasModule(container) {
 
 window.switchComprasSubtab = function (subtab) {
   currentComprasSubtab = subtab;
-  const tabs = ['solicitudes', 'cotizaciones', 'ordenes', 'recepciones', 'threeway', 'expediente', 'proveedores'];
+  const tabs = ['solicitudes', 'cotizaciones', 'ordenes', 'recepciones', 'threeway', 'expediente', 'proveedores', 'cuentas-pagar'];
   tabs.forEach(t => {
     const btn = document.getElementById(`btn-cmp-${t}`);
     if (btn) {
@@ -1288,6 +1289,8 @@ window.switchComprasSubtab = function (subtab) {
     renderComprasExpedienteView(subContainer);
   } else if (subtab === 'proveedores') {
     renderComprasProveedoresView(subContainer);
+  } else if (subtab === 'cuentas-pagar') {
+    renderComprasCuentasPorPagarView(subContainer);
   }
   if (window.applyPurchaseActionVisibility) window.applyPurchaseActionVisibility(subContainer);
 };
@@ -3459,3 +3462,57 @@ function renderMigrationImportResult(response) {
   html += '</div>';
   host.innerHTML = html;
 }
+
+
+function renderComprasCuentasPorPagarView(container) {
+  container.innerHTML = '<section class="rounded-2xl border border-gray-200 bg-white p-5 space-y-4"><div class="flex flex-wrap items-center justify-between gap-3"><div><h5 class="text-sm font-black uppercase text-gray-800">Cuentas por pagar</h5><p class="text-xs text-gray-600">Abonos parciales, notas de crédito y vencimientos de facturas conciliadas</p></div><button id="btn-cxp-refresh" data-purchase-action="getAccountsPayablePortfolio" class="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white">Actualizar cartera</button></div><div id="cxp-summary" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs"></div><div id="cxp-results" class="space-y-3">Cargando cartera...</div></section>';
+  var refresh=document.getElementById("btn-cxp-refresh");if(refresh)refresh.addEventListener("click",function(){window.loadAccountsPayablePortfolio();});
+  window.loadAccountsPayablePortfolio();
+}
+window.loadAccountsPayablePortfolio=async function(query) {
+  var target=document.getElementById("cxp-results"),summary=document.getElementById("cxp-summary");if(!target)return;target.textContent="Consultando cartera...";
+  try{var result=await fetchBackendAccounting("getAccountsPayablePortfolio",{query:String(query||"").trim()});
+    if(!result||result.status!=="success")throw new Error(result&&result.code||"ACCOUNTS_PAYABLE_PORTFOLIO_FAILED");
+    window.renderAccountsPayablePortfolio(result,target,summary);
+  }catch(error){target.textContent=error.message||"No se pudo consultar la cartera.";}
+};
+window.renderAccountsPayablePortfolio=function(result,target,summary) {
+  target.replaceChildren();
+  if(summary){summary.replaceChildren();[["Obligaciones",result.resumen.obligaciones],["Saldo total",result.resumen.saldoTotal],["Saldo vencido",result.resumen.saldoVencido],["Saldo vigente",result.resumen.saldoVigente]].forEach(function(item){
+    var card=document.createElement("div");card.className="rounded-xl border border-gray-200 bg-gray-50 p-3";var label=document.createElement("div");label.className="text-gray-500 uppercase font-bold";label.textContent=item[0];card.appendChild(label);
+    var value=document.createElement("div");value.className="text-lg font-black text-gray-900";value.textContent=typeof item[1]==="number"?window.IMARegionalFormatters.formatCurrency(item[1]):String(item[1]);card.appendChild(value);summary.appendChild(card);});}
+  if(!result.cartera||!result.cartera.length){target.textContent="No hay facturas en la cartera para el ámbito consultado.";return;}
+  result.cartera.forEach(function(invoice){
+    var card=document.createElement("article");card.className="rounded-xl border border-gray-200 p-4 space-y-3";card.dataset.obligationId=invoice.obligacionId;
+    var title=document.createElement("div");title.className="flex flex-wrap justify-between gap-2";var name=document.createElement("strong");name.textContent=invoice.numeroFactura+" · "+invoice.proveedorNombre;title.appendChild(name);
+    var state=document.createElement("span");state.className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold";state.textContent=invoice.estadoCartera+" · "+invoice.rangoVencimiento;title.appendChild(state);card.appendChild(title);
+    var detail=document.createElement("p");detail.className="text-xs text-gray-600";detail.textContent="Vence: "+(invoice.fechaVencimiento||"Sin fecha")+" · Orden: "+invoice.ordenCompraId+" · Total: "+window.IMARegionalFormatters.formatCurrency(invoice.total)+" · Abonado: "+window.IMARegionalFormatters.formatCurrency(invoice.totalAbonado)+" · Notas de crédito: "+window.IMARegionalFormatters.formatCurrency(invoice.totalNotasCredito)+" · Saldo: "+window.IMARegionalFormatters.formatCurrency(invoice.saldoPendiente);card.appendChild(detail);
+    var history=document.createElement("div");history.className="text-xs text-gray-500 space-y-1";(invoice.movimientos||[]).forEach(function(m){var line=document.createElement("p");line.textContent=m.tipo+" · "+m.fecha+" · "+window.IMARegionalFormatters.formatCurrency(m.monto)+" · "+(m.referencia||m.numeroNotaCredito||"")+" · "+(m.motivo||"");history.appendChild(line);});card.appendChild(history);
+    var approval=String(invoice.estadoAprobacion||"").toLowerCase(),blocked=invoice.estadoConciliacion!=="Conciliada"||(approval!=="aprobado"&&approval!=="aprobada");
+    function field(parent,labelText,type,value,placeholder){var label=document.createElement("label");label.className="text-xs font-bold text-gray-700";label.textContent=labelText;var input=document.createElement("input");input.type=type;input.value=value||"";input.placeholder=placeholder||"";input.className="mt-1 w-full rounded-lg border p-2";if(type==="number"){input.min="0.01";input.step="0.01";input.max=String(invoice.saldoPendiente);}label.appendChild(input);parent.appendChild(label);return input;}
+    var payment=document.createElement("div");payment.className="grid md:grid-cols-4 gap-2 items-end";
+    var paymentAmount=field(payment,"Monto del abono","number","","0.00"),paymentMethod=field(payment,"Método","text","","Transferencia"),paymentReference=field(payment,"Referencia","text","","Comprobante / transferencia"),paymentDate=field(payment,"Fecha","date",new Date().toISOString().slice(0,10),"");
+    var paymentButton=document.createElement("button");paymentButton.type="button";paymentButton.dataset.purchaseAction="recordAccountsPayablePayment";paymentButton.className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white";paymentButton.textContent="Registrar abono";paymentButton.disabled=blocked||invoice.saldoPendiente<=0;
+    paymentButton.addEventListener("click",function(){window.recordAccountsPayablePayment(invoice.obligacionId,{monto:paymentAmount.value,metodo:paymentMethod.value,referencia:paymentReference.value,fechaMovimiento:paymentDate.value},paymentButton);});payment.appendChild(paymentButton);card.appendChild(payment);
+    var credit=document.createElement("div");credit.className="grid md:grid-cols-4 gap-2 items-end border-t pt-3";
+    var creditAmount=field(credit,"Monto nota de crédito","number","","0.00"),creditNumber=field(credit,"Número de nota","text","","NC-..."),returnRef=field(credit,"Referencia de devolución","text","","Recepción / devolución"),reason=field(credit,"Motivo","text","","Detalle de devolución"),creditDate=field(credit,"Fecha","date",new Date().toISOString().slice(0,10),"");
+    var creditButton=document.createElement("button");creditButton.type="button";creditButton.dataset.purchaseAction="recordAccountsPayableCreditNote";creditButton.className="rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white";creditButton.textContent="Aplicar nota de crédito";creditButton.disabled=blocked||invoice.saldoPendiente<=0;
+    creditButton.addEventListener("click",function(){window.recordAccountsPayableCreditNote(invoice.obligacionId,{monto:creditAmount.value,numeroNotaCredito:creditNumber.value,referenciaDevolucion:returnRef.value,motivo:reason.value,fechaMovimiento:creditDate.value},creditButton);});credit.appendChild(creditButton);card.appendChild(credit);
+    if(blocked){var notice=document.createElement("p");notice.className="text-xs text-amber-700";notice.textContent="Bloqueada: requiere factura aprobada y conciliada antes de aplicar movimientos.";card.appendChild(notice);}target.appendChild(card);
+  });
+  if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(target);
+};
+window.recordAccountsPayablePayment=async function(obligacionId,data,button){
+  if(button){button.disabled=true;button.textContent="Registrando...";}
+  try{var key="CXP-PAGO-"+(window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now()+"-"+Math.random());
+    var result=await fetchBackendAccounting("recordAccountsPayablePayment",Object.assign({},data,{obligacionId:obligacionId,idempotencyKey:key}));
+    if(!result||result.status!=="success")throw new Error(result&&result.code||"ACCOUNTS_PAYABLE_PAYMENT_FAILED");await window.loadAccountsPayablePortfolio();
+  }catch(error){if(button){button.disabled=false;button.textContent="Registrar abono";}window.alert(error.message||"No se pudo registrar el abono.");}
+};
+window.recordAccountsPayableCreditNote=async function(obligacionId,data,button){
+  if(button){button.disabled=true;button.textContent="Aplicando...";}
+  try{var key="CXP-NC-"+(window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now()+"-"+Math.random());
+    var result=await fetchBackendAccounting("recordAccountsPayableCreditNote",Object.assign({},data,{obligacionId:obligacionId,idempotencyKey:key}));
+    if(!result||result.status!=="success")throw new Error(result&&result.code||"ACCOUNTS_PAYABLE_CREDIT_NOTE_FAILED");await window.loadAccountsPayablePortfolio();
+  }catch(error){if(button){button.disabled=false;button.textContent="Aplicar nota de crédito";}window.alert(error.message||"No se pudo aplicar la nota de crédito.");}
+};
