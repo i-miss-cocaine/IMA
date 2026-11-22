@@ -5839,7 +5839,7 @@ function purchaseQuotationAccess_(payload, ss, write) {
   if (!scope || (scope.valid !== true && scope.authorized !== true)) return { authorized: false, code: "PURCHASE_SCOPE_UNVERIFIED" };
   return { authorized: true, actor: actor, role: role, scope: scope, write: write === true };
 }
-function purchaseQuotationRequest_(payload, ss, access, allowAdjudicated) {
+function purchaseQuotationRequest_(payload, ss, access, allowAdjudicated, readOnly) {
   var sheet = readOnly === true ? ss.getSheetByName("SolicitudesCompra") : getOrCreateSheet(ss, "SolicitudesCompra");
   if (!sheet) throw new Error("PURCHASE_REQUEST_NOT_FOUND");
   var rows = sheet.getDataRange().getValues();
@@ -5973,7 +5973,7 @@ function getPurchaseQuotationMatrix(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID), access = purchaseQuotationAccess_(input, ss, false);
   if (!access.authorized) return { status: "error", code: access.code };
   var request;
-  try { request = purchaseQuotationRequest_(input, ss, access, true); } catch (error) { return { status: "error", code: String(error.message || "PURCHASE_REQUEST_INVALID") }; }
+  try { request = purchaseQuotationRequest_(input, ss, access, true, true); } catch (error) { return { status: "error", code: String(error.message || "PURCHASE_REQUEST_INVALID") }; }
   var quoteSheet = ss.getSheetByName("CotizacionesCompra");
   var detailSheet = ss.getSheetByName("DetalleCotizacionesCompra");
   var supplierSheet = ss.getSheetByName("ProveedoresActivos");
