@@ -1324,7 +1324,7 @@
 ---
 
 <!-- ID: F11-TASK14 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [F11-TASK14] Implementar control presupuestario y alertas de sobregiro por centro de costo
+### [x] [F11-TASK14] Implementar control presupuestario y alertas de sobregiro por centro de costo
 
 **Otros títulos originales:**
 - Desarrollar el control presupuestario y alertas de sobregiro por centro de costo
@@ -1347,7 +1347,7 @@
   Comparar montos presupuestados vs ejecutados por departamento/centro de costo, emitiendo alertas cuando un gasto comprometa la partida asignada.
 - **Criterios de Aceptación:**
   - Se genera una advertencia o bloqueo presupuestario cuando una solicitud excede el presupuesto disponible.
-- **Estado:** Pendiente
+- **Estado:** Completada
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 264-278; clave F11-Task15; asignación única: Contabilidad -->
 
@@ -1441,7 +1441,7 @@
 - **Severidad:** Alta. **Objetivo:** prevenir sobregiros por órdenes concurrentes.
 - **Acción ejecutable:** al aprobar/emitar una orden, reservar el monto en `montoComprometido` de la partida y centro de costo; impedir duplicación de reservas y definir liberación ante cancelación.
 - **Archivos/módulos:** `backend/accounting-service/Code.gs` (`checkBudgetAvailability`), `PresupuestosInstitucionales`, `OrdenesCompra`.
-- **Dependencias/riesgos:** F11-TASK14 (control presupuestario, PresupuestosInstitucionales y checkBudgetAvailability), autorización de órdenes y consistencia concurrente; riesgo de sobregiro o doble compromiso.
+- **Dependencias/riesgos:** F11-TASK14 (completada C1.952) (control presupuestario, PresupuestosInstitucionales y checkBudgetAvailability), autorización de órdenes y consistencia concurrente; riesgo de sobregiro o doble compromiso.
 - **Alcance:** reserva presupuestaria vinculada a la orden; no sustituye el registro contable del gasto.
 - **Criterios de aceptación:** aprobación actualiza el compromiso una sola vez; órdenes concurrentes no exceden el disponible; cancelación libera la reserva según estado y reglas auditables.
 - **Prioridad:** P1. **Estado:** Pendiente.

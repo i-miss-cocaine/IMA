@@ -174,3 +174,77 @@
 - AUD-NG-222/TASK-502 y AUD-NG-226/TASK-506 continúan abiertos e independientes.
 
 ===============================================================================
+
+
+===============================================================================
+### C1.952 — IMA-EXEC-20261122-F11-TASK14-BUDGET-CONTROL-CLOSE
+===============================================================================
+
+### Continuidad, rama y estado Git
+- Sesión: continuidad posterior a C1.951.
+- Repositorio: i-miss-cocaine/IMA.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD de implementación verificado: d220c36b60908c638dd33ce3ff95120cffe1c3a0.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- No se modificó ni publicó ningún cambio en otra rama.
+
+### Tarea y resultado
+- F11-TASK14 — Control presupuestario por centro de costo y partida: completada.
+- Se recuperó el contrato histórico desde NG_beta_0.0.0.1. Se mantuvo el esquema original de ocho columnas de PresupuestosInstitucionales y se extendió mediante migración append-only con UmbralAlertaPct, FechaActualizacion, ActualizadoPor y Version.
+- Se implementaron getBudgets, saveBudgetPlan, getBudgetExecutionReport y checkBudgetAvailability. Las operaciones verifican identidad, permiso dinámico y alcance departamental; no permiten modificar montos ejecutados ni comprometidos al editar el plan.
+- La disponibilidad se calcula como MontoAprobado - MontoComprometido - MontoEjecutado. La partida y el centro de costo deben ser explícitos; no se infieren a partir de descripciones. El umbral porcentual es configurable por presupuesto y no se inventa un valor predeterminado.
+- Los sobregiros se bloquean; el umbral genera advertencia previa a la aprobación. approvePurchaseOrder exige confirmación explícita para continuar cuando se alcanza el umbral y conserva la advertencia en la orden.
+- Se añadió CompromisosPresupuestarios como ledger append-only y reserveBudgetCommitmentLocked_ con clave idempotente, hash de contenido, actualización del resumen bajo ScriptLock y rollback compensatorio si falla la escritura del ledger. Dos reservas que exceden el saldo no pueden ser aceptadas.
+- Las solicitudes de compra capturan PartidaCodigo; el valor se conserva en las líneas de cotización y órdenes adjudicadas. La validación del backend impide continuar sin partida explícita.
+- Las alertas, bloqueos, altas/actualizaciones de presupuesto y reservas se registran mediante el logger estructurado existente.
+- La integración de reserva en la aprobación de órdenes y la liberación por cancelación queda asignada a la siguiente tarea dependiente F18-TASK07; el helper atómico ya está implementado y probado.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- backend/user-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-budget-control.test.js (nuevo)
+- tests/security/accounting-purchase-order-pdf.test.js
+- tests/security/accounting-purchase-console-capabilities.test.js
+- tests/security/accounting-purchase-quotation-adjudication.test.js
+- tests/security/accounting-purchase-asset-capitalization.test.js
+- tests/security/accounting-catalog.test.js
+- .github/workflows/department-scope-contract.yml
+- pendientes/Contabilidad/Pendientes.md
+- changueslogs.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt
+
+### Verificaciones
+- Budget control, audit and reservation contract: SUCCESS.
+- Purchase quotation matrix and split award contract: SUCCESS.
+- Partial purchase receipt and quantity integrity contract: SUCCESS.
+- Purchase receipt to fixed asset capitalization contract: SUCCESS.
+- Purchase console capability gating and stale-response contract: SUCCESS.
+- Official purchase order PDF lifecycle contract: SUCCESS.
+- Accounting master catalog and unit conversion contract: SUCCESS.
+- Transport read permission contract: SUCCESS.
+- Institutional complementary services catalog contract: SUCCESS.
+- Updated Apps Script services syntax-check: SUCCESS.
+- Department Scope Contract run 44992885477: SUCCESS; Node.js 24, all test steps and syntax checks completed.
+- An intermediate run 44992759757 failed because the new budget test harness had not yet extracted budgetLogEvent_; the test harness was corrected and the final run 44992885477 passed.
+- Live Google Sheets permission-matrix rows and deployed Apps Script runtime were not inspected; new actions are registered in the action catalog and static role map, while runtime permission checks remain fail-closed until corresponding matrix grants exist.
+- No real budget, purchase, payment or bank transaction was created in production.
+
+### Commits principales de implementación
+- 7f50892c8fc018b4152b7d01ce93ba4cabe0a61e — servicios seguros de presupuesto y permisos.
+- 2ec59a885f6e8c778bda267e0821757baa65c07f — validación presupuestaria previa a aprobar órdenes.
+- faa4844b91610ca9861caaa934130a7850d83b3b — trazabilidad de partida en solicitudes, cotizaciones y órdenes.
+- 6d9d1b80ef66ca9a0fe539fb7f7d2f935b81a4a1 — contrato de control presupuestario y workflow.
+- 613b830e32ffc5341b3f3980c57c2507b3c7fba8 — auditoría estructurada de alertas y reservas.
+- a186f160f286256bdeefee2afc733a62e7f1a2b2 — assertions de auditoría en contrato.
+- d220c36b60908c638dd33ce3ff95120cffe1c3a0 — ejecución y syntax-check del contrato de presupuesto.
+
+### Hallazgos y siguiente tarea
+- F11-TASK14 queda completada.
+- Siguiente tarea elegible: F18-TASK07 — registrar compromisos presupuestarios al aprobar órdenes y liberar reservas al cancelar.
+- La integración debe llamar reserveBudgetCommitmentLocked_ dentro del mismo ScriptLock de approvePurchaseOrder, revertir reservas si falla la aprobación y liberar solo órdenes cancelables, con justificación y trazabilidad.
+- F18-TASK07 no debe liberar compromisos de órdenes confirmadas/recibidas/facturadas; esos estados requieren el flujo de reversión correspondiente.
+- F11-TASK02 permanece completada en C1.951.
+
+===============================================================================
