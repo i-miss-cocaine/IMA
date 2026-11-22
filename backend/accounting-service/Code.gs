@@ -6493,12 +6493,16 @@ function registerAssetsFromPurchaseReceipt(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = purchaseQuotationAccess_(input, ss, true);
   if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+  var permission = validateRolePermission(access.actor, "registerAssetsFromPurchaseReceipt", input);
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   var createdAssets = [], createdAssignments = [];
   try {
     var context = purchaseAssetReceiptContext_(input);
     if (context.unavailable) return { status: "error", code: "PURCHASE_RECEIPT_NOT_CONFORMING" };
+    permission = validateRolePermission(context.access && context.access.actor, "registerAssetsFromPurchaseReceipt", input);
+    if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
     var invoiceNumber = String(input.numeroFactura || "").trim();
     var invoice = context.facturasDisponibles.filter(function(item) { return item.numeroFactura === invoiceNumber; })[0];
     if (!invoice) return { status: "error", code: "PURCHASE_ASSET_INVOICE_NOT_LINKED" };

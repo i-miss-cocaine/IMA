@@ -24,21 +24,21 @@ function makeSheet(name){
     })
   };
 }
-let lockBusy=false,uuid=0;
+let lockBusy=false,uuid=0,permissionActive=true,onLock=null;
 const spreadsheet={getSheetByName:name=>rows[name]?makeSheet(name):null,insertSheet:name=>{rows[name]=[];return makeSheet(name);}};
 const ctx={SPREADSHEET_ID:"TEST",failAssignmentWrite:false,
  SpreadsheetApp:{openById:()=>spreadsheet},
  getVerifiedAccountingIdentity_:payload=>({authorized:true,userId:String(payload&&payload._verifiedUserId||"U-1"),role:"Director",institutionId:"INST-1"}),
  validateRolePermission:()=>({authorized:true}),
  getVerifiedAccountingDepartmentScope_:()=>({valid:true,authorized:true,institutionWide:true,institutionId:"INST-1",departmentIds:[]}),
- LockService:{getScriptLock:()=>({tryLock:()=>!lockBusy,waitLock:()=>{if(lockBusy)throw Error("LOCK_BUSY");},releaseLock:()=>{}})},
+ LockService:{getScriptLock:()=>({tryLock:()=>{if(onLock){const callback=onLock;onLock=null;callback();}return !lockBusy;},waitLock:()=>{if(lockBusy)throw Error("LOCK_BUSY");},releaseLock:()=>{}})},
  Utilities:{getUuid:()=>"UUID-"+(++uuid)},
  getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-1",role:"Administrador",institutionId:"INST-1"}),validateRolePermission:()=>({authorized:true}),getVerifiedAccountingDepartmentScope_:()=>({valid:true,authorized:true,institutionWide:true,departmentIds:[]}),
  getOrCreateSheet:(ss,name)=>{if(!rows[name]){const headers={ActivosPatrimoniales:["ActivoID","CodigoPatrimonial","Nombre","Categoria","SerieModel","UbicacionActual","CustodioUserId","Estado","Observaciones"],AsignacionesActivos:["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"]}[name]||[];rows[name]=[headers];}return makeSheet(name);},
  catalogActor_:()=>({userId:"U-1"}),catalogFindItem_:()=>({id:"CAT-ITEM",code:"ITEM-C",name:"Papel",baseUnit:"Unidad",unit:"Unidad"}),catalogFindUnit_:()=>({name:"Unidad",base:"Unidad",factor:1}),catalogNormalizeText_:v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(),purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"U-1",role:"Contador"},scope:{institutionWide:true,departmentIds:[]}}),supplierEnsureActiveForOrder_:()=>true
 };
 vm.createContext(ctx);
-vm.runInContext('function getVerifiedAccountingIdentity_(payload){return {authorized:true,userId:String(payload&&payload._verifiedUserId||"U-1"),role:"Director",institutionId:"INST-1"};} function validateRolePermission(){return {authorized:true};}',ctx);
+vm.runInContext('function getVerifiedAccountingIdentity_(payload){return {authorized:true,userId:String(payload&&payload._verifiedUserId||"U-1"),role:"Director",institutionId:"INST-1"};} function validateRolePermission(_actor,action){return permissionActive&&action==="registerAssetsFromPurchaseReceipt"?{authorized:true}:{authorized:false,code:"ROLE_PERMISSION_DENIED"};}',ctx);
 vm.runInContext(constants[0],ctx);
 ["normalizePurchaseAwardRole_","purchaseQuotationItemKey_","purchaseQuotationJsonArray_","normalizePurchaseAssetClassification_","ensureAssetAcquisitionSchema_","purchaseAssetReceiptContext_","getPurchaseReceiptAssetCandidates","registerAssetsFromPurchaseReceipt","getAssetItems","manageAssetItem","createPurchaseRequest","createPurchaseOrder"].forEach(name=>vm.runInContext(extract(source,name),ctx));
 assert.equal(ctx.normalizePurchaseAssetClassification_({tipoBien:"Bienes Capitalizables / Activos Fijos"}),"ActivoFijo");
@@ -111,4 +111,11 @@ assert.equal(damagedCtx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"})
 assert.ok(source.includes("clasificacionInventario:a.clasificacionInventario"));assert.ok(source.includes("clasificacionInventario:normalizePurchaseAssetClassification_(x)"));assert.ok(source.includes("catalogItemId:item.id"));assert.ok(source.includes("const classification=normalizePurchaseAssetClassification_(source)"));
 assert.ok(source.includes("item.itemId || item.ItemId"));
 assert.ok(client.includes("registerAssetsFromPurchaseReceipt")&&client.includes("submitNewPurchaseRequest")&&client.includes("purchaseAssetJsArg"));
+const assetsBeforePermissionRevocation=rows.ActivosPatrimoniales.length,assignmentsBeforePermissionRevocation=rows.AsignacionesActivos.length;
+onLock=()=>{permissionActive=false;};
+const revokedAssetRegistration=ctx.registerAssetsFromPurchaseReceipt({ordenCompraId:"ORD-1",recepcionId:"REC-1",numeroFactura:"INV-001",activos:[{itemId:"IT-1",codigoPatrimonial:"PAT-REVOKED",numeroSerie:"SN-REVOKED",nombre:"Laptop"}]});
+assert.equal(revokedAssetRegistration.code,"ROLE_PERMISSION_DENIED");
+assert.equal(rows.ActivosPatrimoniales.length,assetsBeforePermissionRevocation);
+assert.equal(rows.AsignacionesActivos.length,assignmentsBeforePermissionRevocation);
+permissionActive=true;
 console.log("TASK-182 purchase-to-fixed-assets contract PASS: classification propagation, receipt eligibility, invoice linkage, per-unit serial/code uniqueness, idempotent retries, quantity bounds, custody history, rollback, read-only empty inventory and client flow.");
