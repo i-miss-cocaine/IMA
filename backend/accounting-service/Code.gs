@@ -6328,7 +6328,14 @@ function recordPurchaseReceipt(payload) {
     }
     var receiptId = "REC-" + String(Date.now()) + "-" + String(input.ordenCompraId || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 16) + "-" + String(receiptRows.length);
     var now = new Date();
-    var inventoryResults = [];
+    var inventoryResults = [], kardexSheet = null, movementStart = 0, valuationSnapshot = null;
+    var receiptStart = receiptSheet.getLastRow() + 1, orderStateBefore = order[orderStateIndex];
+    if (registrarInventario && overall !== "danado" && overall !== "dañado") {
+      kardexSheet = catalogEnsureKardexSchema_(ss);
+      movementStart = kardexSheet.getLastRow() + 1;
+      valuationSnapshot = inventoryValuationSnapshot_(ss);
+    }
+    try {
     if (registrarInventario && overall !== "danado" && overall !== "dañado") {
       conformingLines.forEach(function(line) {
         var catalogItem = catalogFindItem_(ss, line.codigoItem);
@@ -6382,6 +6389,13 @@ function recordPurchaseReceipt(payload) {
     orderSheet.getRange(orderRecord.index, orderStateIndex + 1).setValue(orderStatus);
     return { status: "success", recepcionId: receiptId, ordenCompraId: String(input.ordenCompraId),
       estadoOrden: orderStatus, resumenPartidas: summary, movimientosInventario: inventoryResults.length };
+    } catch (writeError) {
+      if (kardexSheet) while (kardexSheet.getLastRow() >= movementStart) kardexSheet.deleteRow(kardexSheet.getLastRow());
+      if (valuationSnapshot) inventoryValuationRestore_(ss, valuationSnapshot);
+      while (receiptSheet.getLastRow() >= receiptStart) receiptSheet.deleteRow(receiptSheet.getLastRow());
+      try { orderSheet.getRange(orderRecord.index, orderStateIndex + 1).setValue(orderStateBefore); } catch (ignoredRestore) {}
+      throw new Error("PURCHASE_RECEIPT_ATOMIC_FAILURE:" + String(writeError && writeError.message || writeError));
+    }
   } finally {
     lock.releaseLock();
   }
