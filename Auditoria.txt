@@ -3273,3 +3273,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-222 / TASK-502 | C1.932] Hallazgos ACADEMIC: (a) getStudentFile resolvía selectores OR/first-match y permitía contradicciones; (b) updateDocumentStatus usaba findIndex y podía escribir el primer DocumentoID duplicado; (c) regex doblemente escapada en rol refrescado tras lock bloqueaba "Secretaría". Correcciones y pruebas asociadas incorporadas. CI: Department Scope SUCCESS 136 pasos; 236 tests Node.js SUCCESS; Academic single-auth, Exam security, Accounting Import Preflight, Task-Service, Reference Consumers, SACE y Hierarchical Config SUCCESS. Continuar inventario ACADEMIC/ACCOUNTING; TASK-502/TASK-506 abiertos.
+
+
+[2026-11-22 | AUD-NG-222 / TASK-502 | C1.933] ACCOUNTING: hallazgo TOCTOU en uploadEmployeeDocument (autorización previa al lock). Revalidación de identidad, permiso dinámico y expediente dentro de lock; actor de auditoría actualizado. Tests cubren revocación de permiso/scope, cambio de identidad, no escrituras y liberación del lock. CI Department Scope SUCCESS 137 pasos, contrato nuevo PASS, syntax checks PASS. Siguiente: vacaciones/incapacidades, asistencia, incidentes y capacitación.

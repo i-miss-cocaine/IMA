@@ -1646,3 +1646,39 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - AUD-NG-222 / TASK-502 permanece En ejecución: continuar inventario de lecturas/escrituras ACADEMIC y la revisión de ACCOUNTING (expedientes laborales, documentos, préstamos/planillas, comprobantes y transporte), sin repetir contratos ya aprobados.
 - TASK-506 / AUD-NG-226 permanece En ejecución y dependiente de TASK-502.
 ===============================================================================
+
+
+===============================================================================
+### C1.933 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-EMPLOYEE-DOCUMENT-TOCTOU
+===============================================================================
+
+### Continuidad, commit y HEAD
+- Continuación desde C1.932 en NG_beta_0.0.0.1_work.
+- Commit de implementación: 738c28374e25eba623e8737dd62d21b74fb20a5b.
+- Commit de integración de CI: 1af410a1c765684a8237a0e3533fc3e8eea73540.
+- HEAD de trabajo verificado antes de este checkpoint: 1af410a1c765684a8237a0e3533fc3e8eea73540.
+- Rama base sin modificar.
+
+### Hallazgo y corrección
+- uploadEmployeeDocument verificaba identidad, permiso RBAC y acceso al expediente antes de esperar ScriptLock, y reutilizaba esa autorización al escribir.
+- Se agregó una segunda verificación dentro de la sección crítica: identidad firmada, permiso dinámico para uploadEmployeeDocument y alcance vigente del expediente.
+- El actor de auditoría CargadoPor se toma de la identidad revalidada dentro del lock.
+- Si se revoca permiso o acceso mientras se espera el lock, la operación retorna denegación sin crear hoja, archivo ni fila.
+- Se agregó contrato para permiso revocado, scope revocado y cambio de identidad entre preflight y lock; verifica liberación de lock y cero escrituras en denegación.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-employee-expediente-scope.test.js
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- Department Scope Contract run 44964790070: SUCCESS, 137 pasos.
+- Contrato accounting employee expediente/document ownership, privacy and concurrency: PASS.
+- Syntax-check updated Apps Script services y node --check del nuevo test: PASS.
+- Los workflows relacionados del commit anterior permanecen SUCCESS: Department Reference Consumers, Identity Mapping and Transport Security, ACCOUNTING Transport, Hierarchical Configuration, Library Circulation Concurrency y Accounting Import Preflight.
+- No se ejecutó CLI local ni Apps Script/Sheets/Drive reales; no se declara validación de producción.
+
+### Siguiente tarea elegible
+- Continuar AUD-NG-222/TASK-502 con auditoría TOCTOU de otros handlers de escritura ACCOUNTING que precalculan identidad o acceso antes de ScriptLock; priorizar vacaciones/incapacidades, correcciones de asistencia, incidentes laborales y capacitación.
+- TASK-506 / AUD-NG-226 permanece dependiente de TASK-502.
+===============================================================================
