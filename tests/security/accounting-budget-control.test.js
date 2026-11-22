@@ -69,10 +69,10 @@ function makeHarness(options={}){
     Object,Array,String,Number,Date,Math,JSON,Error,RegExp,isFinite,parseInt
   };
   vm.createContext(context);
-  const names=["budgetAccess_","budgetScopeAllows_","ensureBudgetSchema_","ensureBudgetCommitmentSchema_","budgetRecordFromRow_","getBudgetRowsCore_",
+  const names=["budgetLogEvent_","budgetAccess_","budgetScopeAllows_","ensureBudgetSchema_","ensureBudgetCommitmentSchema_","budgetRecordFromRow_","getBudgetRowsCore_",
     "getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailabilityCore_","checkBudgetAvailability","reserveBudgetCommitmentLocked_"];
   vm.runInContext(names.map(extract).join("\n")+"\nthis.api={get:getBudgets,save:saveBudgetPlan,report:getBudgetExecutionReport,check:checkBudgetAvailability,checkCore:checkBudgetAvailabilityCore_,reserve:reserveBudgetCommitmentLocked_};",context);
-  return{api:context.api,sheets,ss,stats:()=>({identityCalls,lockCalls,lockReleases})};
+  return{api:context.api,sheets,ss,logs:context.logs,stats:()=>({identityCalls,lockCalls,lockReleases})};
 }
 function main(){
   assert.doesNotThrow(()=>new vm.Script(source),"ACCOUNTING backend syntax");
@@ -88,6 +88,7 @@ function main(){
   const created=h.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:1000,umbralAlertaPct:80});
   assert.equal(created.status,"success",JSON.stringify(created));
   assert.equal(created.version,1);
+  assert.ok(h.logs.some(entry=>entry.code==="BUDGET_PLAN_CREATED"),"budget plan creation must be auditable");
   const schemaHeader=h.sheets.PresupuestosInstitucionales.rows[0];
   assert.deepEqual(schemaHeader,budgetHeaders,"legacy eight-column budget sheet is migrated append-only");
   const budgetId=created.presupuestoId;
@@ -103,10 +104,12 @@ function main(){
   assert.equal(threshold.status,"warning");
   assert.equal(threshold.code,"BUDGET_THRESHOLD_ALERT");
   assert.equal(threshold.alertaUmbral,true);
+  assert.ok(h.logs.some(entry=>entry.code==="BUDGET_THRESHOLD_ALERT"),"threshold alerts must be logged");
   assert.ok(h.stats().lockReleases>=1);
   const overrun=h.api.check({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoSolicitado:1001});
   assert.equal(overrun.disponible,false);
   assert.equal(overrun.code,"BUDGET_OVERRUN_BLOCKED");
+  assert.ok(h.logs.some(entry=>entry.code==="BUDGET_OVERRUN_BLOCKED"),"budget blocks must be logged");
   const report=h.api.report({sessionToken:"S",anoId:"2026"});
   assert.equal(report.status,"success");
   assert.equal(report.report.totals.montoAprobado,1000);
@@ -122,6 +125,7 @@ function main(){
   const reserveInput={presupuestoId:budgetId,ordenCompraId:"OC-1",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:600,idempotencyKey:"OC-1:PRE-1"};
   const reserved=h.api.reserve(h.ss,reserveInput,"U-1");
   assert.equal(reserved.status,"success",JSON.stringify(reserved));
+  assert.ok(h.logs.some(entry=>entry.code==="BUDGET_COMMITMENT_RESERVED"),"commitment reservations must be logged");
   assert.equal(h.sheets.PresupuestosInstitucionales.rows[1][5],600);
   assert.equal(h.sheets.CompromisosPresupuestarios.rows.length,2);
   const replay=h.api.reserve(h.ss,reserveInput,"U-1");
