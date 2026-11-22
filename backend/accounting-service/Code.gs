@@ -6857,7 +6857,7 @@ function ensureAccountsPayableInvoiceSheet_(ss) {
   var values = sheet.getDataRange().getValues();
   if (!values || !values.length) return { valid: false, code: "RESOURCE_SCHEMA_INVALID" };
   var headers = values[0].map(function(v) { return String(v || "").trim(); });
-  if (JSON.stringify(headers.slice(0, 15)) !== JSON.stringify(expected.slice(0, 15))) return { valid: false, code: "RESOURCE_SCHEMA_INVALID" };
+  if (headers.length < 10 || headers.length > expected.length || JSON.stringify(headers) !== JSON.stringify(expected.slice(0, headers.length))) return { valid: false, code: "RESOURCE_SCHEMA_INVALID" };
   if (headers.length < expected.length) {
     var extra = expected.slice(headers.length);
     sheet.getRange(1, headers.length + 1, 1, extra.length).setValues([extra]);
