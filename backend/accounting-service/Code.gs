@@ -6973,9 +6973,11 @@ function getPurchaseReceipts(payload) {
 function getPurchaseActionCapabilities(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(input,ss,false);
   if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
-  var actions=["createPurchaseRequest","submitPurchaseQuotation","adjudicatePurchaseQuotations","createPurchaseOrder",
+  var actions=["getPurchaseRequests","getPurchaseQuotations","getPurchaseQuotationMatrix","getPurchaseOrders","getPurchaseReceipts","getSuppliers","getPurchaseDossier",
+    "createPurchaseRequest","submitPurchaseQuotation","adjudicatePurchaseQuotations","createPurchaseOrder",
     "recordPurchaseReceipt","recordPurchaseOrderConfirmation","recordAccountsPayableExpense","verifyThreeWayMatch",
-    "savePurchaseInvoiceTolerance","registerAssetsFromPurchaseReceipt"];
+    "savePurchaseInvoiceTolerance","registerAssetsFromPurchaseReceipt","registerSupplier","manageSupplierContact",
+    "manageSupplierAddress","manageSupplierCommercialTerms","manageSupplierBankAccount","getSupplierBankAccount"];
   var capabilities=Object.create(null);
   actions.forEach(function(action){var result=validateRolePermission(access.actor,action,input);capabilities[action]=!!(result&&result.authorized===true);});
   return{status:"success",actions:capabilities};

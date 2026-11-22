@@ -1170,6 +1170,42 @@ window.handleSaveBaja = function (e) {
 
 // [TASK-014] [F18-Task03] - Interfaz operativa completa del módulo de compras & proveedores
 let currentComprasSubtab = 'solicitudes';
+let purchaseActionCapabilitiesRequestId = 0;
+window.purchaseActionCapabilities = Object.create(null);
+window.hasPurchaseActionCapability = function(action) {
+  return window.purchaseActionCapabilities && window.purchaseActionCapabilities[action] === true;
+};
+window.applyPurchaseActionVisibility = function(root) {
+  const scope = root || document;
+  if (!scope || typeof scope.querySelectorAll !== "function") return;
+  Array.prototype.forEach.call(scope.querySelectorAll("[data-purchase-action]"), control => {
+    const action = String(control.getAttribute("data-purchase-action") || "").trim();
+    const allowed = !!action && window.hasPurchaseActionCapability(action);
+    control.hidden = !allowed;
+    control.disabled = !allowed;
+    if (control.setAttribute) control.setAttribute("aria-hidden", String(!allowed));
+  });
+};
+window.loadPurchaseActionCapabilities = function() {
+  const requestId = ++purchaseActionCapabilitiesRequestId;
+  window.purchaseActionCapabilities = Object.create(null);
+  window.applyPurchaseActionVisibility(document.getElementById("compras-subtab-container") || document);
+  return fetchBackendAccounting("getPurchaseActionCapabilities", {}).then(result => {
+    if (requestId !== purchaseActionCapabilitiesRequestId) return result;
+    if (!result || result.status !== "success" || !result.actions || typeof result.actions !== "object" || Array.isArray(result.actions)) {
+      throw new Error(result && result.code || "PURCHASE_CAPABILITIES_UNAVAILABLE");
+    }
+    window.purchaseActionCapabilities = Object.assign(Object.create(null), result.actions);
+    window.applyPurchaseActionVisibility(document.getElementById("compras-subtab-container") || document);
+    return result;
+  }).catch(error => {
+    if (requestId === purchaseActionCapabilitiesRequestId) {
+      window.purchaseActionCapabilities = Object.create(null);
+      window.applyPurchaseActionVisibility(document.getElementById("compras-subtab-container") || document);
+    }
+    return { status: "error", code: String(error && error.message || "PURCHASE_CAPABILITIES_UNAVAILABLE") };
+  });
+};
 
 function renderComprasModule(container) {
   container.innerHTML = `
@@ -1267,7 +1303,7 @@ window.searchPurchaseDossier=function(){
     (result.expedientes||[]).forEach(exp=>{
       const card=document.createElement("div");card.className="border rounded-xl p-4 my-3";
       const title=document.createElement("h6");title.className="font-black";title.textContent=exp.orden.ordenCompraId+" · "+exp.proveedor.nombre;card.appendChild(title);
-      const m=exp.metricas||{},metrics=document.createElement("p");metrics.className="text-xs my-2";metrics.textContent="Pedidas "+m.cantidadPedida+" · Recibidas "+m.cantidadRecibida+" · Facturadas "+m.cantidadFacturada+" · Pendientes "+m.cantidadPendiente+" · Autorizado L "+m.importeAutorizado+" · Facturado L "+m.importeFacturado+" · Pagado L "+m.importePagado+" · Saldo L "+m.saldoPendiente;card.appendChild(metrics);const confirmationButton=document.createElement("button");confirmationButton.className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold";confirmationButton.textContent="Registrar confirmación del proveedor";confirmationButton.onclick=()=>window.registerPurchaseOrderConfirmationUI(exp.orden.ordenCompraId);card.appendChild(confirmationButton);
+      const m=exp.metricas||{},metrics=document.createElement("p");metrics.className="text-xs my-2";metrics.textContent="Pedidas "+m.cantidadPedida+" · Recibidas "+m.cantidadRecibida+" · Facturadas "+m.cantidadFacturada+" · Pendientes "+m.cantidadPendiente+" · Autorizado L "+m.importeAutorizado+" · Facturado L "+m.importeFacturado+" · Pagado L "+m.importePagado+" · Saldo L "+m.saldoPendiente;card.appendChild(metrics);const confirmationButton=document.createElement("button");confirmationButton.className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold";confirmationButton.textContent="Registrar confirmación del proveedor";confirmationButton.dataset.purchaseAction="recordPurchaseOrderConfirmation";confirmationButton.onclick=()=>window.registerPurchaseOrderConfirmationUI(exp.orden.ordenCompraId);card.appendChild(confirmationButton);
       (exp.timeline||[]).forEach(ev=>{const p=document.createElement("p");p.className="text-xs";p.textContent=ev.etapa+" · "+(ev.fecha?window.IMARegionalFormatters.formatDateTime(ev.fecha):"Fecha no registrada")+" · "+ev.estado+" · "+ev.responsable;card.appendChild(p);});
       (exp.documentos||[]).forEach(doc=>{const a=document.createElement("a");a.href=doc.url;a.target="_blank";a.rel="noopener noreferrer";a.className="block text-xs text-indigo-600 underline";a.textContent=doc.nombre;card.appendChild(a);});
       if(exp.documentosRestringidos){const note=document.createElement("p");note.className="text-xs text-amber-700";note.textContent="Los enlaces documentales están restringidos para este rol.";card.appendChild(note);}
@@ -1279,6 +1315,7 @@ window.searchPurchaseDossier=function(){
       (exp.asientos||[]).forEach(asiento=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Asiento "+asiento.asientoId+" · "+asiento.fecha+" · "+asiento.descripcion+" · "+asiento.estado;card.appendChild(p);});
       host.appendChild(card);
     });
+    if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(host);
     if(!host.childElementCount)host.textContent="No se encontraron expedientes dentro del ámbito autorizado.";
   }).catch(error=>{host.textContent=error.message||String(error);});
 };
@@ -1599,8 +1636,9 @@ function renderComprasRecepcionesView(container) {
       <td class="p-3">${r.fechaRecepcion?window.IMARegionalFormatters.formatDateTime(r.fechaRecepcion):"-"}</td>
       <td class="p-3">${escapePurchaseAssetHtml(r.receptorUserId)}</td>
       <td class="p-3">${escapePurchaseAssetHtml(r.estadoConformidad)}</td>
-      <td class="p-3">${r.estadoConformidad==="Conforme"?`<button onclick="openReceiptAssetRegistration(${purchaseAssetJsArg(r.recepcionId)})" class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Registrar activos</button>`:"—"}</td>
+      <td class="p-3">${r.estadoConformidad==="Conforme"?`<button onclick="openReceiptAssetRegistration(${purchaseAssetJsArg(r.recepcionId)})" data-purchase-action="registerAssetsFromPurchaseReceipt" hidden class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Registrar activos</button>`:"—"}</td>
     </tr>`).join("");
+    if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(tbody);
     if(window.pendingPurchaseReceiptFocus){const target=Array.from(tbody.querySelectorAll("[data-receipt-id]")).find(row=>row.dataset.receiptId===window.pendingPurchaseReceiptFocus);if(target){target.scrollIntoView({behavior:"smooth",block:"center"});window.pendingPurchaseReceiptFocus="";}}
   }).catch(err=>{const tbody=document.getElementById("tbl-compras-recepciones");if(tbody)tbody.innerHTML='<tr><td colspan="6" class="p-4 text-center text-red-500">Error: '+escapePurchaseAssetHtml(err.message)+'</td></tr>';});
 }
@@ -1719,17 +1757,19 @@ window.executeThreeWayMatchTest = function () {
 
 function renderComprasProveedoresView(container) {
   container.innerHTML=`<div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
-    <div class="flex flex-wrap items-center justify-between gap-3"><h5 class="text-sm font-black uppercase text-gray-800">Directorio de proveedores</h5><button onclick="openNewSupplierModal()" class="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-xs">Registrar proveedor</button></div>
+    <div class="flex flex-wrap items-center justify-between gap-3"><h5 class="text-sm font-black uppercase text-gray-800">Directorio de proveedores</h5><button onclick="openNewSupplierModal()" data-purchase-action="registerSupplier" hidden class="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-xs">Registrar proveedor</button></div>
     <div class="overflow-x-auto"><table class="w-full text-left text-xs text-gray-700"><thead class="bg-gray-50 text-gray-500 uppercase font-black"><tr><th class="p-3">Proveedor / RTN</th><th class="p-3">Contactos</th><th class="p-3">Direcciones</th><th class="p-3">Condiciones</th><th class="p-3">Cuenta bancaria</th><th class="p-3">Estado</th><th class="p-3">Acciones</th></tr></thead><tbody id="tbl-compras-proveedores"><tr><td colspan="7" class="p-4 text-center text-gray-400">Cargando...</td></tr></tbody></table></div>
   </div>`;
   fetchBackendAccounting("getSuppliers",{}).then(res=>{
     const tbody=document.getElementById("tbl-compras-proveedores");if(!tbody)return;const list=res.proveedores||[];
     if(!list.length){tbody.innerHTML='<tr><td colspan="7" class="p-4 text-center text-gray-400">No hay proveedores registrados.</td></tr>';return;}
-    tbody.innerHTML=list.map(p=>{const e=escapePurchaseAssetHtml,terms=p.condicionesComerciales,contactNames=(p.contactos||[]).map(c=>e(c.nombre)+(c.esPrincipal?" (principal)":"")).join("<br>"),addressNames=(p.direcciones||[]).map(a=>e(a.tipoDireccion)+": "+e(a.direccion)).join("<br>");return `<tr data-proveedor-id="${e(p.proveedorId)}" class="border-b hover:bg-gray-50"><td class="p-3"><b>${e(p.nombreProveedor)}</b><div class="text-gray-500">${e(p.proveedorId)} · RTN ${e(p.rtn)}</div></td><td class="p-3">${contactNames||"Sin contactos"}<div><button onclick="openSupplierContactModal('${e(p.proveedorId)}')" class="text-indigo-600 font-bold mt-1">+ Contacto</button></div></td><td class="p-3">${addressNames||"Sin direcciones"}</td><td class="p-3">${terms?e(String(terms.plazoCreditoDias))+" días · "+e(terms.moneda)+" · entrega "+e(String(terms.tiempoEntregaDias))+" días":"Sin condiciones"}</td><td class="p-3">${p.tieneCuentaBancaria?e(p.cuentaBancariaEnmascarada):"No registrada"}</td><td class="p-3"><span class="px-2 py-1 rounded bg-gray-100 font-bold">${e(p.estado)}</span></td><td class="p-3 whitespace-nowrap"><button onclick="viewSupplierBankAccount('${e(p.proveedorId)}')" class="text-indigo-600 font-bold">Ver cuenta</button> <button onclick="updateSupplierBankAccount(this.parentElement.parentElement.dataset.proveedorId)" class="text-indigo-600 font-bold">Actualizar cuenta</button></td></tr>`;}).join("");
+    tbody.innerHTML=list.map(p=>{const e=escapePurchaseAssetHtml,terms=p.condicionesComerciales,contactNames=(p.contactos||[]).map(c=>e(c.nombre)+(c.esPrincipal?" (principal)":"")).join("<br>"),addressNames=(p.direcciones||[]).map(a=>e(a.tipoDireccion)+": "+e(a.direccion)).join("<br>");return `<tr data-proveedor-id="${e(p.proveedorId)}" class="border-b hover:bg-gray-50"><td class="p-3"><b>${e(p.nombreProveedor)}</b><div class="text-gray-500">${e(p.proveedorId)} · RTN ${e(p.rtn)}</div></td><td class="p-3">${contactNames||"Sin contactos"}<div><button onclick="openSupplierContactModal('${e(p.proveedorId)}')" data-purchase-action="manageSupplierContact" hidden class="text-indigo-600 font-bold mt-1">+ Contacto</button></div></td><td class="p-3">${addressNames||"Sin direcciones"}</td><td class="p-3">${terms?e(String(terms.plazoCreditoDias))+" días · "+e(terms.moneda)+" · entrega "+e(String(terms.tiempoEntregaDias))+" días":"Sin condiciones"}</td><td class="p-3">${p.tieneCuentaBancaria?e(p.cuentaBancariaEnmascarada):"No registrada"}</td><td class="p-3"><span class="px-2 py-1 rounded bg-gray-100 font-bold">${e(p.estado)}</span></td><td class="p-3 whitespace-nowrap"><button onclick="viewSupplierBankAccount('${e(p.proveedorId)}')" data-purchase-action="getSupplierBankAccount" hidden class="text-indigo-600 font-bold">Ver cuenta</button> <button onclick="updateSupplierBankAccount(this.parentElement.parentElement.dataset.proveedorId)" data-purchase-action="manageSupplierBankAccount" hidden class="text-indigo-600 font-bold">Actualizar cuenta</button></td></tr>`;}).join("");
+    if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(tbody);
   }).catch(err=>{const tbody=document.getElementById("tbl-compras-proveedores");if(tbody)tbody.innerHTML='<tr><td colspan="7" class="p-4 text-center text-red-500">Error: '+escapePurchaseAssetHtml(err.message)+'</td></tr>';});
 }
 
 function openNewPurchaseRequestModal() {
+  if (!window.hasPurchaseActionCapability("createPurchaseRequest")) { alert("No tiene permisos para esta operación."); return; }
   const existing=document.getElementById("purchase-request-modal");if(existing)existing.remove();
   const modal=document.createElement("div");modal.id="purchase-request-modal";modal.className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-3";
   modal.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto p-5 space-y-4">
@@ -1765,6 +1805,7 @@ function viewPurchaseRequestDetails(solId) {
 }
 
 function openNewSupplierModal() {
+  if (!window.hasPurchaseActionCapability("registerSupplier")) { alert("No tiene permisos para esta operación."); return; }
   const existing=document.getElementById("supplier-profile-modal");if(existing)existing.remove();
   const modal=document.createElement("div");modal.id="supplier-profile-modal";modal.className="fixed inset-0 z-[120] bg-black/60 flex items-center justify-center p-3";
   modal.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] overflow-y-auto p-5 space-y-4">
@@ -1815,13 +1856,14 @@ window.submitSupplierProfile=function(event){
   }).catch(error=>{if(btn)btn.disabled=false;alert("No se completó el registro del proveedor: "+(error.message||error)+". Revise si el proveedor base ya fue guardado antes de reintentar.");});
 };
 window.openSupplierContactModal=function(proveedorId){
+  if(!window.hasPurchaseActionCapability("manageSupplierContact")){alert("No tiene permisos para administrar contactos de proveedores.");return;}
   const modal=document.createElement("div");modal.id="supplier-contact-modal";modal.className="fixed inset-0 z-[125] bg-black/60 flex items-center justify-center p-3";
   modal.innerHTML=`<form id="supplier-contact-form" class="bg-white rounded-2xl p-5 w-full max-w-xl space-y-3" onsubmit="submitSupplierContact(event,'${escapePurchaseAssetHtml(proveedorId)}')"><h3 class="font-black text-sm">Agregar contacto</h3><input id="supplier-extra-contact-name" required class="w-full p-2 border rounded-lg" placeholder="Nombre"><input id="supplier-extra-contact-title" class="w-full p-2 border rounded-lg" placeholder="Cargo"><input id="supplier-extra-contact-phone" required class="w-full p-2 border rounded-lg" placeholder="Teléfono"><input id="supplier-extra-contact-email" type="email" required class="w-full p-2 border rounded-lg" placeholder="Correo"><select id="supplier-extra-contact-area" class="w-full p-2 border rounded-lg"><option>Ventas</option><option>Cobranzas</option><option>Soporte</option><option>Entregas</option></select><label><input id="supplier-extra-contact-primary" type="checkbox"> Contacto principal</label><div class="flex justify-end gap-2"><button type="button" onclick="document.getElementById('supplier-contact-modal').remove()" class="px-3 py-2 bg-gray-100 rounded-lg">Cancelar</button><button class="px-3 py-2 bg-indigo-600 text-white rounded-lg">Guardar</button></div></form>`;
   document.body.appendChild(modal);
 };
 window.submitSupplierContact=function(event,id){event.preventDefault();const val=field=>document.getElementById(field).value.trim();fetchBackendAccounting("manageSupplierContact",{proveedorId:id,nombre:val("supplier-extra-contact-name"),cargo:val("supplier-extra-contact-title"),telefono:val("supplier-extra-contact-phone"),email:val("supplier-extra-contact-email"),area:val("supplier-extra-contact-area"),esPrincipal:document.getElementById("supplier-extra-contact-primary").checked}).then(()=>{document.getElementById("supplier-contact-modal")?.remove();switchComprasSubtab("proveedores");}).catch(error=>alert(error.message||error));};
-window.updateSupplierBankAccount=function(id){const banco=prompt("Banco receptor");if(!banco)return;const tipoCuenta=prompt("Tipo de cuenta: Ahorro o Corriente");if(!tipoCuenta)return;const numeroCuenta=prompt("Número de cuenta");if(!numeroCuenta)return;const beneficiario=prompt("Beneficiario");if(!beneficiario)return;const motivoAutorizacion=prompt("Motivo documentado de la modificación (mínimo 10 caracteres)");if(!motivoAutorizacion)return;const referenciaAutorizacion=prompt("Referencia del documento de autorización");if(!referenciaAutorizacion)return;fetchBackendAccounting("manageSupplierBankAccount",{proveedorId:id,banco:banco,tipoCuenta:tipoCuenta,numeroCuenta:numeroCuenta,beneficiario:beneficiario,motivoAutorizacion:motivoAutorizacion,referenciaAutorizacion:referenciaAutorizacion}).then(()=>{alert("Cuenta actualizada; el historial anterior se conserva.");switchComprasSubtab("proveedores");}).catch(error=>alert("No se pudo actualizar la cuenta: "+(error.message||error)));};
-window.viewSupplierBankAccount=function(proveedorId){fetchBackendAccounting("getSupplierBankAccount",{proveedorId}).then(result=>{const account=result.cuenta,modal=document.createElement("div");modal.className="fixed inset-0 z-[125] bg-black/60 flex items-center justify-center p-3";modal.innerHTML='<div class="bg-white rounded-2xl p-5 max-w-md w-full space-y-2"><h3 class="font-black">Cuenta bancaria protegida</h3><p class="text-xs">Banco: '+escapePurchaseAssetHtml(account.banco)+'</p><p class="text-xs">Tipo: '+escapePurchaseAssetHtml(account.tipoCuenta)+'</p><p class="text-xs">Cuenta: '+escapePurchaseAssetHtml(account.numeroCuenta)+'</p><p class="text-xs">Beneficiario: '+escapePurchaseAssetHtml(account.beneficiario)+'</p><button class="px-3 py-2 bg-gray-100 rounded-lg" onclick="this.closest(\'div.fixed\').remove()">Cerrar</button></div>';document.body.appendChild(modal);}).catch(error=>alert("Acceso no disponible: "+(error.message||error)));};
+window.updateSupplierBankAccount=function(id){if(!window.hasPurchaseActionCapability("manageSupplierBankAccount")){alert("No tiene permisos para modificar cuentas bancarias.");return;}const banco=prompt("Banco receptor");if(!banco)return;const tipoCuenta=prompt("Tipo de cuenta: Ahorro o Corriente");if(!tipoCuenta)return;const numeroCuenta=prompt("Número de cuenta");if(!numeroCuenta)return;const beneficiario=prompt("Beneficiario");if(!beneficiario)return;const motivoAutorizacion=prompt("Motivo documentado de la modificación (mínimo 10 caracteres)");if(!motivoAutorizacion)return;const referenciaAutorizacion=prompt("Referencia del documento de autorización");if(!referenciaAutorizacion)return;fetchBackendAccounting("manageSupplierBankAccount",{proveedorId:id,banco:banco,tipoCuenta:tipoCuenta,numeroCuenta:numeroCuenta,beneficiario:beneficiario,motivoAutorizacion:motivoAutorizacion,referenciaAutorizacion:referenciaAutorizacion}).then(()=>{alert("Cuenta actualizada; el historial anterior se conserva.");switchComprasSubtab("proveedores");}).catch(error=>alert("No se pudo actualizar la cuenta: "+(error.message||error)));};
+window.viewSupplierBankAccount=function(proveedorId){if(!window.hasPurchaseActionCapability("getSupplierBankAccount")){alert("No tiene permisos para consultar cuentas bancarias.");return;}fetchBackendAccounting("getSupplierBankAccount",{proveedorId}).then(result=>{const account=result.cuenta,modal=document.createElement("div");modal.className="fixed inset-0 z-[125] bg-black/60 flex items-center justify-center p-3";modal.innerHTML='<div class="bg-white rounded-2xl p-5 max-w-md w-full space-y-2"><h3 class="font-black">Cuenta bancaria protegida</h3><p class="text-xs">Banco: '+escapePurchaseAssetHtml(account.banco)+'</p><p class="text-xs">Tipo: '+escapePurchaseAssetHtml(account.tipoCuenta)+'</p><p class="text-xs">Cuenta: '+escapePurchaseAssetHtml(account.numeroCuenta)+'</p><p class="text-xs">Beneficiario: '+escapePurchaseAssetHtml(account.beneficiario)+'</p><button class="px-3 py-2 bg-gray-100 rounded-lg" onclick="this.closest(\'div.fixed\').remove()">Cerrar</button></div>';document.body.appendChild(modal);}).catch(error=>alert("Acceso no disponible: "+(error.message||error)));};
 
 
 function renderBibliotecaModule(container) {
