@@ -155,7 +155,7 @@
 ---
 
 <!-- ID: F18-TASK04 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [ ] [F18-TASK04] Generar órdenes de compra oficiales en PDF y ciclo de estados
+### [x] [F18-TASK04] Generar órdenes de compra oficiales en PDF y ciclo de estados
 - **Severidad:** Crítica (Formalización contractual y envío formal a proveedores)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs` (`generatePurchaseOrderPDF`), `OrdenesCompra`.
 - **Problema:** Las órdenes solo existen como registros en la hoja de cálculo, sin documento descargable para enviar al proveedor.
@@ -168,8 +168,9 @@
 - **Dependencias/riesgos:** datos completos de proveedor/orden y flujo de autorizaciones; riesgo de emitir documentos inconsistentes o duplicados.
 - **Alcance:** generación y trazabilidad del PDF; no sustituye aprobación multinivel.
 - **Criterios de aceptación:** PDF descargable con los campos indicados, correlativo no duplicado y datos coincidentes con la orden autorizada.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; el informe no aporta prueba de generación operativa.
+- **Prioridad:** P0. **Estado:** Completada en C1.947.
+- **Evidencia de cierre:** se implementó aprobación independiente de órdenes con bloqueo de autoaprobación y umbral multinivel (> L 50,000: Administrador/Director), revalidación de identidad/permisos/scope bajo lock y requisito de solicitud aprobada/adjudicada. La orden transita Borrador → Aprobada → Emitida → Confirmada → Recepción parcial/total. `generatePurchaseOrderPDF` crea PDF membretado con correlativo anual único, proveedor/RTN, partidas, descuentos, impuestos, transporte, total y firmas; persiste DriveFileId, SHA-256, fecha y usuario en `OrdenesCompra`. El archivo y carpeta quedan privados; descarga autenticada comprueba scope, actor, MIME, extensión, firma PDF y hash. Reintentos son idempotentes; rollback elimina el archivo si falla la persistencia. La UI ofrece aprobar, emitir, descargar y registrar confirmación con gating de capacidades.
+- **Verificación:** Department Scope Contract run 44985337249 SUCCESS (140/140); Regional Formatting 44983281876 SUCCESS; UI Accessibility 44983281874 SUCCESS; Accounting Import Preflight 44984983035 SUCCESS; ACCOUNTING Transport Local 44984983036 SUCCESS; Identity Mapping/Transport Security 44984983052 SUCCESS; Hierarchical Configuration 44984983050 SUCCESS; Department Reference Consumers 44984983024 SUCCESS; Library Circulation Concurrency 44984983018 SUCCESS. Pruebas PDF, aprobación, idempotencia, privacidad, integridad, revocación de permisos/scope, cambio de actor, rollback y transiciones de estado ejecutadas en Node.js CI. No se ejecutó Apps Script/Drive real ni CLI local independiente.
 
 ---
 

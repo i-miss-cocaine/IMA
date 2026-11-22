@@ -2183,3 +2183,58 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Siguiente tarea elegible del ciclo F18: F18-TASK04 — generar órdenes de compra oficiales PDF y ciclo de estados.
 - AUD-NG-222/TASK-502 continúa abierto por inventario transversal de acciones/contextos de los demás servicios; AUD-NG-226/TASK-506 continúa según sus dependencias.
 ===============================================================================
+
+
+===============================================================================
+### C1.947 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-PURCHASE-ORDER-PDF
+===============================================================================
+
+### Continuidad, rama y commits
+- Continuación desde C1.946 en NG_beta_0.0.0.1_work.
+- Commits principales de implementación:
+  - 24ce6048af5e7b8cd4651771d87a2d8393047628 — PDF oficial privado, correlativo único, hash y descarga.
+  - 7989b0461d903898e6a71e7771c956db428a2b0a — transición de aprobación para órdenes.
+  - 5c07c46874dab88a0f57eba18f504abf009892dc — integración de acciones en UI.
+  - 293a61d525efe0e8c9d1c0b25e5e8035a5487b8c — serialización y revalidación de descarga privada.
+  - 4c6f0892e4cec22712da0f2d9bfb8a39ce36fcb2 — aprobación independiente, autoaprobación bloqueada y umbral > L 50,000.
+  - f4e9950890930e100c898aabbd4ffb2e86f57f24 — contrato usa normalizador real de roles.
+- Commits de soporte/hardening y pruebas quedan preservados en el historial entre C1.946 y C1.947; la rama continuó avanzando hasta e8c58d377be716554f771ee56a3966a1f8788ec2 sin reescritura.
+- HEAD de implementación verificado antes del checkpoint: e8c58d377be716554f771ee56a3966a1f8788ec2.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; no se modificó la rama base.
+
+### Hallazgos y correcciones
+1. Órdenes de compra no tenían PDF descargable. Se agregó `generatePurchaseOrderPDF`, correlativo `OC-YYYY-NNNNNN` bajo ScriptLock, metadatos de archivo y SHA-256 en `OrdenesCompra`.
+2. La emisión requiere orden aprobada y solicitud aprobada/adjudicada; proveedor activo y scope departamental vigente. La aprobación independiente impide autoaprobación y restringe importes mayores de L 50,000 a Administrador/Director.
+3. El PDF incorpora membrete institucional, datos fiscales del proveedor (nombre, RTN, teléfono/correo), datos de orden, partidas, subtotales, descuentos, impuestos, transporte, total autorizado, referencia de autorización y líneas de firma.
+4. Los PDF se almacenan en carpeta y archivo privados. La descarga no expone URL pública y vuelve a comprobar actor, permiso, scope, privacidad, MIME, extensión, firma `%PDF-` y hash SHA-256.
+5. Reintentos de emisión reutilizan el documento existente solo tras comprobar integridad; fallos de escritura hacen rollback del archivo. La consulta/descarga no altera el esquema de la hoja.
+6. El ciclo de estados incluye aprobación, emisión, confirmación del proveedor y recepción parcial/total; la confirmación no se admite en órdenes Borrador/Aprobada.
+7. La UI integra acciones Aprobar, Emitir PDF, Descargar y Confirmación, respetando las capacidades devueltas por el servidor.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-purchase-order-pdf.test.js
+- tests/security/accounting-purchase-dossier.test.js
+- tests/security/accounting-purchase-quotation-adjudication.test.js
+- tests/security/accounting-purchase-console-capabilities.test.js
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones
+- Department Scope Contract run 44985337249: SUCCESS, 140 pasos.
+- Regional Formatting Contract run 44983281876: SUCCESS.
+- UI Accessibility and Metadata Contract run 44983281874: SUCCESS.
+- Accounting Import Preflight run 44984983035: SUCCESS.
+- ACCOUNTING Transport Local Contracts run 44984983036: SUCCESS.
+- Identity Mapping and Transport Security run 44984983052: SUCCESS.
+- Hierarchical Configuration run 44984983050: SUCCESS.
+- Department Reference Consumers run 44984983024: SUCCESS.
+- Library Circulation Concurrency run 44984983018: SUCCESS.
+- Los contratos Node.js focalizados ejecutaron pruebas de aprobación independiente, umbral de alto valor, PDF, privacidad, idempotencia, descarga, integridad, revocación de scope/permisos, cambio de actor, rollback y transiciones de estado.
+- CLI local independiente: NOT RUN (sin checkout local); Apps Script real, Google Sheets y Drive de producción: NOT RUN.
+
+### Estado y siguiente tarea elegible
+- F18-TASK04: Completada y evidenciada en pendientes/Contabilidad/Pendientes.md.
+- F19-TASK14 depende de F19-Task01. El informe de Fase 19 registra TASK-019 como antecedente completado, pero pendiente de revalidación/ampliación por AUD-NG-023/AUD-NG-142 (movimientos desconocidos pueden alterar saldos). La siguiente tarea elegible es revalidar F19-Task01/TASK-019 sin repetir la implementación multialmacén histórica; después, continuar F19-TASK14.
+- AUD-NG-222/TASK-502 y AUD-NG-226/TASK-506 permanecen abiertos y no se declaran cerrados por esta tarea.
+===============================================================================
