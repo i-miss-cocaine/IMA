@@ -6970,6 +6970,17 @@ function getPurchaseReceipts(payload) {
   return{status:"success",recepciones:receipts};
 }
 
+function getPurchaseActionCapabilities(payload) {
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(input,ss,false);
+  if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
+  var actions=["createPurchaseRequest","submitPurchaseQuotation","adjudicatePurchaseQuotations","createPurchaseOrder",
+    "recordPurchaseReceipt","recordPurchaseOrderConfirmation","recordAccountsPayableExpense","verifyThreeWayMatch",
+    "savePurchaseInvoiceTolerance","registerAssetsFromPurchaseReceipt"];
+  var capabilities=Object.create(null);
+  actions.forEach(function(action){var result=validateRolePermission(access.actor,action,input);capabilities[action]=!!(result&&result.authorized===true);});
+  return{status:"success",actions:capabilities};
+}
+
 function getPurchaseInvoiceTolerance_(ss, concept) {
   var key = String(concept || "").trim().toUpperCase();
   var defaults = { PRECIO_UNITARIO: [0.05,0], IMPUESTO: [0.05,0], DESCUENTO: [0.05,0], TRANSPORTE: [0.05,0], OTROS_CARGOS: [0.05,0], IMPORTE_SUBTOTAL: [0.05,0], IMPORTE_TOTAL: [0.05,0] };
@@ -8248,6 +8259,7 @@ function doPost(e) {
     if (request.action === "manageSupplierBankAccount") return respond(manageSupplierBankAccount(actionPayload));
     if (request.action === "getSupplierBankAccount") return respond(getSupplierBankAccount(actionPayload));
     // case "getPurchaseDossier": result = getPurchaseDossier(payload); break;
+    if (request.action === "getPurchaseActionCapabilities") return respond(getPurchaseActionCapabilities(actionPayload));
     if (request.action === "getPurchaseRequests") return respond(getPurchaseRequests(actionPayload));
     if (request.action === "getPurchaseOrders") return respond(getPurchaseOrders(actionPayload));
     if (request.action === "getPurchaseReceipts") return respond(getPurchaseReceipts(actionPayload));
