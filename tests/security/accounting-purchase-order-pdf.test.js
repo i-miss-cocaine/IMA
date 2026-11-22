@@ -82,7 +82,7 @@ async function main(){
   assert.equal(makeHarness({state:"Borrador",requestState:"Pendiente"}).context.approvePurchaseOrder({ordenCompraId:"OC-1"}).code,"PURCHASE_REQUEST_NOT_APPROVED");
   const h=makeHarness();
   const generated=h.context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"});
-  assert.equal(generated.status,"success");
+  assert.equal(generated.status,"success",JSON.stringify(generated));
   assert.equal(generated.estadoOrden,"Emitida");
   assert.match(generated.numeroCorrelativo,/^OC-\d{4}-000001$/);
   const order=h.sheets.OrdenesCompra.rows[1];
