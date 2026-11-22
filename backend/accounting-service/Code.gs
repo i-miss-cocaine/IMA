@@ -5545,7 +5545,7 @@ function getOrCreateSheet(ss, name) {
     "ActasAdjudicacionCompra": ["ActaID","SolicitudID","Fecha","ResponsablesEvaluacionJSON","Dictamen","Justificacion","MontoAdjudicado","DetalleAdjudicacionJSON","OfertasDescartadasJSON","SnapshotCotizacionesJSON","Estado","AdjudicadoPor","IdempotencyKey","OrdenesCompraJSON"],
     "OrdenesCompra": ["OrdenCompraID","SolicitudID","CotizacionID","ProveedorID","FechaEmision","FechaEntregaEstimada","DetalleItemsJSON","MontoTotal","CentroCosto","EstadoOrden","AprobadoPor","Observaciones","SolicitanteUserId","VersionDocumental","ArchivoPdfUrl"],
     "ProveedoresActivos": ["ProveedorID","FechaRegistro","NombreProveedor","RTN","Telefono","Email","RubroServicio","Estado","Observaciones"],
-    "CuentasPorPagarGastos": ["ObligacionID","ProveedorID","NumeroFactura","Importe","Impuestos","FechaVencimiento","EstadoAprobacion","EstadoPago","AsientoID","Observaciones","TotalMonto","SaldoPendiente","TotalAbonado","FechaEmision","FechaRecepcion","OrdenCompraID","EstadoConciliacion","DiferenciasJSON","FacturaHash","IdempotencyKey","DiferenciaAutorizadaPor","FechaAutorizacionDiferencia","JustificacionDiferencia"],
+    "CuentasPorPagarGastos": ["ObligacionID","ProveedorID","NumeroFactura","Importe","Impuestos","FechaVencimiento","EstadoAprobacion","EstadoPago","AsientoID","Observaciones","TotalMonto","SaldoPendiente","TotalAbonado","FechaEmision","FechaRecepcion","OrdenCompraID","EstadoConciliacion","DiferenciasJSON","FacturaHash","IdempotencyKey","DiferenciaAutorizadaPor","FechaAutorizacionDiferencia","JustificacionDiferencia","AprobadoPor","FechaAprobacion","JustificacionAprobacion"],
     "ToleranciasConciliacionCompras": ["Concepto","ToleranciaAbsoluta","ToleranciaPorcentual","Estado","ActualizadoPor","FechaActualizacion"],
     "ExpedientesLaborales": ["ExpedienteID","PersonaId","UserId","Puesto","Departamento","CentroCosto","FechaIngreso","FechaSalida","EstadoLaboral","Observaciones"],
     "ContratosLaborales": ["ContratoID","ExpedienteID","TipoContrato","FechaInicio","FechaFin","SalarioBase","Jornada","EstadoContrato","Observaciones"],
@@ -7613,8 +7613,8 @@ function recordAccountsPayableMovement_(payload,type) {
       });
       if(duplicateCredit)return{status:"error",code:"ACCOUNTS_PAYABLE_CREDIT_NOTE_DUPLICATE"};
     }
-    var total=accountsPayableMoney_(record[ix("TotalMonto")]);
-    if(total===null||total<0)total=accountsPayableMoney_(Number(record[ix("Importe")]||0)+Number(record[ix("Impuestos")]||0));
+    var total=accountsPayableMoney_(record[ix("TotalMonto")]),calculatedTotal=accountsPayableMoney_(Number(record[ix("Importe")]||0)+Number(record[ix("Impuestos")]||0));
+    if(total===null||total<0||(total===0&&calculatedTotal>0))total=calculatedTotal;
     var paid=accountsPayableMoney_(record[ix("TotalAbonado")])||0;
     var credits=movementRows.filter(function(row){return String(row[mix("ObligacionID")]||"")===obligationId&&String(row[mix("TipoMovimiento")]||"")==="NOTA_CREDITO";})
       .reduce(function(sum,row){return sum+(accountsPayableMoney_(row[mix("Monto")])||0);},0);
@@ -7670,7 +7670,7 @@ function getAccountsPayablePortfolio(payload) {
     var departmentId=String(request[2]||"").trim();if(scope.institutionWide!==true&&departments.indexOf(departmentId)===-1)return;
     if(String(row[headers.indexOf("ProveedorID")]||"").trim()!==String(order[3]||"").trim())return;
     var invoiceMovements=movements.filter(function(m){return String(m[mi("ObligacionID")]||"")===obligationId;});
-    var total=accountsPayableMoney_(row[headers.indexOf("TotalMonto")]);if(total===null||total<0)total=accountsPayableMoney_(Number(row[headers.indexOf("Importe")]||0)+Number(row[headers.indexOf("Impuestos")]||0));
+    var total=accountsPayableMoney_(row[headers.indexOf("TotalMonto")]),calculatedTotal=accountsPayableMoney_(Number(row[headers.indexOf("Importe")]||0)+Number(row[headers.indexOf("Impuestos")]||0));if(total===null||total<0||(total===0&&calculatedTotal>0))total=calculatedTotal;
     var paid=accountsPayableMoney_(row[headers.indexOf("TotalAbonado")])||0;
     var credits=invoiceMovements.filter(function(m){return String(m[mi("TipoMovimiento")]||"")==="NOTA_CREDITO";}).reduce(function(sum,m){return sum+(accountsPayableMoney_(m[mi("Monto")])||0);},0);
     var balance=Math.max(0,accountsPayableMoney_(total-paid-credits)||0),dueValue=row[headers.indexOf("FechaVencimiento")],due=dueValue?accountsPayableDate_(dueValue):null,daysUntilDue=null,bucket="Sin fecha",state="Sin vencimiento";
@@ -7678,7 +7678,7 @@ function getAccountsPayablePortfolio(payload) {
       if(daysUntilDue>=0){bucket="Vigente";state=daysUntilDue===0?"Vence hoy":"Por vencer";}
       else{var overdue=-daysUntilDue;bucket=overdue<=30?"Vencida 1-30 días":overdue<=60?"Vencida 31-60 días":overdue<=90?"Vencida 61-90 días":"Vencida +90 días";state="Vencida";}}
     var reconciliation=String(row[headers.indexOf("EstadoConciliacion")]||"");if(reconciliation.toLowerCase()!=="conciliada")state="Bloqueada por conciliación";
-    if(balance<=0.005)state=credits>0&&paid<total-0.005?"Saldada por nota de crédito":"Pagada";
+    if(balance<=0.005&&reconciliation.toLowerCase()==="conciliada")state=credits>0&&paid<total-0.005?"Saldada por nota de crédito":"Pagada";
     var item={obligacionId:obligationId,numeroFactura:String(row[headers.indexOf("NumeroFactura")]||""),proveedorId:String(row[headers.indexOf("ProveedorID")]||""),
       ordenCompraId:orderId,departamento:departmentId,fechaVencimiento:due?due.toISOString().slice(0,10):"",diasParaVencimiento:daysUntilDue,
       total:total,totalAbonado:paid,totalNotasCredito:credits,saldoPendiente:balance,estadoAprobacion:String(row[headers.indexOf("EstadoAprobacion")]||""),aprobadoPor:String(row[headers.indexOf("AprobadoPor")]||""),fechaAprobacion:row[headers.indexOf("FechaAprobacion")]||"",justificacionAprobacion:String(row[headers.indexOf("JustificacionAprobacion")]||""),
