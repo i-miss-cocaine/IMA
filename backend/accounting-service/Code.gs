@@ -2796,9 +2796,9 @@ function manageTrainingCourse(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID);
   var access=resolveTrainingCatalogWriteAccess_(input,ss);
   if(!access.authorized)return {status:"error",code:access.code};
+  var permission=validateRolePermission(access.actor,"manageTrainingCourse",input);
+  if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
   var headers=["CursoID","NombreCurso","Categoria","ProveedorResponsable","Modalidad","DuracionHoras","Requisitos","DirigidoA","Estado","CreadoPor","FechaCreacion","UltimaModificacion"];
-  var snapshot=ensureTrainingCourseWriteSheet_(ss,headers);
-  if(!snapshot.valid)return {status:"error",code:snapshot.code};
   var name=String(input.nombreCurso||"").trim(),duration=input.duracionHoras===undefined?null:Number(input.duracionHoras);
   if(!name)return {status:"error",code:"TRAINING_COURSE_NAME_REQUIRED"};
   if(duration!==null&&(!isFinite(duration)||duration<=0||duration>10000))return {status:"error",code:"TRAINING_COURSE_DURATION_INVALID"};
@@ -2808,6 +2808,12 @@ function manageTrainingCourse(payload) {
   var lock=LockService.getScriptLock();
   if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY"};
   try{
+    access=resolveTrainingCatalogWriteAccess_(input,ss);
+    if(!access||access.authorized!==true)return {status:"error",code:access&&access.code||"RESOURCE_SCOPE_DENIED"};
+    permission=validateRolePermission(access.actor,"manageTrainingCourse",input);
+    if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var snapshot=ensureTrainingCourseWriteSheet_(ss,headers);
+    if(!snapshot.valid)return {status:"error",code:snapshot.code};
     var id=String(input.cursoId||"").trim(),matches=snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return id&&String(item.row[0]||"").trim()===id;});
     if(id&&matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND"};
     var now=new Date();
@@ -2872,9 +2878,9 @@ function manageProfessionalDevelopmentPlan(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID);
   var access=resolveProfessionalDevelopmentPlanWriteAccess_(input,ss,input.empleadoId);
   if(!access.authorized)return {status:"error",code:access.code};
+  var permission=validateRolePermission(access.actor,"manageProfessionalDevelopmentPlan",input);
+  if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
   var headers=["PlanID","EmpleadoID","TituloObjetivo","Descripcion","MetasAccionesJSON","FechaInicio","FechaMeta","EstadoObjetivo","EvaluacionSeguimiento","CreadoPor","FechaCreacion","UltimaModificacion"];
-  var snapshot=ensureProfessionalDevelopmentPlanWriteSheet_(ss,headers);
-  if(!snapshot.valid)return {status:"error",code:snapshot.code};
   var title=String(input.tituloObjetivo||"").trim();
   if(!title)return {status:"error",code:"DEVELOPMENT_PLAN_TITLE_REQUIRED"};
   var start=input.fechaInicio?new Date(input.fechaInicio):new Date(),target=input.fechaMeta?new Date(input.fechaMeta):null;
@@ -2885,6 +2891,12 @@ function manageProfessionalDevelopmentPlan(payload) {
   var lock=LockService.getScriptLock();
   if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY"};
   try{
+    access=resolveProfessionalDevelopmentPlanWriteAccess_(input,ss,input.empleadoId);
+    if(!access||access.authorized!==true)return {status:"error",code:access&&access.code||"RESOURCE_NOT_FOUND"};
+    permission=validateRolePermission(access.actor,"manageProfessionalDevelopmentPlan",input);
+    if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var snapshot=ensureProfessionalDevelopmentPlanWriteSheet_(ss,headers);
+    if(!snapshot.valid)return {status:"error",code:snapshot.code};
     var id=String(input.planId||"").trim(),matches=snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return id&&String(item.row[0]||"").trim()===id;});
     if(id&&matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND"};
     var now=new Date();
