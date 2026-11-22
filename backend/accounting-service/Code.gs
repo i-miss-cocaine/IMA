@@ -6999,10 +6999,8 @@ function ensurePurchaseOrderPdfSchema_(ss, createMissing) {
     return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   if(PURCHASE_ORDER_PDF_COLUMNS_.some(function(name){return headers.indexOf(name)>=0&&headers.indexOf(name)!==headers.lastIndexOf(name);}))
     return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
-  if(createMissing===false&&PURCHASE_ORDER_PDF_COLUMNS_.some(function(name){return headers.indexOf(name)<0;}))
-    return{valid:false,code:"PURCHASE_ORDER_PDF_NOT_FOUND"};
   PURCHASE_ORDER_PDF_COLUMNS_.forEach(function(name){
-    if(headers.indexOf(name)<0){sheet.getRange(1,headers.length+1).setValue(name);headers.push(name);}
+    if(headers.indexOf(name)<0&&createMissing!==false){sheet.getRange(1,headers.length+1).setValue(name);headers.push(name);}
   });
   var map={};headers.forEach(function(name,index){if(name)map[name]=index;});
   return{valid:true,sheet:sheet,headers:headers,map:map};
@@ -7249,6 +7247,7 @@ function getPurchaseOrderPDFFile(payload) {
     if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
     var order=matches[0].row,scope=purchaseOrderScopeAccess_(input,ss,order,false);
     if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
+    if(map.DriveFileIdPDF===undefined||map.SHA256PDF===undefined)return{status:"error",code:"PURCHASE_ORDER_PDF_NOT_FOUND"};
     if(!scope.access||String(scope.access.actor.userId||"")!==String(initial.actor.userId||"")||
        String(scope.access.actor.role||"")!==String(initial.actor.role||""))
       return{status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
