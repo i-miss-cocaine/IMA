@@ -8038,7 +8038,9 @@ function recordPurchaseOrderConfirmation(payload) {
     var order=orderMatches[0];
     var orderScope=purchaseOrderScopeAccess_(input,ss,order,true);
     if(!orderScope||orderScope.authorized!==true)return {status:"error",code:orderScope&&orderScope.code||"RESOURCE_NOT_FOUND"};
-    if(String(order[9]||"").toLowerCase()==="cancelada")return {status:"error",code:"PURCHASE_ORDER_CANCELLED"};
+    var currentOrderState=String(order[9]||"").trim().toLowerCase();
+    if(currentOrderState==="cancelada")return {status:"error",code:"PURCHASE_ORDER_CANCELLED"};
+    if(currentOrderState==="borrador"||currentOrderState==="aprobada")return {status:"error",code:"PURCHASE_ORDER_NOT_ISSUED"};
     orderRows=purchaseDossierRows_(ss,"OrdenesCompra");
     order=orderRows.slice(1).filter(function(row){return String(row[0])===String(input.ordenCompraId||"");})[0];
     if(!order||String(order[9]||"").toLowerCase()==="cancelada")return {status:"error",code:"PURCHASE_ORDER_CANCELLED"};
