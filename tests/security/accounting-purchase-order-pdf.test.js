@@ -27,7 +27,7 @@ function makeHarness(options={}){
     const sheet={rows,failCell:"",getDataRange(){return{getValues:()=>sheet.rows.map(row=>row.slice())};},
       getRange(row,col,numRows,numCols){return{
         setValue:value=>{if(sheet.failCell===row+":"+col){sheet.failCell="";throw new Error("SHEET_WRITE_FAILED");}while(sheet.rows.length<row)sheet.rows.push([]);while(sheet.rows[row-1].length<col)sheet.rows[row-1].push("");sheet.rows[row-1][col-1]=value;},
-        setValues:values=>{for(let i=0;i<values.length;i++){while(this.rows.length<row+i)this.rows.push([]);for(let j=0;j<values[i].length;j++)this.rows[row-1+i][col-1+j]=values[i][j];}}
+        setValues:values=>{for(let i=0;i<values.length;i++){while(sheet.rows.length<row+i)sheet.rows.push([]);while(sheet.rows[row-1+i].length<col-1+values[i].length)sheet.rows[row-1+i].push("");for(let j=0;j<values[i].length;j++)sheet.rows[row-1+i][col-1+j]=values[i][j];}}
       };},getLastRow(){return sheet.rows.length;}};
     return sheet;
   }
