@@ -11,7 +11,7 @@ const partial=ctx.recordPurchaseReceipt(partialPayload);
 const partialReceiptId=partial.recepcionId,partialMoves=inventoryMoves.length;
 const replayedPartial=ctx.recordPurchaseReceipt(partialPayload);
 assert.equal(replayedPartial.idempotente,true);assert.equal(replayedPartial.recepcionId,partialReceiptId);assert.equal(inventoryMoves.length,partialMoves,"idempotent receipt replay must not duplicate inventory movements");
-assert.equal(ctx.recordPurchaseReceipt({...partialPayload,detalleRecibido:[{codigoItem:"IT-A",cantidad:3}]}).code,"PURCHASE_RECEIPT_IDEMPOTENCY_CONFLICT","same key with changed payload must fail closed");
+assert.throws(()=>ctx.recordPurchaseReceipt({...partialPayload,detalleRecibido:[{codigoItem:"IT-A",cantidad:3}]}),/PURCHASE_RECEIPT_IDEMPOTENCY_CONFLICT/,"same key with changed payload must fail closed");
 assert.equal(partial.estadoOrden,"RecibidaParcial");assert.equal(partial.resumenPartidas.find(x=>x.codigoItem==="IT-A").pendiente,6);assert.equal(partial.resumenPartidas.find(x=>x.codigoItem==="IT-B").pendiente,5);assert.equal(inventoryMoves.length,1);
 const complete=ctx.recordPurchaseReceipt({ordenCompraId:"PO-1",detalleRecibido:[{codigoItem:"IT-A",cantidad:6},{codigoItem:"IT-B",cantidad:5}],estadoConformidad:"Conforme",registrarEnInventario:true});
 assert.equal(complete.estadoOrden,"RecibidaTotal");assert.equal(complete.resumenPartidas.every(x=>x.pendiente===0),true);assert.equal(inventoryMoves.length,3);
