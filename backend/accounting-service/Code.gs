@@ -10286,10 +10286,12 @@ function applyPayrollLoanLedgerForPlanilla_(ss,planillaId,action,actorId) {
 }
 
 function manageEmployeeLoanAdvance(payload) {
-  const p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  const p=payload||{};let actor=getVerifiedAccountingIdentity_(p);
   if(!actor||!actor.authorized)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
   const role=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
   if(!["RECURSOSHUMANOS","ADMINISTRADOR"].includes(role))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+  let permission=validateRolePermission(actor,"manageEmployeeLoanAdvance",p);
+  if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED",message:"Acceso denegado."};
   const id=String(p.prestamoId||"").trim(),action=String(p.accion||"").trim().toUpperCase(),reason=String(p.motivo||p.observaciones||"").trim().slice(0,500);
   if(!id||!["SUSPENDER","REANUDAR","RENEGOCIAR","LIQUIDAR_ANTICIPADAMENTE"].includes(action))return {status:"error",code:"LOAN_MANAGEMENT_INVALID",message:"La operación solicitada no es válida."};
   if(reason.length<10)return {status:"error",code:"LOAN_MANAGEMENT_REASON_REQUIRED",message:"Se requiere una justificación documentada de al menos 10 caracteres."};
@@ -10303,6 +10305,12 @@ function manageEmployeeLoanAdvance(payload) {
   if(!access.authorized)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Préstamo no disponible."};
   const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La operación está ocupada. Intente nuevamente."};
   try{
+    actor=getVerifiedAccountingIdentity_(p);
+    if(!actor||!actor.authorized)return {status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
+    const refreshedRole=String(actor.role||"").toUpperCase().replace(/[ÁÀÄ]/g,"A").replace(/[ÉÈË]/g,"E").replace(/[ÍÌÏ]/g,"I").replace(/[ÓÒÖ]/g,"O").replace(/[ÚÙÜ]/g,"U").replace(/Ñ/g,"N").replace(/[^A-Z0-9]/g,"");
+    if(!["RECURSOSHUMANOS","ADMINISTRADOR"].includes(refreshedRole))return {status:"error",code:"ROLE_NOT_ALLOWED",message:"Acceso denegado."};
+    permission=validateRolePermission(actor,"manageEmployeeLoanAdvance",p);
+    if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED",message:"Acceso denegado."};
     const data=sheet.getDataRange().getValues(),matches=data.slice(1).map((r,i)=>({r,index:i+2})).filter(x=>String(x.r[0]||"").trim()===id);
     if(matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND",message:"Préstamo no disponible."};
     const current=matches[0],row=current.r.slice(),balance=Number(row[8]),state=String(row[9]||"").trim().toUpperCase();
