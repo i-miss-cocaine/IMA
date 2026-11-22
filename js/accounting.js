@@ -1556,66 +1556,94 @@ window.renderPurchaseQuotationMatrix=function(matrix,target){
 };
 
 function renderComprasOrdenesView(container) {
-  container.innerHTML = `
-    <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2"><h5 class="text-sm font-black uppercase text-gray-800">Órdenes de Compra Emitidas</h5><button onclick="openPurchaseReceiptModal()" data-purchase-action="recordPurchaseReceipt" hidden class="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold">Registrar recepción</button></div>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs text-gray-700">
-          <thead class="bg-gray-50 text-gray-500 uppercase font-black">
-            <tr>
-              <th class="p-3">Orden ID</th>
-              <th class="p-3">Proveedor</th>
-              <th class="p-3">Monto Total</th>
-              <th class="p-3">Fecha Entrega Est.</th>
-              <th class="p-3">Estado Orden</th>
-            </tr>
-          </thead>
-          <tbody id="tbl-compras-ordenes" class="divide-y divide-gray-100">
-            <tr><td colspan="5" class="p-4 text-center text-gray-400">Cargando órdenes de compra...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  fetchBackendAccounting('getPurchaseOrders', {})
-    .then(res => {
-      const tbody = document.getElementById('tbl-compras-ordenes');
-      const kpi = document.getElementById('kpi-cmp-ordenes');
-      const kpiParcial = document.getElementById('kpi-cmp-parciales');
-      if (!tbody) return;
-      const list = res.ordenes || [];
-      if (kpi) kpi.innerText = list.filter(o => o.estadoOrden !== 'RecibidaTotal' && o.estadoOrden !== 'Cancelada').length;
-      if (kpiParcial) kpiParcial.innerText = list.filter(o => o.estadoOrden === 'RecibidaParcial').length;
-
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">No hay órdenes de compra registradas.</td></tr>`;
-        return;
+  container.innerHTML = '<div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">' +
+    '<div class="flex flex-wrap items-center justify-between gap-3"><h5 class="text-sm font-black uppercase text-gray-800">Órdenes de Compra</h5>' +
+    '<button onclick="openPurchaseReceiptModal()" data-purchase-action="recordPurchaseReceipt" hidden class="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold">Registrar recepción</button></div>' +
+    '<div class="overflow-x-auto"><table class="w-full text-left text-xs text-gray-700"><thead class="bg-gray-50 text-gray-500 uppercase font-black"><tr>' +
+    '<th class="p-3">Orden ID</th><th class="p-3">Proveedor</th><th class="p-3">Monto Total</th><th class="p-3">Fecha Entrega Est.</th><th class="p-3">Estado Orden</th><th class="p-3">Documento y acciones</th>' +
+    '</tr></thead><tbody id="tbl-compras-ordenes" class="divide-y divide-gray-100"><tr><td colspan="6" class="p-4 text-center text-gray-400">Cargando órdenes de compra...</td></tr></tbody></table></div></div>';
+  fetchBackendAccounting("getPurchaseOrders", {}).then(res => {
+    if (!res || res.status !== "success") throw new Error(res && res.code || "PURCHASE_ORDERS_UNAVAILABLE");
+    const tbody = document.getElementById("tbl-compras-ordenes");
+    const kpi = document.getElementById("kpi-cmp-ordenes");
+    const kpiParcial = document.getElementById("kpi-cmp-parciales");
+    if (!tbody) return;
+    const list = Array.isArray(res.ordenes) ? res.ordenes : [];
+    if (kpi) kpi.innerText = list.filter(o => !["RecibidaTotal","Cancelada","Cerrada"].includes(String(o.estadoOrden))).length;
+    if (kpiParcial) kpiParcial.innerText = list.filter(o => o.estadoOrden === "RecibidaParcial").length;
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No hay órdenes de compra registradas.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(o => {
+      const orderId = String(o.ordenId || o.ordenCompraId || "");
+      const safeId = escapePurchaseAssetHtml(orderId);
+      const arg = purchaseAssetJsArg(orderId);
+      const state = String(o.estadoOrden || "");
+      const stateLower = state.toLowerCase();
+      const statusClass = stateLower === "recibidatotal" || stateLower === "cerrada" ? "bg-emerald-100 text-emerald-800" :
+        stateLower === "recibidaparcial" ? "bg-amber-100 text-amber-800" :
+        stateLower === "aprobada" || stateLower === "emitida" || stateLower === "confirmada" ? "bg-blue-100 text-blue-800" :
+        stateLower === "endisputa" ? "bg-rose-100 text-rose-800" : "bg-gray-100 text-gray-700";
+      let actions = "";
+      if (stateLower === "borrador") {
+        actions += '<button onclick="approvePurchaseOrderUI(' + arg + ')" data-purchase-action="approvePurchaseOrder" hidden class="px-2 py-1 rounded bg-blue-50 text-blue-700 font-bold">Aprobar</button> ';
       }
-      tbody.innerHTML = list.map(o => `
-        <tr class="hover:bg-gray-50">
-          <td class="p-3 font-bold text-gray-900">${o.ordenId}</td>
-          <td class="p-3">${o.proveedorId}</td>
-          <td class="p-3 font-bold text-gray-900">${window.IMARegionalFormatters.formatCurrency(o.montoTotal)}</td>
-          <td class="p-3">${o.fechaEntregaEstimada ? window.IMARegionalFormatters.formatDate(o.fechaEntregaEstimada) : '-'}</td>
-          <td class="p-3">
-            <span class="px-2 py-1 rounded-lg text-xs font-bold ${
-              o.estadoOrden === 'RecibidaTotal' ? 'bg-emerald-100 text-emerald-800' :
-              o.estadoOrden === 'RecibidaParcial' ? 'bg-amber-100 text-amber-800' :
-              o.estadoOrden === 'Aprobada' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'
-            }">${o.estadoOrden}</span>
-          </td>
-        </tr>
-      `).join('');
-    })
-    .catch(err => {
-      const tbody = document.getElementById('tbl-compras-ordenes');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Error: ${err.message}</td></tr>`;
-    });
+      if (stateLower === "aprobada" && !o.tienePdf) {
+        actions += '<button onclick="generatePurchaseOrderPDFUI(' + arg + ')" data-purchase-action="generatePurchaseOrderPDF" hidden class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Emitir PDF</button> ';
+      }
+      if (o.tienePdf) {
+        actions += '<button onclick="downloadPurchaseOrderPDFUI(' + arg + ')" data-purchase-action="getPurchaseOrderPDFFile" hidden class="px-2 py-1 rounded bg-emerald-50 text-emerald-700 font-bold">Descargar ' + escapePurchaseAssetHtml(o.numeroCorrelativoPDF || "PDF") + '</button> ';
+      }
+      if (stateLower === "emitida") {
+        actions += '<button onclick="registerPurchaseOrderConfirmationUI(' + arg + ')" data-purchase-action="recordPurchaseOrderConfirmation" hidden class="px-2 py-1 rounded bg-amber-50 text-amber-700 font-bold">Confirmación</button>';
+      }
+      return '<tr class="hover:bg-gray-50"><td class="p-3 font-bold text-gray-900">' + safeId + '</td>' +
+        '<td class="p-3">' + escapePurchaseAssetHtml(o.proveedorId) + '</td>' +
+        '<td class="p-3 font-bold text-gray-900">' + window.IMARegionalFormatters.formatCurrency(o.montoTotal) + '</td>' +
+        '<td class="p-3">' + (o.fechaEntregaEstimada ? window.IMARegionalFormatters.formatDate(o.fechaEntregaEstimada) : "-") + '</td>' +
+        '<td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-bold ' + statusClass + '">' + escapePurchaseAssetHtml(state) + '</span></td>' +
+        '<td class="p-3"><div class="flex flex-wrap gap-2">' + (actions || '<span class="text-gray-400">—</span>') + '</div></td></tr>';
+    }).join("");
+    if (window.applyPurchaseActionVisibility) window.applyPurchaseActionVisibility(tbody);
+  }).catch(err => {
+    const tbody = document.getElementById("tbl-compras-ordenes");
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ' + escapePurchaseAssetHtml(err && err.message || err) + '</td></tr>';
+  });
 }
-
+window.approvePurchaseOrderUI = async function(ordenCompraId) {
+  if (!window.hasPurchaseActionCapability("approvePurchaseOrder")) { alert("No tiene permisos para aprobar órdenes."); return; }
+  const result = await fetchBackendAccounting("approvePurchaseOrder", {ordenCompraId: String(ordenCompraId || "")});
+  if (!result || result.status !== "success") { alert("No se pudo aprobar la orden: " + String(result && result.code || "ERROR")); return; }
+  alert("Orden aprobada. Ya puede emitirse el PDF oficial.");
+  const host = document.getElementById("compras-subtab-container");
+  if (host) renderComprasOrdenesView(host);
+};
+window.generatePurchaseOrderPDFUI = async function(ordenCompraId) {
+  if (!window.hasPurchaseActionCapability("generatePurchaseOrderPDF")) { alert("No tiene permisos para emitir órdenes de compra."); return; }
+  const result = await fetchBackendAccounting("generatePurchaseOrderPDF", {ordenCompraId: String(ordenCompraId || "")});
+  if (!result || result.status !== "success") { alert("No se pudo emitir la orden: " + String(result && result.code || "ERROR")); return; }
+  alert("Orden emitida: " + String(result.numeroCorrelativo || ""));
+  await window.downloadPurchaseOrderPDFUI(ordenCompraId);
+  const host = document.getElementById("compras-subtab-container");
+  if (host) renderComprasOrdenesView(host);
+};
+window.downloadPurchaseOrderPDFUI = async function(ordenCompraId) {
+  if (!window.hasPurchaseActionCapability("getPurchaseOrderPDFFile")) { alert("No tiene permisos para descargar órdenes de compra."); return; }
+  const result = await fetchBackendAccounting("getPurchaseOrderPDFFile", {ordenCompraId: String(ordenCompraId || "")});
+  if (!result || result.status !== "success" || result.encoding !== "base64" || !result.fileData) {
+    alert("No se pudo descargar el PDF: " + String(result && result.code || "ARCHIVO_NO_DISPONIBLE")); return;
+  }
+  const binary = atob(result.fileData);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], {type: "application/pdf"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url; link.download = result.fileName || "OrdenCompra.pdf";
+  document.body.appendChild(link); link.click(); link.remove();
+  URL.revokeObjectURL(url);
+};
 function renderComprasRecepcionesView(container) {
   container.innerHTML = `
     <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
