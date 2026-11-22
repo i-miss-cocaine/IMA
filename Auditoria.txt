@@ -3309,3 +3309,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-22 | AUD-NG-222 / TASK-502 | C1.944] Hallazgo: reintentos de recepción parcial podían duplicar inventario y fallo intermedio dejaba movimientos parciales. Se agrega idempotencia persistente (key/hash) y rollback transaccional de Kardex/valoración/recepción/orden. Contratos de replay, conflicto y rollback PASS; Department Scope SUCCESS 137 pasos. La clave se mantiene opcional por compatibilidad; clientes deben enviarla para deduplicación garantizada.
+
+
+[2026-11-22 | AUD-NG-222 / F18-TASK02 | C1.945] Hallazgo: la conciliación devolvía resultado sin persistir bloqueo en CuentasPorPagarGastos y faltaba una ruta backend de registro de facturas. Implementados registro de obligación idempotente, hash, comparación de orden/recepciones conformes/factura, tolerancias, estado EnDisputa y bloqueo de pago. Se añadieron permisos, scope y revalidación bajo ScriptLock, rutas API y migración compatible de 10 a 23 columnas. CI Department Scope SUCCESS 138 pasos; contratos focalizados y sintaxis PASS. F18-TASK02 cerrada; siguiente F18-TASK03.

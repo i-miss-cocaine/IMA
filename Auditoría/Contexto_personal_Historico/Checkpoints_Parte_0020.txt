@@ -2084,3 +2084,54 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Después completar transporte (asignaciones, rutas, pasajeros, cargos, liquidaciones y reportes).
 - TASK-502 y AUD-NG-226 permanecen abiertos.
 ===============================================================================
+
+
+===============================================================================
+### C1.945 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-THREE-WAY-PAYABLES
+===============================================================================
+
+### Continuidad, rama y commits
+- Continuación desde C1.944. Rama exclusiva: NG_beta_0.0.0.1_work.
+- Commits principales:
+  - 916668f17e68d228fb0d5785678ffe3f76af2323 — endurece órdenes y conciliación de compras.
+  - cea4b6ba9748908df5e1ce9eb36f8af3baa35034 — scope departamental en confirmación de orden.
+  - 029f99513ae57240ffd85404c5b3f1f5896a50b4 — total de orden derivado de partidas validadas.
+  - b84043c3a30d92723a951fc5d3e58cc54549d96d — permisos y refresh de tolerancias.
+  - 21cb9d5a1ceb086eaa2f18b15775176f711aaba2 — normalización de rol administrativo.
+  - 124e59318a9392dcff3db8cd499006416c5390e3 — conciliación persistente y bloqueo de pagos.
+  - 90629abb76e592706eee0f1881bf6ef95775f1c4 — rutas y permisos de acciones de cuentas por pagar.
+  - 5a0452786132ae2ae56f006f60cb4ba94b6dee0b — migración compatible de esquema legacy.
+  - d5934ae544573cc945a54b76962043016e2e72cf — comparación robusta de rol Director/Administrador.
+- Commits de fixture/verificación asociados: 60e57dcdd1ae5aa8c12b8cbb3171cc620ff7feaa, bee16408b2e9ef1106ed6ebfde9a192de58a7d63, 8051cbd3a4e1d5ac557deaca2bb1bf507121e2aa, d95e7d4efa529f2f9bf7a11be0c07def2e7bdb5c, 077bce33f7207940c570bc98e13ee668ce026d9e, ebd57e8ec89840ddbc9c5d7cc400f9fd3be8ff02, 81127fe81324349d7ee4f9b77ca57539015a9876, b05b5fb3a8fd884d7c847d21906a78ed2aafb6c9 y 58f958349dc22b54424829851246670e6ef6028c.
+- HEAD de implementación verificado: d5934ae544573cc945a54b76962043016e2e72cf.
+- HEAD de rama base sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Hallazgos y correcciones
+1. recordAccountsPayableExpense no existía en el servicio actual. Se incorporó el registro de obligaciones contra una orden única, con proveedor concordante, partidas, hash, clave idempotente y prevención de factura duplicada por proveedor/número.
+2. evaluatePurchaseThreeWayMatch_ contrasta partidas y precios de la orden, cantidades recibidas conformes, proveedor, subtotal y total de factura. Usa tolerancias configuradas y falla cerrado ante esquema inválido, partidas duplicadas, artículo no ordenado, exceso de cantidad, cantidad no recibida o diferencia de importe.
+3. Facturas conciliadas quedan en PendienteAprobacion; no se autoaprueban. Facturas discrepantes se persisten como EnDisputa, con DiferenciasJSON y EstadoPago=Bloqueado Conciliacion.
+4. verifyThreeWayMatch localiza una obligación persistida por ObligacionID o número de factura, comprueba su vínculo único con orden/proveedor y persiste el resultado y el bloqueo bajo ScriptLock. Se eliminó del cliente el artículo ficticio ITEM-GEN; el servidor verifica la factura registrada.
+5. Las acciones de registro y verificación revalidan identidad, permiso dinámico y ámbito de orden dentro del lock. Se añadieron rutas de API y permisos para operadores de compras; la administración de tolerancias queda reservada a Director/Administrador y revalida permisos tras lock.
+6. recordPurchaseOrderConfirmation verifica ámbito departamental bajo lock. createPurchaseOrder rechaza partidas duplicadas y montos declarados que no coinciden con cantidades/precios recalculados.
+7. ensureAccountsPayableInvoiceSheet_ amplía el esquema histórico de 10 columnas de forma append-only hasta las 23 columnas esperadas. Recepciones mixtas cuentan solamente las líneas conformes, sin descartar la recepción completa por contener otra línea dañada.
+8. Se restauraron las constantes de depreciación patrimonial que un reemplazo intermedio había omitido; el contrato de depreciación volvió a pasar en CI.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-purchase-asset-capitalization.test.js
+- tests/security/accounting-purchase-dossier.test.js
+- tests/security/accounting-catalog.test.js
+
+### Verificaciones
+- Department Scope Contract run 44979718178: SUCCESS, 138 pasos.
+- Contratos PASS: matriz de cotizaciones/adjudicación, recepción parcial/cantidades, capitalización desde factura persistida, expediente de compras, tolerancias y permisos, catálogo/unidades, depreciación y sintaxis Apps Script.
+- Workflows adicionales del mismo SHA: Identity Mapping, Department Reference Consumers, Accounting Import Preflight, Hierarchical Configuration, Accounting Transport Local y Library Circulation: SUCCESS.
+- Node.js 24 ejecutó los contratos focalizados en GitHub Actions. Suite global de todos los tests Node.js: NOT RUN en esta iteración.
+- CLI local independiente: NOT RUN (sin checkout local). No se ejecutó Apps Script real ni se accedió a Google Sheets/Drive de producción.
+
+### Estado y siguiente tarea elegible
+- F18-TASK02: Completada y evidenciada.
+- Siguiente tarea elegible del ciclo F18: F18-TASK03 — consola interactiva de compras/proveedores; después F18-TASK04 — PDF oficial de órdenes.
+- AUD-NG-222/TASK-502 continúa abierto por el inventario transversal de acciones/contextos en los demás servicios. AUD-NG-226 continúa pendiente de sus dependencias.
+===============================================================================

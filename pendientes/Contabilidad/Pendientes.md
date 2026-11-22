@@ -116,7 +116,7 @@
 ---
 
 <!-- ID: F18-TASK02 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [ ] [F18-TASK02] Desarrollar el motor de validación documental y conciliación de tres vías
+### [x] [F18-TASK02] Desarrollar el motor de validación documental y conciliación de tres vías
 - **Severidad:** Crítica (Prevención de fraudes, sobreprecios y pagos indebidos a proveedores)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs` (`verifyThreeWayMatch`), `CuentasPorPagarGastos`.
 - **Problema:** Las facturas se registran sin comparar los precios unitarios de la Orden de Compra ni las cantidades efectivamente ingresadas en la Recepción de Bodega.
@@ -130,7 +130,8 @@
 - **Alcance:** conciliación documental previa a aprobación; no sustituye autorización de pagos ni conciliación bancaria.
 - **Criterios de aceptación:** ninguna factura con diferencia no justificada pasa a aprobada para pago; discrepancias quedan identificadas y sujetas a aprobación autorizada; coincidencias verificables permiten continuar el flujo.
 - **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; no se acredita ejecución correctiva.
+- **Estado:** Completada en C1.945.
+- **Evidencia de cierre:** recordAccountsPayableExpense registra facturas con snapshot de partidas, hash e idempotencia; verifyThreeWayMatch compara orden, recepciones conformes, proveedor, precios y montos y persiste EstadoConciliacion/DiferenciasJSON, bloqueando el pago ante discrepancias. Permisos, ámbito y lock revalidados; CI Department Scope run 44979718178 SUCCESS (138 pasos), incluidos contratos de cotización, recepción parcial, capitalización, expediente de compras, catálogo y sintaxis Apps Script.
 
 ---
 
