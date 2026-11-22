@@ -7338,6 +7338,7 @@ function releaseBudgetCommitmentLocked_(ss,ordenCompraId,reason,actorId) {
     });
   }catch(error){
     failedCode=String(error&&error.message||"BUDGET_COMMITMENT_RELEASE_FAILED");
+    if(failedCode.indexOf("BUDGET_")!==0)failedCode="BUDGET_COMMITMENT_RELEASE_FAILED";
     if(!restoreReleasedBudgetCommitmentsLocked_(ss,rollbackState))return{status:"error",code:"BUDGET_COMMITMENT_RELEASE_ROLLBACK_FAILED",cause:failedCode};
     return{status:"error",code:failedCode};
   }
