@@ -1721,6 +1721,170 @@ function renderComprasThreeWayView(container) {
   `;
 }
 
+window.openPurchaseInvoiceModal = async function() {
+  if (!window.hasPurchaseActionCapability("recordAccountsPayableExpense")) {
+    alert("No tiene permisos para registrar facturas de proveedores.");
+    return;
+  }
+  const existing = document.getElementById("purchase-invoice-modal");
+  if (existing) existing.remove();
+  const modal = document.createElement("div");
+  modal.id = "purchase-invoice-modal";
+  modal.className = "fixed inset-0 z-[130] bg-black/60 flex items-center justify-center p-3";
+  modal.innerHTML = "<form id=\"purchase-invoice-form\" class=\"bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[94vh] overflow-y-auto p-5 space-y-4\">" +
+    "<div class=\"flex items-center justify-between gap-3\"><h3 class=\"font-black text-sm uppercase\">Registrar factura de proveedor</h3><button type=\"button\" id=\"purchase-invoice-close\" class=\"text-xl\" aria-label=\"Cerrar\">×</button></div>" +
+    "<div class=\"grid grid-cols-1 md:grid-cols-3 gap-3 text-xs\"><label class=\"font-bold\">Orden de compra *<select id=\"purchase-invoice-order\" required class=\"mt-1 w-full p-2 border rounded-lg\"><option value=\"\">Cargando órdenes autorizadas...</option></select></label>" +
+    "<label class=\"font-bold\">Número de factura *<input id=\"purchase-invoice-number\" required maxlength=\"100\" class=\"mt-1 w-full p-2 border rounded-lg\"></label>" +
+    "<label class=\"font-bold\">Vencimiento<input id=\"purchase-invoice-due\" type=\"date\" class=\"mt-1 w-full p-2 border rounded-lg\"></label></div>" +
+    "<div class=\"overflow-x-auto border rounded-xl\"><table class=\"w-full text-left text-xs\"><thead class=\"bg-gray-50\"><tr><th class=\"p-2\">Partida</th><th class=\"p-2\">Recibido conforme</th><th class=\"p-2\">Cantidad facturada</th><th class=\"p-2\">Precio unitario</th><th class=\"p-2\">Importe</th></tr></thead><tbody id=\"purchase-invoice-lines\"><tr><td colspan=\"5\" class=\"p-4 text-center text-gray-400\">Seleccione una orden.</td></tr></tbody></table></div>" +
+    "<div class=\"grid grid-cols-1 md:grid-cols-3 gap-3 text-xs\"><label class=\"font-bold\">Subtotal (calculado)<input id=\"purchase-invoice-subtotal\" readonly class=\"mt-1 w-full p-2 border rounded-lg bg-gray-50\" value=\"0.00\"></label>" +
+    "<label class=\"font-bold\">Impuestos<input id=\"purchase-invoice-tax\" type=\"number\" min=\"0\" step=\"0.01\" value=\"0\" class=\"mt-1 w-full p-2 border rounded-lg\"></label>" +
+    "<label class=\"font-bold\">Total (calculado)<input id=\"purchase-invoice-total\" readonly class=\"mt-1 w-full p-2 border rounded-lg bg-gray-50\" value=\"0.00\"></label></div>" +
+    "<label class=\"block text-xs font-bold\">Observaciones<textarea id=\"purchase-invoice-notes\" maxlength=\"500\" rows=\"2\" class=\"mt-1 w-full p-2 border rounded-lg\"></textarea></label>" +
+    "<p id=\"purchase-invoice-status\" role=\"status\" aria-live=\"polite\" class=\"text-xs text-gray-600\">Las cantidades y precios se concilian contra la orden y las recepciones conformes. Las diferencias quedarán bloqueadas para pago.</p>" +
+    "<div class=\"flex justify-end gap-2\"><button type=\"button\" id=\"purchase-invoice-cancel\" class=\"px-4 py-2 rounded-lg bg-gray-100 text-xs font-bold\">Cancelar</button><button type=\"submit\" id=\"purchase-invoice-submit\" data-purchase-action=\"recordAccountsPayableExpense\" hidden disabled class=\"px-4 py-2 rounded-lg bg-emerald-700 text-white text-xs font-bold\">Registrar y conciliar factura</button></div></form>";
+  document.body.appendChild(modal);
+  const form = modal.querySelector("#purchase-invoice-form");
+  const orderSelect = modal.querySelector("#purchase-invoice-order");
+  const linesHost = modal.querySelector("#purchase-invoice-lines");
+  const taxInput = modal.querySelector("#purchase-invoice-tax");
+  const subtotalInput = modal.querySelector("#purchase-invoice-subtotal");
+  const totalInput = modal.querySelector("#purchase-invoice-total");
+  const status = modal.querySelector("#purchase-invoice-status");
+  const submit = modal.querySelector("#purchase-invoice-submit");
+  const close = () => modal.remove();
+  modal.querySelector("#purchase-invoice-close").addEventListener("click", close);
+  modal.querySelector("#purchase-invoice-cancel").addEventListener("click", close);
+  const ordersById = Object.create(null);
+  const money = value => (Math.round((Number(value) + Number.EPSILON) * 100) / 100).toFixed(2);
+  const recalculate = () => {
+    let subtotal = 0;
+    linesHost.querySelectorAll("tr[data-invoice-item]").forEach(row => {
+      const quantity = Number(row.querySelector("[data-invoice-quantity]").value || 0);
+      const price = Number(row.querySelector("[data-invoice-price]").value || 0);
+      const amount = quantity * price;
+      row.querySelector("[data-invoice-total]").textContent = money(amount);
+      subtotal += amount;
+    });
+    subtotalInput.value = money(subtotal);
+    totalInput.value = money(subtotal + Number(taxInput.value || 0));
+  };
+  const renderLines = () => {
+    linesHost.replaceChildren();
+    const order = ordersById[orderSelect.value];
+    if (!order) {
+      linesHost.innerHTML = "<tr><td colspan=\"5\" class=\"p-4 text-center text-gray-400\">Seleccione una orden.</td></tr>";
+      recalculate();
+      return;
+    }
+    (order.detalleItems || []).forEach(item => {
+      const itemId = String(item.itemId || item.codigoItem || item.ItemId || "").trim();
+      if (!itemId) return;
+      const row = document.createElement("tr");
+      row.dataset.invoiceItem = itemId;
+      const label = document.createElement("td");
+      label.className = "p-2";
+      label.textContent = String(item.descripcion || item.nombre || itemId) + " · " + itemId;
+      const received = document.createElement("td");
+      received.className = "p-2";
+      received.textContent = String(Number(item.cantidadRecibidaConforme || 0));
+      const quantityCell = document.createElement("td");
+      quantityCell.className = "p-2";
+      const quantity = document.createElement("input");
+      quantity.type = "number"; quantity.min = "0";
+      quantity.max = String(Number(item.cantidadSolicitada || 0)); quantity.step = "0.01";
+      quantity.value = String(Number(item.cantidadRecibidaConforme || 0));
+      quantity.dataset.invoiceQuantity = "true"; quantity.className = "w-24 p-1 border rounded";
+      quantity.addEventListener("input", recalculate); quantityCell.appendChild(quantity);
+      const priceCell = document.createElement("td");
+      priceCell.className = "p-2";
+      const price = document.createElement("input");
+      price.type = "number"; price.min = "0"; price.step = "0.01";
+      price.value = String(Number(item.precioUnitario === undefined ? item.costoUnitario || 0 : item.precioUnitario));
+      price.dataset.invoicePrice = "true"; price.className = "w-28 p-1 border rounded";
+      price.addEventListener("input", recalculate); priceCell.appendChild(price);
+      const totalCell = document.createElement("td");
+      totalCell.className = "p-2 text-right font-bold";
+      totalCell.dataset.invoiceTotal = "true"; totalCell.textContent = "0.00";
+      row.append(label, received, quantityCell, priceCell, totalCell);
+      linesHost.appendChild(row);
+    });
+    recalculate();
+  };
+  orderSelect.addEventListener("change", renderLines);
+  taxInput.addEventListener("input", recalculate);
+  form.dataset.idempotencyKey = "INV-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+  try {
+    const result = await fetchBackendAccounting("getPurchaseOrders", {});
+    if (!result || result.status !== "success") throw new Error(result && result.code || "PURCHASE_ORDERS_UNAVAILABLE");
+    const orders = Array.isArray(result.ordenes) ? result.ordenes : [];
+    orderSelect.replaceChildren();
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = orders.length ? "Seleccione una orden autorizada" : "No hay órdenes disponibles";
+    orderSelect.appendChild(placeholder);
+    orders.forEach(order => {
+      const id = String(order.ordenId || order.ordenCompraId || "").trim();
+      if (!id) return;
+      ordersById[id] = order;
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = id + " · " + String(order.proveedorId || "");
+      orderSelect.appendChild(option);
+    });
+    if (!orders.length) status.textContent = "No hay órdenes dentro del ámbito autorizado.";
+  } catch (error) {
+    orderSelect.replaceChildren();
+    status.textContent = "No fue posible cargar órdenes autorizadas: " + String(error && error.message || error);
+  }
+  if (window.applyPurchaseActionVisibility) window.applyPurchaseActionVisibility(modal);
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!window.hasPurchaseActionCapability("recordAccountsPayableExpense")) {
+      status.textContent = "No tiene permisos para registrar facturas.";
+      return;
+    }
+    const order = ordersById[orderSelect.value];
+    const number = modal.querySelector("#purchase-invoice-number").value.trim();
+    const partidasFacturadas = [];
+    linesHost.querySelectorAll("tr[data-invoice-item]").forEach(row => {
+      const cantidad = Number(row.querySelector("[data-invoice-quantity]").value || 0);
+      const precioUnitario = Number(row.querySelector("[data-invoice-price]").value || 0);
+      if (cantidad > 0) partidasFacturadas.push({ itemId: row.dataset.invoiceItem, cantidad, precioUnitario, total: Math.round(cantidad * precioUnitario * 100) / 100 });
+    });
+    if (!order || !number || !partidasFacturadas.length) {
+      status.textContent = "Seleccione una orden, indique el número de factura y al menos una partida facturada.";
+      return;
+    }
+    submit.disabled = true;
+    status.textContent = "Registrando y conciliando la factura...";
+    try {
+      const response = await fetchBackendAccounting("recordAccountsPayableExpense", {
+        ordenCompraId: order.ordenId || order.ordenCompraId,
+        idempotencyKey: form.dataset.idempotencyKey,
+        facturaProveedor: {
+          numeroFactura: number, proveedorId: String(order.proveedorId || ""), partidasFacturadas,
+          importe: Number(subtotalInput.value || 0), impuestos: Number(taxInput.value || 0),
+          totalMonto: Number(totalInput.value || 0), fechaVencimiento: modal.querySelector("#purchase-invoice-due").value,
+          observaciones: modal.querySelector("#purchase-invoice-notes").value.trim()
+        }
+      });
+      if (!response || response.status !== "success") throw new Error(response && response.code || "PURCHASE_INVOICE_REGISTRATION_FAILED");
+      status.textContent = response.message || (response.bloqueadoParaPago ? "Factura registrada y bloqueada para pago." : "Factura registrada.");
+      alert(response.message || "Factura registrada.");
+      close();
+      window.switchComprasSubtab("threeway");
+      const orderInput = document.getElementById("inp-match-orden");
+      const invoiceInput = document.getElementById("inp-match-factura");
+      if (orderInput) orderInput.value = order.ordenId || order.ordenCompraId;
+      if (invoiceInput) invoiceInput.value = number;
+    } catch (error) {
+      status.textContent = "No se pudo registrar la factura: " + String(error && error.message || error);
+      submit.disabled = false;
+    }
+  });
+};
+
 window.executeThreeWayMatchTest = function () {
   const ordId = document.getElementById('inp-match-orden')?.value.trim();
   const fctNum = document.getElementById('inp-match-factura')?.value.trim();

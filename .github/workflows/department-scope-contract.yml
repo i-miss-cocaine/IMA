@@ -112,6 +112,7 @@ on:
       - tests/security/accounting-purchase-receipt-partial.test.js
       - tests/security/accounting-supplier-profile.test.js
       - tests/security/accounting-purchase-dossier.test.js
+      - tests/security/accounting-purchase-console-capabilities.test.js
       - tests/security/accounting-vacation-medical-leave-ownership.test.js
       - tests/security/accounting-labor-incident-write-ownership.test.js
       - tests/security/accounting-training-enrollment-ownership.test.js
@@ -295,6 +296,8 @@ jobs:
         run: node tests/security/accounting-supplier-profile.test.js
       - name: Run unified purchase dossier traceability contract
         run: node tests/security/accounting-purchase-dossier.test.js
+      - name: Run purchase console capability gating and stale-response contract
+        run: node tests/security/accounting-purchase-console-capabilities.test.js
       - name: Run accounting master catalog and unit conversion contract
         run: node tests/security/accounting-catalog.test.js
       - name: Run preventive maintenance scheduling and concurrency contract
