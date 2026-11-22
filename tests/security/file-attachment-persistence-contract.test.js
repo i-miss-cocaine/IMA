@@ -261,6 +261,7 @@ let voucherSharing = "PRIVATE";
 let voucherBlobReads = 0;
 let voucherOwnerAllowed = true;
 const voucherDownloadContext = {
+  LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) },
   getVerifiedAccountingIdentity_: () => ({ authorized: true, userId: "student-1", role: "Estudiante" }),
   validateRolePermission: () => ({ authorized: true }),
   assertPaymentVoucherOwnerAccess_: () => voucherOwnerAllowed ? ({ authorized: true }) : ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
