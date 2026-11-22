@@ -2716,11 +2716,11 @@ function manageTrainingEnrollment(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID);
   var access=resolveTrainingEnrollmentEmployeeWriteAccess_(input,ss,input.empleadoId);
   if(!access.authorized)return {status:"error",code:access.code};
+  var permission=validateRolePermission(access.actor,"manageTrainingEnrollment",input);
+  if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
   var course=resolveTrainingCourseForEnrollment_(ss,input.cursoId);
   if(!course.valid)return {status:"error",code:course.code};
   var headers=["InscripcionID","CursoID","EmpleadoID","FechaInscripcion","EstadoInscripcion","AsistenciaPorcentaje","ResultadoNota","CertificadoDriveUrl","FechaEmisionCertificado","FechaVencimientoCertificado","Observaciones","CreadoPor","FechaCreacion","UltimaModificacion"];
-  var snapshot=ensureTrainingEnrollmentWriteSheet_(ss,"InscripcionesCapacitacion",headers);
-  if(!snapshot.valid)return {status:"error",code:snapshot.code};
   if(input.asistenciaPorcentaje!==undefined&&input.asistenciaPorcentaje!==""&&(!isFinite(Number(input.asistenciaPorcentaje))||Number(input.asistenciaPorcentaje)<0||Number(input.asistenciaPorcentaje)>100))return {status:"error",code:"TRAINING_ATTENDANCE_INVALID"};
   if(input.resultadoNota!==undefined&&input.resultadoNota!==""&&(!isFinite(Number(input.resultadoNota))||Number(input.resultadoNota)<0||Number(input.resultadoNota)>100))return {status:"error",code:"TRAINING_GRADE_INVALID"};
   var enrollmentDate=input.fechaInscripcion?new Date(input.fechaInscripcion):new Date();
@@ -2731,6 +2731,14 @@ function manageTrainingEnrollment(payload) {
   var lock=LockService.getScriptLock();
   if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY"};
   try {
+    access=resolveTrainingEnrollmentEmployeeWriteAccess_(input,ss,input.empleadoId);
+    if(!access||access.authorized!==true)return {status:"error",code:access&&access.code||"RESOURCE_NOT_FOUND"};
+    permission=validateRolePermission(access.actor,"manageTrainingEnrollment",input);
+    if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    course=resolveTrainingCourseForEnrollment_(ss,input.cursoId);
+    if(!course||course.valid!==true)return {status:"error",code:course&&course.code||"RESOURCE_NOT_FOUND"};
+    var snapshot=ensureTrainingEnrollmentWriteSheet_(ss,"InscripcionesCapacitacion",headers);
+    if(!snapshot.valid)return {status:"error",code:snapshot.code};
     var id=String(input.inscripcionId||"").trim();
     var matches=snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return id&&String(item.row[0]||"").trim()===id;});
     if(id&&matches.length!==1)return {status:"error",code:"RESOURCE_NOT_FOUND"};
