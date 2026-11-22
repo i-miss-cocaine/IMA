@@ -5931,10 +5931,12 @@ function submitPurchaseQuotation(payload) {
     request = purchaseQuotationRequest_(input, ss, access, false);
     quoteSheet = getOrCreateSheet(ss, "CotizacionesCompra");
     detailSheet = getOrCreateSheet(ss, "DetalleCotizacionesCompra");
-    var existing = quoteSheet.getDataRange().getValues().slice(1).filter(function(row) {
-      return String(row[1] || "").trim() === request.solicitudId && String(row[2] || "").trim() === supplierId &&
+    var requestQuotes = quoteSheet.getDataRange().getValues().slice(1).filter(function(row) {
+      return String(row[1] || "").trim() === request.solicitudId &&
         ["rechazada","anulada"].indexOf(String(row[9] || "").trim().toLowerCase()) === -1;
     });
+    if (requestQuotes.length >= 5) return { status: "error", code: "PURCHASE_QUOTATION_LIMIT_REACHED" };
+    var existing = requestQuotes.filter(function(row) { return String(row[2] || "").trim() === supplierId; });
     if (existing.length) return { status: "error", code: "PURCHASE_QUOTATION_DUPLICATE_SUPPLIER" };
     var quoteId = "COT-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
     quoteRow = quoteSheet.getLastRow() + 1;

@@ -15,7 +15,7 @@ const headers={
 const rows={};Object.keys(headers).forEach(k=>rows[k]=[headers[k]]);
 const requestItems=[{itemId:"ITEM-A",descripcion:"Papel bond",unidad:"Resma",cantidad:5,especificaciones:"75 g/m2",clasificacionInventario:"Consumible"},{itemId:"ITEM-B",descripcion:"Tóner",unidad:"Unidad",cantidad:2,especificaciones:"Compatible",clasificacionInventario:"ActivoFijo"}];
 rows.SolicitudesCompra.push(["REQ-1",new Date(),"D1","USR-REQ","Reposición de materiales","Suministros",JSON.stringify(requestItems),1000,"CC-1","Aprobada",""]);
-["S1","S2","S3"].forEach((id,i)=>rows.ProveedoresActivos.push([id,new Date(),"Proveedor "+id,"","","","General","Activo",""]));
+["S1","S2","S3","S4","S5","S6"].forEach((id,i)=>rows.ProveedoresActivos.push([id,new Date(),"Proveedor "+id,"","","","General","Activo",""]));
 function sheet(name){return {getDataRange:()=>({getValues:()=>rows[name].map(r=>r.slice())}),getLastRow:()=>rows[name].length,appendRow:r=>{if(name==="DetalleCotizacionesCompra"){detailAppendCount++;if(failDetailAppendAt===detailAppendCount){failDetailAppendAt=0;throw new Error("SIMULATED_DETAIL_WRITE_FAILURE");}}rows[name].push(r.slice());},getRange:(row,col,nr=1,nc=1)=>({setValue:v=>{if(name==="SolicitudesCompra"&&col===10&&v==="Adjudicada"&&failRequestStatusWriteOnce){failRequestStatusWriteOnce=false;throw new Error("SIMULATED_REQUEST_STATUS_WRITE_FAILURE");}rows[name][row-1][col-1]=v;},clearContent:()=>{for(let y=0;y<nr;y++)for(let x=0;x<nc;x++)if(rows[name][row-1+y])rows[name][row-1+y][col-1+x]="";}})};}
 const ss={getSheetByName:n=>rows[n]?sheet(n):null};
 let uuid=0,lockBusy=false,failRequestStatusWriteOnce=false,failDetailAppendAt=0,detailAppendCount=0,actor={authorized:true,userId:"USR-REVIEWER",role:"Contador"};
@@ -32,9 +32,13 @@ const q2=ctx.submitPurchaseQuotation({...payload,proveedorId:"S2",precioTotal:90
 assert.equal(q2.status,"success");
 const q3=ctx.submitPurchaseQuotation({...payload,proveedorId:"S3",precioTotal:30,detalleItems:[{itemId:"ITEM-A",cantidadCotizada:2,precioUnitario:15,especificacionesCumplidas:true,cumplimientoTecnico:"Cumple"}]});
 assert.equal(q3.status,"success");
+const q4=ctx.submitPurchaseQuotation({...payload,proveedorId:"S4",precioTotal:150,detalleItems:makeLines(20,25),plazoEntregaDias:7,condicionesPago:"Contado"});assert.equal(q4.status,"success");
+const q5=ctx.submitPurchaseQuotation({...payload,proveedorId:"S5",precioTotal:220,detalleItems:makeLines(30,35),plazoEntregaDias:10,condicionesPago:"Crédito 15 días"});assert.equal(q5.status,"success");
+const quoteCountAtLimit=rows.CotizacionesCompra.length;
+const q6=ctx.submitPurchaseQuotation({...payload,proveedorId:"S6",precioTotal:300,detalleItems:makeLines(40,50)});assert.equal(q6.code,"PURCHASE_QUOTATION_LIMIT_REACHED");assert.equal(rows.CotizacionesCompra.length,quoteCountAtLimit,"sixth active quotation must not be persisted");
 rows.CotizacionesCompra.find(r=>r[0]===q3.cotizacionId)[3]=new Date(Date.now()-10*86400000);rows.CotizacionesCompra.find(r=>r[0]===q3.cotizacionId)[4]="1 día";
 const matrix=ctx.getPurchaseQuotationMatrix(payload);
-assert.equal(matrix.status,"success");
+assert.equal(matrix.status,"success");assert.equal(matrix.cotizaciones.length,5);assert.equal(matrix.partidas[0].ofertas.length,5);
 const savedQuotationSheet=rows.CotizacionesCompra;delete rows.CotizacionesCompra;
 const missingQuotationSheet=ctx.getPurchaseQuotationMatrix(payload);
 assert.equal(missingQuotationSheet.code,"PURCHASE_QUOTATION_SCHEMA_INVALID");
