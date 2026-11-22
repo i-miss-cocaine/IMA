@@ -3490,6 +3490,12 @@ window.renderAccountsPayablePortfolio=function(result,target,summary) {
     var history=document.createElement("div");history.className="text-xs text-gray-500 space-y-1";(invoice.movimientos||[]).forEach(function(m){var line=document.createElement("p");line.textContent=m.tipo+" · "+m.fecha+" · "+window.IMARegionalFormatters.formatCurrency(m.monto)+" · "+(m.referencia||m.numeroNotaCredito||"")+" · "+(m.motivo||"");history.appendChild(line);});card.appendChild(history);
     var approval=String(invoice.estadoAprobacion||"").toLowerCase(),blocked=invoice.estadoConciliacion!=="Conciliada"||(approval!=="aprobado"&&approval!=="aprobada");
     function field(parent,labelText,type,value,placeholder){var label=document.createElement("label");label.className="text-xs font-bold text-gray-700";label.textContent=labelText;var input=document.createElement("input");input.type=type;input.value=value||"";input.placeholder=placeholder||"";input.className="mt-1 w-full rounded-lg border p-2";if(type==="number"){input.min="0.01";input.step="0.01";input.max=String(invoice.saldoPendiente);}label.appendChild(input);parent.appendChild(label);return input;}
+    if(String(invoice.estadoAprobacion||"").toLowerCase()==="pendienteaprobacion"&&invoice.estadoConciliacion==="Conciliada"){
+      var approval=document.createElement("div");approval.className="flex flex-wrap gap-2 items-end border-t pt-3";
+      var approvalReason=field(approval,"Justificación de aprobación","text","","Motivo y revisión de factura");
+      var approveButton=document.createElement("button");approveButton.type="button";approveButton.dataset.purchaseAction="approveAccountsPayableInvoice";approveButton.className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white";approveButton.textContent="Aprobar factura";
+      approveButton.addEventListener("click",function(){window.approveAccountsPayableInvoice(invoice.obligacionId,approvalReason.value,approveButton);});approval.appendChild(approveButton);card.appendChild(approval);
+    }
     var payment=document.createElement("div");payment.className="grid md:grid-cols-4 gap-2 items-end";
     var paymentAmount=field(payment,"Monto del abono","number","","0.00"),paymentMethod=field(payment,"Método","text","","Transferencia"),paymentReference=field(payment,"Referencia","text","","Comprobante / transferencia"),paymentDate=field(payment,"Fecha","date",new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10),"");
     var paymentButton=document.createElement("button");paymentButton.type="button";paymentButton.dataset.purchaseAction="recordAccountsPayablePayment";paymentButton.className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white";paymentButton.textContent="Registrar abono";paymentButton.disabled=blocked||invoice.saldoPendiente<=0;
@@ -3501,6 +3507,12 @@ window.renderAccountsPayablePortfolio=function(result,target,summary) {
     if(blocked){var notice=document.createElement("p");notice.className="text-xs text-amber-700";notice.textContent="Bloqueada: requiere factura aprobada y conciliada antes de aplicar movimientos.";card.appendChild(notice);}target.appendChild(card);
   });
   if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(target);
+};
+window.approveAccountsPayableInvoice=async function(obligacionId,justificacion,button){
+  if(button){button.disabled=true;button.textContent="Aprobando...";}
+  try{var result=await fetchBackendAccounting("approveAccountsPayableInvoice",{obligacionId:obligacionId,justificacion:justificacion});
+    if(!result||result.status!=="success")throw new Error(result&&result.code||"PURCHASE_INVOICE_APPROVAL_FAILED");await window.loadAccountsPayablePortfolio();
+  }catch(error){if(button){button.disabled=false;button.textContent="Aprobar factura";}window.alert(error.message||"No se pudo aprobar la factura.");}
 };
 window.recordAccountsPayablePayment=async function(obligacionId,data,button){
   if(button){button.disabled=true;button.textContent="Registrando...";}

@@ -5618,6 +5618,7 @@ const ROLE_PERMISSIONS = {
 
 ["Contador","Director","Administrador"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];["recordAccountsPayablePayment","recordAccountsPayableCreditNote"].forEach(function(action){if(current.indexOf(action)===-1)current.push(action);});ROLE_PERMISSIONS[role]=current;});
 ["Contador","Director","Subdirector","Administrador"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];if(current.indexOf("getAccountsPayablePortfolio")===-1)current.push("getAccountsPayablePortfolio");ROLE_PERMISSIONS[role]=current;});
+["Director","Administrador"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];if(current.indexOf("approveAccountsPayableInvoice")===-1)current.push("approveAccountsPayableInvoice");ROLE_PERMISSIONS[role]=current;});
 
 // Library circulation is managed only by a verified librarian or institutional administrator.
 ROLE_PERMISSIONS["Bibliotecario"] = ["processLibraryLoan", "reserveLibraryBook"];
@@ -6860,7 +6861,7 @@ function purchaseOrderScopeAccess_(payload, ss, order, write) {
 }
 
 function ensureAccountsPayableInvoiceSheet_(ss) {
-  var expected = ["ObligacionID","ProveedorID","NumeroFactura","Importe","Impuestos","FechaVencimiento","EstadoAprobacion","EstadoPago","AsientoID","Observaciones","TotalMonto","SaldoPendiente","TotalAbonado","FechaEmision","FechaRecepcion","OrdenCompraID","EstadoConciliacion","DiferenciasJSON","FacturaHash","IdempotencyKey","DiferenciaAutorizadaPor","FechaAutorizacionDiferencia","JustificacionDiferencia"];
+  var expected = ["ObligacionID","ProveedorID","NumeroFactura","Importe","Impuestos","FechaVencimiento","EstadoAprobacion","EstadoPago","AsientoID","Observaciones","TotalMonto","SaldoPendiente","TotalAbonado","FechaEmision","FechaRecepcion","OrdenCompraID","EstadoConciliacion","DiferenciasJSON","FacturaHash","IdempotencyKey","DiferenciaAutorizadaPor","FechaAutorizacionDiferencia","JustificacionDiferencia","AprobadoPor","FechaAprobacion","JustificacionAprobacion"];
   var sheet = ss.getSheetByName("CuentasPorPagarGastos") || getOrCreateSheet(ss, "CuentasPorPagarGastos");
   var values = sheet.getDataRange().getValues();
   if (!values || !values.length) return { valid: false, code: "RESOURCE_SCHEMA_INVALID" };
@@ -6985,7 +6986,7 @@ function getPurchaseActionCapabilities(payload) {
   var actions=["getPurchaseRequests","getPurchaseQuotations","getPurchaseQuotationMatrix","getPurchaseOrders","getPurchaseReceipts","getSuppliers","getPurchaseDossier",
     "createPurchaseRequest","submitPurchaseQuotation","adjudicatePurchaseQuotations","createPurchaseOrder",
     "recordPurchaseReceipt","recordPurchaseOrderConfirmation","recordAccountsPayableExpense","verifyThreeWayMatch",
-    "savePurchaseInvoiceTolerance","getAccountsPayablePortfolio","recordAccountsPayablePayment","recordAccountsPayableCreditNote","registerAssetsFromPurchaseReceipt","registerSupplier","manageSupplierContact",
+    "savePurchaseInvoiceTolerance","getAccountsPayablePortfolio","approveAccountsPayableInvoice","recordAccountsPayablePayment","recordAccountsPayableCreditNote","registerAssetsFromPurchaseReceipt","registerSupplier","manageSupplierContact",
     "manageSupplierAddress","manageSupplierCommercialTerms","manageSupplierBankAccount","getSupplierBankAccount"];
   var capabilities=Object.create(null);
   actions.forEach(function(action){var result=validateRolePermission(access.actor,action,input);capabilities[action]=!!(result&&result.authorized===true);});
@@ -7482,7 +7483,7 @@ function recordAccountsPayableExpense(payload) {
     var observations="[ORDEN_"+orderId+"] [ITEMS_JSON:"+JSON.stringify(items)+"] [MATCH:"+(result.conciliada?"Conciliada":"EnDisputa")+"] "+String(invoice.observaciones||input.observaciones||"").slice(0,500);
     var row=[obligationId,supplierId,number,subtotal,taxes,invoice.fechaVencimiento||input.fechaVencimiento||"",status,paymentState,"",observations,
       total,total,0,invoice.fechaEmision||input.fechaEmision||now,invoice.fechaRecepcion||input.fechaRecepcion||now,orderId,
-      result.conciliada?"Conciliada":"EnDisputa",JSON.stringify(result.diferencias),invoiceHash,idempotencyKey,"","", ""];
+      result.conciliada?"Conciliada":"EnDisputa",JSON.stringify(result.diferencias),invoiceHash,idempotencyKey,"","", "","","",""];
     sheet.appendRow(row);
     return{status:"success",obligacionId:obligationId,numeroFactura:number,estadoConciliacion:result.conciliada?"Conciliada":"EnDisputa",
       bloqueadoParaPago:!result.conciliada,diferencias:result.diferencias,importeTotal:total,message:result.conciliada?"Factura conciliada y pendiente de aprobación.":"Factura registrada en disputa y bloqueada para pago."};
@@ -7515,6 +7516,42 @@ function accountsPayableMoney_(value) {if(value===undefined||value===null||Strin
 function accountsPayableDate_(value) {
   if(value===undefined||value===null||String(value).trim()==="")return null;
   var date=value instanceof Date?new Date(value.getTime()):new Date(value);return isNaN(date.getTime())?null:date;
+}
+
+function approveAccountsPayableInvoice(payload) {
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(input,ss,true);
+  if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(access.actor,"approveAccountsPayableInvoice",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var obligationId=String(input.obligacionId||"").trim(),reason=String(input.justificacion||"").trim().slice(0,300);
+  if(!obligationId||reason.length<5)return{status:"error",code:"PURCHASE_INVOICE_APPROVAL_REASON_REQUIRED"};
+  var lock=LockService.getScriptLock();if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  try{
+    access=purchaseQuotationAccess_(input,ss,true);if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"VERIFIED_IDENTITY_REQUIRED"};
+    permission=validateRolePermission(access.actor,"approveAccountsPayableInvoice",input);if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var schema=ensureAccountsPayableInvoiceSheet_(ss);if(!schema||schema.valid!==true)return{status:"error",code:schema&&schema.code||"RESOURCE_SCHEMA_INVALID"};
+    var headers=schema.headers,sheet=schema.sheet,values=sheet.getDataRange().getValues(),ix=function(name){return headers.indexOf(name);};
+    var matches=values.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[ix("ObligacionID")]||"").trim()===obligationId;});
+    if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_INVOICE_NOT_FOUND"};
+    var match=matches[0],record=match.row,orderId=String(record[ix("OrdenCompraID")]||"").trim(),orderSheet=ss.getSheetByName("OrdenesCompra");
+    if(!orderId||!orderSheet)return{status:"error",code:"PURCHASE_ORDER_NOT_FOUND"};
+    var orders=orderSheet.getDataRange().getValues(),orderMatches=orders.slice(1).filter(function(row){return String(row[0]||"").trim()===orderId;});
+    if(orderMatches.length!==1)return{status:"error",code:orderMatches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
+    var scope=purchaseOrderScopeAccess_(input,ss,orderMatches[0],true);if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
+    if(String(record[ix("ProveedorID")]||"").trim()!==String(orderMatches[0][3]||"").trim())return{status:"error",code:"PURCHASE_INVOICE_SUPPLIER_MISMATCH"};
+    if(String(record[ix("EstadoConciliacion")]||"").trim().toLowerCase()!=="conciliada")return{status:"error",code:"PURCHASE_INVOICE_NOT_RECONCILED"};
+    var state=String(record[ix("EstadoAprobacion")]||"").trim().toLowerCase(),actorId=String(access.actor.userId||"");
+    if(state==="aprobado"){
+      if(String(record[ix("AprobadoPor")]||"")===actorId&&String(record[ix("JustificacionAprobacion")]||"")===reason)return{status:"success",idempotente:true,obligacionId:obligationId,estadoAprobacion:"Aprobado"};
+      return{status:"error",code:"PURCHASE_INVOICE_ALREADY_APPROVED"};
+    }
+    if(state!=="pendienteaprobacion")return{status:"error",code:"PURCHASE_INVOICE_NOT_PENDING_APPROVAL"};
+    var updated=record.slice();while(updated.length<headers.length)updated.push("");
+    updated[ix("EstadoAprobacion")]="Aprobado";updated[ix("AprobadoPor")]=actorId;updated[ix("FechaAprobacion")]=new Date();updated[ix("JustificacionAprobacion")]=reason;
+    sheet.getRange(match.index,1,1,headers.length).setValues([updated]);
+    return{status:"success",obligacionId:obligationId,estadoAprobacion:"Aprobado",aprobadoPor:actorId,justificacion:reason};
+  }catch(error){return{status:"error",code:String(error&&error.message||error||"PURCHASE_INVOICE_APPROVAL_FAILED")};}
+  finally{lock.releaseLock();}
 }
 function recordAccountsPayableMovement_(payload,type) {
   var input=payload||{},movementType=type==="NOTA_CREDITO"?"NOTA_CREDITO":"PAGO",action=movementType==="PAGO"?"recordAccountsPayablePayment":"recordAccountsPayableCreditNote";
@@ -7582,7 +7619,7 @@ function recordAccountsPayableMovement_(payload,type) {
     balance=Math.max(0,balance);if(amount>balance+0.000001)return{status:"error",code:"ACCOUNTS_PAYABLE_BALANCE_EXCEEDED"};
     var nextPaid=movementType==="PAGO"?accountsPayableMoney_(paid+amount):paid;
     var nextCredits=movementType==="NOTA_CREDITO"?accountsPayableMoney_(credits+amount):credits;
-    var nextBalance=Math.max(0,accountsPayableMoney_(total-nextPaid-nextCredits)),updated=record.slice();
+    var nextBalance=Math.max(0,accountsPayableMoney_(total-nextPaid-nextCredits)),updated=record.slice();while(updated.length<headers.length)updated.push("");
     updated[ix("TotalAbonado")]=nextPaid;updated[ix("SaldoPendiente")]=nextBalance;
     updated[ix("EstadoPago")]=nextBalance<=0.005?(nextPaid>=total-0.005?"Pagada":nextCredits>=total-nextPaid-0.005?"Saldada por nota de crédito":"Saldada"):
       (nextPaid>0||nextCredits>0?"Pago Parcial":"Pendiente Pago");
@@ -7637,7 +7674,7 @@ function getAccountsPayablePortfolio(payload) {
     if(balance<=0.005)state=credits>0&&paid<total-0.005?"Saldada por nota de crédito":"Pagada";
     var item={obligacionId:obligationId,numeroFactura:String(row[headers.indexOf("NumeroFactura")]||""),proveedorId:String(row[headers.indexOf("ProveedorID")]||""),
       ordenCompraId:orderId,departamento:departmentId,fechaVencimiento:due?due.toISOString().slice(0,10):"",diasParaVencimiento:daysUntilDue,
-      total:total,totalAbonado:paid,totalNotasCredito:credits,saldoPendiente:balance,estadoAprobacion:String(row[headers.indexOf("EstadoAprobacion")]||""),
+      total:total,totalAbonado:paid,totalNotasCredito:credits,saldoPendiente:balance,estadoAprobacion:String(row[headers.indexOf("EstadoAprobacion")]||""),aprobadoPor:String(row[headers.indexOf("AprobadoPor")]||""),fechaAprobacion:row[headers.indexOf("FechaAprobacion")]||"",justificacionAprobacion:String(row[headers.indexOf("JustificacionAprobacion")]||""),
       estadoConciliacion:reconciliation,estadoCartera:state,rangoVencimiento:bucket,movimientos:invoiceMovements.map(function(m){
         var d=accountsPayableDate_(m[mi("FechaMovimiento")]);return{movimientoId:m[mi("MovimientoID")],tipo:m[mi("TipoMovimiento")],monto:Number(m[mi("Monto")]||0),
           fecha:d?d.toISOString():"",metodo:m[mi("Metodo")],referencia:m[mi("Referencia")],motivo:m[mi("Motivo")],
@@ -7687,7 +7724,7 @@ function verifyThreeWayMatch(payload) {
     var invoiceRecord={numeroFactura:String(record[2]||""),proveedorId:String(record[1]||""),partidasFacturadas:items,
       importe:Number(record[3]||0),impuestos:Number(record[4]||0),totalMonto:Number(record[10]===undefined||record[10]===""?Number(record[3]||0)+Number(record[4]||0):record[10])};
     var result=evaluatePurchaseThreeWayMatch_(ss,order,receiptSheet.getDataRange().getValues(),invoiceRecord);
-    var updated=record.slice();
+    var updated=record.slice();while(updated.length<headers.length)updated.push("");
     updated[6]=result.conciliada?(String(record[6]||"").toLowerCase()==="endisputa"?"PendienteAprobacion":record[6]):"EnDisputa";
     updated[7]=result.conciliada?(Number(record[12]||0)>0?"PagoParcial":"Pendiente Pago"):"Bloqueado Conciliacion";
     updated[16]=result.conciliada?"Conciliada":"EnDisputa";updated[17]=JSON.stringify(result.diferencias);
@@ -8751,6 +8788,7 @@ function doPost(e) {
     if (request.action === "savePurchaseInvoiceTolerance") return respond(savePurchaseInvoiceTolerance(actionPayload));
     if (request.action === "recordAccountsPayableExpense") return respond(recordAccountsPayableExpense(actionPayload));
     if (request.action === "getAccountsPayablePortfolio") return respond(getAccountsPayablePortfolio(actionPayload));
+    if (request.action === "approveAccountsPayableInvoice") return respond(approveAccountsPayableInvoice(actionPayload));
     if (request.action === "recordAccountsPayablePayment") return respond(recordAccountsPayablePayment(actionPayload));
     if (request.action === "recordAccountsPayableCreditNote") return respond(recordAccountsPayableCreditNote(actionPayload));
     if (request.action === "recordPurchaseOrderConfirmation") return respond(recordPurchaseOrderConfirmation(actionPayload));
