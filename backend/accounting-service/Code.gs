@@ -6727,6 +6727,8 @@ function createPurchaseRequest(payload) {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var access = purchaseQuotationAccess_(input, ss, true);
     if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+    var permission = validateRolePermission(access.actor, "createPurchaseRequest", input);
+    if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
     var department = typeof resolveStaffingDepartmentReference_ === "function"
       ? resolveStaffingDepartmentReference_(ss, input.departamento)
       : (access.scope.institutionWide === true && String(input.departamento || "").trim()
@@ -6771,31 +6773,59 @@ function createPurchaseRequest(payload) {
   }
 }
 function createPurchaseOrder(payload) {
-  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var access = purchaseQuotationAccess_(input, ss, true);
-  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
-  if (!supplierEnsureActiveForOrder_(ss, input.proveedorId)) return { status: "error", code: "PURCHASE_SUPPLIER_NOT_ACTIVE" };
-  var requests = getOrCreateSheet(ss, "SolicitudesCompra").getDataRange().getValues();
-  var matches = requests.slice(1).filter(function(row) { return String(row[0]) === String(input.solicitudId || ""); });
-  if (matches.length !== 1) return { status: "error", code: "PURCHASE_REQUEST_NOT_FOUND" };
-  var request = matches[0], sourceItems = JSON.parse(String(request[6] || "[]")), orderItems = Array.isArray(input.detalleItems) ? input.detalleItems : [];
-  var sourceById = {};
-  sourceItems.forEach(function(x) { sourceById[String(x.itemId || x.ItemId || "")] = x; });
-  var prepared = orderItems.map(function(x) {
-    var itemId = String(x.itemId || x.ItemId || x.codigoItem || "");
-    var a = sourceById[itemId];
-    if (!a) throw new Error("PURCHASE_ORDER_ITEM_NOT_AUTHORIZED");
-    return Object.assign({}, x, { itemId: itemId, catalogItemId: a.catalogItemId,
-      clasificacionInventario:a.clasificacionInventario,
-      capitalizable: normalizePurchaseAssetClassification_(a) === "ActivoFijo" });
-  });
-  var sheet = getOrCreateSheet(ss, "OrdenesCompra");
-  var id = "OC-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
-  var total = Number(input.montoTotal || prepared.reduce(function(sum, item) { return sum + Number(item.total || Number(item.cantidad || 0) * Number(item.precioUnitario || 0)); }, 0));
-  sheet.appendRow([id, String(input.solicitudId), String(input.cotizacionId || ""), String(input.proveedorId),
-    new Date(), "", JSON.stringify(prepared), total, String(request[8] || ""), "Borrador", "", "",
-    String(request[3] || ""), "1", ""]);
-  return { status: "success", ordenCompraId: id };
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access=purchaseQuotationAccess_(input,ss,true);
+  if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(access.actor,"createPurchaseOrder",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var lock=LockService.getScriptLock();lock.waitLock(15000);
+  try {
+    access=purchaseQuotationAccess_(input,ss,true);
+    if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"VERIFIED_IDENTITY_REQUIRED"};
+    permission=validateRolePermission(access.actor,"createPurchaseOrder",input);
+    if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    if(!supplierEnsureActiveForOrder_(ss,input.proveedorId))return{status:"error",code:"PURCHASE_SUPPLIER_NOT_ACTIVE"};
+    var requestRows=getOrCreateSheet(ss,"SolicitudesCompra").getDataRange().getValues();
+    if(!requestRows||!requestRows.length)return{status:"error",code:"PURCHASE_REQUEST_NOT_FOUND"};
+    var requestHeaders=requestRows[0].map(function(v){return String(v||"").trim();});
+    var requestIdIndex=requestHeaders.indexOf("SolicitudID"),requestStateIndex=requestHeaders.indexOf("EstadoAprobacion");
+    var requestDepartmentIndex=requestHeaders.indexOf("Departamento"),requestItemsIndex=requestHeaders.indexOf("DetalleItemsJSON");
+    var requestMatches=requestRows.slice(1).filter(function(row){return String(row[requestIdIndex>=0?requestIdIndex:0]||"").trim()===String(input.solicitudId||"").trim();});
+    if(requestMatches.length!==1)return{status:"error",code:requestMatches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_REQUEST_NOT_FOUND"};
+    var request=requestMatches[0],requestState=String(request[requestStateIndex>=0?requestStateIndex:9]||"").trim().toLowerCase();
+    if(["aprobada","adjudicada"].indexOf(requestState)===-1)return{status:"error",code:"PURCHASE_REQUEST_NOT_APPROVED"};
+    var scope=access.scope||{},departmentIds=Array.isArray(scope.departmentIds)?scope.departmentIds.map(String):[];
+    var requestDepartment=String(request[requestDepartmentIndex>=0?requestDepartmentIndex:2]||"").trim();
+    if(scope.institutionWide!==true&&departmentIds.indexOf(requestDepartment)===-1)return{status:"error",code:"RESOURCE_NOT_FOUND"};
+    var sourceItems;
+    try{sourceItems=JSON.parse(String(request[requestItemsIndex>=0?requestItemsIndex:6]||"[]"));}catch(ignored){return{status:"error",code:"PURCHASE_REQUEST_ITEMS_INVALID"};}
+    if(!Array.isArray(sourceItems)||!sourceItems.length)return{status:"error",code:"PURCHASE_REQUEST_ITEMS_INVALID"};
+    var orderItems=Array.isArray(input.detalleItems)?input.detalleItems:[];
+    if(!orderItems.length)return{status:"error",code:"PURCHASE_ORDER_ITEMS_INVALID"};
+    var sourceById=Object.create(null);
+    sourceItems.forEach(function(x){var id=String(x.itemId||x.ItemId||x.codigoItem||"").trim();if(id)sourceById[id]=x;});
+    var seen=Object.create(null),prepared=orderItems.map(function(x){
+      x=x||{};var itemId=String(x.itemId||x.ItemId||x.codigoItem||"").trim(),source=sourceById[itemId];
+      if(!source)throw new Error("PURCHASE_ORDER_ITEM_NOT_AUTHORIZED");
+      if(seen[itemId])throw new Error("PURCHASE_ORDER_DUPLICATE_ITEM");seen[itemId]=true;
+      var quantity=Number(x.cantidad===undefined?x.Cantidad:x.cantidad),requested=Number(source.cantidad===undefined?source.Cantidad:source.cantidad);
+      if(!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(requested)||requested<=0||quantity>requested+0.000001)throw new Error("PURCHASE_ORDER_QUANTITY_INVALID");
+      return Object.assign({},x,{itemId:itemId,catalogItemId:source.catalogItemId,clasificacionInventario:source.clasificacionInventario,
+        capitalizable:normalizePurchaseAssetClassification_(source)==="ActivoFijo"});
+    });
+    var orderSheet=getOrCreateSheet(ss,"OrdenesCompra"),orderRows=orderSheet.getDataRange().getValues(),orderHeaders=orderRows[0].map(function(v){return String(v||"").trim();});
+    var orderRequestIndex=orderHeaders.indexOf("SolicitudID"),orderQuoteIndex=orderHeaders.indexOf("CotizacionID"),orderStateIndex=orderHeaders.indexOf("EstadoOrden");
+    var existing=orderRows.slice(1).filter(function(row){return String(row[orderRequestIndex>=0?orderRequestIndex:1]||"")===String(input.solicitudId||"")&&
+      String(row[orderQuoteIndex>=0?orderQuoteIndex:2]||"")===String(input.cotizacionId||"")&&
+      ["cancelada","anulada"].indexOf(String(row[orderStateIndex>=0?orderStateIndex:9]||"").toLowerCase())===-1;});
+    if(existing.length)return{status:"error",code:"PURCHASE_ORDER_ALREADY_EXISTS"};
+    var id="OC-"+String(Utilities.getUuid()).replace(/-/g,"").slice(0,24);
+    var total=Number(input.montoTotal||prepared.reduce(function(sum,item){return sum+Number(item.total||Number(item.cantidad||0)*Number(item.precioUnitario||0));},0));
+    if(!Number.isFinite(total)||total<0)return{status:"error",code:"PURCHASE_ORDER_AMOUNT_INVALID"};
+    orderSheet.appendRow([id,String(input.solicitudId),String(input.cotizacionId||""),String(input.proveedorId),new Date(),"",
+      JSON.stringify(prepared),total,String(request[8]||""),"Borrador","", "",String(request[3]||""),"1",""]);
+    return{status:"success",ordenCompraId:id};
+  } finally {lock.releaseLock();}
 }
 
 
@@ -6892,28 +6922,47 @@ function savePurchaseInvoiceTolerance(payload) {
 }
 
 function verifyThreeWayMatch(payload) {
-  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var orders = getOrCreateSheet(ss, "OrdenesCompra").getDataRange().getValues();
-  var receipts = getOrCreateSheet(ss, "RecepcionesCompra").getDataRange().getValues();
-  var order = orders.slice(1).filter(function(row) { return String(row[0]) === String(input.ordenCompraId || ""); })[0];
-  if (!order) return { status: "error", code: "PURCHASE_ORDER_NOT_FOUND" };
-  var orderItems = purchaseQuotationJsonArray_(order[6]), received = {};
-  receipts.slice(1).filter(function(row) { return String(row[1]) === String(input.ordenCompraId); }).forEach(function(row) {
-    purchaseQuotationJsonArray_(row[4]).forEach(function(item) {
-      var id = String(item.itemId || item.ItemId || item.codigoItem || "");
-      if (item.conforme === true || String(item.estadoConformidad || "").toLowerCase() === "conforme") received[id] = (received[id] || 0) + Number(item.cantidad || 0);
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access=purchaseQuotationAccess_(input,ss,false);
+  if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(access.actor,"verifyThreeWayMatch",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var lock=LockService.getScriptLock();lock.waitLock(10000);
+  try {
+    var refreshed=purchaseQuotationAccess_(input,ss,false);
+    if(!refreshed||refreshed.authorized!==true)return{status:"error",code:refreshed&&refreshed.code||"VERIFIED_IDENTITY_REQUIRED"};
+    permission=validateRolePermission(refreshed.actor,"verifyThreeWayMatch",input);
+    if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var orders=getOrCreateSheet(ss,"OrdenesCompra").getDataRange().getValues();
+    var receipts=getOrCreateSheet(ss,"RecepcionesCompra").getDataRange().getValues();
+    var matches=orders.slice(1).filter(function(row){return String(row[0])===String(input.ordenCompraId||"");});
+    if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
+    var order=matches[0],scope=purchaseOrderScopeAccess_(input,ss,order,false);
+    if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
+    var orderItems=purchaseQuotationJsonArray_(order[6]),received={};
+    if(!orderItems.length)return{status:"error",code:"PURCHASE_ORDER_ITEMS_INVALID"};
+    receipts.slice(1).filter(function(row){return String(row[1])===String(input.ordenCompraId);}).forEach(function(row){
+      purchaseQuotationJsonArray_(row[4]).forEach(function(item){
+        var id=String(item.itemId||item.ItemId||item.codigoItem||"").trim();
+        if(item.conforme===true||String(item.estadoConformidad||"").toLowerCase()==="conforme")received[id]=(received[id]||0)+Number(item.cantidad||0);
+      });
     });
-  });
-  var invoice = input.facturaProveedor || {}, invoiceItems = Array.isArray(invoice.partidasFacturadas) ? invoice.partidasFacturadas : [];
-  var valid = invoice.proveedorId === String(order[3]) && orderItems.every(function(item) {
-    var id = String(item.itemId || item.ItemId || item.codigoItem || "");
-    var billed = invoiceItems.filter(function(x) { return String(x.itemId || x.ItemId || "") === id; })[0];
-    return billed && Number(billed.cantidad) <= Number(received[id] || 0) &&
-      Number(billed.cantidad) <= Number(item.cantidad || 0) &&
-      Math.abs(Number(billed.precioUnitario || 0) - Number(item.precioUnitario || 0)) < 0.01;
-  });
-  return { status: "success", estadoConciliacion: valid ? "Conciliada" : "Discrepancia",
-    ordenCompraId: String(input.ordenCompraId), partidasVerificadas: invoiceItems.length };
+    var invoice=input.facturaProveedor||{},invoiceItems=Array.isArray(invoice.partidasFacturadas)?invoice.partidasFacturadas:[];
+    var seen=Object.create(null),valid=String(invoice.proveedorId||"")===String(order[3]);
+    if(!invoiceItems.length)valid=false;
+    invoiceItems.forEach(function(billed){
+      var id=String(billed&& (billed.itemId||billed.ItemId||billed.codigoItem)||"").trim();
+      var orderLine=orderItems.filter(function(item){return String(item.itemId||item.ItemId||item.codigoItem||"").trim()===id;});
+      var quantity=Number(billed&&billed.cantidad),price=Number(billed&&billed.precioUnitario);
+      if(!id||seen[id]||orderLine.length!==1||!Number.isFinite(quantity)||quantity<=0||
+         !Number.isFinite(price)||price<0||quantity>Number(received[id]||0)+0.000001||
+         quantity>Number(orderLine[0].cantidad||orderLine[0].Cantidad||0)+0.000001||
+         Math.abs(price-Number(orderLine[0].precioUnitario||orderLine[0].costoUnitario||0))>=0.01)valid=false;
+      seen[id]=true;
+    });
+    return{status:"success",estadoConciliacion:valid?"Conciliada":"Discrepancia",
+      ordenCompraId:String(input.ordenCompraId),partidasVerificadas:invoiceItems.length};
+  } finally {lock.releaseLock();}
 }
 
 
@@ -7418,12 +7467,19 @@ function recordPurchaseOrderConfirmation(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID);
   var access=purchaseQuotationAccess_(input,ss,true);
   if(!access||access.authorized!==true)return {status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(access.actor,"recordPurchaseOrderConfirmation",input);
+  if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
   var lock=LockService.getScriptLock();
   lock.waitLock(10000);
   try {
+    access=purchaseQuotationAccess_(input,ss,true);
+    if(!access||access.authorized!==true)return {status:"error",code:access&&access.code||"VERIFIED_IDENTITY_REQUIRED"};
+    permission=validateRolePermission(access.actor,"recordPurchaseOrderConfirmation",input);
+    if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
     var orderRows=purchaseDossierRows_(ss,"OrdenesCompra"),orders=orderRows.slice(1);
-    var order=orders.filter(function(row){return String(row[0])===String(input.ordenCompraId||"");})[0];
-    if(!order)return {status:"error",code:"PURCHASE_ORDER_NOT_FOUND"};
+    var orderMatches=orders.filter(function(row){return String(row[0])===String(input.ordenCompraId||"");});
+    if(orderMatches.length!==1)return {status:"error",code:orderMatches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
+    var order=orderMatches[0];
     if(String(order[9]||"").toLowerCase()==="cancelada")return {status:"error",code:"PURCHASE_ORDER_CANCELLED"};
     orderRows=purchaseDossierRows_(ss,"OrdenesCompra");
     order=orderRows.slice(1).filter(function(row){return String(row[0])===String(input.ordenCompraId||"");})[0];
@@ -7444,6 +7500,8 @@ function getPurchaseDossier(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID);
   var access=purchaseQuotationAccess_(input,ss,false);
   if(!access||access.authorized!==true)return {status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(access.actor,"getPurchaseDossier",input);
+  if(!permission||permission.authorized!==true)return {status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
   var role=String(normalizePurchaseAwardRole_(access.actor&&access.actor.role)||"").toLowerCase();
   var restricted=role==="subdirector";
   var query=String(input.query||"").trim().toLowerCase();
