@@ -4522,3 +4522,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-22] C1.942 / AUD-NG-222-TASK-502 — ACCOUNTING recordPurchaseReceipt: identidad verificada, permiso dinámico y scope de solicitud/orden antes y después del lock; ReceptorUserId deriva del actor autenticado. registerAssetsFromPurchaseReceipt revalida permiso dinámico bajo lock y falla sin escrituras ante revocación. Department Scope 44967324259 SUCCESS (138 pasos), contratos parcial/cantidad y capitalización activos PASS, sintaxis PASS. Fixture VM corregido tras primer fallo. CLI local NOT RUN; Apps Script/Sheets/Kardex reales no ejecutados. Idempotencia durable de recepciones pendiente.
+
+
+[2026-11-22] C1.943 / AUD-NG-222-TASK-502 — ACCOUNTING transferInventoryStock y confirmTransferReceipt: autorización de rol y permiso dinámico pre/post lock; actor solicitante/receptor autenticado; IDs de transferencia ambiguos rechazados; solo EnTransito recibible; confirmación atómica con rollback Kardex/valoración/fila si falla persistencia. Department Scope 44967868283 SUCCESS (138 pasos), accounting catalog/transfer contract PASS, syntax PASS. Primer fallo fue fixture sin hoja de transferencias; se corrigió y rerun PASS. CLI local NOT RUN; Sheets/Kardex reales no ejecutados.

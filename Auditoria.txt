@@ -3303,3 +3303,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-22 | AUD-NG-222 / TASK-502 | C1.942] Hallazgo: recordPurchaseReceipt carecía de autorización contextual y scope; registerAssetsFromPurchaseReceipt no revalidaba permiso tras lock. Se incorporan identidad, permiso dinámico, scope de solicitud/departamento y atribución del actor; capitalización revalida permiso bajo lock. Department Scope SUCCESS 138 pasos y contratos relacionados PASS. Idempotencia durable de recepciones permanece pendiente.
+
+
+[2026-11-22 | AUD-NG-222 / TASK-502 | C1.943] Hallazgo: transferInventoryStock carecía de autorización y confirmTransferReceipt aceptaba identidad no autorizada, receptor controlable por payload y persistía Kardex/fila en operaciones separadas sin rollback. Se añade RBAC/permiso dinámico, actor verificado, selector único, estado EnTransito y rollback de movimientos/capas/registro. Department Scope SUCCESS 138 pasos y contrato catálogo/transferencias PASS. No existe relación autoritativa de usuario-departamento-almacén para scope individual; no se inventó. Continuar idempotencia de recepciones de compra y transporte.

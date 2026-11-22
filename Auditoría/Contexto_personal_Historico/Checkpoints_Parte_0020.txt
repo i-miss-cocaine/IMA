@@ -2006,3 +2006,43 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Después, cerrar idempotencia de recordPurchaseReceipt y completar pagos/compras/transporte.
 - TASK-502 y AUD-NG-226 permanecen abiertos.
 ===============================================================================
+
+
+===============================================================================
+### C1.943 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-INVENTORY-TRANSFER-RECEIPT
+===============================================================================
+
+### Continuidad, commits y HEAD
+- Continuación desde C1.942; rama exclusiva NG_beta_0.0.0.1_work.
+- Commits:
+  - 0fdfc1399b91bae967585bff18437008c15d96a3 — asegura transferInventoryStock y confirmTransferReceipt.
+  - 93dbc97e9d6a2eb11e812135c827ec9ee0fb72ea — corrige el fixture de filas previas de transferencia.
+  - 2354adcf5c83d0f8e6f31244100dee2a360a41bb — valida no creación de transferencias ante revocación.
+  - 62ad50f8d92c5bd52f9c865f4dd5b792608914c9 — contrato de rollback de recepción física ante fallo de persistencia.
+- HEAD verificado: 62ad50f8d92c5bd52f9c865f4dd5b792608914c9.
+- Rama base NG_beta_0.0.0.1 permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Hallazgos y correcciones
+1. transferInventoryStock no verificaba actor ni permiso dinámico. Ahora requiere catalogActor_ con rol de escritura y validateRolePermission("transferInventoryStock") antes y después de adquirir ScriptLock.
+2. La atribución del solicitante se toma del userId autenticado, no de responsableUserId/authenticatedUserId/userId enviados por cliente.
+3. confirmTransferReceipt ahora requiere identidad y permiso dinámico específico antes y después del lock; receptor se deriva del actor autenticado.
+4. El selector de transferencia exige un único TransferBatchID; IDs duplicados fallan cerrados. Solo se reciben transferencias EnTransito; estados no pendientes no pueden provocar entradas duplicadas.
+5. Se validan datos de transferencia y cantidades. La confirmación actualiza la fila completa con setValues y, ante fallo de persistencia, elimina movimientos Kardex recién añadidos, restaura capas/movimientos de valoración y restaura la fila de transferencia.
+6. Contratos verifican revocación de permisos sin despacho/recepción, atribución de receptor autenticado, conservación de valoración, y rollback cuando falla la escritura del estado de transferencia.
+7. No se añadió scope individual por almacén: el repositorio no expone una relación autoritativa entre identidad/departamento y las cadenas de ubicación; no se inventó una política de alcance que contradiga el modelo existente. La autorización se limita al RBAC/permiso dinámico institucional actual.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-catalog.test.js
+
+### Verificaciones
+- Department Scope Contract run 44967868283: SUCCESS, 138 pasos; Accounting master catalog/unit conversion and inventory transfer contract PASS; syntax check Apps Script PASS.
+- La primera ejecución falló por un fixture que asumía que TransferenciasInventario ya existía; se corrigió para manejar el estado sin hoja y la ejecución final pasó.
+- Workflows relacionados de catálogo/traslado de inventario no se ejecutaron fuera del Department Scope en este último commit; el contrato de catálogo se ejecutó en el workflow principal.
+- CLI local independiente: NOT RUN. No se ejecutaron Apps Script/Sheets/Kardex reales.
+
+### Siguiente tarea elegible
+- Continuar AUD-NG-222/TASK-502 revisando idempotencia durable de recordPurchaseReceipt y completar el ciclo de compras/pagos.
+- Después revisar transporte (asignaciones, rutas, pasajeros, cargos y reportes) y cualquier hallazgo abierto de ACCOUNTING.
+- TASK-502 y AUD-NG-226 permanecen abiertos.
+===============================================================================
