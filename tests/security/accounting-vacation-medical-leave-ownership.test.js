@@ -15,13 +15,13 @@ ResourceOwnership:[["OwnershipID","InstitutionID","ResourceType","ResourceID","D
 SolicitudesVacaciones:[["SolicitudID","ExpedienteID","Tipo","FechaInicio","FechaFin","DiasSolicitados","Estado","AprobadoPor","Observaciones"],["VA","EA","Vacaciones","2026-12-01","2026-12-05",5,"PendienteAprobacion","","A"],["VB","EB","Permiso","2026-12-02","2026-12-03",2,"PendienteAprobacion","","B"]],
 IncapacidadesMedicas:[["IncapacidadID","ExpedienteID","CentroMedico","DiagnosticoPrivadoUrl","FechaInicio","FechaFin","DiasOtorgados","EstadoIHSS","Observaciones"],["IA","EA","IHSS","PRIVATE","2026-01-10","2026-01-12",3,"AceptadaIHSS","A"],["IB","EB","IHSS","PRIVATE","2026-01-11","2026-01-13",3,"AceptadaIHSS","B"]]};
 let onAppend=null;function sheet(n){return {getDataRange:()=>({getValues:()=>(rows[n]||[]).map(r=>r.slice())}),getLastRow:()=>(rows[n]||[]).length,appendRow:r=>{if(onAppend)onAppend();rows[n].push(r.slice());},getRange:(r,c)=>({setValue:v=>rows[n][r-1][c-1]=v})};}
-const ss={getSheetByName:n=>Object.hasOwn(rows,n)?sheet(n):null,insertSheet:n=>(rows[n]=[],sheet(n))};let uuid=0,locked=false,available=true;
+const ss={getSheetByName:n=>Object.hasOwn(rows,n)?sheet(n):null,insertSheet:n=>(rows[n]=[],sheet(n))};let uuid=0,locked=false,available=true,onLock=null;
 const auditEvents=[];const ctx={console,Date,Math,Number,String,Object,Array,JSON,WeakMap,isNaN,parseInt,SPREADSHEET_ID:"T",
 requestAccountingUserAuthorization_:(action,payload)=>{const actor=claims[payload.sessionToken];return actor?{status:"success",authorized:true,userId:actor.userId,role:actor.role,institutionId:"I",membershipId:"M-"+actor.userId}:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};},
 PropertiesService:{getScriptProperties:()=>({getProperty:n=>n==="IMA_INSTITUTION_ID"?"I":""})},logStructuredEvent:(...args)=>auditEvents.push(args),
 getVerifiedDepartmentScopeForSession_:(p,s,a)=>scopes[a.userId]?{authorized:true,userId:a.userId,role:a.role,institutionId:"I",departmentIds:scopes[a.userId].departmentIds,institutionWide:scopes[a.userId].institutionWide}:{authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"},
 SpreadsheetApp:{openById:()=>ss},getOrCreateSheet:(s,n)=>(rows[n]||(rows[n]=[]),sheet(n)),Utilities:{getUuid:()=>"U"+(++uuid)},
-LockService:{getScriptLock:()=>({tryLock:()=>{if(!available||locked)return false;locked=true;return true;},releaseLock:()=>locked=false})}};
+LockService:{getScriptLock:()=>({tryLock:()=>{if(!available||locked)return false;locked=true;if(onLock){const callback=onLock;onLock=null;callback();}return true;},releaseLock:()=>locked=false})}};
 vm.createContext(ctx);vm.runInContext(code,ctx);
 ctx.getVerifiedAccountingDepartmentScope_=(payload,spreadsheet,actor)=>{const verified=actor||ctx.getVerifiedAccountingIdentity_(payload);const scope=verified&&scopes[verified.userId];return scope?{valid:true,authorized:true,userId:verified.userId,roleId:verified.role,institutionId:"I",membershipId:"M-"+verified.userId,departmentIds:scope.departmentIds,institutionWide:scope.institutionWide}:{valid:false,authorized:false,code:"RESOURCE_NOT_FOUND"};};
 const p=t=>({sessionToken:t}),count=rows.SolicitudesVacaciones.length;
@@ -75,6 +75,23 @@ assert.equal(ctx.recordMedicalLeave({...p("ha"),expedienteId:"EA",fechaInicio:"2
 const before=rows.SolicitudesVacaciones.find(r=>r[0]==="VA").slice(6,9);
 assert.equal(ctx.reviewVacationRequest({...p("hb"),solicitudId:"VA",nuevoEstado:"Aprobado"}).code,"RESOURCE_NOT_FOUND");assert.deepEqual(rows.SolicitudesVacaciones.find(r=>r[0]==="VA").slice(6,9),before);
 assert.equal(ctx.reviewVacationRequest({...p("ha"),solicitudId:"VA",nuevoEstado:"Aprobado"}).status,"success");assert.equal(rows.SolicitudesVacaciones.find(r=>r[0]==="VA")[7],"RecursosHumanos");
+
+const vacationCountBeforeRevocation=rows.SolicitudesVacaciones.length;
+onLock=()=>{claims.emp=null;};
+assert.equal(ctx.submitLeaveVacationRequest({...p("emp"),fechaInicio:"2026-12-22",fechaFin:"2026-12-23"}).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(rows.SolicitudesVacaciones.length,vacationCountBeforeRevocation);
+claims.emp={userId:"U-EMP",role:"Empleado"};
+const medicalCountBeforeRevocation=rows.IncapacidadesMedicas.length;
+onLock=()=>{claims.ha=null;};
+assert.equal(ctx.recordMedicalLeave({...p("ha"),expedienteId:"EA",fechaInicio:"2026-11-03",fechaFin:"2026-11-04"}).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(rows.IncapacidadesMedicas.length,medicalCountBeforeRevocation);
+claims.ha={userId:"U-HA",role:"RecursosHumanos"};
+const reviewBeforeRevocation=rows.SolicitudesVacaciones.find(r=>r[0]==="VB").slice(6,9);
+onLock=()=>{claims.ha={userId:"U-HA",role:"Empleado"};};
+assert.equal(ctx.reviewVacationRequest({...p("ha"),solicitudId:"VB",nuevoEstado:"Aprobado"}).code,"ROLE_NOT_ALLOWED");
+assert.deepEqual(rows.SolicitudesVacaciones.find(r=>r[0]==="VB").slice(6,9),reviewBeforeRevocation);
+claims.ha={userId:"U-HA",role:"RecursosHumanos"};
+
 available=false;const n=rows.SolicitudesVacaciones.length;assert.equal(ctx.submitLeaveVacationRequest({...p("emp"),fechaInicio:"2026-12-20",fechaFin:"2026-12-21"}).code,"CONCURRENT_UPDATE_RETRY");assert.equal(rows.SolicitudesVacaciones.length,n);assert.equal(ctx.reviewVacationRequest({...p("ha"),solicitudId:"VA",nuevoEstado:"Rechazado"}).code,"CONCURRENT_UPDATE_RETRY");available=true;
 const dup=rows.SolicitudesVacaciones.length;rows.SolicitudesVacaciones.push(["DUP","EA","V","a","b",1,"Pending","",""],["DUP","EA","V","a","b",1,"Pending","",""]);assert.ok(!ctx.getVacationRequests(p("admin")).solicitudes.some(x=>x.solicitudId==="DUP"));rows.SolicitudesVacaciones.splice(dup);
 const header=rows.SolicitudesVacaciones[0].slice();rows.SolicitudesVacaciones[0][0]="bad";assert.equal(ctx.getVacationRequests(p("admin")).code,"RESOURCE_SCHEMA_INVALID");rows.SolicitudesVacaciones[0]=header;

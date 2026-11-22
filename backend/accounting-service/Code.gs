@@ -2324,11 +2324,13 @@ function getEmployeeRecords(payload) {
   return{status:"success",data:rows,expedientes:rows};
 }
 
-function submitVacationRequestCore_(payload, allowedRoles) {
+function submitVacationRequestCore_(payload, allowedRoles, permissionAction) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   var role = normalizeVacationRole_(actor.role);
   if (allowedRoles.indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var actionPermission = validateRolePermission(actor, permissionAction, input);
+  if (!actionPermission || actionPermission.authorized !== true) return { status: "error", code: actionPermission && actionPermission.code || "ROLE_PERMISSION_DENIED" };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = resolveVacationEmployeeAccess_(input, ss, input.expedienteId, actor);
   if (!access.authorized) {
@@ -2342,6 +2344,14 @@ function submitVacationRequestCore_(payload, allowedRoles) {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   try {
+    actor = getVerifiedAccountingIdentity_(input);
+    if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+    role = normalizeVacationRole_(actor.role);
+    if (allowedRoles.indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+    actionPermission = validateRolePermission(actor, permissionAction, input);
+    if (!actionPermission || actionPermission.authorized !== true) return { status: "error", code: actionPermission && actionPermission.code || "ROLE_PERMISSION_DENIED" };
+    access = resolveVacationEmployeeAccess_(input, ss, input.expedienteId, actor);
+    if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "RESOURCE_NOT_FOUND" };
     var snapshot = getVacationSheetSnapshot_(ss);
     if (!snapshot.valid) return { status: "error", code: snapshot.code };
     var sheet = snapshot.sheet;
@@ -2367,11 +2377,11 @@ function submitVacationRequestCore_(payload, allowedRoles) {
 }
 
 function submitLeaveVacationRequest(payload) {
-  return submitVacationRequestCore_(payload, ["empleado","recursoshumanos"]);
+  return submitVacationRequestCore_(payload, ["empleado","recursoshumanos"], "submitLeaveVacationRequest");
 }
 
 function submitVacationRequest(payload) {
-  return submitVacationRequestCore_(payload, ["director","profesor","recursoshumanos"]);
+  return submitVacationRequestCore_(payload, ["director","profesor","recursoshumanos"], "submitVacationRequest");
 }
 
 function getLeaveVacationRequests(payload) {
@@ -2429,9 +2439,16 @@ function reviewVacationRequest(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   if (["recursoshumanos","director","administrador"].indexOf(normalizeVacationRole_(actor.role)) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var permission = validateRolePermission(actor, "reviewVacationRequest", input);
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   try {
+    actor = getVerifiedAccountingIdentity_(input);
+    if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+    if (["recursoshumanos","director","administrador"].indexOf(normalizeVacationRole_(actor.role)) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+    permission = validateRolePermission(actor, "reviewVacationRequest", input);
+    if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID), snapshot = getVacationSheetSnapshot_(ss);
     if (!snapshot.valid) return { status: "error", code: snapshot.code };
     var matches = snapshot.rows.map(function(row, index) { return { row: row, index: index }; })
@@ -2481,6 +2498,8 @@ function recordMedicalLeave(payload) {
   var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
   if (normalizeVacationRole_(actor.role) !== "recursoshumanos") return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var permission = validateRolePermission(actor, "recordMedicalLeave", input);
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), access = resolveVacationEmployeeAccess_(input, ss, input.expedienteId, actor);
   if (!access.authorized) return { status: "error", code: access.code || "RESOURCE_NOT_FOUND" };
   if (!input.fechaInicio || !input.fechaFin || isNaN(new Date(input.fechaInicio).getTime()) ||
@@ -2490,6 +2509,13 @@ function recordMedicalLeave(payload) {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   try {
+    actor = getVerifiedAccountingIdentity_(input);
+    if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
+    if (normalizeVacationRole_(actor.role) !== "recursoshumanos") return { status: "error", code: "ROLE_NOT_ALLOWED" };
+    permission = validateRolePermission(actor, "recordMedicalLeave", input);
+    if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
+    access = resolveVacationEmployeeAccess_(input, ss, input.expedienteId, actor);
+    if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "RESOURCE_NOT_FOUND" };
     var snapshot = getVacationSheetSnapshot_(ss, "IncapacidadesMedicas");
     if (!snapshot.valid) return { status: "error", code: snapshot.code };
     var sheet = snapshot.sheet;
