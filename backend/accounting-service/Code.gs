@@ -5857,10 +5857,11 @@ function purchaseQuotationRequest_(payload, ss, access, allowAdjudicated, readOn
   var match = matches[0], row = match.row;
   var status = String(row[9] || "").trim().toLowerCase();
   if (status !== "aprobada" && !(allowAdjudicated && status === "adjudicada")) throw new Error("PURCHASE_REQUEST_NOT_APPROVED");
-  var departmentId = String(row[2] || "").trim();
+  var departmentId = String(row[2] || "").trim(),centerCost=String(row[8]||"").trim();
   var scope = access.scope;
   var departments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(String) : [];
-  if (scope.institutionWide !== true && departments.indexOf(departmentId) === -1) throw new Error("RESOURCE_NOT_FOUND");
+  if (!centerCost) throw new Error("PURCHASE_REQUEST_COST_CENTER_INVALID");
+  if (scope.institutionWide !== true && (departments.indexOf(departmentId) === -1 || departments.indexOf(centerCost) === -1)) throw new Error("RESOURCE_NOT_FOUND");
   var items = purchaseQuotationJsonArray_(row[6]);
   if (!items.length) throw new Error("PURCHASE_REQUEST_ITEMS_INVALID");
   var seen = {};
@@ -5868,15 +5869,16 @@ function purchaseQuotationRequest_(payload, ss, access, allowAdjudicated, readOn
     var itemId = purchaseQuotationItemKey_(item && (item.itemId || item.ItemId || item.id || item.codigo || ("ITEM-" + (index + 1))));
     if (!itemId || seen[itemId]) throw new Error("PURCHASE_REQUEST_ITEMS_INVALID");
     seen[itemId] = true;
-    var quantity = Number(item.cantidad === undefined ? item.Cantidad : item.cantidad);
+    var quantity = Number(item.cantidad === undefined ? item.Cantidad : item.cantidad),partidaCodigo=String(item.partidaCodigo||item.PartidaCodigo||"").trim();
     if (!isFinite(quantity) || quantity <= 0) throw new Error("PURCHASE_REQUEST_ITEMS_INVALID");
-    return { itemId: itemId, descripcion: String(item.descripcion || item.Descripcion || "").trim(),
+    if(!partidaCodigo||partidaCodigo.length>120)throw new Error("PURCHASE_REQUEST_PARTIDA_REQUIRED");
+    return { itemId: itemId, partidaCodigo:partidaCodigo, descripcion: String(item.descripcion || item.Descripcion || "").trim(),
       unidad: String(item.unidad || item.Unidad || "").trim(), cantidad: quantity,
       especificaciones: String(item.especificaciones || item.especificacionesTecnicas || item.Especificaciones || "").trim(),
       clasificacionInventario: normalizePurchaseAssetClassification_(item.clasificacionInventario || item.tipoActivo || item.categoriaInventario) };
   });
   return { sheet: sheet, row: row, rowIndex: match.index, solicitudId: id, departmentId: departmentId,
-    centroCosto: String(row[8] || "").trim(), solicitanteUserId: String(row[3] || "").trim(), items: items };
+    centroCosto: centerCost, solicitanteUserId: String(row[3] || "").trim(), items: items };
 }
 function purchaseQuoteIsValid_(row, now) {
   var status = String(row[9] || "").trim().toLowerCase();
@@ -6106,7 +6108,7 @@ function adjudicatePurchaseQuotations(payload) {
       var freight = purchaseQuotationRound_(Number(quoteLine[12] || 0) * ratio);
       var amount = purchaseQuotationRound_(subtotal - discount + tax + freight);
       var group = orderGroups[quoteId] || (orderGroups[quoteId] = { quote: quote, supplierId: String(quote[2]), lines: [], amount: 0 });
-      group.lines.push({ itemId: itemId, descripcion: item.descripcion, unidad: item.unidad, cantidad: qty,
+      group.lines.push({ itemId: itemId, partidaCodigo:item.partidaCodigo, descripcion: item.descripcion, unidad: item.unidad, cantidad: qty,
         cantidadCotizada: Number(quoteLine[7]), precioUnitario: unitPrice, subtotal: subtotal, descuento: discount,
         impuestos: tax, flete: freight, total: amount, garantia: quoteLine[14], cumplimientoTecnico: quoteLine[15],
         especificacionesCumplidas: quoteLine[16] === true, clasificacionInventario: item.clasificacionInventario,
@@ -6750,6 +6752,8 @@ function createPurchaseRequest(payload) {
     if (access.scope.institutionWide !== true && allowedDepartments.indexOf(String(department.departmentId)) === -1) {
       return { status: "error", code: "RESOURCE_NOT_FOUND" };
     }
+    var centerCost=String(input.centroCosto||department.departmentId).trim();
+    if(!centerCost||centerCost.length>120||(access.scope.institutionWide!==true&&allowedDepartments.indexOf(centerCost)===-1))return{status:"error",code:"PURCHASE_REQUEST_COST_CENTER_INVALID"};
     var actor = access.actor;
     var classifications = input.detalleItems.map(function(x) { return { clasificacionInventario:normalizePurchaseAssetClassification_(x) }; });
     var prepared = input.detalleItems.map(function(source, index) {
@@ -6778,7 +6782,7 @@ function createPurchaseRequest(payload) {
     var id = "REQ-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
     sheet.appendRow([id, new Date(), String(department.departmentId), String(actor.userId || ""),
       String(input.justificacion || ""), String(input.categoria || ""), JSON.stringify(prepared),
-      Number(input.montoEstimado || 0), String(input.centroCosto || ""), "Pendiente", ""]);
+      Number(input.montoEstimado || 0), centerCost, "Pendiente", ""]);
     return { status: "success", solicitudId: id };
   } finally {
     lock.releaseLock();
