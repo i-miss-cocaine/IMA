@@ -6887,6 +6887,8 @@ function getPurchaseInvoiceTolerances(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = purchaseQuotationAccess_(input, ss, false);
   if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+  var permission = validateRolePermission(access.actor, "getPurchaseInvoiceTolerances", input);
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var concepts = ["PRECIO_UNITARIO","IMPUESTO","DESCUENTO","TRANSPORTE","OTROS_CARGOS","IMPORTE_SUBTOTAL","IMPORTE_TOTAL"];
   var result = [];
   for (var i = 0; i < concepts.length; i++) {
@@ -6898,19 +6900,26 @@ function getPurchaseInvoiceTolerances(payload) {
 }
 
 function savePurchaseInvoiceTolerance(payload) {
-  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
-  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED" };
-  var role = normalizePurchaseAwardRole_(actor.role);
+  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = purchaseQuotationAccess_(input, ss, true);
+  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+  var actor = access.actor, role = normalizePurchaseAwardRole_(actor && actor.role);
   if (["Director","Administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+  var permission = validateRolePermission(actor, "savePurchaseInvoiceTolerance", input);
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var concept = String(input.concepto || "").trim().toUpperCase();
   var allowed = ["PRECIO_UNITARIO","IMPUESTO","DESCUENTO","TRANSPORTE","OTROS_CARGOS","IMPORTE_SUBTOTAL","IMPORTE_TOTAL"];
   var absolute = Number(input.toleranciaAbsoluta), percent = Number(input.toleranciaPorcentual || 0);
   if (allowed.indexOf(concept) === -1 || !isFinite(absolute) || absolute < 0 || absolute > 1000 || !isFinite(percent) || percent < 0 || percent > 5) return { status: "error", code: "PURCHASE_TOLERANCE_INVALID" };
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), access = purchaseQuotationAccess_(input, ss, true);
-  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   try {
+    access = purchaseQuotationAccess_(input, ss, true);
+    if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "VERIFIED_IDENTITY_REQUIRED" };
+    actor = access.actor; role = normalizePurchaseAwardRole_(actor && actor.role);
+    if (["Director","Administrador"].indexOf(role) === -1) return { status: "error", code: "ROLE_NOT_ALLOWED" };
+    permission = validateRolePermission(actor, "savePurchaseInvoiceTolerance", input);
+    if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
     var expected = ["Concepto","ToleranciaAbsoluta","ToleranciaPorcentual","Estado","ActualizadoPor","FechaActualizacion"];
     var sheet = ss.getSheetByName("ToleranciasConciliacionCompras") || getOrCreateSheet(ss, "ToleranciasConciliacionCompras");
     var values = sheet.getDataRange().getValues();
