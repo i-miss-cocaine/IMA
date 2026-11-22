@@ -97,7 +97,7 @@
 ---
 
 <!-- ID: F18-TASK01 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [ ] [F18-TASK01] Implementar el control de recepciones parciales, entregas escalonadas y saldos pendientes
+### [x] [F18-TASK01] Implementar el control de recepciones parciales, entregas escalonadas y saldos pendientes
 - **Severidad:** Crítica (Integridad en la recepción física de compras y control de inventario)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs` (`recordPurchaseReceipt`), `OrdenesCompra`, `RecepcionesCompra`.
 - **Problema:** Al registrar la primera recepción, la orden se marca incondicionalmente como `RecibidaTotal`, impidiendo recepciones posteriores de los artículos faltantes.
@@ -110,8 +110,8 @@
 - **Dependencias/riesgos:** consistencia transaccional de recepciones e inventario; riesgo de pérdida de saldos o cierre prematuro.
 - **Alcance:** recepción parcial y cálculo de saldo por partida; no incluye conciliación de facturas (F18-Task02).
 - **Criterios de aceptación:** permitir varias recepciones por orden; no superar cantidades autorizadas; saldo pendiente correcto; estado total únicamente al completar el 100%.
-- **Prioridad:** P0. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; el informe documenta inspección estática, no implementación correctiva.
+- **Prioridad:** P0. **Estado:** Completada en C1.948; implementación incorporada en C1.944.
+- **Evidencia de cierre:** recordPurchaseReceipt acumula cantidades conformes/rechazadas por partida, conserva saldos pendientes, permite recepciones sucesivas, bloquea sobre-recepción y solo marca RecibidaTotal al completar las cantidades conformes. Idempotencia persistente y rollback de Kardex/valoración/recepción/estado. Contrato accounting-purchase-receipt-partial.test.js PASS; Department Scope run 44985649501 SUCCESS (139 pasos), además de C1.944 run 44968525211 SUCCESS (137 pasos).
 
 ---
 

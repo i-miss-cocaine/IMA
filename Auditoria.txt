@@ -3318,3 +3318,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-22 | F18-TASK04 / C1.947] Cierre verificado: órdenes de compra con aprobación independiente, bloqueo de autoaprobación, umbral > L 50,000 reservado a Administrador/Director; PDF membretado con correlativo único, RTN y datos del proveedor, partidas, impuestos y firmas; archivo privado en Drive, hash SHA-256, descarga autenticada, idempotencia y rollback. Ciclo de estados Borrador/Aprobada/Emitida/Confirmada/recepción parcial-total. Department Scope 140/140 PASS; Regional Formatting, UI Accessibility, Accounting Import Preflight y contratos transversales PASS. No se afirma ejecución real de Apps Script/Drive ni CLI local. Siguiente: revalidación de F19-Task01/TASK-019 por AUD-NG-023/AUD-NG-142.
+
+
+[2026-11-22 | F18-TASK01 / C1.948] Se cierra la tarea técnica P0 de recepciones parciales, ya implementada en C1.944 y verificada de nuevo: acumulación por partida, saldo pendiente, estado parcial/total, rechazo de sobre-recepción, idempotencia y rollback de Kardex/valoración/recepción/orden. Department Scope 44985649501 SUCCESS (139 pasos). La nota de siguiente tarea de C1.947 se corrige: F18-TASK01 y F18-TASK05 seguían sin cierre en Pendientes; completar ambas antes de F18-TASK06.

@@ -2238,3 +2238,38 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - F19-TASK14 depende de F19-Task01. El informe de Fase 19 registra TASK-019 como antecedente completado, pero pendiente de revalidación/ampliación por AUD-NG-023/AUD-NG-142 (movimientos desconocidos pueden alterar saldos). La siguiente tarea elegible es revalidar F19-Task01/TASK-019 sin repetir la implementación multialmacén histórica; después, continuar F19-TASK14.
 - AUD-NG-222/TASK-502 y AUD-NG-226/TASK-506 permanecen abiertos y no se declaran cerrados por esta tarea.
 ===============================================================================
+
+
+===============================================================================
+### C1.948 — IMA-EXEC-20261122-AUD-NG-222-F18-TASK01-PARTIAL-RECEIPT-VERIFICATION
+===============================================================================
+
+### Continuidad, rama y commits
+- Continuación desde C1.947 en NG_beta_0.0.0.1_work.
+- F18-TASK01 ya había sido implementada y probada en C1.944; el estado de Pendientes no se había actualizado y permanecía erróneamente abierto.
+- Commits de implementación preservados:
+  - c1c0f2ac247602afc87b15c9528fbe2473498c77 — idempotency key/hash persistentes.
+  - f31dd7f48239155f1eff435de371531f56410da3 — rollback transaccional de inventario/recepción/orden.
+  - ceed0e3233afa3ce11af2b6f699d9e119d977911 — fixture de rollback.
+- HEAD de implementación verificado antes de este checkpoint: 049a6d93b354b708078026c28642deab673fea80.
+- HEAD de rama base verificado: 44d9891132332e692dbe2ba8602b41f50a508a59; no se modificó.
+
+### Verificación de aceptación
+1. Varias recepciones por orden y acumulación por partida.
+2. RecibidaParcial mientras existan cantidades pendientes; RecibidaTotal únicamente al completar el 100% conforme.
+3. Sobre-recepción y partidas desconocidas rechazadas; unidades dañadas/rechazadas no se consideran conformes.
+4. Idempotencia de reintentos, conflicto de payload con misma clave y rollback de movimientos/valoración ante fallos de persistencia.
+
+### Archivos de implementación y pruebas
+- backend/accounting-service/Code.gs
+- tests/security/accounting-purchase-receipt-partial.test.js
+
+### Verificaciones
+- Department Scope run 44985649501: SUCCESS, 139 pasos; contrato de recepciones parciales PASS.
+- Evidencia original C1.944: Department Scope run 44968525211 SUCCESS, 137 pasos.
+- CLI local independiente: NOT RUN; Apps Script/Sheets/Kardex de producción: NOT RUN.
+
+### Corrección de continuidad respecto de C1.947
+- C1.947 registró F18-TASK04 como completada y propuso continuar F19-Task01/TASK-019. La revisión del índice de Pendientes detectó que F18-TASK01 (dependencia P0, ya implementada) y F18-TASK05 (matriz/adjudicación ya implementada) seguían sin cierre administrativo/evidencial. Se cierran en C1.948/C1.949 antes de avanzar a F18-TASK06.
+- F18-TASK04 permanece completada en C1.947; F18-TASK01 queda completada en este checkpoint. F18-TASK05 es la siguiente verificación de cierre.
+===============================================================================
