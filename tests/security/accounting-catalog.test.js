@@ -24,10 +24,10 @@ const catalogRowsBefore=rows.CatalogoArticulos.length,normalizedUpdate=ctx.manag
 assert.throws(()=>ctx.manageCatalogItem({itemCodigo:"MAT-002",itemNombre:"Papel bond",categoria:"Papelería y oficina",unidadMedida:"Unidad"}),/CATALOG_ITEM_NAME_DUPLICATE/);
 const move=ctx.recordInventoryMovement({itemCodigo:"mat 001",tipoMovimiento:"Entrada",cantidad:2,unidadMedida:"Caja de 12",ubicacionResponsable:"Bodega A"});assert.equal(move.itemCodigo,"MAT-001");assert.equal(move.cantidadBase,24);assert.equal(move.stockNuevoUbicacion,24);
 const out=ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Salida",cantidad:1,unidadMedida:"Unidad",ubicacionResponsable:"Bodega A"});assert.equal(out.stockNuevoUbicacion,23);
-const transferRowsBeforeDenied=rows.TransferenciasInventario.length;
+const transferRowsBeforeDenied=(rows.TransferenciasInventario||[]).length;
 revokePermissionOnLock=lockAcquisitions+1;
 assert.throws(()=>ctx.transferInventoryStock({itemCodigo:"MAT-001",cantidad:1,ubicacionOrigen:"Bodega A",ubicacionDestino:"Bodega B"}),/ROLE_PERMISSION_DENIED/);
-assert.equal(rows.TransferenciasInventario.length,transferRowsBeforeDenied,"revoked transfer permission must not dispatch stock");
+assert.equal((rows.TransferenciasInventario||[]).length,transferRowsBeforeDenied,"revoked transfer permission must not dispatch stock");
 permissionActive=true;revokePermissionOnLock=0;
 const journalsBeforeTransfer=rows.AsientosContables.length;const transferLocks=lockAcquisitions,transfer=ctx.transferInventoryStock({itemCodigo:"mat 001",cantidad:3,ubicacionOrigen:"Bodega A",ubicacionDestino:"Bodega B"});assert.equal(transfer.status,"success");assert.equal(rows.AsientosContables.length,journalsBeforeTransfer,"internal warehouse transfers must not create expense journals");assert.equal(transfer.itemCodigo,"MAT-001");assert.equal(transfer.stockNuevoOrigen,20);assert.equal(lockAcquisitions,transferLocks+1,"transfer must not reacquire its ScriptLock");const transferBeforeDeniedReceipt=rows.TransferenciasInventario.find(r=>r[0]===transfer.transferBatchId).slice(),kardexBeforeDeniedReceipt=rows.InventariosKardex.length;
 revokePermissionOnLock=lockAcquisitions+1;
