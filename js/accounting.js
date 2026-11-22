@@ -1218,6 +1218,7 @@ function renderComprasModule(container) {
   `;
 
   window.switchComprasSubtab('solicitudes');
+  if (window.loadPurchaseActionCapabilities) window.loadPurchaseActionCapabilities();
 }
 
 window.switchComprasSubtab = function (subtab) {
@@ -1252,6 +1253,7 @@ window.switchComprasSubtab = function (subtab) {
   } else if (subtab === 'proveedores') {
     renderComprasProveedoresView(subContainer);
   }
+  if (window.applyPurchaseActionVisibility) window.applyPurchaseActionVisibility(subContainer);
 };
 
 function renderComprasExpedienteView(container){
@@ -1286,7 +1288,7 @@ function renderComprasSolicitudesView(container) {
     <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <h5 class="text-sm font-black uppercase text-gray-800">Solicitudes de Compra Institucionales</h5>
-        <button onclick="openNewPurchaseRequestModal()" class="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase hover:bg-purple-700 shadow-sm flex items-center gap-2">
+        <button onclick="openNewPurchaseRequestModal()" data-purchase-action="createPurchaseRequest" hidden class="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase hover:bg-purple-700 shadow-sm flex items-center gap-2">
           <i class="fas fa-plus"></i> Nueva Solicitud
         </button>
       </div>
@@ -1437,7 +1439,7 @@ window.renderPurchaseQuotationEntry=function(matrix,target){
  });
  tableWrap.appendChild(table);target.appendChild(tableWrap);
  const total=document.createElement('div');total.id='cmp-entry-grand-total';total.className='text-right font-black text-gray-800';total.textContent='Total ofertado: L 0.00';target.appendChild(total);
- const submit=document.createElement('button');submit.type='button';submit.className='px-4 py-2 rounded-lg bg-purple-700 text-white text-xs font-bold';submit.textContent='Registrar cotización';submit.addEventListener('click',()=>window.submitPurchaseQuotationEntry(matrix,target,submit));target.appendChild(submit);
+ const submit=document.createElement('button');submit.type='button';submit.dataset.purchaseAction='submitPurchaseQuotation';submit.hidden=true;submit.className='px-4 py-2 rounded-lg bg-purple-700 text-white text-xs font-bold';submit.textContent='Registrar cotización';submit.addEventListener('click',()=>window.submitPurchaseQuotationEntry(matrix,target,submit));target.appendChild(submit);if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(target);
 };
 window.updatePurchaseQuotationEntryTotal=function(row){
  const get=name=>Number(row.querySelector('[data-field="'+name+'"]').value||0),qty=get('cantidadCotizada'),unit=get('precioUnitario'),discount=get('descuento'),tax=get('impuestos'),freight=get('flete'),total=Math.round((qty*unit-discount+tax+freight)*100)/100;
@@ -1505,7 +1507,7 @@ window.renderPurchaseQuotationMatrix=function(matrix,target){
  const rejected=document.createElement('textarea');rejected.id='cmp-award-rejection';rejected.placeholder='Motivo para descartar ofertas no seleccionadas (obligatorio)';rejected.className='rounded-lg border p-2 min-h-16 md:col-span-2';
  const responsible=document.createElement('input');responsible.id='cmp-award-responsibles';responsible.placeholder='Responsables de evaluación (IDs separados por coma; el usuario autenticado se agrega automáticamente)';responsible.className='rounded-lg border p-2 md:col-span-2';
  form.append(dictamen,justification,rejected,responsible);target.appendChild(form);
- const button=document.createElement('button');button.type='button';button.className='px-4 py-2 rounded-lg bg-emerald-700 text-white font-bold';button.textContent='Emitir acta y generar órdenes por proveedor';button.addEventListener('click',async()=>{
+ const button=document.createElement('button');button.type='button';button.dataset.purchaseAction='adjudicatePurchaseQuotations';button.hidden=true;button.className='px-4 py-2 rounded-lg bg-emerald-700 text-white font-bold';button.textContent='Emitir acta y generar órdenes por proveedor';button.addEventListener('click',async()=>{
   const selected=[...target.querySelectorAll('input[type="checkbox"][data-quote-id]:checked')],allocations=selected.map(check=>{const cell=check.closest('td'),qty=cell&&cell.querySelector('input[type="number"]');return {itemId:check.dataset.itemId,cotizacionId:check.dataset.quoteId,cantidadAdjudicada:Number(qty&&qty.value||0)};});
   const used=new Set(allocations.map(x=>x.cotizacionId)),rejections=matrix.cotizaciones.filter(q=>!used.has(q.cotizacionId)).map(q=>({cotizacionId:q.cotizacionId,motivo:rejected.value.trim()}));
   const payload={solicitudId:matrix.solicitud.solicitudId,adjudicaciones:allocations,dictamen:dictamen.value.trim(),justificacion:justification.value.trim(),responsablesEvaluacion:responsible.value.split(',').map(x=>x.trim()).filter(Boolean),ofertasDescartadas:rejections,idempotencyKey:'AWARD-'+matrix.solicitud.solicitudId+'-'+(window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now()+'-'+Math.random())};
@@ -1513,14 +1515,14 @@ window.renderPurchaseQuotationMatrix=function(matrix,target){
   try{const response=await fetchBackendAccounting('adjudicatePurchaseQuotations',payload);if(!response||response.status!=='success')throw new Error(response&&response.message||response&&response.code||'No se pudo adjudicar.');addText(target,'Acta '+response.actaId+' creada. Órdenes en borrador: '+response.ordenes.map(o=>o.ordenCompraId).join(', '),'div','rounded-lg bg-emerald-50 text-emerald-800 p-3 font-bold');window.loadPurchaseQuotationMatrix();}
   catch(error){addText(target,error.message||'Error al adjudicar.','div','rounded-lg bg-red-50 text-red-700 p-2');button.disabled=false;button.textContent='Emitir acta y generar órdenes por proveedor';}
  });
- target.appendChild(button);
+ target.appendChild(button);if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(target);
 };
 
 function renderComprasOrdenesView(container) {
   container.innerHTML = `
     <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <h5 class="text-sm font-black uppercase text-gray-800">Órdenes de Compra Emitidas</h5>
+        <div class="flex items-center gap-2"><h5 class="text-sm font-black uppercase text-gray-800">Órdenes de Compra Emitidas</h5><button onclick="openPurchaseReceiptModal()" data-purchase-action="recordPurchaseReceipt" hidden class="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold">Registrar recepción</button></div>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-gray-700">
@@ -1580,7 +1582,7 @@ function renderComprasOrdenesView(container) {
 function renderComprasRecepcionesView(container) {
   container.innerHTML = `
     <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
-      <div class="flex flex-wrap items-center justify-between gap-3"><h5 class="text-sm font-black uppercase text-gray-800">Recepciones de Mercancía en Almacén</h5></div>
+      <div class="flex flex-wrap items-center justify-between gap-3"><h5 class="text-sm font-black uppercase text-gray-800">Recepciones de Mercancía en Almacén</h5><button onclick="openPurchaseReceiptModal()" data-purchase-action="recordPurchaseReceipt" hidden class="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold">Registrar recepción</button></div>
       <p class="text-xs text-gray-600">Entregas escalonadas, control de faltantes y capitalización de bienes duraderos recibidos conforme.</p>
       <div class="overflow-x-auto"><table class="w-full text-left text-xs text-gray-700">
         <thead class="bg-gray-50 text-gray-500 uppercase font-black"><tr><th class="p-3">Recepción ID</th><th class="p-3">Orden Compra</th><th class="p-3">Fecha</th><th class="p-3">Receptor</th><th class="p-3">Conformidad</th><th class="p-3">Activos</th></tr></thead>
@@ -1654,7 +1656,7 @@ function renderComprasThreeWayView(container) {
   container.innerHTML = `
     <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <h5 class="text-sm font-black uppercase text-gray-800">Conciliación Documental de Tres Vías (Three-Way Match)</h5>
+        <div class="flex items-center justify-between gap-2"><h5 class="text-sm font-black uppercase text-gray-800">Conciliación Documental de Tres Vías (Three-Way Match)</h5><button onclick="openPurchaseInvoiceModal()" data-purchase-action="recordAccountsPayableExpense" hidden class="px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold">Registrar factura</button></div>
       </div>
       <p class="text-xs text-gray-600">Validación cruzada entre Orden de Compra, Recepciones Físicas en Bodega y Factura Fiscal del Proveedor.</p>
 
@@ -1668,7 +1670,7 @@ function renderComprasThreeWayView(container) {
           <input type="text" id="inp-match-factura" placeholder="000-001-01-..." class="w-full text-xs p-2.5 rounded-lg border border-gray-300">
         </div>
         <div class="flex items-end">
-          <button onclick="executeThreeWayMatchTest()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase rounded-lg shadow-sm">
+          <button onclick="executeThreeWayMatchTest()" data-purchase-action="verifyThreeWayMatch" hidden class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase rounded-lg shadow-sm">
             <i class="fas fa-check-double mr-1"></i> Ejecutar Conciliación
           </button>
         </div>
