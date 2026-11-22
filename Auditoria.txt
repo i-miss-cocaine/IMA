@@ -3297,3 +3297,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-22 | AUD-NG-222 / TASK-502 | C1.940] Hallazgo: distribución de boletas validaba autorización antes del lock y no distinguía los permisos dinámicos de preview/process. Se revalidan sesión, rol y permisos de cada acción dentro del lock y antes de MailApp; se revalida el contexto del empleado y se conserva el actor auditado. Revocación no deja claims ni envíos. Department Scope SUCCESS 138 pasos y workflows relacionados SUCCESS. Continuar comprobantes de pago, recepciones de compra y transferencias.
+
+
+[2026-11-22 | AUD-NG-222 / TASK-502 | C1.941] Hallazgo: las lecturas de comprobantes verificaban identidad/permisos solo antes de leer; no serializaban con cambios de versión/revisión ni refrescaban autorización tras esperar. getPaymentVouchers/getPaymentVoucherFile ahora usan ScriptLock y revalidan identidad y permiso dinámico; se preservan ownership, privacidad Drive y SHA-256. Department Scope SUCCESS 137 pasos, contratos voucher/adjuntos y sintaxis PASS. Continuar recepciones de compra y transferencias.

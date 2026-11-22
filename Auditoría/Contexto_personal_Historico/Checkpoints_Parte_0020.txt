@@ -1932,3 +1932,38 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Después, continuar recepciones de compra y confirmación de transferencias de inventario.
 - TASK-502 y AUD-NG-226 permanecen abiertos.
 ===============================================================================
+
+
+===============================================================================
+### C1.941 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-PAYMENT-VOUCHER-READ-TOCTOU
+===============================================================================
+
+### Continuidad, commits y HEAD
+- Continuación desde C1.940; rama exclusiva NG_beta_0.0.0.1_work.
+- Commits:
+  - 586093a830386f1c1fb9d80d2e396e7adbdd8449 — lecturas getPaymentVouchers/getPaymentVoucherFile bajo ScriptLock con revalidación de identidad y permiso dinámico.
+  - 599545da0b52dbaec493a1fec19bce43a64e2a29 — fixture de persistencia de adjuntos actualizado para proporcionar ScriptLock a la descarga de comprobantes.
+- HEAD verificado: 599545da0b52dbaec493a1fec19bce43a64e2a29.
+
+### Hallazgos y correcciones
+1. getPaymentVouchers y getPaymentVoucherFile comprobaban identidad y permiso dinámico antes de leer, pero no serializaban la lectura ni repetían la autorización después de esperar por un lock. Ahora adquieren ScriptLock, vuelven a validar identidad (incluida continuidad de userId/role) y permiso específico de la acción, y liberan el lock con finally.
+2. La lectura de la lista conserva filtrado por propietario/ámbito, no expone URL de Drive y mantiene los metadatos de versión e integridad.
+3. La descarga mantiene comprobación de ownership, privacidad de Drive y SHA-256 mientras se ejecuta bajo el mismo lock que serializa cambios de versión y revisión.
+4. Se actualizó el fixture transversal de persistencia de adjuntos para modelar LockService requerido por la descarga.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-payment-voucher-evidence-integrity.test.js
+- tests/security/file-attachment-persistence-contract.test.js
+
+### Verificaciones
+- Department Scope Contract run 44966964718: SUCCESS, 137 pasos; payment voucher evidence/versioning/decision binding PASS; private attachment persistence/authorization PASS; syntax check Apps Script PASS.
+- Accounting Import Preflight, Transport Local, Identity/Transport Security, Department Reference Consumers, Hierarchical Configuration: SUCCESS en la ejecución previa del HEAD 586093a830386f1c1fb9d80d2e396e7adbdd8449; tras el fixture de compatibilidad se volvió a ejecutar Department Scope, que pasó.
+- Una ejecución inicial falló porque el fixture file-attachment-persistence no definía LockService; se corrigió el fixture y la ejecución final pasó.
+- CLI local independiente: NOT RUN (sin checkout local). No se ejecutaron Drive/Sheets reales ni Apps Script desplegado.
+
+### Siguiente tarea elegible
+- Continuar AUD-NG-222/TASK-502 con recepciones de compra: recordPurchaseReceipt, referencias de orden/proveedor/ítems, identidad del receptor, autorización, idempotencia, integridad de inventario y rollback.
+- Luego revisar confirmTransferReceipt y completar pagos/compras/transporte.
+- TASK-502 y AUD-NG-226 permanecen abiertos.
+===============================================================================
