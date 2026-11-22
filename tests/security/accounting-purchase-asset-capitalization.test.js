@@ -53,8 +53,14 @@ assert.equal(JSON.parse(rows.SolicitudesCompra.at(-1)[6])[0].clasificacionInvent
 // createPurchaseOrder correctly requires an approved source request; model that prerequisite in this fixture.
 rows.SolicitudesCompra.at(-1)[9]="Aprobada";
 ctx.purchaseOrderScopeAccess_=()=>({authorized:true});
-const directOrder=ctx.createPurchaseOrder({solicitudId:createdRequest.solicitudId,proveedorId:"SUP-1",montoTotal:100,detalleItems:[{itemId:"ITEM-C",descripcion:"Papel",cantidad:2,clasificacionInventario:"ActivoFijo"}]});
+const directOrder=ctx.createPurchaseOrder({solicitudId:createdRequest.solicitudId,proveedorId:"SUP-1",montoTotal:100,detalleItems:[{itemId:"ITEM-C",descripcion:"Papel",cantidad:2,precioUnitario:50,total:999,clasificacionInventario:"ActivoFijo"}]});
+assert.equal(directOrder.status,"success");
 const directOrderRow=rows.OrdenesCompra.at(-1),directOrderLine=JSON.parse(directOrderRow[6])[0];
+assert.equal(directOrderRow[7],100,"order total is derived from approved line quantity and price, not a client total");
+assert.equal(directOrderLine.total,100,"client-provided line totals are recalculated");
+const orderCountBeforeMismatch=rows.OrdenesCompra.length;
+const mismatchedTotal=ctx.createPurchaseOrder({solicitudId:createdRequest.solicitudId,proveedorId:"SUP-1",montoTotal:999,detalleItems:[{itemId:"ITEM-C",cantidad:2,precioUnitario:50}]});
+assert.equal(mismatchedTotal.code,"PURCHASE_ORDER_AMOUNT_MISMATCH");assert.equal(rows.OrdenesCompra.length,orderCountBeforeMismatch,"mismatched amount must not create an order");
 assert.equal(directOrderLine.clasificacionInventario,"Consumible","direct order must inherit the request classification, not a client override");
 assert.equal(directOrderLine.capitalizable,false);
 vm.runInContext(extract(source,"verifyThreeWayMatch"),ctx);
