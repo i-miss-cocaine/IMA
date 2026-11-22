@@ -11,3 +11,5 @@ assert.ok(client.includes('dataset.purchaseAction="approveAccountsPayableInvoice
 
 assert.ok(client.includes('id="cxp-date-from"'));
 assert.ok(client.includes('id="cxp-date-to"'));
+
+assert.ok(client.includes('data-ui-help-key="fechas.calendario"'));
