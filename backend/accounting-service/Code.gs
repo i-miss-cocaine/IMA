@@ -10676,9 +10676,11 @@ function previewPayrollReceiptDistribution(payload) {
   const planillaId=String(p.planillaId||"").trim();if(!planillaId)return {status:"error",code:"PLANILLA_SELECTION_REQUIRED",message:"Seleccione una planilla."};
   const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La distribución está ocupada."};
   try{
+    const refreshedAccess=requirePayrollReceiptDistributionManager_(p);
+    if(!refreshedAccess.authorized)return {status:"error",code:refreshedAccess.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
     const ss=SpreadsheetApp.openById(SPREADSHEET_ID),context=getPayrollReceiptDistributionContext_(p,ss,planillaId);
     if(context.error)return {status:"error",code:context.error,message:context.message};
-    preparePayrollReceiptDistributionRows_(ss,context,access.actor);
+    preparePayrollReceiptDistributionRows_(ss,context,refreshedAccess.actor);
     return getPayrollReceiptDistributionSummary_(ss,context);
   }catch(e){return {status:"error",code:e.message==="PAYROLL_DISTRIBUTION_DUPLICATE"?e.message:"PAYROLL_DISTRIBUTION_PREVIEW_FAILED",message:"No fue posible preparar la vista previa de distribución."};}
   finally{lock.releaseLock();}
@@ -10720,6 +10722,9 @@ function processPayrollReceiptDistribution(payload) {
   if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La distribución está ocupada."};
   let claimed=[];
   try{
+    // Revalidate the manager session and role after acquiring the batch-claim lock.
+    const refreshedAccess=requirePayrollReceiptDistributionManager_(p);
+    if(!refreshedAccess.authorized)return {status:"error",code:refreshedAccess.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
     const context=getPayrollReceiptDistributionContext_(p,ss,planillaId);if(context.error)return {status:"error",code:context.error,message:context.message};
     const dist=ensurePayrollReceiptDistributionSheet_(ss),byEmployee=Object.create(null);
     context.records.forEach(r=>{byEmployee[r.expedienteId]=r;});
@@ -10731,10 +10736,10 @@ function processPayrollReceiptDistribution(payload) {
       limit=Math.min(limit,quota);
     }
     candidates.slice(0,limit).forEach(item=>{
-      const updated=item.r.slice();updated[5]="PROCESANDO";updated[6]=Number(updated[6]||0)+1;updated[7]=new Date();updated[9]=access.actor.userId;updated[10]="";
+      const updated=item.r.slice();updated[5]="PROCESANDO";updated[6]=Number(updated[6]||0)+1;updated[7]=new Date();updated[9]=refreshedAccess.actor.userId;updated[10]="";
       dist.sheet.getRange(item.index,1,1,dist.headers.length).setValues([updated]);
       const record=byEmployee[String(updated[3]||"").trim()];
-      claimed.push({distributionId:String(updated[0]),expedienteId:record.expedienteId,email:record.email,record});
+      claimed.push({distributionId:String(updated[0]),expedienteId:record.expedienteId,email:record.email,record,actorUserId:refreshedAccess.actor.userId});
     });
   }catch(e){return {status:"error",code:"PAYROLL_DISTRIBUTION_CLAIM_FAILED",message:"No fue posible reservar los envíos."};}
   finally{lock.releaseLock();}
@@ -10757,6 +10762,12 @@ function processPayrollReceiptDistribution(payload) {
       const latestRecord=!latestContext.error&&latestContext.records.find(r=>r.expedienteId===item.expedienteId);
       if(!latestRecord||!latestRecord.emailValid){
         if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"FALLIDO",errorCode:latestContext.error||latestRecord&&latestRecord.emailReason||"DISTRIBUTION_CONTEXT_CHANGED"}))failed++;else updateFailures++;return;
+      }
+      // MailApp is external, so revalidate the same manager immediately before sending.
+      const sendAccess=requirePayrollReceiptDistributionManager_(p);
+      if(!sendAccess.authorized||sendAccess.actor.userId!==item.actorUserId){
+        if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"REINTENTABLE",errorCode:sendAccess.code||"DISTRIBUTION_ACTOR_CHANGED"}))retryable++;else updateFailures++;
+        return;
       }
       item.email=latestRecord.email;
       let driveFileId="";
