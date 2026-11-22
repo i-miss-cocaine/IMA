@@ -1716,3 +1716,37 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Continuar AUD-NG-222/TASK-502 revisando handlers de corrección de asistencia, incidentes laborales y capacitación que reutilizan identidad o scope calculados antes de ScriptLock. Priorizar submitAttendanceCorrection y reviewAttendanceCorrection.
 - TASK-506 / AUD-NG-226 permanece dependiente de TASK-502.
 ===============================================================================
+
+
+===============================================================================
+### C1.935 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-ATTENDANCE-CORRECTION-TOCTOU
+===============================================================================
+
+### Continuidad, commits y HEAD
+- Continuación desde C1.934, rama NG_beta_0.0.0.1_work.
+- Commit de implementación: 1e094b6872d26875fa71d720946043c7111a7b8a.
+- Commit de ajuste de fixture de regresión: 9f7ade1f31d4e460bc05a1e43a256f1b9e1d507d.
+- HEAD verificado antes del checkpoint: 9f7ade1f31d4e460bc05a1e43a256f1b9e1d507d.
+
+### Hallazgos y correcciones
+- submitAttendanceCorrection reusaba la identidad anterior al lock para resolver nuevamente el expediente. Ahora verifica identidad firmada, permiso dinámico y ownership dentro de la sección crítica.
+- reviewAttendanceCorrection conservaba rol e identidad previos al lock. Ahora vuelve a verificar sesión, rol y permiso dinámico antes de leer y modificar la corrección/registro de asistencia.
+- Se agregaron casos de sesión revocada durante espera y cambio de rol HR a Empleado, comprobando que no se creen ni modifiquen registros.
+- Primer CI detectó contaminación de estado en el propio fixture: la solicitud pendiente usada para probar cambio de rol bloqueaba una prueba posterior de rollback. Se cerró esa solicitud en el fixture después de restaurar el actor HR; no se relajaron las aserciones de producto.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-attendance-correction-ownership.test.js
+
+### Verificaciones
+- Primer Department Scope run 44965110635: FAILURE en test line 45 por fixture pendiente de la prueba de cambio de rol; no por una falla de sintaxis ni por la ruta de autorización corregida.
+- Fixture corregido en 9f7ade1f31d4e460bc05a1e43a256f1b9e1d507d.
+- Department Scope run 44965191324: SUCCESS.
+- Contrato accounting attendance correction ownership, integrity and concurrency: PASS.
+- Syntax-check updated Apps Script services: PASS.
+- No se ejecutó CLI local ni Apps Script/Sheets/Drive reales.
+
+### Siguiente tarea elegible
+- Continuar AUD-NG-222/TASK-502 revisando incidentes laborales/medidas disciplinarias y capacitación, con foco en autorización de recurso calculada antes de ScriptLock.
+- TASK-506 / AUD-NG-226 permanece dependiente de TASK-502.
+===============================================================================

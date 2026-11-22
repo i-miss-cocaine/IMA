@@ -4498,3 +4498,6 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-22] C1.934 / AUD-NG-222-TASK-502 — ACCOUNTING: submitVacationRequestCore_ revalida identidad firmada, RBAC, rol y expediente tras lock; recordMedicalLeave revalida identidad HR, permiso y expediente; reviewVacationRequest revalida identidad/rol/permiso antes de mutar. Tests de revocación de sesión durante lock y cambio de rol. Department Scope run 44964976451 SUCCESS; vacation/medical ownership contract PASS; syntax PASS. CLI y Apps Script/Sheets/Drive reales NOT RUN. Próximo: submit/reviewAttendanceCorrection, incidentes y capacitación.
+
+
+[2026-11-22] C1.935 / AUD-NG-222-TASK-502 — ACCOUNTING: submitAttendanceCorrection y reviewAttendanceCorrection revalidan identidad firmada, permiso dinámico, rol y scope dentro del lock. Pruebas cubren revocación de sesión y cambio de rol HR; no escrituras ante denegación. CI inicial falló por estado pendiente residual del fixture; corregido cerrando la solicitud de prueba. Department Scope run 44965191324 SUCCESS; contrato attendance correction PASS; syntax PASS. CLI/Apps Script real NOT RUN. Próximo: incidentes laborales/medidas disciplinarias y capacitación.
