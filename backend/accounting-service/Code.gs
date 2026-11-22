@@ -7242,7 +7242,7 @@ function getPurchaseOrderPDFFile(payload) {
     var file=DriveApp.getFileById(fileId);
     if(!file||file.isTrashed()||file.getSharingAccess()!==DriveApp.Access.PRIVATE)return{status:"error",code:"PURCHASE_ORDER_PDF_NOT_PRIVATE"};
     var blob=file.getBlob(),bytes=blob.getBytes(),mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase(),name=String(file.getName()||"");
-    if(!bytes||!bytes.length||bytes.length>10*1024*1024||mime!=="application/pdf"||!/\.pdf$/i.test(name))return{status:"error",code:"PURCHASE_ORDER_PDF_INVALID"};
+    if(!bytes||!bytes.length||bytes.length>10*1024*1024||mime!=="application/pdf"||String(name).toLowerCase().slice(-4)!==".pdf")return{status:"error",code:"PURCHASE_ORDER_PDF_INVALID",mimeType:mime,fileName:name,fileSizeBytes:bytes&&bytes.length||0};
     var signature=bytes.slice(0,5).map(function(value){return String.fromCharCode((Number(value)+256)%256);}).join("");
     if(signature!=="%PDF-"||computeDocumentSHA256(bytes)!==expectedHash)return{status:"error",code:"PURCHASE_ORDER_PDF_INTEGRITY_FAILED"};
     return{status:"success",ordenCompraId:orderId,numeroCorrelativo:String(order[map.CorrelativoPDF]||""),fileName:name,mimeType:mime,encoding:"base64",fileData:Utilities.base64Encode(bytes),fileSizeBytes:bytes.length,sha256Hash:expectedHash};
