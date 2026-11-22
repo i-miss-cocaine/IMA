@@ -37,7 +37,7 @@ function makeHarness(options={}){
     ProveedoresActivos:makeSheet([supplierHeaders,supplier])
   };
   const files=Object.create(null);let nextFile=0,created=0,trashed=0,lockCalls=0,lockReleases=0;
-  let permissionActive=options.permissionDenied!==true,scopeActive=options.scopeDenied!==true,actorUserId="U-1";
+  let permissionActive=options.permissionDenied!==true,scopeActive=options.scopeDenied!==true,actorUserId="U-1",actorRole=options.actorRole||"Director";
   const folder={access:options.folderPublic? "ANYONE":"PRIVATE",files,
     getSharingAccess(){return this.access;},setSharing(access){this.access=access;},
     createFile(blob){created++;const id="FILE-"+(++nextFile);const file={id,name:blob.name,access:"PRIVATE",trashed:false,
@@ -57,10 +57,10 @@ function makeHarness(options={}){
     Utilities:{base64Encode:()=> "JVBERi0xLjQKJVBERg=="},
     computeDocumentSHA256:()=> "a".repeat(64),
     validateFileBinaryIntegrity:(base64)=>({valid:typeof base64==="string"&&!base64.startsWith("data:")&&base64.length>0,detectedFormat:"pdf"}),
-    purchaseQuotationAccess_:()=>({authorized:options.authorized!==false,code:"ROLE_NOT_ALLOWED",actor:{authorized:true,userId:actorUserId,role:"Director"},scope:{institutionWide:scopeActive,departmentIds:scopeActive?[]:["OTHER"]}}),
+    purchaseQuotationAccess_:()=>({authorized:options.authorized!==false,code:"ROLE_NOT_ALLOWED",actor:{authorized:true,userId:actorUserId,role:actorRole},scope:{institutionWide:scopeActive,departmentIds:scopeActive?[]:["OTHER"]}}),
     validateRolePermission:(_actor,action)=>!permissionActive?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:
       (["createPurchaseOrder","getPurchaseOrders"].includes(action)?{authorized:true}:{authorized:false}),
-    purchaseOrderScopeAccess_:()=>!scopeActive?{authorized:false,code:"RESOURCE_NOT_FOUND"}:{authorized:true,access:{actor:{authorized:true,userId:actorUserId,role:"Director"}}},
+    purchaseOrderScopeAccess_:()=>!scopeActive?{authorized:false,code:"RESOURCE_NOT_FOUND"}:{authorized:true,access:{actor:{authorized:true,userId:actorUserId,role:actorRole}}},
     purchaseQuotationJsonArray_:value=>{try{const parsed=Array.isArray(value)?value:JSON.parse(String(value||"[]"));return Array.isArray(parsed)?parsed:[];}catch(_){return[];}},
     getOrCreateSheet:(ss,name)=>ss.getSheetByName(name),
     supplierEnsureActiveForOrder_:()=>true,
@@ -81,6 +81,17 @@ async function main(){
   const approvalRetry=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1"});
   assert.equal(approvalRetry.idempotente,true);
   assert.equal(makeHarness({state:"Borrador",requestState:"Pendiente"}).context.approvePurchaseOrder({ordenCompraId:"OC-1"}).code,"PURCHASE_REQUEST_NOT_APPROVED");
+  const selfApproval=makeHarness({state:"Borrador"});
+  selfApproval.sheets.OrdenesCompra.rows[1][12]="U-1";
+  assert.equal(selfApproval.context.approvePurchaseOrder({ordenCompraId:"OC-1"}).code,"AUTO_APPROVAL_BLOCKED");
+  assert.equal(selfApproval.sheets.OrdenesCompra.rows[1][9],"Borrador","self-approval must not change order state");
+  const highValueContador=makeHarness({state:"Borrador",actorRole:"Contador"});
+  highValueContador.sheets.OrdenesCompra.rows[1][7]=50000.01;
+  assert.equal(highValueContador.context.approvePurchaseOrder({ordenCompraId:"OC-1"}).code,"HIGH_VALUE_APPROVAL_REQUIRED");
+  assert.equal(highValueContador.sheets.OrdenesCompra.rows[1][9],"Borrador","low-level role must not approve a high-value order");
+  const highValueDirector=makeHarness({state:"Borrador",actorRole:"Administrador"});
+  highValueDirector.sheets.OrdenesCompra.rows[1][7]=50000.01;
+  assert.equal(highValueDirector.context.approvePurchaseOrder({ordenCompraId:"OC-1"}).status,"success");
   const missingPdf=makeHarness();
   const originalHeaderWidth=missingPdf.sheets.OrdenesCompra.rows[0].length;
   assert.equal(missingPdf.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"PURCHASE_ORDER_PDF_NOT_FOUND");
