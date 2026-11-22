@@ -7769,7 +7769,8 @@ function assetDeprSheet_(ss,name,headers) {
     sheet.getRange(1, actualHeaders.length + 1).setValue(headers[headers.length - 1]);
     actualHeaders.push(headers[headers.length - 1]);
   }
-  if (JSON.stringify(actualHeaders) !== JSON.stringify(headers)) throw new Error("ASSET_DEPR_SCHEMA_INVALID");
+  var headerPrefixMatches=actualHeaders.length>=headers.length&&headers.every(function(header,index){return actualHeaders[index]===header;});
+  if (name === "AsientosContables" ? !headerPrefixMatches : JSON.stringify(actualHeaders) !== JSON.stringify(headers)) throw new Error("ASSET_DEPR_SCHEMA_INVALID");
   return sheet;
 }
 const ASSET_DEPR_POLICY_HEADERS_=["PolicyID","Categoria","Metodo","VidaUtilMeses","ValorResidualPorcentaje","TasaAnual","CuentaActivo","CuentaDepreciacionAcumulada","CuentaGastoDepreciacion","Estado","FechaActualizacion"];
