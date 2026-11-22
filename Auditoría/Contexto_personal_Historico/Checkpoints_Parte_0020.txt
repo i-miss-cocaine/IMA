@@ -1890,3 +1890,45 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Continuar inventario ACCOUNTING: revisar payroll receipt distribution, pago de comprobantes, purchase quotations/receipts y transporte para confirmar refresh de actor/scope y snapshots tras lock.
 - TASK-502 y TASK-506 permanecen abiertos.
 ===============================================================================
+
+
+===============================================================================
+### C1.940 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-PAYROLL-DISTRIBUTION-TOCTOU
+===============================================================================
+
+### Continuidad, commits y HEAD
+- Continuación desde C1.939; rama exclusiva NG_beta_0.0.0.1_work.
+- Commits de implementación, pruebas y corrección:
+  - ce64e202f1c3b76a2ce5849a677d1506de5578b2 — preview/claim y pre-send revalidan actor/scope bajo lock y antes del correo.
+  - a3b1bfaa4d78e5b9ea3ce206737a66ab025ad9b7 — corrige aserción de filas preparadas.
+  - 795b7ea200380c503faffe5b33e93878e642b934 — prueba de revocación sin claim.
+  - 42e5cb26b95dd750b41d2e6b3e59677c0e818c5e — permisos dinámicos por acción.
+  - 598d545c2ab28e9de94a18b95ac27c4e6054b916 — corrige el binding de permisos: preview valida preview y process valida process, también en los puntos de revalidación bajo lock.
+- HEAD verificado: 598d545c2ab28e9de94a18b95ac27c4e6054b916.
+- HEAD de rama base, sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Hallazgos y correcciones
+1. previewPayrollReceiptDistribution revalida sesión, rol y permiso dinámico propio de preview dentro de la sección crítica.
+2. processPayrollReceiptDistribution revalida permiso dinámico propio de process antes de iniciar, dentro del lock de claim y justo antes de enviar correo.
+3. El claim registra el actor recién verificado. Antes de cada envío se vuelve a resolver contexto de planilla/empleado y se exige que la misma identidad administradora siga autorizada; si la sesión o permiso cambió, no envía y deja el elemento reintentable.
+4. Contratos cubren revocación de sesión y permiso dinámico durante espera del lock. La vista previa puede dejar filas preparadas (incluidos fallidos por datos incompletos), pero ninguna queda PROCESANDO ni incrementa intentos si el manager pierde autorización.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-payroll-receipt-distribution.test.js
+
+### Verificaciones
+- Department Scope Contract run 44966658005: SUCCESS, 138 pasos; payroll receipt distribution privacy/retry contract PASS; sintaxis Apps Script y contratos Node incluidos.
+- Accounting Import Preflight run 44966657999: SUCCESS.
+- ACCOUNTING Transport Local Contracts run 44966658059: SUCCESS.
+- Identity mapping and transport security contracts run 44966658023: SUCCESS.
+- Department Reference Consumers run 44966658064: SUCCESS.
+- Hierarchical Configuration Contract run 44966658001: SUCCESS.
+- Dos ejecuciones previas del contrato payroll fallaron por aserciones del fixture sobre filas de vista previa; se corrigieron y la ejecución final pasó.
+- CLI local independiente: NOT RUN (sin checkout local). No se ejecutaron servicios reales de Apps Script, MailApp, Drive ni Sheets de producción.
+
+### Siguiente tarea elegible
+- Continuar AUD-NG-222/TASK-502 revisando comprobantes de pago: getPaymentVouchers, getPaymentVoucherFile y ciclo upload/review, incluyendo identidad, permiso dinámico, ownership, integridad y concurrencia.
+- Después, continuar recepciones de compra y confirmación de transferencias de inventario.
+- TASK-502 y AUD-NG-226 permanecen abiertos.
+===============================================================================
