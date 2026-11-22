@@ -53,9 +53,9 @@ function makeHarness(options={}){
     SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:name=>sheets[name]||null})},
     LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
     DriveApp,HtmlService,MimeType:{PDF:"application/pdf"},
-    Utilities:{base64Encode:()=> "UEZERg=="},
+    Utilities:{base64Encode:()=> "JVBERi0xLjQKJVBERg=="},
     computeDocumentSHA256:()=> "a".repeat(64),
-    validateFileBinaryIntegrity:()=>({valid:true,detectedFormat:"pdf"}),
+    validateFileBinaryIntegrity:(base64)=>({valid:typeof base64==="string"&&!base64.startsWith("data:")&&base64.length>0,detectedFormat:"pdf"}),
     purchaseQuotationAccess_:()=>({authorized:options.authorized!==false,code:"ROLE_NOT_ALLOWED",actor:{authorized:true,userId:"U-1",role:"Director"},scope:{institutionWide:options.scopeDenied!==true,departmentIds:options.scopeDenied?["OTHER"]:[]}}),
     validateRolePermission:(_actor,action)=>options.permissionDenied?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:
       (["createPurchaseOrder","getPurchaseOrders"].includes(action)?{authorized:true}:{authorized:false}),
