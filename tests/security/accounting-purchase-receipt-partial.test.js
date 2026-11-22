@@ -3,8 +3,8 @@ function extract(source,name){const start=source.indexOf("function "+name+"(");a
 const root=path.resolve(__dirname,"../.."),source=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");assert.doesNotThrow(()=>new vm.Script(source));
 const rows={OrdenesCompra:[["OrdenCompraID","FechaEmision","FechaEntregaEstimada","ProveedorID","FechaRecepcion","EstadoAprobacion","DetalleItemsJSON","MontoTotal","CentroCosto","EstadoOrden"],["PO-1","","","SUP-1","","Aprobada",JSON.stringify([{codigoItem:"IT-A",cantidad:10},{codigoItem:"IT-B",cantidad:5}]),100,"CC-1","Aprobada"],["PO-2","","","SUP-1","","Aprobada",JSON.stringify([{codigoItem:"IT-A",cantidad:10}]),100,"CC-1","Aprobada"],["PO-3","","","SUP-1","","Aprobada",JSON.stringify([{codigoItem:"IT-A",cantidad:10}]),100,"CC-1","Aprobada"]],RecepcionesCompra:[["RecepcionID","OrdenCompraID","Fecha","ReceptorUserId","DetalleJSON","EstadoConformidad","RegistrarInventario","AsientoID","Observaciones"]]};
 function sheet(name){return {getDataRange:()=>({getValues:()=>rows[name].map(r=>r.slice())}),getLastRow:()=>rows[name].length,appendRow:r=>rows[name].push(r.slice()),getRange:(row,col)=>({setValue:v=>{rows[name][row-1][col-1]=v;}})};}
-let inventoryMoves=[],lockBusy=false;
-const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:n=>rows[n]?sheet(n):null})},LockService:{getScriptLock:()=>({waitLock:()=>{if(lockBusy)throw new Error("LOCK_BUSY");},releaseLock:()=>{}})},getOrCreateSheet:(ss,name)=>sheet(name),catalogFindItem_:(ss,code)=>({unit:"Unidad",baseUnit:"Unidad"}),catalogFindUnit_:()=>({base:"Unidad",factor:1}),catalogNormalizeText_:v=>String(v||"").toLowerCase(),recordInventoryMovementLocked_:(ss,p)=>{inventoryMoves.push({...p});return {status:"success"};}};
+let inventoryMoves=[],lockBusy=false,managerActive=true,onLock=null;
+const ctx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:n=>rows[n]?sheet(n):null})},purchaseQuotationAccess_:(payload)=>managerActive?{authorized:true,actor:{userId:"HR-TEST",role:"RecursosHumanos"},scope:{institutionWide:true,departmentIds:[]}}:{authorized:false,code:"VERIFIED_IDENTITY_REQUIRED"},validateRolePermission:(actor,action)=>action==="recordPurchaseReceipt"?{authorized:true}:{authorized:false,code:"ROLE_PERMISSION_DENIED"},LockService:{getScriptLock:()=>({waitLock:()=>{if(onLock){const callback=onLock;onLock=null;callback();}if(lockBusy)throw new Error("LOCK_BUSY");},releaseLock:()=>{}})},getOrCreateSheet:(ss,name)=>sheet(name),catalogFindItem_:(ss,code)=>({unit:"Unidad",baseUnit:"Unidad"}),catalogFindUnit_:()=>({base:"Unidad",factor:1}),catalogNormalizeText_:v=>String(v||"").toLowerCase(),recordInventoryMovementLocked_:(ss,p)=>{inventoryMoves.push({...p});return {status:"success"};}};
 vm.createContext(ctx);vm.runInContext(extract(source,"recordPurchaseReceipt"),ctx);
 const partial=ctx.recordPurchaseReceipt({ordenCompraId:"PO-1",detalleRecibido:[{codigoItem:"IT-A",cantidad:4}],estadoConformidad:"Conforme",registrarEnInventario:true});
 assert.equal(partial.estadoOrden,"RecibidaParcial");assert.equal(partial.resumenPartidas.find(x=>x.codigoItem==="IT-A").pendiente,6);assert.equal(partial.resumenPartidas.find(x=>x.codigoItem==="IT-B").pendiente,5);assert.equal(inventoryMoves.length,1);
@@ -21,6 +21,13 @@ assert.equal(damaged.estadoOrden,"EnDisputa");assert.equal(damaged.resumenPartid
 rows.OrdenesCompra.push(["PO-4","","","SUP-1","","Aprobada",JSON.stringify([{itemId:"IT-C",cantidad:2}]),100,"CC-1","Aprobada"]);
 const aliasReceipt=ctx.recordPurchaseReceipt({ordenCompraId:"PO-4",detalleRecibido:[{itemId:"IT-C",nombreItem:"Item C",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true});
 assert.equal(aliasReceipt.estadoOrden,"RecibidaParcial");assert.equal(inventoryMoves.at(-1).itemCodigo,"IT-C");
+const beforeRevokedReceipt=rows.RecepcionesCompra.length,beforeRevokedMoves=inventoryMoves.length;
+onLock=()=>{managerActive=false;};
+const revokedReceipt=ctx.recordPurchaseReceipt({ordenCompraId:"PO-4",detalleRecibido:[{itemId:"IT-C",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true,receptorUserId:"FORGED"});
+assert.equal(revokedReceipt.code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(rows.RecepcionesCompra.length,beforeRevokedReceipt);
+assert.equal(inventoryMoves.length,beforeRevokedMoves);
+managerActive=true;
 const receiptsBeforeLock=rows.RecepcionesCompra.length,movesBeforeLock=inventoryMoves.length;lockBusy=true;
 assert.throws(()=>ctx.recordPurchaseReceipt({ordenCompraId:"PO-4",detalleRecibido:[{itemId:"IT-C",cantidad:1}],estadoConformidad:"Conforme",registrarEnInventario:true}),/LOCK_BUSY/);
 lockBusy=false;assert.equal(rows.RecepcionesCompra.length,receiptsBeforeLock);assert.equal(inventoryMoves.length,movesBeforeLock);assert.equal(rows.OrdenesCompra[4][9],"RecibidaParcial");

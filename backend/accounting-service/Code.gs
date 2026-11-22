@@ -6186,9 +6186,17 @@ function adjudicatePurchaseQuotations(payload) {
 function recordPurchaseReceipt(payload) {
   var input = payload || {};
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = purchaseQuotationAccess_(input, ss, true);
+  if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "ROLE_NOT_ALLOWED" };
+  var permission = validateRolePermission(access.actor, "recordPurchaseReceipt", input);
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
+    access = purchaseQuotationAccess_(input, ss, true);
+    if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "VERIFIED_IDENTITY_REQUIRED" };
+    permission = validateRolePermission(access.actor, "recordPurchaseReceipt", input);
+    if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
     var orderSheet = getOrCreateSheet(ss, "OrdenesCompra");
     var receiptSheet = getOrCreateSheet(ss, "RecepcionesCompra");
     var orderRows = orderSheet.getDataRange().getValues();
@@ -6209,6 +6217,23 @@ function recordPurchaseReceipt(payload) {
       .filter(function(item) { return String(item.row[orderIdIndex] || "").trim() === String(input.ordenCompraId || "").trim(); });
     if (orderRowsFound.length !== 1) throw new Error("PURCHASE_ORDER_NOT_FOUND");
     var orderRecord = orderRowsFound[0], order = orderRecord.row;
+    var requestIndex = orderHeaders.indexOf("SolicitudID");
+    var requestId = requestIndex >= 0 ? String(order[requestIndex] || "").trim() : "";
+    var scope = access.scope || {}, departmentIds = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(String) : [];
+    if (requestId) {
+      var requestSheet = ss.getSheetByName("SolicitudesCompra");
+      if (!requestSheet) throw new Error("PURCHASE_REQUEST_NOT_FOUND");
+      var requestRows = requestSheet.getDataRange().getValues(), requestHeaders = requestRows[0].map(function(v) { return String(v || "").trim(); });
+      var requestIdIndex = requestHeaders.indexOf("SolicitudID"), requestDepartmentIndex = requestHeaders.indexOf("Departamento");
+      var requestStateIndex = requestHeaders.indexOf("EstadoAprobacion");
+      if (requestIdIndex < 0 || requestDepartmentIndex < 0 || requestStateIndex < 0) throw new Error("PURCHASE_REQUEST_SCHEMA_INVALID");
+      var requestMatches = requestRows.slice(1).filter(function(row) { return String(row[requestIdIndex] || "").trim() === requestId; });
+      if (requestMatches.length !== 1 || ["aprobada","adjudicada"].indexOf(String(requestMatches[0][requestStateIndex] || "").trim().toLowerCase()) === -1) throw new Error("PURCHASE_REQUEST_NOT_FOUND");
+      var requestDepartment = String(requestMatches[0][requestDepartmentIndex] || "").trim();
+      if (scope.institutionWide !== true && departmentIds.indexOf(requestDepartment) === -1) throw new Error("RESOURCE_NOT_FOUND");
+    } else if (scope.institutionWide !== true) {
+      throw new Error("RESOURCE_NOT_FOUND");
+    }
     var orderState = String(order[orderStateIndex] || "").trim().toLowerCase();
     if (["aprobada","recibidaparcial"].indexOf(orderState) === -1) throw new Error("PURCHASE_ORDER_NOT_RECEIVABLE");
     var orderItems;
@@ -6311,7 +6336,7 @@ function recordPurchaseReceipt(payload) {
     receiptRow[indexOfHeader(receiptHeaders, "RecepcionID", 0)] = receiptId;
     receiptRow[indexOfHeader(receiptHeaders, "OrdenCompraID", 1)] = String(input.ordenCompraId);
     receiptRow[indexOfHeader(receiptHeaders, "Fecha", 2)] = now;
-    receiptRow[indexOfHeader(receiptHeaders, "ReceptorUserId", 3)] = String(input.receptorUserId || input.userId || "");
+    receiptRow[indexOfHeader(receiptHeaders, "ReceptorUserId", 3)] = String(access.actor && access.actor.userId || "");
     receiptRow[detailIndex] = JSON.stringify(normalized);
     receiptRow[indexOfHeader(receiptHeaders, "EstadoConformidad", 5)] = receiptState;
     receiptRow[indexOfHeader(receiptHeaders, "RegistrarInventario", 6)] = registrarInventario && inventoryResults.length > 0;
