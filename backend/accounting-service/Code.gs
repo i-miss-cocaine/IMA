@@ -6761,9 +6761,10 @@ function createPurchaseRequest(payload) {
       var item = catalogFindItem_(ss, lookup, true);
       var unit = catalogFindUnit_(ss, source.unidadMedida || source.unidad || item.baseUnit);
       if (catalogNormalizeText_(unit.base) !== catalogNormalizeText_(item.baseUnit)) throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");
-      var quantity = Number(source.cantidad);
+      var quantity = Number(source.cantidad),partidaCodigo=String(source.partidaCodigo||source.PartidaCodigo||"").trim();
       if (!isFinite(quantity) || quantity <= 0) throw new Error("PURCHASE_REQUEST_ITEMS_INVALID");
-      return { itemId: item.code, codigoItem: item.code, catalogItemId:item.id,
+      if(!partidaCodigo||partidaCodigo.length>120)throw new Error("PURCHASE_REQUEST_PARTIDA_REQUIRED");
+      return { itemId: item.code, codigoItem: item.code, catalogItemId:item.id, partidaCodigo:partidaCodigo,
         descripcion: String(source.descripcion || item.name || ""), cantidad: quantity,
         unidadMedida: String(source.unidadMedida || source.unidad || item.baseUnit),
         clasificacionInventario: classification };
@@ -7051,7 +7052,9 @@ function createPurchaseOrder(payload) {
       var unitPrice=Number(x.precioUnitario===undefined?x.costoUnitario:x.precioUnitario);
       if(!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(requested)||requested<=0||quantity>requested+0.000001||!Number.isFinite(unitPrice)||unitPrice<0)throw new Error("PURCHASE_ORDER_QUANTITY_OR_PRICE_INVALID");
       var lineTotal=Math.round((quantity*unitPrice+Number.EPSILON)*100)/100;calculatedTotal=Math.round((calculatedTotal+lineTotal+Number.EPSILON)*100)/100;
-      return Object.assign({},x,{itemId:itemId,cantidad:quantity,precioUnitario:unitPrice,total:lineTotal,catalogItemId:source.catalogItemId,clasificacionInventario:source.clasificacionInventario,
+      var partidaCodigo=String(source.partidaCodigo||source.PartidaCodigo||"").trim();
+      if(!partidaCodigo)throw new Error("PURCHASE_REQUEST_PARTIDA_REQUIRED");
+      return Object.assign({},x,{itemId:itemId,cantidad:quantity,precioUnitario:unitPrice,total:lineTotal,partidaCodigo:partidaCodigo,catalogItemId:source.catalogItemId,clasificacionInventario:source.clasificacionInventario,
         capitalizable:normalizePurchaseAssetClassification_(source)==="ActivoFijo"});
     });
     var orderSheet=getOrCreateSheet(ss,"OrdenesCompra"),orderRows=orderSheet.getDataRange().getValues(),orderHeaders=orderRows[0].map(function(v){return String(v||"").trim();});
@@ -7140,7 +7143,7 @@ function getPurchaseOrders(payload) {
   var requestRows=getOrCreateSheet(ss,"SolicitudesCompra").getDataRange().getValues(),orderRows=getOrCreateSheet(ss,"OrdenesCompra").getDataRange().getValues();
   if(!requestRows.length||!orderRows.length)return{status:"success",ordenes:[]};
   var rh=requestRows[0].map(function(v){return String(v||"").trim();}),oh=orderRows[0].map(function(v){return String(v||"").trim();});
-  var ri={id:rh.indexOf("SolicitudID"),department:rh.indexOf("Departamento")},oi={id:oh.indexOf("OrdenCompraID"),request:oh.indexOf("SolicitudID"),quote:oh.indexOf("CotizacionID"),supplier:oh.indexOf("ProveedorID"),date:oh.indexOf("FechaEmision"),eta:oh.indexOf("FechaEntregaEstimada"),items:oh.indexOf("DetalleItemsJSON"),amount:oh.indexOf("MontoTotal"),cost:oh.indexOf("CentroCosto"),state:oh.indexOf("EstadoOrden"),approved:oh.indexOf("AprobadoPor"),approvalDate:oh.indexOf("FechaAprobacion"),approvalReason:oh.indexOf("JustificacionAprobacion"),approverRole:oh.indexOf("AprobadorRol"),notes:oh.indexOf("Observaciones"),requester:oh.indexOf("SolicitanteUserId"),version:oh.indexOf("VersionDocumental"),pdf:oh.indexOf("ArchivoPdfUrl"),pdfSequence:oh.indexOf("CorrelativoPDF"),pdfFileId:oh.indexOf("DriveFileIdPDF"),pdfDate:oh.indexOf("FechaGeneracionPDF")};
+  var ri={id:rh.indexOf("SolicitudID"),department:rh.indexOf("Departamento")},oi={id:oh.indexOf("OrdenCompraID"),request:oh.indexOf("SolicitudID"),quote:oh.indexOf("CotizacionID"),supplier:oh.indexOf("ProveedorID"),date:oh.indexOf("FechaEmision"),eta:oh.indexOf("FechaEntregaEstimada"),items:oh.indexOf("DetalleItemsJSON"),amount:oh.indexOf("MontoTotal"),cost:oh.indexOf("CentroCosto"),state:oh.indexOf("EstadoOrden"),approved:oh.indexOf("AprobadoPor"),approvalDate:oh.indexOf("FechaAprobacion"),approvalReason:oh.indexOf("JustificacionAprobacion"),approverRole:oh.indexOf("AprobadorRol"),budgetAlerts:oh.indexOf("AlertaPresupuestariaJSON"),budgetValidationDate:oh.indexOf("FechaValidacionPresupuestaria"),notes:oh.indexOf("Observaciones"),requester:oh.indexOf("SolicitanteUserId"),version:oh.indexOf("VersionDocumental"),pdf:oh.indexOf("ArchivoPdfUrl"),pdfSequence:oh.indexOf("CorrelativoPDF"),pdfFileId:oh.indexOf("DriveFileIdPDF"),pdfDate:oh.indexOf("FechaGeneracionPDF")};
   if(Object.keys(ri).some(function(k){return ri[k]<0;})||["id","request","supplier","date","items","amount","state"].some(function(k){return oi[k]<0;}))return{status:"error",code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   var requestCounts=Object.create(null),requestById=Object.create(null),allowed=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
   requestRows.slice(1).forEach(function(row){var id=String(row[ri.id]||"").trim();if(!id)return;requestCounts[id]=(requestCounts[id]||0)+1;requestById[id]=row;});
@@ -7179,7 +7182,7 @@ function getPurchaseOrders(payload) {
     return{ordenId:orderId,ordenCompraId:orderId,solicitudId:requestId,cotizacionId:String(row[oi.quote]||""),
       proveedorId:String(row[oi.supplier]||""),fechaEmision:row[oi.date],fechaEntregaEstimada:oi.eta>=0?row[oi.eta]:"",
       detalleItems:detail,montoTotal:Number(row[oi.amount]||0),centroCosto:oi.cost>=0?String(row[oi.cost]||""):"",
-      estadoOrden:String(row[oi.state]||""),aprobadoPor:oi.approved>=0?String(row[oi.approved]||""):"",fechaAprobacion:oi.approvalDate>=0?row[oi.approvalDate]:"",justificacionAprobacion:oi.approvalReason>=0?String(row[oi.approvalReason]||""):"",aprobadorRol:oi.approverRole>=0?String(row[oi.approverRole]||""):"",
+      estadoOrden:String(row[oi.state]||""),aprobadoPor:oi.approved>=0?String(row[oi.approved]||""):"",fechaAprobacion:oi.approvalDate>=0?row[oi.approvalDate]:"",justificacionAprobacion:oi.approvalReason>=0?String(row[oi.approvalReason]||""):"",aprobadorRol:oi.approverRole>=0?String(row[oi.approverRole]||""):"",alertasPresupuestarias:oi.budgetAlerts>=0?(function(){try{return JSON.parse(String(row[oi.budgetAlerts]||"[]"));}catch(e){return[];}})():[],fechaValidacionPresupuestaria:oi.budgetValidationDate>=0?row[oi.budgetValidationDate]:"",
       observaciones:oi.notes>=0?String(row[oi.notes]||""):"",solicitanteUserId:oi.requester>=0?String(row[oi.requester]||""):"",
       versionDocumental:oi.version>=0?String(row[oi.version]||""):"",archivoPdfUrl:oi.pdf>=0?String(row[oi.pdf]||""):"",
       numeroCorrelativoPDF:oi.pdfSequence>=0?String(row[oi.pdfSequence]||""):"",tienePdf:oi.pdfFileId>=0?!!String(row[oi.pdfFileId]||"").trim():false,
@@ -7227,14 +7230,14 @@ function getPurchaseActionCapabilities(payload) {
   return{status:"success",actions:capabilities};
 }
 
-const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol"];
+const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol","AlertaPresupuestariaJSON","FechaValidacionPresupuestaria"];
 function ensurePurchaseOrderPdfSchema_(ss, createMissing) {
   var sheet=ss&&ss.getSheetByName?ss.getSheetByName("OrdenesCompra"):null;
   if(!sheet)return{valid:false,code:"PURCHASE_ORDER_NOT_FOUND"};
   var values=sheet.getDataRange().getValues();
   if(!values||!values.length)return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   var headers=values[0].map(function(v){return String(v||"").trim();});
-  var required=["OrdenCompraID","SolicitudID","ProveedorID","DetalleItemsJSON","MontoTotal","EstadoOrden","AprobadoPor","SolicitanteUserId"];
+  var required=["OrdenCompraID","SolicitudID","ProveedorID","DetalleItemsJSON","MontoTotal","EstadoOrden","AprobadoPor","SolicitanteUserId","CentroCosto","FechaEmision"];
   if(required.some(function(name){return headers.indexOf(name)<0||headers.indexOf(name)!==headers.lastIndexOf(name);}))
     return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   if(PURCHASE_ORDER_PDF_COLUMNS_.some(function(name){return headers.indexOf(name)>=0&&headers.indexOf(name)!==headers.lastIndexOf(name);}))
@@ -7292,7 +7295,7 @@ function approvePurchaseOrder(payload) {
     var actorId=String(access.actor.userId||"").trim(),state=String(order[map.EstadoOrden]||"").trim().toLowerCase();
     if(state==="aprobada"){
       if(String(order[map.AprobadoPor]||"")===actorId&&String(order[map.JustificacionAprobacion]||"")===reason)
-        return{status:"success",idempotente:true,ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:actorId,fechaAprobacion:order[map.FechaAprobacion]||"",aprobadorRol:String(order[map.AprobadorRol]||approverRole)};
+        return{status:"success",idempotente:true,ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:actorId,fechaAprobacion:order[map.FechaAprobacion]||"",aprobadorRol:String(order[map.AprobadorRol]||approverRole),alertasPresupuestarias:(function(){try{return JSON.parse(String(order[map.AlertaPresupuestariaJSON]||"[]"));}catch(e){return[];}})()};
       return{status:"error",code:"PURCHASE_ORDER_ALREADY_APPROVED"};
     }
     if(state!=="borrador")return{status:"error",code:"PURCHASE_ORDER_STATE_INVALID"};
@@ -7310,6 +7313,31 @@ function approvePurchaseOrder(payload) {
     if(requesterId===actorId)return{status:"error",code:"AUTO_APPROVAL_BLOCKED"};
     var orderAmount=Number(order[map.MontoTotal]);
     if(!Number.isFinite(orderAmount)||orderAmount<0)return{status:"error",code:"PURCHASE_ORDER_AMOUNT_INVALID"};
+    var orderItems=[];
+    try{orderItems=Array.isArray(order[map.DetalleItemsJSON])?order[map.DetalleItemsJSON]:JSON.parse(String(order[map.DetalleItemsJSON]||"[]"));}catch(parseError){return{status:"error",code:"PURCHASE_ORDER_ITEMS_INVALID"};}
+    if(!Array.isArray(orderItems)||!orderItems.length)return{status:"error",code:"PURCHASE_ORDER_ITEMS_INVALID"};
+    var costCenter=String(order[map.CentroCosto]||"").trim(),orderDate=new Date(order[map.FechaEmision]);
+    if(!costCenter||!Number.isFinite(orderDate.getTime()))return{status:"error",code:"BUDGET_ORDER_CONTEXT_REQUIRED"};
+    var budgetYear=String(orderDate.getFullYear()),budgetTotals=Object.create(null),itemsTotalCents=0;
+    for(var itemIndex=0;itemIndex<orderItems.length;itemIndex++){
+      var item=orderItems[itemIndex]||{},partCode=String(item.partidaCodigo||item.PartidaCodigo||"").trim();
+      if(!partCode)return{status:"error",code:"PURCHASE_REQUEST_PARTIDA_REQUIRED"};
+      var lineAmount=Number(item.total);
+      if(!Number.isFinite(lineAmount))lineAmount=Number(item.cantidad)*Number(item.precioUnitario);
+      var lineCents=Math.round(lineAmount*100);
+      if(!Number.isFinite(lineAmount)||lineAmount<=0||!Number.isSafeInteger(lineCents))return{status:"error",code:"PURCHASE_ORDER_ITEMS_INVALID"};
+      itemsTotalCents+=lineCents;budgetTotals[partCode]=(budgetTotals[partCode]||0)+lineCents;
+      if(!Number.isSafeInteger(itemsTotalCents)||!Number.isSafeInteger(budgetTotals[partCode]))return{status:"error",code:"PURCHASE_ORDER_AMOUNT_INVALID"};
+    }
+    if(Math.abs(itemsTotalCents-Math.round(orderAmount*100))>0)return{status:"error",code:"PURCHASE_ORDER_AMOUNT_MISMATCH"};
+    var budgetWarnings=[];
+    Object.keys(budgetTotals).forEach(function(partCode){
+      var budgetCheck=checkBudgetAvailabilityCore_(ss,{anoId:budgetYear,centroCosto:costCenter,partidaCodigo:partCode,montoSolicitado:budgetTotals[partCode]/100},access.scope);
+      if(!budgetCheck||budgetCheck.disponible!==true)throw new Error(budgetCheck&&budgetCheck.code||"BUDGET_OVERRUN_BLOCKED");
+      if(budgetCheck.alertaUmbral===true)budgetWarnings.push(budgetCheck);
+    });
+    if(budgetWarnings.length&&input.confirmarAlertaPresupuestaria!==true)
+      return{status:"warning",code:"BUDGET_THRESHOLD_CONFIRMATION_REQUIRED",alertasPresupuestarias:budgetWarnings,message:"La orden alcanza uno o más umbrales de alerta presupuestaria. Confirme para continuar."};
     if(orderAmount>50000&&["director","administrador"].indexOf(approverRole)===-1)return{status:"error",code:"HIGH_VALUE_APPROVAL_REQUIRED"};
     if(["subdirector","director","administrador"].indexOf(approverRole)===-1)return{status:"error",code:"PURCHASE_ORDER_APPROVER_ROLE_REQUIRED"};
     var departments=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
@@ -7321,12 +7349,13 @@ function approvePurchaseOrder(payload) {
     while(updated.length<schema.headers.length)updated.push("");
     updated[map.AprobadoPor]=actorId;updated[map.EstadoOrden]="Aprobada";updated[map.FechaAprobacion]=new Date();
     updated[map.JustificacionAprobacion]=reason;updated[map.AprobadorRol]=String(access.actor.role||approverRole);
+    updated[map.AlertaPresupuestariaJSON]=JSON.stringify(budgetWarnings);updated[map.FechaValidacionPresupuestaria]=new Date();
     try{schema.sheet.getRange(record.index,1,1,schema.headers.length).setValues([updated]);}
     catch(writeError){
       try{schema.sheet.getRange(record.index,1,1,schema.headers.length).setValues([original]);}catch(rollbackError){}
       return{status:"error",code:"PURCHASE_ORDER_APPROVAL_WRITE_FAILED"};
     }
-    return{status:"success",ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:actorId,fechaAprobacion:updated[map.FechaAprobacion],justificacionAprobacion:reason,aprobadorRol:updated[map.AprobadorRol]};
+    return{status:"success",ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:actorId,fechaAprobacion:updated[map.FechaAprobacion],justificacionAprobacion:reason,aprobadorRol:updated[map.AprobadorRol],alertasPresupuestarias:budgetWarnings};
   }catch(error){return{status:"error",code:String(error&&error.message||"PURCHASE_ORDER_APPROVAL_FAILED")};}
   finally{lock.releaseLock();}
 }

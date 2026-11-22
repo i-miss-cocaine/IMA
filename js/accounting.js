@@ -669,7 +669,9 @@ window.loadInventoryReplenishmentSuggestions=function(){
  }).catch(e=>{host.innerHTML='<p class="text-rose-600">'+catalogHtmlEscape(e.message||e)+'</p>';});
 };
 window.createPurchaseRequestFromSuggestion=function(itemId,itemCode,qty,unit,cost,department,location){
- fetchApi("ACCOUNTING","createPurchaseRequest",{departamento:department,justificacion:"Reposición sugerida por el motor de inventario para "+itemCode+" en "+location,categoria:"Materiales/Insumos",detalleItems:[{catalogItemId:itemId,codigoItem:itemCode,unidadMedida:unit,cantidad:qty,clasificacionInventario:"Consumible"}],montoEstimado:Math.round(Number(cost||0)*qty*100)/100,centroCosto:department}).then(r=>alert(r.message||"Solicitud de compra creada: "+r.solicitudId)).catch(e=>alert(e.message||e));
+ const partidaCodigo=window.prompt("Ingrese el código de partida presupuestaria para este artículo:");
+ if(!partidaCodigo||!String(partidaCodigo).trim()){alert("La partida presupuestaria es obligatoria.");return;}
+ fetchApi("ACCOUNTING","createPurchaseRequest",{departamento:department,justificacion:"Reposición sugerida por el motor de inventario para "+itemCode+" en "+location,categoria:"Materiales/Insumos",detalleItems:[{catalogItemId:itemId,codigoItem:itemCode,unidadMedida:unit,cantidad:qty,clasificacionInventario:"Consumible",partidaCodigo:String(partidaCodigo).trim()}],montoEstimado:Math.round(Number(cost||0)*qty*100)/100,centroCosto:department}).then(r=>alert(r.message||"Solicitud de compra creada: "+r.solicitudId)).catch(e=>alert(e.message||e));
 };
 
 // --- ACTIVOS FIJOS & CUSTODIAS ---
@@ -1618,9 +1620,19 @@ window.approvePurchaseOrderUI = async function(ordenCompraId) {
   if (!window.hasPurchaseActionCapability("approvePurchaseOrder")) { alert("No tiene permisos para aprobar órdenes."); return; }
   const justification = window.prompt("Ingrese la justificación de aprobación (mínimo 5 caracteres):");
   if (!justification || String(justification).trim().length < 5) { alert("La justificación de aprobación es obligatoria."); return; }
-  const result = await fetchBackendAccounting("approvePurchaseOrder", {ordenCompraId: String(ordenCompraId || ""), justificacion: String(justification).trim()});
+  const approvalPayload = {ordenCompraId: String(ordenCompraId || ""), justificacion: String(justification).trim()};
+  let result = await fetchBackendAccounting("approvePurchaseOrder", approvalPayload);
+  if (result && result.status === "warning" && result.code === "BUDGET_THRESHOLD_CONFIRMATION_REQUIRED") {
+    const details = (result.alertasPresupuestarias || []).map(function(x) {
+      return String(x.centroCosto || "") + " / " + String(x.partidaCodigo || "") + ": " + String(x.porcentajeProyectado || "") + "%";
+    }).join("\n");
+    if (!window.confirm("Advertencia presupuestaria:\n" + details + "\n\n¿Desea continuar con la aprobación?")) return;
+    result = await fetchBackendAccounting("approvePurchaseOrder", Object.assign({}, approvalPayload, {confirmarAlertaPresupuestaria:true}));
+  }
   if (!result || result.status !== "success") { alert("No se pudo aprobar la orden: " + String(result && result.code || "ERROR")); return; }
-  alert("Orden aprobada. Ya puede emitirse el PDF oficial.");
+  alert(result.alertasPresupuestarias && result.alertasPresupuestarias.length
+    ? "Orden aprobada con alerta presupuestaria registrada. Ya puede emitirse el PDF oficial."
+    : "Orden aprobada. Ya puede emitirse el PDF oficial.");
   const host = document.getElementById("compras-subtab-container");
   if (host) renderComprasOrdenesView(host);
 };
