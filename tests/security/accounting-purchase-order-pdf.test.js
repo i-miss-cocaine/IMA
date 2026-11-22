@@ -105,7 +105,7 @@ async function main(){
   assert.equal(download.status,"success",JSON.stringify(download));
   assert.equal(download.encoding,"base64");
   assert.equal(download.sha256Hash,"a".repeat(64));
-  assert.equal(h.stats().lockReleases,2,"generation and private download both release their script locks");
+  assert.equal(h.stats().lockReleases,3,"initial generation, idempotent replay and private download release their script locks");
   const revokedDownload=makeHarness({revokeDownloadPermission:true});
   assert.equal(revokedDownload.context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"}).status,"success");
   assert.equal(revokedDownload.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"ROLE_PERMISSION_DENIED");
