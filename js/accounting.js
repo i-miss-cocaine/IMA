@@ -1695,8 +1695,7 @@ window.executeThreeWayMatchTest = function () {
   fetchBackendAccounting('verifyThreeWayMatch', {
     ordenCompraId: ordId,
     facturaProveedor: {
-      numeroFactura: fctNum,
-      partidasFacturadas: [{ codigoItem: "ITEM-GEN", cantidad: 1, precioUnitario: 100 }]
+      numeroFactura: fctNum
     }
   })
   .then(res => {
@@ -1706,7 +1705,7 @@ window.executeThreeWayMatchTest = function () {
           <div class="font-bold text-sm ${res.bloqueadoParaPago ? 'text-red-700' : 'text-emerald-700'}">
             Estado Conciliación: ${res.estadoConciliacion} (${res.bloqueadoParaPago ? 'BLOQUEADO PARA PAGO' : 'HABILITADO PARA PAGO'})
           </div>
-          <p>${res.mensaje}</p>
+          <p>${res.message || res.mensaje || "Verificación completada."}</p>
         </div>
       `;
     }
