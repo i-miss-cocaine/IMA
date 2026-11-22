@@ -6981,6 +6981,7 @@ function getPurchaseActionCapabilities(payload) {
     "manageSupplierAddress","manageSupplierCommercialTerms","manageSupplierBankAccount","getSupplierBankAccount"];
   var capabilities=Object.create(null);
   actions.forEach(function(action){var result=validateRolePermission(access.actor,action,input);capabilities[action]=!!(result&&result.authorized===true);});
+  capabilities.approvePurchaseOrder=capabilities.createPurchaseOrder===true;
   capabilities.generatePurchaseOrderPDF=capabilities.createPurchaseOrder===true;
   capabilities.getPurchaseOrderPDFFile=capabilities.getPurchaseOrders===true;
   return{status:"success",actions:capabilities};
@@ -7021,6 +7022,58 @@ function rollbackPrivatePurchaseOrderFile_(file,reason) {
 function purchaseOrderPdfEscape_(value) {
   return String(value===null||value===undefined?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
+function approvePurchaseOrder(payload) {
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=purchaseQuotationAccess_(input,ss,true);
+  if(!initial||initial.authorized!==true)return{status:"error",code:initial&&initial.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(initial.actor,"createPurchaseOrder",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  try{
+    var access=purchaseQuotationAccess_(input,ss,true);
+    if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"VERIFIED_IDENTITY_REQUIRED"};
+    if(String(access.actor.userId||"")!==String(initial.actor.userId||"")||String(access.actor.role||"")!==String(initial.actor.role||""))
+      return{status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
+    permission=validateRolePermission(access.actor,"createPurchaseOrder",input);
+    if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var schema=ensurePurchaseOrderPdfSchema_(ss);
+    if(!schema.valid)return{status:"error",code:schema.code};
+    var map=schema.map,values=schema.sheet.getDataRange().getValues(),orderId=String(input.ordenCompraId||"").trim();
+    var matches=values.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[map.OrdenCompraID]||"").trim()===orderId;});
+    if(!orderId||matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
+    var record=matches[0],order=record.row,scope=purchaseOrderScopeAccess_(input,ss,order,true);
+    if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
+    var state=String(order[map.EstadoOrden]||"").trim().toLowerCase();
+    if(state==="aprobada")return{status:"success",idempotente:true,ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:String(order[map.AprobadoPor]||"")};
+    if(state!=="borrador")return{status:"error",code:"PURCHASE_ORDER_STATE_INVALID"};
+    if(map.AprobadoPor===undefined)return{status:"error",code:"PURCHASE_ORDER_SCHEMA_INVALID"};
+    var requestSheet=ss.getSheetByName("SolicitudesCompra");
+    if(!requestSheet)return{status:"error",code:"PURCHASE_REQUEST_NOT_FOUND"};
+    var requestRows=requestSheet.getDataRange().getValues(),headers=requestRows[0].map(function(v){return String(v||"").trim();});
+    var idIndex=headers.indexOf("SolicitudID"),departmentIndex=headers.indexOf("Departamento"),statusIndex=headers.indexOf("EstadoAprobacion");
+    if(idIndex<0||departmentIndex<0||statusIndex<0)return{status:"error",code:"PURCHASE_REQUEST_SCHEMA_INVALID"};
+    var requestId=String(order[map.SolicitudID]||"").trim(),requestMatches=requestRows.slice(1).filter(function(row){return String(row[idIndex]||"").trim()===requestId;});
+    if(requestMatches.length!==1)return{status:"error",code:requestMatches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_REQUEST_NOT_FOUND"};
+    var request=requestMatches[0],requestState=String(request[statusIndex]||"").trim().toLowerCase();
+    if(["aprobada","adjudicada"].indexOf(requestState)===-1)return{status:"error",code:"PURCHASE_REQUEST_NOT_APPROVED"};
+    var departments=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
+    if(access.scope.institutionWide!==true&&departments.indexOf(String(request[departmentIndex]||"").trim())===-1)
+      return{status:"error",code:"RESOURCE_NOT_FOUND"};
+    if(!supplierEnsureActiveForOrder_(ss,String(order[map.ProveedorID]||"")))return{status:"error",code:"PURCHASE_SUPPLIER_NOT_ACTIVE"};
+    var oldApprover=order[map.AprobadoPor];
+    try{
+      schema.sheet.getRange(record.index,map.AprobadoPor+1).setValue(String(access.actor.userId||""));
+      schema.sheet.getRange(record.index,map.EstadoOrden+1).setValue("Aprobada");
+    }catch(writeError){
+      try{schema.sheet.getRange(record.index,map.AprobadoPor+1).setValue(oldApprover);}catch(ignored){}
+      try{schema.sheet.getRange(record.index,map.EstadoOrden+1).setValue(order[map.EstadoOrden]);}catch(ignored2){}
+      throw writeError;
+    }
+    return{status:"success",ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:String(access.actor.userId||"")};
+  }catch(error){return{status:"error",code:String(error&&error.message||"PURCHASE_ORDER_APPROVAL_FAILED")};}
+  finally{lock.releaseLock();}
+}
+
 function generatePurchaseOrderPDF(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=purchaseQuotationAccess_(input,ss,true);
   if(!initial||initial.authorized!==true)return{status:"error",code:initial&&initial.code||"ROLE_NOT_ALLOWED"};
