@@ -1616,7 +1616,9 @@ function renderComprasOrdenesView(container) {
 }
 window.approvePurchaseOrderUI = async function(ordenCompraId) {
   if (!window.hasPurchaseActionCapability("approvePurchaseOrder")) { alert("No tiene permisos para aprobar órdenes."); return; }
-  const result = await fetchBackendAccounting("approvePurchaseOrder", {ordenCompraId: String(ordenCompraId || "")});
+  const justification = window.prompt("Ingrese la justificación de aprobación (mínimo 5 caracteres):");
+  if (!justification || String(justification).trim().length < 5) { alert("La justificación de aprobación es obligatoria."); return; }
+  const result = await fetchBackendAccounting("approvePurchaseOrder", {ordenCompraId: String(ordenCompraId || ""), justificacion: String(justification).trim()});
   if (!result || result.status !== "success") { alert("No se pudo aprobar la orden: " + String(result && result.code || "ERROR")); return; }
   alert("Orden aprobada. Ya puede emitirse el PDF oficial.");
   const host = document.getElementById("compras-subtab-container");

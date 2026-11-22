@@ -6910,7 +6910,7 @@ function getPurchaseOrders(payload) {
   var requestRows=getOrCreateSheet(ss,"SolicitudesCompra").getDataRange().getValues(),orderRows=getOrCreateSheet(ss,"OrdenesCompra").getDataRange().getValues();
   if(!requestRows.length||!orderRows.length)return{status:"success",ordenes:[]};
   var rh=requestRows[0].map(function(v){return String(v||"").trim();}),oh=orderRows[0].map(function(v){return String(v||"").trim();});
-  var ri={id:rh.indexOf("SolicitudID"),department:rh.indexOf("Departamento")},oi={id:oh.indexOf("OrdenCompraID"),request:oh.indexOf("SolicitudID"),quote:oh.indexOf("CotizacionID"),supplier:oh.indexOf("ProveedorID"),date:oh.indexOf("FechaEmision"),eta:oh.indexOf("FechaEntregaEstimada"),items:oh.indexOf("DetalleItemsJSON"),amount:oh.indexOf("MontoTotal"),cost:oh.indexOf("CentroCosto"),state:oh.indexOf("EstadoOrden"),approved:oh.indexOf("AprobadoPor"),notes:oh.indexOf("Observaciones"),requester:oh.indexOf("SolicitanteUserId"),version:oh.indexOf("VersionDocumental"),pdf:oh.indexOf("ArchivoPdfUrl"),pdfSequence:oh.indexOf("CorrelativoPDF"),pdfFileId:oh.indexOf("DriveFileIdPDF"),pdfDate:oh.indexOf("FechaGeneracionPDF")};
+  var ri={id:rh.indexOf("SolicitudID"),department:rh.indexOf("Departamento")},oi={id:oh.indexOf("OrdenCompraID"),request:oh.indexOf("SolicitudID"),quote:oh.indexOf("CotizacionID"),supplier:oh.indexOf("ProveedorID"),date:oh.indexOf("FechaEmision"),eta:oh.indexOf("FechaEntregaEstimada"),items:oh.indexOf("DetalleItemsJSON"),amount:oh.indexOf("MontoTotal"),cost:oh.indexOf("CentroCosto"),state:oh.indexOf("EstadoOrden"),approved:oh.indexOf("AprobadoPor"),approvalDate:oh.indexOf("FechaAprobacion"),approvalReason:oh.indexOf("JustificacionAprobacion"),approverRole:oh.indexOf("AprobadorRol"),notes:oh.indexOf("Observaciones"),requester:oh.indexOf("SolicitanteUserId"),version:oh.indexOf("VersionDocumental"),pdf:oh.indexOf("ArchivoPdfUrl"),pdfSequence:oh.indexOf("CorrelativoPDF"),pdfFileId:oh.indexOf("DriveFileIdPDF"),pdfDate:oh.indexOf("FechaGeneracionPDF")};
   if(Object.keys(ri).some(function(k){return ri[k]<0;})||["id","request","supplier","date","items","amount","state"].some(function(k){return oi[k]<0;}))return{status:"error",code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   var requestCounts=Object.create(null),requestById=Object.create(null),allowed=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
   requestRows.slice(1).forEach(function(row){var id=String(row[ri.id]||"").trim();if(!id)return;requestCounts[id]=(requestCounts[id]||0)+1;requestById[id]=row;});
@@ -6949,7 +6949,7 @@ function getPurchaseOrders(payload) {
     return{ordenId:orderId,ordenCompraId:orderId,solicitudId:requestId,cotizacionId:String(row[oi.quote]||""),
       proveedorId:String(row[oi.supplier]||""),fechaEmision:row[oi.date],fechaEntregaEstimada:oi.eta>=0?row[oi.eta]:"",
       detalleItems:detail,montoTotal:Number(row[oi.amount]||0),centroCosto:oi.cost>=0?String(row[oi.cost]||""):"",
-      estadoOrden:String(row[oi.state]||""),aprobadoPor:oi.approved>=0?String(row[oi.approved]||""):"",
+      estadoOrden:String(row[oi.state]||""),aprobadoPor:oi.approved>=0?String(row[oi.approved]||""):"",fechaAprobacion:oi.approvalDate>=0?row[oi.approvalDate]:"",justificacionAprobacion:oi.approvalReason>=0?String(row[oi.approvalReason]||""):"",aprobadorRol:oi.approverRole>=0?String(row[oi.approverRole]||""):"",
       observaciones:oi.notes>=0?String(row[oi.notes]||""):"",solicitanteUserId:oi.requester>=0?String(row[oi.requester]||""):"",
       versionDocumental:oi.version>=0?String(row[oi.version]||""):"",archivoPdfUrl:oi.pdf>=0?String(row[oi.pdf]||""):"",
       numeroCorrelativoPDF:oi.pdfSequence>=0?String(row[oi.pdfSequence]||""):"",tienePdf:oi.pdfFileId>=0?!!String(row[oi.pdfFileId]||"").trim():false,
@@ -6990,13 +6990,14 @@ function getPurchaseActionCapabilities(payload) {
     "manageSupplierAddress","manageSupplierCommercialTerms","manageSupplierBankAccount","getSupplierBankAccount"];
   var capabilities=Object.create(null);
   actions.forEach(function(action){var result=validateRolePermission(access.actor,action,input);capabilities[action]=!!(result&&result.authorized===true);});
-  capabilities.approvePurchaseOrder=capabilities.createPurchaseOrder===true;
+  var approvalRole=normalizePurchaseAwardRole_(access.actor.role);
+  capabilities.approvePurchaseOrder=capabilities.createPurchaseOrder===true&&["subdirector","director","administrador"].indexOf(approvalRole)!==-1;
   capabilities.generatePurchaseOrderPDF=capabilities.createPurchaseOrder===true;
   capabilities.getPurchaseOrderPDFFile=capabilities.getPurchaseOrders===true;
   return{status:"success",actions:capabilities};
 }
 
-const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF"];
+const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol"];
 function ensurePurchaseOrderPdfSchema_(ss, createMissing) {
   var sheet=ss&&ss.getSheetByName?ss.getSheetByName("OrdenesCompra"):null;
   if(!sheet)return{valid:false,code:"PURCHASE_ORDER_NOT_FOUND"};
@@ -7033,11 +7034,16 @@ function rollbackPrivatePurchaseOrderFile_(file,reason) {
 function purchaseOrderPdfEscape_(value) {
   return String(value===null||value===undefined?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
+
 function approvePurchaseOrder(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=purchaseQuotationAccess_(input,ss,true);
   if(!initial||initial.authorized!==true)return{status:"error",code:initial&&initial.code||"ROLE_NOT_ALLOWED"};
   var permission=validateRolePermission(initial.actor,"createPurchaseOrder",input);
   if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var initialRole=normalizePurchaseAwardRole_(initial.actor.role);
+  if(["subdirector","director","administrador"].indexOf(initialRole)===-1)return{status:"error",code:"PURCHASE_ORDER_APPROVER_ROLE_REQUIRED"};
+  var reason=String(input.justificacion||"").trim().slice(0,300);
+  if(reason.length<5)return{status:"error",code:"PURCHASE_ORDER_APPROVAL_REASON_REQUIRED"};
   var lock=LockService.getScriptLock();
   if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
   try{
@@ -7047,6 +7053,8 @@ function approvePurchaseOrder(payload) {
       return{status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
     permission=validateRolePermission(access.actor,"createPurchaseOrder",input);
     if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var approverRole=normalizePurchaseAwardRole_(access.actor.role);
+    if(["subdirector","director","administrador"].indexOf(approverRole)===-1)return{status:"error",code:"PURCHASE_ORDER_APPROVER_ROLE_REQUIRED"};
     var schema=ensurePurchaseOrderPdfSchema_(ss);
     if(!schema.valid)return{status:"error",code:schema.code};
     var map=schema.map,values=schema.sheet.getDataRange().getValues(),orderId=String(input.ordenCompraId||"").trim();
@@ -7054,10 +7062,13 @@ function approvePurchaseOrder(payload) {
     if(!orderId||matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
     var record=matches[0],order=record.row,scope=purchaseOrderScopeAccess_(input,ss,order,true);
     if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
-    var state=String(order[map.EstadoOrden]||"").trim().toLowerCase();
-    if(state==="aprobada"){var existingApprover=String(order[map.AprobadoPor]||"").trim();return existingApprover?{status:"success",idempotente:true,ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:existingApprover}:{status:"error",code:"PURCHASE_ORDER_APPROVER_MISSING"};}
+    var actorId=String(access.actor.userId||"").trim(),state=String(order[map.EstadoOrden]||"").trim().toLowerCase();
+    if(state==="aprobada"){
+      if(String(order[map.AprobadoPor]||"")===actorId&&String(order[map.JustificacionAprobacion]||"")===reason)
+        return{status:"success",idempotente:true,ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:actorId,fechaAprobacion:order[map.FechaAprobacion]||"",aprobadorRol:String(order[map.AprobadorRol]||approverRole)};
+      return{status:"error",code:"PURCHASE_ORDER_ALREADY_APPROVED"};
+    }
     if(state!=="borrador")return{status:"error",code:"PURCHASE_ORDER_STATE_INVALID"};
-    if(map.AprobadoPor===undefined)return{status:"error",code:"PURCHASE_ORDER_SCHEMA_INVALID"};
     var requestSheet=ss.getSheetByName("SolicitudesCompra");
     if(!requestSheet)return{status:"error",code:"PURCHASE_REQUEST_NOT_FOUND"};
     var requestRows=requestSheet.getDataRange().getValues(),headers=requestRows[0].map(function(v){return String(v||"").trim();});
@@ -7069,28 +7080,29 @@ function approvePurchaseOrder(payload) {
     if(["aprobada","adjudicada"].indexOf(requestState)===-1)return{status:"error",code:"PURCHASE_REQUEST_NOT_APPROVED"};
     var requesterId=String(order[map.SolicitanteUserId]||request[3]||"").trim();
     if(!requesterId)return{status:"error",code:"PURCHASE_ORDER_REQUESTER_MISSING"};
-    if(requesterId===String(access.actor.userId||"").trim())return{status:"error",code:"AUTO_APPROVAL_BLOCKED"};
+    if(requesterId===actorId)return{status:"error",code:"AUTO_APPROVAL_BLOCKED"};
     var orderAmount=Number(order[map.MontoTotal]);
     if(!Number.isFinite(orderAmount)||orderAmount<0)return{status:"error",code:"PURCHASE_ORDER_AMOUNT_INVALID"};
-    var approverRole=access.role||normalizePurchaseAwardRole_(access.actor.role);
     if(orderAmount>50000&&["director","administrador"].indexOf(approverRole)===-1)return{status:"error",code:"HIGH_VALUE_APPROVAL_REQUIRED"};
     var departments=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
     if(access.scope.institutionWide!==true&&departments.indexOf(String(request[departmentIndex]||"").trim())===-1)
       return{status:"error",code:"RESOURCE_NOT_FOUND"};
     if(!supplierEnsureActiveForOrder_(ss,String(order[map.ProveedorID]||"")))return{status:"error",code:"PURCHASE_SUPPLIER_NOT_ACTIVE"};
-    var oldApprover=order[map.AprobadoPor];
-    try{
-      schema.sheet.getRange(record.index,map.AprobadoPor+1).setValue(String(access.actor.userId||""));
-      schema.sheet.getRange(record.index,map.EstadoOrden+1).setValue("Aprobada");
-    }catch(writeError){
-      try{schema.sheet.getRange(record.index,map.AprobadoPor+1).setValue(oldApprover);}catch(ignored){}
-      try{schema.sheet.getRange(record.index,map.EstadoOrden+1).setValue(order[map.EstadoOrden]);}catch(ignored2){}
-      throw writeError;
+    var original=order.slice(),updated=order.slice();
+    while(original.length<schema.headers.length)original.push("");
+    while(updated.length<schema.headers.length)updated.push("");
+    updated[map.AprobadoPor]=actorId;updated[map.EstadoOrden]="Aprobada";updated[map.FechaAprobacion]=new Date();
+    updated[map.JustificacionAprobacion]=reason;updated[map.AprobadorRol]=String(access.actor.role||approverRole);
+    try{schema.sheet.getRange(record.index,1,1,schema.headers.length).setValues([updated]);}
+    catch(writeError){
+      try{schema.sheet.getRange(record.index,1,1,schema.headers.length).setValues([original]);}catch(rollbackError){}
+      return{status:"error",code:"PURCHASE_ORDER_APPROVAL_WRITE_FAILED"};
     }
-    return{status:"success",ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:String(access.actor.userId||"")};
+    return{status:"success",ordenCompraId:orderId,estadoOrden:"Aprobada",aprobadoPor:actorId,fechaAprobacion:updated[map.FechaAprobacion],justificacionAprobacion:reason,aprobadorRol:updated[map.AprobadorRol]};
   }catch(error){return{status:"error",code:String(error&&error.message||"PURCHASE_ORDER_APPROVAL_FAILED")};}
   finally{lock.releaseLock();}
 }
+
 
 function generatePurchaseOrderPDF(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),initial=purchaseQuotationAccess_(input,ss,true);
@@ -8808,6 +8820,7 @@ function doPost(e) {
     if (request.action === "manageAssetItem") return respond(manageAssetItem(actionPayload));
     if (request.action === "createPurchaseRequest") return respond(createPurchaseRequest(actionPayload));
     if (request.action === "createPurchaseOrder") return respond(createPurchaseOrder(actionPayload));
+    if (request.action === "approvePurchaseOrder") return respond(approvePurchaseOrder(actionPayload));
     if (request.action === "getEnrollmentBillingConfiguration") return respond(getEnrollmentBillingConfiguration(actionPayload));
     if (request.action === "saveEnrollmentBillingConfiguration") return respond(saveEnrollmentBillingConfiguration(actionPayload));
     if (request.action === "verifyThreeWayMatch") return respond(verifyThreeWayMatch(actionPayload));
