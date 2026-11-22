@@ -36,7 +36,8 @@ function makeHarness(options={}){
     SolicitudesCompra:makeSheet([requestHeaders,request]),
     ProveedoresActivos:makeSheet([supplierHeaders,supplier])
   };
-  const files=Object.create(null);let nextFile=0,created=0,trashed=0;
+  const files=Object.create(null);let nextFile=0,created=0,trashed=0,lockCalls=0,lockReleases=0;
+  let permissionActive=options.permissionDenied!==true,scopeActive=options.scopeDenied!==true,actorUserId="U-1";
   const folder={access:options.folderPublic? "ANYONE":"PRIVATE",files,
     getSharingAccess(){return this.access;},setSharing(access){this.access=access;},
     createFile(blob){created++;const id="FILE-"+(++nextFile);const file={id,name:blob.name,access:"PRIVATE",trashed:false,
@@ -51,13 +52,13 @@ function makeHarness(options={}){
   const HtmlService={createHtmlOutput:html=>({getAs:()=>({name:"",setName(name){this.name=name;},getBytes:()=>bytes.slice(),getContentType:()=>"application/pdf"})})};
   const context={
     SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>({getSheetByName:name=>sheets[name]||null})},
-    LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
+    LockService:{getScriptLock:()=>({tryLock:()=>{lockCalls++;if(lockCalls>1&&options.revokeDownloadPermission)permissionActive=false;if(lockCalls>1&&options.changeActorOnDownload)actorUserId="U-2";if(lockCalls>1&&options.revokeDownloadScope)scopeActive=false;return true;},releaseLock:()=>{lockReleases++;}})},
     DriveApp,HtmlService,MimeType:{PDF:"application/pdf"},
     Utilities:{base64Encode:()=> "JVBERi0xLjQKJVBERg=="},
     computeDocumentSHA256:()=> "a".repeat(64),
     validateFileBinaryIntegrity:(base64)=>({valid:typeof base64==="string"&&!base64.startsWith("data:")&&base64.length>0,detectedFormat:"pdf"}),
-    purchaseQuotationAccess_:()=>({authorized:options.authorized!==false,code:"ROLE_NOT_ALLOWED",actor:{authorized:true,userId:"U-1",role:"Director"},scope:{institutionWide:options.scopeDenied!==true,departmentIds:options.scopeDenied?["OTHER"]:[]}}),
-    validateRolePermission:(_actor,action)=>options.permissionDenied?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:
+    purchaseQuotationAccess_:()=>({authorized:options.authorized!==false,code:"ROLE_NOT_ALLOWED",actor:{authorized:true,userId:actorUserId,role:"Director"},scope:{institutionWide:scopeActive,departmentIds:scopeActive?[]:["OTHER"]}}),
+    validateRolePermission:(_actor,action)=>!permissionActive?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:
       (["createPurchaseOrder","getPurchaseOrders"].includes(action)?{authorized:true}:{authorized:false}),
     purchaseOrderScopeAccess_:()=>options.scopeDenied?{authorized:false,code:"RESOURCE_NOT_FOUND"}:{authorized:true},
     purchaseQuotationJsonArray_:value=>{try{const parsed=Array.isArray(value)?value:JSON.parse(String(value||"[]"));return Array.isArray(parsed)?parsed:[];}catch(_){return[];}},
@@ -68,7 +69,7 @@ function makeHarness(options={}){
   vm.createContext(context);
   vm.runInContext('const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF"];',context);
   ["ensurePurchaseOrderPdfSchema_","getOrCreatePrivatePurchaseOrderFolder_","rollbackPrivatePurchaseOrderFile_","purchaseOrderPdfEscape_","approvePurchaseOrder","generatePurchaseOrderPDF","getPurchaseOrderPDFFile"].forEach(name=>vm.runInContext(extract(name),context));
-  return {context,sheets,files,folder,stats:()=>({created,trashed})};
+  return {context,sheets,files,folder,stats:()=>({created,trashed,lockCalls,lockReleases})};
 }
 async function main(){
   assert.doesNotThrow(()=>new vm.Script(source),"ACCOUNTING backend syntax");
@@ -104,6 +105,17 @@ async function main(){
   assert.equal(download.status,"success",JSON.stringify(download));
   assert.equal(download.encoding,"base64");
   assert.equal(download.sha256Hash,"a".repeat(64));
+  assert.equal(h.stats().lockReleases,2,"generation and private download both release their script locks");
+  const revokedDownload=makeHarness({revokeDownloadPermission:true});
+  assert.equal(revokedDownload.context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"}).status,"success");
+  assert.equal(revokedDownload.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"ROLE_PERMISSION_DENIED");
+  assert.equal(revokedDownload.stats().lockReleases,2);
+  const changedActor=makeHarness({changeActorOnDownload:true});
+  assert.equal(changedActor.context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"}).status,"success");
+  assert.equal(changedActor.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"VERIFIED_IDENTITY_CHANGED");
+  const revokedScope=makeHarness({revokeDownloadScope:true});
+  assert.equal(revokedScope.context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"}).status,"success");
+  assert.equal(revokedScope.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"RESOURCE_NOT_FOUND");
   assert.equal(makeHarness({scopeDenied:true}).context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"RESOURCE_NOT_FOUND");
 
   assert.equal(makeHarness({state:"Borrador"}).context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"}).code,"PURCHASE_ORDER_NOT_APPROVED");

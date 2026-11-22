@@ -7225,28 +7225,53 @@ function generatePurchaseOrderPDF(payload) {
   }finally{lock.releaseLock();}
 }
 function getPurchaseOrderPDFFile(payload) {
-  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(input,ss,false);
-  if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
-  var permission=validateRolePermission(access.actor,"getPurchaseOrders",input);
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  var initial=purchaseQuotationAccess_(input,ss,false);
+  if(!initial||initial.authorized!==true)return{status:"error",code:initial&&initial.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(initial.actor,"getPurchaseOrders",input);
   if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
-  var schema=ensurePurchaseOrderPdfSchema_(ss,false);
-  if(!schema.valid)return{status:"error",code:schema.code};
-  var map=schema.map,values=schema.sheet.getDataRange().getValues(),orderId=String(input.ordenCompraId||"").trim();
-  var matches=values.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[map.OrdenCompraID]||"").trim()===orderId;});
-  if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
-  var order=matches[0].row,scope=purchaseOrderScopeAccess_(input,ss,order,false);
-  if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
-  var fileId=String(order[map.DriveFileIdPDF]||"").trim(),expectedHash=String(order[map.SHA256PDF]||"").trim();
-  if(!fileId||!expectedHash)return{status:"error",code:"PURCHASE_ORDER_PDF_NOT_FOUND"};
+  var lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
   try{
-    var file=DriveApp.getFileById(fileId);
-    if(!file||file.isTrashed()||file.getSharingAccess()!==DriveApp.Access.PRIVATE)return{status:"error",code:"PURCHASE_ORDER_PDF_NOT_PRIVATE"};
-    var blob=file.getBlob(),bytes=blob.getBytes(),mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase(),name=String(file.getName()||"");
-    if(!bytes||!bytes.length||bytes.length>10*1024*1024||mime!=="application/pdf"||String(name).toLowerCase().slice(-4)!==".pdf")return{status:"error",code:"PURCHASE_ORDER_PDF_INVALID",mimeType:mime,fileName:name,fileSizeBytes:bytes&&bytes.length||0};
-    var signature=bytes.slice(0,5).map(function(value){return String.fromCharCode((Number(value)+256)%256);}).join("");
-    if(signature!=="%PDF-"||computeDocumentSHA256(bytes)!==expectedHash)return{status:"error",code:"PURCHASE_ORDER_PDF_INTEGRITY_FAILED"};
-    return{status:"success",ordenCompraId:orderId,numeroCorrelativo:String(order[map.CorrelativoPDF]||""),fileName:name,mimeType:mime,encoding:"base64",fileData:Utilities.base64Encode(bytes),fileSizeBytes:bytes.length,sha256Hash:expectedHash};
-  }catch(error){return{status:"error",code:"PURCHASE_ORDER_PDF_UNAVAILABLE"};}
+    var access=purchaseQuotationAccess_(input,ss,false);
+    if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"VERIFIED_IDENTITY_REQUIRED"};
+    if(String(access.actor.userId||"")!==String(initial.actor.userId||"")||
+       String(access.actor.role||"")!==String(initial.actor.role||""))
+      return{status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
+    permission=validateRolePermission(access.actor,"getPurchaseOrders",input);
+    if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var schema=ensurePurchaseOrderPdfSchema_(ss,false);
+    if(!schema.valid)return{status:"error",code:schema.code};
+    var map=schema.map,values=schema.sheet.getDataRange().getValues(),orderId=String(input.ordenCompraId||"").trim();
+    if(!orderId)return{status:"error",code:"PURCHASE_ORDER_ID_REQUIRED"};
+    var matches=values.slice(1).map(function(row,index){return{row:row,index:index+2};})
+      .filter(function(item){return String(item.row[map.OrdenCompraID]||"").trim()===orderId;});
+    if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
+    var order=matches[0].row,scope=purchaseOrderScopeAccess_(input,ss,order,false);
+    if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
+    if(!scope.access||String(scope.access.actor.userId||"")!==String(initial.actor.userId||"")||
+       String(scope.access.actor.role||"")!==String(initial.actor.role||""))
+      return{status:"error",code:"VERIFIED_IDENTITY_CHANGED"};
+    permission=validateRolePermission(scope.access.actor,"getPurchaseOrders",input);
+    if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var fileId=String(order[map.DriveFileIdPDF]||"").trim(),expectedHash=String(order[map.SHA256PDF]||"").trim();
+    if(!fileId||!expectedHash)return{status:"error",code:"PURCHASE_ORDER_PDF_NOT_FOUND"};
+    try{
+      var file=DriveApp.getFileById(fileId);
+      if(!file||file.isTrashed()||file.getSharingAccess()!==DriveApp.Access.PRIVATE)
+        return{status:"error",code:"PURCHASE_ORDER_PDF_NOT_PRIVATE"};
+      var blob=file.getBlob(),bytes=blob.getBytes();
+      var mime=String(blob.getContentType()||file.getMimeType()||"").toLowerCase(),name=String(file.getName()||"");
+      if(!bytes||!bytes.length||bytes.length>10*1024*1024||mime!=="application/pdf"||String(name).toLowerCase().slice(-4)!==".pdf")
+        return{status:"error",code:"PURCHASE_ORDER_PDF_INVALID"};
+      var signature=bytes.slice(0,5).map(function(value){return String.fromCharCode((Number(value)+256)%256);}).join("");
+      if(signature!=="%PDF-"||computeDocumentSHA256(bytes)!==expectedHash)
+        return{status:"error",code:"PURCHASE_ORDER_PDF_INTEGRITY_FAILED"};
+      return{status:"success",ordenCompraId:orderId,numeroCorrelativo:String(order[map.CorrelativoPDF]||""),
+        fileName:name,mimeType:mime,encoding:"base64",fileData:Utilities.base64Encode(bytes),
+        fileSizeBytes:bytes.length,sha256Hash:expectedHash};
+    }catch(error){return{status:"error",code:"PURCHASE_ORDER_PDF_UNAVAILABLE"};}
+  }finally{lock.releaseLock();}
 }
 
 function getPurchaseInvoiceTolerance_(ss, concept) {
