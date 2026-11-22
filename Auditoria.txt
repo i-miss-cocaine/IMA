@@ -3270,3 +3270,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-21 | AUD-NG-222 / TASK-502 | C1.931] Hallazgo ACADEMIC: getStudentFile seleccionaba expediente con OR y first-match entre expedienteId/personaId/codigoInstitucional, sin detectar contradicciones ni duplicados. Corrección: cada selector debe resolver una fila única y todos deben coincidir; estudiantes usan personaId derivado de identidad firmada. Prueba añadida a academic-student-expediente-ownership; Department Scope run 44963762179 SUCCESS 136/136 y parseo Apps Script PASS. ACADEMIC/ACCOUNTING Reference Consumer run 44963762194 SUCCESS 22/22. Continuar auditoría de matrículas/documentos y ACCOUNTING; TASK-502/TASK-506 abiertos.
+
+
+[2026-11-21 | AUD-NG-222 / TASK-502 | C1.932] Hallazgos ACADEMIC: (a) getStudentFile resolvía selectores OR/first-match y permitía contradicciones; (b) updateDocumentStatus usaba findIndex y podía escribir el primer DocumentoID duplicado; (c) regex doblemente escapada en rol refrescado tras lock bloqueaba "Secretaría". Correcciones y pruebas asociadas incorporadas. CI: Department Scope SUCCESS 136 pasos; 236 tests Node.js SUCCESS; Academic single-auth, Exam security, Accounting Import Preflight, Task-Service, Reference Consumers, SACE y Hierarchical Config SUCCESS. Continuar inventario ACADEMIC/ACCOUNTING; TASK-502/TASK-506 abiertos.

@@ -1599,3 +1599,50 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - AUD-NG-222 / TASK-502 permanece En ejecución: continuar inventario de lecturas/escrituras ACADEMIC (matrículas/documentos) y completar ACCOUNTING (empleados, transporte, documentos y finanzas), reutilizando evidencia vigente.
 - TASK-506 / AUD-NG-226 permanece En ejecución y dependiente de TASK-502.
 ===============================================================================
+
+
+===============================================================================
+### C1.932 — IMA-EXEC-20261121-AUD-NG-222-ACADEMIC-DOCUMENTS-AND-ADMISSION
+===============================================================================
+
+### Continuidad, commits y HEAD
+- Continuación desde C1.931. Rama de trabajo exclusiva: NG_beta_0.0.0.1_work.
+- Commits propios de esta iteración:
+  - 9a824ac26b7ad5f65900b362244a0b3c7827a147 — selectores de getStudentFile únicos y concordantes.
+  - b189e6cc0b42afeea9d40068910914018b3a38d4 — destino documental único en updateDocumentStatus.
+  - ea08b23fa95a1db20c8b73b83c9d61f7b72457d2 — conserva contrato de not-found y actualiza fixtures de refresh de ámbito.
+  - dd4e9163b10b45a0d8d59f6a3d9e8722c37a084b — composición de helpers de test corregida.
+  - 788d5cecc033ed09b4eaa0588301e40b335ff125 — normalización correcta de roles acentuados tras lock.
+- Se conservaron commits concurrentes de la rama tras revisar sus diffs: EXAM test/cache invalidation y ACADEMIC refresh de ámbito de admisión bajo lock. No se reescribieron ni descartaron.
+- HEAD verificado de trabajo: 788d5cecc033ed09b4eaa0588301e40b335ff125.
+- HEAD de rama base, sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+
+### Hallazgos y correcciones
+1. ACADEMIC getStudentFile: se eliminó el lookup OR/first-match. Cada selector (expedienteId, personaId, codigoInstitucional) debe resolver una fila única y todos deben identificar la misma fila. Se usa personaId derivado de identidad firmada para estudiantes.
+2. ACADEMIC updateDocumentStatus: ahora detecta IDs de documento duplicados y devuelve RESOURCE_AMBIGUOUS sin escribir; mantiene el error original de documento inexistente para preservar compatibilidad.
+3. ACADEMIC resolveAdmissionDuplicate: se corrigió una expresión regular doblemente escapada que impedía normalizar el rol "Secretaría" al revalidar identidad después del lock. El control de rol vuelve a aceptar correctamente la representación acentuada autenticada.
+4. Los fixtures aislados se actualizaron para cargar el helper real refreshAcademicAdmissionScopeContext_ y el limpiador de contexto de autorización; se corrigió la composición de strings de prueba. No se relajaron aserciones de autorización.
+
+### Archivos de código y pruebas propios
+- backend/academic-service/Code.gs
+- tests/security/academic-student-expediente-ownership.test.js
+- tests/security/academic-admission-ownership.test.js
+- tests/security/exam-service-security-contract.test.js
+- tests/security/exam-service-departmental-access.test.js
+
+### Verificaciones
+- Department Scope Contract run 44964399368: SUCCESS; 136 pasos. ACADEMIC admission ownership (paso 111), expediente ownership (paso 94) y sintaxis Apps Script (paso 117) PASS.
+- Academic-Service single authorization context run 44964399205: SUCCESS.
+- Exam-Service security local contracts run 44964399213: SUCCESS; incluye complete Exam-Service suite, syntax check del repositorio y los 236 archivos de pruebas Node.js del repositorio — SUCCESS.
+- Accounting Import Preflight run 44964399207: SUCCESS.
+- Task-Service security local contracts run 44964399206: SUCCESS.
+- Department Reference Consumers run 44964399196: SUCCESS.
+- SACE monotonic source revision run 44964399194: SUCCESS.
+- Hierarchical Configuration Contract run 44964399191: SUCCESS.
+- CLI local independiente: NOT RUN (sin checkout local). No se afirma ejecución de Apps Script real, Google Sheets/Drive de producción ni pruebas beta.
+
+### Estado y siguiente tarea elegible
+- Los incrementos de expediente y estado documental ACADEMIC descritos arriba están implementados y cubiertos por CI.
+- AUD-NG-222 / TASK-502 permanece En ejecución: continuar inventario de lecturas/escrituras ACADEMIC y la revisión de ACCOUNTING (expedientes laborales, documentos, préstamos/planillas, comprobantes y transporte), sin repetir contratos ya aprobados.
+- TASK-506 / AUD-NG-226 permanece En ejecución y dependiente de TASK-502.
+===============================================================================
