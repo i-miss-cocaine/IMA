@@ -6932,55 +6932,190 @@ function savePurchaseInvoiceTolerance(payload) {
   } finally { lock.releaseLock(); }
 }
 
+function evaluatePurchaseThreeWayMatch_(ss, order, receiptRows, invoice) {
+  var differences=[], orderItems=purchaseQuotationJsonArray_(order&&order[6]),ordered=Object.create(null),received=Object.create(null);
+  function add(code,itemId,detail){differences.push({codigo:code,itemId:String(itemId||""),detalle:String(detail||code)});}
+  if(!orderItems.length)add("PURCHASE_ORDER_ITEMS_INVALID","","La orden no contiene partidas válidas.");
+  orderItems.forEach(function(item){
+    var id=String(item&&(item.itemId||item.ItemId||item.codigoItem||item.codigo||item.itemCodigo)||"").trim();
+    var qty=Number(item&&(item.cantidad===undefined?item.Cantidad:item.cantidad));
+    var price=Number(item&&(item.precioUnitario===undefined?item.costoUnitario:item.precioUnitario));
+    if(!id||Object.prototype.hasOwnProperty.call(ordered,id)||!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<0){add("PURCHASE_ORDER_LINE_INVALID",id,"Partida de orden inválida o duplicada.");return;}
+    ordered[id]={cantidad:qty,precioUnitario:price};
+  });
+  var seenReceipts=Object.create(null);
+  (receiptRows||[]).slice(1).forEach(function(row){
+    if(String(row[1]||"").trim()!==String(order[0]||"").trim())return;
+    var receiptId=String(row[0]||"").trim();
+    if(!receiptId||seenReceipts[receiptId]){add("PURCHASE_RECEIPT_AMBIGUOUS",receiptId,"Identificador de recepción ausente o duplicado.");return;}
+    seenReceipts[receiptId]=true;
+    var state=String(row[5]||"").trim().toLowerCase();
+    if(state!=="conforme")return;
+    var details=purchaseQuotationJsonArray_(row[4]),seenLines=Object.create(null);
+    details.forEach(function(line){
+      var id=String(line&&(line.itemId||line.ItemId||line.codigoItem||line.codigoItem||line.itemCodigo)||"").trim();
+      var qty=Number(line&&(line.cantidad===undefined?line.cantidadRecibida:line.cantidad));
+      if(!id||seenLines[id]||!Object.prototype.hasOwnProperty.call(ordered,id)||!Number.isFinite(qty)||qty<=0){add("PURCHASE_RECEIPT_LINE_INVALID",id,"Partida de recepción inválida o duplicada.");return;}
+      seenLines[id]=true;
+      if(line.conforme===true||String(line.estadoConformidad||"").trim().toLowerCase()==="conforme")received[id]=(received[id]||0)+qty;
+    });
+  });
+  var invoiceItems=Array.isArray(invoice&&invoice.partidasFacturadas)?invoice.partidasFacturadas:[];
+  if(!invoiceItems.length)add("PURCHASE_INVOICE_ITEMS_MISSING","","La factura no contiene partidas detalladas.");
+  var seenInvoice=Object.create(null),computedSubtotal=0;
+  var priceTolerance=getPurchaseInvoiceTolerance_(ss,"PRECIO_UNITARIO"),subtotalTolerance=getPurchaseInvoiceTolerance_(ss,"IMPORTE_SUBTOTAL"),totalTolerance=getPurchaseInvoiceTolerance_(ss,"IMPORTE_TOTAL");
+  if(!priceTolerance||priceTolerance.valid===false||!subtotalTolerance||subtotalTolerance.valid===false||!totalTolerance||totalTolerance.valid===false)
+    add("PURCHASE_TOLERANCE_SCHEMA_INVALID","","La configuración de tolerancias no es válida.");
+  invoiceItems.forEach(function(line){
+    var id=String(line&&(line.itemId||line.ItemId||line.codigoItem||line.codigo||line.itemCodigo)||"").trim();
+    var qty=Number(line&&(line.cantidad===undefined?line.Cantidad:line.cantidad));
+    var price=Number(line&&(line.precioUnitario===undefined?line.costoUnitario:line.precioUnitario));
+    if(!id||seenInvoice[id]){add("PURCHASE_INVOICE_LINE_AMBIGUOUS",id,"Partida de factura ausente o duplicada.");return;}
+    seenInvoice[id]=true;
+    if(!Object.prototype.hasOwnProperty.call(ordered,id)){add("PURCHASE_INVOICE_ITEM_NOT_ORDERED",id,"La factura incluye un artículo que no figura en la orden.");return;}
+    if(!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<0){add("PURCHASE_INVOICE_LINE_INVALID",id,"Cantidad o precio facturado inválido.");return;}
+    if(qty>ordered[id].cantidad+0.000001)add("PURCHASE_INVOICE_QUANTITY_EXCEEDS_ORDER",id,"La cantidad facturada supera la cantidad autorizada.");
+    if(qty>(received[id]||0)+0.000001)add("PURCHASE_INVOICE_QUANTITY_NOT_RECEIVED",id,"La cantidad facturada supera la cantidad recibida conforme.");
+    var delta=Math.abs(price-ordered[id].precioUnitario),allowed=Math.max(Number(priceTolerance.absolute||0),Math.abs(ordered[id].precioUnitario)*Number(priceTolerance.percent||0)/100);
+    if(delta>allowed+0.000001)add("PURCHASE_INVOICE_UNIT_PRICE_MISMATCH",id,"El precio unitario facturado difiere del precio autorizado.");
+    computedSubtotal+=qty*price;
+    if(line.total!==undefined&&line.total!==null&&String(line.total).trim()!==""){
+      var lineTotal=Number(line.total);
+      if(!Number.isFinite(lineTotal)||Math.abs(lineTotal-qty*price)>0.01)add("PURCHASE_INVOICE_LINE_TOTAL_MISMATCH",id,"El total de la partida no coincide con cantidad por precio unitario.");
+    }
+  });
+  var supplier=String(invoice&&invoice.proveedorId||"").trim(),orderSupplier=String(order&&order[3]||"").trim();
+  if(!supplier||supplier!==orderSupplier)add("PURCHASE_INVOICE_SUPPLIER_MISMATCH","","El proveedor de la factura no coincide con la orden.");
+  var subtotal=invoice&&invoice.importe!==undefined?Number(invoice.importe):computedSubtotal;
+  var taxes=invoice&&invoice.impuestos!==undefined?Number(invoice.impuestos):0;
+  var total=invoice&&invoice.totalMonto!==undefined?Number(invoice.totalMonto):subtotal+taxes;
+  if(!Number.isFinite(subtotal)||subtotal<0||!Number.isFinite(taxes)||taxes<0||!Number.isFinite(total)||total<0)add("PURCHASE_INVOICE_AMOUNT_INVALID","","Los importes de la factura no son válidos.");
+  else{
+    var subtotalAllowed=Math.max(Number(subtotalTolerance.absolute||0),Math.abs(computedSubtotal)*Number(subtotalTolerance.percent||0)/100);
+    if(Math.abs(subtotal-computedSubtotal)>subtotalAllowed+0.000001)add("PURCHASE_INVOICE_SUBTOTAL_MISMATCH","","El subtotal de factura no coincide con sus partidas.");
+    var expectedTotal=subtotal+taxes,totalAllowed=Math.max(Number(totalTolerance.absolute||0),Math.abs(expectedTotal)*Number(totalTolerance.percent||0)/100);
+    if(Math.abs(total-expectedTotal)>totalAllowed+0.000001)add("PURCHASE_INVOICE_TOTAL_MISMATCH","","El total de factura no coincide con subtotal más impuestos.");
+    var orderTotal=Number(order&&order[7]);
+    if(Number.isFinite(orderTotal)&&orderTotal>=0&&total>orderTotal+Math.max(0.01,totalAllowed))add("PURCHASE_INVOICE_TOTAL_EXCEEDS_ORDER","","El importe facturado supera el monto autorizado de la orden.");
+  }
+  return {conciliada:differences.length===0,diferencias:differences,subtotalCalculado:Math.round((computedSubtotal+Number.EPSILON)*100)/100,
+    importeFactura:subtotal,impuestos:taxes,totalFactura:total,cantidadPartidas:invoiceItems.length};
+}
+
+function purchaseInvoiceStoredItems_(observations) {
+  var text=String(observations||""),match=text.match(/\[ITEMS_JSON:(\[[\s\S]*?\])\]/);
+  if(!match)return [];
+  try{var parsed=JSON.parse(match[1]);return Array.isArray(parsed)?parsed:[];}catch(_){return [];}
+}
+
+function recordAccountsPayableExpense(payload) {
+  var input=payload||{},invoice=input.facturaProveedor||input,ss=SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access=purchaseQuotationAccess_(input,ss,true);
+  if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
+  var permission=validateRolePermission(access.actor,"recordAccountsPayableExpense",input);
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var orderId=String(input.ordenCompraId||invoice.ordenCompraId||"").trim();
+  var number=String(invoice.numeroFactura||input.numeroFactura||"").trim(),supplierId=String(invoice.proveedorId||input.proveedorId||"").trim();
+  var items=Array.isArray(invoice.partidasFacturadas)?invoice.partidasFacturadas:[];
+  if(!orderId||!number||!supplierId||!items.length)return{status:"error",code:"PURCHASE_INVOICE_REQUEST_INVALID"};
+  var idempotencyKey=String(input.idempotencyKey||invoice.idempotencyKey||"").trim();
+  if(idempotencyKey&&!/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey))return{status:"error",code:"PURCHASE_INVOICE_IDEMPOTENCY_KEY_INVALID"};
+  var lock=LockService.getScriptLock();if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  try{
+    access=purchaseQuotationAccess_(input,ss,true);
+    if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"VERIFIED_IDENTITY_REQUIRED"};
+    permission=validateRolePermission(access.actor,"recordAccountsPayableExpense",input);
+    if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var orderSheet=ss.getSheetByName("OrdenesCompra"),receiptSheet=ss.getSheetByName("RecepcionesCompra");
+    if(!orderSheet||!receiptSheet)return{status:"error",code:"PURCHASE_ORDER_OR_RECEIPT_NOT_FOUND"};
+    var orders=orderSheet.getDataRange().getValues(),orderMatches=orders.slice(1).filter(function(row){return String(row[0]||"").trim()===orderId;});
+    if(orderMatches.length!==1)return{status:"error",code:orderMatches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
+    var order=orderMatches[0],scope=purchaseOrderScopeAccess_(input,ss,order,true);
+    if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
+    if(["cancelada","anulada"].indexOf(String(order[9]||"").trim().toLowerCase())!==-1)return{status:"error",code:"PURCHASE_ORDER_CANCELLED"};
+    if(String(order[3]||"").trim()!==supplierId)return{status:"error",code:"PURCHASE_INVOICE_SUPPLIER_MISMATCH"};
+    var invoiceSchema=ensureAccountsPayableInvoiceSheet_(ss);
+    if(!invoiceSchema||invoiceSchema.valid!==true)return{status:"error",code:invoiceSchema&&invoiceSchema.code||"RESOURCE_SCHEMA_INVALID"};
+    var sheet=invoiceSchema.sheet,headers=invoiceSchema.headers,rows=sheet.getDataRange().getValues();
+    var invoiceIndex=headers.indexOf("NumeroFactura"),supplierIndex=headers.indexOf("ProveedorID"),orderIndex=headers.indexOf("OrdenCompraID"),idempotencyIndex=headers.indexOf("IdempotencyKey"),hashIndex=headers.indexOf("FacturaHash");
+    var invoiceHash=computeDocumentSHA256(JSON.stringify({ordenCompraId:orderId,numeroFactura:number,proveedorId:supplierId,partidasFacturadas:items,
+      importe:invoice.importe===undefined?null:invoice.importe,impuestos:invoice.impuestos===undefined?0:invoice.impuestos,
+      totalMonto:invoice.totalMonto===undefined?null:invoice.totalMonto,fechaVencimiento:invoice.fechaVencimiento||"",actorUserId:access.actor.userId}));
+    if(idempotencyKey){
+      var retries=rows.slice(1).filter(function(row){return String(row[idempotencyIndex]||"").trim()===idempotencyKey;});
+      if(retries.length>1)return{status:"error",code:"PURCHASE_INVOICE_IDEMPOTENCY_AMBIGUOUS"};
+      if(retries.length===1){
+        if(String(retries[0][hashIndex]||"")!==invoiceHash)return{status:"error",code:"PURCHASE_INVOICE_IDEMPOTENCY_CONFLICT"};
+        return{status:"success",idempotente:true,obligacionId:String(retries[0][0]||""),estadoConciliacion:String(retries[0][16]||""),bloqueadoParaPago:String(retries[0][7]||"").toLowerCase().indexOf("bloqueado")!==-1};
+      }
+    }
+    var duplicate=rows.slice(1).filter(function(row){return String(row[supplierIndex]||"").trim()===supplierId&&String(row[invoiceIndex]||"").trim().toLowerCase()===number.toLowerCase();});
+    if(duplicate.length)return{status:"error",code:"PURCHASE_INVOICE_ALREADY_REGISTERED"};
+    var invoiceRecord={numeroFactura:number,proveedorId:supplierId,partidasFacturadas:items,
+      importe:invoice.importe===undefined?undefined:Number(invoice.importe),impuestos:invoice.impuestos===undefined?0:Number(invoice.impuestos),
+      totalMonto:invoice.totalMonto===undefined?undefined:Number(invoice.totalMonto)};
+    var result=evaluatePurchaseThreeWayMatch_(ss,order,receiptSheet.getDataRange().getValues(),invoiceRecord);
+    var now=new Date(),obligationId="CXP-"+String(Utilities.getUuid()).replace(/-/g,"").slice(0,24);
+    var subtotal=invoiceRecord.importe===undefined?result.subtotalCalculado:invoiceRecord.importe;
+    var taxes=invoiceRecord.impuestos,total=invoiceRecord.totalMonto===undefined?subtotal+taxes:invoiceRecord.totalMonto;
+    var status=result.conciliada?"PendienteAprobacion":"EnDisputa",paymentState=result.conciliada?"Pendiente Pago":"Bloqueado Conciliacion";
+    var observations="[ORDEN_"+orderId+"] [ITEMS_JSON:"+JSON.stringify(items)+"] [MATCH:"+(result.conciliada?"Conciliada":"EnDisputa")+"] "+String(invoice.observaciones||input.observaciones||"").slice(0,500);
+    var row=[obligationId,supplierId,number,subtotal,taxes,invoice.fechaVencimiento||input.fechaVencimiento||"",status,paymentState,"",observations,
+      total,total,0,invoice.fechaEmision||input.fechaEmision||now,invoice.fechaRecepcion||input.fechaRecepcion||now,orderId,
+      result.conciliada?"Conciliada":"EnDisputa",JSON.stringify(result.diferencias),invoiceHash,idempotencyKey,"","", ""];
+    sheet.appendRow(row);
+    return{status:"success",obligacionId:obligationId,numeroFactura:number,estadoConciliacion:result.conciliada?"Conciliada":"EnDisputa",
+      bloqueadoParaPago:!result.conciliada,diferencias:result.diferencias,importeTotal:total,message:result.conciliada?"Factura conciliada y pendiente de aprobación.":"Factura registrada en disputa y bloqueada para pago."};
+  }catch(e){return{status:"error",code:String(e&&e.message||e||"PURCHASE_INVOICE_REGISTRATION_FAILED")};}
+  finally{lock.releaseLock();}
+}
+
 function verifyThreeWayMatch(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID);
   var access=purchaseQuotationAccess_(input,ss,false);
   if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
   var permission=validateRolePermission(access.actor,"verifyThreeWayMatch",input);
   if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
-  var lock=LockService.getScriptLock();lock.waitLock(10000);
-  try {
-    var refreshed=purchaseQuotationAccess_(input,ss,false);
-    if(!refreshed||refreshed.authorized!==true)return{status:"error",code:refreshed&&refreshed.code||"VERIFIED_IDENTITY_REQUIRED"};
-    permission=validateRolePermission(refreshed.actor,"verifyThreeWayMatch",input);
+  var orderId=String(input.ordenCompraId||"").trim(),invoice=input.facturaProveedor||input;
+  var lock=LockService.getScriptLock();if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  try{
+    access=purchaseQuotationAccess_(input,ss,false);
+    if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"VERIFIED_IDENTITY_REQUIRED"};
+    permission=validateRolePermission(access.actor,"verifyThreeWayMatch",input);
     if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
-    var orders=getOrCreateSheet(ss,"OrdenesCompra").getDataRange().getValues();
-    var receipts=getOrCreateSheet(ss,"RecepcionesCompra").getDataRange().getValues();
-    var matches=orders.slice(1).filter(function(row){return String(row[0])===String(input.ordenCompraId||"");});
-    if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
-    var order=matches[0],scope=purchaseOrderScopeAccess_(input,ss,order,false);
+    var orderSheet=ss.getSheetByName("OrdenesCompra"),receiptSheet=ss.getSheetByName("RecepcionesCompra");
+    if(!orderSheet||!receiptSheet)return{status:"error",code:"PURCHASE_ORDER_OR_RECEIPT_NOT_FOUND"};
+    var orders=orderSheet.getDataRange().getValues(),orderMatches=orders.slice(1).filter(function(row){return String(row[0]||"").trim()===orderId;});
+    if(orderMatches.length!==1)return{status:"error",code:orderMatches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_ORDER_NOT_FOUND"};
+    var order=orderMatches[0],scope=purchaseOrderScopeAccess_(input,ss,order,false);
     if(!scope||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"RESOURCE_NOT_FOUND"};
-    var orderItems=purchaseQuotationJsonArray_(order[6]),received={};
-    if(!orderItems.length)return{status:"error",code:"PURCHASE_ORDER_ITEMS_INVALID"};
-    receipts.slice(1).filter(function(row){return String(row[1])===String(input.ordenCompraId);}).forEach(function(row){
-      purchaseQuotationJsonArray_(row[4]).forEach(function(item){
-        var id=String(item.itemId||item.ItemId||item.codigoItem||"").trim();
-        if(item.conforme===true||String(item.estadoConformidad||"").toLowerCase()==="conforme")received[id]=(received[id]||0)+Number(item.cantidad||0);
-      });
+    var invoiceSchema=ensureAccountsPayableInvoiceSheet_(ss);
+    if(!invoiceSchema||invoiceSchema.valid!==true)return{status:"error",code:invoiceSchema&&invoiceSchema.code||"RESOURCE_SCHEMA_INVALID"};
+    var sheet=invoiceSchema.sheet,headers=invoiceSchema.headers,rows=sheet.getDataRange().getValues();
+    var obligationId=String(input.obligacionId||invoice.obligacionId||"").trim(),number=String(invoice.numeroFactura||input.numeroFactura||"").trim();
+    var matches=rows.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){
+      return (obligationId&&String(item.row[0]||"").trim()===obligationId)||(!obligationId&&number&&String(item.row[2]||"").trim().toLowerCase()===number.toLowerCase());
     });
-    var invoice=input.facturaProveedor||{},invoiceItems=Array.isArray(invoice.partidasFacturadas)?invoice.partidasFacturadas:[];
-    var seen=Object.create(null),valid=String(invoice.proveedorId||"")===String(order[3]);
-    if(!invoiceItems.length)valid=false;
-    invoiceItems.forEach(function(billed){
-      var id=String(billed&& (billed.itemId||billed.ItemId||billed.codigoItem)||"").trim();
-      var orderLine=orderItems.filter(function(item){return String(item.itemId||item.ItemId||item.codigoItem||"").trim()===id;});
-      var quantity=Number(billed&&billed.cantidad),price=Number(billed&&billed.precioUnitario);
-      if(!id||seen[id]||orderLine.length!==1||!Number.isFinite(quantity)||quantity<=0||
-         !Number.isFinite(price)||price<0||quantity>Number(received[id]||0)+0.000001||
-         quantity>Number(orderLine[0].cantidad||orderLine[0].Cantidad||0)+0.000001||
-         Math.abs(price-Number(orderLine[0].precioUnitario||orderLine[0].costoUnitario||0))>=0.01)valid=false;
-      seen[id]=true;
-    });
-    return{status:"success",estadoConciliacion:valid?"Conciliada":"Discrepancia",
-      ordenCompraId:String(input.ordenCompraId),partidasVerificadas:invoiceItems.length};
-  } finally {lock.releaseLock();}
+    if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_INVOICE_NOT_FOUND"};
+    var match=matches[0],record=match.row;
+    if(String(record[15]||"").trim()!==orderId||String(record[1]||"").trim()!==String(order[3]||"").trim())return{status:"error",code:"PURCHASE_INVOICE_ORDER_MISMATCH"};
+    var items=purchaseInvoiceStoredItems_(record[9]);
+    var invoiceRecord={numeroFactura:String(record[2]||""),proveedorId:String(record[1]||""),partidasFacturadas:items,
+      importe:Number(record[3]||0),impuestos:Number(record[4]||0),totalMonto:Number(record[10]===undefined||record[10]===""?Number(record[3]||0)+Number(record[4]||0):record[10])};
+    var result=evaluatePurchaseThreeWayMatch_(ss,order,receiptSheet.getDataRange().getValues(),invoiceRecord);
+    var updated=record.slice();
+    updated[6]=result.conciliada?(String(record[6]||"").toLowerCase()==="endisputa"?"PendienteAprobacion":record[6]):"EnDisputa";
+    updated[7]=result.conciliada?(Number(record[12]||0)>0?"PagoParcial":"Pendiente Pago"):"Bloqueado Conciliacion";
+    updated[16]=result.conciliada?"Conciliada":"EnDisputa";updated[17]=JSON.stringify(result.diferencias);
+    var obs=String(record[9]||"").replace(/\[MATCH:[^\]]*\]/g,"").trim();
+    updated[9]=(obs+" [MATCH:"+(result.conciliada?"Conciliada":"EnDisputa")+"]").trim();
+    sheet.getRange(match.index,1,1,headers.length).setValues([updated]);
+    return{status:"success",obligacionId:String(record[0]),numeroFactura:String(record[2]),estadoConciliacion:result.conciliada?"Conciliada":"EnDisputa",
+      bloqueadoParaPago:!result.conciliada,diferencias:result.diferencias,subtotalCalculado:result.subtotalCalculado,importeFactura:result.importeFactura,
+      impuestos:result.impuestos,totalFactura:result.totalFactura,message:result.conciliada?"Factura conciliada; continúa a aprobación de pago.":"Factura en disputa; pago bloqueado hasta resolver las diferencias."};
+  }catch(e){return{status:"error",code:String(e&&e.message||e||"PURCHASE_THREE_WAY_MATCH_FAILED")};}
+  finally{lock.releaseLock();}
 }
-
-
-const ASSET_DEPR_POLICY_HEADERS_=["PolicyID","Categoria","Metodo","VidaUtilMeses","ValorResidualPorcentaje","TasaAnual","CuentaActivo","CuentaDepreciacionAcumulada","CuentaGastoDepreciacion","Estado","FechaActualizacion"];
-const ASSET_DEPR_PROFILE_HEADERS_=["ProfileID","ActivoID","CategoriaContable","FechaPuestaFuncionamiento","FechaInicioDepreciacion","FechaCorteApertura","CostoCapitalizado","ValorResidual","VidaUtilMeses","Metodo","TasaAnual","UnidadesTotales","UnidadesAcumuladas","DepreciacionAcumuladaInicial","ValorNetoApertura","CuentaActivo","CuentaDepreciacionAcumulada","CuentaGastoDepreciacion","CuentaPerdidaBaja","CentroCosto","Moneda","RegistradoPor","FechaRegistro","Estado"];
-const ASSET_DEPR_IMPROVEMENT_HEADERS_=["MejoraID","ActivoID","FechaCapitalizacion","Descripcion","Importe","ValorResidual","VidaUtilMeses","Metodo","TasaAnual","RegistradoPor","FechaRegistro","Estado","IdempotencyKey"];
-const ASSET_DEPR_HEADERS_=["DepreciacionID","ActivoID","Periodo","FechaCalculo","Metodo","BaseCosto","DepreciacionPeriodo","DepreciacionAcumulada","ValorNetoLibros","UnidadesPeriodo","ComponentesJSON","AsientoID","Estado","IdempotencyKey","RegistradoPor"];
 
 function assetDeprSheet_(ss,name,headers) {
   var sheet = ss.getSheetByName(name);
