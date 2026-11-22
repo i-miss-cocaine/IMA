@@ -7638,12 +7638,15 @@ function recordAccountsPayableMovement_(payload,type) {
 function recordAccountsPayablePayment(payload){return recordAccountsPayableMovement_(payload,"PAGO");}
 function recordAccountsPayableCreditNote(payload){return recordAccountsPayableMovement_(payload,"NOTA_CREDITO");}
 function getAccountsPayablePortfolio(payload) {
-  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(input,ss,false);
+  var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),lock=LockService.getScriptLock();
+  if(!lock.tryLock(10000))return{status:"error",code:"CONCURRENT_UPDATE_RETRY"};
+  try {
+  var access=purchaseQuotationAccess_(input,ss,false);
   if(!access||access.authorized!==true)return{status:"error",code:access&&access.code||"ROLE_NOT_ALLOWED"};
   var permission=validateRolePermission(access.actor,"getAccountsPayablePortfolio",input);
   if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
   var invoiceSheet=ss.getSheetByName("CuentasPorPagarGastos"),orderSheet=ss.getSheetByName("OrdenesCompra"),requestSheet=ss.getSheetByName("SolicitudesCompra");
-  if(!invoiceSheet||!orderSheet||!requestSheet)return{status:"success",total:0,cartera:[],resumen:{obligaciones:0,saldoTotal:0,saldoVencido:0,saldoVigente:0}};
+  if(!invoiceSheet||!orderSheet||!requestSheet)return{status:"success",total:0,cartera:[],resumen:{obligaciones:0,saldoTotal:0,saldoVencido:0,saldoVigente:0,saldoSinFecha:0,notasCredito:0,totalAbonado:0}};
   var invoiceValues=invoiceSheet.getDataRange().getValues(),headers=(invoiceValues[0]||[]).map(function(v){return String(v||"").trim();});
   var required=["ObligacionID","ProveedorID","NumeroFactura","Importe","Impuestos","FechaVencimiento","EstadoAprobacion","EstadoPago","TotalMonto","SaldoPendiente","TotalAbonado","OrdenCompraID","EstadoConciliacion"];
   if(required.some(function(name){return headers.indexOf(name)<0||headers.indexOf(name)!==headers.lastIndexOf(name);}))return{status:"error",code:"RESOURCE_SCHEMA_INVALID"};
@@ -7689,6 +7692,7 @@ function getAccountsPayablePortfolio(payload) {
   portfolio.sort(function(a,b){return String(a.fechaVencimiento||"9999-12-31").localeCompare(String(b.fechaVencimiento||"9999-12-31"));});
   Object.keys(summary).forEach(function(key){if(key!=="obligaciones")summary[key]=accountsPayableMoney_(summary[key])||0;});
   return{status:"success",fechaCorte:cutoff.toISOString().slice(0,10),total:portfolio.length,cartera:portfolio,resumen:summary};
+  } finally { lock.releaseLock(); }
 }
 
 function verifyThreeWayMatch(payload) {

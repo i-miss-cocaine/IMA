@@ -3465,13 +3465,14 @@ function renderMigrationImportResult(response) {
 
 
 function renderComprasCuentasPorPagarView(container) {
-  container.innerHTML = '<section class="rounded-2xl border border-gray-200 bg-white p-5 space-y-4"><div class="flex flex-wrap items-center justify-between gap-3"><div><h5 class="text-sm font-black uppercase text-gray-800">Cuentas por pagar</h5><p class="text-xs text-gray-600">Abonos parciales, notas de crédito y vencimientos de facturas conciliadas</p></div><button id="btn-cxp-refresh" data-purchase-action="getAccountsPayablePortfolio" class="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white">Actualizar cartera</button></div><div id="cxp-summary" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs"></div><div id="cxp-results" class="space-y-3">Cargando cartera...</div></section>';
+  container.innerHTML = '<section class="rounded-2xl border border-gray-200 bg-white p-5 space-y-4"><div class="flex flex-wrap items-center justify-between gap-3"><div><h5 class="text-sm font-black uppercase text-gray-800">Cuentas por pagar</h5><p class="text-xs text-gray-600">Abonos parciales, notas de crédito y vencimientos de facturas conciliadas</p></div><button id="btn-cxp-refresh" data-purchase-action="getAccountsPayablePortfolio" class="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white">Actualizar cartera</button></div><div class="grid md:grid-cols-3 gap-2 items-end"><label class="text-xs font-bold text-gray-700">Vencimiento desde<input id="cxp-date-from" type="date" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold text-gray-700">Vencimiento hasta<input id="cxp-date-to" type="date" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold text-gray-700">Buscar<input id="cxp-query" type="search" class="mt-1 w-full rounded-lg border p-2" placeholder="Factura, proveedor u orden"></label></div><div id="cxp-summary" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs"></div><div id="cxp-results" class="space-y-3">Cargando cartera...</div></section>';
   var refresh=document.getElementById("btn-cxp-refresh");if(refresh)refresh.addEventListener("click",function(){window.loadAccountsPayablePortfolio();});
   window.loadAccountsPayablePortfolio();
 }
 window.loadAccountsPayablePortfolio=async function(query) {
   var target=document.getElementById("cxp-results"),summary=document.getElementById("cxp-summary");if(!target)return;target.textContent="Consultando cartera...";
-  try{var result=await fetchBackendAccounting("getAccountsPayablePortfolio",{query:String(query||"").trim()});
+  var from=document.getElementById("cxp-date-from"),to=document.getElementById("cxp-date-to"),search=document.getElementById("cxp-query");
+  try{var result=await fetchBackendAccounting("getAccountsPayablePortfolio",{query:String(query||search&&search.value||"").trim(),desde:from&&from.value||"",hasta:to&&to.value||""});
     if(!result||result.status!=="success")throw new Error(result&&result.code||"ACCOUNTS_PAYABLE_PORTFOLIO_FAILED");
     window.renderAccountsPayablePortfolio(result,target,summary);
   }catch(error){target.textContent=error.message||"No se pudo consultar la cartera.";}

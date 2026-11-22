@@ -8,3 +8,6 @@ console.log("F18-TASK06 accounts payable UI contract PASS: portfolio, aging, pay
 
 assert.ok(client.includes('fetchBackendAccounting("approveAccountsPayableInvoice"'));
 assert.ok(client.includes('dataset.purchaseAction="approveAccountsPayableInvoice"'));
+
+assert.ok(client.includes('id="cxp-date-from"'));
+assert.ok(client.includes('id="cxp-date-to"'));
