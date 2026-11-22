@@ -10587,10 +10587,12 @@ function ensurePayrollReceiptDistributionSheet_(ss) {
   return {sheet,headers,rows:data.slice(1)};
 }
 
-function requirePayrollReceiptDistributionManager_(payload) {
-  const actor=getVerifiedAccountingIdentity_(payload||{});
+function requirePayrollReceiptDistributionManager_(payload,action) {
+  const input=payload||{},actor=getVerifiedAccountingIdentity_(input);
   if(!actor.authorized)return {authorized:false,code:actor.code||"VERIFIED_IDENTITY_REQUIRED"};
   if(!["RECURSOSHUMANOS","ADMINISTRADOR"].includes(normalizePayrollRole_(actor.role)))return {authorized:false,code:"ROLE_NOT_ALLOWED"};
+  const permission=validateRolePermission(actor,action||"previewPayrollReceiptDistribution",input);
+  if(!permission||permission.authorized!==true)return {authorized:false,code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
   return {authorized:true,actor};
 }
 
@@ -10671,12 +10673,12 @@ function getPayrollReceiptDistributionSummary_(ss,context) {
 }
 
 function previewPayrollReceiptDistribution(payload) {
-  const p=payload||{},access=requirePayrollReceiptDistributionManager_(p);
+  const p=payload||{},access=requirePayrollReceiptDistributionManager_(p,"processPayrollReceiptDistribution");
   if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
   const planillaId=String(p.planillaId||"").trim();if(!planillaId)return {status:"error",code:"PLANILLA_SELECTION_REQUIRED",message:"Seleccione una planilla."};
   const lock=LockService.getScriptLock();if(!lock.tryLock(5000))return {status:"error",code:"CONCURRENT_UPDATE_RETRY",message:"La distribución está ocupada."};
   try{
-    const refreshedAccess=requirePayrollReceiptDistributionManager_(p);
+    const refreshedAccess=requirePayrollReceiptDistributionManager_(p,"processPayrollReceiptDistribution");
     if(!refreshedAccess.authorized)return {status:"error",code:refreshedAccess.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
     const ss=SpreadsheetApp.openById(SPREADSHEET_ID),context=getPayrollReceiptDistributionContext_(p,ss,planillaId);
     if(context.error)return {status:"error",code:context.error,message:context.message};
@@ -10712,7 +10714,7 @@ function updatePayrollReceiptDistributionRow_(ss,distributionId,changes) {
 }
 
 function processPayrollReceiptDistribution(payload) {
-  const p=payload||{},access=requirePayrollReceiptDistributionManager_(p);
+  const p=payload||{},access=requirePayrollReceiptDistributionManager_(p,"previewPayrollReceiptDistribution");
   if(!access.authorized)return {status:"error",code:access.code,message:"Acceso denegado."};
   const planillaId=String(p.planillaId||"").trim(),mode=String(p.modo||"ENVIAR").trim().toUpperCase();
   if(!planillaId||!["ENVIAR","REINTENTAR"].includes(mode))return {status:"error",code:"PAYROLL_DISTRIBUTION_REQUEST_INVALID",message:"Planilla o modo de distribución no válido."};
@@ -10723,7 +10725,7 @@ function processPayrollReceiptDistribution(payload) {
   let claimed=[];
   try{
     // Revalidate the manager session and role after acquiring the batch-claim lock.
-    const refreshedAccess=requirePayrollReceiptDistributionManager_(p);
+    const refreshedAccess=requirePayrollReceiptDistributionManager_(p,"previewPayrollReceiptDistribution");
     if(!refreshedAccess.authorized)return {status:"error",code:refreshedAccess.code||"VERIFIED_IDENTITY_REQUIRED",message:"Acceso denegado."};
     const context=getPayrollReceiptDistributionContext_(p,ss,planillaId);if(context.error)return {status:"error",code:context.error,message:context.message};
     const dist=ensurePayrollReceiptDistributionSheet_(ss),byEmployee=Object.create(null);
@@ -10764,7 +10766,7 @@ function processPayrollReceiptDistribution(payload) {
         if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"FALLIDO",errorCode:latestContext.error||latestRecord&&latestRecord.emailReason||"DISTRIBUTION_CONTEXT_CHANGED"}))failed++;else updateFailures++;return;
       }
       // MailApp is external, so revalidate the same manager immediately before sending.
-      const sendAccess=requirePayrollReceiptDistributionManager_(p);
+      const sendAccess=requirePayrollReceiptDistributionManager_(p,"processPayrollReceiptDistribution");
       if(!sendAccess.authorized||sendAccess.actor.userId!==item.actorUserId){
         if(updatePayrollReceiptDistributionRow_(ss,item.distributionId,{estado:"REINTENTABLE",errorCode:sendAccess.code||"DISTRIBUTION_ACTOR_CHANGED"}))retryable++;else updateFailures++;
         return;
