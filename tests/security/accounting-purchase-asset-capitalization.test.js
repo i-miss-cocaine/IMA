@@ -8,7 +8,7 @@ const rows={
   SolicitudesCompra:[["SolicitudID","Fecha","Departamento","SolicitanteUserId","Justificacion","Categoria","DetalleItemsJSON","MontoEstimado","CentroCosto","EstadoAprobacion","Observaciones"],["REQ-1",new Date(),"Finanzas","U-1","Compra de equipo","Bienes",JSON.stringify([{itemId:"IT-1",descripcion:"Laptop",cantidad:2,clasificacionInventario:"ActivoFijo"}]),1000,"CC-1","Adjudicada",""]],
   OrdenesCompra:[["OrdenCompraID","SolicitudID","CotizacionID","ProveedorID","FechaEmision","FechaEntregaEstimada","DetalleItemsJSON","MontoTotal","CentroCosto","EstadoOrden"],["ORD-1","REQ-1","Q-1","SUP-1",new Date(),"",JSON.stringify([{itemId:"IT-1",descripcion:"Laptop",cantidad:2,precioUnitario:500,total:1000,clasificacionInventario:"ActivoFijo",capitalizable:true}]),1000,"CC-1","RecibidaTotal"]],
   RecepcionesCompra:[["RecepcionID","OrdenCompraID","Fecha","ReceptorUserId","DetalleJSON","EstadoConformidad","RegistrarInventario","AsientoID","Observaciones"],["REC-1","ORD-1",new Date(),"U-1",JSON.stringify([{itemId:"IT-1",cantidad:2,conforme:true}]),"Conforme",false,"",""]],
-  CuentasPorPagarGastos:[["ObligacionID","ProveedorID","NumeroFactura","Importe","Impuestos","FechaVencimiento","EstadoAprobacion","EstadoPago","AsientoID","Observaciones"],["CXP-1","SUP-1","INV-001",1000,0,"","Aprobado","Pendiente Pago","AST-1","[ORDEN_ORD-1] [ITEMS_JSON:[{\"itemId\":\"IT-1\",\"cantidad\":2}]] [MATCH:Conciliada]"]],
+  CuentasPorPagarGastos:[["ObligacionID","ProveedorID","NumeroFactura","Importe","Impuestos","FechaVencimiento","EstadoAprobacion","EstadoPago","AsientoID","Observaciones","TotalMonto","SaldoPendiente","TotalAbonado","FechaEmision","FechaRecepcion","OrdenCompraID","EstadoConciliacion","DiferenciasJSON","FacturaHash","IdempotencyKey","DiferenciaAutorizadaPor","FechaAutorizacionDiferencia","JustificacionDiferencia"],["CXP-1","SUP-1","INV-001",1000,0,"","Aprobado","Pendiente Pago","AST-1","[ORDEN_ORD-1] [ITEMS_JSON:[{\"itemId\":\"IT-1\",\"cantidad\":2,\"precioUnitario\":500}]] [MATCH:Conciliada]",1000,1000,0,new Date(),new Date(),"ORD-1","Conciliada","[]","HASH-1","","","",""]],
   ActivosPatrimoniales:[["ActivoID","CodigoPatrimonial","Nombre","Categoria","SerieModel","UbicacionActual","CustodioUserId","Estado","Observaciones"]],
   AsignacionesActivos:[["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"]]
 };
@@ -38,9 +38,9 @@ const ctx={SPREADSHEET_ID:"TEST",failAssignmentWrite:false,permissionActive:true
  catalogActor_:()=>({userId:"U-1"}),catalogFindItem_:()=>({id:"CAT-ITEM",code:"ITEM-C",name:"Papel",baseUnit:"Unidad",unit:"Unidad"}),catalogFindUnit_:()=>({name:"Unidad",base:"Unidad",factor:1}),catalogNormalizeText_:v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(),purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"U-1",role:"Contador"},scope:{institutionWide:true,departmentIds:[]}}),supplierEnsureActiveForOrder_:()=>true
 };
 vm.createContext(ctx);
-vm.runInContext('function getVerifiedAccountingIdentity_(payload){return {authorized:true,userId:String(payload&&payload._verifiedUserId||"U-1"),role:"Director",institutionId:"INST-1"};} function validateRolePermission(_actor,action){return permissionActive&&["registerAssetsFromPurchaseReceipt","createPurchaseRequest","createPurchaseOrder","verifyThreeWayMatch"].includes(action)?{authorized:true}:{authorized:false,code:"ROLE_PERMISSION_DENIED"};}',ctx);
+vm.runInContext('function getVerifiedAccountingIdentity_(payload){return {authorized:true,userId:String(payload&&payload._verifiedUserId||"U-1"),role:"Director",institutionId:"INST-1"};} function validateRolePermission(_actor,action){return permissionActive&&["registerAssetsFromPurchaseReceipt","createPurchaseRequest","createPurchaseOrder","recordAccountsPayableExpense","verifyThreeWayMatch"].includes(action)?{authorized:true}:{authorized:false,code:"ROLE_PERMISSION_DENIED"};}',ctx);
 vm.runInContext(constants[0],ctx);
-["normalizePurchaseAwardRole_","purchaseQuotationItemKey_","purchaseQuotationJsonArray_","normalizePurchaseAssetClassification_","ensureAssetAcquisitionSchema_","purchaseAssetReceiptContext_","getPurchaseReceiptAssetCandidates","registerAssetsFromPurchaseReceipt","getAssetItems","manageAssetItem","createPurchaseRequest","createPurchaseOrder"].forEach(name=>vm.runInContext(extract(source,name),ctx));
+["normalizePurchaseAwardRole_","purchaseQuotationItemKey_","purchaseQuotationJsonArray_","normalizePurchaseAssetClassification_","ensureAssetAcquisitionSchema_","purchaseAssetReceiptContext_","getPurchaseInvoiceTolerance_","ensureAccountsPayableInvoiceSheet_","evaluatePurchaseThreeWayMatch_","purchaseInvoiceStoredItems_","verifyThreeWayMatch","getPurchaseReceiptAssetCandidates","registerAssetsFromPurchaseReceipt","getAssetItems","manageAssetItem","createPurchaseRequest","createPurchaseOrder"].forEach(name=>vm.runInContext(extract(source,name),ctx));
 assert.equal(ctx.normalizePurchaseAssetClassification_({tipoBien:"Bienes Capitalizables / Activos Fijos"}),"ActivoFijo");
 assert.equal(ctx.normalizePurchaseAssetClassification_({clasificacionInventario:"Consumible"}),"Consumible");
 const sourceClassBefore=rows.SolicitudesCompra[1][6];
@@ -63,11 +63,8 @@ const mismatchedTotal=ctx.createPurchaseOrder({solicitudId:createdRequest.solici
 assert.equal(mismatchedTotal.code,"PURCHASE_ORDER_AMOUNT_MISMATCH");assert.equal(rows.OrdenesCompra.length,orderCountBeforeMismatch,"mismatched amount must not create an order");
 assert.equal(directOrderLine.clasificacionInventario,"Consumible","direct order must inherit the request classification, not a client override");
 assert.equal(directOrderLine.capitalizable,false);
-vm.runInContext(extract(source,"verifyThreeWayMatch"),ctx);
-const existingInvoiceObservations=rows.CuentasPorPagarGastos[1][9];
-rows.CuentasPorPagarGastos[1][9]=""; // Isolate the three-way match from the separate already-invoiced capitalization fixture.
-const invoiceMatch=ctx.verifyThreeWayMatch({ordenCompraId:"ORD-1",facturaProveedor:{numeroFactura:"INV-CHECK",proveedorId:"SUP-1",partidasFacturadas:[{itemId:"IT-1",cantidad:2,precioUnitario:500,subtotal:1000}]}});
-rows.CuentasPorPagarGastos[1][9]=existingInvoiceObservations;
+ctx.purchaseOrderScopeAccess_=()=>({authorized:true});
+const invoiceMatch=ctx.verifyThreeWayMatch({ordenCompraId:"ORD-1",facturaProveedor:{numeroFactura:"INV-001"}});
 assert.equal(invoiceMatch.estadoConciliacion,"Conciliada","three-way match must resolve adjudicated itemId through receipt");
 const oldPaymentState=rows.CuentasPorPagarGastos[1][7];rows.CuentasPorPagarGastos[1][7]="Bloqueado Conciliacion";
 assert.equal(ctx.getPurchaseReceiptAssetCandidates({recepcionId:"REC-1"}).facturasDisponibles.length,0,"blocked payable invoices cannot be used to capitalize assets");
