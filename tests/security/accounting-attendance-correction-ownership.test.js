@@ -37,6 +37,8 @@ onLock=()=>{claims.hrA={userId:"HR-A",role:"Empleado"};};
 assert.equal(ctx.reviewAttendanceCorrection(p("hrA",{correccionId:pendingRoleChange.correccionId,nuevoEstado:"Aprobado"})).code,"ROLE_NOT_ALLOWED");
 assert.deepEqual(rows.CorreccionesAsistencia.find(r=>r[0]===pendingRoleChange.correccionId),beforeRoleChange);
 claims.hrA={userId:"HR-A",role:"RecursosHumanos"};
+assert.equal(ctx.reviewAttendanceCorrection(p("hrA",{correccionId:pendingRoleChange.correccionId,nuevoEstado:"Rechazado"})).status,"success",
+  "restore the pending fixture before continuing rollback assertions");
 
 assert.equal(ctx.reviewAttendanceCorrection(p("hrA",{correccionId:self.correccionId,nuevoEstado:"Aprobado"})).code,"ATTENDANCE_CORRECTION_ALREADY_REVIEWED");
 const exit=ctx.submitAttendanceCorrection(p("empA",{asistenciaId:"AST-A",horaOriginal:"15:30",horaSolicitada:"15:45",motivo:"Corregir salida"}));
