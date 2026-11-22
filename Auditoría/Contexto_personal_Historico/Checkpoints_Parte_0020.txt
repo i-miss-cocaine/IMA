@@ -1967,3 +1967,42 @@ Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/A
 - Luego revisar confirmTransferReceipt y completar pagos/compras/transporte.
 - TASK-502 y AUD-NG-226 permanecen abiertos.
 ===============================================================================
+
+
+===============================================================================
+### C1.942 — IMA-EXEC-20261122-AUD-NG-222-ACCOUNTING-PURCHASE-RECEIPT-AUTH
+===============================================================================
+
+### Continuidad, commits y HEAD
+- Continuación desde C1.941; rama exclusiva NG_beta_0.0.0.1_work.
+- Commits:
+  - 8d1635b646c8441783338c9f60a2f54408ad9473 — autorización contextual de recepciones de compra.
+  - ceb7c4586c23efd64f9cde12ab74e65d779f81cb — revalidación de permiso dinámico al registrar activos desde recepción.
+  - 4e299602f50a033d93c4a4aa8d3d356298044ea9 — fixture de permiso mutable para contrato de capitalización de activos.
+- HEAD verificado: 4e299602f50a033d93c4a4aa8d3d356298044ea9.
+
+### Hallazgos y correcciones
+1. recordPurchaseReceipt no verificaba identidad, permiso dinámico ni ámbito departamental antes de mutar RecepcionesCompra y Kardex.
+2. Ahora exige purchaseQuotationAccess_ y validateRolePermission para recordPurchaseReceipt antes del lock y vuelve a verificar identidad/ámbito y permiso dentro de la sección crítica.
+3. Resuelve SolicitudID de la orden, verifica que la solicitud exista, esté aprobada/adjudicada y pertenezca al ámbito departamental autorizado; el acceso institucional amplio sigue sujeto a su permiso.
+4. ReceptorUserId se deriva del actor autenticado; los valores receptorUserId/userId del payload no pueden falsificar la atribución.
+5. registerAssetsFromPurchaseReceipt ahora verifica permiso dinámico antes y después de adquirir el lock; si el permiso se revoca durante la espera, no crea activos ni asignaciones.
+6. Se cubren revocación de autorización en recepción de compra y revocación de permiso durante capitalización de activos.
+
+### Archivos modificados
+- backend/accounting-service/Code.gs
+- tests/security/accounting-purchase-receipt-partial.test.js
+- tests/security/accounting-purchase-asset-capitalization.test.js
+
+### Verificaciones
+- Department Scope Contract run 44967324259: SUCCESS, 138 pasos; partial purchase receipt/quantity integrity PASS; purchase receipt to fixed asset capitalization PASS; syntax Apps Script PASS.
+- Workflows de importación, transporte, identidad, referencias y configuración en el HEAD anterior: SUCCESS.
+- Primera ejecución del workflow detectó fixture de permiso no expuesto al contexto VM en el contrato de capitalización; se corrigió y la ejecución final pasó.
+- CLI local independiente: NOT RUN. No se ejecutaron Apps Script/Sheets/Kardex reales.
+- Idempotencia durable explícita para reintentos de la misma solicitud de recepción sigue pendiente; no se declara resuelta.
+
+### Siguiente tarea elegible
+- Continuar AUD-NG-222/TASK-502 revisando confirmTransferReceipt: identidad, permiso, ownership de transferencia, almacén destino, idempotencia, actor receptor y atomicidad entre Kardex y transferencia.
+- Después, cerrar idempotencia de recordPurchaseReceipt y completar pagos/compras/transporte.
+- TASK-502 y AUD-NG-226 permanecen abiertos.
+===============================================================================

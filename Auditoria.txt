@@ -3300,3 +3300,6 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-22 | AUD-NG-222 / TASK-502 | C1.941] Hallazgo: las lecturas de comprobantes verificaban identidad/permisos solo antes de leer; no serializaban con cambios de versión/revisión ni refrescaban autorización tras esperar. getPaymentVouchers/getPaymentVoucherFile ahora usan ScriptLock y revalidan identidad y permiso dinámico; se preservan ownership, privacidad Drive y SHA-256. Department Scope SUCCESS 137 pasos, contratos voucher/adjuntos y sintaxis PASS. Continuar recepciones de compra y transferencias.
+
+
+[2026-11-22 | AUD-NG-222 / TASK-502 | C1.942] Hallazgo: recordPurchaseReceipt carecía de autorización contextual y scope; registerAssetsFromPurchaseReceipt no revalidaba permiso tras lock. Se incorporan identidad, permiso dinámico, scope de solicitud/departamento y atribución del actor; capitalización revalida permiso bajo lock. Department Scope SUCCESS 138 pasos y contratos relacionados PASS. Idempotencia durable de recepciones permanece pendiente.
