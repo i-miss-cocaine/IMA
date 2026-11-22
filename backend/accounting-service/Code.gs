@@ -6143,7 +6143,7 @@ function adjudicatePurchaseQuotations(payload) {
         condicionesPago: String(group.quote[7] || ""), plazoEntregaDias: Number(group.quote[6] || 0),
         proveedorId: group.supplierId, proveedorNombre: String(suppliers[quoteId][2] || "") }); });
       orderSheet.appendRow([orderId, request.solicitudId, quoteId, group.supplierId, now, eta, JSON.stringify(orderLineItems),
-        group.amount, request.centroCosto, "Aprobada", String(actor.userId || ""), "Adjudicación " + request.solicitudId,
+        group.amount, request.centroCosto, "Borrador", "", "Adjudicación " + request.solicitudId,
         request.solicitanteUserId, "1", ""]);
       createdOrders.push(orderSheet.getLastRow());
       orderIds.push({ ordenCompraId: orderId, cotizacionId: quoteId, proveedorId: group.supplierId, montoTotal: group.amount });
@@ -6825,7 +6825,7 @@ function createPurchaseOrder(payload) {
     var total=calculatedTotal;
     if(input.montoTotal!==undefined&&input.montoTotal!==null&&String(input.montoTotal).trim()!==""&&(!Number.isFinite(Number(input.montoTotal))||Math.abs(Number(input.montoTotal)-calculatedTotal)>=0.01))return{status:"error",code:"PURCHASE_ORDER_AMOUNT_MISMATCH"};
     orderSheet.appendRow([id,String(input.solicitudId),String(input.cotizacionId||""),String(input.proveedorId),new Date(),"",
-      JSON.stringify(prepared),total,String(request[8]||""),"Aprobada",String(access.actor.userId||""), "",String(request[3]||""),"1",""]);
+      JSON.stringify(prepared),total,String(request[8]||""),"Borrador","", "",String(request[3]||""),"1",""]);
     return{status:"success",ordenCompraId:id};
   } finally {lock.releaseLock();}
 }
@@ -7058,6 +7058,13 @@ function approvePurchaseOrder(payload) {
     if(requestMatches.length!==1)return{status:"error",code:requestMatches.length?"RESOURCE_AMBIGUOUS":"PURCHASE_REQUEST_NOT_FOUND"};
     var request=requestMatches[0],requestState=String(request[statusIndex]||"").trim().toLowerCase();
     if(["aprobada","adjudicada"].indexOf(requestState)===-1)return{status:"error",code:"PURCHASE_REQUEST_NOT_APPROVED"};
+    var requesterId=String(order[map.SolicitanteUserId]||request[3]||"").trim();
+    if(!requesterId)return{status:"error",code:"PURCHASE_ORDER_REQUESTER_MISSING"};
+    if(requesterId===String(access.actor.userId||"").trim())return{status:"error",code:"AUTO_APPROVAL_BLOCKED"};
+    var orderAmount=Number(order[map.MontoTotal]);
+    if(!Number.isFinite(orderAmount)||orderAmount<0)return{status:"error",code:"PURCHASE_ORDER_AMOUNT_INVALID"};
+    var approverRole=access.role||normalizePurchaseAwardRole_(access.actor.role);
+    if(orderAmount>50000&&["director","administrador"].indexOf(approverRole)===-1)return{status:"error",code:"HIGH_VALUE_APPROVAL_REQUIRED"};
     var departments=access.scope&&Array.isArray(access.scope.departmentIds)?access.scope.departmentIds.map(String):[];
     if(access.scope.institutionWide!==true&&departments.indexOf(String(request[departmentIndex]||"").trim())===-1)
       return{status:"error",code:"RESOURCE_NOT_FOUND"};
