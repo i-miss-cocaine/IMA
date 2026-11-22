@@ -80,6 +80,10 @@ async function main(){
   const approvalRetry=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1"});
   assert.equal(approvalRetry.idempotente,true);
   assert.equal(makeHarness({state:"Borrador",requestState:"Pendiente"}).context.approvePurchaseOrder({ordenCompraId:"OC-1"}).code,"PURCHASE_REQUEST_NOT_APPROVED");
+  const missingPdf=makeHarness();
+  const originalHeaderWidth=missingPdf.sheets.OrdenesCompra.rows[0].length;
+  assert.equal(missingPdf.context.getPurchaseOrderPDFFile({ordenCompraId:"OC-1"}).code,"PURCHASE_ORDER_PDF_NOT_FOUND");
+  assert.equal(missingPdf.sheets.OrdenesCompra.rows[0].length,originalHeaderWidth,"read-only PDF lookup must not mutate sheet schema");
   const h=makeHarness();
   const generated=h.context.generatePurchaseOrderPDF({ordenCompraId:"OC-1"});
   assert.equal(generated.status,"success",JSON.stringify(generated));
