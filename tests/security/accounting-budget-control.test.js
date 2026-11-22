@@ -24,12 +24,12 @@ function extract(name){
 const budgetHeaders=["PresupuestoID","AnoID","CentroCosto","PartidaCodigo","MontoAprobado","MontoComprometido","MontoEjecutado","Estado","UmbralAlertaPct","FechaActualizacion","ActualizadoPor","Version"];
 const commitmentHeaders=["CompromisoID","PresupuestoID","OrdenCompraID","AnoID","CentroCosto","PartidaCodigo","Monto","Estado","IdempotencyKey","PayloadHash","FechaCreacion","CreadoPor","FechaLiberacion","MotivoLiberacion","ActualizadoPor","Version"];
 function makeSheet(rows,options={}){
-  const sheet={rows:rows.map(r=>r.slice()),failAppend:options.failAppend===true,
+  const sheet={rows:rows.map(r=>r.slice()),failAppend:options.failAppend===true,failSetValues:options.failSetValues===true,
     getDataRange(){return{getValues:()=>sheet.rows.map(r=>r.slice())};},
     getLastRow(){return sheet.rows.length;},
     getRange(row,col){
       return{setValue(value){while(sheet.rows.length<row)sheet.rows.push([]);while(sheet.rows[row-1].length<col)sheet.rows[row-1].push("");sheet.rows[row-1][col-1]=value;},
-        setValues(values){values.forEach((line,i)=>{while(sheet.rows.length<row+i)sheet.rows.push([]);while(sheet.rows[row-1+i].length<col-1+line.length)sheet.rows[row-1+i].push("");line.forEach((v,j)=>sheet.rows[row-1+i][col-1+j]=v);});}};
+        setValues(values){if(sheet.failSetValues){sheet.failSetValues=false;throw new Error("SIMULATED_SET_VALUES_FAILURE");}values.forEach((line,i)=>{while(sheet.rows.length<row+i)sheet.rows.push([]);while(sheet.rows[row-1+i].length<col-1+line.length)sheet.rows[row-1+i].push("");line.forEach((v,j)=>sheet.rows[row-1+i][col-1+j]=v);});}};
     },
     appendRow(row){sheet.rows.push(row.slice());if(sheet.failAppend){sheet.failAppend=false;throw new Error("SIMULATED_APPEND_FAILURE");}},
     deleteRow(row){if(row===sheet.rows.length)sheet.rows.pop();else sheet.rows.splice(row-1,1);}
@@ -70,8 +70,8 @@ function makeHarness(options={}){
   };
   vm.createContext(context);
   const names=["budgetLogEvent_","budgetAccess_","budgetScopeAllows_","ensureBudgetSchema_","ensureBudgetCommitmentSchema_","budgetRecordFromRow_","getBudgetRowsCore_",
-    "getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailabilityCore_","checkBudgetAvailability","reserveBudgetCommitmentLocked_"];
-  vm.runInContext(names.map(extract).join("\n")+"\nthis.api={get:getBudgets,save:saveBudgetPlan,report:getBudgetExecutionReport,check:checkBudgetAvailability,checkCore:checkBudgetAvailabilityCore_,reserve:reserveBudgetCommitmentLocked_};",context);
+    "getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailabilityCore_","checkBudgetAvailability","reserveBudgetCommitmentLocked_","restoreReleasedBudgetCommitmentsLocked_","releaseBudgetCommitmentLocked_","reservePurchaseOrderBudgetCommitmentsLocked_"];
+  vm.runInContext(names.map(extract).join("\n")+"\nthis.api={get:getBudgets,save:saveBudgetPlan,report:getBudgetExecutionReport,check:checkBudgetAvailability,checkCore:checkBudgetAvailabilityCore_,reserve:reserveBudgetCommitmentLocked_,release:releaseBudgetCommitmentLocked_,reserveOrder:reservePurchaseOrderBudgetCommitmentsLocked_};",context);
   return{api:context.api,sheets,ss,logs:context.logs,stats:()=>({identityCalls,lockCalls,lockReleases})};
 }
 function main(){
@@ -143,6 +143,39 @@ function main(){
   const lowerPlan=h.api.save({sessionToken:"S",presupuestoId:budgetId,anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:500});
   assert.equal(lowerPlan.code,"BUDGET_AMOUNT_BELOW_COMMITTED_EXECUTED");
 
+  const releaseHarness=makeHarness();
+  const releaseBudget=releaseHarness.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:1000});
+  const releaseReservation=releaseHarness.api.reserve(releaseHarness.ss,{presupuestoId:releaseBudget.presupuestoId,ordenCompraId:"OC-REL",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:300,idempotencyKey:"PO:OC-REL:PRE"},"U-1");
+  assert.equal(releaseReservation.status,"success");
+  const released=releaseHarness.api.release(releaseHarness.ss,"OC-REL","Cancelación autorizada de orden","U-1");
+  assert.equal(released.status,"success");
+  assert.equal(released.released.length,1);
+  assert.equal(releaseHarness.sheets.PresupuestosInstitucionales.rows[1][5],0);
+  assert.equal(releaseHarness.sheets.CompromisosPresupuestarios.rows[1][7],"Liberado");
+  const releaseReplay=releaseHarness.api.release(releaseHarness.ss,"OC-REL","Cancelación autorizada de orden","U-1");
+  assert.equal(releaseReplay.idempotente,true);
+  assert.equal(releaseHarness.sheets.PresupuestosInstitucionales.rows[1][5],0);
+  const invalidRelease=releaseHarness.api.release(releaseHarness.ss,"OC-REL","no","U-1");
+  assert.equal(invalidRelease.code,"BUDGET_COMMITMENT_RELEASE_INPUT_INVALID");
+
+  const reserveOrderHarness=makeHarness();
+  const orderBudget=reserveOrderHarness.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:1000});
+  const orderCheck=reserveOrderHarness.api.checkCore(reserveOrderHarness.ss,{anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoSolicitado:1},{institutionWide:true});
+  const orderReserve=reserveOrderHarness.api.reserveOrder(reserveOrderHarness.ss,"OC-BATCH","2026","D1",{"5101":60000},{"5101":orderCheck},"U-1");
+  assert.equal(orderReserve.status,"success",JSON.stringify(orderReserve));
+  assert.equal(reserveOrderHarness.sheets.PresupuestosInstitucionales.rows[1][5],600);
+  const orderOverrun=reserveOrderHarness.api.reserveOrder(reserveOrderHarness.ss,"OC-BATCH-2","2026","D1",{"5101":50000},{"5101":orderCheck},"U-1");
+  assert.equal(orderOverrun.code,"BUDGET_OVERRUN_BLOCKED");
+  assert.equal(reserveOrderHarness.sheets.PresupuestosInstitucionales.rows[1][5],600);
+
+  const releaseRollback=makeHarness();
+  const releaseRollbackBudget=releaseRollback.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:100});
+  releaseRollback.api.reserve(releaseRollback.ss,{presupuestoId:releaseRollbackBudget.presupuestoId,ordenCompraId:"OC-RB",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:50,idempotencyKey:"PO:OC-RB:PRE"},"U-1");
+  releaseRollback.sheets.CompromisosPresupuestarios.failSetValues=true;
+  const releaseFailure=releaseRollback.api.release(releaseRollback.ss,"OC-RB","Cancelación autorizada de orden","U-1");
+  assert.equal(releaseFailure.code,"BUDGET_COMMITMENT_RELEASE_FAILED");
+  assert.equal(releaseRollback.sheets.PresupuestosInstitucionales.rows[1][5],50,"failed release rolls budget total back");
+  assert.equal(releaseRollback.sheets.CompromisosPresupuestarios.rows[1][7],"Comprometido","failed release restores ledger state");
   const scopeDenied=makeHarness({departmentIds:["D2"]});
   const outOfScope=scopeDenied.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:100});
   assert.equal(outOfScope.code,"RESOURCE_NOT_FOUND");
