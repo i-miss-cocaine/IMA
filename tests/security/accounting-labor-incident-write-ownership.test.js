@@ -10,12 +10,13 @@ ExpedientesLaborales:[["ExpedienteID","PersonaId","UserId","Puesto","Departament
 ResourceOwnership:[["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"],["OA","I","EXPEDIENTE_LABORAL","EA","A","ACTIVE","U-ADMIN","",""],["OB","I","EXPEDIENTE_LABORAL","EB","B","ACTIVE","U-ADMIN","",""]],
 IncidenciasLaborales:[["IncidenciaID","EmpleadoID","Fecha","Categoria","DescripcionObjetiva","ResponsableRegistro","Estado","ResponsabilidadEstablecida","DocumentacionDriveUrl","ObservacionesAclaraciones","HistorialAclaracionesJSON","CreadoPor","FechaCreacion","UltimaModificacion"],["INC-A","U-EMP","2026-01-10","Seguridad","Incidencia A","U-OLD","Registrada",false,"private-a","Aclaración A","[]","U-OLD","2026-01-10",""]],
 MedidasDisciplinarias:[["MedidaID","IncidenciaID","EmpleadoID","TipoMedida","FundamentoDocumentado","FechaEfectiva","ResponsableAprobacion","EstadoMedida","DiasSuspension","ActaFirmadaDriveUrl","CreadoPor","FechaCreacion","UltimaModificacion"],["MED-A","INC-A","U-EMP","Amonestación","Fundamento A","2026-01-12","U-OLD","Aprobada",0,"private-med-a","U-OLD","2026-01-12",""]]};
-let uuid=0,uuidOverride=null,locked=false,available=true,onAppend=null,failNextSetValues=false;
+let uuid=0,uuidOverride=null,locked=false,available=true,onAppend=null,onLock=null,failNextSetValues=false;
 function sheet(n){return {getDataRange:()=>({getValues:()=>(rows[n]||[]).map(r=>r.slice())}),getLastRow:()=>(rows[n]||[]).length,appendRow:r=>{if(onAppend)onAppend();rows[n].push(r.slice());},getRange:(r,c,rs,cs)=>({setValue:v=>rows[n][r-1][c-1]=v,setValues:v=>{if(failNextSetValues){failNextSetValues=false;throw Error("simulated write failure");}rows[n][r-1]=v[0].slice();}})};}
 const ss={getSheetByName:n=>Object.hasOwn(rows,n)?sheet(n):null};
 const ctx={console,Date,Math,Number,String,Object,Array,JSON,WeakMap,isNaN,parseInt,SPREADSHEET_ID:"T",
 requestAccountingUserAuthorization_:(action,payload)=>{const actor=claims[payload.sessionToken];return actor?{status:"success",authorized:true,userId:actor.userId,role:actor.role,institutionId:"I",membershipId:"M-"+actor.userId}:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};},
-PropertiesService:{getScriptProperties:()=>({getProperty:n=>n==="IMA_INSTITUTION_ID"?"I":""})},getVerifiedDepartmentScopeForSession_:(p,s,a)=>scopes[a.userId]?{authorized:true,userId:a.userId,role:a.role,institutionId:"I",departmentIds:scopes[a.userId].departmentIds,institutionWide:scopes[a.userId].institutionWide}:{authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"},SpreadsheetApp:{openById:()=>ss},getOrCreateSheet:(s,n)=>(rows[n]||(rows[n]=[]),sheet(n)),Utilities:{getUuid:()=>(uuidOverride||"U"+(++uuid))},LockService:{getScriptLock:()=>({tryLock:()=>{if(!available||locked)return false;locked=true;return true;},releaseLock:()=>locked=false})}};
+PropertiesService:{getScriptProperties:()=>({getProperty:n=>n==="IMA_INSTITUTION_ID"?"I":""})},getVerifiedDepartmentScopeForSession_:(p,s,a)=>scopes[a.userId]?{authorized:true,userId:a.userId,role:a.role,institutionId:"I",departmentIds:scopes[a.userId].departmentIds,institutionWide:scopes[a.userId].institutionWide}:{authorized:false,code:"DEPARTMENT_SCOPE_NOT_ASSIGNED"},SpreadsheetApp:{openById:()=>ss},getOrCreateSheet:(s,n)=>(rows[n]||(rows[n]=[]),sheet(n)),validateRolePermission:(actor,action)=>({authorized:!!actor&&actor.authorized===true&&normalizeRoleForTest(actor.role)==="recursoshumanos"&&["manageLaborIncident","manageDisciplinaryMeasure"].includes(action),code:"ROLE_NOT_ALLOWED"}),Utilities:{getUuid:()=>(uuidOverride||"U"+(++uuid))},LockService:{getScriptLock:()=>({tryLock:()=>{if(!available||locked)return false;locked=true;if(onLock){const callback=onLock;onLock=null;callback();}return true;},releaseLock:()=>locked=false})}};
+ctx.normalizeRoleForTest=role=>String(role||"").toLowerCase().replace(/\\s+/g,"");
 vm.createContext(ctx);vm.runInContext(code,ctx);
 ctx.getVerifiedAccountingDepartmentScope_=(payload,spreadsheet,actor)=>{const verified=actor||ctx.getVerifiedAccountingIdentity_(payload);const scope=verified&&scopes[verified.userId];return scope?{valid:true,authorized:true,userId:verified.userId,roleId:verified.role,institutionId:"I",membershipId:"M-"+verified.userId,departmentIds:scope.departmentIds,institutionWide:scope.institutionWide}:{valid:false,authorized:false,code:"RESOURCE_NOT_FOUND"};};
 const p=t=>({sessionToken:t});
@@ -43,4 +44,15 @@ const beforeRollback=rows.IncidenciasLaborales.find(r=>r[0]==="INC-A").slice();f
 available=false;assert.equal(ctx.manageLaborIncident({...p("ha"),empleadoId:"U-EMP",descripcionObjetiva:"busy"}).code,"CONCURRENT_UPDATE_RETRY");available=true;
 let nested=null;const count=rows.IncidenciasLaborales.length;onAppend=()=>{onAppend=null;nested=ctx.manageLaborIncident({...p("ha"),empleadoId:"U-EMP",descripcionObjetiva:"nested"});};assert.equal(ctx.manageLaborIncident({...p("ha"),empleadoId:"U-EMP",descripcionObjetiva:"outer"}).status,"success");assert.equal(nested.code,"CONCURRENT_UPDATE_RETRY");assert.equal(rows.IncidenciasLaborales.length,count+1);
 const gate=extractFunction(accounting,"validateRolePermission");assert.ok(gate.includes("accountingHasRolePermission_"));assert.ok(accounting.includes('"manageLaborIncident", "manageDisciplinaryMeasure"'));
+
+const incidentCountBeforeRevocation=rows.IncidenciasLaborales.length;
+onLock=()=>{claims.ha=null;};
+assert.equal(ctx.manageLaborIncident({...p("ha"),empleadoId:"U-EMP",descripcionObjetiva:"No escribir tras revocación"}).code,"VERIFIED_IDENTITY_REQUIRED");
+assert.equal(rows.IncidenciasLaborales.length,incidentCountBeforeRevocation);
+claims.ha={userId:"U-HA",role:"RecursosHumanos"};
+const measureCountBeforeRevocation=rows.MedidasDisciplinarias.length;
+onLock=()=>{claims.ha={userId:"U-HA",role:"Empleado"};};
+assert.equal(ctx.manageDisciplinaryMeasure({...p("ha"),incidenciaId:"INC-A",empleadoId:"U-EMP",tipoMedida:"Suspensión",fundamentoDocumentado:"No escribir"}).code,"ROLE_NOT_ALLOWED");
+assert.equal(rows.MedidasDisciplinarias.length,measureCountBeforeRevocation);
+claims.ha={userId:"U-HA",role:"RecursosHumanos"};
 console.log("ACCOUNTING labor incident and disciplinary measure ownership contract passed");

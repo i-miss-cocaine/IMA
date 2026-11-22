@@ -2581,9 +2581,9 @@ function manageLaborIncident(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = resolveLaborIncidentWriteAccess_(input, ss, input.empleadoId, "manageLaborIncident");
   if (!access.authorized) return { status: "error", code: access.code };
+  var permission = validateRolePermission(access.actor, "manageLaborIncident", input);
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var headers = ["IncidenciaID","EmpleadoID","Fecha","Categoria","DescripcionObjetiva","ResponsableRegistro","Estado","ResponsabilidadEstablecida","DocumentacionDriveUrl","ObservacionesAclaraciones","HistorialAclaracionesJSON","CreadoPor","FechaCreacion","UltimaModificacion"];
-  var snapshot = ensureLaborWriteSheet_(ss, "IncidenciasLaborales", headers);
-  if (!snapshot.valid) return { status: "error", code: snapshot.code };
   var description = String(input.descripcionObjetiva || "").trim();
   if (!description) return { status: "error", code: "LABOR_INCIDENT_DESCRIPTION_REQUIRED" };
   var responsibility = parseLaborBoolean_(input.responsabilidadEstablecida);
@@ -2591,6 +2591,12 @@ function manageLaborIncident(payload) {
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   try {
+    access = resolveLaborIncidentWriteAccess_(input, ss, input.empleadoId, "manageLaborIncident");
+    if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "RESOURCE_NOT_FOUND" };
+    permission = validateRolePermission(access.actor, "manageLaborIncident", input);
+    if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
+    var snapshot = ensureLaborWriteSheet_(ss, "IncidenciasLaborales", headers);
+    if (!snapshot.valid) return { status: "error", code: snapshot.code };
     var matches = snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){
       return input.incidenciaId && String(item.row[0]||"").trim() === String(input.incidenciaId).trim();
     });
@@ -2622,28 +2628,31 @@ function manageDisciplinaryMeasure(payload) {
   var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = resolveLaborIncidentWriteAccess_(input, ss, input.empleadoId, "manageDisciplinaryMeasure");
   if (!access.authorized) return { status: "error", code: access.code };
+  var permission = validateRolePermission(access.actor, "manageDisciplinaryMeasure", input);
+  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
   var headers = ["MedidaID","IncidenciaID","EmpleadoID","TipoMedida","FundamentoDocumentado","FechaEfectiva","ResponsableAprobacion","EstadoMedida","DiasSuspension","ActaFirmadaDriveUrl","CreadoPor","FechaCreacion","UltimaModificacion"];
   var days = Number(input.diasSuspension || 0);
   if (!isFinite(days) || days < 0 || days > 365) return { status: "error", code: "DISCIPLINARY_DAYS_INVALID" };
   if (!String(input.tipoMedida||"").trim() || !String(input.fundamentoDocumentado||"").trim()) return { status: "error", code: "DISCIPLINARY_BASIS_REQUIRED" };
-  var existingSheet = ss.getSheetByName("MedidasDisciplinarias");
-  var existingValues = existingSheet ? existingSheet.getDataRange().getValues().slice(1) : [];
-  var proposedId = input.medidaId ? String(input.medidaId).trim() : "MED-DISC-" + String(Utilities.getUuid()).replace(/-/g,"");
-  if (!input.medidaId && existingValues.some(function(row){return String(row[0]||"")===proposedId;})) return { status: "error", code: "DISCIPLINARY_MEASURE_ID_COLLISION" };
-  var incidentSheet = ss.getSheetByName("IncidenciasLaborales");
-  if (!incidentSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  var incidentValues = incidentSheet.getDataRange().getValues();
-  var incidentMatches = incidentValues.slice(1).filter(function(row){return String(row[0]||"")===String(input.incidenciaId||"") && String(row[1]||"")===access.employeeId;});
-  if (incidentMatches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  var snapshot = ensureLaborWriteSheet_(ss,"MedidasDisciplinarias",headers);
-  if (!snapshot.valid) return { status: "error", code: snapshot.code };
   var lock = LockService.getScriptLock();
   if (!lock.tryLock(5000)) return { status: "error", code: "CONCURRENT_UPDATE_RETRY" };
   try {
-    var now = new Date(), id = String(input.medidaId||"").trim(), matches = snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return id && String(item.row[0]||"")===id;});
+    access = resolveLaborIncidentWriteAccess_(input, ss, input.empleadoId, "manageDisciplinaryMeasure");
+    if (!access || access.authorized !== true) return { status: "error", code: access && access.code || "RESOURCE_NOT_FOUND" };
+    permission = validateRolePermission(access.actor, "manageDisciplinaryMeasure", input);
+    if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED" };
+    var incidentSheet = ss.getSheetByName("IncidenciasLaborales");
+    if (!incidentSheet) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var incidentValues = incidentSheet.getDataRange().getValues();
+    var incidentMatches = incidentValues.slice(1).filter(function(row){return String(row[0]||"")===String(input.incidenciaId||"") && String(row[1]||"")===access.employeeId;});
+    if (incidentMatches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var snapshot = ensureLaborWriteSheet_(ss,"MedidasDisciplinarias",headers);
+    if (!snapshot.valid) return { status: "error", code: snapshot.code };
+    var id = String(input.medidaId||"").trim(), matches = snapshot.rows.map(function(row,index){return {row:row,index:index};}).filter(function(item){return id && String(item.row[0]||"")===id;});
     if (id && matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    var now = new Date();
     if (!id) {
-      id = proposedId;
+      id = "MED-DISC-" + String(Utilities.getUuid()).replace(/-/g,"");
       if (snapshot.rows.some(function(row){return String(row[0]||"")===id;})) return { status: "error", code: "DISCIPLINARY_MEASURE_ID_COLLISION" };
       snapshot.sheet.appendRow([id,input.incidenciaId,access.employeeId,String(input.tipoMedida),String(input.fundamentoDocumentado),input.fechaEfectiva||now,
         access.actor.userId,"Pendiente",days,String(input.actaFirmadaDriveUrl||""),access.actor.userId,now,""]);
