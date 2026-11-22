@@ -7600,12 +7600,16 @@ function recordAccountsPayableMovement_(payload,type) {
     if(retries.length>1)return{status:"error",code:"ACCOUNTS_PAYABLE_IDEMPOTENCY_AMBIGUOUS"};
     if(retries.length===1){if(String(retries[0][mix("PayloadHash")]||"")!==payloadHash)return{status:"error",code:"ACCOUNTS_PAYABLE_IDEMPOTENCY_CONFLICT"};
       return{status:"success",idempotente:true,movimientoId:String(retries[0][mix("MovimientoID")]||""),obligacionId:obligationId,saldoPendiente:accountsPayableMoney_(record[ix("SaldoPendiente")])||0};}
+    if(movementType==="PAGO"){
+      var duplicatePayment=movementRows.some(function(row){return String(row[mix("TipoMovimiento")]||"")==="PAGO"&&String(row[mix("ObligacionID")]||"")===obligationId&&String(row[mix("Referencia")]||"").trim().toLowerCase()===reference.toLowerCase();});
+      if(duplicatePayment)return{status:"error",code:"ACCOUNTS_PAYABLE_PAYMENT_REFERENCE_DUPLICATE"};
+    }
     if(movementType==="NOTA_CREDITO"){
       var supplierId=String(record[ix("ProveedorID")]||"").trim();
       var duplicateCredit=movementRows.some(function(row){
         if(String(row[mix("TipoMovimiento")]||"")!=="NOTA_CREDITO"||String(row[mix("NumeroNotaCredito")]||"").toLowerCase()!==creditNumber.toLowerCase())return false;
         var linked=values.slice(1).filter(function(invoiceRow){return String(invoiceRow[ix("ObligacionID")]||"").trim()===String(row[mix("ObligacionID")]||"").trim();});
-        return linked.length===1&&String(linked[0][ix("ProveedorID")]||"").trim()===supplierId;
+        return linked.length!==1||String(linked[0][ix("ProveedorID")]||"").trim()===supplierId;
       });
       if(duplicateCredit)return{status:"error",code:"ACCOUNTS_PAYABLE_CREDIT_NOTE_DUPLICATE"};
     }
