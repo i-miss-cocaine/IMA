@@ -6997,6 +6997,8 @@ function ensurePurchaseOrderPdfSchema_(ss) {
   var required=["OrdenCompraID","SolicitudID","ProveedorID","DetalleItemsJSON","MontoTotal","EstadoOrden"];
   if(required.some(function(name){return headers.indexOf(name)<0||headers.indexOf(name)!==headers.lastIndexOf(name);}))
     return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
+  if(PURCHASE_ORDER_PDF_COLUMNS_.some(function(name){return headers.indexOf(name)>=0&&headers.indexOf(name)!==headers.lastIndexOf(name);}))
+    return{valid:false,code:"PURCHASE_ORDER_SCHEMA_INVALID"};
   PURCHASE_ORDER_PDF_COLUMNS_.forEach(function(name){
     if(headers.indexOf(name)<0){sheet.getRange(1,headers.length+1).setValue(name);headers.push(name);}
   });
@@ -7102,8 +7104,13 @@ function generatePurchaseOrderPDF(payload) {
       try{
         var existing=DriveApp.getFileById(fileId);
         if(existing&&!existing.isTrashed()&&existing.getSharingAccess()===DriveApp.Access.PRIVATE&&storedHash){
-          return{status:"success",idempotente:true,ordenCompraId:orderId,numeroCorrelativo:String(order[map.CorrelativoPDF]||""),
-            fileName:String(existing.getName()||""),sha256Hash:storedHash,estadoOrden:String(order[map.EstadoOrden]||""),integridadVerificada:true};
+          var existingBlob=existing.getBlob(),existingBytes=existingBlob.getBytes(),existingMime=String(existingBlob.getContentType()||existing.getMimeType()||"").toLowerCase();
+          var existingSignature=existingBytes&&existingBytes.slice(0,5).map(function(value){return String.fromCharCode((Number(value)+256)%256);}).join("");
+          if(existingMime==="application/pdf"&&/\.pdf$/i.test(String(existing.getName()||""))&&existingSignature==="%PDF-"&&
+            existingBytes.length>0&&existingBytes.length<=10*1024*1024&&computeDocumentSHA256(existingBytes)===storedHash){
+            return{status:"success",idempotente:true,ordenCompraId:orderId,numeroCorrelativo:String(order[map.CorrelativoPDF]||""),
+              fileName:String(existing.getName()||""),sha256Hash:storedHash,estadoOrden:String(order[map.EstadoOrden]||""),integridadVerificada:true};
+          }
         }
       }catch(existingError){return{status:"error",code:"PURCHASE_ORDER_PDF_UNAVAILABLE"};}
       return{status:"error",code:"PURCHASE_ORDER_PDF_UNAVAILABLE"};
@@ -8020,14 +8027,14 @@ function recordPurchaseOrderConfirmation(payload) {
       String(input.observaciones||""),access.actor.userId]);
     try {
       var confirmationState=String(input.estadoConfirmacion||"Confirmada").trim().toLowerCase();
-      if(["emitida","aprobada"].indexOf(String(order[9]||"").trim().toLowerCase())!==-1&&confirmationState==="confirmada"){
+      if(String(order[9]||"").trim().toLowerCase()==="emitida"&&confirmationState==="confirmada"){
         var orderSheet=ss.getSheetByName("OrdenesCompra"),orderValues=orderSheet.getDataRange().getValues(),orderHeaders=orderValues[0].map(function(v){return String(v||"").trim();});
         var stateIndex=orderHeaders.indexOf("EstadoOrden"),matches=orderValues.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[0]||"")===String(input.ordenCompraId||"");});
         if(stateIndex<0||matches.length!==1)throw new Error("PURCHASE_ORDER_SCHEMA_INVALID");
         orderSheet.getRange(matches[0].index,stateIndex+1).setValue("Confirmada");
       }
     } catch(stateError) { try{sheet.deleteRow(confirmationRow);}catch(ignoredRollback){} throw stateError; }
-    return {status:"success",confirmacionId:id,estadoOrden:confirmationState==="confirmada"&&["emitida","aprobada"].indexOf(String(order[9]||"").trim().toLowerCase())!==-1?"Confirmada":String(order[9]||"")};
+    return {status:"success",confirmacionId:id,estadoOrden:confirmationState==="confirmada"&&String(order[9]||"").trim().toLowerCase()==="emitida"?"Confirmada":String(order[9]||"")};
   } finally {lock.releaseLock();}
 }
 function getPurchaseDossier(payload) {
