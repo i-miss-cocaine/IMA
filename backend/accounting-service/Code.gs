@@ -6719,6 +6719,235 @@ function manageAssetItem(payload) {
   return { status: "success" };
 }
 
+
+function assetCustodyNormalizeCondition_(value) {
+  var raw=String(value||"").trim().toLowerCase(),map={"nuevo":"Nuevo","bueno":"Bueno","regular":"Regular","dañado":"Dañado","danado":"Dañado","incompleto":"Incompleto","requierereparacion":"RequiereReparacion","requiere reparación":"RequiereReparacion"};
+  var normalized=map[raw];if(!normalized)throw new Error("ASSET_CUSTODY_CONDITION_INVALID");return normalized;
+}
+function assetCustodyParseList_(value,code) {
+  var raw=value===undefined||value===null?[]:value,list;
+  if(Array.isArray(raw))list=raw;
+  else if(typeof raw==="string"){var text=raw.trim();if(!text)list=[];else{try{list=JSON.parse(text);}catch(_){list=text.split(/[\n;,]+/);}}}
+  else throw new Error(code||"ASSET_CUSTODY_LIST_INVALID");
+  if(!Array.isArray(list))throw new Error(code||"ASSET_CUSTODY_LIST_INVALID");
+  var seen=Object.create(null),out=[];
+  list.forEach(function(item){var v=String(item&&typeof item==="object"?(item.nombre||item.descripcion||item.id||""):item||"").trim().slice(0,240);if(!v)return;var k=v.toLowerCase();if(!seen[k]){seen[k]=true;out.push(v);}});
+  return out;
+}
+function assetCustodyResolveEmployee_(ss,userId) {
+  var sheet=ss.getSheetByName("ExpedientesLaborales");if(!sheet)throw new Error("ASSET_CUSTODY_EMPLOYEE_SHEET_REQUIRED");
+  var rows=sheet.getDataRange().getValues();if(!rows||!rows.length)throw new Error("ASSET_CUSTODY_EMPLOYEE_NOT_FOUND");
+  var h=rows[0].map(function(v){return String(v||"").trim();}),uid=h.indexOf("UserId"),dept=h.indexOf("Departamento"),name=h.indexOf("NombreCompleto")>=0?h.indexOf("NombreCompleto"):h.indexOf("Nombre"),state=h.indexOf("Estado");
+  if(uid<0||dept<0)throw new Error("ASSET_CUSTODY_EMPLOYEE_SCHEMA_INVALID");
+  var matches=rows.slice(1).filter(function(r){return String(r[uid]||"").trim()===String(userId||"").trim();});
+  if(matches.length!==1)throw new Error(matches.length?"ASSET_CUSTODY_EMPLOYEE_AMBIGUOUS":"ASSET_CUSTODY_EMPLOYEE_NOT_FOUND");
+  var row=matches[0],status=state>=0?String(row[state]||"").trim().toLowerCase():"";
+  if(["inactivo","inactive","baja","retirado","suspendido","eliminado"].indexOf(status)>=0)throw new Error("ASSET_CUSTODY_EMPLOYEE_INACTIVE");
+  var department=String(row[dept]||"").trim();if(!department)throw new Error("ASSET_CUSTODY_EMPLOYEE_DEPARTMENT_REQUIRED");
+  return{userId:String(userId),name:name>=0?String(row[name]||userId).trim():String(userId),departmentId:department};
+}
+function assetCustodyAssertDepartment_(p,ss,actor,departmentId) {
+  var scope=getVerifiedAccountingDepartmentScope_(p,ss,actor);
+  if(!scope||scope.valid!==true||scope.authorized===false)throw new Error(scope&&scope.code||"RESOURCE_SCOPE_DENIED");
+  var department=String(departmentId||"").trim();
+  if(scope.institutionWide!==true&&(!department||!Array.isArray(scope.departmentIds)||scope.departmentIds.map(String).indexOf(department)<0))throw new Error("RESOURCE_SCOPE_DENIED");
+  return department;
+}
+function assetCustodyFindAsset_(sheet,headers,assetId) {
+  var id=headers.indexOf("ActivoID");if(id<0)throw new Error("ASSET_SCHEMA_INVALID");
+  var rows=sheet.getDataRange().getValues(),matches=rows.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(x){return String(x.row[id]||"").trim()===String(assetId||"").trim();});
+  if(matches.length!==1)throw new Error(matches.length?"ASSET_ID_AMBIGUOUS":"ASSET_NOT_FOUND");
+  return matches[0];
+}
+function assetCustodyStableKey_(value) {
+  var raw=JSON.stringify(value||{}),bytes=Utilities.newBlob(raw,"application/json").getBytes(),hash=computeDocumentSHA256(bytes);
+  if(!hash||String(hash).length!==64)throw new Error("ASSET_CUSTODY_IDEMPOTENCY_HASH_FAILED");
+  return String(hash).toLowerCase();
+}
+function assetCustodyHtmlEscape_(value) {
+  return String(value===null||value===undefined?"":value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function getOrCreatePrivateAssetCustodyFolder_() {
+  var root=DriveApp.getRootFolder(),name="IMA_ACTAS_CUSTODIA_PRIVADAS",it=root.getFoldersByName(name),exists=it&&it.hasNext(),folder=exists?it.next():root.createFolder(name);
+  if(!folder||typeof folder.getSharingAccess!=="function")throw new Error("ASSET_CUSTODY_FOLDER_UNVERIFIABLE");
+  if(folder.getSharingAccess()!==DriveApp.Access.PRIVATE){if(exists)throw new Error("ASSET_CUSTODY_FOLDER_NOT_PRIVATE");folder.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);}
+  if(folder.getSharingAccess()!==DriveApp.Access.PRIVATE)throw new Error("ASSET_CUSTODY_FOLDER_NOT_PRIVATE");
+  return folder;
+}
+function assetCustodyValidateEvidence_(value) {
+  var refs=assetCustodyParseList_(value,"ASSET_CUSTODY_EVIDENCE_INVALID");if(!refs.length)throw new Error("ASSET_CUSTODY_EVIDENCE_REQUIRED");
+  var saved=[];
+  refs.forEach(function(ref){
+    var raw=String(ref||"").trim(),match=raw.match(/\/d\/([A-Za-z0-9_-]{10,})/i)||raw.match(/[?&]id=([A-Za-z0-9_-]{10,})/i),id=match?match[1]:raw;
+    if(!/^[A-Za-z0-9_-]{10,}$/.test(id))throw new Error("ASSET_CUSTODY_EVIDENCE_REFERENCE_INVALID");
+    var file=DriveApp.getFileById(id);if(!file||file.isTrashed&&file.isTrashed())throw new Error("ASSET_CUSTODY_EVIDENCE_NOT_FOUND");
+    var mime=String(file.getMimeType?file.getMimeType():"").toLowerCase();if(mime.indexOf("image/")!==0&&mime!=="application/pdf")throw new Error("ASSET_CUSTODY_EVIDENCE_TYPE_INVALID");
+    file.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);if(file.getSharingAccess()!==DriveApp.Access.PRIVATE)throw new Error("ASSET_CUSTODY_EVIDENCE_NOT_PRIVATE");
+    saved.push({fileId:id,fileName:String(file.getName?file.getName():id),mimeType:mime});
+  });
+  return saved;
+}
+function assetCustodyCreateActPdf_(data) {
+  var e=assetCustodyHtmlEscape_,html="<!doctype html><html><head><meta charset='utf-8'><style>body{font:12px Arial;color:#18212f;margin:32px}h1{font-size:20px;text-align:center}h2{font-size:13px;margin-top:20px;border-bottom:1px solid #9aa4b2;padding-bottom:5px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #cbd5e1;padding:7px;text-align:left;vertical-align:top}.sign{margin-top:48px;display:flex;gap:40px}.sign div{width:50%;border-top:1px solid #222;padding-top:8px}.foot{margin-top:25px;font-size:9px;color:#64748b}</style></head><body>";
+  html+="<h1>ACTA DE DEVOLUCIÓN Y RECEPCIÓN DE ACTIVO PATRIMONIAL</h1><p><b>Acta:</b> "+e(data.devolucionId)+" &nbsp; <b>Asignación:</b> "+e(data.asignacionId)+"</p>";
+  html+="<h2>Identificación del activo</h2><table><tr><th>Código patrimonial</th><td>"+e(data.codigoPatrimonial)+"</td><th>Activo</th><td>"+e(data.nombre)+"</td></tr><tr><th>Serie</th><td>"+e(data.serie)+"</td><th>Custodio</th><td>"+e(data.custodio)+"</td></tr></table>";
+  html+="<h2>Entrega y recepción</h2><table><tr><th>Fecha de entrega</th><td>"+e(data.fechaEntrega)+"</td><th>Fecha de recepción</th><td>"+e(data.fechaRecepcion)+"</td></tr><tr><th>Ubicación de recepción</th><td>"+e(data.ubicacion)+"</td><th>Condición</th><td>"+e(data.condicionEntrega)+" → "+e(data.condicionRecepcion)+"</td></tr></table>";
+  html+="<h2>Componentes y accesorios</h2><table><tr><th>Entregados</th><td>"+e((data.accesoriosEntregados||[]).join(", ")||"Ninguno")+"</td></tr><tr><th>Recibidos</th><td>"+e((data.accesoriosRecibidos||[]).join(", ")||"Ninguno")+"</td></tr><tr><th>Faltantes</th><td>"+e((data.faltantes||[]).join(", ")||"Ninguno")+"</td></tr></table>";
+  html+="<h2>Observaciones e incidencias</h2><p>"+e(data.observaciones)+"</p><p><b>Orden de mantenimiento:</b> "+e(data.ordenMaintId||"No requerida")+"</p><p><b>Evidencias adjuntas:</b> "+e((data.evidencias||[]).map(function(x){return x.fileName+" ["+x.fileId+"]";}).join("; "))+"</p>";
+  html+="<div class='sign'><div>Entrega: "+e(data.firmaEntrega)+"<br>Custodio "+e(data.custodio)+"</div><div>Recibe: "+e(data.firmaRecepcion)+"<br>Responsable "+e(data.receptor)+"</div></div><p class='foot'>Documento privado generado por IMA. Identificador único: "+e(data.devolucionId)+" · Hash SHA-256: pendiente de cálculo.</p></body></html>";
+  var fileName="Acta-Devolucion-"+String(data.devolucionId)+".pdf",blob=HtmlService.createHtmlOutput(html).getAs(MimeType.PDF);
+  if(blob&&blob.setName)blob.setName(fileName);
+  var bytes=blob&&blob.getBytes?blob.getBytes():null;if(!bytes||!bytes.length||bytes.length>10*1024*1024)throw new Error("ASSET_CUSTODY_ACT_PDF_INVALID");
+  var signature=bytes.slice(0,5).map(function(v){return String.fromCharCode((Number(v)+256)%256);}).join("");if(signature!=="%PDF-")throw new Error("ASSET_CUSTODY_ACT_PDF_INVALID");
+  var hash=computeDocumentSHA256(bytes);if(!hash||String(hash).length!==64)throw new Error("ASSET_CUSTODY_ACT_HASH_FAILED");
+  var folder=getOrCreatePrivateAssetCustodyFolder_(),file=folder.createFile(blob);if(!file)throw new Error("ASSET_CUSTODY_ACT_DRIVE_CREATE_FAILED");
+  try{file.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);if(file.getSharingAccess()!==DriveApp.Access.PRIVATE)throw new Error("ASSET_CUSTODY_ACT_NOT_PRIVATE");}
+  catch(error){try{file.setTrashed(true);}catch(_){}throw error;}
+  return{file:file,fileId:String(file.getId()),fileName:fileName,sha256:String(hash).toLowerCase(),bytes:bytes.length};
+}
+function assetCustodyCreateMaintenanceOrderLocked_(ss,data,actor) {
+  var sheet=getOrCreateSheet(ss,"MantenimientoOrdenes"),rows=sheet.getDataRange().getValues(),base=["OrdenMaintID","FechaReporte","ActivoIdUbicacion","TipoMantenimiento","DescripcionFalla","Prioridad","ReportadoPorUserId","AsignadoAEmpleadoId","RepuestosConsumidosJSON","CostoEstimado","CostoReal","EstadoOrden","FechaResolucion","Observaciones"];
+  if(!rows||!rows.length||!rows[0]||String(rows[0][0]||"")!==base[0])sheet.getRange(1,1,1,base.length).setValues([base]);
+  inventoryEnsureMaintenanceSchema_(sheet);
+  var id=String(data.ordenMaintId),current=sheet.getDataRange().getValues();
+  if(current.slice(1).some(function(r){return String(r[0]||"")===id;}))throw new Error("ASSET_CUSTODY_MAINTENANCE_ORDER_DUPLICATE");
+  var row=new Array(24).fill("");row[0]=id;row[1]=new Date();row[2]=data.activoId;row[3]="Correctivo";row[4]=data.descripcion;row[5]="Alta";row[6]=actor.userId;row[7]="";row[8]="[]";row[9]=0;row[10]=0;row[11]="Reportado";row[12]="";row[13]=data.observaciones;row[14]=data.departamentoId;row[15]=data.centroCosto;row[16]="";row[17]="[]";row[18]=data.ubicacion;row[19]="";row[20]="";row[21]="[]";row[22]="";row[23]="";
+  sheet.appendRow(row);return id;
+}
+function assetCustodyDeleteAppendedRows_(sheet,originalLastRow) {
+  if(!sheet||typeof sheet.deleteRow!=="function")return;
+  while(sheet.getLastRow()>originalLastRow)sheet.deleteRow(sheet.getLastRow());
+}
+function assignAssetCustody(payload) {
+  var p=payload||{},actor=getVerifiedAccountingIdentity_(p);
+  if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(actor,"assignAssetCustody",p);if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var lock=LockService.getScriptLock();lock.waitLock(15000);var assetBefore=null,assetRowIndex=0,assignmentSheet=null,historySheet=null,assignmentLast=0,historyLast=0;
+  try{
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensureAssetAcquisitionSchema_(ss),assetSheet=schema.assets,headers=schema.assetHeaders,assetId=String(p.activoId||p.assetId||"").trim(),custodianId=String(p.custodioUserId||"").trim();
+    if(!assetId||!custodianId)throw new Error("ASSET_CUSTODY_ASSIGNMENT_FIELDS_REQUIRED");
+    var found=assetCustodyFindAsset_(assetSheet,headers,assetId),row=found.row,idx=found.index,employee=assetCustodyResolveEmployee_(ss,custodianId),map={};headers.forEach(function(h,i){map[h]=i;});
+    var department=String(row[map.DepartamentoID]||"").trim(),dept=department||employee.departmentId;
+    if(department&&employee.departmentId!==department)throw new Error("ASSET_CUSTODY_CUSTODIAN_DEPARTMENT_MISMATCH");
+    assetCustodyAssertDepartment_(p,ss,actor,dept);
+    var state=String(row[map.Estado]||"").trim().toLowerCase(),currentCustodian=String(row[map.CustodioUserId]||"").trim();
+    if(currentCustodian||["activo","available","disponible"].indexOf(state)<0)throw new Error("ASSET_NOT_AVAILABLE_FOR_ASSIGNMENT");
+    assignmentSheet=schema.assignments;historySheet=schema.history;var av=assignmentSheet.getDataRange().getValues(),ah=av[0].map(function(v){return String(v||"").trim();}),ai={};ah.forEach(function(h,i){ai[h]=i;});
+    var active=av.slice(1).filter(function(r){return String(r[ai.ActivoID]||"").trim()===assetId&&(String(r[ai.EstadoAsignacion]||"")==="Activa"||(!String(r[ai.EstadoAsignacion]||"")&&!r[ai.FechaDevolucion]));});
+    var idempotency=assetCustodyStableKey_({assetId:assetId,custodianId:custodianId,actor:actor.userId,location:p.ubicacionEntrega||row[map.UbicacionActual]||"",condition:p.estadoFisicoEntrega||"Bueno",accessories:assetCustodyParseList_(p.accesoriosEntregadosJSON||p.accesoriosEntregados)});
+    if(active.length){var old=active[0];if(active.length===1&&String(old[ai.CustodioUserId]||"")===custodianId&&String(old[ai.IdempotencyKey]||"")===idempotency)return{status:"success",idempotente:true,asignacionId:old[ai.AsignacionID]};throw new Error("ASSET_CUSTODY_ALREADY_ASSIGNED");}
+    var condition=assetCustodyNormalizeCondition_(p.estadoFisicoEntrega||"Bueno"),accessories=assetCustodyParseList_(p.accesoriosEntregadosJSON||p.accesoriosEntregados),now=new Date(),assignmentId="ASG-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"").slice(0,24);
+    var assignmentRow=new Array(ah.length).fill("");assignmentRow[ai.AsignacionID]=assignmentId;assignmentRow[ai.ActivoID]=assetId;assignmentRow[ai.CustodioUserId]=custodianId;assignmentRow[ai.FechaEntrega]=now;assignmentRow[ai.FechaDevolucion]="";assignmentRow[ai.EstadoActa]="Entregada";assignmentRow[ai.Observaciones]=String(p.observaciones||"").slice(0,1500);assignmentRow[ai.EntregadoPorUserId]=actor.userId;assignmentRow[ai.UbicacionEntrega]=String(p.ubicacionEntrega||row[map.UbicacionActual]||"").trim();assignmentRow[ai.EstadoFisicoEntrega]=condition;assignmentRow[ai.AccesoriosEntregadosJSON]=JSON.stringify(accessories);assignmentRow[ai.FirmaEntrega]=String(p.firmaEntrega||employee.name||custodianId).slice(0,240);assignmentRow[ai.EstadoAsignacion]="Activa";assignmentRow[ai.IdempotencyKey]=idempotency;assignmentRow[ai.FechaRegistro]=now;assignmentRow[ai.RegistradoPorUserId]=actor.userId;
+    assetBefore=row.slice();assetRowIndex=idx;assignmentLast=assignmentSheet.getLastRow();historyLast=historySheet.getLastRow();
+    try{
+      assignmentSheet.appendRow(assignmentRow);
+      var updated=row.slice();updated[map.CustodioUserId]=custodianId;updated[map.Estado]="assigned";updated[map.UbicacionActual]=assignmentRow[ai.UbicacionEntrega];updated[map.DepartamentoID]=dept;updated[map.CentroCosto]=String(p.centroCosto||"").trim();
+      assetSheet.getRange(idx,1,1,updated.length).setValues([updated]);
+      historySheet.appendRow(["EVT-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"").slice(0,24),assignmentId,assetId,"ASIGNACION_CREADA",now,actor.userId,custodianId,state,"assigned",String(row[map.UbicacionActual]||""),String(updated[map.UbicacionActual]||""),assignmentId,JSON.stringify({estadoFisicoEntrega:condition,accesoriosEntregados:accessories})]);
+    }catch(writeError){
+      try{assetSheet.getRange(idx,1,1,assetBefore.length).setValues([assetBefore]);}catch(_){}
+      assetCustodyDeleteAppendedRows_(assignmentSheet,assignmentLast);assetCustodyDeleteAppendedRows_(historySheet,historyLast);throw new Error("ASSET_CUSTODY_ASSIGNMENT_ATOMIC_FAILURE:"+String(writeError&&writeError.message||writeError));
+    }
+    try{logStructuredEvent("ACCOUNTING","assignAssetCustody","INFO","ASSET_CUSTODY_ASSIGNED","Activo "+assetId+" asignado a "+custodianId,{activoId:assetId,asignacionId:assignmentId,custodioUserId:custodianId},actor.userId);}catch(_){}
+    return{status:"success",asignacionId:assignmentId,activoId:assetId,custodioUserId:custodianId,estadoActivo:"assigned",message:"Custodia asignada correctamente."};
+  }finally{lock.releaseLock();}
+}
+function getAssetAssignments(payload) {
+  var p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED",asignaciones:[]};
+  var permission=validateRolePermission(actor,"getAssetAssignments",p);if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED",asignaciones:[]};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensureAssetAcquisitionSchema_(ss),av=schema.assignments.getDataRange().getValues(),ah=av[0].map(function(v){return String(v||"").trim();}),assets=schema.assets.getDataRange().getValues(),assetHeaders=schema.assetHeaders,returns=schema.returns.getDataRange().getValues(),rh=returns[0].map(function(v){return String(v||"").trim();}),assetMap=Object.create(null);
+  assets.slice(1).forEach(function(row){assetMap[String(row[assetHeaders.indexOf("ActivoID")]||"")]=row;});
+  var scope=getVerifiedAccountingDepartmentScope_(p,ss,actor);if(!scope||scope.valid!==true||scope.authorized===false)return{status:"error",code:scope&&scope.code||"RESOURCE_SCOPE_DENIED",asignaciones:[]};
+  var list=av.slice(1).filter(function(row){
+    var id=String(row[ah.indexOf("ActivoID")]||"").trim(),asset=assetMap[id];if(!asset)return false;
+    if(p.activoId&&String(p.activoId)!==id)return false;
+    if(p.custodioUserId&&String(p.custodioUserId)!==String(row[ah.indexOf("CustodioUserId")]||""))return false;
+    if(p.estadoAsignacion&&String(p.estadoAsignacion)!==String(row[ah.indexOf("EstadoAsignacion")]||""))return false;
+    if(scope.institutionWide===true)return true;
+    var dept=String(asset[assetHeaders.indexOf("DepartamentoID")]||"").trim();return !!dept&&Array.isArray(scope.departmentIds)&&scope.departmentIds.map(String).indexOf(dept)>=0;
+  }).map(function(row){
+    var item={};ah.forEach(function(h,i){item[h.charAt(0).toLowerCase()+h.slice(1)]=row[i];});
+    var assignmentId=String(row[ah.indexOf("AsignacionID")]||"");
+    var returned=returns.slice(1).filter(function(r){return String(r[rh.indexOf("AsignacionID")]||"")===assignmentId;})[0];
+    item.devolucion=returned?{devolucionId:returned[rh.indexOf("DevolucionID")],fechaRecepcion:returned[rh.indexOf("FechaHoraRecepcion")],estado:returned[rh.indexOf("EstadoDevolucion")],ordenMaintId:returned[rh.indexOf("OrdenMaintID")]}:null;
+    return item;
+  });
+  return{status:"success",asignaciones:list,total:list.length};
+}
+function returnAssetCustody(payload) {
+  var p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(actor,"returnAssetCustody",p);if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var receiver=String(p.receptorUserId||p.recibidoPorUserId||p.recibidoPor||actor.userId||"").trim();
+  if(receiver!==String(actor.userId||"").trim())throw new Error("ASSET_CUSTODY_RECEIVER_MUST_BE_VERIFIED_USER");
+  var condition=assetCustodyNormalizeCondition_(p.estadoFisico||p.condicionRecepcion),location=String(p.ubicacionRecepcion||"").trim(),signatureDelivery=String(p.firmaEntrega||"").trim(),signatureReceipt=String(p.firmaRecepcion||"").trim();
+  if(!location||!signatureDelivery||!signatureReceipt)throw new Error("ASSET_CUSTODY_RETURN_FIELDS_REQUIRED");
+  var accessoriesReceived=assetCustodyParseList_(p.accesoriosRecibidosJSON||p.accesoriosRecibidos),evidence=assetCustodyValidateEvidence_(p.evidenciasJSON||p.evidencias);
+  var lock=LockService.getScriptLock();lock.waitLock(15000);var pdf=null,assetBefore=null,assignmentBefore=null,assetRowIndex=0,assignmentRowIndex=0,returnSheet=null,historySheet=null,maintenanceSheet=null,returnLast=0,historyLast=0,maintenanceLast=0;
+  try{
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensureAssetAcquisitionSchema_(ss),assetId=String(p.activoId||p.assetId||"").trim(),assetHeaders=schema.assetHeaders,assetMap={};assetHeaders.forEach(function(h,i){assetMap[h]=i;});
+    var assignmentRows=schema.assignments.getDataRange().getValues(),ah=assignmentRows[0].map(function(v){return String(v||"").trim();}),ai={};ah.forEach(function(h,i){ai[h]=i;});
+    var assignmentId=String(p.asignacionId||p.assignmentId||"").trim();
+    var candidates=assignmentRows.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(x){return (!assignmentId||String(x.row[ai.AsignacionID]||"")===assignmentId)&&(!assetId||String(x.row[ai.ActivoID]||"")===assetId)&&(!p.custodioUserId||String(x.row[ai.CustodioUserId]||"")===String(p.custodioUserId))&&String(x.row[ai.EstadoAsignacion]||"")==="Activa"&&!x.row[ai.FechaDevolucion];});
+    if(candidates.length!==1){
+      var targetId=assignmentId||(assetId&&candidates.length===0?String(assignmentRows.slice(1).find(function(r){return String(r[ai.ActivoID]||"")===assetId;})?.[ai.AsignacionID]||""):"");
+      var previous=schema.returns.getDataRange().getValues(),ph=previous[0].map(function(v){return String(v||"").trim();}),existing=previous.slice(1).find(function(r){return String(r[ph.indexOf("AsignacionID")]||"")===targetId;});
+      if(existing){var stable=assetCustodyStableKey_({assignmentId:targetId,condition:condition,location:location,accessories:accessoriesReceived,evidence:evidence.map(function(x){return x.fileId;}),observation:String(p.observaciones||""),firmaEntrega:signatureDelivery,firmaRecepcion:signatureReceipt});if(String(existing[ph.indexOf("IdempotencyKey")]||"")===stable)return{status:"success",idempotente:true,devolucionId:existing[ph.indexOf("DevolucionID")],actaDevolucionId:existing[ph.indexOf("DevolucionID")],ordenMantenimientoId:existing[ph.indexOf("OrdenMaintID")]||null,estadoActivo:String(existing[ph.indexOf("EstadoDevolucion")]||"")};}
+      throw new Error(candidates.length?"ASSET_CUSTODY_ASSIGNMENT_AMBIGUOUS":"ASSET_CUSTODY_ACTIVE_ASSIGNMENT_REQUIRED");
+    }
+    var found=candidates[0],aRow=found.row,assetFound=assetCustodyFindAsset_(schema.assets,assetHeaders,String(aRow[ai.ActivoID]||"")),assetRow=assetFound.row,assetIndex=assetFound.index;
+    if(assetId&&assetId!==String(aRow[ai.ActivoID]))throw new Error("ASSET_CUSTODY_ASSIGNMENT_ASSET_MISMATCH");
+    var custodianId=String(aRow[ai.CustodioUserId]||"").trim(),employee=assetCustodyResolveEmployee_(ss,custodianId),dept=String(assetRow[assetMap.DepartamentoID]||employee.departmentId).trim();
+    if(dept!==employee.departmentId)throw new Error("ASSET_CUSTODY_CUSTODIAN_DEPARTMENT_MISMATCH");
+    assetCustodyAssertDepartment_(p,ss,actor,dept);
+    var delivered=assetCustodyParseList_(aRow[ai.AccesoriosEntregadosJSON]||"[]"),receivedMap=Object.create(null);accessoriesReceived.forEach(function(x){receivedMap[x.toLowerCase()]=true;});
+    var missing=delivered.filter(function(x){return !receivedMap[x.toLowerCase()];}),needsMaintenance=["Dañado","Incompleto","RequiereReparacion"].indexOf(condition)>=0||missing.length>0;
+    var returnId="DEV-ACT-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"").slice(0,24),orderId=needsMaintenance?"MNT-RET-"+returnId:"",now=new Date(),idempotency=assetCustodyStableKey_({assignmentId:String(aRow[ai.AsignacionID]),condition:condition,location:location,accessories:accessoriesReceived,evidence:evidence.map(function(x){return x.fileId;}),observation:String(p.observaciones||""),firmaEntrega:signatureDelivery,firmaRecepcion:signatureReceipt});
+    var data={devolucionId:returnId,asignacionId:String(aRow[ai.AsignacionID]),codigoPatrimonial:assetRow[assetMap.CodigoPatrimonial],nombre:assetRow[assetMap.Nombre],serie:assetRow[assetMap.NumeroSerie]||assetRow[assetMap.SerieModel],custodio:employee.name,fechaEntrega:aRow[ai.FechaEntrega],fechaRecepcion:now,ubicacion:location,condicionEntrega:aRow[ai.EstadoFisicoEntrega],condicionRecepcion:condition,accesoriosEntregados:delivered,accesoriosRecibidos:accessoriesReceived,faltantes:missing,observaciones:String(p.observaciones||""),evidencias:evidence,firmaEntrega:signatureDelivery,firmaRecepcion:signatureReceipt,ordenMaintId:orderId};
+    pdf=assetCustodyCreateActPdf_(data);
+    returnSheet=schema.returns;historySheet=schema.history;maintenanceSheet=ss.getSheetByName("MantenimientoOrdenes");
+    returnLast=returnSheet.getLastRow();historyLast=historySheet.getLastRow();maintenanceLast=maintenanceSheet?maintenanceSheet.getLastRow():0;
+    assetBefore=assetRow.slice();assignmentBefore=aRow.slice();assetRowIndex=assetIndex;assignmentRowIndex=found.index;
+    try{
+      if(needsMaintenance){assetCustodyCreateMaintenanceOrderLocked_(ss,{ordenMaintId:orderId,activoId:String(aRow[ai.ActivoID]),descripcion:"Devolución de activo con condición "+condition+(missing.length?"; componentes faltantes: "+missing.join(", "):"")+"; "+String(p.observaciones||""),observaciones:String(p.observaciones||""),departamentoId:dept,centroCosto:String(assetRow[assetMap.CentroCosto]||dept),ubicacion:location},actor);maintenanceSheet=ss.getSheetByName("MantenimientoOrdenes");}
+      var returnHeaders=schema.returnHeaders,rMap={};returnHeaders.forEach(function(h,i){rMap[h]=i;});
+      var ret=new Array(returnHeaders.length).fill("");ret[rMap.DevolucionID]=returnId;ret[rMap.AsignacionID]=aRow[ai.AsignacionID];ret[rMap.ActivoID]=aRow[ai.ActivoID];ret[rMap.CustodioUserId]=custodianId;ret[rMap.EntregadoPorUserId]=custodianId;ret[rMap.RecibidoPorUserId]=actor.userId;ret[rMap.FechaHoraEntrega]=aRow[ai.FechaEntrega];ret[rMap.FechaHoraRecepcion]=now;ret[rMap.UbicacionRecepcion]=location;ret[rMap.EstadoFisicoEntrega]=aRow[ai.EstadoFisicoEntrega];ret[rMap.EstadoFisicoRecepcion]=condition;ret[rMap.AccesoriosEntregadosJSON]=JSON.stringify(delivered);ret[rMap.AccesoriosRecibidosJSON]=JSON.stringify(accessoriesReceived);ret[rMap.ComponentesFaltantesJSON]=JSON.stringify(missing);ret[rMap.Observaciones]=String(p.observaciones||"");ret[rMap.EvidenciasJSON]=JSON.stringify(evidence);ret[rMap.FirmaEntrega]=signatureDelivery;ret[rMap.FirmaRecepcion]=signatureReceipt;ret[rMap.OrdenMaintID]=orderId;ret[rMap.EstadoDevolucion]=needsMaintenance?"AceptadaConIncidencia":"Aceptada";ret[rMap.ActaFileId]=pdf.fileId;ret[rMap.ActaSHA256]=pdf.sha256;ret[rMap.IdempotencyKey]=idempotency;ret[rMap.RegistradoPorUserId]=actor.userId;
+      returnSheet.appendRow(ret);
+      var assignmentUpdated=aRow.slice();assignmentUpdated[ai.FechaDevolucion]=now;assignmentUpdated[ai.EstadoActa]=needsMaintenance?"DevueltaConIncidencia":"Devuelta";assignmentUpdated[ai.EstadoAsignacion]=needsMaintenance?"DevueltaConIncidencia":"Devuelta";assignmentUpdated[ai.ReturnID]=returnId;
+      schema.assignments.getRange(found.index,1,1,assignmentUpdated.length).setValues([assignmentUpdated]);
+      var assetUpdated=assetRow.slice();assetUpdated[assetMap.CustodioUserId]="";assetUpdated[assetMap.UbicacionActual]=location;assetUpdated[assetMap.Estado]=needsMaintenance?"maintenance":"available";
+      schema.assets.getRange(assetIndex,1,1,assetUpdated.length).setValues([assetUpdated]);
+      historySheet.appendRow(["EVT-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"").slice(0,24),aRow[ai.AsignacionID],aRow[ai.ActivoID],"DEVOLUCION_REGISTRADA",now,actor.userId,custodianId,"assigned",assetUpdated[assetMap.Estado],String(assetRow[assetMap.UbicacionActual]||""),location,returnId,JSON.stringify({condicion:condition,missing:missing,ordenMaintId:orderId,actaFileId:pdf.fileId})]);
+    }catch(writeError){
+      try{schema.assets.getRange(assetIndex,1,1,assetBefore.length).setValues([assetBefore]);}catch(_){}
+      try{schema.assignments.getRange(found.index,1,1,assignmentBefore.length).setValues([assignmentBefore]);}catch(_){}
+      assetCustodyDeleteAppendedRows_(returnSheet,returnLast);assetCustodyDeleteAppendedRows_(historySheet,historyLast);if(maintenanceSheet)assetCustodyDeleteAppendedRows_(maintenanceSheet,maintenanceLast);
+      if(pdf&&pdf.file)try{pdf.file.setTrashed(true);}catch(_){}
+      throw new Error("ASSET_CUSTODY_RETURN_ATOMIC_FAILURE:"+String(writeError&&writeError.message||writeError));
+    }
+    try{logStructuredEvent("ACCOUNTING","returnAssetCustody","INFO","ASSET_CUSTODY_RETURNED","Activo "+aRow[ai.ActivoID]+" devuelto por "+custodianId,{activoId:aRow[ai.ActivoID],asignacionId:aRow[ai.AsignacionID],devolucionId:returnId,estadoFisico:condition,ordenMantenimientoId:orderId,actaFileId:pdf.fileId},actor.userId);}catch(_){}
+    return{status:"success",devolucionId:returnId,actaDevolucionId:returnId,actaFileId:pdf.fileId,actaFileName:pdf.fileName,sha256Hash:pdf.sha256,ordenMantenimientoId:orderId||null,estadoActivo:needsMaintenance?"maintenance":"available",estadoDevolucion:needsMaintenance?"AceptadaConIncidencia":"Aceptada",message:"Devolución formal registrada y acta privada generada."};
+  }catch(error){
+    if(pdf&&pdf.file){try{pdf.file.setTrashed(true);}catch(_){}}
+    throw error;
+  }finally{lock.releaseLock();}
+}
+function getAssetCustodyActPDF(payload) {
+  var p=payload||{},actor=getVerifiedAccountingIdentity_(p);if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(actor,"getAssetCustodyActPDF",p);if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensureAssetAcquisitionSchema_(ss),id=String(p.devolucionId||p.actaDevolucionId||"").trim();if(!id)return{status:"error",code:"ASSET_CUSTODY_RETURN_ID_REQUIRED"};
+  var rows=schema.returns.getDataRange().getValues(),h=rows[0].map(function(v){return String(v||"").trim();}),matches=rows.slice(1).filter(function(r){return String(r[h.indexOf("DevolucionID")]||"")===id;});
+  if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"ASSET_CUSTODY_RETURN_NOT_FOUND"};
+  var ret=matches[0],assetId=String(ret[h.indexOf("ActivoID")]||""),asset=assetCustodyFindAsset_(schema.assets,schema.assetHeaders,assetId),dept=String(asset.row[schema.assetHeaders.indexOf("DepartamentoID")]||"").trim();assetCustodyAssertDepartment_(p,ss,actor,dept);
+  var fileId=String(ret[h.indexOf("ActaFileId")]||""),expected=String(ret[h.indexOf("ActaSHA256")]||"");if(!fileId||!expected)return{status:"error",code:"ASSET_CUSTODY_ACT_NOT_FOUND"};
+  try{
+    var file=DriveApp.getFileById(fileId);if(!file||file.isTrashed&&file.isTrashed()||file.getSharingAccess()!==DriveApp.Access.PRIVATE)return{status:"error",code:"ASSET_CUSTODY_ACT_NOT_PRIVATE"};
+    var blob=file.getBlob(),bytes=blob.getBytes(),mime=String(blob.getContentType?blob.getContentType():file.getMimeType?file.getMimeType():"").toLowerCase(),name=String(file.getName()||"");
+    if(!bytes||!bytes.length||bytes.length>10*1024*1024||mime!=="application/pdf"||name.toLowerCase().slice(-4)!==".pdf")return{status:"error",code:"ASSET_CUSTODY_ACT_INVALID"};
+    var sig=bytes.slice(0,5).map(function(v){return String.fromCharCode((Number(v)+256)%256);}).join("");if(sig!=="%PDF-"||computeDocumentSHA256(bytes)!==expected)return{status:"error",code:"ASSET_CUSTODY_ACT_INTEGRITY_FAILED"};
+    return{status:"success",devolucionId:id,fileName:name,mimeType:mime,encoding:"base64",fileData:Utilities.base64Encode(bytes),fileSizeBytes:bytes.length,sha256Hash:expected};
+  }catch(error){return{status:"error",code:"ASSET_CUSTODY_ACT_UNAVAILABLE"};}
+}
+
 function createPurchaseRequest(payload) {
   var input = payload || {}, lock = LockService.getScriptLock();
   if (!Array.isArray(input.detalleItems) || !input.detalleItems.length) {
