@@ -13204,7 +13204,7 @@ function inventoryValuationReportRows_(ss,p){
  if(transferSheet){
   transferSheet.getDataRange().getValues().slice(1).forEach(t=>{
    const id=String(t[0]||"").trim(),sentAt=new Date(t[1]),code=catalogNormalizeCode_(t[2]),sentQty=Number(t[4]||0),destination=String(t[6]||"Destino no especificado").trim(),transferState=String(t[8]||"").trim();
-   if(["EnTransito","RecibidaParcial"].indexOf(transferState)===-1||!id||!Number.isFinite(sentQty)||sentQty<=0||isNaN(sentAt.getTime())||(cutoff&&sentAt>cutoff))return;
+   if(["EnTransito","RecibidaParcial","RecibidaTotal","Rechazada","Cancelada"].indexOf(transferState)===-1||!id||!Number.isFinite(sentQty)||sentQty<=0||isNaN(sentAt.getTime())||(cutoff&&sentAt>cutoff))return;
    const outs=eligible.filter(r=>String(r[13]||"")===id&&String(r[6])==="TransferenciaSalida");
    if(outs.length!==1)throw new Error(outs.length?"INVENTORY_TRANSFER_VALUATION_AMBIGUOUS:"+id:"INVENTORY_TRANSFER_VALUATION_MISSING:"+id);
    const receipts=eligible.filter(r=>String(r[13]||"")===id&&String(r[6])==="Entrada"),receivedQty=receipts.reduce((n,r)=>n+Number(r[7]||0),0),receivedValue=inventoryValuationMoney_(receipts.reduce((n,r)=>n+Number(r[9]||0),0)),pendingQty=inventoryValuationMoney_(Math.max(0,sentQty-receivedQty));
