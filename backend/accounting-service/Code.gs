@@ -7989,6 +7989,7 @@ function restoreBudgetExecutionLocked_(ss,rollbackState) {
   return ok;
 }
 function recordBudgetExecutionLocked_(ss,order,orderHeaders,invoice,invoiceHeaders,obligationId,actorId) {
+  try {
   var orderMap={},invoiceMap={};
   (orderHeaders||[]).forEach(function(name,index){orderMap[String(name||"").trim()]=index;});
   (invoiceHeaders||[]).forEach(function(name,index){invoiceMap[String(name||"").trim()]=index;});
@@ -8041,19 +8042,27 @@ function recordBudgetExecutionLocked_(ss,order,orderHeaders,invoice,invoiceHeade
   });
   var budgetSchema=ensureBudgetSchema_(ss),bm=budgetSchema.map,budgetRows=budgetSchema.sheet.getDataRange().getValues();
   var executionSchema=ensureBudgetExecutionSchema_(ss),es=executionSchema.sheet,em=executionSchema.map,executionRows=es.getDataRange().getValues();
+  var priorQty=Object.create(null);
+  executionRows.slice(1).forEach(function(row){
+    if(String(row[em.OrdenCompraID]||"").trim()!==orderId||String(row[em.ObligacionID]||"").trim()===obligation)return;
+    try{JSON.parse(String(row[em.DetalleItemsJSON]||"[]")).forEach(function(item){var id=String(item.itemId||"").trim();if(id)priorQty[id]=(priorQty[id]||0)+Number(item.cantidad||0);});}catch(parseError){throw new Error("BUDGET_EXECUTION_LEDGER_INVALID");}
+  });
+  Object.keys(invoiceQty).forEach(function(id){if((priorQty[id]||0)+invoiceQty[id]>orderedQty[id]+0.000001)throw new Error("BUDGET_EXECUTION_QUANTITY_EXCEEDS_ORDER");});
   var existingByPart=Object.create(null),newEntries=[];
   parts.forEach(function(part){
-    var active=activeCommitments.filter(function(item){return String(item.row[lm.PartidaCodigo]||"").trim()===part;});
-    if(active.length!==1)throw new Error(active.length?"BUDGET_COMMITMENT_AMBIGUOUS":"BUDGET_EXECUTION_COMMITMENT_MISSING");
-    var commitment=active[0],budgetId=String(commitment.row[lm.PresupuestoID]||"").trim(),amountCents=partAmounts[part];
-    var key="CXP:"+obligation+":"+budgetId,detailJson=JSON.stringify(itemDetails[part]);
+    var amountCents=partAmounts[part],detailJson=JSON.stringify(itemDetails[part]);
+    var budgetMatches=budgetRows.slice(1).map(function(row,index){return{row:row,index:index+2};});
+    var candidateCommitments=orderCommitments.filter(function(item){return String(item.row[lm.PartidaCodigo]||"").trim()===part;});
+    if(candidateCommitments.length!==1)throw new Error(candidateCommitments.length?"BUDGET_COMMITMENT_AMBIGUOUS":"BUDGET_EXECUTION_COMMITMENT_MISSING");
+    var candidate=candidateCommitments[0],budgetId=String(candidate.row[lm.PresupuestoID]||"").trim();
+    var key="CXP:"+obligation+":"+budgetId;
     var hash=migrationHash_(migrationStableJson_({ordenCompraId:orderId,obligacionId:obligation,facturaHash:invoiceHash,presupuestoId:budgetId,partidaCodigo:part,monto:amountCents/100,detalleItems:itemDetails[part]}));
     var retries=executionRows.slice(1).filter(function(row){return String(row[em.IdempotencyKey]||"")===key;});
     if(retries.length>1)throw new Error("BUDGET_EXECUTION_IDEMPOTENCY_AMBIGUOUS");
-    if(retries.length===1){
-      if(String(retries[0][em.PayloadHash]||"")!==hash)throw new Error("BUDGET_EXECUTION_IDEMPOTENCY_CONFLICT");
-      existingByPart[part]=true;return;
-    }
+    if(retries.length===1){if(String(retries[0][em.PayloadHash]||"")!==hash)throw new Error("BUDGET_EXECUTION_IDEMPOTENCY_CONFLICT");existingByPart[part]=true;return;}
+    var active=activeCommitments.filter(function(item){return String(item.row[lm.PartidaCodigo]||"").trim()===part;});
+    if(active.length!==1)throw new Error(active.length?"BUDGET_COMMITMENT_AMBIGUOUS":"BUDGET_EXECUTION_NO_ACTIVE_COMMITMENT");
+    var commitment=active[0];
     var budgetMatches=budgetRows.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){
       return String(item.row[bm.PresupuestoID]||"").trim()===budgetId;
     });
@@ -8104,6 +8113,7 @@ function recordBudgetExecutionLocked_(ss,order,orderHeaders,invoice,invoiceHeade
     ordenCompraId:orderId,obligacionId:obligation,facturaHash:invoiceHash,ejecuciones:executed
   },actorId);
   return{status:"success",idempotente:false,ordenCompraId:orderId,obligacionId:obligation,executions:executed,rollbackState:rollbackState};
+  }catch(error){return{status:"error",code:String(error&&error.message||"BUDGET_EXECUTION_FAILED")};}
 }
 function approveAccountsPayableInvoice(payload) {
   var input=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),access=purchaseQuotationAccess_(input,ss,true);
