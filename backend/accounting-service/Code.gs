@@ -7996,14 +7996,14 @@ function recordBudgetExecutionLocked_(ss,order,orderHeaders,invoice,invoiceHeade
   var invoiceHash=String(invoice&&invoice[invoiceMap.FacturaHash]||"").trim();
   if(!orderId||!obligation||!invoiceHash)return{status:"error",code:"BUDGET_EXECUTION_INPUT_INVALID"};
   var commitmentSheet=ss.getSheetByName("CompromisosPresupuestarios");
-  if(!commitmentSheet)return{status:"success",skipped:true,code:"BUDGET_COMMITMENT_NOT_PRESENT",executions:[]};
+  var orderState=String(order&&order[orderMap.EstadoCompromisoPresupuestario]||"").trim().toLowerCase();
+  if(!commitmentSheet)return orderState==="comprometido"?{status:"error",code:"BUDGET_EXECUTION_COMMITMENT_LEDGER_MISSING"}:{status:"success",skipped:true,code:"BUDGET_COMMITMENT_NOT_PRESENT",executions:[]};
   var commitmentSchema=ensureBudgetCommitmentSchema_(ss),ledgerRows=commitmentSchema.sheet.getDataRange().getValues(),lm=commitmentSchema.map;
   var orderCommitments=ledgerRows.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){
     return String(item.row[lm.OrdenCompraID]||"").trim()===orderId;
   });
-  if(!orderCommitments.length)return{status:"success",skipped:true,code:"BUDGET_COMMITMENT_NOT_PRESENT",executions:[]};
+  if(!orderCommitments.length)return orderState==="comprometido"?{status:"error",code:"BUDGET_EXECUTION_COMMITMENT_LEDGER_MISSING"}:{status:"success",skipped:true,code:"BUDGET_COMMITMENT_NOT_PRESENT",executions:[]};
   var activeCommitments=orderCommitments.filter(function(item){return String(item.row[lm.Estado]||"").trim()==="Comprometido"&&Number(item.row[lm.Monto]||0)>0;});
-  if(!activeCommitments.length)return{status:"error",code:"BUDGET_EXECUTION_NO_ACTIVE_COMMITMENT"};
   var orderItems=purchaseQuotationJsonArray_(order&&order[orderMap.DetalleItemsJSON]),invoiceItems=purchaseInvoiceStoredItems_(invoice&&invoice[invoiceMap.Observaciones]);
   if(!orderItems.length||!invoiceItems.length)return{status:"error",code:"BUDGET_EXECUTION_ITEMS_REQUIRED"};
   var orderByItem=Object.create(null),orderedQty=Object.create(null);
@@ -8083,7 +8083,7 @@ function recordBudgetExecutionLocked_(ss,order,orderHeaders,invoice,invoiceHeade
       var remaining=Math.round((Number(updatedCommitment[lm.Monto]||0)-amount)*100)/100;
       updatedCommitment[lm.Monto]=remaining;updatedCommitment[lm.Estado]=remaining<=0.005?"Ejecutado":"Comprometido";
       updatedCommitment[lm.ActualizadoPor]=actor;updatedCommitment[lm.Version]=Math.max(0,Number(updatedCommitment[lm.Version]||0))+1;
-      budgetSchema.sheet.getRange(entry.budget.index,1, budgetSchema.headers.length?budgetSchema.headers.length:1).setValues([updatedBudget]);
+      budgetSchema.sheet.getRange(entry.budget.index,1,1,budgetSchema.headers.length).setValues([updatedBudget]);
       commitmentSchema.sheet.getRange(entry.commitment.index,1,commitmentSchema.headers.length).setValues([updatedCommitment]);
       var executionId="EJE-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,""),executionRow=new Array(executionSchema.headers.length).fill("");
       executionRow[em.EjecucionID]=executionId;executionRow[em.PresupuestoID]=entry.budgetId;executionRow[em.OrdenCompraID]=orderId;
