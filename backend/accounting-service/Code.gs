@@ -6995,6 +6995,7 @@ function reserveBudgetCommitmentLocked_(ss,input,actorId) {
   if(overrunRequested&&overrunReason.length<5)return{status:"error",code:"BUDGET_OVERRUN_REASON_REQUIRED"};
   if(!Number.isFinite(amount)||amount<=0||!Number.isSafeInteger(amountCents))return{status:"error",code:"BUDGET_COMMITMENT_AMOUNT_INVALID"};
   var hashPayload={presupuestoId:budgetRecord.presupuestoId,ordenCompraId:orderId,anoId:budgetRecord.anoId,centroCosto:budgetRecord.centroCosto,partidaCodigo:budgetRecord.partidaCodigo,monto:amountCents/100};
+  if(overrunRequested)hashPayload.sobregiro={actorRole:overrunRole,justificacion:overrunReason};
   var hash=migrationHash_(migrationStableJson_(hashPayload));
   var ledgerRows=ledgerSchema.sheet.getDataRange().getValues(),duplicates=ledgerRows.slice(1).filter(function(row){return String(row[lm.IdempotencyKey]||"")===key;});
   if(duplicates.length>1)return{status:"error",code:"BUDGET_COMMITMENT_IDEMPOTENCY_AMBIGUOUS"};
@@ -7006,8 +7007,7 @@ function reserveBudgetCommitmentLocked_(ss,input,actorId) {
   var check=checkBudgetAvailabilityCore_(ss,{anoId:budgetRecord.anoId,centroCosto:budgetRecord.centroCosto,partidaCodigo:budgetRecord.partidaCodigo,montoSolicitado:amount,presupuestoId:budgetRecord.presupuestoId},{institutionWide:true});
   var overrunAuthorized=overrunRequested&&check&&check.disponible!==true&&check.code==="BUDGET_OVERRUN_BLOCKED";
   if(!check.disponible&&!overrunAuthorized)return{status:"error",code:check.code||"BUDGET_OVERRUN_BLOCKED",budget:check};
-  if(overrunAuthorized)hashPayload.sobregiro={actorRole:overrunRole,justificacion:overrunReason};
-  if(overrunAuthorized)hash=migrationHash_(migrationStableJson_(hashPayload));
+  if(overrunAuthorized)budgetLogEvent_("reserveBudgetCommitmentLocked_","WARNING","BUDGET_OVERRUN_ALERT","Sobregiro presupuestario autorizado de forma extraordinaria",{ordenCompraId:orderId,presupuestoId:budgetRecord.presupuestoId,partidaCodigo:budgetRecord.partidaCodigo,monto:amountCents/100,justificacion:overrunReason,autorizadoPor:actorId,rol:overrunRole},actorId);
   var budgetRow=budgetMatches[0].row.slice(),oldBudget=budgetRow.slice();
   while(budgetRow.length<budgetSchema.headers.length)budgetRow.push("");
   while(oldBudget.length<budgetSchema.headers.length)oldBudget.push("");

@@ -40,7 +40,7 @@ function makeHarness(options={}){
   if(options.invoiceExists)sheets.CuentasPorPagarGastos=makeSheet([["OrdenCompraID"],["OC-1"]]);
   sheets.OrdenesCompra.failValues=options.failApprovalWrite===true||options.failCancellationWrite===true;
   const files=Object.create(null);let nextFile=0,created=0,trashed=0,lockCalls=0,lockReleases=0,reservationCalls=0,releaseCalls=0;
-  let permissionActive=options.permissionDenied!==true,scopeActive=options.scopeDenied!==true,actorUserId="U-1",actorRole=options.actorRole||"Director",restoreCalls=0;
+  let permissionActive=options.permissionDenied!==true,scopeActive=options.scopeDenied!==true,actorUserId="U-1",actorRole=options.actorRole||"Director",restoreCalls=0,overrunCalls=[];
   const budgetChecks=[];
   const folder={access:options.folderPublic? "ANYONE":"PRIVATE",files,
     getSharingAccess(){return this.access;},setSharing(access){this.access=access;},
@@ -62,15 +62,15 @@ function makeHarness(options={}){
     computeDocumentSHA256:()=> "a".repeat(64),
     validateFileBinaryIntegrity:(base64)=>({valid:typeof base64==="string"&&!base64.startsWith("data:")&&base64.length>0,detectedFormat:"pdf"}),
     purchaseQuotationAccess_:()=>({authorized:options.authorized!==false,code:"ROLE_NOT_ALLOWED",actor:{authorized:true,userId:actorUserId,role:actorRole},scope:{institutionWide:scopeActive,departmentIds:scopeActive?[]:["OTHER"]}}),
-    validateRolePermission:(_actor,action)=>!permissionActive?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:
-      (["createPurchaseOrder","getPurchaseOrders","cancelPurchaseOrder"].includes(action)?{authorized:true}:{authorized:false}),
+    validateRolePermission:(_actor,action)=>!permissionActive||(action==="authorizeBudgetOverrun"&&options.overrunPermissionDenied===true)?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:
+      (["createPurchaseOrder","getPurchaseOrders","cancelPurchaseOrder","authorizeBudgetOverrun"].includes(action)?{authorized:true}:{authorized:false}),
     purchaseOrderScopeAccess_:()=>!scopeActive?{authorized:false,code:"RESOURCE_NOT_FOUND"}:{authorized:true,access:{actor:{authorized:true,userId:actorUserId,role:actorRole}}},
     purchaseQuotationJsonArray_:value=>{try{const parsed=Array.isArray(value)?value:JSON.parse(String(value||"[]"));return Array.isArray(parsed)?parsed:[];}catch(_){return[];}},
     getOrCreateSheet:(ss,name)=>ss.getSheetByName(name),
     supplierEnsureActiveForOrder_:()=>true,
     checkBudgetAvailabilityCore_:(ss,input,scope)=>{budgetChecks.push({input,scope});return options.budgetCheck||{status:"success",disponible:true,alertaUmbral:false,presupuestoId:"PRE-1",centroCosto:input.centroCosto,partidaCodigo:input.partidaCodigo};},
     budgetLogEvent_:()=>{},
-    reservePurchaseOrderBudgetCommitmentsLocked_:(ss,orderId,year,center,totals,checks,actorId)=>{reservationCalls++;return options.reservationFailure?{status:"error",code:"BUDGET_COMMITMENT_RESERVATION_FAILED"}:{status:"success",reservations:[{compromisoId:"CMP-1",presupuestoId:"PRE-1",partidaCodigo:"5101",monto:100,idempotente:false}]};},
+    reservePurchaseOrderBudgetCommitmentsLocked_:(ss,orderId,year,center,totals,checks,actorId,overrunAuthorization)=>{reservationCalls++;if(overrunAuthorization)overrunCalls.push(overrunAuthorization);return options.reservationFailure?{status:"error",code:"BUDGET_COMMITMENT_RESERVATION_FAILED"}:{status:"success",reservations:[{compromisoId:"CMP-1",presupuestoId:"PRE-1",partidaCodigo:"5101",monto:100,idempotente:false}]};},
     releaseBudgetCommitmentLocked_:(ss,orderId,reason,actorId)=>{releaseCalls++;return options.releaseFailure?{status:"error",code:"BUDGET_COMMITMENT_RELEASE_FAILED"}:{status:"success",released:[{compromisoId:"CMP-1",estado:"Liberado"}],rollbackState:{budgetRows:[],ledgerRows:[]}};},
     restoreReleasedBudgetCommitmentsLocked_:()=>{restoreCalls++;return true;},
     Object,Array,String,Number,Date,Math,JSON,Intl,Error,RegExp,isFinite
@@ -93,7 +93,7 @@ function makeHarness(options={}){
   context.budgetLogEvent_=()=>{};
 
 
-  return {context,sheets,files,folder,budgetChecks,stats:()=>({created,trashed,lockCalls,lockReleases,reservationCalls,releaseCalls,restoreCalls})};
+  return {context,sheets,files,folder,budgetChecks,stats:()=>({created,trashed,lockCalls,lockReleases,reservationCalls,releaseCalls,restoreCalls,overrunCalls})};
 }
 async function main(){
   assert.doesNotThrow(()=>new vm.Script(source),"ACCOUNTING backend syntax");
@@ -153,6 +153,22 @@ async function main(){
   assert.equal(cancelWriteFailure.context.cancelPurchaseOrder({ordenCompraId:"OC-1",justificacion:"Rollback de cancelación fallida"}).code,"PURCHASE_ORDER_CANCELLATION_WRITE_FAILED");
   assert.equal(cancelWriteFailure.stats().restoreCalls,1);
   assert.equal(cancelWriteFailure.sheets.OrdenesCompra.rows[1][9],"Aprobada");
+  const overrunBlocked=makeHarness({state:"Borrador",budgetCheck:{status:"error",disponible:false,code:"BUDGET_OVERRUN_BLOCKED",presupuestoId:"PRE-1"}});
+  assert.equal(overrunBlocked.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida"}).code,"BUDGET_OVERRUN_BLOCKED");
+  assert.equal(overrunBlocked.stats().reservationCalls,0);
+  const overrunMissingReason=makeHarness({state:"Borrador",budgetCheck:{status:"error",disponible:false,code:"BUDGET_OVERRUN_BLOCKED",presupuestoId:"PRE-1"}});
+  assert.equal(overrunMissingReason.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestaria:true,justificacionSobregiro:""}).code,"BUDGET_OVERRUN_REASON_REQUIRED");
+  const overrunWrongRole=makeHarness({state:"Borrador",actorRole:"Subdirector",budgetCheck:{status:"error",disponible:false,code:"BUDGET_OVERRUN_BLOCKED",presupuestoId:"PRE-1"}});
+  assert.equal(overrunWrongRole.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestaria:true,justificacionSobregiro:"Excepción autorizada"}).code,"BUDGET_OVERRUN_ROLE_REQUIRED");
+  const overrunNoPermission=makeHarness({state:"Borrador",overrunPermissionDenied:true,budgetCheck:{status:"error",disponible:false,code:"BUDGET_OVERRUN_BLOCKED",presupuestoId:"PRE-1"}});
+  assert.equal(overrunNoPermission.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestaria:true,justificacionSobregiro:"Excepción autorizada"}).code,"ROLE_PERMISSION_DENIED");
+  const overrunAuthorized=makeHarness({state:"Borrador",budgetCheck:{status:"error",disponible:false,code:"BUDGET_OVERRUN_BLOCKED",presupuestoId:"PRE-1"}});
+  const overrunApproval=overrunAuthorized.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestaria:true,justificacionSobregiro:"Excepción extraordinaria documentada"});
+  assert.equal(overrunApproval.status,"success",JSON.stringify(overrunApproval));
+  assert.equal(overrunAuthorized.stats().overrunCalls.length,1);
+  assert.equal(overrunAuthorized.stats().overrunCalls[0].reason,"Excepción extraordinaria documentada");
+  assert.equal(overrunAuthorized.sheets.OrdenesCompra.rows[1][9],"Aprobada");
+
   const highValueDirector=makeHarness({state:"Borrador",actorRole:"Administrador"});
   highValueDirector.sheets.OrdenesCompra.rows[1][6]=JSON.stringify([{itemId:"ITEM-1",descripcion:"Silla",unidad:"Unidad",cantidad:1,precioUnitario:50000.01,total:50000.01,partidaCodigo:"5101"}]);
   highValueDirector.sheets.OrdenesCompra.rows[1][7]=50000.01;
