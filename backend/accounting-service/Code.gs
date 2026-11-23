@@ -8051,7 +8051,6 @@ function recordBudgetExecutionLocked_(ss,order,orderHeaders,invoice,invoiceHeade
   var existingByPart=Object.create(null),newEntries=[];
   parts.forEach(function(part){
     var amountCents=partAmounts[part],detailJson=JSON.stringify(itemDetails[part]);
-    var budgetMatches=budgetRows.slice(1).map(function(row,index){return{row:row,index:index+2};});
     var candidateCommitments=orderCommitments.filter(function(item){return String(item.row[lm.PartidaCodigo]||"").trim()===part;});
     if(candidateCommitments.length!==1)throw new Error(candidateCommitments.length?"BUDGET_COMMITMENT_AMBIGUOUS":"BUDGET_EXECUTION_COMMITMENT_MISSING");
     var candidate=candidateCommitments[0],budgetId=String(candidate.row[lm.PresupuestoID]||"").trim();

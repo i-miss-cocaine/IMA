@@ -23,6 +23,7 @@ function extract(name){
 }
 const budgetHeaders=["PresupuestoID","AnoID","CentroCosto","PartidaCodigo","MontoAprobado","MontoComprometido","MontoEjecutado","Estado","UmbralAlertaPct","FechaActualizacion","ActualizadoPor","Version"];
 const commitmentHeaders=["CompromisoID","PresupuestoID","OrdenCompraID","AnoID","CentroCosto","PartidaCodigo","Monto","Estado","IdempotencyKey","PayloadHash","FechaCreacion","CreadoPor","FechaLiberacion","MotivoLiberacion","ActualizadoPor","Version"];
+const executionHeaders=["EjecucionID","PresupuestoID","OrdenCompraID","ObligacionID","FacturaHash","PartidaCodigo","Monto","DetalleItemsJSON","IdempotencyKey","PayloadHash","FechaRegistro","RegistradoPor"];
 function makeSheet(rows,options={}){
   const sheet={rows:rows.map(r=>r.slice()),failAppend:options.failAppend===true,failSetValues:options.failSetValues===true,
     getDataRange(){return{getValues:()=>sheet.rows.map(r=>r.slice())};},
@@ -41,7 +42,7 @@ function makeHarness(options={}){
   const legacyBudgetHeaders=budgetHeaders.slice(0,8);
   const budgets=makeSheet([legacyBudgetHeaders],{});
   const sheets={PresupuestosInstitucionales:budgets};
-  const ss={getSheetByName:name=>sheets[name]||null};
+  const ss={getSheetByName:name=>sheets[name]||null,insertSheet:name=>{if(sheets[name])throw new Error("SHEET_ALREADY_EXISTS");sheets[name]=makeSheet([[]],{failAppend:options.failExecutionAppend===true});return sheets[name];}};
   const context={
     SPREADSHEET_ID:"TEST",
     SpreadsheetApp:{openById:()=>ss},
@@ -49,7 +50,7 @@ function makeHarness(options={}){
     Utilities:{getUuid:()=>"UUID-"+(++uuid)},
     getOrCreateSheet:(_ss,name)=>{
       if(!sheets[name]){
-        const headers=name==="PresupuestosInstitucionales"?budgetHeaders:name==="CompromisosPresupuestarios"?commitmentHeaders:[];
+        const headers=name==="PresupuestosInstitucionales"?budgetHeaders:name==="CompromisosPresupuestarios"?commitmentHeaders:name==="EjecucionesPresupuestarias"?executionHeaders:[];
         sheets[name]=makeSheet([headers],{failAppend:options.failLedgerAppend===true&&name==="CompromisosPresupuestarios"});
       }
       return sheets[name];
@@ -70,8 +71,8 @@ function makeHarness(options={}){
   };
   vm.createContext(context);
   const names=["budgetLogEvent_","budgetAccess_","budgetScopeAllows_","ensureBudgetSchema_","ensureBudgetCommitmentSchema_","budgetRecordFromRow_","getBudgetRowsCore_",
-    "getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailabilityCore_","checkBudgetAvailability","reserveBudgetCommitmentLocked_","restoreReleasedBudgetCommitmentsLocked_","releaseBudgetCommitmentLocked_","reservePurchaseOrderBudgetCommitmentsLocked_"];
-  vm.runInContext(names.map(extract).join("\n")+"\nthis.api={get:getBudgets,save:saveBudgetPlan,report:getBudgetExecutionReport,check:checkBudgetAvailability,checkCore:checkBudgetAvailabilityCore_,reserve:reserveBudgetCommitmentLocked_,release:releaseBudgetCommitmentLocked_,reserveOrder:reservePurchaseOrderBudgetCommitmentsLocked_};",context);
+    "getBudgets","saveBudgetPlan","getBudgetExecutionReport","checkBudgetAvailabilityCore_","checkBudgetAvailability","reserveBudgetCommitmentLocked_","restoreReleasedBudgetCommitmentsLocked_","releaseBudgetCommitmentLocked_","reservePurchaseOrderBudgetCommitmentsLocked_","ensureBudgetExecutionSchema_","restoreBudgetExecutionLocked_","recordBudgetExecutionLocked_","purchaseQuotationJsonArray_","purchaseInvoiceStoredItems_"];
+  vm.runInContext(names.map(extract).join("\n")+"\nthis.api={get:getBudgets,save:saveBudgetPlan,report:getBudgetExecutionReport,check:checkBudgetAvailability,checkCore:checkBudgetAvailabilityCore_,reserve:reserveBudgetCommitmentLocked_,release:releaseBudgetCommitmentLocked_,reserveOrder:reservePurchaseOrderBudgetCommitmentsLocked_,recordExecution:recordBudgetExecutionLocked_};",context);
   return{api:context.api,sheets,ss,logs:context.logs,stats:()=>({identityCalls,lockCalls,lockReleases})};
 }
 function main(){
@@ -189,6 +190,45 @@ function main(){
   assert.equal(partialRollbackHarness.sheets.PresupuestosInstitucionales.rows[1][5],0,"a later invalid part rolls back earlier reservations");
   assert.equal(partialRollbackHarness.sheets.CompromisosPresupuestarios.rows[1][7],"Liberado","partial reservation is compensated in the ledger");
   assert.ok(partOne.presupuestoId&&partTwo.presupuestoId);
+
+  const executionHarness=makeHarness();
+  const executionBudgetA=executionHarness.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:1000});
+  const executionBudgetB=executionHarness.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5102",montoAprobado:500});
+  assert.equal(executionHarness.api.reserve(executionHarness.ss,{presupuestoId:executionBudgetA.presupuestoId,ordenCompraId:"OC-EXEC",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:500,idempotencyKey:"OC-EXEC:PRE-A"},"U-1").status,"success");
+  assert.equal(executionHarness.api.reserve(executionHarness.ss,{presupuestoId:executionBudgetB.presupuestoId,ordenCompraId:"OC-EXEC",anoId:"2026",centroCosto:"D1",partidaCodigo:"5102",monto:100,idempotencyKey:"OC-EXEC:PRE-B"},"U-1").status,"success");
+  const executionOrderHeaders=["OrdenCompraID","DetalleItemsJSON","EstadoCompromisoPresupuestario"];
+  const executionOrder=["OC-EXEC",JSON.stringify([{itemId:"I-1",partidaCodigo:"5101",cantidad:5,precioUnitario:100,total:500},{itemId:"I-2",partidaCodigo:"5102",cantidad:2,precioUnitario:50,total:100}]),"Comprometido"];
+  const executionInvoiceHeaders=["ObligacionID","Importe","Impuestos","TotalMonto","Observaciones","FacturaHash"];
+  const executionInvoice=["CXP-EXEC-1",250,25,275,'[ITEMS_JSON:[{"itemId":"I-1","cantidad":2,"precioUnitario":100},{"itemId":"I-2","cantidad":1,"precioUnitario":50}]]',"HASH-EXEC-1"];
+  const execution=executionHarness.api.recordExecution(executionHarness.ss,executionOrder,executionOrderHeaders,executionInvoice,executionInvoiceHeaders,"CXP-EXEC-1","U-1");
+  assert.equal(execution.status,"success",JSON.stringify(execution));
+  assert.equal(execution.executions.length,2);
+  assert.equal(executionHarness.sheets.PresupuestosInstitucionales.rows[1][5],280);
+  assert.equal(executionHarness.sheets.PresupuestosInstitucionales.rows[1][6],220);
+  assert.equal(executionHarness.sheets.PresupuestosInstitucionales.rows[2][5],45);
+  assert.equal(executionHarness.sheets.PresupuestosInstitucionales.rows[2][6],55);
+  assert.equal(executionHarness.sheets.CompromisosPresupuestarios.rows[1][6],280);
+  assert.equal(executionHarness.sheets.CompromisosPresupuestarios.rows[2][6],45);
+  assert.equal(executionHarness.sheets.EjecucionesPresupuestarias.rows.length,3);
+  const executionReplay=executionHarness.api.recordExecution(executionHarness.ss,executionOrder,executionOrderHeaders,executionInvoice,executionInvoiceHeaders,"CXP-EXEC-1","U-1");
+  assert.equal(executionReplay.idempotente,true);
+  assert.equal(executionHarness.sheets.PresupuestosInstitucionales.rows[1][6],220);
+  const duplicateQuantityInvoice=["CXP-EXEC-2",450,45,495,'[ITEMS_JSON:[{"itemId":"I-1","cantidad":4,"precioUnitario":100},{"itemId":"I-2","cantidad":1,"precioUnitario":50}]]',"HASH-EXEC-2"];
+  assert.equal(executionHarness.api.recordExecution(executionHarness.ss,executionOrder,executionOrderHeaders,duplicateQuantityInvoice,executionInvoiceHeaders,"CXP-EXEC-2","U-1").code,"BUDGET_EXECUTION_QUANTITY_EXCEEDS_ORDER");
+  const executionOverrunInvoice=["CXP-EXEC-3",300,30,330,'[ITEMS_JSON:[{"itemId":"I-1","cantidad":3,"precioUnitario":100}]]',"HASH-EXEC-3"];
+  assert.equal(executionHarness.api.recordExecution(executionHarness.ss,executionOrder,executionOrderHeaders,executionOverrunInvoice,executionInvoiceHeaders,"CXP-EXEC-3","U-1").code,"BUDGET_EXECUTION_EXCEEDS_COMMITMENT");
+
+  const executionRollbackHarness=makeHarness({failExecutionAppend:true});
+  const executionRollbackBudget=executionRollbackHarness.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:1000});
+  executionRollbackHarness.api.reserve(executionRollbackHarness.ss,{presupuestoId:executionRollbackBudget.presupuestoId,ordenCompraId:"OC-EXEC-RB",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:500,idempotencyKey:"OC-EXEC-RB:PRE"},"U-1");
+  const rollbackOrder=["OC-EXEC-RB",JSON.stringify([{itemId:"I-1",partidaCodigo:"5101",cantidad:5,precioUnitario:100,total:500}]),"Comprometido"];
+  const rollbackInvoice=["CXP-EXEC-RB",200,20,220,'[ITEMS_JSON:[{"itemId":"I-1","cantidad":2,"precioUnitario":100}]]',"HASH-EXEC-RB"];
+  const executionWriteFailure=executionRollbackHarness.api.recordExecution(executionRollbackHarness.ss,rollbackOrder,executionOrderHeaders,rollbackInvoice,executionInvoiceHeaders,"CXP-EXEC-RB","U-1");
+  assert.equal(executionWriteFailure.code,"SIMULATED_APPEND_FAILURE");
+  assert.equal(executionRollbackHarness.sheets.PresupuestosInstitucionales.rows[1][5],500);
+  assert.equal(executionRollbackHarness.sheets.PresupuestosInstitucionales.rows[1][6],0);
+  assert.equal(executionRollbackHarness.sheets.CompromisosPresupuestarios.rows[1][6],500);
+  assert.equal(executionRollbackHarness.sheets.EjecucionesPresupuestarias.rows.length,1);
 
   const releaseRollback=makeHarness();
   const releaseRollbackBudget=releaseRollback.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:100});
