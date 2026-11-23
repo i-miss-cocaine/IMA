@@ -13348,179 +13348,52 @@ function getInventoryKardex(payload) {
 // [TAREA 3] [Fase Proveedores y Compromisos] - Registro y actualización de contratos de proveedores con fecha de inicio, vencimiento y días de aviso.
 
 function transferInventoryStock(payload) {
-  const input=payload||{},actor=catalogActor_(input,true);
-  if(!actor||!actor.userId)throw new Error("VERIFIED_IDENTITY_REQUIRED");
-  const permission=validateRolePermission(actor,"transferInventoryStock",input);
-  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
-  const {
-    itemCodigo,
-    itemNombre,
-    cantidad,
-    ubicacionOrigen,
-    ubicacionDestino,
-    responsableUserId,
-    requiereConfirmacionFisica,
-    observaciones,
-    authRole
-  } = payload || {};
-
-  if (!itemCodigo || !cantidad || !ubicacionOrigen || !ubicacionDestino) {
-    throw new Error("itemCodigo, cantidad, ubicacionOrigen y ubicacionDestino son requeridos.");
+ const input=payload||{},actor=catalogActor_(input,true);
+ if(!actor||!actor.userId)throw new Error("VERIFIED_IDENTITY_REQUIRED");
+ const permission=validateRolePermission(actor,"transferInventoryStock",input);
+ if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+ const itemCodigo=String(input.itemCodigo||""),cantidad=input.cantidad,requiereConfirmacionFisica=input.requiereConfirmacionFisica,observaciones=input.observaciones||"";
+ const originInput=String(input.ubicacionOrigen||"").trim(),destinationInput=String(input.ubicacionDestino||"").trim();
+ const qty=Number(cantidad),lot=String(input.numeroLote||"").trim(),serial=String(input.numeroSerie||"").trim();
+ if(!itemCodigo||!Number.isFinite(qty)||qty<=0||!originInput||!destinationInput)throw new Error("TRANSFER_INPUT_INVALID");
+ const lock=LockService.getScriptLock();lock.waitLock(15000);
+ try{
+  const verified=catalogActor_(input,true);
+  if(String(verified.userId)!==String(actor.userId)||String(verified.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
+  const lockedPermission=validateRolePermission(verified,"transferInventoryStock",input);
+  if(!lockedPermission||lockedPermission.authorized!==true)throw new Error(lockedPermission&&lockedPermission.code||"ROLE_PERMISSION_DENIED");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),catalogItem=catalogFindItem_(ss,itemCodigo,true),canonicalCode=catalogItem.code;
+  const origin=inventoryResolveLocation_(ss,{ubicacionId:input.ubicacionIdOrigen||"",sedeCod:input.sedeCodOrigen||input.almacenOrigen||"",ubicacionResponsable:originInput});
+  const destination=inventoryResolveLocation_(ss,{ubicacionId:input.ubicacionIdDestino||"",sedeCod:input.sedeCodDestino||input.almacenDestino||"",ubicacionResponsable:destinationInput});
+  const uOrigen=origin.nombreUbicacion,uDestino=destination.nombreUbicacion;
+  if(origin.sedeCod===destination.sedeCod&&origin.ubicacionId===destination.ubicacionId)throw new Error("TRANSFER_SOURCE_DESTINATION_MUST_DIFFER");
+  const kardexSheet=catalogEnsureKardexSchema_(ss),kData=kardexSheet.getDataRange().getValues().slice(1),movementStart=kardexSheet.getLastRow()+1;
+  const valuationSnapshot=inventoryValuationSnapshot_(ss),transferSheetBefore=ss.getSheetByName("TransferenciasInventario"),transferRowsBefore=transferSheetBefore?transferSheetBefore.getDataRange().getValues().map(r=>r.slice()):null;
+  let stockDisponibleOrigen=0,sNombre=catalogItem.name;
+  kData.forEach(function(r){
+   if(catalogNormalizeCode_(r[2])!==catalogNormalizeCode_(canonicalCode))return;
+   var rowLoc;try{rowLoc=inventoryResolveLocation_(ss,{sedeCod:r[20],ubicacionId:r[21],ubicacionResponsable:r[10]});}catch(_){rowLoc={sedeCod:String(r[20]||"LEGACY"),ubicacionId:String(r[21]||inventoryLegacyLocationId_(r[10]||"Bodega General"))};}
+   if(rowLoc.sedeCod===origin.sedeCod&&rowLoc.ubicacionId===origin.ubicacionId&&String(r[22]||"")===lot&&String(r[23]||"")===serial)stockDisponibleOrigen=Number(r[8]||0);
+  });
+  if(stockDisponibleOrigen+0.000001<qty)return{status:"error",code:"INSUFFICIENT_SOURCE_STOCK",disponible:stockDisponibleOrigen,solicitado:qty,ubicacionOrigen:uOrigen,sedeCodOrigen:origin.sedeCod};
+  const now=new Date(),transferBatchId="TRF-"+now.getFullYear()+"-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,""),solicitanteId=verified.userId;
+  const esperaConfirmacion=requiereConfirmacionFisica!==false,estadoTransferencia=esperaConfirmacion?"EnTransito":"RecibidaTotal";
+  try{
+   const salidaRes=recordInventoryMovementLocked_(ss,{itemCodigo:canonicalCode,itemNombre:sNombre,tipoMovimiento:"TransferenciaSalida",cantidad:qty,cantidadBase:true,ubicacionResponsable:uOrigen,sedeCod:origin.sedeCod,ubicacionId:origin.ubicacionId,numeroLote:lot,numeroSerie:serial,actorUserId:solicitanteId,documentOrigen:transferBatchId,referenciaMovimiento:"Hacia "+uDestino+" ["+estadoTransferencia+"]",observaciones:"Transferencia a "+uDestino+". "+observaciones});
+   let entradaRes=null;
+   if(!esperaConfirmacion)entradaRes=recordInventoryMovementLocked_(ss,{itemCodigo:canonicalCode,itemNombre:sNombre,tipoMovimiento:"Entrada",cantidad:qty,cantidadBase:true,capasTransferencia:salidaRes.capasTransferencia,ubicacionResponsable:uDestino,sedeCod:destination.sedeCod,ubicacionId:destination.ubicacionId,numeroLote:lot,numeroSerie:serial,actorUserId:solicitanteId,documentOrigen:transferBatchId,referenciaMovimiento:"Desde "+uOrigen,observaciones:"Transferencia automática recibida desde "+uOrigen+". "+observaciones});
+   const trfSheet=getOrCreateSheet(ss,"TransferenciasInventario");
+   trfSheet.appendRow([transferBatchId,now,canonicalCode,sNombre,qty,uOrigen,uDestino,solicitanteId,estadoTransferencia,esperaConfirmacion?"":solicitanteId,esperaConfirmacion?"":now,esperaConfirmacion?0:qty,0,observaciones,origin.sedeCod,origin.ubicacionId,destination.sedeCod,destination.ubicacionId,lot,serial]);
+   logStructuredEvent("ACCOUNTING","transferInventoryStock","INFO","STOCK_TRANSFERRED","Transferencia "+transferBatchId+": "+qty+" unidades de "+canonicalCode+" de "+uOrigen+" a "+uDestino,{transferBatchId:transferBatchId,itemCodigo:canonicalCode,qty:qty,ubicacionOrigen:uOrigen,ubicacionDestino:uDestino,sedeCodOrigen:origin.sedeCod,sedeCodDestino:destination.sedeCod,estadoTransferencia:estadoTransferencia},solicitanteId);
+   return{status:"success",transferBatchId:transferBatchId,itemCodigo:canonicalCode,itemNombre:sNombre,cantidadTransferida:qty,ubicacionOrigen:uOrigen,ubicacionDestino:uDestino,sedeCodOrigen:origin.sedeCod,sedeCodDestino:destination.sedeCod,ubicacionIdOrigen:origin.ubicacionId,ubicacionIdDestino:destination.ubicacionId,numeroLote:lot,numeroSerie:serial,estadoTransferencia:estadoTransferencia,stockNuevoOrigen:salidaRes.stockNuevoUbicacion,stockNuevoDestino:entradaRes?entradaRes.stockNuevoUbicacion:null,stockConsolidadoInstitucional:salidaRes.stockConsolidadoInstitucional};
+  }catch(error){
+   while(kardexSheet.getLastRow()>=movementStart)kardexSheet.deleteRow(kardexSheet.getLastRow());
+   inventoryValuationRestore_(ss,valuationSnapshot);
+   const transferSheet=ss.getSheetByName("TransferenciasInventario");
+   if(transferSheet){while(transferSheet.getLastRow()>(transferRowsBefore?transferRowsBefore.length:0))transferSheet.deleteRow(transferSheet.getLastRow());if(transferRowsBefore&&transferRowsBefore.length){const width=Math.max.apply(null,transferRowsBefore.map(r=>r.length));transferSheet.getRange(1,1,transferRowsBefore.length,width).setValues(transferRowsBefore.map(r=>{const row=r.slice();while(row.length<width)row.push("");return row;}));}}
+   throw new Error("INVENTORY_TRANSFER_ATOMIC_FAILURE:"+String(error&&error.message||error));
   }
-
-  const uOrigen = String(ubicacionOrigen).trim();
-  const uDestino = String(ubicacionDestino).trim();
-
-  if (uOrigen.toLowerCase() === uDestino.toLowerCase()) {
-    throw new Error("La ubicación de origen y destino no pueden ser iguales en una transferencia.");
-  }
-
-  const qty = parseFloat(cantidad);
-  if (isNaN(qty) || qty <= 0) {
-    throw new Error("La cantidad a transferir debe ser estrictamente mayor a cero.");
-  }
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(15000);
-
-  try {
-    const verifiedActor=catalogActor_(input,true);
-    if(!verifiedActor||String(verifiedActor.userId)!==String(actor.userId)||String(verifiedActor.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
-    const lockedPermission=validateRolePermission(verifiedActor,"transferInventoryStock",input);
-    if(!lockedPermission||lockedPermission.authorized!==true)throw new Error(lockedPermission&&lockedPermission.code||"ROLE_PERMISSION_DENIED");
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const catalogItem = catalogFindItem_(ss, itemCodigo, true);
-    const canonicalCode = catalogItem.code;
-    const kardexSheet = catalogEnsureKardexSchema_(ss);
-    const kData = kardexSheet.getDataRange().getValues().slice(1);
-    const movementStart = kardexSheet.getLastRow() + 1;
-    const valuationSnapshot = inventoryValuationSnapshot_(ss);
-    const transferSheetBefore = ss.getSheetByName("TransferenciasInventario");
-    const transferRowsBefore = transferSheetBefore ? transferSheetBefore.getDataRange().getValues().map(r => r.slice()) : null;
-    try {
-
-    // 1. Validar existencia y stock disponible local en el almacén de origen
-    let stockDisponibleOrigen = 0;
-    let sNombre = itemNombre || "";
-
-    kData.forEach(r => {
-      const rowItem = String(r[2]).trim();
-      const rowUbicacion = String(r[10] || "Bodega General").trim();
-      if (rowItem === canonicalCode) {
-        if (!sNombre) sNombre = String(r[3] || itemCodigo).trim();
-        if (rowUbicacion.toLowerCase() === uOrigen.toLowerCase()) {
-          stockDisponibleOrigen = parseFloat(r[8] || 0);
-        }
-      }
-    });
-
-    if (stockDisponibleOrigen < qty) {
-      return {
-        status: "error",
-        code: "INSUFFICIENT_SOURCE_STOCK",
-        message: `Transferencia rechazada: Stock insuficiente para '${sNombre || itemCodigo}' en '${uOrigen}'. Disponible: ${stockDisponibleOrigen}, Solicitado: ${qty}.`
-      };
-    }
-
-    const now = new Date();
-    const transferBatchId = "TRF-" + now.getFullYear() + "-" + String(now.getTime()).slice(-6);
-    const solicitanteId = verifiedActor.userId;
-
-    // Determinar si pasa a EnTransito o recepción automática directa
-    const esperaConfirmacion = requiereConfirmacionFisica !== false; // por defecto requiere recepción física en destino
-    const estadoTransferencia = esperaConfirmacion ? "EnTransito" : "RecibidaTotal";
-
-    // 2. Registrar Salida en almacén de origen
-    const salidaRes = recordInventoryMovementLocked_(ss,{
-      itemCodigo: canonicalCode,
-      itemNombre: sNombre || itemCodigo,
-      tipoMovimiento: "TransferenciaSalida",
-      cantidad: qty,
-      cantidadBase: true,
-      ubicacionResponsable: uOrigen,
-      documentOrigen: transferBatchId,
-      referenciaMovimiento: `Hacia ${uDestino} [Estado: ${estadoTransferencia}]`,
-      observaciones: `Transferencia TRF hacia '${uDestino}'. ${observaciones || ""}`
-    });
-
-    let entradaRes = null;
-    if (!esperaConfirmacion) {
-      // Si no espera confirmación física, entra inmediatamente a destino
-      entradaRes = recordInventoryMovementLocked_(ss,{
-      itemCodigo: canonicalCode,
-        itemNombre: sNombre || itemCodigo,
-        tipoMovimiento: "Entrada",
-        cantidad: qty,
-        cantidadBase: true,
-        capasTransferencia: salidaRes.capasTransferencia,
-        ubicacionResponsable: uDestino,
-        documentOrigen: transferBatchId,
-        referenciaMovimiento: `Desde ${uOrigen}`,
-        observaciones: `Transferencia automática recibida desde '${uOrigen}'. ${observaciones || ""}`
-      });
-    }
-
-    // 3. Persistir en TransferenciasInventario para trazabilidad completa
-    const trfSheet = getOrCreateSheet(ss, "TransferenciasInventario");
-    trfSheet.appendRow([
-      transferBatchId,
-      now,
-      canonicalCode,
-      sNombre || canonicalCode,
-      qty,
-      uOrigen,
-      uDestino,
-      solicitanteId,
-      estadoTransferencia, // Borrador, PendienteAprobacion, EnTransito, RecibidaTotal, RecibidaParcial, Rechazada, Cancelada
-      esperaConfirmacion ? "" : solicitanteId, // Receptor
-      esperaConfirmacion ? "" : now,           // FechaRecepcion
-      esperaConfirmacion ? 0 : qty,            // CantidadRecibida
-      0,                                       // Discrepancia
-      observaciones || ""
-    ]);
-
-    logStructuredEvent(
-      "ACCOUNTING",
-      "transferInventoryStock",
-      "INFO",
-      "STOCK_TRANSFERRED",
-      `Transferencia ${transferBatchId}: ${qty} unidades de ${itemCodigo} de ${uOrigen} a ${uDestino}. Estado: ${estadoTransferencia}`,
-      { transferBatchId, itemCodigo: canonicalCode, qty, uOrigen, uDestino, estadoTransferencia },
-      solicitanteId
-    );
-
-    return {
-      status: "success",
-      transferBatchId: transferBatchId,
-      itemCodigo: canonicalCode,
-      itemNombre: sNombre,
-      cantidadTransferida: qty,
-      ubicacionOrigen: uOrigen,
-      ubicacionDestino: uDestino,
-      estadoTransferencia: estadoTransferencia,
-      stockNuevoOrigen: salidaRes.stockNuevoUbicacion,
-      stockNuevoDestino: entradaRes ? entradaRes.stockNuevoUbicacion : null,
-      stockConsolidadoInstitucional: salidaRes.stockConsolidadoInstitucional,
-      message: esperaConfirmacion
-        ? `Transferencia ${transferBatchId} despachada. ${qty} unidades en tránsito desde '${uOrigen}' hacia '${uDestino}' pendientes de recepción.`
-        : `Transferencia ${transferBatchId} completada. ${qty} unidades transferidas de '${uOrigen}' a '${uDestino}'.`
-    };
-    } catch (e) {
-      while (kardexSheet.getLastRow() >= movementStart) kardexSheet.deleteRow(kardexSheet.getLastRow());
-      inventoryValuationRestore_(ss, valuationSnapshot);
-      const transferSheet = ss.getSheetByName("TransferenciasInventario");
-      if (transferSheet) {
-        while (transferSheet.getLastRow() > (transferRowsBefore ? transferRowsBefore.length : 0)) transferSheet.deleteRow(transferSheet.getLastRow());
-        if (transferRowsBefore && transferRowsBefore.length) {
-          const width = Math.max(...transferRowsBefore.map(r => r.length));
-          transferSheet.getRange(1, 1, transferRowsBefore.length, width).setValues(transferRowsBefore.map(r => { const row = r.slice(); while (row.length < width) row.push(""); return row; }));
-        }
-      }
-      throw new Error("INVENTORY_TRANSFER_ATOMIC_FAILURE:" + e.message);
-    }
-  } finally {
-    lock.releaseLock();
-  }
+ }finally{lock.releaseLock();}
 }
 
 // [TASK-021] [F19-Task03] - Confirmación de recepción física de transferencias con gestión de discrepancias
