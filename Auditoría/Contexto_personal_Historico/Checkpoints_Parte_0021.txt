@@ -512,3 +512,52 @@
 - Dependencias declaradas: ActivosPatrimoniales, AsignacionesActivos y ROLE_PERMISSIONS. El alcance es técnicamente separable de la validación beta de TASK-019.
 
 ===============================================================================
+
+===============================================================================
+### C1.958 — IMA-EXEC-20261123-TASK020-ASSET-CUSTODY-RETURN
+===============================================================================
+
+### Continuidad y Git
+- Sesión: continuación de C1.957.
+- Repositorio: i-miss-cocaine/IMA.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- HEAD inicial: 20107c19c30b03a0e8694d769d42b256a7a33fbf.
+- HEAD de implementación verificado: acabdec1e2b378705418cbc903d2693db79de2da.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; sin modificaciones.
+
+### Implementación TASK-020
+- API de asignación/devolución y consulta de custodias: assignAssetCustody, returnAssetCustody, getAssetAssignments y getAssetCustodyActPDF.
+- Devolución obligatoriamente vinculada a una asignación activa única; identidad del receptor obtenida de sesión autenticada y revalidada después de adquirir ScriptLock.
+- Ledger de asignaciones, devoluciones e historial de eventos append-only; idempotencia por clave estable y rollback de activo, asignación, devolución, historial, orden de mantenimiento y archivo PDF ante fallo.
+- Condiciones normalizadas, accesorios entregados/recibidos, faltantes, ubicación, observaciones, firmas y evidencias. El acta incluye identificador de receptor autenticado.
+- Evidencias Drive deben ser privadas y de tipo imagen/PDF; si un archivo externo no es privado, se rechaza sin cambiar permisos de ese archivo.
+- Acta PDF generada en carpeta privada, con SHA-256, validación binaria, descarga autorizada y control de ámbito departamental.
+- Daños, faltantes o condición RequiereReparacion generan orden correctiva y mantienen activo en maintenance. Al completar la orden, el activo sin custodio pasa a available con evento histórico; transición departamental y escritura de activo/historial con rollback.
+- UI Kardex/activos permite asignar, devolver, consultar historial y descargar actas.
+
+### Archivos modificados desde C1.957
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-asset-custody-return.test.js
+- tests/security/accounting-catalog.test.js
+- tests/security/accounting-purchase-asset-capitalization.test.js
+- tests/ui/accounting-asset-custody-ui.test.js
+- .github/workflows/department-scope-contract.yml
+
+### Verificaciones ejecutadas
+- GitHub Actions Department Scope Contract run 45286954207: SUCCESS en SHA acabdec1e2b378705418cbc903d2693db79de2da.
+- GitHub Actions UI Accessibility and Metadata Contract run 45286894600: SUCCESS en SHA 79ed1c616a728722af0bed8de15a931d0c8fceed; el código/UI cubierto no cambió después.
+- Node.js 24.22.3: accounting-asset-custody-return.test.js PASS; accounting-asset-custody-ui.test.js PASS; accounting-catalog.test.js PASS; purchase asset capitalization y fixed asset depreciation contracts PASS.
+- Syntax-check: Code.gs, js/accounting.js, contratos de seguridad/UI y servicios Apps Script PASS.
+- Pruebas de rollback de devolución y liberación de mantenimiento, lock contention, revalidación de identidad, duplicados idempotentes, ámbito departamental, evidencia compartida rechazada sin mutación y reasignación posterior a mantenimiento: PASS.
+- Revisión de diff: cambios limitados al flujo patrimonial/custodia, contrato de regresión de catálogo y CI asociado; no se alteró la rama base.
+
+### Estado
+- TASK-020: COMPLETADA en código y pruebas locales/CI.
+- BETA-FUNC-131: PENDIENTE DE BETA para verificación real en Apps Script/Sheets/Drive. No se declara ejecutada.
+- No se realizó despliegue ni se modificaron datos reales.
+
+### Siguiente tarea elegible
+- TASK-021 (P0): validación transaccional de transferencias entre almacenes; verificar primero qué controles ya están cubiertos por TASK-019 y ejecutar solo el alcance faltante.
+
+===============================================================================

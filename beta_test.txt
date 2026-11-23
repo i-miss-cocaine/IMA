@@ -2543,3 +2543,18 @@ BETA-F18-007 — F18-TASK07: ciclo de compromisos presupuestarios de órdenes de
 - **Evidencia requerida:** SHA del despliegue, IDs sintéticos, snapshots antes/después de Kardex/valoración/reservas/transferencias, pruebas por rol allow/deny, hashes y logs saneados. La conciliación de conteo físico se verifica cuando F19-TASK14 esté implementada.
 - **Tarea vinculada:** TASK-019 / F19-TASK14.
 ===============================================================================
+
+===============================================================================
+## BETA-FUNC-131 — ACCOUNTING: devolución y recepción de activos bajo custodia
+- **Módulo/roles:** ACCOUNTING; RecursosHumanos, Director, Subdirector, Contador y Administrador, conforme a ROLE_PERMISSIONS y ámbito departamental efectivo.
+- **Tarea/requisito:** TASK-020 — devolución formal de activos, cierre de asignación, historial de custodia, acta PDF, evidencias y mantenimiento por incidencias.
+- **Objetivo:** verificar en Apps Script/Sheets/Drive desplegados el ciclo completo de entrega, devolución, inspección, cierre, disponibilidad y mantenimiento de activos.
+- **Prioridad:** P0.
+- **Precondiciones:** despliegue vigente de ACCOUNTING; hojas ActivosPatrimoniales, AsignacionesActivos, DevolucionesActivos, HistorialCustodiaActivos y MantenimientoOrdenes; activos y empleados sintéticos en un departamento de prueba; usuario receptor con permiso explícito; archivo de evidencia sintético privado (imagen o PDF); carpeta privada IMA_ACTAS_CUSTODIA_PRIVADAS. No utilizar activos, personas ni documentos reales.
+- **Pasos:** asignar un activo disponible y verificar la asignación/historial; registrar devolución en condición Bueno con accesorios completos y evidencia privada; verificar cierre de asignación, custodio vacío, ubicación y estado available; descargar el acta PDF y comprobar su hash, identificadores, custodio, receptor y privacidad; repetir la misma solicitud y comprobar idempotencia; intentar devolver una asignación inexistente/cerrada y una devolución desde otro departamento; proporcionar evidencia compartida y comprobar rechazo sin cambio de permisos; devolver otro activo con daño o accesorios faltantes y verificar orden correctiva vinculada, estado maintenance y rechazo de reasignación; completar la orden y comprobar transición a available con evento histórico; intentar solicitudes concurrentes/reintentos y comprobar ausencia de devoluciones u órdenes duplicadas.
+- **Resultado esperado:** cada devolución queda vinculada a una asignación activa única; el historial anterior permanece inalterado; la recepción se atribuye al usuario autenticado; el acta PDF es íntegra y privada; archivos de evidencia externos no cambian de permisos; daños/faltantes bloquean la reasignación hasta completar mantenimiento; las escrituras parciales se revierten; los intentos duplicados son idempotentes o rechazados.
+- **Estado:** PENDIENTE DE BETA.
+- **Implementación/contratos locales:** completados en C1.958; contratos Node.js 24 y sintaxis PASS. No se ha ejecutado esta prueba contra Apps Script/Sheets/Drive desplegados.
+- **Evidencia requerida:** SHA del despliegue, IDs sintéticos, snapshots de activo/asignación/devolución/historial/orden antes y después, rol/scope allow-deny, SHA-256 y metadatos del acta, verificación de acceso privado de Drive y logs saneados sin PII ni tokens.
+- **Tarea vinculada:** TASK-020 / C1.958.
+===============================================================================

@@ -6362,3 +6362,13 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Exam-Service security local run 44963334570 SUCCESS 42/42; Department Scope 44963151092 SUCCESS 136/136; SACE Monotonic Source Revision 44963151083 SUCCESS.
 - BETA-EXAM-116 creado para verificar en Apps Script/Sheets la revocación/cambio de rol/scope durante espera real de lock. Pendiente beta.
 - TASK-502 sigue En ejecución; TASK-506 depende de TASK-502. Siguiente: continuar inventario action/resource en ACADEMIC y handlers restantes de ACCOUNTING/TASK/EXAM.
+
+
+
+### Continuidad C1.958 — TASK-020 / devolución y recepción de activos bajo custodia
+- TASK-020 completada en código: devolución ligada a asignación activa, ledger histórico append-only, acta PDF privada e íntegra, identidad autenticada del receptor, evidencias privadas sin mutar permisos de archivos externos y mantenimiento automático por daños/faltantes.
+- El estado maintenance bloquea reasignación; al completar la orden, el activo sin custodio pasa a available con evento de historial y rollback.
+- Contratos Node.js 24.22.3: devolución/custodia, UI, catálogo y regresiones de activos PASS; sintaxis Apps Script/JS PASS.
+- Department Scope run 45286954207 SUCCESS en SHA acabdec1e2b378705418cbc903d2693db79de2da; UI Accessibility run 45286894600 SUCCESS en SHA 79ed1c616a728722af0bed8de15a931d0c8fceed.
+- BETA-FUNC-131 registra las verificaciones pendientes de Apps Script/Sheets/Drive reales; permanece Pendiente beta y no bloquea implementación.
+- Siguiente tarea elegible: TASK-021 (P0), transferencias transaccionales entre almacenes; reutilizar la evidencia vigente de TASK-019 y cerrar únicamente brechas restantes.

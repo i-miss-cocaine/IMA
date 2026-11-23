@@ -1104,7 +1104,8 @@
   - Los activos dañados no pueden reasignarse como disponibles.
   - Se genera un acta verificable de entrega-recepción descargable en PDF.
   - Se rechazan devoluciones duplicadas de una misma asignación.
-- **Estado:** Pendiente
+- **Seguimiento C1.958:** Backend y UI integrados; devolución vinculada a asignación activa, historial append-only, PDF privado con identidad del receptor, evidencias privadas sin alterar permisos de archivos externos, escalamiento automático a mantenimiento por daños/faltantes y liberación controlada a `available` al completar mantenimiento. Contratos Node.js 24, regresión de catálogo y sintaxis Apps Script/JS PASS en GitHub Actions run 45286954207 (SHA `acabdec1e2b378705418cbc903d2693db79de2da`).
+- **Estado:** Completada
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1502-1541; clave TASK-021; asignación única: Contabilidad -->
 
