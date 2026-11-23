@@ -853,7 +853,7 @@ window.loadActivosData = function () {
     let html='<table class="w-full text-left border-collapse"><thead><tr class="bg-gray-50 border-b text-gray-600 font-bold uppercase"><th class="p-2">Código</th><th class="p-2">Activo</th><th class="p-2">Serie</th><th class="p-2">Ubicación</th><th class="p-2">Custodio</th><th class="p-2">Adquisición</th><th class="p-2">Acciones</th></tr></thead><tbody class="divide-y divide-gray-100">';
     items.forEach(a=>{
       const acquisition=a.ordenCompraId?`<button onclick="viewAssetAcquisitionRecord(${purchaseAssetJsArg(a.activoId)})" class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded font-bold text-[10px]">Ver expediente</button>`:"—";
-      html+=`<tr><td class="p-2 font-mono font-bold text-indigo-600">${esc(a.codigoPatrimonial)}</td><td class="p-2 font-bold">${esc(a.nombre)}<div class="text-[10px] text-gray-500">${esc(a.categoria)}</div></td><td class="p-2">${esc(a.numeroSerie||a.serieModel)}</td><td class="p-2">${esc(a.ubicacionActual)}</td><td class="p-2">${esc(a.custodioUserId||"Sin custodio")}</td><td class="p-2">${acquisition}</td><td class="p-2 whitespace-nowrap"><button onclick="handleAsignarCustodia(${purchaseAssetJsArg(a.activoId)})" class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-bold text-[10px]">Asignar</button>${a.custodioUserId||a.estado==="assigned"?` <button onclick="handleDevolverCustodia(${purchaseAssetJsArg(a.activoId)},${purchaseAssetJsArg(a.codigoPatrimonial)},${purchaseAssetJsArg(a.nombre)},${purchaseAssetJsArg(a.custodioUserId)})" class="px-2 py-1 bg-rose-50 text-rose-600 rounded font-bold text-[10px]">Devolver</button>`:""}</td></tr>`;
+      html+=`<tr><td class="p-2 font-mono font-bold text-indigo-600">${esc(a.codigoPatrimonial)}</td><td class="p-2 font-bold">${esc(a.nombre)}<div class="text-[10px] text-gray-500">${esc(a.categoria)}</div></td><td class="p-2">${esc(a.numeroSerie||a.serieModel)}</td><td class="p-2">${esc(a.ubicacionActual)}</td><td class="p-2">${esc(a.custodioUserId||"Sin custodio")}</td><td class="p-2">${acquisition}</td><td class="p-2 whitespace-nowrap"><button onclick="handleAsignarCustodia(${purchaseAssetJsArg(a.activoId)})" class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-bold text-[10px]">Asignar</button>${a.custodioUserId||a.estado==="assigned"?` <button onclick="handleDevolverCustodia(${purchaseAssetJsArg(a.activoId)},${purchaseAssetJsArg(a.codigoPatrimonial)},${purchaseAssetJsArg(a.nombre)},${purchaseAssetJsArg(a.custodioUserId)},${purchaseAssetJsArg(a.asignacionActivaId)})" class="px-2 py-1 bg-rose-50 text-rose-600 rounded font-bold text-[10px]">Devolver</button>`:""} <button onclick="viewAssetAssignmentsUI(${purchaseAssetJsArg(a.activoId)})" class="px-2 py-1 bg-gray-100 text-gray-700 rounded font-bold text-[10px]">Historial</button></td></tr>`;
     });
     container.innerHTML=html+"</tbody></table>";
   }).catch(err=>{container.innerHTML='<div class="p-4 text-rose-600 font-bold text-center">Error al cargar activos: '+escapePurchaseAssetHtml(err.message)+'</div>';});
@@ -932,52 +932,45 @@ window.loadAssetDeprScheduleUI=function(){
 window.reverseAssetDeprUI=function(){const value=id=>document.getElementById(id).value,activoId=value("asset-depr-id"),periodo=value("asset-depr-period"),motivo=value("asset-depr-reversal-reason");if(!activoId||!periodo||!motivo){alert("Indique el activo, período y motivo de reversión.");return;}if(!confirm("Se conservará el asiento original y se registrará un asiento inverso. ¿Continuar?"))return;fetchApi("ACCOUNTING","reverseAssetDepreciationEntry",{activoId,periodo,motivo}).then(result=>{alert("Reversión registrada: "+result.asientoReversionId);loadAssetDeprScheduleUI();}).catch(e=>alert(e.message||String(e)));};
 
 window.handleAsignarCustodia = function (activoId) {
-  const custodio = prompt("Ingrese el UserId del custodio o empleado responsable (EJ: EMP-01):");
-  if (!custodio) return;
+  const custodio=prompt("UserId del custodio o empleado responsable (EJ: EMP-01):");if(!custodio)return;
+  const ubicacion=prompt("Ubicación donde se entrega el activo:","Bodega General");if(!ubicacion)return;
+  const condition=prompt("Condición física de entrega (Nuevo, Bueno, Regular):","Bueno");if(!condition)return;
+  const accessories=prompt("Componentes y accesorios entregados (separados por coma):","");
+  fetchApi("ACCOUNTING","assignAssetCustody",{activoId:activoId,custodioUserId:custodio,ubicacionEntrega:ubicacion,estadoFisicoEntrega:condition,accesoriosEntregados:(accessories||"").split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean),firmaEntrega:custodio})
+    .then(res=>{alert(res.message||"Custodia asignada correctamente. ID: "+res.asignacionId);loadActivosData();})
+    .catch(err=>alert("Error al asignar custodia: "+(err.message||err)));
+};;
 
-  fetchApi('ACCOUNTING', 'assignAssetCustody', { activoId: activoId, custodioUserId: custodio })
-    .then(res => {
-      alert(res.message || "Custodia asignada correctamente.");
-      loadActivosData();
-    })
-    .catch(err => alert("Error: " + err.message));
+window.handleDevolverCustodia = function (activoId,codigoPatrimonial,nombre,custodioUserId,asignacionId) {
+  const custodio=prompt("Confirmar custodio que entrega el activo ("+codigoPatrimonial+" - "+nombre+"):",custodioUserId||"");if(!custodio)return;
+  const receptor=(window.currentUser&&window.currentUser.userId)||"";if(!receptor){alert("No se pudo verificar el usuario receptor de la sesión.");return;}
+  const condition=prompt("Condición física al reingreso (Nuevo, Bueno, Regular, Dañado, Incompleto, RequiereReparacion):","Bueno");if(!condition)return;
+  const location=prompt("Ubicación física de recepción:","Bodega General");if(!location)return;
+  const accessories=prompt("Componentes y accesorios recibidos (separados por coma):","");
+  const evidence=prompt("IDs o enlaces de Drive de evidencias fotográficas/actas (obligatorio, separados por coma):","");if(!evidence){alert("Adjunte al menos una evidencia privada de Drive antes de registrar la devolución.");return;}
+  const signatureDelivery=prompt("Firma/nombre de quien entrega:",custodio);if(!signatureDelivery)return;
+  const signatureReceipt=prompt("Firma/nombre de quien recibe:",receptor);if(!signatureReceipt)return;
+  const obs=prompt("Observaciones de la entrega / componentes o detalles:","Recepción formal y revisión física")||"Recepción formal de custodia";
+  fetchApi("ACCOUNTING","returnAssetCustody",{activoId:activoId,asignacionId:asignacionId,custodioUserId:custodio,receptorUserId:receptor,recibidoPor:receptor,estadoFisico:condition,condicionRecepcion:condition,ubicacionRecepcion:location,observaciones:obs,accesoriosRecibidos:(accessories||"").split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean),evidenciasJSON:evidence.split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean),firmaEntrega:signatureDelivery,firmaRecepcion:signatureReceipt})
+    .then(res=>{let msg=res.message||"Devolución registrada.";if(res.ordenMantenimientoId)msg+="\nOrden de mantenimiento: "+res.ordenMantenimientoId;alert(msg);if(res.actaDevolucionId)window.openAssetCustodyActPDFUI(res.actaDevolucionId);loadActivosData();})
+    .catch(err=>alert("Error al devolver custodia: "+(err.message||err)));
 };
-
-window.handleDevolverCustodia = function (activoId, codigoPatrimonial, nombre, custodioUserId) {
-  const custodio = prompt(`Confirmar custodio que entrega el activo (${codigoPatrimonial} - ${nombre}):`, custodioUserId || "");
-  if (!custodio) return;
-
-  const receptor = prompt("UserId o nombre del responsable institucional que recibe el activo:", (window.currentUser && window.currentUser.userId) || "DIR-01");
-  if (!receptor) return;
-
-  const condicionPrompt = prompt("Condición física al reingreso (Nuevo, Bueno, Regular, Dañado, Incompleto, RequiereReparacion):", "Bueno");
-  if (!condicionPrompt) return;
-
-  const obs = prompt("Observaciones de la entrega / componentes o detalles:", "Devolución en orden y revisión conforme");
-
-  fetchApi('ACCOUNTING', 'returnAssetCustody', {
-    activoId: activoId,
-    custodioUserId: custodio,
-    recibidoPor: receptor,
-    receptorUserId: receptor,
-    estadoFisico: condicionPrompt,
-    condicionRecepcion: condicionPrompt,
-    observaciones: obs || "Recepción formal de custodia",
-    ubicacionRecepcion: "Bodega General"
-  })
-    .then(res => {
-      let msg = res.message || "Devolución registrada correctamente.";
-      if (res.ordenMantenimientoId) {
-        msg += `\nSe generó orden de mantenimiento: ${res.ordenMantenimientoId}`;
-      }
-      if (res.actaDevolucionId) {
-        msg += `\nActa de Entrega-Recepción: ${res.actaDevolucionId}`;
-      }
-      alert(msg);
-      loadActivosData();
-    })
-    .catch(err => alert("Error al devolver custodia: " + (err.message || err)));
+window.openAssetCustodyActPDFUI = function(devolucionId) {
+  fetchApi("ACCOUNTING","getAssetCustodyActPDF",{devolucionId:devolucionId}).then(function(result){
+    if(!result||result.status!=="success"||!result.fileData)throw new Error(result&&result.code||"ASSET_CUSTODY_ACT_DOWNLOAD_FAILED");
+    const binary=atob(result.fileData),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+    const url=URL.createObjectURL(new Blob([bytes],{type:"application/pdf"})),link=document.createElement("a");link.href=url;link.download=result.fileName||("Acta-Devolucion-"+devolucionId+".pdf");document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+  }).catch(error=>alert("No se pudo descargar el acta: "+(error.message||error)));
 };
+window.viewAssetAssignmentsUI = function(activoId) {
+  fetchApi("ACCOUNTING","getAssetAssignments",{activoId:activoId}).then(function(result){
+    const existing=document.getElementById("asset-custody-history-modal");if(existing)existing.remove();
+    const modal=document.createElement("div");modal.id="asset-custody-history-modal";modal.className="fixed inset-0 z-[115] bg-black/60 flex items-center justify-center p-3";
+    const rows=(result.asignaciones||[]).map(function(item){const returned=item.devolucion||{};return "<tr><td class='p-2'>"+escapePurchaseAssetHtml(item.asignacionId)+"</td><td class='p-2'>"+escapePurchaseAssetHtml(item.custodioUserId)+"</td><td class='p-2'>"+escapePurchaseAssetHtml(item.fechaEntrega)+"</td><td class='p-2'>"+escapePurchaseAssetHtml(item.estadoAsignacion)+"</td><td class='p-2'>"+escapePurchaseAssetHtml(returned.fechaRecepcion||"—")+"</td><td class='p-2'>"+escapePurchaseAssetHtml(returned.estado||"—")+"</td>"+(returned.devolucionId?"<td class='p-2'><button onclick='openAssetCustodyActPDFUI("+purchaseAssetJsArg(returned.devolucionId)+")' class='text-indigo-700 underline'>Descargar acta</button></td>":"<td class='p-2'>—</td>")+"</tr>";}).join("");
+    modal.innerHTML="<div class='bg-white rounded-2xl p-5 max-w-5xl w-full space-y-3'><div class='flex justify-between'><h3 class='font-black text-sm'>Historial de custodia</h3><button onclick='document.getElementById(\"asset-custody-history-modal\").remove()' class='text-xl'>×</button></div><div class='overflow-x-auto'><table class='w-full text-xs'><thead><tr class='border-b text-left'><th class='p-2'>Asignación</th><th class='p-2'>Custodio</th><th class='p-2'>Entrega</th><th class='p-2'>Estado</th><th class='p-2'>Recepción</th><th class='p-2'>Resultado</th><th class='p-2'>Acta</th></tr></thead><tbody>"+rows+"</tbody></table></div></div>";
+    document.body.appendChild(modal);
+  }).catch(error=>alert("No se pudo consultar el historial: "+(error.message||error)));
+};;
 
 // --- MANTENIMIENTO ---
 

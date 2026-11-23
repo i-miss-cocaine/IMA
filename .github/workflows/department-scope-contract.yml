@@ -89,6 +89,7 @@ on:
       - tests/security/accounting-accounts-payable-movements.test.js
       - tests/ui/accounting-accounts-payable-ui.test.js
       - tests/security/accounting-purchase-asset-capitalization.test.js
+      - tests/security/accounting-asset-custody-return.test.js
       - tests/security/accounting-asset-depreciation.test.js
       - tests/security/accounting-catalog.test.js
       - tests/security/accounting-transport-monthly-charges.test.js
@@ -322,6 +323,8 @@ jobs:
 
       - name: Run inventory warehouse UI contract
         run: node tests/ui/inventory-warehouse-ui.test.js
+      - name: Run asset custody assignment, return, private acta and rollback contract
+        run: node tests/security/accounting-asset-custody-return.test.js
       - name: Run budget reservation and commitment ledger contract
         run: node tests/security/accounting-budget-control.test.js
       - name: Run accounting master catalog and unit conversion contract
