@@ -5567,6 +5567,7 @@ function getOrCreateSheet(ss, name) {
     "RelacionesFamiliares": ["RelacionID","ExpedienteID","ResponsableUserId","TipoRelacion","Estado","FechaInicio","FechaFin","VerificadaPor","FechaVerificacion"],
     "TransporteRutas": ["RutaID","Nombre","Unidad","Conductor","Capacidad","Paradas","Estado"],
     "TransporteAsignaciones": ["ID","RutaID","EstudianteUserId","Parada","Horario","Estado","Fecha","Jornada"],
+    "TransferenciasInventario": ["TransferenciaID","FechaCreacion","ItemCodigo","ItemNombre","CantidadDespachada","UbicacionOrigen","UbicacionDestino","SolicitanteUserId","Estado","ReceptorUserId","FechaRecepcion","CantidadRecibida","Discrepancia","Observaciones","SedeCodOrigen","UbicacionIDOrigen","SedeCodDestino","UbicacionIDDestino","NumeroLote","NumeroSerie"],
     "TransporteViajes": ["ViajeID","RutaID","Unidad","Conductor","Monitor","Fecha","Jornada","Inicio","Fin","Estado"]
   };
   var headers = defaultHeaders[name];
@@ -13714,15 +13715,38 @@ function getInventoryKardex(payload) {
 
 // [TAREA 3] [Fase Proveedores y Compromisos] - Registro y actualización de contratos de proveedores con fecha de inicio, vencimiento y días de aviso.
 
+function inventoryEnsureTransferSheet_(ss) {
+ const spreadsheet=ss||SpreadsheetApp.openById(SPREADSHEET_ID);
+ if(!spreadsheet)throw new Error("SPREADSHEET_NOT_CONFIGURED");
+ const headers=["TransferenciaID","FechaCreacion","ItemCodigo","ItemNombre","CantidadDespachada","UbicacionOrigen","UbicacionDestino","SolicitanteUserId","Estado","ReceptorUserId","FechaRecepcion","CantidadRecibida","Discrepancia","Observaciones","SedeCodOrigen","UbicacionIDOrigen","SedeCodDestino","UbicacionIDDestino","NumeroLote","NumeroSerie"];
+ let sheet=spreadsheet.getSheetByName("TransferenciasInventario");
+ if(!sheet)sheet=spreadsheet.insertSheet("TransferenciasInventario");
+ const rows=sheet.getDataRange().getValues(),first=rows&&rows.length?rows[0]:[];
+ if(!first||!first.some(function(v){return String(v||"").trim();})){
+  sheet.getRange(1,1,1,headers.length).setValues([headers]);return sheet;
+ }
+ if(String(first[0]||"").trim().indexOf("TRF-")===0){
+  sheet.insertRowBefore(1);sheet.getRange(1,1,1,headers.length).setValues([headers]);return sheet;
+ }
+ const current=first.map(function(v){return String(v||"").trim();});
+ const prefix=current.length<=headers.length&&current.every(function(v,i){return v===headers[i];});
+ if(prefix&&current.length<headers.length){sheet.getRange(1,current.length+1,1,headers.length-current.length).setValues([headers.slice(current.length)]);return sheet;}
+ if(!prefix||current.length!==headers.length)throw new Error("INVENTORY_TRANSFER_SCHEMA_MISMATCH");
+ return sheet;
+}
+
 function transferInventoryStock(payload) {
  const input=payload||{},actor=catalogActor_(input,true);
  if(!actor||!actor.userId)throw new Error("VERIFIED_IDENTITY_REQUIRED");
  const permission=validateRolePermission(actor,"transferInventoryStock",input);
  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
- const itemCodigo=String(input.itemCodigo||""),cantidad=input.cantidad,requiereConfirmacionFisica=input.requiereConfirmacionFisica,observaciones=input.observaciones||"";
+ const itemCodigo=String(input.itemCodigo||"").trim(),cantidad=input.cantidad,requiereConfirmacionFisica=input.requiereConfirmacionFisica,observaciones=String(input.observaciones||"");
  const originInput=String(input.ubicacionOrigen||"").trim(),destinationInput=String(input.ubicacionDestino||"").trim();
- const qty=Number(cantidad),lot=String(input.numeroLote||"").trim(),serial=String(input.numeroSerie||"").trim();
- if(!itemCodigo||!Number.isFinite(qty)||qty<=0||!originInput||!destinationInput)throw new Error("TRANSFER_INPUT_INVALID");
+ const requestedQty=Number(cantidad),lot=String(input.numeroLote||"").trim(),serial=String(input.numeroSerie||"").trim();
+ const originWarehouse=String(input.sedeCodOrigen||input.almacenOrigen||"").trim(),destinationWarehouse=String(input.sedeCodDestino||input.almacenDestino||"").trim();
+ const originLocationId=String(input.ubicacionIdOrigen||"").trim(),destinationLocationId=String(input.ubicacionIdDestino||"").trim();
+ if(!itemCodigo||!Number.isFinite(requestedQty)||requestedQty<=0||!originInput||!destinationInput)throw new Error("TRANSFER_INPUT_INVALID");
+ if(!originWarehouse||!destinationWarehouse||!originLocationId||!destinationLocationId)throw new Error("TRANSFER_LOCATION_ID_REQUIRED");
  const lock=LockService.getScriptLock();lock.waitLock(15000);
  try{
   const verified=catalogActor_(input,true);
@@ -13730,35 +13754,42 @@ function transferInventoryStock(payload) {
   const lockedPermission=validateRolePermission(verified,"transferInventoryStock",input);
   if(!lockedPermission||lockedPermission.authorized!==true)throw new Error(lockedPermission&&lockedPermission.code||"ROLE_PERMISSION_DENIED");
   const ss=SpreadsheetApp.openById(SPREADSHEET_ID),catalogItem=catalogFindItem_(ss,itemCodigo,true),canonicalCode=catalogItem.code;
-  const origin=inventoryResolveLocation_(ss,{ubicacionId:input.ubicacionIdOrigen||"",sedeCod:input.sedeCodOrigen||input.almacenOrigen||"",ubicacionResponsable:originInput});
-  const destination=inventoryResolveLocation_(ss,{ubicacionId:input.ubicacionIdDestino||"",sedeCod:input.sedeCodDestino||input.almacenDestino||"",ubicacionResponsable:destinationInput});
+  const unit=catalogFindUnit_(ss,input.unidadMedida||catalogItem.baseUnit);
+  if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(catalogItem.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");
+  const qty=assetDeprMoney_(requestedQty*Number(unit.factor||1));
+  if(!Number.isFinite(qty)||qty<=0)throw new Error("TRANSFER_BASE_QUANTITY_INVALID");
+  const origin=inventoryResolveLocation_(ss,{ubicacionId:originLocationId,sedeCod:originWarehouse,ubicacionResponsable:originInput});
+  const destination=inventoryResolveLocation_(ss,{ubicacionId:destinationLocationId,sedeCod:destinationWarehouse,ubicacionResponsable:destinationInput});
   const uOrigen=origin.nombreUbicacion,uDestino=destination.nombreUbicacion;
   if(origin.sedeCod===destination.sedeCod&&origin.ubicacionId===destination.ubicacionId)throw new Error("TRANSFER_SOURCE_DESTINATION_MUST_DIFFER");
   const kardexSheet=catalogEnsureKardexSchema_(ss),kData=kardexSheet.getDataRange().getValues().slice(1),movementStart=kardexSheet.getLastRow()+1;
-  const valuationSnapshot=inventoryValuationSnapshot_(ss),transferSheetBefore=ss.getSheetByName("TransferenciasInventario"),transferRowsBefore=transferSheetBefore?transferSheetBefore.getDataRange().getValues().map(r=>r.slice()):null;
-  let stockDisponibleOrigen=0,sNombre=catalogItem.name;
+  const transferSheet=inventoryEnsureTransferSheet_(ss),transferRowsBefore=transferSheet.getDataRange().getValues().map(r=>r.slice());
+  const valuationSnapshot=inventoryValuationSnapshot_(ss);
+  let sNombre=catalogItem.name;const originBuckets=Object.create(null);
   kData.forEach(function(r){
    if(catalogNormalizeCode_(r[2])!==catalogNormalizeCode_(canonicalCode))return;
    var rowLoc;try{rowLoc=inventoryResolveLocation_(ss,{sedeCod:r[20],ubicacionId:r[21],ubicacionResponsable:r[10]});}catch(_){rowLoc={sedeCod:String(r[20]||"LEGACY"),ubicacionId:String(r[21]||inventoryLegacyLocationId_(r[10]||"Bodega General"))};}
-   if(rowLoc.sedeCod===origin.sedeCod&&rowLoc.ubicacionId===origin.ubicacionId&&String(r[22]||"")===lot&&String(r[23]||"")===serial)stockDisponibleOrigen=Number(r[8]||0);
+   if(rowLoc.sedeCod!==origin.sedeCod||rowLoc.ubicacionId!==origin.ubicacionId)return;
+   originBuckets[String(r[22]||"")+"\u001f"+String(r[23]||"")]=Number(r[8]||0);
   });
-  const stockReservadoOrigen=inventoryActiveReserved_(ss,canonicalCode,uOrigen,"",origin.sedeCod,origin.ubicacionId),stockDisponibleReal=assetDeprMoney_(stockDisponibleOrigen-stockReservadoOrigen);
-  if(stockDisponibleReal+0.000001<qty)return{status:"error",code:"INSUFFICIENT_AVAILABLE_STOCK",stockFisico:stockDisponibleOrigen,stockReservado:stockReservadoOrigen,disponible:stockDisponibleReal,solicitado:qty,ubicacionOrigen:uOrigen,sedeCodOrigen:origin.sedeCod};
+  const stockDisponibleOrigen=Number(originBuckets[lot+"\u001f"+serial]||0),stockFisicoOrigen=assetDeprMoney_(Object.keys(originBuckets).reduce(function(sum,key){return sum+Number(originBuckets[key]||0);},0));
+  const stockReservadoOrigen=inventoryActiveReserved_(ss,canonicalCode,uOrigen,"",origin.sedeCod,origin.ubicacionId),stockDisponibleReal=assetDeprMoney_(stockFisicoOrigen-stockReservadoOrigen);
+  if(stockDisponibleOrigen+0.000001<qty)return{status:"error",code:"INSUFFICIENT_LOCAL_STOCK_BUCKET",stockFisico:stockFisicoOrigen,stockFisicoLoteSerie:stockDisponibleOrigen,stockReservado:stockReservadoOrigen,disponible:stockDisponibleReal,solicitado:qty,ubicacionOrigen:uOrigen,sedeCodOrigen:origin.sedeCod};
+  if(stockDisponibleReal+0.000001<qty)return{status:"error",code:"INSUFFICIENT_AVAILABLE_STOCK",stockFisico:stockFisicoOrigen,stockFisicoLoteSerie:stockDisponibleOrigen,stockReservado:stockReservadoOrigen,disponible:stockDisponibleReal,solicitado:qty,ubicacionOrigen:uOrigen,sedeCodOrigen:origin.sedeCod};
   const now=new Date(),transferBatchId="TRF-"+now.getFullYear()+"-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,""),solicitanteId=verified.userId;
   const esperaConfirmacion=requiereConfirmacionFisica!==false,estadoTransferencia=esperaConfirmacion?"EnTransito":"RecibidaTotal";
   try{
    const salidaRes=recordInventoryMovementLocked_(ss,{itemCodigo:canonicalCode,itemNombre:sNombre,tipoMovimiento:"TransferenciaSalida",cantidad:qty,cantidadBase:true,ubicacionResponsable:uOrigen,sedeCod:origin.sedeCod,ubicacionId:origin.ubicacionId,numeroLote:lot,numeroSerie:serial,actorUserId:solicitanteId,documentOrigen:transferBatchId,referenciaMovimiento:"Hacia "+uDestino+" ["+estadoTransferencia+"]",observaciones:"Transferencia a "+uDestino+". "+observaciones});
    let entradaRes=null;
    if(!esperaConfirmacion)entradaRes=recordInventoryMovementLocked_(ss,{itemCodigo:canonicalCode,itemNombre:sNombre,tipoMovimiento:"Entrada",cantidad:qty,cantidadBase:true,capasTransferencia:salidaRes.capasTransferencia,ubicacionResponsable:uDestino,sedeCod:destination.sedeCod,ubicacionId:destination.ubicacionId,numeroLote:lot,numeroSerie:serial,actorUserId:solicitanteId,documentOrigen:transferBatchId,referenciaMovimiento:"Desde "+uOrigen,observaciones:"Transferencia automática recibida desde "+uOrigen+". "+observaciones});
-   const trfSheet=getOrCreateSheet(ss,"TransferenciasInventario");
-   trfSheet.appendRow([transferBatchId,now,canonicalCode,sNombre,qty,uOrigen,uDestino,solicitanteId,estadoTransferencia,esperaConfirmacion?"":solicitanteId,esperaConfirmacion?"":now,esperaConfirmacion?0:qty,0,observaciones,origin.sedeCod,origin.ubicacionId,destination.sedeCod,destination.ubicacionId,lot,serial]);
+   transferSheet.appendRow([transferBatchId,now,canonicalCode,sNombre,qty,uOrigen,uDestino,solicitanteId,estadoTransferencia,esperaConfirmacion?"":solicitanteId,esperaConfirmacion?"":now,esperaConfirmacion?0:qty,0,observaciones,origin.sedeCod,origin.ubicacionId,destination.sedeCod,destination.ubicacionId,lot,serial]);
    logStructuredEvent("ACCOUNTING","transferInventoryStock","INFO","STOCK_TRANSFERRED","Transferencia "+transferBatchId+": "+qty+" unidades de "+canonicalCode+" de "+uOrigen+" a "+uDestino,{transferBatchId:transferBatchId,itemCodigo:canonicalCode,qty:qty,ubicacionOrigen:uOrigen,ubicacionDestino:uDestino,sedeCodOrigen:origin.sedeCod,sedeCodDestino:destination.sedeCod,estadoTransferencia:estadoTransferencia},solicitanteId);
    return{status:"success",transferBatchId:transferBatchId,itemCodigo:canonicalCode,itemNombre:sNombre,cantidadTransferida:qty,ubicacionOrigen:uOrigen,ubicacionDestino:uDestino,sedeCodOrigen:origin.sedeCod,sedeCodDestino:destination.sedeCod,ubicacionIdOrigen:origin.ubicacionId,ubicacionIdDestino:destination.ubicacionId,numeroLote:lot,numeroSerie:serial,estadoTransferencia:estadoTransferencia,stockNuevoOrigen:salidaRes.stockNuevoUbicacion,stockNuevoDestino:entradaRes?entradaRes.stockNuevoUbicacion:null,stockConsolidadoInstitucional:salidaRes.stockConsolidadoInstitucional};
   }catch(error){
    while(kardexSheet.getLastRow()>=movementStart)kardexSheet.deleteRow(kardexSheet.getLastRow());
    inventoryValuationRestore_(ss,valuationSnapshot);
-   const transferSheet=ss.getSheetByName("TransferenciasInventario");
-   if(transferSheet){while(transferSheet.getLastRow()>(transferRowsBefore?transferRowsBefore.length:0))transferSheet.deleteRow(transferSheet.getLastRow());if(transferRowsBefore&&transferRowsBefore.length){const width=Math.max.apply(null,transferRowsBefore.map(r=>r.length));transferSheet.getRange(1,1,transferRowsBefore.length,width).setValues(transferRowsBefore.map(r=>{const row=r.slice();while(row.length<width)row.push("");return row;}));}}
+   while(transferSheet.getLastRow()>transferRowsBefore.length)transferSheet.deleteRow(transferSheet.getLastRow());
+   if(transferRowsBefore.length){const width=Math.max.apply(null,transferRowsBefore.map(r=>r.length));transferSheet.getRange(1,1,transferRowsBefore.length,width).setValues(transferRowsBefore.map(r=>{const row=r.slice();while(row.length<width)row.push("");return row;}));}
    throw new Error("INVENTORY_TRANSFER_ATOMIC_FAILURE:"+String(error&&error.message||error));
   }
  }finally{lock.releaseLock();}
@@ -13767,46 +13798,14 @@ function transferInventoryStock(payload) {
 // [TASK-021] [F19-Task03] - Confirmación de recepción física de transferencias con gestión de discrepancias
 
 function getInventoryTransfers(payload) {
-  const { estado, ubicacion } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const rows = getOrCreateSheet(ss, "TransferenciasInventario").getDataRange().getValues().slice(1);
-
-  let filtered = rows;
-  if (estado) {
-    filtered = filtered.filter(r => String(r[8]).trim() === String(estado).trim());
-  }
-  if (ubicacion) {
-    const uStr = String(ubicacion).toLowerCase().trim();
-    filtered = filtered.filter(r => String(r[5]).toLowerCase().trim() === uStr || String(r[6]).toLowerCase().trim() === uStr);
-  }
-
-  const mapped = filtered.map(r => ({
-    transferBatchId: r[0],
-    fechaCreacion: r[1],
-    itemCodigo: r[2],
-    itemNombre: r[3],
-    cantidadDespachada: r[4],
-    ubicacionOrigen: r[5],
-    ubicacionDestino: r[6],
-    solicitanteUserId: r[7],
-    estadoTransferencia: r[8],
-    receptorUserId: r[9],
-    fechaRecepcion: r[10],
-    cantidadRecibida: r[11],
-    discrepancia: r[12],
-    observaciones: r[13],
-    sedeCodOrigen: String(r[14]||"LEGACY"),
-    ubicacionIdOrigen: String(r[15]||""),
-    sedeCodDestino: String(r[16]||"LEGACY"),
-    ubicacionIdDestino: String(r[17]||""),
-    numeroLote: String(r[18]||""),
-    numeroSerie: String(r[19]||"")
-  }));
-
-  return {
-    status: "success",
-    transferencias: mapped
-  };
+  const input=payload||{},actor=catalogActor_(input,false),permission=validateRolePermission(actor,"getInventoryTransfers",input);
+  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),rows=inventoryEnsureTransferSheet_(ss).getDataRange().getValues().slice(1);
+  let filtered=rows;
+  if(input.estado)filtered=filtered.filter(r=>String(r[8]||"").trim()===String(input.estado).trim());
+  if(input.ubicacion){const key=String(input.ubicacion).toLowerCase().trim();filtered=filtered.filter(r=>String(r[5]||"").toLowerCase().trim()===key||String(r[6]||"").toLowerCase().trim()===key);}
+  const mapped=filtered.filter(r=>String(r[0]||"").trim()).map(r=>({transferBatchId:r[0],fechaCreacion:r[1],itemCodigo:r[2],itemNombre:r[3],cantidadDespachada:r[4],ubicacionOrigen:r[5],ubicacionDestino:r[6],solicitanteUserId:r[7],estadoTransferencia:r[8],receptorUserId:r[9],fechaRecepcion:r[10],cantidadRecibida:r[11],discrepancia:r[12],observaciones:r[13],sedeCodOrigen:String(r[14]||"LEGACY"),ubicacionIdOrigen:String(r[15]||""),sedeCodDestino:String(r[16]||"LEGACY"),ubicacionIdDestino:String(r[17]||""),numeroLote:String(r[18]||""),numeroSerie:String(r[19]||"")}));
+  return{status:"success",transferencias:mapped};
 }
 
 function createMaterialRequisition(payload) {
@@ -14327,11 +14326,11 @@ function confirmTransferReceipt(payload) {
   if(String(verified.userId)!==String(actor.userId)||String(verified.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
   const lockedPermission=validateRolePermission(verified,"confirmTransferReceipt",input);
   if(!lockedPermission||!lockedPermission.authorized)throw new Error(lockedPermission&&lockedPermission.code||"ROLE_PERMISSION_DENIED");
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),trfSheet=getOrCreateSheet(ss,"TransferenciasInventario"),trfData=trfSheet.getDataRange().getValues();
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),trfSheet=inventoryEnsureTransferSheet_(ss),trfData=trfSheet.getDataRange().getValues();
   const matches=[];for(let i=1;i<trfData.length;i++)if(String(trfData[i][0]||"").trim()===transferBatchId)matches.push(i);
   if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"NOT_FOUND"};
   const rowIndex=matches[0],row=trfData[rowIndex],state=String(row[8]||"").trim(),itemCodigo=String(row[2]||"").trim();
-  const dispatched=Number(row[4]||0),previousReceived=Number(row[11]||0),received=input.cantidadRecibida===undefined?dispatched:Number(input.cantidadRecibida);
+  const dispatched=assetDeprMoney_(Number(row[4]||0)),previousReceived=assetDeprMoney_(Number(row[11]||0)),received=assetDeprMoney_(input.cantidadRecibida===undefined?dispatched:Number(input.cantidadRecibida));
   if(!itemCodigo||!Number.isFinite(dispatched)||dispatched<=0||!Number.isFinite(received)||received<0)
     throw new Error("TRANSFER_RECEIPT_QUANTITY_INVALID");
   if(received>dispatched+0.000001)throw new Error("TRANSFER_RECEIPT_EXCEEDS_DISPATCHED_QUANTITY");
@@ -14347,7 +14346,7 @@ function confirmTransferReceipt(payload) {
   if(discrepancy>0.005&&justification.length<5)throw new Error("TRANSFER_DISCREPANCY_JUSTIFICATION_REQUIRED");
   const originLabel=String(row[5]||"Bodega General"),destinationLabel=String(row[6]||"Bodega General");
   const origin={sedeCod:String(row[14]||"LEGACY"),ubicacionId:String(row[15]||inventoryLegacyLocationId_(originLabel))};
-  const destination={sedeCod:String(row[16]||"LEGACY"),ubicacionId:String(row[17]||inventoryLegacyLocationId_(destinationLabel))};
+  const destination=received>previousReceived?inventoryResolveLocation_(ss,{sedeCod:String(row[16]||"LEGACY"),ubicacionId:String(row[17]||inventoryLegacyLocationId_(destinationLabel)),ubicacionResponsable:destinationLabel}):{sedeCod:String(row[16]||"LEGACY"),ubicacionId:String(row[17]||inventoryLegacyLocationId_(destinationLabel)),nombreUbicacion:destinationLabel};
   const lot=String(row[18]||""),serial=String(row[19]||""),delta=assetDeprMoney_(received-previousReceived);
   const newState=received===0?"Rechazada":(discrepancy<=0.005?"RecibidaTotal":"RecibidaParcial");
   const kardex=getOrCreateSheet(ss,"InventariosKardex"),movementStart=kardex.getLastRow()+1,valuationSnapshot=inventoryValuationSnapshot_(ss),original=row.slice();
