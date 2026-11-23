@@ -1,0 +1,559 @@
+# Keep canonical absence reconciliation and ownership tests covered on every relevant push.
+# Include the PDF page classifier dependency in the academic evidence contract.
+# Revalidate payroll concepts, loan amortization, journals, and receipt distribution with department scope.
+# Keep HR incident, disciplinary, attendance-correction, and transport ownership contracts enabled.
+name: Department Scope Contract
+
+on:
+  push:
+    branches:
+      - NG_beta_0.0.0.1_work
+    paths:
+      - backend/user-service/Code.gs
+      - developer-dashboard.html
+      - js/developer.js
+      - tests/security/permission-matrix-dimensions-contract.test.js
+      - tests/security/security-version-propagation-contract.test.js
+      - tests/security/security-delegation-version-propagation-contract.test.js
+      - tests/security/session-token-expiry.test.js
+      - backend/academic-service/Code.gs
+      - tests/security/academic-multilevel-file-validation.test.js
+      - tests/security/academic-service-single-auth-context.test.js
+      - tests/security/openxml-package-validation.test.js
+      - tests/ui/pdf-document-classification.test.js
+      - tests/ui/teacher-excel-workbook-preflight.test.js
+      - backend/accounting-service/Code.gs
+      - backend/task-service/Code.gs
+      - backend/exam-service/Code.gs
+      - backend/developer-service/Code.gs
+      - js/student.js
+      - js/secretary.js
+      - js/ui-common.js
+      - dashboard-recursos-humanos.html
+      - js/hr-payroll-pdf.js
+      - tests/security/student-payment-voucher-client.test.js
+      - tests/security/department-scope-contract.test.js
+      - tests/security/contextual-abac-policy-contract.test.js
+      - tests/security/contextual-abac-five-services-contract.test.js
+      - tests/security/task-exam-guardian-academic-permission-contract.test.js
+      - tests/security/academic-coordinator-area-abac-contract.test.js
+      - tests/security/academic-planning-teacher-abac-contract.test.js
+      - tests/security/academic-guardian-primary-relation-abac-contract.test.js
+      - tests/security/user-service-department-hierarchy-cycle.test.js
+      - tests/security/user-service-department-affiliation-integrity.test.js
+      - tests/security/academic-department-governance-contract.test.js
+      - tests/security/internal-responsibility-rbac-contract.test.js
+      - tests/security/user-role-membership-contract.test.js
+      - login.html
+      - js/auth.js
+      - tests/security/departmental-resource-access.test.js
+      - tests/security/user-student-guardian-consolidated-list-abac.test.js
+      - tests/security/user-service-absence-justification-guardian-abac.test.js
+      - tests/security/user-service-absence-review-resource-ownership.test.js
+      - tests/security/user-student-procedure-notification-logs-ownership.test.js
+      - tests/security/user-admission-notification-logs-ownership.test.js
+      - tests/security/user-global-notification-logs-scope.test.js
+      - tests/security/user-internal-messages-participant-ownership.test.js
+      - tests/security/user-internal-message-mutations-ownership.test.js
+      - tests/security/user-appointment-bookings-scope.test.js
+      - tests/security/user-appointment-mutations-ownership.test.js
+      - tests/security/user-departmental-work-inbox-scope.test.js
+      - tests/security/user-administrative-requests-scope.test.js
+      - tests/security/academic-student-expediente-ownership.test.js
+      - tests/security/academic-update-student-file-ownership.test.js
+      - tests/security/academic-merge-student-files-ownership.test.js
+      - tests/security/academic-student-document-private-storage.test.js
+      - tests/security/academic-student-enrollment-history-ownership.test.js
+      - tests/security/academic-student-enrollment-write-ownership.test.js
+      - tests/security/academic-student-lifecycle-mutations-ownership.test.js
+      - tests/security/academic-student-attendance-summary-ownership.test.js
+      - js/accounting.js
+      - dashboard-contabilidad.html
+      - tests/security/accounting-enrollment-billing-config.test.js
+      - tests/security/accounting-monthly-charge-period.test.js
+      - tests/security/accounting-payroll-generation-authorization.test.js
+      - tests/security/accounting-transport-assignment-ownership.test.js
+      - tests/security/accounting-transport-read-permissions.test.js
+      - tests/security/accounting-transport-read-scope-ownership.test.js
+      - tests/security/academic-enrollment-billing-integration.test.js
+      - tests/security/academic-extracurricular-enrollment.test.js
+      - tests/security/accounting-complementary-services.test.js
+      - tests/security/academic-admission-ownership.test.js
+      - tests/security/user-service-signature-ownership.test.js
+      - tests/security/user-service-signature-provider-callback.test.js
+      - tests/security/file-binary-validation-contract.test.js
+      - tests/security/file-attachment-persistence-contract.test.js
+      - tests/security/user-service-request-attachment-integrity.test.js
+      - tests/security/accounting-departmental-resource-access.test.js
+      - tests/security/accounting-purchase-quotation-adjudication.test.js
+      - tests/security/accounting-accounts-payable-movements.test.js
+      - tests/ui/accounting-accounts-payable-ui.test.js
+      - tests/security/accounting-purchase-asset-capitalization.test.js
+      - tests/security/accounting-asset-custody-return.test.js
+      - tests/security/accounting-asset-depreciation.test.js
+      - tests/security/accounting-catalog.test.js
+      - tests/security/accounting-transport-monthly-charges.test.js
+      - tests/security/accounting-transport-route-optimization.test.js
+      - tests/security/accounting-transport-efficiency-metrics.test.js
+      - tests/contracts/api-response-contract.test.js
+      - tests/regression/hr-vacation-dashboard-contract.test.js
+      - tests/ui/hr-department-affiliation-ui-contract.test.js
+      - tests/ui/academic-department-crosswalk-ui-contract.test.js
+      - dashboard-direccion.html
+      - js/academic-department-crosswalk-admin.js
+      - tests/regression/phase22-document-management-suite-contract.test.js
+      - tests/security/user-service-signature-document-integrity.test.js
+      - tests/security/accounting-school-document-binary-integrity.test.js
+      - js/api.js
+      - backend/academic-service/Code.gs
+      - backend/accounting-service/Code.gs
+      - dashboard-direccion.html
+      - js/transport-analytics.js
+      - tests/security/accounting-service-tariffs.test.js
+      - tests/security/accounting-payment-voucher-evidence-integrity.test.js
+      - tests/security/accounting-family-credit-preference.test.js
+      - tests/security/accounting-purchase-receipt-partial.test.js
+      - tests/security/accounting-supplier-profile.test.js
+      - tests/security/accounting-purchase-dossier.test.js
+      - tests/security/accounting-purchase-console-capabilities.test.js
+      - tests/security/accounting-purchase-order-pdf.test.js
+      - tests/security/accounting-vacation-medical-leave-ownership.test.js
+      - tests/security/accounting-labor-incident-write-ownership.test.js
+      - tests/security/accounting-training-enrollment-ownership.test.js
+      - tests/security/accounting-training-course-catalog-ownership.test.js
+      - tests/security/accounting-professional-development-analytics-ownership.test.js
+      - tests/security/accounting-work-shift-substitution-ownership.test.js
+      - tests/security/accounting-staffing-needs-ownership.test.js
+      - tests/security/accounting-staff-attendance-ownership.test.js
+      - tests/security/accounting-employee-self-service-portal.test.js
+      - tests/security/accounting-employee-expediente-scope.test.js
+      - tests/security/accounting-attendance-correction-ownership.test.js
+      - tests/security/academic-absence-justification-canonical.test.js
+      - tests/security/academic-teacher-justification-abac.test.js
+      - teacher-dashboard.html
+      - js/teacher.js
+      - tests/security/user-service-departmental-outbox.test.js
+      - tests/security/user-service-legacy-document-inventory.test.js
+      - tests/security/user-service-workflow-notifications.test.js
+      - tests/security/user-service-ui-metadata.test.js
+      - tests/security/ui-common-permanent-help.test.js
+      - tests/security/academic-admission-identity.test.js
+      - tests/security/task-service-grade-validation.test.js
+      - tests/security/task-service-upload-contract.test.js
+      - tests/ui/**
+      - student-dashboard.html
+      - .github/workflows/ui-accessibility-contract.yml
+      - tests/security/accounting-employee-loan-advance-ownership.test.js
+      - tests/security/accounting-payroll-loan-amortization.test.js
+      - tests/security/accounting-payroll-concept-catalog.test.js
+      - tests/security/accounting-payroll-receipt-distribution.test.js
+      - tests/security/accounting-payroll-journal-integration.test.js
+      - tests/security/accounting-departmental-import-scope.test.js
+      - tests/security/accounting-import-auth-router.test.js
+      - tests/security/accounting-import-mapping-profiles.test.js
+      - tests/security/user-service-help-preferences.test.js
+      - tests/security/accounting-import-semantic-preflight.test.js
+      - tests/security/user-migrated-resource-ownership-contract.test.js
+      - tests/security/resource-ownership-abac.test.js
+      - tests/security/department-reference-policy.test.js
+      - tests/security/department-reference-policy-storage.test.js
+      - tests/security/department-reference-grant-admin.test.js
+      - tests/security/department-reference-read-authorization.test.js
+      - tests/security/department-reference-interservice-envelope.test.js
+      - tests/security/academic-department-reference-consumer.test.js
+      - tests/security/accounting-department-reference-consumer.test.js
+      - .github/workflows/department-scope-contract.yml
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  department-scope-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout authorized work branch
+        uses: actions/checkout@v4
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Run department scope contract
+        run: node tests/security/department-scope-contract.test.js
+      - name: Run contextual ABAC fail-closed policy contract
+        run: node tests/security/contextual-abac-policy-contract.test.js
+      - name: Run five-service contextual ABAC identity, guardian relationship and validity contract
+        run: node tests/security/contextual-abac-five-services-contract.test.js
+      - name: Run TASK and EXAM strict guardian academic permission contract
+        run: node tests/security/task-exam-guardian-academic-permission-contract.test.js
+      - name: Run academic coordinator area ABAC contract
+        run: node tests/security/academic-coordinator-area-abac-contract.test.js
+      - name: Run academic planning teacher assignment ABAC contract
+        run: node tests/security/academic-planning-teacher-abac-contract.test.js
+      - name: Run academic guardian primary relation ABAC contract
+        run: node tests/security/academic-guardian-primary-relation-abac-contract.test.js
+      - name: Run organizational department hierarchy cycle contract
+        run: node tests/security/user-service-department-hierarchy-cycle.test.js
+      - name: Run institutional department affiliation integrity contract
+        run: node tests/security/user-service-department-affiliation-integrity.test.js
+      - name: Run academic department governance contract
+        run: node tests/security/academic-department-governance-contract.test.js
+      - name: Run internal responsibility RBAC contract
+        run: node tests/security/internal-responsibility-rbac-contract.test.js
+      - name: Run dynamic permission matrix dimension contract
+        run: node tests/security/permission-matrix-dimensions-contract.test.js
+      - name: Run security version propagation and stale-session contract
+        run: node tests/security/security-version-propagation-contract.test.js
+      - name: Run delegated privilege version propagation and expiry contract
+        run: node tests/security/security-delegation-version-propagation-contract.test.js
+      - name: Run session token expiry and role version contract
+        run: node tests/security/session-token-expiry.test.js
+      - name: Run accounting departmental import scope contract
+        run: node tests/security/accounting-departmental-import-scope.test.js
+      - name: Run accounting semantic import preflight contract
+        run: node tests/security/accounting-import-semantic-preflight.test.js
+      - name: Run fixed asset depreciation contract
+        run: node tests/security/accounting-asset-depreciation.test.js
+      - name: Run accounting import authentication and router contract
+        run: node tests/security/accounting-import-auth-router.test.js
+      - name: Run private versioned import mapping profile contract
+        run: node tests/security/accounting-import-mapping-profiles.test.js
+      - name: Run per-user help preferences contract
+        run: node tests/security/user-service-help-preferences.test.js
+      - name: Run user migrated resource ownership contract
+        run: node tests/security/user-migrated-resource-ownership-contract.test.js
+      - name: Run user role membership contract
+        run: node tests/security/user-role-membership-contract.test.js
+      - name: Run accounting vacation and medical leave ownership contract
+        run: node tests/security/accounting-vacation-medical-leave-ownership.test.js
+      - name: Run accounting labor incident and disciplinary measure ownership contract
+        run: node tests/security/accounting-labor-incident-write-ownership.test.js
+      - name: Run accounting training enrollment ownership contract
+        run: node tests/security/accounting-training-enrollment-ownership.test.js
+      - name: Run accounting training course catalog ownership contract
+        run: node tests/security/accounting-training-course-catalog-ownership.test.js
+      - name: Run accounting professional development and training analytics ownership contract
+        run: node tests/security/accounting-professional-development-analytics-ownership.test.js
+      - name: Run accounting staff attendance ownership, isolation and concurrency contract
+        run: node tests/security/accounting-staff-attendance-ownership.test.js
+      - name: Run accounting employee self-service portal ownership and XSS contract
+        run: node tests/security/accounting-employee-self-service-portal.test.js
+      - name: Run accounting employee expediente and document ownership, privacy and concurrency contract
+        run: node tests/security/accounting-employee-expediente-scope.test.js
+      - name: Run accounting attendance correction ownership, integrity and concurrency contract
+        run: node tests/security/accounting-attendance-correction-ownership.test.js
+      - name: Run canonical academic absence justification and reconciliation contract
+        run: node tests/security/academic-absence-justification-canonical.test.js
+      - name: Run academic teacher justification ABAC and acknowledgment contract
+        run: node tests/security/academic-teacher-justification-abac.test.js
+      - name: Run departmental document outbox, receipt and integrity contract
+        run: node tests/security/user-service-departmental-outbox.test.js
+      - name: Run scoped legacy document inventory and migration history contract
+        run: node tests/security/user-service-legacy-document-inventory.test.js
+      - name: Run academic evidence binary and MIME validation contract
+        run: node tests/security/academic-multilevel-file-validation.test.js
+      - name: Run academic single authorization context contract
+        run: node tests/security/academic-service-single-auth-context.test.js
+      - name: Run OpenXML package validation contract
+        run: node tests/security/openxml-package-validation.test.js
+      - name: Run PDF page classification contract
+        run: node tests/ui/pdf-document-classification.test.js
+      - name: Run teacher Excel workbook preflight contract
+        run: node tests/ui/teacher-excel-workbook-preflight.test.js
+      - name: Run reactive workflow notification privacy, deduplication and concurrency contract
+        run: node tests/security/user-service-workflow-notifications.test.js
+      - name: Run versioned UI metadata catalog contract
+        run: node tests/security/user-service-ui-metadata.test.js
+      - name: Run accessible tooltip positioning and interaction contract
+        run: node tests/ui/accessible-tooltips.test.js
+      - name: Run permanent form help metadata contract
+        run: node tests/ui/permanent-form-help.test.js
+      - name: Run inline permanent help and validation DOM contract
+        run: node tests/security/ui-common-permanent-help.test.js
+      - name: Run Honduran admission identity validation contract
+        run: node tests/security/academic-admission-identity.test.js
+      - name: Run task grade validation contract
+        run: node tests/security/task-service-grade-validation.test.js
+      - name: Run task upload MIME and size contract
+        run: node tests/security/task-service-upload-contract.test.js
+      - name: Run accounting employee loan request and approval ownership contract
+        run: node tests/security/accounting-employee-loan-advance-ownership.test.js
+      - name: Run accounting payroll loan amortization and reversal contract
+        run: node tests/security/accounting-payroll-loan-amortization.test.js
+      - name: Run accounting dynamic payroll concept catalog and calculation contract
+        run: node tests/security/accounting-payroll-concept-catalog.test.js
+      - name: Run accounting payroll receipt distribution privacy and retry contract
+        run: node tests/security/accounting-payroll-receipt-distribution.test.js
+      - name: Run accounting payroll journal integration contract
+        run: node tests/security/accounting-payroll-journal-integration.test.js
+      - name: Run accounting journal integrity contract
+        run: node tests/security/accounting-journal-entry-integrity.test.js
+      - name: Run accounting budget control, audit and reservation contract
+        run: |
+          node --check tests/security/accounting-budget-control.test.js
+          node tests/security/accounting-budget-control.test.js
+      - name: Run accounting payroll batch and variance contract
+        run: node tests/security/accounting-payroll-batch-variance.test.js
+      - name: Run accounting purchase quotation matrix and split award contract
+        run: node tests/security/accounting-purchase-quotation-adjudication.test.js
+      - name: Run accounts payable partial payments, credit notes and aging portfolio contract
+        run: node tests/security/accounting-accounts-payable-movements.test.js
+      - name: Run accounts payable portfolio and movement UI contract
+        run: node tests/ui/accounting-accounts-payable-ui.test.js
+      - name: Run partial purchase receipt and quantity integrity contract
+        run: node tests/security/accounting-purchase-receipt-partial.test.js
+      - name: Run purchase receipt to fixed asset capitalization contract
+        run: node tests/security/accounting-purchase-asset-capitalization.test.js
+      - name: Run fixed asset depreciation and double-entry contract
+        run: node tests/security/accounting-asset-depreciation.test.js
+      - name: Run supplier profile and protected banking contract
+        run: node tests/security/accounting-supplier-profile.test.js
+      - name: Run unified purchase dossier traceability contract
+        run: node tests/security/accounting-purchase-dossier.test.js
+      - name: Run purchase console capability gating and stale-response contract
+        run: node tests/security/accounting-purchase-console-capabilities.test.js
+      - name: Run official purchase order PDF lifecycle contract
+        run: node tests/security/accounting-purchase-order-pdf.test.js
+
+      - name: Run authorized purchase order budget reduction contract
+        run: node tests/security/accounting-purchase-order-budget-adjustment.test.js
+
+      - name: Run inventory multi-warehouse Kardex and transfer contract
+        run: node tests/security/inventory-multilocation-kardex.test.js
+
+      - name: Run inventory warehouse UI contract
+        run: node tests/ui/inventory-warehouse-ui.test.js
+      - name: Run asset custody assignment, return, private acta and rollback contract
+        run: node tests/security/accounting-asset-custody-return.test.js
+      - name: Run budget reservation and commitment ledger contract
+        run: node tests/security/accounting-budget-control.test.js
+      - name: Run accounting master catalog and unit conversion contract
+        run: node tests/security/accounting-catalog.test.js
+      - name: Run preventive maintenance scheduling and concurrency contract
+        run: node tests/security/accounting-preventive-maintenance.test.js
+      - name: Run transport monthly charge, proration, cancellation and idempotency contract
+        run: node tests/security/accounting-transport-monthly-charges.test.js
+      - name: Run transport route optimization, approval and stale-write contract
+        run: node tests/security/accounting-transport-route-optimization.test.js
+      - name: Run transport efficiency metrics authorization, aggregation and data-gap contract
+        run: node tests/security/accounting-transport-efficiency-metrics.test.js
+      - name: Run versioned API envelope and local HTTP contract suite
+        run: node tests/contracts/api-response-contract.test.js
+      - name: Run HR vacation dashboard DTO and state contract
+        run: node tests/regression/hr-vacation-dashboard-contract.test.js
+      - name: Run HR department affiliation UI contract
+        run: node tests/ui/hr-department-affiliation-ui-contract.test.js
+      - name: Run academic department crosswalk UI contract
+        run: node tests/ui/academic-department-crosswalk-ui-contract.test.js
+      - name: Run centralized service tariff, versioning and discount contract
+        run: node tests/security/accounting-service-tariffs.test.js
+      - name: Run accounting payment voucher evidence integrity, versioning and decision binding contract
+        run: node tests/security/accounting-payment-voucher-evidence-integrity.test.js
+      - name: Run family credit guardian approval preference and fail-closed contract
+        run: node tests/security/accounting-family-credit-preference.test.js
+      - name: Run supplier profile and protected banking contract
+        run: node tests/security/accounting-supplier-profile.test.js
+      - name: Run unified purchase dossier traceability contract
+        run: node tests/security/accounting-purchase-dossier.test.js
+      - name: Run accounting staffing needs ownership and read-isolation contract
+        run: node tests/security/accounting-staffing-needs-ownership.test.js
+      - name: Run accounting work shift and substitution ownership contract
+        run: node tests/security/accounting-work-shift-substitution-ownership.test.js
+      - name: Run accounting departmental resource access contract
+        run: node tests/security/accounting-departmental-resource-access.test.js
+      - name: Run academic departmental resource access contract
+        run: node tests/security/departmental-resource-access.test.js
+      - name: Run USER student guardian roster resource ownership ABAC contract
+        run: node tests/security/user-student-guardian-consolidated-list-abac.test.js
+      - name: Run USER absence justification guardian attendance grant contract
+        run: node tests/security/user-service-absence-justification-guardian-abac.test.js
+      - name: Run USER absence review expediente ownership contract
+        run: node tests/security/user-service-absence-review-resource-ownership.test.js
+      - name: Run USER student procedure notification logs ownership contract
+        run: node tests/security/user-student-procedure-notification-logs-ownership.test.js
+      - name: Run USER admission notification logs ownership contract
+        run: node tests/security/user-admission-notification-logs-ownership.test.js
+      - name: Run USER global notification logs institutional scope contract
+        run: node tests/security/user-global-notification-logs-scope.test.js
+      - name: Run USER internal messages participant ownership contract
+        run: node tests/security/user-internal-messages-participant-ownership.test.js
+      - name: Run USER internal message mutations ownership contract
+        run: node tests/security/user-internal-message-mutations-ownership.test.js
+      - name: Run USER appointment bookings scope contract
+        run: node tests/security/user-appointment-bookings-scope.test.js
+      - name: Run USER appointment mutations ownership contract
+        run: node tests/security/user-appointment-mutations-ownership.test.js
+      - name: Run USER departmental work inbox scope contract
+        run: node tests/security/user-departmental-work-inbox-scope.test.js
+      - name: Run USER administrative requests scope contract
+        run: node tests/security/user-administrative-requests-scope.test.js
+      - name: Run academic student expediente ownership contract
+        run: node tests/security/academic-student-expediente-ownership.test.js
+      - name: Run academic update student file ownership contract
+        run: node tests/security/academic-update-student-file-ownership.test.js
+      - name: Run academic merge student files ownership contract
+        run: node tests/security/academic-merge-student-files-ownership.test.js
+      - name: Run academic student enrollment history ownership contract
+        run: node tests/security/academic-student-enrollment-history-ownership.test.js
+      - name: Run academic student enrollment write ownership contract
+        run: node tests/security/academic-student-enrollment-write-ownership.test.js
+      - name: Run academic student lifecycle mutations ownership contract
+        run: node tests/security/academic-student-lifecycle-mutations-ownership.test.js
+      - name: Run academic student attendance summary ownership contract
+        run: node tests/security/academic-student-attendance-summary-ownership.test.js
+      - name: Run accounting enrollment billing configuration contract
+        run: node tests/security/accounting-enrollment-billing-config.test.js
+      - name: Run accounting monthly charge period contract
+        run: node tests/security/accounting-monthly-charge-period.test.js
+      - name: Run accounting payroll generation authorization contract
+        run: node tests/security/accounting-payroll-generation-authorization.test.js
+      - name: Run accounting transport assignment ownership contract
+        run: node tests/security/accounting-transport-assignment-ownership.test.js
+      - name: Syntax-check transport read permission contract
+        run: node --check tests/security/accounting-transport-read-permissions.test.js
+      - name: Run transport read action permission contract
+        run: node tests/security/accounting-transport-read-permissions.test.js
+      - name: Run transport read scope and ownership contract
+        run: node tests/security/accounting-transport-read-scope-ownership.test.js
+      - name: Run academic enrollment billing integration contract
+        run: node tests/security/academic-enrollment-billing-integration.test.js
+      - name: Run extracurricular capacity, family enrollment and billing contract
+        run: node tests/security/academic-extracurricular-enrollment.test.js
+      - name: Run institutional complementary services catalog contract
+        run: node tests/security/accounting-complementary-services.test.js
+      - name: Run academic admission ownership contract
+        run: node tests/security/academic-admission-ownership.test.js
+      - name: Run user-service signature ownership contract
+        run: node tests/security/user-service-signature-ownership.test.js
+      - name: Run user-service signature provider callback contract
+        run: node tests/security/user-service-signature-provider-callback.test.js
+      - name: Run binary validation contract across services
+        run: node tests/security/file-binary-validation-contract.test.js
+      - name: Run private attachment persistence and authorization contract
+        run: node tests/security/file-attachment-persistence-contract.test.js
+      - name: Run request attachment SHA-256 integrity and tamper detection contract
+        run: node tests/security/user-service-request-attachment-integrity.test.js
+      - name: Syntax-check updated Apps Script services
+        run: |
+          node --check < backend/user-service/Code.gs
+          node --check < backend/academic-service/Code.gs
+          node --check < backend/accounting-service/Code.gs
+          node --check tests/security/academic-update-student-file-ownership.test.js
+          node --check tests/security/academic-merge-student-files-ownership.test.js
+          node --check tests/security/academic-student-lifecycle-mutations-ownership.test.js
+          node --check tests/security/accounting-monthly-charge-period.test.js
+          node --check tests/security/accounting-employee-expediente-scope.test.js
+          node --check tests/security/accounting-transport-monthly-charges.test.js
+          node --check tests/security/accounting-payroll-generation-authorization.test.js
+          node --check < backend/accounting-service/Code.gs
+          node --check tests/security/accounting-transport-assignment-ownership.test.js
+          node --check tests/security/accounting-transport-read-scope-ownership.test.js
+          node --check tests/security/accounting-family-credit-preference.test.js
+          node --check js/accounting.js
+          node --check js/secretary.js
+          node --check js/transport-analytics.js
+          node --check js/api.js
+          node --check js/developer.js
+          node --check tests/security/permission-matrix-dimensions-contract.test.js
+          node --check tests/security/security-version-propagation-contract.test.js
+          node --check tests/security/session-token-expiry.test.js
+          node --check tests/security/user-role-membership-contract.test.js
+          node --check tests/security/internal-responsibility-rbac-contract.test.js
+          node --check tests/security/department-scope-contract.test.js
+          node --check tests/security/contextual-abac-policy-contract.test.js
+          node --check tests/security/contextual-abac-five-services-contract.test.js
+          node --check tests/security/task-exam-guardian-academic-permission-contract.test.js
+          node --check tests/security/academic-coordinator-area-abac-contract.test.js
+          node --check tests/security/academic-planning-teacher-abac-contract.test.js
+          node --check tests/security/academic-guardian-primary-relation-abac-contract.test.js
+          node --check tests/security/task-service-security-contract.test.js
+          node --check tests/security/hmac-secret-config.test.js
+          node --check js/teacher.js
+          node --check tests/security/academic-teacher-justification-abac.test.js
+          node --check tests/contracts/api-response-contract.test.js
+          node --check tests/security/user-service-signature-provider-callback.test.js
+          node --check tests/security/file-binary-validation-contract.test.js
+          node --check tests/security/accounting-import-mapping-profiles.test.js
+          node --check tests/security/user-service-help-preferences.test.js
+          node --check tests/security/user-student-guardian-consolidated-list-abac.test.js
+          node --check tests/security/user-service-absence-justification-guardian-abac.test.js
+          node --check tests/security/user-service-absence-review-resource-ownership.test.js
+          node --check tests/security/user-student-procedure-notification-logs-ownership.test.js
+          node --check tests/security/user-admission-notification-logs-ownership.test.js
+          node --check tests/security/user-global-notification-logs-scope.test.js
+          node --check tests/security/user-internal-messages-participant-ownership.test.js
+          node --check tests/security/user-internal-message-mutations-ownership.test.js
+          node --check tests/security/user-appointment-bookings-scope.test.js
+          node --check tests/security/user-appointment-mutations-ownership.test.js
+          node --check tests/security/user-departmental-work-inbox-scope.test.js
+          node --check tests/security/user-administrative-requests-scope.test.js
+          node --check tests/regression/phase22-document-management-suite-contract.test.js
+          node --check tests/regression/hr-vacation-dashboard-contract.test.js
+          node --check js/ui-common.js
+          node --check < backend/task-service/Code.gs
+          node --check < backend/exam-service/Code.gs
+          node --check < backend/developer-service/Code.gs
+          node --check tests/security/academic-student-attendance-summary-ownership.test.js
+      - name: Run Phase 22 document management suite contract
+        run: node tests/regression/phase22-document-management-suite-contract.test.js
+      - name: Run user-service signature document integrity contract
+        run: node tests/security/user-service-signature-document-integrity.test.js
+      - name: Run ACCOUNTING school document binary integrity contract
+        run: node tests/security/accounting-school-document-binary-integrity.test.js
+      - name: Run generic resource ownership ABAC contract
+        run: node tests/security/resource-ownership-abac.test.js
+      - name: Run interdepartmental reference policy contract
+        run: node tests/security/department-reference-policy.test.js
+      - name: Run interdepartmental reference policy storage contract
+        run: node tests/security/department-reference-policy-storage.test.js
+      - name: Run interdepartmental reference grant administration contract
+        run: node tests/security/department-reference-grant-admin.test.js
+      - name: Run audited interdepartmental reference read authorization contract
+        run: node tests/security/department-reference-read-authorization.test.js
+      - name: Run signed interservice reference authorization envelope contract
+        run: node tests/security/department-reference-interservice-envelope.test.js
+      - name: Run ACADEMIC department reference consumer contract
+        run: node tests/security/academic-department-reference-consumer.test.js
+      - name: Run academic private student document storage, versioning and download contract
+        run: node tests/security/academic-student-document-private-storage.test.js
+      - name: Run ACCOUNTING department reference consumer contract
+        run: node tests/security/accounting-department-reference-consumer.test.js
+      - name: Run student private voucher client contract
+        run: node tests/security/student-payment-voucher-client.test.js
+      - name: Check student client syntax
+        run: node --check js/student.js
+      - name: Check authentication client syntax
+        run: node --check js/auth.js
+      - name: Check HR payroll PDF download helper
+        run: node --check js/hr-payroll-pdf.js
+      - name: Publish Department Scope result for API verification
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          node <<'NODE'
+          (async function () {
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split("/");
+            const state = process.env.JOB_STATUS === "success" ? "success" : "failure";
+            const response = await fetch(
+              process.env.GITHUB_API_URL + "/repos/" + owner + "/" + repo + "/statuses/" + process.env.GITHUB_SHA,
+              {
+                method: "POST",
+                headers: {
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": "Bearer " + process.env.GH_TOKEN,
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  state: state,
+                  context: "ima/department-scope-contract",
+                  description: state === "success" ? "Node contracts and syntax checks passed" : "A Node contract or syntax check failed"
+                })
+              }
+            );
+            if (!response.ok) throw new Error("Commit status publication failed: HTTP " + response.status);
+            process.stdout.write("Published " + state + " status for " + process.env.GITHUB_SHA + "\\n");
+          })().catch(function (error) { process.stderr.write(error.message + "\\n"); process.exitCode = 1; });
+          NODE
