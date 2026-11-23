@@ -13052,7 +13052,7 @@ function inventoryCountBuckets_(ss,itemCode,location) {
     var resolved=inventoryResolveLocation_(ss,{sedeCod:row[20],ubicacionId:row[21],ubicacionResponsable:row[10]});
     if(resolved.sedeCod!==location.sedeCod||resolved.ubicacionId!==location.ubicacionId)return;
     var lot=String(row[22]||""),serial=String(row[23]||""),key=lot+"\u001f"+serial;
-    map[key]={numeroLote:lot,numeroSerie:serial,stock:Number(row[8]||0)};
+    var balance=Number(row[8]||0);if(!Number.isFinite(balance)||balance< -0.000001)throw new Error("INVENTORY_COUNT_NEGATIVE_THEORETICAL_STOCK:"+code);map[key]={numeroLote:lot,numeroSerie:serial,stock:balance};
   });
   return Object.keys(map).map(function(key){return map[key];}).filter(function(bucket){return bucket.stock>0.0001;});
 }
@@ -13133,15 +13133,15 @@ function reconcilePhysicalCount(payload) {
       else if(candidates.length>1)throw new Error("INVENTORY_COUNT_BUCKET_AMBIGUOUS:"+code);
       if(group.current.length===1&&candidates.length===0)throw new Error("INVENTORY_COUNT_BUCKET_MISMATCH:"+code);
       var bucketKey=lot+"\u001f"+serial;if(group.seen[bucketKey])throw new Error("INVENTORY_COUNT_DUPLICATE_BUCKET:"+code);group.seen[bucketKey]=true;
-      var existing=group.current.find(function(bucket){return bucket.numeroLote===lot&&bucket.numeroSerie===serial;}),theoretical=existing?existing.stock:0,difference=assetDeprMoney_(line.cantidadContada-theoretical);
+      var existing=group.current.find(function(bucket){return bucket.numeroLote===lot&&bucket.numeroSerie===serial;}),theoretical=existing?existing.stock:0,difference=Math.round((line.cantidadContada-theoretical)*1000000)/1000000;
       resolved.push({item:item,code:code,line:line,lot:lot,serial:serial,theoretical:theoretical,difference:difference});
       differences.push({itemCodigo:code,itemNombre:item.name||line.itemNombre,numeroLote:lot,numeroSerie:serial,stockTeorico:theoretical,cantidadContada:line.cantidadContada,diferencia:difference,ubicacion:location.nombreUbicacion,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId});
     });
     Object.keys(groups).forEach(function(code){groups[code].current.forEach(function(bucket){if(!groups[code].seen[bucket.numeroLote+"\u001f"+bucket.numeroSerie])throw new Error("INVENTORY_COUNT_BUCKETS_INCOMPLETE:"+code);});});
     var kardex=catalogEnsureKardexSchema_(ss),movementStart=kardex.getLastRow()+1,snapshot=inventoryValuationSnapshot_(ss),original=record.slice(),now=new Date(),reconciliationId="RCN-"+Utilities.getUuid();
     try{
-      resolved.forEach(function(entry){if(Math.abs(entry.difference)<=0.005)return;recordInventoryMovementLocked_(ss,{itemCodigo:entry.code,itemNombre:entry.item.name||entry.line.itemNombre,tipoMovimiento:entry.difference>0?"AjustePositivo":"AjusteNegativo",cantidad:Math.abs(entry.difference),cantidadBase:true,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId,ubicacionResponsable:location.nombreUbicacion,numeroLote:entry.lot,numeroSerie:entry.serial,actorUserId:verified.userId,documentOrigen:conteoId,referenciaMovimiento:"Conciliación de inventario físico "+reconciliationId,observaciones:"Ajuste por conteo físico. Diferencia: "+entry.difference+"; "+String(input.observaciones||"").trim()});});
-      var result={status:"success",conteoId:conteoId,reconciliacionId:reconciliationId,idempotente:false,estadoConteo:"ConciliadoAprobado",totalDiferencias:differences.filter(function(x){return Math.abs(x.diferencia)>0.005;}).length,diferencias:differences,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId,fechaConciliacion:now.toISOString()};
+      resolved.forEach(function(entry){if(Math.abs(entry.difference)<=0.000001)return;recordInventoryMovementLocked_(ss,{itemCodigo:entry.code,itemNombre:entry.item.name||entry.line.itemNombre,tipoMovimiento:entry.difference>0?"AjustePositivo":"AjusteNegativo",cantidad:Math.abs(entry.difference),cantidadBase:true,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId,ubicacionResponsable:location.nombreUbicacion,numeroLote:entry.lot,numeroSerie:entry.serial,actorUserId:verified.userId,documentOrigen:conteoId,referenciaMovimiento:"Conciliación de inventario físico "+reconciliationId,observaciones:"Ajuste por conteo físico. Diferencia: "+entry.difference+"; "+String(input.observaciones||"").trim()});});
+      var result={status:"success",conteoId:conteoId,reconciliacionId:reconciliationId,idempotente:false,estadoConteo:"ConciliadoAprobado",totalDiferencias:differences.filter(function(x){return Math.abs(x.diferencia)>0.000001;}).length,diferencias:differences,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId,fechaConciliacion:now.toISOString()};
       var updated=record.slice();while(updated.length<headers.length)updated.push("");
       updated[ix("ArticulosDetalleJSON")]=JSON.stringify(normalized);updated[ix("DiferenciasJSON")]=JSON.stringify(differences);updated[ix("EstadoConteo")]="ConciliadoAprobado";updated[ix("AprobadoPor")]=verified.userId;updated[ix("Observaciones")]=String(input.observaciones||"").trim().slice(0,500);updated[ix("SedeCod")]=location.sedeCod;updated[ix("UbicacionID")]=location.ubicacionId;updated[ix("ReconciliacionID")]=reconciliationId;updated[ix("IdempotencyKey")]=idempotencyKey;updated[ix("PayloadHash")]=payloadHash;updated[ix("ResultadoJSON")]=JSON.stringify(result);updated[ix("FechaConciliacion")]=now;updated[ix("ConciliadoPor")]=verified.userId;updated[ix("Version")]=Number(record[ix("Version")]||0)+1;
       sheet.getRange(match.index,1,1,headers.length).setValues([updated]);
