@@ -8077,8 +8077,10 @@ function recordBudgetExecutionLocked_(ss,order,orderHeaders,invoice,invoiceHeade
   });
   if(Object.keys(existingByPart).length&&Object.keys(existingByPart).length!==parts.length)
     return{status:"error",code:"BUDGET_EXECUTION_PARTIAL_REPLAY"};
-  if(Object.keys(existingByPart).length===parts.length)
-    return{status:"success",idempotente:true,obligacionId:obligation,ordenCompraId:orderId,executions:[]};
+  if(Object.keys(existingByPart).length===parts.length){
+    var remainsAfterReplay=activeCommitments.some(function(item){return Number(item.row[lm.Monto]||0)>0.005;});
+    return{status:"success",idempotente:true,obligacionId:obligation,ordenCompraId:orderId,executions:[],estadoCompromisoPresupuestario:remainsAfterReplay?"ParcialmenteEjecutado":"Ejecutado"};
+  }
   var rollbackState={budgetRows:[],commitmentRows:[],executionRows:[]},executed=[];
   try{
     newEntries.forEach(function(entry){
@@ -8108,10 +8110,14 @@ function recordBudgetExecutionLocked_(ss,order,orderHeaders,invoice,invoiceHeade
     if(!restoreBudgetExecutionLocked_(ss,rollbackState))return{status:"error",code:"BUDGET_EXECUTION_ROLLBACK_FAILED",cause:String(error&&error.message||error)};
     return{status:"error",code:String(error&&error.message||"BUDGET_EXECUTION_FAILED")};
   }
+  var remainingAfter=activeCommitments.some(function(item){
+    var part=String(item.row[lm.PartidaCodigo]||"").trim(),applied=newEntries.filter(function(entry){return entry.part===part;}).reduce(function(sum,entry){return sum+entry.amountCents;},0);
+    return Math.round(Number(item.row[lm.Monto]||0)*100)-applied>0;
+  });
   budgetLogEvent_("recordBudgetExecutionLocked_","INFO","BUDGET_COMMITMENT_EXECUTED","Compromiso presupuestario transferido a ejecución",{
     ordenCompraId:orderId,obligacionId:obligation,facturaHash:invoiceHash,ejecuciones:executed
   },actorId);
-  return{status:"success",idempotente:false,ordenCompraId:orderId,obligacionId:obligation,executions:executed,rollbackState:rollbackState};
+  return{status:"success",idempotente:false,ordenCompraId:orderId,obligacionId:obligation,executions:executed,estadoCompromisoPresupuestario:remainingAfter?"ParcialmenteEjecutado":"Ejecutado",rollbackState:rollbackState};
   }catch(error){return{status:"error",code:String(error&&error.message||"BUDGET_EXECUTION_FAILED")};}
 }
 function approveAccountsPayableInvoice(payload) {
@@ -8142,17 +8148,29 @@ function approveAccountsPayableInvoice(payload) {
       return{status:"error",code:"PURCHASE_INVOICE_ALREADY_APPROVED"};
     }
     if(state!=="pendienteaprobacion")return{status:"error",code:"PURCHASE_INVOICE_NOT_PENDING_APPROVAL"};
-    var orderHeaders=orders[0].map(function(v){return String(v||"").trim();});
+    var orderHeaders=orders[0].map(function(v){return String(v||"").trim();}),orderRowIndex=orders.findIndex(function(row){return String(row[0]||"").trim()===orderId;})+1;
     var execution=recordBudgetExecutionLocked_(ss,orderMatches[0],orderHeaders,record,headers,obligationId,actorId);
     if(!execution||execution.status!=="success")return{status:"error",code:execution&&execution.code||"BUDGET_EXECUTION_FAILED"};
+    var orderStateIndex=orderHeaders.indexOf("EstadoCompromisoPresupuestario"),orderOriginal=orderMatches[0].slice(),orderUpdated=orderOriginal.slice(),orderStateWritten=false;
+    if(!execution.skipped&&execution.estadoCompromisoPresupuestario&&orderStateIndex>=0){
+      orderUpdated[orderStateIndex]=execution.estadoCompromisoPresupuestario;
+      try{orderSheet.getRange(orderRowIndex,1,1,orderHeaders.length).setValues([orderUpdated]);orderStateWritten=true;}
+      catch(orderWriteError){
+        if(execution.rollbackState&&!restoreBudgetExecutionLocked_(ss,execution.rollbackState))return{status:"error",code:"PURCHASE_INVOICE_APPROVAL_ROLLBACK_FAILED"};
+        return{status:"error",code:"PURCHASE_INVOICE_ORDER_EXECUTION_WRITE_FAILED"};
+      }
+    }
     var updated=record.slice();while(updated.length<headers.length)updated.push("");
     updated[ix("EstadoAprobacion")]="Aprobado";updated[ix("AprobadoPor")]=actorId;updated[ix("FechaAprobacion")]=new Date();updated[ix("JustificacionAprobacion")]=reason;
     try{sheet.getRange(match.index,1,1,headers.length).setValues([updated]);}
     catch(writeError){
+      var orderRestored=true;
+      if(orderStateWritten)try{orderSheet.getRange(orderRowIndex,1,1,orderHeaders.length).setValues([orderOriginal]);}catch(orderRollbackError){orderRestored=false;}
       if(execution.rollbackState&&!restoreBudgetExecutionLocked_(ss,execution.rollbackState))return{status:"error",code:"PURCHASE_INVOICE_APPROVAL_ROLLBACK_FAILED"};
+      if(!orderRestored)return{status:"error",code:"PURCHASE_INVOICE_APPROVAL_ROLLBACK_FAILED"};
       return{status:"error",code:String(writeError&&writeError.message||"PURCHASE_INVOICE_APPROVAL_WRITE_FAILED")};
     }
-    return{status:"success",obligacionId:obligationId,estadoAprobacion:"Aprobado",aprobadoPor:actorId,justificacion:reason,ejecucionesPresupuestarias:execution.executions||[],ejecucionIdempotente:execution.idempotente===true};
+    return{status:"success",obligacionId:obligationId,estadoAprobacion:"Aprobado",aprobadoPor:actorId,justificacion:reason,ejecucionesPresupuestarias:execution.executions||[],ejecucionIdempotente:execution.idempotente===true,estadoCompromisoPresupuestario:execution.estadoCompromisoPresupuestario||""};
   }catch(error){return{status:"error",code:String(error&&error.message||error||"PURCHASE_INVOICE_APPROVAL_FAILED")};}
   finally{lock.releaseLock();}
 }
