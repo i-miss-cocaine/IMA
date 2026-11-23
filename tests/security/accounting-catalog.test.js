@@ -217,7 +217,7 @@ const rollbackItem=ctx.manageCatalogItem({itemCodigo:"VAL-TRANSFER-ROLLBACK",ite
 ctx.recordInventoryMovement({itemCodigo:"VAL-TRANSFER-ROLLBACK",tipoMovimiento:"Entrada",cantidad:2,costoUnitario:5,unidadMedida:"Unidad",ubicacionResponsable:"Bodega Rollback A",sedeCod:"SPS-05",ubicacionId:"LOC-ROLL-A"});
 const rollbackKardexBefore=rows.InventariosKardex.length,rollbackValueBefore=ctx.getValuatedInventoryReport({categoria:"Papelería y oficina"}).detalle.filter(x=>x.itemCodigo==="VAL-TRANSFER-ROLLBACK").reduce((n,x)=>n+x.valor,0);
 ctx.inventoryEnsureTransferSheet_(ss);
-const transferSheetForFailure=rows.TransferenciasInventario,originalTransferGetRange=transferSheetForFailure.getRange;
+const transferSheetForFailure=ctx.inventoryEnsureTransferSheet_(ss),originalTransferGetRange=transferSheetForFailure.getRange;
 transferSheetForFailure.getRange=(row,col,numRows,numCols)=>row>1?{setValues:()=>{throw Error("SIMULATED_TRANSFER_RECORD_FAILURE");}}:originalTransferGetRange(row,col,numRows,numCols);
 assert.throws(()=>ctx.transferInventoryStock({itemCodigo:"VAL-TRANSFER-ROLLBACK",cantidad:1,ubicacionOrigen:"Bodega Rollback A",ubicacionDestino:"Bodega Rollback B",sedeCodOrigen:"SPS-05",sedeCodDestino:"SPS-06",ubicacionIdOrigen:"LOC-ROLL-A",ubicacionIdDestino:"LOC-ROLL-B",requiereConfirmacionFisica:false,responsableUserId:"U-1"}),/INVENTORY_TRANSFER_ATOMIC_FAILURE/);
 transferSheetForFailure.getRange=originalTransferGetRange;
