@@ -81,6 +81,9 @@ function main(){
  const serialOneRows=ctx.getInventoryKardex({sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,numeroSerie:"SER-001"});
  assert.equal(serialOneRows.kardex.length,1);
  assert.equal(serialOneRows.kardex[0].stockNuevo,2);
+ const serialTwoRows=ctx.getInventoryKardex({sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,numeroSerie:"SER-002"});
+ assert.equal(serialTwoRows.kardex.length,1);
+ assert.equal(serialTwoRows.kardex[0].stockNuevo,3);
  assert.equal(serialOneRows.resumenPorUbicacion.find(x=>x.sedeCod==="SPS-01").stockFisico,13);
 
  const beforeOverReceiptRows=h.sheets.InventariosKardex.rows.length;
@@ -95,6 +98,8 @@ function main(){
  ctx.inventoryValuationApplyMovement_=originalValuationApply;
  assert.equal(h.sheets.InventariosKardex.rows.length,beforeOverReceiptRows,"failed two-leg transfer must roll back both Kardex writes");
  assert.equal(h.sheets.TransferenciasInventario.rows.length,transferRows,"failed transfer must not leave a transfer ledger row");
+ assert.equal(ctx.inventoryPhysicalStock_(h.ss,"ITM-1","Bodega Norte","SPS-01",loc1.ubicacionId,"L-2"),4,"failed transfer must restore the origin lot balance");
+ assert.equal(ctx.inventoryPhysicalStock_(h.ss,"ITM-1","Bodega Norte","SPS-02",loc2.ubicacionId,"L-2"),0,"failed transfer must not leave destination stock");
 
  const legacyRows=[["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones","CatalogoItemID","CantidadBase","UnidadMedidaOriginal","FactorConversion"],["KDX-OLD",new Date(),"ITM-1","Equipo de prueba","Equipo","Entrada",4,0,4,5,"","[LOTE:LOT-OLD] [SERIE:SER-OLD]", "ITM-1",4,"Unidad",1]];
  const legacyHarness=makeHarness();legacyHarness.sheets.InventariosKardex=sheet(legacyRows);legacyHarness.context.catalogEnsureKardexSchema_(legacyHarness.ss);assert.equal(legacyHarness.sheets.InventariosKardex.rows[1][20],"LEGACY");assert.match(legacyHarness.sheets.InventariosKardex.rows[1][21],/UBI-LEGACY-BODEGA-GENERAL/);assert.equal(legacyHarness.sheets.InventariosKardex.rows[1][22],"LOT-OLD");assert.equal(legacyHarness.sheets.InventariosKardex.rows[1][23],"SER-OLD");
