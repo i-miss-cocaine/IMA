@@ -5617,6 +5617,11 @@ const ROLE_PERMISSIONS = {
   "Bodeguero": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders"],
   "Encargado de Bodega": ["getCatalogCategories", "getCatalogUnits", "getCatalogItems", "exportCatalogItems", "getInventoryKardex", "getInventoryTransfers", "getMaterialRequisitions", "getInventoryReplenishmentSuggestions", "getValuatedInventoryReport", "exportValuatedInventoryReportCSV", "exportValuatedInventoryReportPDF", "recordInventoryMovement", "transferInventoryStock", "confirmTransferReceipt", "createMaterialRequisition", "manageMaterialRequisition", "deliverMaterialRequisition", "manageInventoryReplenishmentPolicy", "returnMaterialToInventory", "recognizeAssignedMaterialConsumption", "manageMaintenanceOrder", "managePreventiveMaintenancePlan", "getPreventiveMaintenancePlans", "getPreventiveMaintenanceTemplates", "getPreventiveMaintenanceAlerts", "generatePreventiveMaintenanceOrders", "getMaintenanceOrders"]
 };
+["RecursosHumanos","Director","Subdirector","Contador","Administrador"].forEach(function(role){
+  var actions=["assignAssetCustody","getAssetAssignments","returnAssetCustody","getAssetCustodyActPDF"];
+  if(!Array.isArray(ROLE_PERMISSIONS[role]))ROLE_PERMISSIONS[role]=[];
+  actions.forEach(function(action){if(ROLE_PERMISSIONS[role].indexOf(action)===-1)ROLE_PERMISSIONS[role].push(action);});
+});
 
 ["Contador","Director","Administrador"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];["recordAccountsPayablePayment","recordAccountsPayableCreditNote"].forEach(function(action){if(current.indexOf(action)===-1)current.push(action);});ROLE_PERMISSIONS[role]=current;});
 ["Director","Administrador","Contador","Almacenista","Bodeguero","Encargado de Bodega"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];if(current.indexOf("getPhysicalInventoryCounts")===-1)current.push("getPhysicalInventoryCounts");ROLE_PERMISSIONS[role]=current;});
@@ -6698,25 +6703,27 @@ function getAssetItems(payload) {
 }
 
 function manageAssetItem(payload) {
-  var input = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var sheet = getOrCreateSheet(ss, "ActivosPatrimoniales"), rows = sheet.getDataRange().getValues();
-  var headers = rows[0].map(String), serial = String(input.numeroSerie || input.SerieModel || "").trim();
-  var code = String(input.codigoPatrimonial || "").trim();
-  var duplicate = rows.slice(1).some(function(row) {
-    return (serial && (String(row[headers.indexOf("NumeroSerie")] || "") === serial || String(row[4] || "") === serial)) ||
-      (code && String(row[headers.indexOf("CodigoPatrimonial")] || "") === code);
-  });
-  if (duplicate) throw new Error("ASSET_SERIAL_ALREADY_EXISTS");
-  var newRow = [];
-  newRow[headers.indexOf("ActivoID")] = "ACT-" + String(Utilities.getUuid()).replace(/-/g, "").slice(0, 24);
-  newRow[headers.indexOf("CodigoPatrimonial")] = code;
-  newRow[headers.indexOf("Nombre")] = String(input.nombre || "");
-  newRow[headers.indexOf("Categoria")] = String(input.categoria || "");
-  newRow[headers.indexOf("SerieModel")] = serial;
-  newRow[headers.indexOf("Estado")] = "Activo";
-  while (newRow.length < headers.length) newRow.push("");
-  sheet.appendRow(newRow);
-  return { status: "success" };
+  var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+  if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+  var permission=validateRolePermission(actor,"manageAssetItem",input);if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+  var lock=LockService.getScriptLock();lock.waitLock(15000);
+  try{
+    actor=getVerifiedAccountingIdentity_(input);if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED"};
+    permission=validateRolePermission(actor,"manageAssetItem",input);if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensureAssetAcquisitionSchema_(ss),sheet=schema.assets,headers=schema.assetHeaders,serial=String(input.numeroSerie||input.SerieModel||"").trim(),code=String(input.codigoPatrimonial||"").trim();
+    if(!code||!String(input.nombre||"").trim())throw new Error("ASSET_REQUIRED_FIELDS_MISSING");
+    var rows=sheet.getDataRange().getValues(),idIndex=headers.indexOf("ActivoID"),serialIndex=headers.indexOf("NumeroSerie"),codeIndex=headers.indexOf("CodigoPatrimonial");
+    var duplicate=rows.slice(1).some(function(row){return(serial&&(String(row[serialIndex]||"")===serial||String(row[headers.indexOf("SerieModel")]||"")===serial))||(code&&String(row[codeIndex]||"")===code);});
+    if(duplicate)throw new Error("ASSET_SERIAL_ALREADY_EXISTS");
+    var scope=getVerifiedAccountingDepartmentScope_(input,ss,actor);if(!scope||scope.valid!==true||scope.authorized===false)throw new Error(scope&&scope.code||"RESOURCE_SCOPE_DENIED");
+    var department=String(input.departamentoId||input.departamento||"").trim();
+    if(!department&&scope.institutionWide!==true&&Array.isArray(scope.departmentIds)&&scope.departmentIds.length===1)department=String(scope.departmentIds[0]);
+    if(scope.institutionWide!==true&&(!department||!Array.isArray(scope.departmentIds)||scope.departmentIds.map(String).indexOf(department)<0))throw new Error("RESOURCE_SCOPE_DENIED");
+    var newRow=new Array(headers.length).fill(""),assetId="ACT-"+String(Utilities.getUuid()).replace(/-/g,"").slice(0,24);
+    newRow[idIndex]=assetId;newRow[codeIndex]=code;newRow[headers.indexOf("Nombre")]=String(input.nombre||"").trim();newRow[headers.indexOf("Categoria")]=String(input.categoria||"").trim();newRow[headers.indexOf("SerieModel")]=String(input.serieModel||input.modelo||serial).trim();newRow[serialIndex]=serial;newRow[headers.indexOf("Marca")]=String(input.marca||"").trim();newRow[headers.indexOf("Modelo")]=String(input.modelo||"").trim();newRow[headers.indexOf("UbicacionActual")]=String(input.ubicacionActual||"").trim();newRow[headers.indexOf("Estado")]="available";newRow[headers.indexOf("Observaciones")]=String(input.observaciones||"").slice(0,1000);newRow[headers.indexOf("DepartamentoID")]=department;newRow[headers.indexOf("CentroCosto")]=String(input.centroCosto||"").trim();
+    sheet.appendRow(newRow);
+    return{status:"success",activoId:assetId,message:"Activo registrado con éxito."};
+  }finally{lock.releaseLock();}
 }
 
 
@@ -9847,6 +9854,10 @@ function doPost(e) {
     if (request.action === "registerAssetsFromPurchaseReceipt") return respond(registerAssetsFromPurchaseReceipt(actionPayload));
     if (request.action === "getAssetItems") return respond(getAssetItems(actionPayload));
     if (request.action === "manageAssetItem") return respond(manageAssetItem(actionPayload));
+    if (request.action === "assignAssetCustody") return respond(assignAssetCustody(actionPayload));
+    if (request.action === "getAssetAssignments") return respond(getAssetAssignments(actionPayload));
+    if (request.action === "returnAssetCustody") return respond(returnAssetCustody(actionPayload));
+    if (request.action === "getAssetCustodyActPDF") return respond(getAssetCustodyActPDF(actionPayload));
     if (request.action === "createPurchaseRequest") return respond(createPurchaseRequest(actionPayload));
     if (request.action === "createPurchaseOrder") return respond(createPurchaseOrder(actionPayload));
     if (request.action === "approvePurchaseOrder") return respond(approvePurchaseOrder(actionPayload));
