@@ -642,7 +642,7 @@
 - tests/ui/inventory-warehouse-ui.test.js
 
 ### Verificaciones
-- Department Scope run 45291514151: pasos 72 (contrato multialmacén/inventario), 73 (contrato UI almacenes) y 75 (sintaxis Apps Script/JS) SUCCESS; estado de commit ima/department-scope-contract SUCCESS. El workflow aún figuraba finalizando su paso de publicación de estado al crear este checkpoint.
+- Department Scope run 45291514151: pasos 72 (contrato multialmacén/inventario), 73 (contrato UI almacenes) y 75 (sintaxis Apps Script/JS) SUCCESS; estado de commit ima/department-scope-contract SUCCESS. Department Scope run 45291514151 terminó SUCCESS; el estado ima/department-scope-contract del HEAD de código también quedó SUCCESS.
 - UI Accessibility and Metadata Contract run 45291514101: SUCCESS.
 - Department Scope run 45291418117: FAIL por aserción defectuosa que buscaba idempotencyKey: dentro del fragmento HTML del formulario. Se corrigió para comprobar por separado el campo oculto y el binding del handler; el run posterior confirmó PASS en los pasos 72/73/75.
 - El run anterior 45291418117 no se oculta; su causa fue el test, no una regresión de producción.
