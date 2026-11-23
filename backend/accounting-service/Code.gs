@@ -13801,7 +13801,10 @@ function transferInventoryStock(payload) {
 function getInventoryTransfers(payload) {
   const input=payload||{},actor=catalogActor_(input,false),permission=validateRolePermission(actor,"getInventoryTransfers",input);
   if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
-  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),rows=inventoryEnsureTransferSheet_(ss).getDataRange().getValues().slice(1);
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("TransferenciasInventario");
+  if(!sheet)return{status:"success",transferencias:[]};
+  const data=sheet.getDataRange().getValues(),first=data.length?String(data[0][0]||"").trim():"";
+  const rows=first==="TransferenciaID"?data.slice(1):first.indexOf("TRF-")===0?data:data.slice(1);
   let filtered=rows;
   if(input.estado)filtered=filtered.filter(r=>String(r[8]||"").trim()===String(input.estado).trim());
   if(input.ubicacion){const key=String(input.ubicacion).toLowerCase().trim();filtered=filtered.filter(r=>String(r[5]||"").toLowerCase().trim()===key||String(r[6]||"").toLowerCase().trim()===key);}
