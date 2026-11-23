@@ -1148,7 +1148,8 @@
   - Salida y entrada comparten identificador de transferencia y trazabilidad.
   - No existen movimientos huérfanos bajo fallos o interrupciones de red.
   - Se garantiza integridad y bloqueo transaccional bajo solicitudes concurrentes.
-- **Estado:** Pendiente
+- **Seguimiento C1.959:** Backend y UI de transferencias integrados: validación de almacenes/ubicaciones activas, unidad compatible, origen/destino distintos, stock local no reservado, estados de borrador/aprobación/tránsito/recepción/cancelación, recepción acumulada con discrepancias justificadas, correlación TRF y rollback de Kardex/valoración/ledger. Department Scope run 45290156732 SUCCESS en SHA fd4f794848c956388961a145fb35eb5c6d5ae41c; Node.js 24.22.3 y sintaxis Apps Script/JS PASS en ese SHA. Se añadieron aserciones complementarias al contrato después de ese run (HEAD dc08ea8de8584491d016586fd6aa2badda9c9b8e), todavía NOT RUN; no hubo cambios de producción posteriores al SHA probado. El checkout local sigue bloqueado por DNS y el conector no ofrece dispatch de Actions.
+- **Estado:** En ejecución
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3601-3637; clave TASK-072; asignación única: Contabilidad -->
 
