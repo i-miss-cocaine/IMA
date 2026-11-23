@@ -345,8 +345,9 @@ window.startPhysicalInventoryCountUI = function() {
 };
 window.reconcilePhysicalInventoryCountUI = function() {
   const select=document.getElementById("kdx-count-id"),container=document.getElementById("kdx-count-lines");if(!select||!select.value||!container)return;
-  const items=Array.from(container.querySelectorAll("[data-count-line]")).map(function(row){return{itemCodigo:row.querySelector("[data-count-item]").value.trim(),cantidadContada:Number(row.querySelector("[data-count-quantity]").value),numeroLote:row.querySelector("[data-count-lot]").value.trim(),numeroSerie:row.querySelector("[data-count-serial]").value.trim()};});
-  if(!items.length||items.some(function(item){return!item.itemCodigo||!Number.isFinite(item.cantidadContada)||item.cantidadContada<0;})){alert("Complete el artículo y una cantidad válida en cada línea.");return;}
+  const rows=Array.from(container.querySelectorAll("[data-count-line]"));
+  const items=rows.map(function(row){return{itemCodigo:row.querySelector("[data-count-item]").value.trim(),cantidadContada:Number(row.querySelector("[data-count-quantity]").value),numeroLote:row.querySelector("[data-count-lot]").value.trim(),numeroSerie:row.querySelector("[data-count-serial]").value.trim()};});
+  if(!items.length||rows.some(function(row){return!row.querySelector("[data-count-quantity]").value.trim();})||items.some(function(item){return!item.itemCodigo||!Number.isFinite(item.cantidadContada)||item.cantidadContada<0;})){alert("Complete el artículo y una cantidad válida en cada línea.");return;}
   fetchApi("ACCOUNTING","reconcilePhysicalCount",{conteoId:select.value,articulosDetalleJSON:items}).then(function(result){
     alert("Conteo conciliado. Diferencias aplicadas: "+result.totalDiferencias);window.loadPhysicalInventoryCountsUI(select.value);window.loadKardexData();
   }).catch(function(error){alert("No se pudo conciliar el conteo: "+(error.message||error));});
