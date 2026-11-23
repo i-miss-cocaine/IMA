@@ -32,7 +32,7 @@ function makeHarness(){
 function main(){
  assert.doesNotThrow(()=>new vm.Script(source),"Apps Script syntax");
  const h=makeHarness(),ctx=h.context;
- const emptyTransferList=ctx.getInventoryTransfers({});assert.deepEqual(emptyTransferList.transferencias,[]);assert.equal(h.sheets.TransferenciasInventario,undefined,"read-only transfer listing must not create the transfer ledger sheet");
+ const emptyTransferList=ctx.getInventoryTransfers({});assert.equal(emptyTransferList.transferencias.length,0);assert.equal(h.sheets.TransferenciasInventario,undefined,"read-only transfer listing must not create the transfer ledger sheet");
 
  const loc1=ctx.manageWarehouseLocation({sedeCod:"SPS-01",nombreUbicacion:"Bodega Norte",tipoArea:"Bodega"}),loc2=ctx.manageWarehouseLocation({sedeCod:"SPS-02",nombreUbicacion:"Bodega Norte",tipoArea:"Bodega"});
  assert.equal(loc1.status,"success");assert.equal(loc2.status,"success");assert.notEqual(loc1.ubicacionId,loc2.ubicacionId);
