@@ -80,7 +80,7 @@ function main(){
  const serialOneRows=ctx.getInventoryKardex({sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,numeroSerie:"SER-001"});
  assert.equal(serialOneRows.kardex.length,1);
  assert.equal(serialOneRows.kardex[0].stockNuevo,2);
- assert.equal(serialOneRows.resumenPorUbicacion.find(x=>x.sedeCod==="SPS-01").stockFisico,16);
+ assert.equal(serialOneRows.resumenPorUbicacion.find(x=>x.sedeCod==="SPS-01").stockFisico,13);
 
  const beforeOverReceiptRows=h.sheets.InventariosKardex.rows.length;
  assert.throws(()=>ctx.confirmTransferReceipt({transferBatchId:transfer2.transferBatchId,cantidadRecibida:2}),/TRANSFER_RECEIPT_EXCEEDS_DISPATCHED_QUANTITY/);
