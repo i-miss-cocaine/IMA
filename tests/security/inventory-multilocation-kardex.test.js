@@ -94,6 +94,25 @@ function main(){
  const fractionalTransfer=ctx.transferInventoryStock({itemCodigo:fracItem,cantidad:1.006,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,requiereConfirmacionFisica:true});
  assert.equal(fractionalTransfer.cantidadTransferida,1.01);assert.equal(Number(h.sheets.TransferenciasInventario.rows.find(r=>r[0]===fractionalTransfer.transferBatchId)[4]),1.01);
  assert.equal(Number(h.sheets.InventariosKardex.rows.filter(r=>r[25]===fractionalTransfer.transferBatchId&&r[5]==="TransferenciaSalida").at(-1)[6]),1.01);
+ const stateItem="ITM-STATE";ctx.recordInventoryMovementLocked_(h.ss,{itemCodigo:stateItem,cantidad:5,cantidadBase:true,tipoMovimiento:"Entrada",sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,actorUserId:"USR-1"});
+ const beforeDraftKardex=h.sheets.InventariosKardex.rows.length;
+ const draft=ctx.transferInventoryStock({itemCodigo:stateItem,cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,estadoInicial:"Borrador",requiereConfirmacionFisica:true});
+ assert.equal(draft.estadoTransferencia,"Borrador");assert.equal(h.sheets.InventariosKardex.rows.length,beforeDraftKardex,"draft creation must not move stock");
+ const canceled=ctx.cancelInventoryTransfer({transferBatchId:draft.transferBatchId,sessionToken:"TEST",justificacion:"Transferencia no requerida"});assert.equal(canceled.estadoTransferencia,"Cancelada");
+ assert.equal(h.sheets.InventariosKardex.rows.length,beforeDraftKardex);assert.equal(ctx.cancelInventoryTransfer({transferBatchId:draft.transferBatchId,sessionToken:"TEST"}).idempotente,true);
+ assert.throws(()=>ctx.approveInventoryTransfer({transferBatchId:draft.transferBatchId,sessionToken:"TEST"}),/TRANSFER_NOT_APPROVABLE/);
+ const pending=ctx.transferInventoryStock({itemCodigo:stateItem,cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,estadoInicial:"PendienteAprobacion",requiereConfirmacionFisica:true});
+ assert.equal(pending.estadoTransferencia,"PendienteAprobacion");assert.equal(h.sheets.InventariosKardex.rows.length,beforeDraftKardex);
+ const approved=ctx.approveInventoryTransfer({transferBatchId:pending.transferBatchId,sessionToken:"TEST"});assert.equal(approved.status,"success");assert.equal(approved.estadoTransferencia,"EnTransito");
+ const approvedRow=h.sheets.TransferenciasInventario.rows.find(r=>r[0]===pending.transferBatchId);assert.equal(approvedRow[21],"USR-1");assert.ok(approvedRow[22]);
+ assert.throws(()=>ctx.cancelInventoryTransfer({transferBatchId:pending.transferBatchId,sessionToken:"TEST"}),/TRANSFER_CANNOT_CANCEL_AFTER_DISPATCH/);
+ const stateReceipt=ctx.confirmTransferReceipt({transferBatchId:pending.transferBatchId,cantidadRecibida:1});assert.equal(stateReceipt.estadoTransferencia,"RecibidaTotal");
+ const shortageDraft=ctx.transferInventoryStock({itemCodigo:stateItem,cantidad:99,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,estadoInicial:"PendienteAprobacion"});
+ const beforeFailedApproval=h.sheets.InventariosKardex.rows.length,failedApproval=ctx.approveInventoryTransfer({transferBatchId:shortageDraft.transferBatchId,sessionToken:"TEST"});
+ assert.equal(failedApproval.code,"INSUFFICIENT_LOCAL_STOCK_BUCKET");assert.equal(h.sheets.InventariosKardex.rows.length,beforeFailedApproval);
+ assert.equal(h.sheets.TransferenciasInventario.rows.find(r=>r[0]===shortageDraft.transferBatchId)[8],"PendienteAprobacion");
+ assert.equal(ctx.cancelInventoryTransfer({transferBatchId:shortageDraft.transferBatchId,sessionToken:"TEST"}).estadoTransferencia,"Cancelada");
+
 
  const rejected=ctx.confirmTransferReceipt({transferBatchId:transfer2.transferBatchId,cantidadRecibida:0,justificacionDiscrepancia:"Destino rechazó la entrega"});
  assert.equal(rejected.estadoTransferencia,"Rechazada");
