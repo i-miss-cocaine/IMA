@@ -5619,6 +5619,9 @@ const ROLE_PERMISSIONS = {
 };
 
 ["Contador","Director","Administrador"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];["recordAccountsPayablePayment","recordAccountsPayableCreditNote"].forEach(function(action){if(current.indexOf(action)===-1)current.push(action);});ROLE_PERMISSIONS[role]=current;});
+["Director","Administrador","Contador","Almacenista","Bodeguero","Encargado de Bodega"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];if(current.indexOf("getPhysicalInventoryCounts")===-1)current.push("getPhysicalInventoryCounts");ROLE_PERMISSIONS[role]=current;});
+["Director","Administrador","Almacenista","Bodeguero","Encargado de Bodega"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];if(current.indexOf("createPhysicalInventoryCount")===-1)current.push("createPhysicalInventoryCount");ROLE_PERMISSIONS[role]=current;});
+["Director","Administrador","Contador"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];if(current.indexOf("reconcilePhysicalCount")===-1)current.push("reconcilePhysicalCount");ROLE_PERMISSIONS[role]=current;});
 ["Contador","Director","Subdirector","Administrador"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];if(current.indexOf("getAccountsPayablePortfolio")===-1)current.push("getAccountsPayablePortfolio");ROLE_PERMISSIONS[role]=current;});
 ["Director","Administrador"].forEach(function(role){var current=ROLE_PERMISSIONS[role]||[];if(current.indexOf("approveAccountsPayableInvoice")===-1)current.push("approveAccountsPayableInvoice");ROLE_PERMISSIONS[role]=current;});
 
@@ -9665,6 +9668,9 @@ function doPost(e) {
     if (request.action === "getInventoryKardex") return respond(getInventoryKardex(actionPayload));
     if (request.action === "manageWarehouseLocation") return respond(manageWarehouseLocation(actionPayload));
     if (request.action === "getWarehouseLocations") return respond(getWarehouseLocations(actionPayload));
+    if (request.action === "createPhysicalInventoryCount") return respond(createPhysicalInventoryCount(actionPayload));
+    if (request.action === "getPhysicalInventoryCounts") return respond(getPhysicalInventoryCounts(actionPayload));
+    if (request.action === "reconcilePhysicalCount") return respond(reconcilePhysicalCount(actionPayload));
     if (request.action === "transferInventoryStock") return respond(transferInventoryStock(actionPayload));
     if (request.action === "confirmTransferReceipt") return respond(confirmTransferReceipt(actionPayload));
     if (request.action === "getInventoryTransfers") return respond(getInventoryTransfers(actionPayload));
