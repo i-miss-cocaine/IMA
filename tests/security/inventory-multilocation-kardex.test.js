@@ -78,6 +78,10 @@ function main(){
  const blockedTransfer=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:7,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1",requiereConfirmacionFisica:true});assert.equal(blockedTransfer.code,"INSUFFICIENT_LOCAL_STOCK_BUCKET");
  const transfer=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:3,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1",requiereConfirmacionFisica:true});
  assert.equal(transfer.status,"success",JSON.stringify(transfer));
+ assert.match(transfer.transferBatchId,/^TRF-/,"transfer must receive a unique TRF identifier");
+ const initialTransferMovements=h.sheets.InventariosKardex.rows.filter(r=>r[25]===transfer.transferBatchId);
+ assert.equal(initialTransferMovements.length,1,"dispatch must create exactly one source movement while receipt is pending");
+ assert.equal(initialTransferMovements[0][5],"TransferenciaSalida");
  const transferList=ctx.getInventoryTransfers({});assert.ok(transferList.transferencias.some(x=>x.transferBatchId===transfer.transferBatchId),"first transfer row must be visible after transfer sheet header initialization");
  h.setPermissionDenied(true);assert.throws(()=>ctx.getInventoryTransfers({}),/ROLE_PERMISSION_DENIED/);h.setPermissionDenied(false);
  const lockKardexBefore=h.sheets.InventariosKardex.rows.length,lockTransfersBefore=h.sheets.TransferenciasInventario.rows.length;
@@ -92,6 +96,10 @@ function main(){
  kardex=ctx.getInventoryKardex({});assert.equal(kardex.resumenPorUbicacion.find(x=>x.sedeCod==="SPS-02").stockEnTransito,1);
  const full=ctx.confirmTransferReceipt({transferBatchId:transfer.transferBatchId,cantidadRecibida:3});
  assert.equal(full.estadoTransferencia,"RecibidaTotal");assert.equal(full.cantidadRecibidaEnEstaConfirmacion,1);
+ const correlatedMovements=h.sheets.InventariosKardex.rows.filter(r=>r[25]===transfer.transferBatchId);
+ assert.equal(correlatedMovements.length,3,"dispatch and cumulative receipts must retain one transfer correlation ID");
+ assert.equal(correlatedMovements.filter(r=>r[5]==="TransferenciaSalida").length,1);
+ assert.equal(correlatedMovements.filter(r=>r[5]==="Entrada").reduce((n,r)=>n+Number(r[6]||0),0),3,"received movements must reconcile exactly to cumulative received quantity");
  assert.equal(ctx.confirmTransferReceipt({transferBatchId:transfer.transferBatchId,cantidadRecibida:3}).idempotente,true);
  assert.equal(ctx.getInventoryKardex({}).resumenPorUbicacion.find(x=>x.sedeCod==="SPS-02").stockEnTransito,0);
  const transfer2=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-2",requiereConfirmacionFisica:true});
@@ -122,6 +130,7 @@ function main(){
  const pending=ctx.transferInventoryStock({itemCodigo:stateItem,cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,estadoInicial:"PendienteAprobacion",requiereConfirmacionFisica:true});
  assert.equal(pending.estadoTransferencia,"PendienteAprobacion");assert.equal(h.sheets.InventariosKardex.rows.length,beforeDraftKardex);
  const approved=ctx.approveInventoryTransfer({transferBatchId:pending.transferBatchId,sessionToken:"TEST"});assert.equal(approved.status,"success");assert.equal(approved.estadoTransferencia,"EnTransito");
+ assert.equal(ctx.approveInventoryTransfer({transferBatchId:pending.transferBatchId,sessionToken:"TEST"}).idempotente,true,"approval retries must not dispatch a second time");
  const approvedRow=h.sheets.TransferenciasInventario.rows.find(r=>r[0]===pending.transferBatchId);assert.equal(approvedRow[21],"USR-1");assert.ok(approvedRow[22]);
  assert.throws(()=>ctx.cancelInventoryTransfer({transferBatchId:pending.transferBatchId,sessionToken:"TEST"}),/TRANSFER_CANNOT_CANCEL_AFTER_DISPATCH/);
  const stateReceipt=ctx.confirmTransferReceipt({transferBatchId:pending.transferBatchId,cantidadRecibida:1});assert.equal(stateReceipt.estadoTransferencia,"RecibidaTotal");
