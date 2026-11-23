@@ -44,7 +44,8 @@ const kardex=rows.InventariosKardex;kardex.push(["OLD-1",new Date(),"OLD-001","R
 const before=rows.CatalogoArticulos.length;assert.throws(()=>ctx.importCatalogItems({items:[{itemCodigo:"MAT-003",itemNombre:"Marcador",categoria:"Papelería y oficina",unidadMedida:"Unidad"},{itemCodigo:"MAT-004",itemNombre:"Marcador",categoria:"Papelería y oficina",unidadMedida:"Unidad"}]}),/CATALOG_ITEM_NAME_DUPLICATE/);assert.equal(rows.CatalogoArticulos.length,before,"failed import must not append partial rows");
 assert.ok(ctx.exportCatalogItems({}).csv.includes("MAT-001"));
 
-const purchaseReceiptFn=extract(source,"recordPurchaseReceipt");assert.ok(purchaseReceiptFn.includes("recordInventoryMovementLocked_(ss,"));assert.ok(!purchaseReceiptFn.includes("recordInventoryMovement("));assert.ok(extract(source,"transferInventoryStock").includes("recordInventoryMovementLocked_(ss,"));assert.ok(extract(source,"confirmTransferReceipt").includes("recordInventoryMovementLocked_(ss,"));
+const purchaseReceiptFn=extract(source,"recordPurchaseReceipt");assert.ok(purchaseReceiptFn.includes("recordInventoryMovementLocked_(ss,"));assert.ok(!purchaseReceiptFn.includes("recordInventoryMovement("));assert.ok(extract(source,"transferInventoryStock").includes("inventoryDispatchTransferLocked_(ss,transferSheet,rowIndex,verified)"));
+assert.ok(extract(source,"inventoryDispatchTransferLocked_").includes("recordInventoryMovementLocked_(ss,"));assert.ok(extract(source,"confirmTransferReceipt").includes("recordInventoryMovementLocked_(ss,"));
 
 ctx.recordInventoryMovement({itemCodigo:"MAT-001",tipoMovimiento:"Entrada",cantidad:30,unidadMedida:"Unidad",ubicacionResponsable:"Bodega General"});
 const approved=ctx.manageMaterialRequisition({solicitudMatId:request.solicitudMatId,operacion:"aprobar"});assert.equal(approved.estadoAprobacion,"Aprobada");assert.equal(approved.reservadas,24);
