@@ -2097,6 +2097,9 @@ function saveEnrollmentBillingConfiguration(payload) {
   } finally { lock.releaseLock(); }
 }
 
+["Administrador","Director","Subdirector","Contador"].forEach(function(role){var list=ROLE_PERMISSIONS[role]||[];["manageWarehouseLocation","getWarehouseLocations"].forEach(function(action){if(list.indexOf(action)===-1)list.push(action);});ROLE_PERMISSIONS[role]=list;});
+["Almacenista","Bodeguero","EncargadoDeBodega","EncargadoTienda","EncargadoCafeteria"].forEach(function(role){var list=ROLE_PERMISSIONS[role]||[];if(list.indexOf("getWarehouseLocations")===-1)list.push("getWarehouseLocations");ROLE_PERMISSIONS[role]=list;});
+
 function validateRolePermission(actorOrPayload, action, payloadContext) {
   var actor = actorOrPayload && actorOrPayload.authorized === true
     ? actorOrPayload : getVerifiedAccountingIdentity_(actorOrPayload || {});
@@ -9663,6 +9666,8 @@ function doPost(e) {
     if (request.action === "exportValuatedInventoryReportPDF") return respond(exportValuatedInventoryReportPDF(actionPayload));
     if (request.action === "recordInventoryMovement") return respond(recordInventoryMovement(actionPayload));
     if (request.action === "getInventoryKardex") return respond(getInventoryKardex(actionPayload));
+    if (request.action === "manageWarehouseLocation") return respond(manageWarehouseLocation(actionPayload));
+    if (request.action === "getWarehouseLocations") return respond(getWarehouseLocations(actionPayload));
     if (request.action === "transferInventoryStock") return respond(transferInventoryStock(actionPayload));
     if (request.action === "confirmTransferReceipt") return respond(confirmTransferReceipt(actionPayload));
     if (request.action === "getInventoryTransfers") return respond(getInventoryTransfers(actionPayload));
@@ -12950,7 +12955,96 @@ function getCatalogItems(p){
 }
 function importCatalogItems(p){p=p||{};const a=catalogActor_(p,true),ss=SpreadsheetApp.openById(SPREADSHEET_ID),l=LockService.getScriptLock();l.waitLock(15000);try{catalogEnsureDefaults_(ss,a);let items=Array.isArray(p.items)?p.items:null;if(!items){const csv=String(p.csv||"");if(!csv)throw new Error("CATALOG_IMPORT_CONTENT_REQUIRED");const parsed=Utilities.parseCsv(csv);if(parsed.length<2)throw new Error("CATALOG_IMPORT_EMPTY");const h=parsed.shift().map(catalogNormalizeText_);items=parsed.filter(r=>r.some(v=>String(v||"").trim())).map(r=>{const o={};h.forEach((k,i)=>o[k]=r[i]||"");return {itemCodigo:o.itemcodigo||o.codigo,itemNombre:o.itemnombre||o.nombre,descripcion:o.descripcion,categoria:o.categoria,subcategoria:o.subcategoria,unidadMedida:o.unidadmedida||o.unidad,marca:o.marca,modeloReferencia:o.modeloreferencia||o.modelo,imagenUrl:o.imagenurl,codigoBarras:o.codigobarras,codigoQR:o.codigoqr,especificacionesTecnicas:o.especificacionestecnicas,proveedorHabitualId:o.proveedorhabitualid,costoReferencial:o.costoreferencial,costoUltimaAdquisicion:o.costoultimaadquisicion,costoPromedio:o.costopromedio,stockMinimo:o.stockminimo,stockMaximo:o.stockmaximo,puntoReposicion:o.puntoreposicion,activoFijoRelacionadoId:o.activofijorelacionadoid,observaciones:o.observaciones};});}const sh=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,true),rows=sh.getDataRange().getValues().slice(1),prepared=[],codes=new Set(rows.map(r=>catalogNormalizeCode_(r[1]))),names=new Set(rows.map(r=>catalogNormalizeText_(r[2])+"|"+catalogNormalizeText_(r[5])));for(let i=0;i<items.length;i++){const v=catalogBuildItemValues_(ss,items[i],a,rows.concat(prepared)),c=catalogNormalizeCode_(v[1]),n=catalogNormalizeText_(v[2])+"|"+catalogNormalizeText_(v[5]);if(codes.has(c)||names.has(n))throw new Error("CATALOG_IMPORT_DUPLICATE_ROW_"+(i+2));codes.add(c);names.add(n);prepared.push(v);}if(prepared.length)sh.getRange(sh.getLastRow()+1,1,prepared.length,CATALOG_ITEM_HEADERS_.length).setValues(prepared);return {status:"success",importados:prepared.length};}finally{l.releaseLock();}}
 function exportCatalogItems(p){catalogActor_(p,false);const ss=SpreadsheetApp.openById(SPREADSHEET_ID),sh=catalogSheet_(ss,"CatalogoArticulos",CATALOG_ITEM_HEADERS_,false),rows=sh?sh.getDataRange().getValues():[CATALOG_ITEM_HEADERS_],csv=rows.map(r=>r.map(v=>'"'+String(v===undefined||v===null?"":v).replace(/"/g,'""')+'"').join(",")).join("\r\n");return {status:"success",filename:"catalogo-articulos.csv",csv:"\uFEFF"+csv};}
-function catalogEnsureKardexSchema_(ss){const h=["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones","CatalogoItemID","CantidadBase","UnidadMedidaOriginal","FactorConversion"],sh=getOrCreateSheet(ss,"InventariosKardex"),v=sh.getDataRange().getValues();if(!v.length||!v[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,h.length).setValues([h]);else{const a=v[0].map(x=>String(x||"").trim()),prefix=a.length<=h.length&&a.every((x,i)=>x===h[i]);if(prefix&&a.length<h.length)sh.getRange(1,a.length+1,1,h.length-a.length).setValues([h.slice(a.length)]);else if(h.slice(0,12).some((x,i)=>a[i]!==x))throw new Error("INVENTORY_KARDEX_SCHEMA_MISMATCH");}return sh;}
+
+function inventoryLegacyLocationId_(label) {
+  var slug=catalogNormalizeCode_(String(label||"Bodega General")).replace(/[^A-Z0-9_-]/g,"-").replace(/-+/g,"-").slice(0,42);
+  return "UBI-LEGACY-"+(slug||"BODEGA-GENERAL");
+}
+function inventoryEnsureWarehouseLocations_(ss) {
+  var headers=["UbicacionID","SedeCod","NombreUbicacion","TipoArea","ResponsableUserId","Estado","Observaciones"];
+  var sheet=getOrCreateSheet(ss,"AlmacenesUbicaciones"),rows=sheet.getDataRange().getValues();
+  if(!rows.length||!rows[0]||!rows[0].some(function(v){return String(v||"").trim();}))sheet.getRange(1,1,1,headers.length).setValues([headers]);
+  else if(headers.some(function(h,i){return String(rows[0][i]||"").trim()!==h;}))throw new Error("WAREHOUSE_LOCATION_SCHEMA_INVALID");
+  return{sheet:sheet,headers:headers};
+}
+function inventoryResolveLocation_(ss,payload) {
+  var p=payload||{},locationId=String(p.ubicacionId||"").trim(),sedeCod=String(p.almacenId||p.sedeCod||p.sede||"").trim();
+  var label=String(p.ubicacionResponsable||p.nombreUbicacion||p.ubicacion||"").trim(),sheet=ss.getSheetByName("AlmacenesUbicaciones");
+  if(sheet){
+    var rows=sheet.getDataRange().getValues(),headers=(rows[0]||[]).map(function(v){return String(v||"").trim();});
+    if(headers.length&&headers.some(Boolean)){
+      var id=headers.indexOf("UbicacionID"),sede=headers.indexOf("SedeCod"),name=headers.indexOf("NombreUbicacion"),state=headers.indexOf("Estado");
+      if(id<0||sede<0||name<0||state<0)throw new Error("WAREHOUSE_LOCATION_SCHEMA_INVALID");
+      var matches=rows.slice(1).filter(function(row){
+        if(String(row[state]||"Activo").trim()!=="Activo")return false;
+        if(locationId&&String(row[id]||"").trim()!==locationId)return false;
+        if(sedeCod&&String(row[sede]||"").trim()!==sedeCod)return false;
+        if(!locationId&&label&&catalogNormalizeText_(row[name])!==catalogNormalizeText_(label))return false;
+        return !!(locationId||sedeCod||label);
+      });
+      if(matches.length>1)throw new Error("INVENTORY_LOCATION_AMBIGUOUS");
+      if(matches.length===1)return{ubicacionId:String(matches[0][id]).trim(),sedeCod:String(matches[0][sede]).trim(),nombreUbicacion:String(matches[0][name]).trim(),responsableUserId:String(matches[0][4]||""),legacy:false};
+      if(locationId||sedeCod)throw new Error("INVENTORY_LOCATION_NOT_FOUND");
+    }
+  }else if(locationId||sedeCod)throw new Error("INVENTORY_LOCATION_NOT_FOUND");
+  label=label||"Bodega General";
+  return{ubicacionId:inventoryLegacyLocationId_(label),sedeCod:"LEGACY",nombreUbicacion:label,responsableUserId:"",legacy:true};
+}
+function manageWarehouseLocation(payload) {
+  var p=payload||{},actor=catalogActor_(p,true),permission=validateRolePermission(actor,"manageWarehouseLocation",p);
+  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+  var role=String(actor.role||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(["ADMINISTRADOR","DIRECTOR","SUBDIRECTOR","CONTADOR"].indexOf(role)===-1)throw new Error("WAREHOUSE_LOCATION_ROLE_NOT_ALLOWED");
+  var sedeCod=String(p.sedeCod||p.almacenId||"").trim(),name=String(p.nombreUbicacion||"").trim(),type=String(p.tipoArea||"Bodega").trim();
+  var responsible=String(p.responsableUserId||"").trim(),state=String(p.estado||"Activo").trim(),notes=String(p.observaciones||"").trim().slice(0,500);
+  if(!sedeCod||!name)throw new Error("WAREHOUSE_LOCATION_REQUIRED_FIELDS");
+  if(["Bodega","Laboratorio","Aula","Oficina","Otro"].indexOf(type)===-1)throw new Error("WAREHOUSE_LOCATION_TYPE_INVALID");
+  if(["Activo","Inactivo"].indexOf(state)===-1)throw new Error("WAREHOUSE_LOCATION_STATE_INVALID");
+  var lock=LockService.getScriptLock();lock.waitLock(15000);
+  try{
+    var verified=catalogActor_(p,true);
+    if(String(verified.userId)!==String(actor.userId)||String(verified.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
+    permission=validateRolePermission(verified,"manageWarehouseLocation",p);
+    if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+    var schema=inventoryEnsureWarehouseLocations_(SpreadsheetApp.openById(SPREADSHEET_ID)),rows=schema.sheet.getDataRange().getValues();
+    var id=String(p.ubicacionId||"").trim(),matches=rows.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(x){return id&&String(x.row[0]||"").trim()===id;});
+    if(matches.length>1)throw new Error("WAREHOUSE_LOCATION_AMBIGUOUS");
+    if(id&&!matches.length)throw new Error("WAREHOUSE_LOCATION_NOT_FOUND");
+    var duplicate=rows.slice(1).some(function(row,index){return catalogNormalizeText_(row[1])===catalogNormalizeText_(sedeCod)&&catalogNormalizeText_(row[2])===catalogNormalizeText_(name)&&(!matches.length||index+2!==matches[0].index);});
+    if(duplicate)throw new Error("WAREHOUSE_LOCATION_DUPLICATE");
+    var locationId=id||"UBI-"+Utilities.getUuid(),values=[locationId,sedeCod,name,type,responsible,state,notes];
+    if(matches.length)schema.sheet.getRange(matches[0].index,1,1,values.length).setValues([values]);else schema.sheet.appendRow(values);
+    if(typeof logStructuredEvent==="function")logStructuredEvent("ACCOUNTING","manageWarehouseLocation","INFO","WAREHOUSE_LOCATION_SAVED","Ubicación de almacén guardada",{ubicacionId:locationId,sedeCod:sedeCod,estado:state},verified.userId);
+    return{status:"success",ubicacionId:locationId,sedeCod:sedeCod,nombreUbicacion:name,estado:state};
+  }finally{lock.releaseLock();}
+}
+function getWarehouseLocations(payload) {
+  var p=payload||{},actor=catalogActor_(p,false),permission=validateRolePermission(actor,"getWarehouseLocations",p);
+  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+  var schema=inventoryEnsureWarehouseLocations_(SpreadsheetApp.openById(SPREADSHEET_ID)),rows=schema.sheet.getDataRange().getValues().slice(1),filter=String(p.sedeCod||p.almacenId||"").trim();
+  return{status:"success",ubicaciones:rows.filter(function(row){return String(row[5]||"Activo")==="Activo"&&(!filter||String(row[1]||"").trim()===filter);}).map(function(row){return{ubicacionId:String(row[0]||""),sedeCod:String(row[1]||""),almacenId:String(row[1]||""),nombreUbicacion:String(row[2]||""),tipoArea:String(row[3]||""),responsableUserId:String(row[4]||""),estado:String(row[5]||"Activo"),observaciones:String(row[6]||"")};})};
+}
+
+function catalogEnsureKardexSchema_(ss){
+ const h=["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones","CatalogoItemID","CantidadBase","UnidadMedidaOriginal","FactorConversion","CostoUnitarioValoracion","CostoTotalValoracion","MetodoValoracion","EstadoCosto","SedeCod","UbicacionID","NumeroLote","NumeroSerie","UsuarioResponsable","DocumentoOrigen","ReferenciaMovimiento"];
+ const sh=getOrCreateSheet(ss,"InventariosKardex"),v=sh.getDataRange().getValues();
+ if(!v.length||!v[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,h.length).setValues([h]);
+ else{const a=v[0].map(x=>String(x||"").trim()),prefix=a.length<=h.length&&a.every((x,i)=>x===h[i]);
+  if(prefix&&a.length<h.length)sh.getRange(1,a.length+1,1,h.length-a.length).setValues([h.slice(a.length)]);
+  else if(h.slice(0,16).some((x,i)=>a[i]!==x))throw new Error("INVENTORY_KARDEX_SCHEMA_MISMATCH");
+ }
+ const rows=sh.getDataRange().getValues();
+ if(rows.length>1){
+  const metadata=rows.slice(1).map(function(row){
+   var label=String(row[10]||"Bodega General").trim()||"Bodega General",resolved;
+   try{resolved=inventoryResolveLocation_(ss,{ubicacionResponsable:label});}catch(_){resolved={sedeCod:"LEGACY",ubicacionId:inventoryLegacyLocationId_(label)};}
+   var obs=String(row[11]||""),marker=function(name){var m=obs.match(new RegExp("\\\\["+name+":([^\\\\]]+)\\\\]"));return m?String(m[1]).trim():"";};
+   return[String(row[20]||resolved.sedeCod||"LEGACY"),String(row[21]||resolved.ubicacionId||inventoryLegacyLocationId_(label)),String(row[22]||marker("LOTE")),String(row[23]||marker("SERIE")),String(row[24]||""),String(row[25]||marker("DOC")),String(row[26]||marker("REF"))];
+  });
+  sh.getRange(2,21,metadata.length,7).setValues(metadata);
+ }
+ return sh;
+}
 
 
 const INVENTORY_VALUATION_LAYER_HEADERS_=["CapaID","FechaAdquisicion","ItemID","ItemCodigo","Ubicacion","KardexOrigenID","DocumentoOrigen","Metodo","CantidadInicial","CantidadDisponible","CostoUnitario","ValorInicial","EstadoCosto","FechaRegistro","Referencia"];
@@ -13138,30 +13232,44 @@ function exportValuatedInventoryReportPDF(p){
 }
 
 function recordInventoryMovementLocked_(ss,payload) {
- const p=payload||{},itemCodigo=p.itemCodigo,cantidad=p.cantidad,tipoNorm=String(p.tipoMovimiento||"Entrada").trim(),target=String(p.ubicacionId||p.ubicacionResponsable||p.almacenId||"Bodega General").trim();
+ const p=payload||{},itemCodigo=p.itemCodigo,cantidad=p.cantidad,tipoNorm=String(p.tipoMovimiento||"Entrada").trim();
  if(!itemCodigo||cantidad===undefined||!Number.isFinite(Number(cantidad))||Number(cantidad)<=0)throw new Error("itemCodigo y cantidad válida requeridos.");
  const code=catalogNormalizeCode_(String(itemCodigo).trim()),inputQty=Number(cantidad),item=catalogFindItem_(ss,code,true),unit=catalogFindUnit_(ss,p.cantidadBase===true?item.baseUnit:(p.unidadMedida||item.unit));
  if(catalogNormalizeText_(unit.base)!==catalogNormalizeText_(item.baseUnit))throw new Error("CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM");
+ const location=inventoryResolveLocation_(ss,p),target=location.nombreUbicacion,warehouse=location.sedeCod,locationId=location.ubicacionId;
+ const lot=String(p.numeroLote||"").trim(),serial=String(p.numeroSerie||"").trim(),bucket=[warehouse,locationId,lot,serial].join("|");
  const factor=unit.factor,qty=assetDeprMoney_(inputQty*factor),name=item.name,category=item.category;if(qty<=0)throw new Error("INVENTORY_BASE_QUANTITY_INVALID");
- const sheet=catalogEnsureKardexSchema_(ss),data=sheet.getDataRange().getValues().slice(1);let current=0;const locations={};
- data.forEach(r=>{if(catalogNormalizeCode_(r[2])===code){const loc=String(r[10]||"Bodega General").trim();locations[loc.toLowerCase()]=Number(r[8]||0);if(loc.toLowerCase()===target.toLowerCase())current=Number(r[8]||0);}});
+ const sheet=catalogEnsureKardexSchema_(ss),data=sheet.getDataRange().getValues().slice(1);let current=0;const balances=Object.create(null);
+ data.forEach(function(r){
+  if(catalogNormalizeCode_(r[2])!==code)return;
+  var rowLocation;
+  try{rowLocation=inventoryResolveLocation_(ss,{ubicacionId:r[21],sedeCod:r[20],ubicacionResponsable:r[10]});}catch(_){rowLocation={sedeCod:String(r[20]||"LEGACY"),ubicacionId:String(r[21]||inventoryLegacyLocationId_(r[10]||"Bodega General"))};}
+  var rowBucket=[rowLocation.sedeCod,rowLocation.ubicacionId,String(r[22]||""),String(r[23]||"")].join("|");
+  balances[rowBucket]=Number(r[8]||0);if(rowBucket===bucket)current=Number(r[8]||0);
+ });
  let next=current;const incoming=["Entrada","Devolucion","AjustePositivo"].indexOf(tipoNorm)!==-1,outgoing=["Salida","Prestamo","Baja","TransferenciaSalida","Consumo","AjusteNegativo"].indexOf(tipoNorm)!==-1;
- if(incoming)next=assetDeprMoney_(current+qty);else if(outgoing){if(current<qty)throw new Error("INSUFFICIENT_LOCAL_STOCK:"+code+":"+target+":"+current+":"+qty);}else throw new Error("INVENTORY_MOVEMENT_TYPE_UNSUPPORTED:"+tipoNorm);
- const storedMin=item.row[20],min=Number(p.stockMinimo===undefined||p.stockMinimo===""?(storedMin===undefined||storedMin===""?5:storedMin):p.stockMinimo),now=new Date(),id="KDX-"+Utilities.getUuid();let obs=String(p.observaciones||"");if(p.numeroLote)obs+=" | [LOTE:"+p.numeroLote+"]";if(p.numeroSerie)obs+=" | [SERIE:"+p.numeroSerie+"]";if(p.documentOrigen)obs+=" | [DOC:"+p.documentOrigen+"]";if(p.referenciaMovimiento)obs+=" | [REF:"+p.referenciaMovimiento+"]";if(p.cantidadBase!==true&&factor!==1)obs+=" | [CONVERSION:"+inputQty+" "+unit.name+" x "+factor+" = "+qty+" "+unit.base+"]";
- const valuationSnapshot=inventoryValuationSnapshot_(ss);let valuation;
+ if(incoming)next=assetDeprMoney_(current+qty);else if(outgoing){if(current<qty)throw new Error("INSUFFICIENT_LOCAL_STOCK:"+code+":"+warehouse+":"+locationId+":"+current+":"+qty);}else throw new Error("INVENTORY_MOVEMENT_TYPE_UNSUPPORTED:"+tipoNorm);
+ const storedMin=item.row[20],min=Number(p.stockMinimo===undefined||p.stockMinimo===""?(storedMin===undefined||storedMin===""?5:storedMin):p.stockMinimo),now=new Date(),id="KDX-"+Utilities.getUuid();
+ let obs=String(p.observaciones||"");if(lot)obs+=" | [LOTE:"+lot+"]";if(serial)obs+=" | [SERIE:"+serial+"]";if(p.documentOrigen)obs+=" | [DOC:"+p.documentOrigen+"]";if(p.referenciaMovimiento)obs+=" | [REF:"+p.referenciaMovimiento+"]";if(p.cantidadBase!==true&&factor!==1)obs+=" | [CONVERSION:"+inputQty+" "+unit.name+" x "+factor+" = "+qty+" "+unit.base+"]";
+ const valuationLocation=location.legacy?target:(warehouse+"::"+locationId),valuationSnapshot=inventoryValuationSnapshot_(ss);let valuation;
  try{
-  valuation=inventoryValuationApplyMovement_(ss,item,p,id,qty,tipoNorm,target,current);
+  valuation=inventoryValuationApplyMovement_(ss,item,p,id,qty,tipoNorm,valuationLocation,current);
   if(outgoing)next=assetDeprMoney_(current-qty);
-  locations[target.toLowerCase()]=next;let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
-  sheet.appendRow([id,now,code,name,category,tipoNorm,qty,current,next,min,target,obs.trim(),item.id,qty,unit.name,factor,valuation.costoUnitario,valuation.costoTotal,valuation.metodo,valuation.estadoCosto]);
+  balances[bucket]=next;let total=0;Object.keys(balances).forEach(function(k){total+=Number(balances[k]||0);});total=assetDeprMoney_(total);
+  sheet.appendRow([id,now,code,name,category,tipoNorm,qty,current,next,min,target,obs.trim(),item.id,qty,unit.name,factor,valuation.costoUnitario,valuation.costoTotal,valuation.metodo,valuation.estadoCosto,warehouse,locationId,lot,serial,String(p.actorUserId||p.responsableUserId||p.userId||""),String(p.documentOrigen||""),String(p.referenciaMovimiento||"")]);
  }catch(e){inventoryValuationRestore_(ss,valuationSnapshot);throw new Error("INVENTORY_VALUATION_MOVEMENT_ATOMIC_FAILURE:"+e.message);}
- let total=0;Object.keys(locations).forEach(k=>total+=Number(locations[k]||0));total=assetDeprMoney_(total);
- const low=next<=min;return {status:"success",kardexId:id,itemCodigo:code,itemNombre:name,ubicacion:target,cantidadRegistrada:inputQty,cantidadBase:qty,unidadBase:item.baseUnit,stockAnteriorUbicacion:current,stockNuevoUbicacion:next,stockConsolidadoInstitucional:total,stockMinimo:min,alertaStockMinimo:low,costoUnitarioValoracion:valuation.costoUnitario,costoTotalValoracion:valuation.costoTotal,metodoValoracion:valuation.metodo,estadoCosto:valuation.estadoCosto,capasTransferencia:valuation.asignaciones,message:low?"Movimiento registrado; stock bajo en "+target+".":"Movimiento de inventario registrado correctamente."};
+ let total=0;Object.keys(balances).forEach(function(k){total+=Number(balances[k]||0);});total=assetDeprMoney_(total);
+ const low=next<=min;return{status:"success",kardexId:id,itemCodigo:code,itemNombre:name,ubicacion:target,sedeCod:warehouse,almacenId:warehouse,ubicacionId:locationId,numeroLote:lot,numeroSerie:serial,cantidadRegistrada:inputQty,cantidadBase:qty,unidadBase:item.baseUnit,stockAnteriorUbicacion:current,stockNuevoUbicacion:next,stockConsolidadoInstitucional:total,stockMinimo:min,alertaStockMinimo:low,costoUnitarioValoracion:valuation.costoUnitario,costoTotalValoracion:valuation.costoTotal,metodoValoracion:valuation.metodo,estadoCosto:valuation.estadoCosto,capasTransferencia:valuation.asignaciones,message:low?"Movimiento registrado; stock bajo en "+target+".":"Movimiento de inventario registrado correctamente."};
 }
 function recordInventoryMovement(payload) {
+ const input=payload||{},actor=catalogActor_(input,true),permission=validateRolePermission(actor,"recordInventoryMovement",input);
+ if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
  const lock=LockService.getScriptLock();lock.waitLock(15000);
- try{return recordInventoryMovementLocked_(SpreadsheetApp.openById(SPREADSHEET_ID),payload||{});}
- finally{lock.releaseLock();}
+ try{
+  const verified=catalogActor_(input,true);if(String(verified.userId)!==String(actor.userId)||String(verified.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
+  const locked=validateRolePermission(verified,"recordInventoryMovement",input);if(!locked||locked.authorized!==true)throw new Error(locked&&locked.code||"ROLE_PERMISSION_DENIED");
+  return recordInventoryMovementLocked_(SpreadsheetApp.openById(SPREADSHEET_ID),Object.assign({},input,{actorUserId:verified.userId}));
+ }finally{lock.releaseLock();}
 }
 function getInventoryKardex(payload) {
   const { itemCodigo, categoriaTipo, ubicacionId, ubicacionResponsable, almacenId, fechaInicio, fechaFin } = payload || {};
