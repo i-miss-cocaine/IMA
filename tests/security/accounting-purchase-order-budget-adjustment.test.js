@@ -59,7 +59,7 @@ function main(){
  const invoice=makeHarness();invoice.sheets.CuentasPorPagarGastos=makeSheet([["OrdenCompraID"],["OC-1"]]);
  assert.equal(invoice.context.adjustPurchaseOrderCommitment({...payload,idempotencyKey:"ADJ-OC-1-0004"}).code,"PURCHASE_ORDER_ADJUSTMENT_HAS_RECEIPT_OR_INVOICE");
  const writeFailure=makeHarness({failOrderWrite:true}),failed=writeFailure.context.adjustPurchaseOrderCommitment(payload);
- assert.equal(failed.status,"error");assert.equal(writeFailure.sheets.OrdenesCompra.rows[1][4],120);assert.equal(writeFailure.sheets.PresupuestosInstitucionales.rows[1][5],100);assert.equal(writeFailure.sheets.CompromisosPresupuestarios.rows[1][6],100);
+ assert.equal(failed.status,"error");assert.equal(writeFailure.sheets.OrdenesCompra.rows[1][4],120);assert.equal(writeFailure.sheets.PresupuestosInstitucionales.rows[1][5],100);assert.equal(writeFailure.sheets.CompromisosPresupuestarios.rows[1][6],100);assert.equal(writeFailure.sheets.OrdenesCompra.rows[1][21],"");assert.equal(writeFailure.sheets.OrdenesCompra.rows[1][23],"");
  const appendFailure=makeHarness({failAuditAppendAfterWrite:true}),appendFailed=appendFailure.context.adjustPurchaseOrderCommitment(payload);
  assert.equal(appendFailed.status,"error");assert.equal(appendFailure.sheets.OrdenesCompra.rows[1][4],120);assert.equal(appendFailure.sheets.PresupuestosInstitucionales.rows[1][5],100);assert.equal(appendFailure.sheets.CompromisosPresupuestarios.rows[1][6],100);assert.equal(appendFailure.sheets.AjustesCompromisosPresupuestarios.rows.length,1);
  assert.ok(h.logs.some(x=>x[2]==="BUDGET_COMMITMENT_ADJUSTED"));

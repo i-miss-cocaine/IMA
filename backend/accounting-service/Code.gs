@@ -7560,7 +7560,8 @@ function adjustPurchaseOrderCommitment(payload) {
         throw new Error("BUDGET_COMMITMENT_REDUCTION_EXCEEDS_UNEXECUTED");
       plan.push({part:part,delta:delta,commitment:commitment,budget:budgetMatches[0]});
     });
-    rollback.orderRow={rowIndex:match.index,row:order.slice()};rollback.auditStart=auditSchema.sheet.getLastRow();
+    var originalOrder=order.slice();while(originalOrder.length<schema.headers.length)originalOrder.push("");
+    rollback.orderRow={rowIndex:match.index,row:originalOrder};rollback.auditStart=auditSchema.sheet.getLastRow();
     plan.forEach(function(entry){
       rollback.budgetRows.push({rowIndex:entry.budget.index,row:entry.budget.row.slice()});
       rollback.commitmentRows.push({rowIndex:entry.commitment.index,row:entry.commitment.row.slice()});
