@@ -132,6 +132,14 @@ h.setRole("Director");h.setPermissionDenied(true);assert.throws(()=>ctx.manageWa
  assert.equal(ctx.reconcilePhysicalCount(countPayload).idempotente,true);
  assert.equal(h.sheets.InventariosKardex.rows.length,rowsAfterReconcile,"reconciliation replay must not duplicate movements");
  assert.equal(ctx.getPhysicalInventoryCounts({estadoConteo:"ConciliadoAprobado"}).conteos[0].reconciliacionId,reconciled.reconciliacionId);
+ ctx.recordInventoryMovementLocked_(h.ss,{itemCodigo:"ITM-COUNT",cantidad:4,cantidadBase:true,tipoMovimiento:"Entrada",sedeCod:"SPS-02",ubicacionId:loc2.ubicacionId,numeroLote:"LOT-COUNT",actorUserId:"USR-1"});
+ const secondPhysicalCount=ctx.createPhysicalInventoryCount({sedeCod:"SPS-02",ubicacionId:loc2.ubicacionId});
+ assert.equal(ctx.getPhysicalInventoryCounts({conteoId:physicalCount.conteoId}).total,1,"count identifier filter must isolate one physical count");
+ assert.equal(ctx.getPhysicalInventoryCounts({conteoId:secondPhysicalCount.conteoId}).conteos[0].sedeCod,"SPS-02");
+ const secondReconciliation=ctx.reconcilePhysicalCount({conteoId:secondPhysicalCount.conteoId,articulosDetalleJSON:[{itemCodigo:"ITM-COUNT",cantidadContada:5,numeroLote:"LOT-COUNT"}],idempotencyKey:"COUNT-RECON-02"});
+ assert.equal(secondReconciliation.status,"success");
+ assert.equal(ctx.inventoryPhysicalStock_(h.ss,"ITM-COUNT","Bodega Norte","SPS-01",loc1.ubicacionId),8,"reconciling a second warehouse must preserve the first warehouse balance");
+ assert.equal(ctx.inventoryPhysicalStock_(h.ss,"ITM-COUNT","Bodega Norte","SPS-02",loc2.ubicacionId),5,"physical count adjustment must apply only to its warehouse");
  assert.throws(()=>ctx.reconcilePhysicalCount({...countPayload,articulosDetalleJSON:[{itemCodigo:"ITM-COUNT",cantidadContada:7}]}),/INVENTORY_COUNT_IDEMPOTENCY_CONFLICT|INVENTORY_COUNT_ALREADY_RECONCILED/);
  ctx.recordInventoryMovementLocked_(h.ss,{itemCodigo:"ITM-MULTI",cantidad:5,cantidadBase:true,tipoMovimiento:"Entrada",sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,numeroLote:"LOT-A",actorUserId:"USR-1"});
  ctx.recordInventoryMovementLocked_(h.ss,{itemCodigo:"ITM-MULTI",cantidad:3,cantidadBase:true,tipoMovimiento:"Entrada",sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,numeroLote:"LOT-B",actorUserId:"USR-1"});
