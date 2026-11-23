@@ -73,6 +73,28 @@ function main(){
  const transfer2=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-2",requiereConfirmacionFisica:true});
  const rejected=ctx.confirmTransferReceipt({transferBatchId:transfer2.transferBatchId,cantidadRecibida:0,justificacionDiscrepancia:"Destino rechazó la entrega"});
  assert.equal(rejected.estadoTransferencia,"Rechazada");
+ const serialOne=move("SPS-01",loc1.ubicacionId,2,"Entrada","LOT-SERIAL","SER-001");
+ const serialTwo=move("SPS-01",loc1.ubicacionId,3,"Entrada","LOT-SERIAL","SER-002");
+ assert.equal(serialOne.stockNuevoUbicacion,2);
+ assert.equal(serialTwo.stockNuevoUbicacion,3);
+ const serialOneRows=ctx.getInventoryKardex({sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,numeroSerie:"SER-001"});
+ assert.equal(serialOneRows.kardex.length,1);
+ assert.equal(serialOneRows.kardex[0].stockNuevo,2);
+ assert.equal(serialOneRows.resumenPorUbicacion.find(x=>x.sedeCod==="SPS-01").stockFisico,16);
+
+ const beforeOverReceiptRows=h.sheets.InventariosKardex.rows.length;
+ assert.throws(()=>ctx.confirmTransferReceipt({transferBatchId:transfer2.transferBatchId,cantidadRecibida:2}),/TRANSFER_RECEIPT_EXCEEDS_DISPATCHED_QUANTITY/);
+ assert.equal(h.sheets.InventariosKardex.rows.length,beforeOverReceiptRows,"over-receipt must not append Kardex movements");
+
+ const transferRows=h.sheets.TransferenciasInventario.rows.length;
+ const originalValuationApply=ctx.inventoryValuationApplyMovement_;
+ let valuationCalls=0;
+ ctx.inventoryValuationApplyMovement_=(...args)=>{valuationCalls++;if(valuationCalls===2)throw new Error("INJECTED_DESTINATION_VALUATION_FAILURE");return originalValuationApply(...args);};
+ assert.throws(()=>ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-2",requiereConfirmacionFisica:false}),/INVENTORY_TRANSFER_ATOMIC_FAILURE/);
+ ctx.inventoryValuationApplyMovement_=originalValuationApply;
+ assert.equal(h.sheets.InventariosKardex.rows.length,beforeOverReceiptRows,"failed two-leg transfer must roll back both Kardex writes");
+ assert.equal(h.sheets.TransferenciasInventario.rows.length,transferRows,"failed transfer must not leave a transfer ledger row");
+
  const legacyRows=[["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones","CatalogoItemID","CantidadBase","UnidadMedidaOriginal","FactorConversion"],["KDX-OLD",new Date(),"ITM-1","Equipo de prueba","Equipo","Entrada",4,0,4,5,"","[LOTE:LOT-OLD] [SERIE:SER-OLD]", "ITM-1",4,"Unidad",1]];
  const legacyHarness=makeHarness();legacyHarness.sheets.InventariosKardex=sheet(legacyRows);legacyHarness.context.catalogEnsureKardexSchema_(legacyHarness.ss);assert.equal(legacyHarness.sheets.InventariosKardex.rows[1][20],"LEGACY");assert.match(legacyHarness.sheets.InventariosKardex.rows[1][21],/UBI-LEGACY-BODEGA-GENERAL/);assert.equal(legacyHarness.sheets.InventariosKardex.rows[1][22],"LOT-OLD");assert.equal(legacyHarness.sheets.InventariosKardex.rows[1][23],"SER-OLD");
  const legacy=move("", "",4,"Entrada","","");
