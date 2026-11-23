@@ -612,3 +612,48 @@
 - No se declara PASS para las aserciones añadidas después de fd4f ni para pruebas beta.
 
 ===============================================================================
+
+
+===============================================================================
+### C1.960 — IMA-EXEC-20261123-TASK021-WAREHOUSE-TRANSFER-IDEMPOTENCY-CLOSE
+===============================================================================
+
+### Continuidad y Git
+- Sesión: continuación desde C1.959.
+- Repositorio: i-miss-cocaine/IMA.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- HEAD inicial comprobado: 3fdbb166d1a3c58846d9c6a3fffd243c2e65753e.
+- HEAD de implementación: 364e4dc4c01471226be6fbe47511b306bcc09a73.
+- HEAD final de esta sesión: 8d994380eb6846240c807b57d8a1259b9663b900.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta.
+- No se modificó ni publicó otra rama.
+
+### Correcciones e implementación
+- Se corrigió el formulario de transferencias: el selector de estado inicial quedó dentro del formulario; la clave idempotente se genera al iniciar y se conserva en reintentos, renovándose tras un envío exitoso.
+- La revisión detectó que el backend solo persistía la clave pero no deduplicaba solicitudes. Se completó el contrato en backend/accounting-service/Code.gs: validación de formato de clave, hash SHA-256 de payload canónico, consulta de duplicados bajo ScriptLock, retorno del TRF existente para payload idéntico y rechazo TRANSFER_IDEMPOTENCY_CONFLICT cuando se reutiliza la clave con contenido distinto.
+- Se añadió PayloadHash al esquema TransferenciasInventario con extensión compatible del encabezado previo. Se mantiene IdempotencyKey en su columna existente y no se exponen hashes en la respuesta de lectura.
+- El contrato de inventario ahora prueba reintento idéntico sin duplicar ledger/Kardex, conflicto de payload alterado y rechazo de clave mal formada.
+- Se corrigió el contrato UI: la aserción comprueba el campo oculto dentro del formulario y el enlace del valor en el payload del handler, sin exigir que el handler esté dentro del HTML.
+
+### Archivos de código y pruebas
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/inventory-multilocation-kardex.test.js
+- tests/ui/inventory-warehouse-ui.test.js
+
+### Verificaciones
+- Department Scope run 45291514151: pasos 72 (contrato multialmacén/inventario), 73 (contrato UI almacenes) y 75 (sintaxis Apps Script/JS) SUCCESS; estado de commit ima/department-scope-contract SUCCESS. El workflow aún figuraba finalizando su paso de publicación de estado al crear este checkpoint.
+- UI Accessibility and Metadata Contract run 45291514101: SUCCESS.
+- Department Scope run 45291418117: FAIL por aserción defectuosa que buscaba idempotencyKey: dentro del fragmento HTML del formulario. Se corrigió para comprobar por separado el campo oculto y el binding del handler; el run posterior confirmó PASS en los pasos 72/73/75.
+- El run anterior 45291418117 no se oculta; su causa fue el test, no una regresión de producción.
+- Revisión del diff de implementación: cambios limitados al flujo de transferencias, contrato de inventario y contrato UI. No se alteró la rama base.
+- La prueba de concurrencia sigue siendo determinista mediante contención de ScriptLock; no se afirma una intercalación paralela real.
+
+### Estado y límites
+- TASK-021: COMPLETADA en código y verificaciones locales/CI pertinentes.
+- BETA-FUNC-132: PENDIENTE DE BETA para validación contra Apps Script/Sheets desplegados. No se ejecutó despliegue ni se modificaron datos reales.
+- La clave idempotente de la UI ahora es aplicada por backend, no solo enviada/persistida.
+
+### Siguiente tarea elegible
+- Revisar la cola P0 del Plan Maestro y seleccionar la siguiente tarea sin dependencia pendiente; TASK-072 aparece a continuación en el backlog contable, sujeto a confirmar prioridad y dependencias antes de iniciar.
+===============================================================================
