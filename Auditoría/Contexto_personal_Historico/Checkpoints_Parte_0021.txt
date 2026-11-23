@@ -657,3 +657,27 @@
 ### Siguiente tarea elegible
 - Revisar la cola P0 del Plan Maestro y seleccionar la siguiente tarea sin dependencia pendiente; TASK-072 aparece a continuación en el backlog contable, sujeto a confirmar prioridad y dependencias antes de iniciar.
 ===============================================================================
+
+
+===============================================================================
+### C1.961 — IMA-EXEC-20261123-F29-TASK01-DEPENDENCY-RECONCILIATION
+===============================================================================
+
+### Hallazgo de continuidad
+- Tras cerrar TASK-021 en C1.960, se revisó el siguiente bloque P0 del Plan Maestro.
+- TASK-072 aparece como siguiente bloque contable, pero no es elegible: depende de F29-TASK01/02/03; F29-TASK02 y F29-TASK03 siguen pendientes y TASK-072 tiene alcance sustancialmente solapado con F29-TASK02.
+- El Plan Maestro referencia F29-TASK01 en pendientes/Otros/Pendientes.md, pero esa entrada no existía. La auditoría Fase 29 sección I define el alcance y el código ya lo implementa mediante TASK-068.
+
+### Reconciliación F29-TASK01
+- Se añadió la entrada faltante a pendientes/Otros/Pendientes.md y se marcó completada por evidencia previa, sin duplicar implementación.
+- La hoja CorrespondenciaIdentificadores, clave compuesta fuente/tipo/ID/institución, registro idempotente, resolución bidireccional, revisión humana, historial y auditoría de duplicados/orfandad están documentados en Auditoría TASK-068 C1.363.
+- Identity Mapping and Transport Security Contract run 45291418277: SUCCESS en SHA 364e4dc4c01471226be6fbe47511b306bcc09a73. Incluye pruebas de mapeo, aislamiento institucional, snapshot HMAC y writers.
+- BETA-FUNC-008 continúa PENDIENTE DE BETA; no se ejecutaron despliegues ni fuentes reales.
+
+### Estado y siguiente acción
+- F29-TASK01: COMPLETADA en código/CI por TASK-068; su registro de backlog fue recuperado.
+- TASK-072/F29-TASK02: BLOQUEADAS hasta reconciliar dependencias F29-TASK07/08 y TASK-133/AUD-NG-133, además de unificar el alcance duplicado del corte financiero.
+- F29-TASK03: BLOQUEADA por F29-TASK13 y AUD-NG-167.
+- No se inicia trabajo de corte financiero ni de protección de notas históricas mientras las dependencias no estén resueltas.
+- Siguiente acción: seleccionar el próximo P0 realmente elegible del Plan Maestro, evitando duplicar tareas ya cubiertas por TASK-068 y sin saltar dependencias.
+===============================================================================

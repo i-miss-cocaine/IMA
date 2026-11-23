@@ -34,3 +34,14 @@
 - **Verificación:** ejecutar pruebas locales pertinentes para las correcciones incluidas en el propio trabajo de auditoría; los cambios correctivos sustanciales se implementarán mediante sus tareas específicas y pruebas propias. No declarar PASS para módulos no inspeccionados ni convertir pruebas beta en bloqueo de implementación.
 - **Límites:** no reescribir módulos en bloque, no imponer permisos universales por rol, no crear una nueva capa de autorización repetida entre servicios y no debilitar controles básicos necesarios. La auditoría debe medir conformidad con la política, no diseñar una política más restrictiva.
 - **Cierre:** entregar matriz completa de módulos y hallazgos trazables; toda desviación accionable queda asociada a una tarea de ajuste concreta. La auditoría no se considera completada con una revisión superficial o solo documental.
+
+
+<!-- ID: F29-TASK01 | Fuente: AUDITORIA_FASE_29_MIGRACION_Y_TRANSICION.md, sección I; Plan Maestro PM-04 -->
+### [x] [F29-TASK01] Tabla Central de Correspondencia de Identificadores (CorrespondenciaIdentificadores)
+- **Prioridad:** P0.
+- **Alcance:** persistir la relación por institución entre sistema de origen, tipo de entidad e ID legado con su ID interno; evitar duplicados/conflictos en reimportaciones; conservar hash de origen, versión, estado, método, confianza y actor; resolver referencias en ambos sentidos; exigir revisión humana para confirmar o rechazar; mantener historial auditable y aislamiento institucional.
+- **Dependencias:** ninguna declarada en el Plan Maestro.
+- **Evidencia de implementación previa:** satisfecha como parte de TASK-068; hoja CorrespondenciaIdentificadores con esquema canónico, inicialización segura, clave compuesta fuente/tipo/ID/institución, registro idempotente, conflicto de destino, resolución bidireccional, revisión humana y HistorialDecisionesIdentidad. La auditoría de consistencia detecta duplicados, filas incompletas y destinos huérfanos sin autocorregir ni fusionar.
+- **Verificación:** Auditoría TASK-068 C1.363 dictaminó criterios locales PASS; Identity Mapping and Transport Security Contract run 45291418277 SUCCESS en SHA 364e4dc4c01471226be6fbe47511b306bcc09a73; incluye identity-mapping-contract.test.js y accounting-identity-map-snapshot.test.js, con aislamiento por institución y transporte HMAC firmado ACCOUNTING→USER.
+- **Estado:** Completada en código/CI por implementación previa TASK-068; BETA-FUNC-008 permanece PENDIENTE DE BETA para validar transporte entre despliegues, fuentes reales y persistencia en servicios vivos.
+- **Nota de trazabilidad:** se recupera esta entrada faltante del backlog porque el Plan Maestro ya la referencia. No se duplicó ni reimplementó el módulo; se vinculó la evidencia existente al identificador F29-TASK01.
