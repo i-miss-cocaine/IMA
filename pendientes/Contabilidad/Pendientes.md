@@ -966,7 +966,7 @@
 ---
 
 <!-- ID: TASK-017 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-017] Implementar el compromiso presupuestario formal al aprobar órdenes de compra
+### [x] [TASK-017] Implementar el compromiso presupuestario formal al aprobar órdenes de compra
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.6), Sección E y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Control preventivo del gasto, protección presupuestaria y concurrencia)
@@ -995,8 +995,8 @@
   - La cancelación formal de una orden de compra libera el compromiso devolviendo los fondos a disponibilidad.
   - Reducir el importe de una orden ajusta la diferencia en el compromiso de forma trazable.
   - Las autorizaciones de sobregiro quedan auditadas con usuario directivo responsable y motivo.
-- **Estado:** Pendiente
-- **Continuidad C1.953:** F18-TASK07 cubre la reserva idempotente al aprobar órdenes y la liberación de compromisos al cancelar órdenes elegibles. TASK-017 permanece abierto para transferir compromisos a ejecución al facturar/liquidar, ajustar reducciones autorizadas y definir la excepción extraordinaria de sobregiro con autorización y trazabilidad; no se considera completado por el cierre de F18-TASK07.
+- **Estado:** Completada
+- **Cierre C1.954:** transferencia idempotente de compromisos a ejecución al aprobar facturas conciliadas; reducción autorizada de órdenes Aprobadas no emitidas con liberación proporcional del compromiso no ejecutado y ledger de auditoría append-only; excepciones extraordinarias de sobregiro solo para Director/Administrador, justificación obligatoria y log BUDGET_OVERRUN_ALERT. La reducción se bloquea después de emitir PDF, registrar recepción o factura, o crear ejecución; el backend conserva el cierre fail-closed y rollback.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1400-1460; clave TASK-019; asignación única: Contabilidad -->
 

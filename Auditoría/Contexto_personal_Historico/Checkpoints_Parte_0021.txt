@@ -311,3 +311,71 @@
 - TASK-017 no se considera completada por F18-TASK07; debe conservarse la separación entre compromisos, ejecución contable y disponibilidad.
 
 ===============================================================================
+
+
+===============================================================================
+### C1.954 — IMA-EXEC-20261123-F11-TASK017-BUDGET-COMMITMENT-EXECUTION-REDUCTION-OVERRUN-CLOSE
+===============================================================================
+
+### Continuidad, rama y estado Git
+- Sesión: continuidad posterior a C1.953.
+- Repositorio: i-miss-cocaine/IMA.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD inicial de esta unidad: 107e38d2e088f5a96384dea910774f6236b55714 (cierre documental C1.953).
+- HEAD de implementación y pruebas: be7cc4ce76ec5af2afd72a02ff8ebc7a1b2055f8.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- No se modificó ni publicó ningún cambio en otra rama.
+
+### Tarea y resultado
+- TASK-017 (P0) — compromiso presupuestario formal, ejecución, reducciones autorizadas y excepciones de sobregiro: completada en el alcance de código y contratos.
+- La aprobación de factura de proveedor, después de conciliación de tres vías, llama recordBudgetExecutionLocked_ dentro del ScriptLock. La transferencia se calcula por partida y líneas de artículo, descuenta el compromiso pendiente y aumenta el monto ejecutado. La ejecución conserva factura hash, clave idempotente, payload hash y detalle de cantidades.
+- Las ejecuciones parciales conservan el saldo comprometido restante. Las cantidades facturadas acumuladas no pueden superar las cantidades adjudicadas. Los importes se validan contra subtotal/impuestos/total y se asignan por partida sin duplicar saldos.
+- La escritura de presupuesto, ledger de compromisos, ledger de ejecuciones, estado de la orden y aprobación de factura se coordina con snapshots y rollback compensatorio. Un fallo de append o persistencia no deja la factura aprobada ni transfiere parcialmente el presupuesto.
+- approvePurchaseOrder permite una excepción extraordinaria de sobregiro solo a Director/Administrador, con permiso authorizeBudgetOverrun, justificación obligatoria, persistencia de autorizador/fecha/motivo en el ledger y evento estructurado BUDGET_OVERRUN_ALERT. El sobregiro no se autoriza implícitamente.
+- Se añadió adjustPurchaseOrderCommitment, expuesto por el router y las capacidades de compras. Solo Director/Administrador puede reducir cantidades de una orden en estado Aprobada y aún no emitida. No admite aumentos, cambios de precio, cambios de partida ni líneas añadidas/eliminadas.
+- La reducción actualiza el detalle y monto de la orden, disminuye MontoComprometido, reduce el saldo activo del ledger y registra un evento append-only en AjustesCompromisosPresupuestarios, con hash anterior/nuevo, desglose por partida, actor, rol, justificación y clave idempotente.
+- La reducción se bloquea si la orden ya fue emitida/confirmada, si tiene recepción o factura asociada, o si existe ejecución presupuestaria. Esta frontera evita alterar documentos comerciales o cantidades que ya tienen evidencia operativa; cualquier modificación posterior requiere un flujo de enmienda/reversión independiente.
+- La reducción es idempotente, serializada bajo ScriptLock y revierte orden, presupuesto, ledger y auditoría si falla una escritura. La UI de compras expone el control solo mediante capacidad del servidor.
+
+### Archivos modificados en la unidad TASK-017
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-budget-control.test.js
+- tests/security/accounting-purchase-order-pdf.test.js
+- tests/security/accounting-purchase-order-budget-adjustment.test.js (nuevo)
+- tests/security/accounting-purchase-console-capabilities.test.js
+- .github/workflows/department-scope-contract.yml
+- pendientes/Contabilidad/Pendientes.md
+- changueslogs.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt
+
+### Verificaciones
+- Department Scope Contract run 45271468013: SUCCESS; Node.js 24; todos los contratos configurados y syntax-check de servicios Apps Script completados.
+- Purchase console capability gating and stale-response contract: SUCCESS.
+- Official purchase order PDF lifecycle contract: SUCCESS.
+- Authorized purchase order budget reduction contract: SUCCESS; Director/Admin, solo reducción, liberación por partida, idempotencia, conflicto de clave, recepción/factura, permisos, scope, lock y rollback.
+- Budget reservation and commitment ledger contract: SUCCESS; ejecución parcial, ejecución idempotente, cantidades acumuladas, sobregiro, liberación y rollback.
+- Syntax-check updated Apps Script services: SUCCESS.
+- Regional Formatting, UI Accessibility/Metadata, Department Reference Consumers, Identity Mapping/Transport Security, Accounting Import Preflight, Hierarchical Configuration, Library Circulation Concurrency y ACCOUNTING Transport Local Contracts: SUCCESS en el mismo HEAD.
+- Las pruebas intermedias de sobrepresupuesto fallaron por una clave mal escrita en el fixture y por un stub que omitía propagar el contexto de autorización; se corrigió el contrato sin debilitar las aserciones y el run final pasó.
+- CLI local independiente: NOT RUN; el checkout local no estuvo disponible. Los contratos Node.js se ejecutaron en GitHub Actions sobre Node.js 24.
+- Apps Script/Sheets/Drive desplegados y filas reales de matriz dinámica de permisos: NOT RUN; PENDIENTE DE BETA. authorizeBudgetOverrun y adjustPurchaseOrderCommitment permanecen fail-closed hasta que sus grants dinámicos estén configurados en el entorno real.
+- No se crearon órdenes, facturas, pagos ni movimientos presupuestarios reales.
+
+### Commits principales de TASK-017
+- 0a6569f2c433f3e8d87f6ea417c077a9027f8c3a — transferencia de compromisos a ejecución al aprobar factura.
+- f14520862c39331c0252383c5a4032ba9dc5677f y 9dbba4288cddbcf5a9c478ad55551b4f04d7bd43 — integridad de estado e idempotencia de ejecución.
+- 20f34c7a53d9d3d4d77335dcdd2e39ab9d8e897b, 77f9843bd25cd704a6182a26c89c8d99dea3139f y 93f1f6604419ce4f8bc2ee1f613e97aaaed01995 — rollback, estado de factura y sincronización de estado de orden.
+- 6666191cf89680d26b10d4d4ffc60ac14b52b433 y eebaf66a14d4a6a806dedae56479c0ddb142b2a0 — excepción de sobregiro y contratos.
+- b1b9c3b1595231bc0ef0118877a9467d901e2a9c y aa5718547a4f81e87c147b98f9377e527a9d0f39 — normalización de payload y fixture de autorización.
+- bb8a3c38f35bb76b5dc1c906f28b711b06c78695 y 5381b1b0dd3670137dabf8123e5e904cb6111c26 — reducción autorizada y replay seguro.
+- 4ace271d2e4c528bc923a92fef0c0478a44a760a y 1ace9b3779090d2e6e6feae049a1c0f26c072205 — contrato de reducción y workflow.
+- 8ccc19d64e5901c45bb3a49c78bb33347446bd20 y be7cc4ce76ec5af2afd72a02ff8ebc7a1b2055f8 — rollback completo de orden y acción UI.
+
+### Hallazgos y siguiente tarea
+- TASK-017 queda Completada en código y contratos Node.js.
+- La operación real sigue condicionada a despliegue y grants de matriz dinámica en beta; no se declara verificada en producción.
+- Siguiente tarea elegible en el backlog de Contabilidad: TASK-019 (P0), corrección del control de existencias multialmacén. Antes de modificar inventario se debe verificar el estado real de recordInventoryMovement, getInventoryKardex, transferInventoryStock, InventariosKardex y AlmacenesUbicaciones, y recuperar cualquier contrato histórico que la tarea requiera.
+
+===============================================================================
