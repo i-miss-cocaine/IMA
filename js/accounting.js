@@ -304,6 +304,54 @@ window.loadKardexLocationSelects = function () {
     window.loadPhysicalInventoryCountsUI();
   }).catch(function(error){console.error("No se pudieron cargar las ubicaciones del Kardex:",error);});
 };
+window.inventoryPhysicalCountsCache = [];
+window.loadPhysicalInventoryCountsUI = function(preferredCountId) {
+  const warehouse=document.getElementById("kdx-count-sede"),location=document.getElementById("kdx-count-ubicacion"),select=document.getElementById("kdx-count-id"),detail=document.getElementById("kdx-count-detail");
+  if(!warehouse||!location||!select||!detail)return;
+  const payload={};if(warehouse.value)payload.sedeCod=warehouse.value;if(location.value)payload.ubicacionId=location.value;
+  if(!payload.sedeCod||!payload.ubicacionId){select.innerHTML='<option value="">Seleccione almacén y ubicación</option>';window.inventoryPhysicalCountsCache=[];detail.textContent="Seleccione almacén y ubicación.";return;}
+  fetchApi("ACCOUNTING","getPhysicalInventoryCounts",payload).then(function(result){
+    window.inventoryPhysicalCountsCache=Array.isArray(result&&result.conteos)?result.conteos:[];
+    const selected=preferredCountId||select.value;select.innerHTML="";
+    const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent="Seleccione un conteo";select.appendChild(placeholder);
+    window.inventoryPhysicalCountsCache.forEach(function(count){const option=document.createElement("option");option.value=count.conteoId;option.textContent=count.conteoId+" · "+count.estadoConteo;select.appendChild(option);});
+    if(selected&&window.inventoryPhysicalCountsCache.some(function(count){return count.conteoId===selected;}))select.value=selected;
+    else if(window.inventoryPhysicalCountsCache.length)select.value=window.inventoryPhysicalCountsCache[0].conteoId;
+    window.renderPhysicalInventoryCountUI();
+  }).catch(function(error){detail.textContent="No se pudieron cargar los conteos: "+(error.message||error);});
+};
+window.renderPhysicalInventoryCountUI = function() {
+  const select=document.getElementById("kdx-count-id"),detail=document.getElementById("kdx-count-detail");if(!select||!detail)return;
+  const count=window.inventoryPhysicalCountsCache.find(function(item){return item.conteoId===select.value;});
+  if(!count){detail.textContent="No hay un conteo seleccionado.";return;}
+  detail.innerHTML='<div class="mb-3 flex flex-wrap items-center justify-between gap-2"><strong id="kdx-count-summary"></strong><span id="kdx-count-state" class="text-[11px] font-bold"></span></div><div id="kdx-count-lines" class="space-y-2"></div><div class="mt-3 flex flex-wrap gap-2"><button type="button" onclick="addPhysicalInventoryCountLineUI()" class="rounded-lg border px-3 py-2 text-[11px] font-bold">Añadir artículo/lote</button><button type="button" onclick="reconcilePhysicalInventoryCountUI()" class="rounded-lg bg-emerald-700 px-3 py-2 text-[11px] font-bold text-white">Conciliar conteo</button></div><p class="mt-2 text-[10px] text-gray-500">Registre todos los lotes y series existentes del artículo. El servidor valida la integridad antes de aplicar ajustes.</p>';
+  document.getElementById("kdx-count-summary").textContent=count.conteoId+" · "+count.sedeCod+" · "+count.ubicacionId;
+  document.getElementById("kdx-count-state").textContent=count.estadoConteo;
+  if(count.estadoConteo==="EnConteo")window.addPhysicalInventoryCountLineUI();
+  else detail.querySelectorAll("button").forEach(function(button){button.disabled=true;});
+};
+window.addPhysicalInventoryCountLineUI = function() {
+  const container=document.getElementById("kdx-count-lines");if(!container)return;
+  const row=document.createElement("div");row.setAttribute("data-count-line","");row.className="grid grid-cols-1 gap-2 rounded-lg border p-2 sm:grid-cols-4";
+  row.innerHTML='<input data-count-item required aria-label="Código de artículo" placeholder="Código de artículo" class="rounded border p-2"><input data-count-quantity type="number" min="0" step="0.000001" required aria-label="Cantidad contada" placeholder="Cantidad contada" class="rounded border p-2"><input data-count-lot aria-label="Lote" placeholder="Lote (si aplica)" class="rounded border p-2"><input data-count-serial aria-label="Serie" placeholder="Serie (si aplica)" class="rounded border p-2">';
+  container.appendChild(row);
+};
+window.startPhysicalInventoryCountUI = function() {
+  const sedeCod=document.getElementById("kdx-count-sede")?.value||"",ubicacionId=document.getElementById("kdx-count-ubicacion")?.value||"";
+  if(!sedeCod||!ubicacionId){alert("Seleccione almacén y ubicación física.");return;}
+  fetchApi("ACCOUNTING","createPhysicalInventoryCount",{sedeCod:sedeCod,ubicacionId:ubicacionId}).then(function(result){
+    alert("Conteo físico iniciado: "+result.conteoId);window.loadPhysicalInventoryCountsUI(result.conteoId);
+  }).catch(function(error){alert("No se pudo iniciar el conteo: "+(error.message||error));});
+};
+window.reconcilePhysicalInventoryCountUI = function() {
+  const select=document.getElementById("kdx-count-id"),container=document.getElementById("kdx-count-lines");if(!select||!select.value||!container)return;
+  const items=Array.from(container.querySelectorAll("[data-count-line]")).map(function(row){return{itemCodigo:row.querySelector("[data-count-item]").value.trim(),cantidadContada:Number(row.querySelector("[data-count-quantity]").value),numeroLote:row.querySelector("[data-count-lot]").value.trim(),numeroSerie:row.querySelector("[data-count-serial]").value.trim()};});
+  if(!items.length||items.some(function(item){return!item.itemCodigo||!Number.isFinite(item.cantidadContada)||item.cantidadContada<0;})){alert("Complete el artículo y una cantidad válida en cada línea.");return;}
+  fetchApi("ACCOUNTING","reconcilePhysicalCount",{conteoId:select.value,articulosDetalleJSON:items}).then(function(result){
+    alert("Conteo conciliado. Diferencias aplicadas: "+result.totalDiferencias);window.loadPhysicalInventoryCountsUI(select.value);window.loadKardexData();
+  }).catch(function(error){alert("No se pudo conciliar el conteo: "+(error.message||error));});
+};
+
 window.clearKardexFilters = function () {
   ["kdx-filter-sede","kdx-filter-ubicacion","kdx-filter-item","kdx-filter-category","kdx-filter-from","kdx-filter-to"].forEach(function(id){const el=document.getElementById(id);if(el)el.value="";});
   window.loadKardexData();
