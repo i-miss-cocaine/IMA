@@ -84,6 +84,14 @@ function makeHarness(options={}){
       {status:"success",reservations:[{compromisoId:"CMP-1",presupuestoId:"PRE-1",partidaCodigo:"5101",monto:100,idempotente:false}]};
   };
   assert.equal(typeof context.reservePurchaseOrderBudgetCommitmentsLocked_,"function","approval harness must stub the atomic reservation boundary");
+  context.releaseBudgetCommitmentLocked_=(ss,orderId,reason,actorId)=>{
+    releaseCalls++;
+    return options.releaseFailure?{status:"error",code:"BUDGET_COMMITMENT_RELEASE_FAILED"}:
+      {status:"success",released:[{compromisoId:"CMP-1",estado:"Liberado"}],rollbackState:{budgetRows:[],ledgerRows:[]}};
+  };
+  context.restoreReleasedBudgetCommitmentsLocked_=()=>{restoreCalls++;return true;};
+  context.budgetLogEvent_=()=>{};
+
 
   return {context,sheets,files,folder,budgetChecks,stats:()=>({created,trashed,lockCalls,lockReleases,reservationCalls,releaseCalls,restoreCalls})};
 }
