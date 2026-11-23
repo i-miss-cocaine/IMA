@@ -284,20 +284,24 @@ window.loadCatalogSelectOptions=function(itemId,unitId){const item=document.getE
 window.loadKardexLocationSelects = function () {
   const movementWarehouse=document.getElementById("kdx-sede"),movementLocation=document.getElementById("kdx-ubicacion");
   const filterWarehouse=document.getElementById("kdx-filter-sede"),filterLocation=document.getElementById("kdx-filter-ubicacion");
+  const countWarehouse=document.getElementById("kdx-count-sede"),countLocation=document.getElementById("kdx-count-ubicacion");
   if(!movementWarehouse||!movementLocation)return;
   fetchApi("ACCOUNTING","getWarehouseLocations",{}).then(function(result){
     const locations=Array.isArray(result&&result.ubicaciones)?result.ubicaciones:[];
     const fill=function(select,placeholder){if(!select)return;select.innerHTML="";const option=document.createElement("option");option.value="";option.textContent=placeholder;select.appendChild(option);};
-    fill(movementWarehouse,"Seleccione almacén");fill(movementLocation,"Seleccione ubicación");fill(filterWarehouse,"Todos");fill(filterLocation,"Todas");
+    fill(movementWarehouse,"Seleccione almacén");fill(movementLocation,"Seleccione ubicación");fill(filterWarehouse,"Todos");fill(filterLocation,"Todas");fill(countWarehouse,"Seleccione almacén");fill(countLocation,"Seleccione ubicación");
     const warehouses=Array.from(new Set(locations.map(x=>String(x.sedeCod||"")))).filter(Boolean).sort();
-    warehouses.forEach(function(code){const option=document.createElement("option");option.value=code;option.textContent=code;movementWarehouse.appendChild(option);const filterOption=document.createElement("option");filterOption.value=code;filterOption.textContent=code;filterWarehouse&&filterWarehouse.appendChild(filterOption);});
+    warehouses.forEach(function(code){const option=document.createElement("option");option.value=code;option.textContent=code;movementWarehouse.appendChild(option);const filterOption=document.createElement("option");filterOption.value=code;filterOption.textContent=code;filterWarehouse&&filterWarehouse.appendChild(filterOption);const countOption=document.createElement("option");countOption.value=code;countOption.textContent=code;countWarehouse&&countWarehouse.appendChild(countOption);});
     locations.forEach(function(location){
       const label=String(location.sedeCod)+" — "+String(location.nombreUbicacion);
       const option=document.createElement("option");option.value=location.ubicacionId;option.textContent=label;option.dataset.sedeCod=String(location.sedeCod);option.dataset.name=String(location.nombreUbicacion);movementLocation.appendChild(option);
-      const filterOption=document.createElement("option");filterOption.value=location.ubicacionId;filterOption.textContent=label;filterOption.dataset.sedeCod=String(location.sedeCod);filterLocation&&filterLocation.appendChild(filterOption);
+      const filterOption=document.createElement("option");filterOption.value=location.ubicacionId;filterOption.textContent=label;filterOption.dataset.sedeCod=String(location.sedeCod);filterLocation&&filterLocation.appendChild(filterOption);const countOption=document.createElement("option");countOption.value=location.ubicacionId;countOption.textContent=label;countOption.dataset.sedeCod=String(location.sedeCod);countLocation&&countLocation.appendChild(countOption);
     });
     movementWarehouse.addEventListener("change",function(){const selected=movementWarehouse.value;if(movementLocation.selectedOptions[0]&&movementLocation.selectedOptions[0].dataset.sedeCod!==selected)movementLocation.value="";Array.from(movementLocation.options).forEach(function(option){option.hidden=!!(option.value&&selected&&option.dataset.sedeCod!==selected);});});
     movementLocation.addEventListener("change",function(){const option=movementLocation.selectedOptions[0];if(option&&option.dataset.sedeCod)movementWarehouse.value=option.dataset.sedeCod;});
+    if(countWarehouse)countWarehouse.addEventListener("change",function(){if(countLocation&&countLocation.selectedOptions[0]&&countLocation.selectedOptions[0].dataset.sedeCod!==countWarehouse.value)countLocation.value="";Array.from(countLocation?countLocation.options:[]).forEach(function(option){option.hidden=!!(option.value&&countWarehouse.value&&option.dataset.sedeCod!==countWarehouse.value);});window.loadPhysicalInventoryCountsUI();});
+    if(countLocation)countLocation.addEventListener("change",function(){const option=countLocation.selectedOptions[0];if(option&&option.dataset.sedeCod&&countWarehouse)countWarehouse.value=option.dataset.sedeCod;window.loadPhysicalInventoryCountsUI();});
+    window.loadPhysicalInventoryCountsUI();
   }).catch(function(error){console.error("No se pudieron cargar las ubicaciones del Kardex:",error);});
 };
 window.clearKardexFilters = function () {
