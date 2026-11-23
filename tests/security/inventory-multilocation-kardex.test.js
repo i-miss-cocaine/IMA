@@ -62,8 +62,9 @@ function main(){
  assert.equal(kardex.resumenExistencias[0].totalInstitucional,31);
  assert.equal(kardex.kardex.filter(x=>x.sedeCod==="SPS-01").length,3);
  assert.throws(()=>ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte"}),/TRANSFER_LOCATION_ID_REQUIRED/);
- const invalidTransferKardex=h.sheets.InventariosKardex.rows.length,invalidTransferLedger=h.sheets.TransferenciasInventario?.rows.length||0;
+ const invalidTransferKardex=h.sheets.InventariosKardex.rows.length;
  assert.throws(()=>ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-01",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc1.ubicacionId}),/TRANSFER_SOURCE_DESTINATION_MUST_DIFFER/);
+ const invalidTransferLedger=h.sheets.TransferenciasInventario.rows.length;
  const originalUnitLookup=ctx.catalogFindUnit_;
  ctx.catalogFindUnit_=()=>({id:"UND-BOX",name:"Caja",base:"Caja",factor:1});
  assert.throws(()=>ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:1,unidadMedida:"Caja",ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId}),/CATALOG_UNIT_INCOMPATIBLE_WITH_ITEM/);
