@@ -69,7 +69,8 @@ function main(){
  assert.equal(legacy.sedeCod,"LEGACY");assert.match(legacy.ubicacionId,/UBI-LEGACY-BODEGA-GENERAL/);
  const tamper=h.sheets.InventariosKardex.rows[1];tamper[8]=999;
  kardex=ctx.getInventoryKardex({});assert.ok(kardex.totalInconsistencias>0);
- h.setRole("Contador");assert.throws(()=>ctx.manageWarehouseLocation({sedeCod:"SPS-03",nombreUbicacion:"Bodega Sur"}),/ROLE_PERMISSION_DENIED/);
+ h.setRole("Bodeguero");assert.throws(()=>ctx.manageWarehouseLocation({sedeCod:"SPS-03",nombreUbicacion:"Bodega Sur"}),/WAREHOUSE_LOCATION_ROLE_NOT_ALLOWED/);
+h.setRole("Director");h.setPermissionDenied(true);assert.throws(()=>ctx.manageWarehouseLocation({sedeCod:"SPS-03",nombreUbicacion:"Bodega Sur"}),/ROLE_PERMISSION_DENIED/);
  console.log("Inventory multi-warehouse contract PASS: location registry, same-name isolation by SedeCod/UbicacionID, lot-level balances, reservation/available stock, transit, cumulative partial receipt, rejection rollback, legacy Bodega General, unsupported movement types and Kardex anomaly detection.");
 }
 main();

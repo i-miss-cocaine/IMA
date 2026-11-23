@@ -2097,9 +2097,6 @@ function saveEnrollmentBillingConfiguration(payload) {
   } finally { lock.releaseLock(); }
 }
 
-["Administrador","Director","Subdirector","Contador"].forEach(function(role){var list=ROLE_PERMISSIONS[role]||[];["manageWarehouseLocation","getWarehouseLocations"].forEach(function(action){if(list.indexOf(action)===-1)list.push(action);});ROLE_PERMISSIONS[role]=list;});
-["Almacenista","Bodeguero","EncargadoDeBodega","EncargadoTienda","EncargadoCafeteria"].forEach(function(role){var list=ROLE_PERMISSIONS[role]||[];["getWarehouseLocations","recordInventoryMovement","getInventoryKardex"].forEach(function(action){if(list.indexOf(action)===-1)list.push(action);});ROLE_PERMISSIONS[role]=list;});
-
 function validateRolePermission(actorOrPayload, action, payloadContext) {
   var actor = actorOrPayload && actorOrPayload.authorized === true
     ? actorOrPayload : getVerifiedAccountingIdentity_(actorOrPayload || {});
