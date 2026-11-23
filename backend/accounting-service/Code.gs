@@ -7253,6 +7253,7 @@ function getPurchaseActionCapabilities(payload) {
   var approvalRole=normalizePurchaseAwardRole_(access.actor.role);
   capabilities.approvePurchaseOrder=capabilities.createPurchaseOrder===true&&["subdirector","director","administrador"].indexOf(approvalRole)!==-1;
   capabilities.cancelPurchaseOrder=capabilities.cancelPurchaseOrder===true&&["director","administrador"].indexOf(approvalRole)!==-1;
+  capabilities.adjustPurchaseOrderCommitment=capabilities.adjustPurchaseOrderCommitment===true&&["director","administrador"].indexOf(approvalRole)!==-1;
   capabilities.generatePurchaseOrderPDF=capabilities.createPurchaseOrder===true;
   capabilities.getPurchaseOrderPDFFile=capabilities.getPurchaseOrders===true;
   return{status:"success",actions:capabilities};

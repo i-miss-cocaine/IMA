@@ -1580,12 +1580,14 @@ function renderComprasOrdenesView(container) {
       tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No hay órdenes de compra registradas.</td></tr>';
       return;
     }
+    window.purchaseOrderAdjustmentItemsById = Object.create(null);
     tbody.innerHTML = list.map(o => {
       const orderId = String(o.ordenId || o.ordenCompraId || "");
       const safeId = escapePurchaseAssetHtml(orderId);
       const arg = purchaseAssetJsArg(orderId);
       const state = String(o.estadoOrden || "");
       const stateLower = state.toLowerCase();
+      window.purchaseOrderAdjustmentItemsById[orderId] = Array.isArray(o.detalleItems) ? o.detalleItems : [];
       const statusClass = stateLower === "recibidatotal" || stateLower === "cerrada" ? "bg-emerald-100 text-emerald-800" :
         stateLower === "recibidaparcial" ? "bg-amber-100 text-amber-800" :
         stateLower === "aprobada" || stateLower === "emitida" || stateLower === "confirmada" ? "bg-blue-100 text-blue-800" :
@@ -1595,6 +1597,7 @@ function renderComprasOrdenesView(container) {
         actions += '<button onclick="approvePurchaseOrderUI(' + arg + ')" data-purchase-action="approvePurchaseOrder" hidden class="px-2 py-1 rounded bg-blue-50 text-blue-700 font-bold">Aprobar</button> ';
       }
       if (stateLower === "aprobada" && !o.tienePdf) {
+        actions += '<button onclick="adjustPurchaseOrderCommitmentUI(' + arg + ')" data-purchase-action="adjustPurchaseOrderCommitment" hidden class="px-2 py-1 rounded bg-amber-50 text-amber-700 font-bold">Reducir</button> ';
         actions += '<button onclick="generatePurchaseOrderPDFUI(' + arg + ')" data-purchase-action="generatePurchaseOrderPDF" hidden class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Emitir PDF</button> ';
       }
       if (o.tienePdf) {
@@ -1619,6 +1622,34 @@ function renderComprasOrdenesView(container) {
     if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ' + escapePurchaseAssetHtml(err && err.message || err) + '</td></tr>';
   });
 }
+
+window.adjustPurchaseOrderCommitmentUI = async function(ordenCompraId) {
+  const orderId=String(ordenCompraId||"");
+  if(!window.hasPurchaseActionCapability("adjustPurchaseOrderCommitment")){alert("No tiene permisos para reducir órdenes de compra.");return;}
+  const items=window.purchaseOrderAdjustmentItemsById&&window.purchaseOrderAdjustmentItemsById[orderId];
+  if(!Array.isArray(items)||!items.length){alert("No se encontró el detalle de la orden.");return;}
+  const reduced=[];
+  for(const item of items){
+    const itemId=String(item.itemId||item.codigoItem||item.ItemId||item.codigo||"");
+    const current=Number(item.cantidadSolicitada===undefined?(item.cantidad===undefined?item.Cantidad:item.cantidad):item.cantidadSolicitada);
+    if(!itemId||!Number.isFinite(current)||current<=0){alert("El detalle de la orden no es válido.");return;}
+    const value=window.prompt("Nueva cantidad para "+String(item.descripcion||item.nombreItem||itemId)+" (actual: "+current+")",String(current));
+    if(value===null)return;
+    const quantity=Number(String(value).trim());
+    if(!Number.isFinite(quantity)||quantity<=0||quantity>current){alert("La cantidad debe ser mayor que cero y no superar la cantidad actual.");return;}
+    reduced.push({itemId:itemId,cantidad:quantity});
+  }
+  const currentTotal=items.reduce((sum,item)=>sum+Number(item.total===undefined?Number(item.precioUnitario||item.costoUnitario||0)*Number(item.cantidadSolicitada===undefined?item.cantidad:item.cantidadSolicitada):item.total),0);
+  const nextTotal=reduced.reduce((sum,line,index)=>sum+Number(items[index].precioUnitario||items[index].costoUnitario||0)*line.cantidad,0);
+  if(!Number.isFinite(currentTotal)||!Number.isFinite(nextTotal)||nextTotal>=currentTotal){alert("La nueva cantidad no reduce el importe de la orden.");return;}
+  const reason=window.prompt("Justificación obligatoria de la reducción (mínimo 5 caracteres):");
+  if(!reason||String(reason).trim().length<5){alert("La justificación de la reducción es obligatoria.");return;}
+  const result=await fetchBackendAccounting("adjustPurchaseOrderCommitment",{ordenCompraId:orderId,detalleItems:reduced,justificacion:String(reason).trim(),idempotencyKey:"ADJ-"+orderId+"-"+Date.now()});
+  if(!result||result.status!=="success"){alert(result&&result.code||"No se pudo reducir la orden.");return;}
+  alert("Orden reducida. Importe liberado: "+window.IMARegionalFormatters.formatCurrency(result.montoLiberado));
+  if(typeof switchComprasSubtab==="function")switchComprasSubtab("ordenes");
+};
+
 window.approvePurchaseOrderUI = async function(ordenCompraId) {
   if (!window.hasPurchaseActionCapability("approvePurchaseOrder")) { alert("No tiene permisos para aprobar órdenes."); return; }
   const justification = window.prompt("Ingrese la justificación de aprobación (mínimo 5 caracteres):");

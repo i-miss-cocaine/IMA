@@ -55,10 +55,10 @@ async function test(){
   assert.ok(uiSource.includes('fetchBackendAccounting("cancelPurchaseOrder"'));
   assert.ok(uiSource.includes('data-purchase-action="cancelPurchaseOrder"'));
   assert.ok(uiSource.includes('fetchBackendAccounting("recordAccountsPayableExpense"'));
-  const controls=[makeControl("createPurchaseRequest"),makeControl("registerSupplier"),makeControl("manageSupplierBankAccount"),makeControl("cancelPurchaseOrder")];
+  const controls=[makeControl("createPurchaseRequest"),makeControl("registerSupplier"),makeControl("manageSupplierBankAccount"),makeControl("cancelPurchaseOrder"),makeControl("adjustPurchaseOrderCommitment")];
   const ui=makeUiContext(async action=>{
     assert.equal(action,"getPurchaseActionCapabilities");
-    return {status:"success",actions:{createPurchaseRequest:true,registerSupplier:false,manageSupplierBankAccount:true,cancelPurchaseOrder:true}};
+    return {status:"success",actions:{createPurchaseRequest:true,registerSupplier:false,manageSupplierBankAccount:true,cancelPurchaseOrder:true,adjustPurchaseOrderCommitment:true}};
   });
   ui.root.controls.push(...controls);
   const result=await ui.window.loadPurchaseActionCapabilities();
@@ -70,6 +70,9 @@ async function test(){
   assert.equal(controls[2].hidden,false);
   assert.equal(controls[2].attributes["aria-hidden"],"false");
   assert.equal(controls[3].hidden,false,"authorized cancellation control is visible");
+  assert.equal(controls[4].hidden,false,"authorized purchase order adjustment control is visible");
+  assert.ok(uiSource.includes('data-purchase-action="adjustPurchaseOrderCommitment"'));
+  assert.ok(uiSource.includes('fetchBackendAccounting("adjustPurchaseOrderCommitment"'));
   const lateControl=makeControl("registerAssetsFromPurchaseReceipt");
   ui.root.controls.push(lateControl);
   ui.window.applyPurchaseActionVisibility(ui.root);
@@ -95,7 +98,7 @@ async function test(){
 
   const capabilityFunction=extractFunction(backendSource,"getPurchaseActionCapabilities");
   const normalizeRoleFunction=extractFunction(backendSource,"normalizePurchaseAwardRole_");
-  const calls=[],allowed=new Set(["registerSupplier","manageSupplierContact","getSupplierBankAccount","createPurchaseOrder","getPurchaseOrders","cancelPurchaseOrder"]);
+  const calls=[],allowed=new Set(["registerSupplier","manageSupplierContact","getSupplierBankAccount","createPurchaseOrder","getPurchaseOrders","cancelPurchaseOrder","adjustPurchaseOrderCommitment"]);
   const backendContext={SPREADSHEET_ID:"TEST",actorRole:"Director",SpreadsheetApp:{openById:()=>({})},
     purchaseQuotationAccess_:()=>({authorized:true,actor:{userId:"DIRECTOR-1",role:backendContext.actorRole}}),
     validateRolePermission:(_actor,action)=>{calls.push(action);return {authorized:allowed.has(action)};},Object};
@@ -111,11 +114,13 @@ async function test(){
   assert.ok(calls.includes("getPurchaseRequests"));
   assert.equal(response.actions.approvePurchaseOrder,true);
   assert.equal(response.actions.cancelPurchaseOrder,true,"Director can cancel unconfirmed purchase orders");
+  assert.equal(response.actions.adjustPurchaseOrderCommitment,true,"Director can reduce unissued purchase orders");
   assert.ok(calls.includes("cancelPurchaseOrder"));
   backendContext.actorRole="Contador";
   const contadorResponse=backendContext.run({});
   assert.equal(contadorResponse.actions.approvePurchaseOrder,false,"accounting staff cannot approve purchase orders");
   assert.equal(contadorResponse.actions.cancelPurchaseOrder,false,"accounting staff cannot cancel purchase orders");
+  assert.equal(contadorResponse.actions.adjustPurchaseOrderCommitment,false,"accounting staff cannot reduce purchase orders");
   assert.equal(response.actions.generatePurchaseOrderPDF,true);
   assert.equal(response.actions.getPurchaseOrderPDFFile,true);
   console.log("Purchase console capability loading, fail-closed visibility, stale-response race and supplier action contracts passed.");
