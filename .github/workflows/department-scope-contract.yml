@@ -325,6 +325,10 @@ jobs:
         run: node tests/ui/inventory-warehouse-ui.test.js
       - name: Syntax-check asset custody return contract source and fixture
         run: node --check tests/security/accounting-asset-custody-return.test.js
+      - name: Syntax-check asset custody Apps Script and UI
+        run: |
+          node --check < backend/accounting-service/Code.gs
+          node --check js/accounting.js
       - name: Run asset custody assignment, return, private acta and rollback contract
         run: node tests/security/accounting-asset-custody-return.test.js
       - name: Syntax-check asset custody regression fixtures
