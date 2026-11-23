@@ -49,7 +49,7 @@ const ctx={
  logStructuredEvent:()=>{}
 };
 vm.createContext(ctx);
-const names=["ensureAssetAcquisitionSchema_","assetCustodyNormalizeCondition_","assetCustodyParseList_","assetCustodyResolveEmployee_","assetCustodyAssertDepartment_","assetCustodyFindAsset_","assetCustodyStableKey_","assetCustodyHtmlEscape_","getOrCreatePrivateAssetCustodyFolder_","assetCustodyValidateEvidence_","assetCustodyCreateActPdf_","assetCustodyCreateMaintenanceOrderLocked_","assetCustodyDeleteAppendedRows_","assignAssetCustody","getAssetAssignments","returnAssetCustody","getAssetCustodyActPDF","getAssetItems"];
+const names=["ensureAssetAcquisitionSchema_","assetCustodyNormalizeCondition_","assetCustodyParseList_","assetCustodyResolveEmployee_","assetCustodyAssertDepartment_","assetCustodyFindAsset_","assetCustodyStableKey_","assetCustodyHtmlEscape_","getOrCreatePrivateAssetCustodyFolder_","assetCustodyValidateEvidence_","assetCustodyCreateActPdf_","assetCustodyCreateMaintenanceOrderLocked_","assetCustodyDeleteAppendedRows_","assignAssetCustody","getAssetAssignments","returnAssetCustody","getAssetCustodyActPDF","getAssetItems","assetCustodyReleaseAfterMaintenance_"];
 vm.runInContext(constants.join("\n")+"\n"+names.map(n=>extract(source,n)).join("\n"),ctx);
 function payload(extra={}){return Object.assign({activoId:"A-1",custodioUserId:"EMP-1",ubicacionEntrega:"Bodega A",estadoFisicoEntrega:"Bueno",accesoriosEntregados:["Cargador"],firmaEntrega:"Empleado Uno",receptorUserId:"DIR-1",estadoFisico:"Bueno",condicionRecepcion:"Bueno",ubicacionRecepcion:"Bodega General",accesoriosRecibidos:["Cargador"],observaciones:"Recepción verificada",firmaRecepcion:"Director Uno",evidenciasJSON:["EVIDENCE123456789"]},extra);}
 const assigned=ctx.assignAssetCustody(payload());
@@ -86,6 +86,13 @@ assert.equal(damaged.estadoActivo,"maintenance");assert.ok(damaged.ordenMantenim
 assetRow=rows.ActivosPatrimoniales[1];assert.equal(assetRow[assetHeaders.indexOf("Estado")],"maintenance");assert.equal(rows.DevolucionesActivos.length,3);assert.equal(rows.HistorialCustodiaActivos.length,5);
 assert.throws(()=>ctx.assignAssetCustody(payload()),/ASSET_NOT_AVAILABLE_FOR_ASSIGNMENT/,"assets under maintenance cannot be reassigned");
 const maintenancePdf=ctx.getAssetCustodyActPDF({devolucionId:damaged.devolucionId});assert.equal(maintenancePdf.status,"success");
+const historyBeforeRelease=rows.HistorialCustodiaActivos.length;
+failHistoryWrite=true;assert.throws(()=>ctx.assetCustodyReleaseAfterMaintenance_(ss,"A-1",damaged.ordenMantenimientoId,actor,{departmentId:"DEP-A"}),/ASSET_CUSTODY_MAINTENANCE_RELEASE_ATOMIC_FAILURE/);failHistoryWrite=false;
+assert.equal(rows.ActivosPatrimoniales[1][assetHeaders.indexOf("Estado")],"maintenance","failed maintenance release must restore maintenance state");assert.equal(rows.HistorialCustodiaActivos.length,historyBeforeRelease,"failed maintenance release must not append history");
+assert.throws(()=>ctx.assetCustodyReleaseAfterMaintenance_(ss,"A-1",damaged.ordenMantenimientoId,actor,{departmentId:"DEP-B"}),/RESOURCE_SCOPE_DENIED/,"maintenance completion cannot release an asset from another department");
+const released=ctx.assetCustodyReleaseAfterMaintenance_(ss,"A-1",damaged.ordenMantenimientoId,actor,{departmentId:"DEP-A"});assert.equal(released.status,"success");assert.equal(rows.ActivosPatrimoniales[1][assetHeaders.indexOf("Estado")],"available");assert.equal(rows.HistorialCustodiaActivos.length,historyBeforeRelease+1);
+const postMaintenanceAssignment=ctx.assignAssetCustody(payload({ubicacionEntrega:"Bodega C",accesoriosEntregados:["Cable"]}));assert.equal(postMaintenanceAssignment.status,"success","asset becomes assignable only after maintenance is completed");
+const postMaintenanceReturn=ctx.returnAssetCustody(payload({asignacionId:postMaintenanceAssignment.asignacionId,ubicacionRecepcion:"Bodega General",accesoriosRecibidos:["Cable"]}));assert.equal(postMaintenanceReturn.estadoActivo,"available");
 const beforeAssignment=rows.AsignacionesActivos.length,beforeHistory=rows.HistorialCustodiaActivos.length,assetBefore=rows.ActivosPatrimoniales[1].slice();
 assetRow[assetHeaders.indexOf("Estado")]="available";assetRow[assetHeaders.indexOf("CustodioUserId")]="";rows.ActivosPatrimoniales[1]=assetRow;
 failHistoryWrite=true;assert.throws(()=>ctx.assignAssetCustody(payload({custodioUserId:"EMP-1"})),/ASSET_CUSTODY_ASSIGNMENT_ATOMIC_FAILURE/);failHistoryWrite=false;

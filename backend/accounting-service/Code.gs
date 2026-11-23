@@ -14217,6 +14217,44 @@ function recognizeAssignedMaterialConsumption(payload) {
  }catch(e){const ss=SpreadsheetApp.openById(SPREADSHEET_ID);inventoryValuationRestore_(ss,valuationSnapshot);if(movementStart)inventoryDeleteAppendedRows_(ss.getSheetByName("InventariosKardex"),movementStart);if(journalStart)inventoryDeleteAppendedRows_(ss.getSheetByName("AsientosContables"),journalStart);if(ledgerStart)inventoryDeleteAppendedRows_(ss.getSheetByName("ConsumosMateriales"),ledgerStart);throw e;}finally{lock.releaseLock();}
 }
 
+function assetCustodyReleaseAfterMaintenance_(ss,assetRef,orderId,actor,departmentInfo) {
+  var department=String(departmentInfo&&departmentInfo.departmentId||"").trim();
+  if(!department)return{status:"skipped",code:"MAINTENANCE_DEPARTMENT_UNRESOLVED"};
+  var sheet=ss.getSheetByName("ActivosPatrimoniales");if(!sheet)return{status:"skipped",code:"ASSET_SHEET_NOT_FOUND"};
+  var rows=sheet.getDataRange().getValues();if(!rows||rows.length<2)return{status:"skipped",code:"ASSET_NOT_FOUND"};
+  var headers=rows[0].map(function(v){return String(v||"").trim();}),idIndex=headers.indexOf("ActivoID"),departmentIndex=headers.indexOf("DepartamentoID"),custodianIndex=headers.indexOf("CustodioUserId"),stateIndex=headers.indexOf("Estado"),locationIndex=headers.indexOf("UbicacionActual");
+  if(idIndex<0||departmentIndex<0||custodianIndex<0||stateIndex<0||locationIndex<0)throw new Error("ASSET_CUSTODY_MAINTENANCE_SCHEMA_INVALID");
+  var matches=rows.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[idIndex]||"").trim()===String(assetRef||"").trim();});
+  if(!matches.length)return{status:"skipped",code:"ASSET_NOT_FOUND"};
+  if(matches.length!==1)throw new Error("ASSET_ID_AMBIGUOUS");
+  var found=matches[0],row=found.row,actualDepartment=String(row[departmentIndex]||"").trim();
+  if(!actualDepartment||actualDepartment!==department)throw new Error("RESOURCE_SCOPE_DENIED");
+  if(String(row[custodianIndex]||"").trim())throw new Error("ASSET_CUSTODY_MAINTENANCE_ASSET_STILL_ASSIGNED");
+  var previousState=String(row[stateIndex]||"").trim();
+  if(previousState.toLowerCase()!=="maintenance")return{status:"unchanged",estadoActivo:previousState};
+  var history=ss.getSheetByName("HistorialCustodiaActivos");if(!history)throw new Error("ASSET_CUSTODY_HISTORY_SHEET_REQUIRED");
+  var historyLast=history.getLastRow(),before=row.slice(),updated=row.slice(),now=new Date(),assignmentId="";
+  var returns=ss.getSheetByName("DevolucionesActivos");
+  if(returns){
+    var returnRows=returns.getDataRange().getValues(),returnHeaders=returnRows.length?returnRows[0].map(function(v){return String(v||"").trim();}):[],returnOrder=returnHeaders.indexOf("OrdenMaintID"),returnAsset=returnHeaders.indexOf("ActivoID"),returnAssignment=returnHeaders.indexOf("AsignacionID");
+    if(returnOrder>=0&&returnAsset>=0&&returnAssignment>=0){
+      var linked=returnRows.slice(1).filter(function(r){return String(r[returnOrder]||"").trim()===String(orderId||"").trim()&&String(r[returnAsset]||"").trim()===String(assetRef||"").trim();});
+      if(linked.length>1)throw new Error("ASSET_CUSTODY_RETURN_LINK_AMBIGUOUS");
+      if(linked.length===1)assignmentId=String(linked[0][returnAssignment]||"");
+    }
+  }
+  updated[stateIndex]="available";
+  try{
+    sheet.getRange(found.index,1,1,updated.length).setValues([updated]);
+    history.appendRow(["EVT-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"").slice(0,24),assignmentId,String(assetRef),"MANTENIMIENTO_COMPLETADO",now,String(actor&&actor.userId||""),"",previousState,"available",String(row[locationIndex]||""),String(row[locationIndex]||""),String(orderId||""),JSON.stringify({ordenMaintId:String(orderId||""),estadoOrden:"Completado"})]);
+  }catch(error){
+    try{sheet.getRange(found.index,1,1,before.length).setValues([before]);}catch(_){}
+    assetCustodyDeleteAppendedRows_(history,historyLast);
+    throw new Error("ASSET_CUSTODY_MAINTENANCE_RELEASE_ATOMIC_FAILURE:"+String(error&&error.message||error));
+  }
+  return{status:"success",activoId:String(assetRef),estadoAnterior:previousState,estadoActivo:"available",ordenMaintId:String(orderId||"")};
+}
+
 function manageMaintenanceOrder(payload) {
  const p=payload||{},actor=catalogActor_(p,false),assetRef=String(p.activoIdUbicacion||"").trim(),description=String(p.descripcionFalla||"").trim();
  if(!assetRef||!description)throw new Error("activoIdUbicacion y descripcionFalla son requeridos.");
@@ -14262,6 +14300,7 @@ function manageMaintenanceOrder(payload) {
   maintenanceOrderSheetRef=sheet;maintenanceOrderIndex=idx!==-1?idx+1:sheet.getLastRow()+1;maintenanceOrderSnapshot=idx!==-1?existing.slice():null;
    if(idx!==-1)sheet.getRange(idx+1,1,1,row.length).setValues([row]);else sheet.appendRow(row);
    if(complete&&row[19])maintenancePlanComplete_(ss,row,actor);
+  if(complete)assetCustodyReleaseAfterMaintenance_(ss,assetRef,oId,actor,departmentInfo);
   try{
    const vehSheet=getOrCreateSheet(ss,"TransporteVehiculos"),vehData=vehSheet.getDataRange().getValues(),vIdx=vehData.findIndex(r=>String(r[0]||"").trim()===assetRef||String(r[1]||"").trim()===assetRef||String(r[2]||"").trim()===assetRef);
    if(vIdx!==-1){if(complete)vehSheet.getRange(vIdx+1,8).setValue("Disponible");else if(["ENTALLER","ENPROCESO","REPORTADO"].includes(state.toUpperCase()))vehSheet.getRange(vIdx+1,8).setValue("EnMantenimiento");}
