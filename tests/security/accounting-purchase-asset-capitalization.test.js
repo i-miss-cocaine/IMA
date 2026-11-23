@@ -101,7 +101,9 @@ const beforeRollback=rows.ActivosPatrimoniales.length;ctx.failAssignmentWrite=tr
 const rollback=ctx.registerAssetsFromPurchaseReceipt({recepcionId:"REC-1",numeroFactura:"INV-001",activos:[{itemId:"IT-1",codigoPatrimonial:"PAT-005",numeroSerie:"SN-005",categoriaPatrimonial:"Equipo",marca:"Marca",modelo:"Modelo",ubicacionActual:"Bodega",custodioUserId:"U-3"}]});
 ctx.failAssignmentWrite=false;assert.equal(rollback.status,"error");assert.equal(rows.ActivosPatrimoniales.length,beforeRollback);
 const duplicateManual=()=>ctx.manageAssetItem({codigoPatrimonial:"PAT-NEW",nombre:"Equipo",numeroSerie:"SN-001"});
-assert.throws(duplicateManual,/ASSET_SERIAL_ALREADY_EXISTS/);
+let duplicateManualResult,duplicateManualError;try{duplicateManualResult=duplicateManual();}catch(error){duplicateManualError=String(error&&error.message||error);}
+console.log("ASSET_DUPLICATE_DIAGNOSTIC",JSON.stringify({header:rows.ActivosPatrimoniales[0].map((v,i)=>({v,i})).filter(x=>x.v==="NumeroSerie"||x.v==="SerieModel"),rowSerials:rows.ActivosPatrimoniales.slice(1).map(r=>({serieModel:r[rows.ActivosPatrimoniales[0].indexOf("SerieModel")],numeroSerie:r[rows.ActivosPatrimoniales[0].indexOf("NumeroSerie")]})),result:duplicateManualResult,error:duplicateManualError}));
+assert.match(duplicateManualError||"",/ASSET_SERIAL_ALREADY_EXISTS/);
 rows.ActivosPatrimoniales.push(["ACT-LEGACY","PAT-LEGACY","Equipo antiguo","Equipo","SN-LEGACY","","","available",""]);
 assert.throws(()=>ctx.manageAssetItem({codigoPatrimonial:"PAT-NEW-LEGACY",nombre:"Equipo",numeroSerie:"SN-LEGACY"}),/ASSET_SERIAL_ALREADY_EXISTS/);
 const assetListCtx={SPREADSHEET_ID:"TEST",SpreadsheetApp:{openById:()=>spreadsheet},getVerifiedAccountingIdentity_:()=>({authorized:true,userId:"U-1",role:"Administrador",institutionId:"INST-1"}),validateRolePermission:()=>({authorized:true}),getVerifiedAccountingDepartmentScope_:()=>({valid:true,authorized:true,institutionWide:true,departmentIds:[]})};
