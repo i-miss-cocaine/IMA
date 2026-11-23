@@ -13760,6 +13760,7 @@ function transferInventoryStock(payload) {
   if(!Number.isFinite(qty)||qty<=0)throw new Error("TRANSFER_BASE_QUANTITY_INVALID");
   const origin=inventoryResolveLocation_(ss,{ubicacionId:originLocationId,sedeCod:originWarehouse,ubicacionResponsable:originInput});
   const destination=inventoryResolveLocation_(ss,{ubicacionId:destinationLocationId,sedeCod:destinationWarehouse,ubicacionResponsable:destinationInput});
+  if(origin.legacy||destination.legacy)throw new Error("TRANSFER_REGISTERED_LOCATION_REQUIRED");
   const uOrigen=origin.nombreUbicacion,uDestino=destination.nombreUbicacion;
   if(origin.sedeCod===destination.sedeCod&&origin.ubicacionId===destination.ubicacionId)throw new Error("TRANSFER_SOURCE_DESTINATION_MUST_DIFFER");
   const kardexSheet=catalogEnsureKardexSchema_(ss),kData=kardexSheet.getDataRange().getValues().slice(1),movementStart=kardexSheet.getLastRow()+1;
