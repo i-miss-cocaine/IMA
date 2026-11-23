@@ -5,6 +5,10 @@ for(const token of ['id="loc-sede"',"sedeCod: document.getElementById('loc-sede'
  assert.ok(source.includes(token),"missing warehouse UI contract: "+token);
 assert.ok(!source.includes('|| "Diferencia de conteo en destino"'),"UI must not invent a discrepancy justification");
 assert.ok(source.includes("data-transfer-receipt"),"transfer receipt buttons must use data attributes rather than inline event code");
+assert.ok(source.includes('id="trf-estado-inicial"'),"transfer UI must expose draft, approval and direct dispatch states");
+assert.ok(source.includes("data-transfer-approve")&&source.includes("data-transfer-cancel"),"draft and pending transfers must expose approve/cancel actions");
+assert.ok(source.includes("approveInventoryTransfer")&&source.includes("cancelInventoryTransfer"),"transfer state actions must call the corresponding backend transitions");
+
 assert.ok(source.includes("escapeTransferHtml"),"transfer ledger data must be escaped before HTML rendering");
 assert.ok(!source.includes('onclick="handleRecibirTransferencia'),"transfer receipt action must not interpolate untrusted values into inline handlers");
 console.log("Inventory warehouse UI contract PASS: explicit warehouse/location registration, location-ID transfer selection, lot/serial fields and cumulative partial receipt with mandatory justification.");

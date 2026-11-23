@@ -244,6 +244,14 @@ function renderKardexView(container) {
             <div><label class="block font-bold text-gray-600 mb-1">Serie (si aplica)</label><input type="text" id="kdx-serie" class="w-full p-2 border border-gray-300 rounded-xl"></div>
           </div>
           <div>
+            <label class="block font-bold text-gray-600 mb-1">Flujo de transferencia</label>
+            <select id="trf-estado-inicial" class="w-full p-2 border border-gray-300 rounded-xl">
+              <option value="EnTransito">Despachar ahora</option>
+              <option value="Borrador">Guardar como borrador</option>
+              <option value="PendienteAprobacion">Enviar a aprobación</option>
+            </select>
+          </div>
+          <div>
             <label class="block font-bold text-gray-600 mb-1">Observaciones</label>
             <input type="text" id="kdx-obs" class="w-full p-2 border border-gray-300 rounded-xl">
           </div>
@@ -3048,11 +3056,9 @@ function renderTransferenciasView(container) {
             <label class="block font-bold text-gray-600 mb-1">Artículo del catálogo *</label>
             <select id="trf-codigo" required class="w-full p-2 border border-gray-300 rounded-xl"></select>
           </div>
-          <div><label class="block font-bold text-gray-600 mb-1">Cantidad (unidad base) *</label>
-          </div>
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Cantidad a Transferir *</label>
-            <input type="number" id="trf-cantidad" required step="1" min="1" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="1">
+            <label class="block font-bold text-gray-600 mb-1">Cantidad a Transferir (unidad base) *</label>
+            <input type="number" id="trf-cantidad" required step="0.01" min="0.01" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="1.00">
           </div>
           <div>
             <label class="block font-bold text-gray-600 mb-1">Sede / Ubicación Origen *</label>
@@ -3132,16 +3138,20 @@ window.loadTransferenciasData = function () {
       items.forEach(t => {
         const state=String(t.estadoTransferencia||"");
         let badgeClass = "bg-blue-100 text-blue-800";
-        if (state === "EnTransito") badgeClass = "bg-amber-100 text-amber-800";
+        if (state === "Borrador") badgeClass = "bg-gray-100 text-gray-700";
+        else if (state === "PendienteAprobacion") badgeClass = "bg-violet-100 text-violet-800";
+        else if (state === "EnTransito") badgeClass = "bg-amber-100 text-amber-800";
         else if (state === "RecibidaTotal") badgeClass = "bg-emerald-100 text-emerald-800";
         else if (state === "RecibidaParcial") badgeClass = "bg-orange-100 text-orange-800";
         else if (state === "Rechazada" || state === "Cancelada") badgeClass = "bg-rose-100 text-rose-800";
         const id=escapeTransferHtml(t.transferBatchId),itemCode=escapeTransferHtml(t.itemCodigo),itemName=escapeTransferHtml(t.itemNombre||t.itemCodigo);
         const quantity=escapeTransferHtml(t.cantidadDespachada),origin=escapeTransferHtml(t.ubicacionOrigen),destination=escapeTransferHtml(t.ubicacionDestino),safeState=escapeTransferHtml(state);
         const received=escapeTransferHtml(t.cantidadRecibida||0);
-        const action=(["EnTransito","RecibidaParcial"].includes(state))
-          ? `<button type="button" data-transfer-receipt="${id}" data-item-code="${itemCode}" data-dispatched="${quantity}" data-destination="${destination}" data-received="${received}" class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded font-bold text-[10px] hover:bg-emerald-100 uppercase">Recibir</button>`
-          : `<span class="text-gray-400 font-bold text-[10px]">${received || quantity} rec.</span>`;
+        const action=(["Borrador","PendienteAprobacion"].includes(state))
+          ? `<div class="flex justify-end gap-1"><button type="button" data-transfer-approve="${id}" class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded font-bold text-[10px]">Aprobar y despachar</button><button type="button" data-transfer-cancel="${id}" class="px-2 py-1 bg-rose-50 text-rose-700 rounded font-bold text-[10px]">Cancelar</button></div>`
+          : (["EnTransito","RecibidaParcial"].includes(state))
+            ? `<button type="button" data-transfer-receipt="${id}" data-item-code="${itemCode}" data-dispatched="${quantity}" data-destination="${destination}" data-received="${received}" class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded font-bold text-[10px] hover:bg-emerald-100 uppercase">Recibir</button>`
+            : `<span class="text-gray-400 font-bold text-[10px]">${state==="Cancelada"?"Cancelada":state==="Rechazada"?"Rechazada":received+" / "+quantity+" recibidas"}</span>`;
         html += `<tr class="hover:bg-gray-50">
           <td class="p-2 font-mono font-bold text-indigo-600">${id}</td>
           <td class="p-2"><span class="font-bold text-gray-800">${itemName}</span> <span class="font-mono text-gray-400 text-[10px]">(${itemCode})</span></td>
@@ -3158,6 +3168,9 @@ window.loadTransferenciasData = function () {
           button.dataset.destination, button.dataset.received
         ));
       });
+      container.querySelectorAll("[data-transfer-approve]").forEach(button => button.addEventListener("click", () => window.handleAprobarTransferencia(button.dataset.transferApprove)));
+      container.querySelectorAll("[data-transfer-cancel]").forEach(button => button.addEventListener("click", () => window.handleCancelarTransferencia(button.dataset.transferCancel)));
+
     })
     .catch(err => {
       container.textContent = "Error al cargar transferencias: " + String(err && err.message || err);
@@ -3175,17 +3188,33 @@ window.handleSaveTransferencia = function (e) {
     ubicacionDestino: destination.dataset.name, ubicacionIdDestino: destination.value, sedeCodDestino: destination.dataset.sedeCod,
     numeroLote: document.getElementById('trf-lote').value, numeroSerie: document.getElementById('trf-serie').value,
     requiereConfirmacionFisica: document.getElementById('trf-requiere-recepcion').checked,
+    estadoInicial: document.getElementById('trf-estado-inicial').value,
     observaciones: document.getElementById('trf-obs').value
   };
 
   fetchApi('ACCOUNTING', 'transferInventoryStock', payload)
     .then(res => {
-      alert(res.message || "Transferencia despachada con éxito.");
+      const stateLabel=res.estadoTransferencia==="Borrador"?"Borrador guardado":res.estadoTransferencia==="PendienteAprobacion"?"Transferencia enviada a aprobación":"Transferencia despachada con éxito.";
+      alert(res.message || stateLabel);
       document.getElementById('form-transferencia').reset();
       loadTransferenciasData();
       if (typeof loadKardexData === "function") loadKardexData();
     })
     .catch(err => alert("Error: " + err.message));
+};
+
+window.handleAprobarTransferencia = function (transferBatchId) {
+  if(!confirm("¿Aprobar y despachar la transferencia "+transferBatchId+"? Se volverá a validar el stock disponible."))return;
+  fetchApi("ACCOUNTING","approveInventoryTransfer",{transferBatchId:transferBatchId})
+    .then(res=>{alert(res.message||("Estado: "+(res.estadoTransferencia||"EnTransito")));loadTransferenciasData();if(typeof loadKardexData==="function")loadKardexData();})
+    .catch(err=>alert("Error al aprobar transferencia: "+err.message));
+};
+window.handleCancelarTransferencia = function (transferBatchId) {
+  const reason=prompt("Justificación de cancelación (opcional):");
+  if(reason===null)return;
+  fetchApi("ACCOUNTING","cancelInventoryTransfer",{transferBatchId:transferBatchId,justificacion:reason})
+    .then(res=>{alert(res.message||"Transferencia cancelada.");loadTransferenciasData();})
+    .catch(err=>alert("Error al cancelar transferencia: "+err.message));
 };
 
 window.handleRecibirTransferencia = function (transferBatchId, itemCodigo, cantDespachada, uDestino, cantidadAnterior) {
