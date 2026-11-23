@@ -14223,7 +14223,7 @@ function assetCustodyReleaseAfterMaintenance_(ss,assetRef,orderId,actor,departme
   var sheet=ss.getSheetByName("ActivosPatrimoniales");if(!sheet)return{status:"skipped",code:"ASSET_SHEET_NOT_FOUND"};
   var rows=sheet.getDataRange().getValues();if(!rows||rows.length<2)return{status:"skipped",code:"ASSET_NOT_FOUND"};
   var headers=rows[0].map(function(v){return String(v||"").trim();}),idIndex=headers.indexOf("ActivoID"),departmentIndex=headers.indexOf("DepartamentoID"),custodianIndex=headers.indexOf("CustodioUserId"),stateIndex=headers.indexOf("Estado"),locationIndex=headers.indexOf("UbicacionActual");
-  if(idIndex<0||departmentIndex<0||custodianIndex<0||stateIndex<0||locationIndex<0)throw new Error("ASSET_CUSTODY_MAINTENANCE_SCHEMA_INVALID");
+  if(idIndex<0||custodianIndex<0||stateIndex<0||locationIndex<0)throw new Error("ASSET_CUSTODY_MAINTENANCE_SCHEMA_INVALID");if(departmentIndex<0)return{status:"skipped",code:"ASSET_CUSTODY_DEPARTMENT_NOT_STORED"};
   var matches=rows.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(item){return String(item.row[idIndex]||"").trim()===String(assetRef||"").trim();});
   if(!matches.length)return{status:"skipped",code:"ASSET_NOT_FOUND"};
   if(matches.length!==1)throw new Error("ASSET_ID_AMBIGUOUS");
