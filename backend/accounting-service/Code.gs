@@ -6419,36 +6419,31 @@ function recordPurchaseReceipt(payload) {
 
 
 const ASSET_BASE_HEADERS_ = ["ActivoID","CodigoPatrimonial","Nombre","Categoria","SerieModel","UbicacionActual","CustodioUserId","Estado","Observaciones"];
-const ASSET_ACQUISITION_HEADERS_ = ["FechaAdquisicion","OrdenCompraID","RecepcionID","NumeroFactura","ProveedorID","ItemId","Marca","NumeroSerie","Modelo","CostoAdquisicion","FechaRegistro","ClasificacionInventario"];
-const ASSET_ASSIGNMENT_HEADERS_ = ["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"];
+const ASSET_ACQUISITION_HEADERS_ = ["FechaAdquisicion","OrdenCompraID","RecepcionID","NumeroFactura","ProveedorID","ItemId","Marca","NumeroSerie","Modelo","CostoAdquisicion","FechaRegistro","ClasificacionInventario","DepartamentoID","CentroCosto"];
+const ASSET_ASSIGNMENT_HEADERS_ = ["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones","EntregadoPorUserId","UbicacionEntrega","EstadoFisicoEntrega","AccesoriosEntregadosJSON","FirmaEntrega","EstadoAsignacion","ReturnID","IdempotencyKey","FechaRegistro","RegistradoPorUserId"];
+const ASSET_RETURN_HEADERS_ = ["DevolucionID","AsignacionID","ActivoID","CustodioUserId","EntregadoPorUserId","RecibidoPorUserId","FechaHoraEntrega","FechaHoraRecepcion","UbicacionRecepcion","EstadoFisicoEntrega","EstadoFisicoRecepcion","AccesoriosEntregadosJSON","AccesoriosRecibidosJSON","ComponentesFaltantesJSON","Observaciones","EvidenciasJSON","FirmaEntrega","FirmaRecepcion","OrdenMaintID","EstadoDevolucion","ActaFileId","ActaSHA256","IdempotencyKey","RegistradoPorUserId"];
+const ASSET_CUSTODY_EVENT_HEADERS_ = ["EventoID","AsignacionID","ActivoID","TipoEvento","FechaHora","ActorUserId","CustodioUserId","EstadoActivoAnterior","EstadoActivoNuevo","UbicacionAnterior","UbicacionNueva","ReferenciaID","DetalleJSON"];
 
 function ensureAssetAcquisitionSchema_(ss) {
-  var spreadsheet = ss || SpreadsheetApp.openById(SPREADSHEET_ID);
-  var assets = getOrCreateSheet(spreadsheet, "ActivosPatrimoniales");
-  var values = assets.getDataRange().getValues();
-  if (!values || !values.length) throw new Error("ASSET_SCHEMA_INVALID");
-  var headers = values[0].map(function(v) { return String(v || "").trim(); });
-  if (JSON.stringify(headers.slice(0, ASSET_BASE_HEADERS_.length)) !== JSON.stringify(ASSET_BASE_HEADERS_)) {
-    throw new Error("ASSET_SCHEMA_INVALID");
+  var spreadsheet=ss||SpreadsheetApp.openById(SPREADSHEET_ID);
+  var assets=getOrCreateSheet(spreadsheet,"ActivosPatrimoniales");
+  var values=assets.getDataRange().getValues();
+  if(!values||!values.length)throw new Error("ASSET_SCHEMA_INVALID");
+  var headers=values[0].map(function(v){return String(v||"").trim();});
+  if(JSON.stringify(headers.slice(0,ASSET_BASE_HEADERS_.length))!==JSON.stringify(ASSET_BASE_HEADERS_))throw new Error("ASSET_SCHEMA_INVALID");
+  var current=headers.slice();
+  ASSET_ACQUISITION_HEADERS_.forEach(function(header){if(current.indexOf(header)===-1){assets.getRange(1,current.length+1).setValue(header);current.push(header);}});
+  function ensureLedger(name,expected){
+    var sheet=getOrCreateSheet(spreadsheet,name),last=sheet.getLastRow(),data=last>0?sheet.getDataRange().getValues():[],row=data.length?data[0].map(function(v){return String(v||"").trim();}):[];
+    if(!row.some(function(v){return !!v;})){sheet.getRange(1,1,1,expected.length).setValues([expected]);return expected.slice();}
+    for(var i=0;i<row.length;i++){if(row[i]&&(!expected[i]||row[i]!==expected[i]))throw new Error("ASSET_CUSTODY_SCHEMA_MISMATCH:"+name+":"+row[i]);}
+    expected.forEach(function(header,index){if(!row[index]){sheet.getRange(1,index+1).setValue(header);row[index]=header;}});
+    return row;
   }
-  var current = headers.slice();
-  ASSET_ACQUISITION_HEADERS_.forEach(function(header) {
-    if (current.indexOf(header) === -1) {
-      assets.getRange(1, current.length + 1).setValue(header);
-      current.push(header);
-    }
-  });
-  var assignments = getOrCreateSheet(spreadsheet, "AsignacionesActivos");
-  var assignmentExpectedHeaders = ["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"];
-  var assignmentValues = assignments.getDataRange().getValues();
-  if (!assignmentValues || !assignmentValues.length) throw new Error("ASSET_ASSIGNMENT_SCHEMA_INVALID");
-  var assignmentHeaders = assignmentValues[0].map(function(v) { return String(v || "").trim(); });
-  if (assignmentHeaders.length === 0) {
-    assignments.appendRow(assignmentExpectedHeaders);
-  } else if (JSON.stringify(assignmentHeaders.slice(0, assignmentExpectedHeaders.length)) !== JSON.stringify(assignmentExpectedHeaders)) {
-    throw new Error("ASSET_ASSIGNMENT_SCHEMA_INVALID");
-  }
-  return { assets: assets, assignments: assignments, assetHeaders: current, assignmentHeaders: assignmentHeaders };
+  var assignmentHeaders=ensureLedger("AsignacionesActivos",ASSET_ASSIGNMENT_HEADERS_);
+  var returns=ensureLedger("DevolucionesActivos",ASSET_RETURN_HEADERS_);
+  var history=ensureLedger("HistorialCustodiaActivos",ASSET_CUSTODY_EVENT_HEADERS_);
+  return {assets:assets,assignments:spreadsheet.getSheetByName("AsignacionesActivos"),returns:returns?spreadsheet.getSheetByName("DevolucionesActivos"):null,history:spreadsheet.getSheetByName("HistorialCustodiaActivos"),assetHeaders:current,assignmentHeaders:assignmentHeaders,returnHeaders:returns,historyHeaders:history};
 }
 
 function purchaseAssetReceiptContext_(payload) {
@@ -6669,46 +6664,37 @@ function registerAssetsFromPurchaseReceipt(payload) {
 }
 
 function getAssetItems(payload) {
-  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
-  if (!actor || actor.authorized !== true) return { status: "error", code: actor && actor.code || "VERIFIED_IDENTITY_REQUIRED", activos: [] };
-  var permission = validateRolePermission(actor, "getAssetItems");
-  if (!permission || permission.authorized !== true) return { status: "error", code: permission && permission.code || "ROLE_PERMISSION_DENIED", activos: [] };
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var scope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
-  if (!scope || scope.valid !== true || scope.authorized === false) return { status: "error", code: scope && scope.code || "RESOURCE_SCOPE_DENIED", activos: [] };
-  var sheet = ss.getSheetByName("ActivosPatrimoniales");
-  if (!sheet) return { status: "success", activos: [] };
-  var values = sheet.getDataRange().getValues();
-  if (!values || !values.length) return { status: "success", activos: [] };
-  var headers = values[0].map(function(value) { return String(value || "").trim(); });
-  var idIndexes = [], departmentIndex = -1, custodianIndex = -1;
-  headers.forEach(function(header, index) {
-    if (header === "ActivoID") idIndexes.push(index);
-    if (["DepartamentoID", "Departamento", "DepartamentoResponsable"].indexOf(header) !== -1) departmentIndex = index;
-    if (["CustodioUserId", "CustodianUserId", "Custodio Usuario"].indexOf(header) !== -1) custodianIndex = index;
-  });
-  if (idIndexes.length !== 1) return { status: "error", code: "ASSET_SCHEMA_INVALID", activos: [] };
-  if (scope.institutionWide !== true && departmentIndex < 0 && custodianIndex < 0) return { status: "error", code: "RESOURCE_SCOPE_UNVERIFIED", activos: [] };
-  var idIndex = idIndexes[0], counts = Object.create(null);
-  values.slice(1).forEach(function(row) { var id = String(row[idIndex] || "").trim(); if (id) counts[id] = (counts[id] || 0) + 1; });
-  var activos = values.slice(1).filter(function(row) {
-    var assetId = String(row[idIndex] || "").trim();
-    if (!assetId || counts[assetId] !== 1) return false;
-    if (scope.institutionWide === true) return true;
-    var departmentValue = departmentIndex >= 0 ? String(row[departmentIndex] || "").trim() : "";
-    var custodianValue = custodianIndex >= 0 ? String(row[custodianIndex] || "").trim() : "";
-    if (!departmentValue && !custodianValue) return false;
-    var allowedDepartments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(String) : [];
-    if (!allowedDepartments.length) return false;
-    for (var i = 0; i < allowedDepartments.length; i++) {
-      try { maintenancePlanAssertAssetScope_(ss, input, actor, assetId, allowedDepartments[i]); return true; }
-      catch (ignored) {}
-    }
+  var input=payload||{},actor=getVerifiedAccountingIdentity_(input);
+  if(!actor||actor.authorized!==true)return{status:"error",code:actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED",activos:[]};
+  var permission=validateRolePermission(actor,"getAssetItems");
+  if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED",activos:[]};
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(input,ss,actor);
+  if(!scope||scope.valid!==true||scope.authorized===false)return{status:"error",code:scope&&scope.code||"RESOURCE_SCOPE_DENIED",activos:[]};
+  var sheet=ss.getSheetByName("ActivosPatrimoniales");
+  if(!sheet)return{status:"success",activos:[]};
+  var raw=sheet.getDataRange().getValues();
+  if(!raw||!raw.length)return{status:"success",activos:[]};
+  var schema=ensureAssetAcquisitionSchema_(ss),headers=schema.assetHeaders,idIndex=headers.indexOf("ActivoID"),departmentIndex=headers.indexOf("DepartamentoID"),custodianIndex=headers.indexOf("CustodioUserId");
+  if(idIndex<0)return{status:"error",code:"ASSET_SCHEMA_INVALID",activos:[]};
+  var counts=Object.create(null),activeByAsset=Object.create(null),assignmentRows=schema.assignments.getDataRange().getValues(),ah=assignmentRows[0].map(function(v){return String(v||"").trim();});
+  assignmentRows.slice(1).forEach(function(row){var assetId=String(row[ah.indexOf("ActivoID")]||"").trim(),state=String(row[ah.indexOf("EstadoAsignacion")]||"").trim(),returned=String(row[ah.indexOf("FechaDevolucion")]||"").trim();if(assetId&&(state==="Activa"||(!state&&!returned)))activeByAsset[assetId]=row[ah.indexOf("AsignacionID")];});
+  raw.slice(1).forEach(function(row){var id=String(row[idIndex]||"").trim();if(id)counts[id]=(counts[id]||0)+1;});
+  var aliases={ActivoID:"activoId",CodigoPatrimonial:"codigoPatrimonial",Nombre:"nombre",Categoria:"categoria",SerieModel:"serieModel",UbicacionActual:"ubicacionActual",CustodioUserId:"custodioUserId",Estado:"estado",Observaciones:"observaciones",FechaAdquisicion:"fechaAdquisicion",OrdenCompraID:"ordenCompraId",RecepcionID:"recepcionId",NumeroFactura:"numeroFactura",ProveedorID:"proveedorId",ItemId:"itemId",Marca:"marca",NumeroSerie:"numeroSerie",Modelo:"modelo",CostoAdquisicion:"costoAdquisicion",ClasificacionInventario:"clasificacionInventario",DepartamentoID:"departamentoId",CentroCosto:"centroCosto"};
+  var activos=raw.slice(1).filter(function(row){
+    var assetId=String(row[idIndex]||"").trim();if(!assetId||counts[assetId]!==1)return false;
+    if(scope.institutionWide===true)return true;
+    var department=departmentIndex>=0?String(row[departmentIndex]||"").trim():"",custodian=custodianIndex>=0?String(row[custodianIndex]||"").trim():"";
+    if(!department&&!custodian)return false;
+    var allowed=Array.isArray(scope.departmentIds)?scope.departmentIds.map(String):[];
+    if(!allowed.length)return false;
+    for(var i=0;i<allowed.length;i++){try{maintenancePlanAssertAssetScope_(ss,input,actor,assetId,allowed[i]);return true;}catch(ignored){}}
     return false;
-  }).map(function(row) {
-    var result = {}; headers.forEach(function(header, index) { result[header] = row[index]; }); return result;
+  }).map(function(row){
+    var result={};headers.forEach(function(header,index){result[header]=row[index];if(aliases[header])result[aliases[header]]=row[index];});
+    result.asignacionActivaId=activeByAsset[String(row[idIndex]||"").trim()]||"";
+    return result;
   });
-  return { status: "success", activos: activos };
+  return{status:"success",activos:activos};
 }
 
 function manageAssetItem(payload) {
