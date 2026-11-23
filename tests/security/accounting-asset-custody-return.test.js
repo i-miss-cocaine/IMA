@@ -6,7 +6,7 @@ assert.doesNotThrow(()=>new vm.Script(source));assert.doesNotThrow(()=>new vm.Sc
 for(const action of ["assignAssetCustody","getAssetAssignments","returnAssetCustody","getAssetCustodyActPDF"])assert.ok(source.includes('request.action === "'+action+'"'),"missing router action "+action);
 for(const role of ["RecursosHumanos","Director","Subdirector","Contador","Administrador"])assert.ok(source.includes('"'+role+'"'),"missing asset custody role "+role);
 const constantNames=["ASSET_BASE_HEADERS_","ASSET_ACQUISITION_HEADERS_","ASSET_ASSIGNMENT_HEADERS_","ASSET_RETURN_HEADERS_","ASSET_CUSTODY_EVENT_HEADERS_"];
-const constants=constantNames.map(name=>{const m=source.match(new RegExp("const "+name+" = \\\\[[^\\\\n]+\\\\];"));assert.ok(m,"missing schema "+name);return m[0];});
+const constants=constantNames.map(name=>{const start=source.indexOf("const "+name+" = [");assert.ok(start>=0,"missing schema "+name);const end=source.indexOf("];",start);assert.ok(end>=0,"unterminated schema "+name);return source.slice(start,end+2);});
 const rows={
  ActivosPatrimoniales:[["ActivoID","CodigoPatrimonial","Nombre","Categoria","SerieModel","UbicacionActual","CustodioUserId","Estado","Observaciones"],["A-1","PAT-001","Laptop institucional","Equipo computacional","SN-001","Bodega","", "Activo",""]],
  AsignacionesActivos:[["AsignacionID","ActivoID","CustodioUserId","FechaEntrega","FechaDevolucion","EstadoActa","Observaciones"]],
