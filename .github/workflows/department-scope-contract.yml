@@ -316,6 +316,9 @@ jobs:
 
       - name: Run authorized purchase order budget reduction contract
         run: node tests/security/accounting-purchase-order-budget-adjustment.test.js
+
+      - name: Run inventory multi-warehouse Kardex and transfer contract
+        run: node tests/security/inventory-multilocation-kardex.test.js
       - name: Run budget reservation and commitment ledger contract
         run: node tests/security/accounting-budget-control.test.js
       - name: Run accounting master catalog and unit conversion contract
