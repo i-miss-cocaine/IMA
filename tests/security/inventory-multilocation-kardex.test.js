@@ -19,7 +19,7 @@ function makeHarness(){
   assetDeprMoney_:v=>Math.round(Number(v||0)*100)/100,
   inventoryValuationSnapshot_:()=>({}),inventoryValuationRestore_:()=>{},
   inventoryValuationApplyMovement_:(_ss,_item,_p,_id,qty,_type,_location)=>({costoUnitario:1,costoTotal:qty,metodo:"PROMEDIO_PONDERADO",estadoCosto:"OK",asignaciones:[]}),
-  inventoryValuationTransferLayers_:()=>[],inventoryValuationSliceLayers_:(_layers,qty)=>[{cantidad:qty}],migrationStableJson_:value=>JSON.stringify(value),migrationHash_:value=>require("node:crypto").createHash("sha256").update(String(value)).digest("hex"),
+  inventoryValuationTransferLayers_:()=>[],inventoryValuationSliceLayers_:(_layers,qty)=>[{cantidad:qty}],migrationStableJson_:value=>JSON.stringify(value),migrationHash_:value=>require("node:crypto").createHash("sha256").update(String(value)).digest("hex"),computeDocumentSHA256:value=>require("node:crypto").createHash("sha256").update(String(value)).digest("hex"),
   inventoryDeleteAppendedRows_:(sh,start)=>{while(sh.getLastRow()>=start)sh.deleteRow(sh.getLastRow());},
   logStructuredEvent:(...args)=>logs.push(args),Utilities:{getUuid:()=>String(++uuid).padStart(8,"0")},
   Object,Array,String,Number,Date,Math,JSON,RegExp,Error,isFinite,parseFloat
@@ -76,8 +76,17 @@ function main(){
  assert.equal(h.sheets.InventariosKardex.rows.length,invalidTransferKardex,"invalid transfer preconditions must not mutate Kardex");
  assert.equal(h.sheets.TransferenciasInventario?.rows.length||0,invalidTransferLedger,"invalid transfer preconditions must not create ledger rows");
  const blockedTransfer=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:7,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1",requiereConfirmacionFisica:true});assert.equal(blockedTransfer.code,"INSUFFICIENT_LOCAL_STOCK_BUCKET");
- const transfer=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:3,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1",requiereConfirmacionFisica:true});
+ const transferPayload={itemCodigo:"ITM-1",cantidad:3,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1",requiereConfirmacionFisica:true,idempotencyKey:"TRF-REQUEST-0001"};
+ const transfer=ctx.transferInventoryStock(transferPayload);
  assert.equal(transfer.status,"success",JSON.stringify(transfer));
+ const rowsAfterTransfer=h.sheets.TransferenciasInventario.rows.length,kardexAfterTransfer=h.sheets.InventariosKardex.rows.length;
+ const retriedTransfer=ctx.transferInventoryStock({...transferPayload});
+ assert.equal(retriedTransfer.status,"success");assert.equal(retriedTransfer.idempotente,true);assert.equal(retriedTransfer.transferBatchId,transfer.transferBatchId);
+ assert.equal(h.sheets.TransferenciasInventario.rows.length,rowsAfterTransfer,"replayed transfer requests must not create duplicate ledger rows");
+ assert.equal(h.sheets.InventariosKardex.rows.length,kardexAfterTransfer,"replayed transfer requests must not create duplicate Kardex movements");
+ assert.throws(()=>ctx.transferInventoryStock({...transferPayload,cantidad:4}),/TRANSFER_IDEMPOTENCY_CONFLICT/,"reusing a key with a changed payload must fail closed");
+ assert.equal(h.sheets.TransferenciasInventario.rows.length,rowsAfterTransfer);assert.equal(h.sheets.InventariosKardex.rows.length,kardexAfterTransfer);
+ assert.throws(()=>ctx.transferInventoryStock({...transferPayload,idempotencyKey:"short"}),/TRANSFER_IDEMPOTENCY_KEY_INVALID/);
  assert.match(transfer.transferBatchId,/^TRF-/,"transfer must receive a unique TRF identifier");
  const initialTransferMovements=h.sheets.InventariosKardex.rows.filter(r=>r[25]===transfer.transferBatchId);
  assert.equal(initialTransferMovements.length,1,"dispatch must create exactly one source movement while receipt is pending");

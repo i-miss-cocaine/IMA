@@ -13721,7 +13721,7 @@ function getInventoryKardex(payload) {
 function inventoryEnsureTransferSheet_(ss) {
  const spreadsheet=ss||SpreadsheetApp.openById(SPREADSHEET_ID);
  if(!spreadsheet)throw new Error("SPREADSHEET_NOT_CONFIGURED");
- const headers=["TransferenciaID","FechaCreacion","ItemCodigo","ItemNombre","CantidadDespachada","UbicacionOrigen","UbicacionDestino","SolicitanteUserId","Estado","ReceptorUserId","FechaRecepcion","CantidadRecibida","Discrepancia","Observaciones","SedeCodOrigen","UbicacionIDOrigen","SedeCodDestino","UbicacionIDDestino","NumeroLote","NumeroSerie","RequiereConfirmacionFisica","AprobadoPorUserId","FechaAprobacion","CanceladoPorUserId","FechaCancelacion","JustificacionCancelacion","IdempotencyKey"];
+ const headers=["TransferenciaID","FechaCreacion","ItemCodigo","ItemNombre","CantidadDespachada","UbicacionOrigen","UbicacionDestino","SolicitanteUserId","Estado","ReceptorUserId","FechaRecepcion","CantidadRecibida","Discrepancia","Observaciones","SedeCodOrigen","UbicacionIDOrigen","SedeCodDestino","UbicacionIDDestino","NumeroLote","NumeroSerie","RequiereConfirmacionFisica","AprobadoPorUserId","FechaAprobacion","CanceladoPorUserId","FechaCancelacion","JustificacionCancelacion","IdempotencyKey","PayloadHash"];
  let sheet=spreadsheet.getSheetByName("TransferenciasInventario");
  if(!sheet)sheet=spreadsheet.insertSheet("TransferenciasInventario");
  const rows=sheet.getDataRange().getValues(),first=rows&&rows.length?rows[0]:[];
@@ -13790,6 +13790,8 @@ function transferInventoryStock(payload) {
  const originLocationId=String(input.ubicacionIdOrigen||"").trim(),destinationLocationId=String(input.ubicacionIdDestino||"").trim();
  const lot=String(input.numeroLote||"").trim(),serial=String(input.numeroSerie||"").trim(),observaciones=String(input.observaciones||"");
  if(!existingTransferId&&(!itemCodigo||!Number.isFinite(requestedQty)||requestedQty<=0||!originInput||!destinationInput))throw new Error("TRANSFER_INPUT_INVALID");
+ const idempotencyKey=String(input.idempotencyKey||"").trim();
+ if(idempotencyKey&&!/^[A-Za-z0-9._:-]{8,128}$/.test(idempotencyKey))throw new Error("TRANSFER_IDEMPOTENCY_KEY_INVALID");
  if(!existingTransferId&&(!originWarehouse||!destinationWarehouse||!originLocationId||!destinationLocationId))throw new Error("TRANSFER_LOCATION_ID_REQUIRED");
  const lock=LockService.getScriptLock();lock.waitLock(15000);
  try{
@@ -13816,8 +13818,21 @@ function transferInventoryStock(payload) {
   if(origin.sedeCod===destination.sedeCod&&origin.ubicacionId===destination.ubicacionId)throw new Error("TRANSFER_SOURCE_DESTINATION_MUST_DIFFER");
   const initialState=String(input.estadoInicial||(input.requiereAprobacion===true?"PendienteAprobacion":"EnTransito")).trim();
   if(["Borrador","PendienteAprobacion","EnTransito"].indexOf(initialState)===-1)throw new Error("TRANSFER_INITIAL_STATE_INVALID");
-  const requiresConfirmation=input.requiereConfirmacionFisica!==false,now=new Date(),transferBatchId="TRF-"+now.getFullYear()+"-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,""),solicitanteId=verified.userId;
-  const row=[transferBatchId,now,catalogItem.code,catalogItem.name,qty,origin.nombreUbicacion,destination.nombreUbicacion,solicitanteId,initialState==="EnTransito"?"Borrador":initialState,"","",0,0,observaciones,origin.sedeCod,origin.ubicacionId,destination.sedeCod,destination.ubicacionId,lot,serial,requiresConfirmation,"","","","","",String(input.idempotencyKey||"").trim()];
+  const requiresConfirmation=input.requiereConfirmacionFisica!==false,solicitanteId=verified.userId;
+  const payloadHash=idempotencyKey?computeDocumentSHA256(JSON.stringify({userId:solicitanteId,itemCodigo:catalogItem.code,cantidadBase:qty,ubicacionIdOrigen:origin.ubicacionId,sedeCodOrigen:origin.sedeCod,ubicacionIdDestino:destination.ubicacionId,sedeCodDestino:destination.sedeCod,numeroLote:lot,numeroSerie:serial,requiereConfirmacionFisica:requiresConfirmation,estadoInicial:initialState,observaciones:observaciones})):"";
+  if(idempotencyKey){
+   const transferRows=transferSheet.getDataRange().getValues(),matches=[];
+   for(let i=1;i<transferRows.length;i++)if(String(transferRows[i][26]||"").trim()===idempotencyKey)matches.push(transferRows[i]);
+   if(matches.length>1)throw new Error("TRANSFER_IDEMPOTENCY_LEDGER_CONFLICT");
+   if(matches.length===1){
+    const prior=matches[0],storedHash=String(prior[27]||"").trim();
+    const legacyMatch=String(prior[2]||"")===String(catalogItem.code)&&Math.abs(Number(prior[4]||0)-qty)<0.000001&&String(prior[5]||"")===String(origin.nombreUbicacion)&&String(prior[6]||"")===String(destination.nombreUbicacion)&&String(prior[7]||"")===String(solicitanteId)&&String(prior[13]||"")===observaciones&&String(prior[14]||"")===String(origin.sedeCod)&&String(prior[15]||"")===String(origin.ubicacionId)&&String(prior[16]||"")===String(destination.sedeCod)&&String(prior[17]||"")===String(destination.ubicacionId)&&String(prior[18]||"")===lot&&String(prior[19]||"")===serial&&String(prior[20])===String(requiresConfirmation);
+    if(storedHash?storedHash!==payloadHash:!legacyMatch)throw new Error("TRANSFER_IDEMPOTENCY_CONFLICT");
+    return{status:"success",idempotente:true,transferBatchId:String(prior[0]),itemCodigo:String(prior[2]),itemNombre:String(prior[3]),cantidadTransferida:Number(prior[4]||0),ubicacionOrigen:String(prior[5]||""),ubicacionDestino:String(prior[6]||""),estadoTransferencia:String(prior[8]||""),pendienteDespacho:["Borrador","PendienteAprobacion"].indexOf(String(prior[8]||""))!==-1};
+   }
+  }
+  const now=new Date(),transferBatchId="TRF-"+now.getFullYear()+"-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"");
+  const row=[transferBatchId,now,catalogItem.code,catalogItem.name,qty,origin.nombreUbicacion,destination.nombreUbicacion,solicitanteId,initialState==="EnTransito"?"Borrador":initialState,"","",0,0,observaciones,origin.sedeCod,origin.ubicacionId,destination.sedeCod,destination.ubicacionId,lot,serial,requiresConfirmation,"","","","","",idempotencyKey,payloadHash];
   try{transferSheet.appendRow(row);}catch(error){throw new Error("INVENTORY_TRANSFER_CREATE_FAILURE:"+String(error&&error.message||error));}
   const rowIndex=transferSheet.getLastRow()-1;
   if(initialState==="Borrador"||initialState==="PendienteAprobacion")return{status:"success",transferBatchId:transferBatchId,itemCodigo:catalogItem.code,itemNombre:catalogItem.name,cantidadTransferida:qty,ubicacionOrigen:origin.nombreUbicacion,ubicacionDestino:destination.nombreUbicacion,estadoTransferencia:initialState,pendienteDespacho:true};
