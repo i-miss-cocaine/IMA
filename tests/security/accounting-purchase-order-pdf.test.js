@@ -85,7 +85,7 @@ async function main(){
   assert.ok(source.includes('request.action === "approvePurchaseOrder"'),"purchase order approval route is exposed");
   const draft=makeHarness({state:"Borrador"});
   const approved=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"});
-  assert.equal(approved.status,"success");
+  assert.equal(approved.status,"success",JSON.stringify(approved));
   assert.equal(draft.sheets.OrdenesCompra.rows[1][9],"Aprobada");
   assert.equal(draft.sheets.OrdenesCompra.rows[1][10],"U-1");
   assert.ok(draft.sheets.OrdenesCompra.rows[1][20] instanceof Date);
