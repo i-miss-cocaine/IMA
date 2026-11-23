@@ -244,14 +244,6 @@ function renderKardexView(container) {
             <div><label class="block font-bold text-gray-600 mb-1">Serie (si aplica)</label><input type="text" id="kdx-serie" class="w-full p-2 border border-gray-300 rounded-xl"></div>
           </div>
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Flujo de transferencia</label>
-            <select id="trf-estado-inicial" class="w-full p-2 border border-gray-300 rounded-xl">
-              <option value="EnTransito">Despachar ahora</option>
-              <option value="Borrador">Guardar como borrador</option>
-              <option value="PendienteAprobacion">Enviar a aprobación</option>
-            </select>
-          </div>
-          <div>
             <label class="block font-bold text-gray-600 mb-1">Observaciones</label>
             <input type="text" id="kdx-obs" class="w-full p-2 border border-gray-300 rounded-xl">
           </div>
@@ -3052,6 +3044,7 @@ function renderTransferenciasView(container) {
       <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
         <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-dolly text-blue-600"></i> Despachar Transferencia</h5>
         <form id="form-transferencia" onsubmit="handleSaveTransferencia(event)" class="space-y-3 text-xs">
+          <input type="hidden" id="trf-idempotency-key" value="">
           <div>
             <label class="block font-bold text-gray-600 mb-1">Artículo del catálogo *</label>
             <select id="trf-codigo" required class="w-full p-2 border border-gray-300 rounded-xl"></select>
@@ -3075,6 +3068,14 @@ function renderTransferenciasView(container) {
             <label for="trf-requiere-recepcion" class="font-bold text-gray-700 text-[11px]">Requiere confirmación física en destino (En Tránsito)</label>
           </div>
           <div>
+            <label class="block font-bold text-gray-600 mb-1">Flujo de transferencia</label>
+            <select id="trf-estado-inicial" class="w-full p-2 border border-gray-300 rounded-xl">
+              <option value="EnTransito">Despachar ahora</option>
+              <option value="Borrador">Guardar como borrador</option>
+              <option value="PendienteAprobacion">Enviar a aprobación</option>
+            </select>
+          </div>
+          <div>
             <label class="block font-bold text-gray-600 mb-1">Observaciones</label>
             <input type="text" id="trf-obs" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Motivo o referencia del traslado">
           </div>
@@ -3096,6 +3097,8 @@ function renderTransferenciasView(container) {
     </div>
   `;
   populateCatalogSelect(document.getElementById("trf-codigo"));
+  const idempotencyInput=document.getElementById("trf-idempotency-key");
+  if(idempotencyInput&&!idempotencyInput.value)idempotencyInput.value=(window.crypto&&typeof window.crypto.randomUUID==="function")?window.crypto.randomUUID():("TRF-"+Date.now()+"-"+Math.random().toString(36).slice(2));
   loadInventoryLocationSelects();
   loadTransferenciasData();
 }
@@ -3189,6 +3192,7 @@ window.handleSaveTransferencia = function (e) {
     numeroLote: document.getElementById('trf-lote').value, numeroSerie: document.getElementById('trf-serie').value,
     requiereConfirmacionFisica: document.getElementById('trf-requiere-recepcion').checked,
     estadoInicial: document.getElementById('trf-estado-inicial').value,
+    idempotencyKey: document.getElementById('trf-idempotency-key').value,
     observaciones: document.getElementById('trf-obs').value
   };
 
@@ -3197,6 +3201,8 @@ window.handleSaveTransferencia = function (e) {
       const stateLabel=res.estadoTransferencia==="Borrador"?"Borrador guardado":res.estadoTransferencia==="PendienteAprobacion"?"Transferencia enviada a aprobación":"Transferencia despachada con éxito.";
       alert(res.message || stateLabel);
       document.getElementById('form-transferencia').reset();
+      const nextKey=document.getElementById('trf-idempotency-key');
+      if(nextKey)nextKey.value=(window.crypto&&typeof window.crypto.randomUUID==="function")?window.crypto.randomUUID():("TRF-"+Date.now()+"-"+Math.random().toString(36).slice(2));
       loadTransferenciasData();
       if (typeof loadKardexData === "function") loadKardexData();
     })
