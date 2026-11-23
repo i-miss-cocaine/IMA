@@ -13608,22 +13608,33 @@ function inventoryEnsureRequisitionSchema_(sheet) {
  headers.forEach((h,i)=>{if(!String(row[10+i]||"").trim())sheet.getRange(1,11+i).setValue(h);});
 }
 
-function inventoryEnsureReservations_(ss){return inventoryEnsureLedgerSheet_(ss,"InventoryReservations",["ReservaID","SolicitudMatID","ItemID","ItemCodigo","Ubicacion","CantidadBase","Estado","CreadoEn","ActualizadoEn","ActorUserId"]);}
+function inventoryEnsureReservations_(ss){return inventoryEnsureLedgerSheet_(ss,"InventoryReservations",["ReservaID","SolicitudMatID","ItemID","ItemCodigo","Ubicacion","CantidadBase","Estado","CreadoEn","ActualizadoEn","ActorUserId","SedeCod","UbicacionID"]);}
 
 function inventoryEnsureReplenishmentPolicies_(ss){return inventoryEnsureLedgerSheet_(ss,"InventoryReplenishmentPolicies",["PoliticaID","ItemID","ItemCodigo","Ubicacion","StockMinimo","StockMaximo","StockObjetivo","PlazoEntregaDias","Estado","ActualizadoPor","FechaActualizacion"]);}
 
-function inventoryPhysicalStock_(ss,itemCode,location){
+function inventoryPhysicalStock_(ss,itemCode,location,sedeCod,ubicacionId,numeroLote,numeroSerie){
  const sh=ss.getSheetByName("InventariosKardex");if(!sh)return 0;
- const rows=sh.getDataRange().getValues().slice(1),key=catalogNormalizeCode_(itemCode),loc=catalogNormalizeText_(location);let stock=0;
- rows.forEach(r=>{if(catalogNormalizeCode_(r[2])===key&&catalogNormalizeText_(r[10]||"Bodega General")===loc)stock=Number(r[8]||0);});
- return assetDeprMoney_(stock);
+ const target=inventoryResolveLocation_(ss,{sedeCod:sedeCod,ubicacionId:ubicacionId,ubicacionResponsable:location}),rows=sh.getDataRange().getValues().slice(1),key=catalogNormalizeCode_(itemCode),balances=Object.create(null);
+ rows.forEach(function(r){
+  if(catalogNormalizeCode_(r[2])!==key)return;
+  var rowLoc;try{rowLoc=inventoryResolveLocation_(ss,{sedeCod:r[20],ubicacionId:r[21],ubicacionResponsable:r[10]});}catch(_){rowLoc={sedeCod:String(r[20]||"LEGACY"),ubicacionId:String(r[21]||inventoryLegacyLocationId_(r[10]||"Bodega General"))};}
+  if(rowLoc.sedeCod!==target.sedeCod||rowLoc.ubicacionId!==target.ubicacionId)return;
+  var lot=String(r[22]||""),serial=String(r[23]||"");
+  if(numeroLote&&lot!==String(numeroLote))return;if(numeroSerie&&serial!==String(numeroSerie))return;
+  balances[lot+"|"+serial]=Number(r[8]||0);
+ });
+ return assetDeprMoney_(Object.keys(balances).reduce(function(sum,k){return sum+Number(balances[k]||0);},0));
 }
 
 function inventoryReservationRows_(ss){const sh=ss.getSheetByName("InventoryReservations");return sh?sh.getDataRange().getValues().slice(1):[];}
 
-function inventoryActiveReserved_(ss,itemCode,location,excludeRequestId){
- const key=catalogNormalizeCode_(itemCode),loc=catalogNormalizeText_(location);
- return assetDeprMoney_(inventoryReservationRows_(ss).reduce((sum,r)=>sum+(String(r[1])===String(excludeRequestId||"")?0:(catalogNormalizeCode_(r[3])===key&&catalogNormalizeText_(r[4])===loc&&String(r[6])==="Activa"?Number(r[5]||0):0)),0));
+function inventoryActiveReserved_(ss,itemCode,location,excludeRequestId,sedeCod,ubicacionId){
+ const key=catalogNormalizeCode_(itemCode),target=inventoryResolveLocation_(ss,{sedeCod:sedeCod,ubicacionId:ubicacionId,ubicacionResponsable:location});
+ return assetDeprMoney_(inventoryReservationRows_(ss).reduce(function(sum,r){
+  if(String(r[1])===String(excludeRequestId||"")||catalogNormalizeCode_(r[3])!==key||String(r[6])!=="Activa")return sum;
+  var rowLoc;try{rowLoc=inventoryResolveLocation_(ss,{sedeCod:r[10],ubicacionId:r[11],ubicacionResponsable:r[4]});}catch(_){rowLoc={sedeCod:String(r[10]||"LEGACY"),ubicacionId:String(r[11]||inventoryLegacyLocationId_(r[4]||"Bodega General"))};}
+  return rowLoc.sedeCod===target.sedeCod&&rowLoc.ubicacionId===target.ubicacionId?sum+Number(r[5]||0):sum;
+ },0));
 }
 
 function inventoryNormalizeRequisitionItems_(ss,rawItems){
@@ -13650,22 +13661,25 @@ function inventorySetReservationState_(ss,requestId,state,actorId,fromStates){
  return matches.length;
 }
 
-function inventoryReserveRequisition_(ss,requestId,items,location,actorId){
+function inventoryReserveRequisition_(ss,requestId,items,location,actorId,sedeCod,ubicacionId){
+ const resolved=inventoryResolveLocation_(ss,{sedeCod:sedeCod,ubicacionId:ubicacionId,ubicacionResponsable:location}),label=resolved.nombreUbicacion||location;
  const sh=inventoryEnsureReservations_(ss),rows=sh.getDataRange().getValues().slice(1);
  const active=rows.filter(r=>String(r[1])===String(requestId)&&String(r[6])==="Activa");
  if(active.length){
-  const same=active.length===items.length&&items.every(x=>active.some(r=>String(r[2])===String(x.catalogItemId)&&catalogNormalizeText_(r[4])===catalogNormalizeText_(location)&&Math.abs(Number(r[5])-Number(x.cantidad)*Number(x.factorConversionBase))<0.000001));
+  const same=active.length===items.length&&items.every(x=>active.some(r=>String(r[2])===String(x.catalogItemId)&&catalogNormalizeText_(r[4])===catalogNormalizeText_(label)&&String(r[10]||resolved.sedeCod)===resolved.sedeCod&&String(r[11]||resolved.ubicacionId)===resolved.ubicacionId&&Math.abs(Number(r[5])-Number(x.cantidad)*Number(x.factorConversionBase))<0.000001));
   if(!same)throw new Error("MATERIAL_RESERVATION_STATE_CONFLICT");
-  return {idempotent:true,reservadas:active.reduce((n,r)=>n+Number(r[5]||0),0)};
+  return{idempotent:true,reservadas:active.reduce((n,r)=>n+Number(r[5]||0),0)};
  }
- const plan=items.map(x=>{
+ const plan=items.map(function(x){
   const qty=assetDeprMoney_(Number(x.cantidad)*Number(x.factorConversionBase));
-  const physical=inventoryPhysicalStock_(ss,x.itemCodigo,location),reserved=inventoryActiveReserved_(ss,x.itemCodigo,location,requestId),available=assetDeprMoney_(physical-reserved);
+  const physical=inventoryPhysicalStock_(ss,x.itemCodigo,label,resolved.sedeCod,resolved.ubicacionId),reserved=inventoryActiveReserved_(ss,x.itemCodigo,label,requestId,resolved.sedeCod,resolved.ubicacionId),available=assetDeprMoney_(physical-reserved);
   if(qty>available+0.000001)throw new Error("INSUFFICIENT_AVAILABLE_STOCK:"+x.itemCodigo+":available="+available+":requested="+qty);
-  return {item:x,qty};
+  return{item:x,qty:qty};
  });
- const now=new Date(),startRow=sh.getLastRow()+1;try{plan.forEach(x=>sh.appendRow(["RSV-"+Utilities.getUuid(),requestId,x.item.catalogItemId,x.item.itemCodigo,location,x.qty,"Activa",now,now,actorId]));}catch(e){inventoryDeleteAppendedRows_(sh,startRow);throw e;}
- return {idempotent:false,reservadas:plan.reduce((n,x)=>n+x.qty,0)};
+ const now=new Date(),startRow=sh.getLastRow()+1;
+ try{plan.forEach(function(x){sh.appendRow(["RSV-"+Utilities.getUuid(),requestId,x.item.catalogItemId,x.item.itemCodigo,label,x.qty,"Activa",now,now,actorId,resolved.sedeCod,resolved.ubicacionId]);});}
+ catch(e){inventoryDeleteAppendedRows_(sh,startRow);throw e;}
+ return{idempotent:false,reservadas:plan.reduce(function(n,x){return n+x.qty;},0)};
 }
 
 function manageMaterialRequisition(payload){
@@ -13747,7 +13761,11 @@ function inventoryEnsureLedgerSheet_(ss,name,headers) {
  let sh=ss.getSheetByName(name);if(!sh)sh=ss.insertSheet(name);
  const rows=sh.getDataRange().getValues();
  if(!rows.length||!rows[0].some(x=>String(x||"").trim()))sh.getRange(1,1,1,headers.length).setValues([headers]);
- else if(JSON.stringify(rows[0].map(x=>String(x||"").trim()))!==JSON.stringify(headers))throw new Error("INVENTORY_LEDGER_SCHEMA_MISMATCH:"+name);
+ else{
+  const current=rows[0].map(x=>String(x||"").trim()),prefix=current.length<=headers.length&&current.every((x,i)=>x===headers[i]);
+  if(prefix&&current.length<headers.length)sh.getRange(1,current.length+1,1,headers.length-current.length).setValues([headers.slice(current.length)]);
+  else if(headers.some((x,i)=>current[i]!==x))throw new Error("INVENTORY_LEDGER_SCHEMA_MISMATCH:"+name);
+ }
  return sh;
 }
 
