@@ -92,6 +92,7 @@ function main(){
  assert.equal(h.sheets.InventariosKardex.rows.length,beforeOverReceiptRows,"over-receipt must not append Kardex movements");
 
  const transferRows=h.sheets.TransferenciasInventario.rows.length;
+ const originLotBeforeFailure=ctx.inventoryPhysicalStock_(h.ss,"ITM-1","Bodega Norte","SPS-01",loc1.ubicacionId,"L-2");
  const originalValuationApply=ctx.inventoryValuationApplyMovement_;
  let valuationCalls=0;
  ctx.inventoryValuationApplyMovement_=(...args)=>{valuationCalls++;if(valuationCalls===2)throw new Error("INJECTED_DESTINATION_VALUATION_FAILURE");return originalValuationApply(...args);};
