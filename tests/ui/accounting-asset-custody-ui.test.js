@@ -10,7 +10,8 @@ assert.ok(source.includes("purchaseAssetJsArg(a.asignacionActivaId)"),"return ac
 assert.ok(backend.includes("ASSET_CUSTODY_RECEIVER_MUST_BE_VERIFIED_USER"),"server must bind receiver to verified actor");
 assert.ok(backend.includes("ASSET_CUSTODY_EVIDENCE_REQUIRED"),"server must require photo/document evidence");
 assert.ok(backend.includes("ASSET_CUSTODY_RETURN_ATOMIC_FAILURE"),"server must rollback partial return writes");
-assert.ok(backend.includes("assetCustodyReleaseAfterMaintenance_"),"completed maintenance must release an unassigned asset to available");\nassert.ok(backend.includes("if(complete)assetCustodyReleaseAfterMaintenance_(ss,assetRef,oId,actor,departmentInfo);"),"maintenance release must be limited to completed orders");
+assert.ok(backend.includes("assetCustodyReleaseAfterMaintenance_"),"completed maintenance must release an unassigned asset to available");
+assert.ok(backend.includes("if(complete)assetCustodyReleaseAfterMaintenance_(ss,assetRef,oId,actor,departmentInfo);"),"maintenance release must be limited to completed orders");
 assert.ok(backend.includes('receptor:String(actor.userId||"")'),"formal return acta must identify the authenticated receiver");
 assert.ok(backend.includes('file.getSharingAccess()!==DriveApp.Access.PRIVATE'),"evidence validation must reject shared files without mutating their permissions");
 process.stdout.write("Accounting asset custody UI: authenticated return receiver, assignment-bound return, evidence/accessories/signatures, history and private acta download PASS.\n");
