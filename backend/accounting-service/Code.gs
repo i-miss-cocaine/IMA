@@ -6675,14 +6675,12 @@ function getAssetItems(payload) {
   if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED",activos:[]};
   var ss=SpreadsheetApp.openById(SPREADSHEET_ID),scope=getVerifiedAccountingDepartmentScope_(input,ss,actor);
   if(!scope||scope.valid!==true||scope.authorized===false)return{status:"error",code:scope&&scope.code||"RESOURCE_SCOPE_DENIED",activos:[]};
-  var sheet=ss.getSheetByName("ActivosPatrimoniales");
-  if(!sheet)return{status:"success",activos:[]};
-  var schema=ensureAssetAcquisitionSchema_(ss),raw=sheet.getDataRange().getValues();
-  if(!raw||!raw.length)return{status:"success",activos:[]};
-  var headers=schema.assetHeaders,idIndex=headers.indexOf("ActivoID"),departmentIndex=headers.indexOf("DepartamentoID"),custodianIndex=headers.indexOf("CustodioUserId");
+  var sheet=ss.getSheetByName("ActivosPatrimoniales");if(!sheet)return{status:"success",activos:[]};
+  var raw=sheet.getDataRange().getValues();if(!raw||!raw.length)return{status:"success",activos:[]};
+  var headers=raw[0].map(function(v){return String(v||"").trim();}),idIndex=headers.indexOf("ActivoID"),departmentIndex=headers.indexOf("DepartamentoID"),custodianIndex=headers.indexOf("CustodioUserId");
   if(idIndex<0)return{status:"error",code:"ASSET_SCHEMA_INVALID",activos:[]};
-  var counts=Object.create(null),activeByAsset=Object.create(null),assignmentRows=schema.assignments.getDataRange().getValues(),ah=assignmentRows[0].map(function(v){return String(v||"").trim();});
-  assignmentRows.slice(1).forEach(function(row){var assetId=String(row[ah.indexOf("ActivoID")]||"").trim(),state=String(row[ah.indexOf("EstadoAsignacion")]||"").trim(),returned=String(row[ah.indexOf("FechaDevolucion")]||"").trim();if(assetId&&(state==="Activa"||(!state&&!returned)))activeByAsset[assetId]=row[ah.indexOf("AsignacionID")];});
+  var counts=Object.create(null),activeByAsset=Object.create(null),assignmentSheet=ss.getSheetByName("AsignacionesActivos"),assignmentRows=assignmentSheet?assignmentSheet.getDataRange().getValues():[];
+  if(assignmentRows.length){var ah=assignmentRows[0].map(function(v){return String(v||"").trim();}),assetCol=ah.indexOf("ActivoID"),assignmentCol=ah.indexOf("AsignacionID"),stateCol=ah.indexOf("EstadoAsignacion"),returnedCol=ah.indexOf("FechaDevolucion");assignmentRows.slice(1).forEach(function(row){var id=assetCol>=0?String(row[assetCol]||"").trim():"",state=stateCol>=0?String(row[stateCol]||"").trim():"",returned=returnedCol>=0?String(row[returnedCol]||"").trim():"";if(id&&(state==="Activa"||(!state&&!returned)))activeByAsset[id]=assignmentCol>=0?row[assignmentCol]:"";});}
   raw.slice(1).forEach(function(row){var id=String(row[idIndex]||"").trim();if(id)counts[id]=(counts[id]||0)+1;});
   var aliases={ActivoID:"activoId",CodigoPatrimonial:"codigoPatrimonial",Nombre:"nombre",Categoria:"categoria",SerieModel:"serieModel",UbicacionActual:"ubicacionActual",CustodioUserId:"custodioUserId",Estado:"estado",Observaciones:"observaciones",FechaAdquisicion:"fechaAdquisicion",OrdenCompraID:"ordenCompraId",RecepcionID:"recepcionId",NumeroFactura:"numeroFactura",ProveedorID:"proveedorId",ItemId:"itemId",Marca:"marca",NumeroSerie:"numeroSerie",Modelo:"modelo",CostoAdquisicion:"costoAdquisicion",ClasificacionInventario:"clasificacionInventario",DepartamentoID:"departamentoId",CentroCosto:"centroCosto"};
   var activos=raw.slice(1).filter(function(row){
@@ -6690,15 +6688,10 @@ function getAssetItems(payload) {
     if(scope.institutionWide===true)return true;
     var department=departmentIndex>=0?String(row[departmentIndex]||"").trim():"",custodian=custodianIndex>=0?String(row[custodianIndex]||"").trim():"";
     if(!department&&!custodian)return false;
-    var allowed=Array.isArray(scope.departmentIds)?scope.departmentIds.map(String):[];
-    if(!allowed.length)return false;
+    var allowed=Array.isArray(scope.departmentIds)?scope.departmentIds.map(String):[];if(!allowed.length)return false;
     for(var i=0;i<allowed.length;i++){try{maintenancePlanAssertAssetScope_(ss,input,actor,assetId,allowed[i]);return true;}catch(ignored){}}
     return false;
-  }).map(function(row){
-    var result={};headers.forEach(function(header,index){result[header]=row[index];if(aliases[header])result[aliases[header]]=row[index];});
-    result.asignacionActivaId=activeByAsset[String(row[idIndex]||"").trim()]||"";
-    return result;
-  });
+  }).map(function(row){var result={};headers.forEach(function(header,index){result[header]=row[index];if(aliases[header])result[aliases[header]]=row[index];});result.asignacionActivaId=activeByAsset[String(row[idIndex]||"").trim()]||"";return result;});
   return{status:"success",activos:activos};
 }
 
