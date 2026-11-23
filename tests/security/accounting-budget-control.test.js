@@ -168,6 +168,28 @@ function main(){
   assert.equal(orderOverrun.code,"BUDGET_OVERRUN_BLOCKED");
   assert.equal(reserveOrderHarness.sheets.PresupuestosInstitucionales.rows[1][5],600);
 
+  const multiPartHarness=makeHarness();
+  const partOne=multiPartHarness.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:1000});
+  const partTwo=multiPartHarness.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5102",montoAprobado:500});
+  const partOneCheck=multiPartHarness.api.checkCore(multiPartHarness.ss,{anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoSolicitado:1},{institutionWide:true});
+  const partTwoCheck=multiPartHarness.api.checkCore(multiPartHarness.ss,{anoId:"2026",centroCosto:"D1",partidaCodigo:"5102",montoSolicitado:1},{institutionWide:true});
+  const multiPartReserve=multiPartHarness.api.reserveOrder(multiPartHarness.ss,"OC-MULTI","2026","D1",{"5101":25000,"5102":12500},{"5101":partOneCheck,"5102":partTwoCheck},"U-1");
+  assert.equal(multiPartReserve.status,"success",JSON.stringify(multiPartReserve));
+  assert.equal(multiPartHarness.sheets.PresupuestosInstitucionales.rows[1][5],250);
+  assert.equal(multiPartHarness.sheets.PresupuestosInstitucionales.rows[2][5],125);
+  const multiPartRelease=multiPartHarness.api.release(multiPartHarness.ss,"OC-MULTI","Cancelación de orden multi-partida","U-1");
+  assert.equal(multiPartRelease.status,"success");
+  assert.equal(multiPartHarness.sheets.PresupuestosInstitucionales.rows[1][5],0);
+  assert.equal(multiPartHarness.sheets.PresupuestosInstitucionales.rows[2][5],0);
+  const partialRollbackHarness=makeHarness();
+  const partialBudget=partialRollbackHarness.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:100});
+  const partialCheck=partialRollbackHarness.api.checkCore(partialRollbackHarness.ss,{anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoSolicitado:1},{institutionWide:true});
+  const partialRollback=partialRollbackHarness.api.reserveOrder(partialRollbackHarness.ss,"OC-PARTIAL","2026","D1",{"5101":5000,"5102":1000},{"5101":partialCheck,"5102":{disponible:true}},"U-1");
+  assert.equal(partialRollback.code,"BUDGET_COMMITMENT_INPUT_INVALID");
+  assert.equal(partialRollbackHarness.sheets.PresupuestosInstitucionales.rows[1][5],0,"a later invalid part rolls back earlier reservations");
+  assert.equal(partialRollbackHarness.sheets.CompromisosPresupuestarios.rows[1][7],"Liberado","partial reservation is compensated in the ledger");
+  assert.ok(partOne.presupuestoId&&partTwo.presupuestoId);
+
   const releaseRollback=makeHarness();
   const releaseRollbackBudget=releaseRollback.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:100});
   releaseRollback.api.reserve(releaseRollback.ss,{presupuestoId:releaseRollbackBudget.presupuestoId,ordenCompraId:"OC-RB",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:50,idempotencyKey:"PO:OC-RB:PRE"},"U-1");

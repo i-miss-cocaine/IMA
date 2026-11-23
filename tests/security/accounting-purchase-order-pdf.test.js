@@ -98,6 +98,7 @@ function makeHarness(options={}){
 async function main(){
   assert.doesNotThrow(()=>new vm.Script(source),"ACCOUNTING backend syntax");
   assert.ok(source.includes('request.action === "approvePurchaseOrder"'),"purchase order approval route is exposed");
+  assert.ok(source.includes('request.action === "cancelPurchaseOrder"'),"purchase order cancellation route is exposed");
   const draft=makeHarness({state:"Borrador"});
   const approved=draft.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Validación de aprobación de compra"});
   assert.equal(approved.status,"success",JSON.stringify(approved));
@@ -228,6 +229,6 @@ async function main(){
   assert.equal(failed.status,"error");
   assert.equal(rollback.stats().created,1);
   assert.equal(rollback.stats().trashed,1);
-  console.log("Purchase order PDF authorization, approval, private Drive storage, unique correlativo, idempotency, download integrity and rollback contracts passed.");
+  console.log("Purchase order approval, budget commitment reservation, cancellation safeguards, private PDF storage, idempotency, download integrity and rollback contracts passed.");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
