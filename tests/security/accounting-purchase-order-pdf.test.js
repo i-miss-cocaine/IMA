@@ -157,13 +157,13 @@ async function main(){
   assert.equal(overrunBlocked.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida"}).code,"BUDGET_OVERRUN_BLOCKED");
   assert.equal(overrunBlocked.stats().reservationCalls,0);
   const overrunMissingReason=makeHarness({state:"Borrador",budgetCheck:{status:"error",disponible:false,code:"BUDGET_OVERRUN_BLOCKED",presupuestoId:"PRE-1"}});
-  assert.equal(overrunMissingReason.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestaria:true,justificacionSobregiro:""}).code,"BUDGET_OVERRUN_REASON_REQUIRED");
+  assert.equal(overrunMissingReason.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestario:true,justificacionSobregiro:""}).code,"BUDGET_OVERRUN_REASON_REQUIRED");
   const overrunWrongRole=makeHarness({state:"Borrador",actorRole:"Subdirector",budgetCheck:{status:"error",disponible:false,code:"BUDGET_OVERRUN_BLOCKED",presupuestoId:"PRE-1"}});
-  assert.equal(overrunWrongRole.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestaria:true,justificacionSobregiro:"Excepción autorizada"}).code,"BUDGET_OVERRUN_ROLE_REQUIRED");
+  assert.equal(overrunWrongRole.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestario:true,justificacionSobregiro:"Excepción autorizada"}).code,"BUDGET_OVERRUN_ROLE_REQUIRED");
   const overrunNoPermission=makeHarness({state:"Borrador",overrunPermissionDenied:true,budgetCheck:{status:"error",disponible:false,code:"BUDGET_OVERRUN_BLOCKED",presupuestoId:"PRE-1"}});
-  assert.equal(overrunNoPermission.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestaria:true,justificacionSobregiro:"Excepción autorizada"}).code,"ROLE_PERMISSION_DENIED");
+  assert.equal(overrunNoPermission.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestario:true,justificacionSobregiro:"Excepción autorizada"}).code,"ROLE_PERMISSION_DENIED");
   const overrunAuthorized=makeHarness({state:"Borrador",budgetCheck:{status:"error",disponible:false,code:"BUDGET_OVERRUN_BLOCKED",presupuestoId:"PRE-1"}});
-  const overrunApproval=overrunAuthorized.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestaria:true,justificacionSobregiro:"Excepción extraordinaria documentada"});
+  const overrunApproval=overrunAuthorized.context.approvePurchaseOrder({ordenCompraId:"OC-1",justificacion:"Aprobación válida",autorizarSobregiroPresupuestario:true,justificacionSobregiro:"Excepción extraordinaria documentada"});
   assert.equal(overrunApproval.status,"success",JSON.stringify(overrunApproval));
   assert.equal(overrunAuthorized.stats().overrunCalls.length,1);
   assert.equal(overrunAuthorized.stats().overrunCalls[0].reason,"Excepción extraordinaria documentada");
