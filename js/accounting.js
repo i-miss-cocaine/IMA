@@ -452,6 +452,10 @@ function renderAlmacenesView(container) {
         <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-warehouse text-blue-600"></i> Registrar Ubicación / Almacén</h5>
         <form id="form-almacen" onsubmit="handleSaveAlmacen(event)" class="space-y-3 text-xs">
           <div>
+            <label class="block font-bold text-gray-600 mb-1">Código de Sede / Almacén *</label>
+            <input type="text" id="loc-sede" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: SPS-01">
+          </div>
+          <div>
             <label class="block font-bold text-gray-600 mb-1">Nombre de Ubicación *</label>
             <input type="text" id="loc-nombre" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: Bodega de Ciencias">
           </div>
@@ -508,7 +512,8 @@ window.loadAlmacenesData = function () {
           <thead>
             <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
               <th class="p-2">ID</th>
-              <th class="p-2">Ubicación / Almacén</th>
+              <th class="p-2">Sede / Almacén</th>
+              <th class="p-2">Ubicación física</th>
               <th class="p-2">Tipo</th>
               <th class="p-2">Responsable</th>
               <th class="p-2">Estado</th>
@@ -520,6 +525,7 @@ window.loadAlmacenesData = function () {
         html += `
           <tr class="hover:bg-gray-50">
             <td class="p-2 font-mono font-bold text-blue-600">${u.ubicacionId}</td>
+            <td class="p-2 font-mono text-gray-700">${u.sedeCod}</td>
             <td class="p-2 font-bold text-gray-800">${u.nombreUbicacion}</td>
             <td class="p-2 text-gray-500">${u.tipoArea}</td>
             <td class="p-2 text-gray-700 font-medium">${u.responsableUserId || 'Sin asignar'}</td>
@@ -538,6 +544,7 @@ window.loadAlmacenesData = function () {
 window.handleSaveAlmacen = function (e) {
   e.preventDefault();
   const payload = {
+    sedeCod: document.getElementById('loc-sede').value,
     nombreUbicacion: document.getElementById('loc-nombre').value,
     tipoArea: document.getElementById('loc-tipo').value,
     responsableUserId: document.getElementById('loc-responsable').value,
@@ -2947,13 +2954,15 @@ function renderTransferenciasView(container) {
             <input type="number" id="trf-cantidad" required step="1" min="1" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="1">
           </div>
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Bodega / Ubicación Origen *</label>
-            <input type="text" id="trf-origen" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Bodega General">
+            <label class="block font-bold text-gray-600 mb-1">Sede / Ubicación Origen *</label>
+            <select id="trf-origen" required class="w-full p-2 border border-gray-300 rounded-xl"><option value="">Seleccione ubicación de origen</option></select>
           </div>
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Bodega / Ubicación Destino *</label>
-            <input type="text" id="trf-destino" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Laboratorio de Cómputo 1">
+            <label class="block font-bold text-gray-600 mb-1">Sede / Ubicación Destino *</label>
+            <select id="trf-destino" required class="w-full p-2 border border-gray-300 rounded-xl"><option value="">Seleccione ubicación de destino</option></select>
           </div>
+          <div><label class="block font-bold text-gray-600 mb-1">Número de lote (si aplica)</label><input type="text" id="trf-lote" class="w-full p-2 border border-gray-300 rounded-xl"></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Número de serie (si aplica)</label><input type="text" id="trf-serie" class="w-full p-2 border border-gray-300 rounded-xl"></div>
           <div class="flex items-center gap-2 pt-1">
             <input type="checkbox" id="trf-requiere-recepcion" checked class="rounded text-blue-600">
             <label for="trf-requiere-recepcion" class="font-bold text-gray-700 text-[11px]">Requiere confirmación física en destino (En Tránsito)</label>
@@ -2980,8 +2989,27 @@ function renderTransferenciasView(container) {
     </div>
   `;
   populateCatalogSelect(document.getElementById("trf-codigo"));
+  loadInventoryLocationSelects();
   loadTransferenciasData();
 }
+
+
+window.loadInventoryLocationSelects = function() {
+  const origin=document.getElementById("trf-origen"),destination=document.getElementById("trf-destino");
+  if(!origin||!destination)return;
+  fetchApi("ACCOUNTING","getWarehouseLocations",{}).then(function(result){
+    const locations=Array.isArray(result&&result.ubicaciones)?result.ubicaciones:[];
+    [origin,destination].forEach(function(select){
+      select.innerHTML="";
+      const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent="Seleccione ubicación";select.appendChild(placeholder);
+      locations.forEach(function(location){
+        const option=document.createElement("option");option.value=location.ubicacionId;
+        option.textContent=String(location.sedeCod)+" — "+String(location.nombreUbicacion);
+        option.dataset.sedeCod=String(location.sedeCod);option.dataset.name=String(location.nombreUbicacion);select.appendChild(option);
+      });
+    });
+  }).catch(function(error){console.error("No se pudieron cargar las ubicaciones:",error);});
+};
 
 window.loadTransferenciasData = function () {
   const container = document.getElementById('transferencias-table-container');
@@ -3015,8 +3043,8 @@ window.loadTransferenciasData = function () {
         else if (t.estadoTransferencia === "RecibidaParcial") badgeClass = "bg-orange-100 text-orange-800";
         else if (t.estadoTransferencia === "Rechazada" || t.estadoTransferencia === "Cancelada") badgeClass = "bg-rose-100 text-rose-800";
 
-        const accionBtn = (t.estadoTransferencia === "EnTransito")
-          ? `<button onclick="handleRecibirTransferencia('${t.transferBatchId}', '${t.itemCodigo}', '${t.cantidadDespachada}', '${t.ubicacionDestino}')" class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded font-bold text-[10px] hover:bg-emerald-100 uppercase">Recibir</button>`
+        const accionBtn = (["EnTransito","RecibidaParcial"].includes(t.estadoTransferencia))
+          ? `<button onclick="handleRecibirTransferencia('${t.transferBatchId}', '${t.itemCodigo}', '${t.cantidadDespachada}', '${t.ubicacionDestino}', '${t.cantidadRecibida||0}')" class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded font-bold text-[10px] hover:bg-emerald-100 uppercase">Recibir</button>`
           : `<span class="text-gray-400 font-bold text-[10px]">${t.cantidadRecibida || t.cantidadDespachada} rec.</span>`;
 
         html += `
@@ -3040,12 +3068,15 @@ window.loadTransferenciasData = function () {
 
 window.handleSaveTransferencia = function (e) {
   e.preventDefault();
+  const origin=document.getElementById('trf-origen').selectedOptions[0],destination=document.getElementById('trf-destino').selectedOptions[0];
+  if(!origin||!destination||!origin.value||!destination.value){alert("Seleccione ubicaciones registradas de origen y destino.");return;}
   const payload = {
     itemCodigo: document.getElementById('trf-codigo').value,
     itemNombre: document.getElementById('trf-codigo').selectedOptions[0]?.dataset.name || '',
     cantidad: document.getElementById('trf-cantidad').value,
-    ubicacionOrigen: document.getElementById('trf-origen').value,
-    ubicacionDestino: document.getElementById('trf-destino').value,
+    ubicacionOrigen: origin.dataset.name, ubicacionIdOrigen: origin.value, sedeCodOrigen: origin.dataset.sedeCod,
+    ubicacionDestino: destination.dataset.name, ubicacionIdDestino: destination.value, sedeCodDestino: destination.dataset.sedeCod,
+    numeroLote: document.getElementById('trf-lote').value, numeroSerie: document.getElementById('trf-serie').value,
     requiereConfirmacionFisica: document.getElementById('trf-requiere-recepcion').checked,
     observaciones: document.getElementById('trf-obs').value
   };
@@ -3060,21 +3091,17 @@ window.handleSaveTransferencia = function (e) {
     .catch(err => alert("Error: " + err.message));
 };
 
-window.handleRecibirTransferencia = function (transferBatchId, itemCodigo, cantDespachada, uDestino) {
-  const cantStr = prompt(`Confirmar unidades físicas recibidas en ${uDestino} (Despachadas: ${cantDespachada}):`, cantDespachada);
+window.handleRecibirTransferencia = function (transferBatchId, itemCodigo, cantDespachada, uDestino, cantidadAnterior) {
+  const anterior=Number(cantidadAnterior||0);
+  const cantStr = prompt(`Cantidad acumulada recibida en ${uDestino} (Despachadas: ${cantDespachada}; recibidas antes: ${anterior}):`, String(anterior));
   if (cantStr === null) return;
-
   const cantRec = parseFloat(cantStr);
-  if (isNaN(cantRec) || cantRec < 0) {
-    alert("Cantidad recibida inválida.");
-    return;
-  }
-
+  if (!Number.isFinite(cantRec) || cantRec < anterior || cantRec > Number(cantDespachada)) { alert("La cantidad acumulada debe ser válida, no disminuir lo recibido y no superar lo despachado."); return; }
   let justif = "";
-  if (cantRec !== parseFloat(cantDespachada)) {
-    justif = prompt("Especifique justificación de la discrepancia de recepción:") || "Diferencia de conteo en destino";
+  if (cantRec < Number(cantDespachada)) {
+    justif = prompt("Justificación obligatoria de la diferencia o recepción parcial:") || "";
+    if (justif.trim().length < 5) { alert("Debe proporcionar una justificación de al menos cinco caracteres."); return; }
   }
-
   fetchApi('ACCOUNTING', 'confirmTransferReceipt', {
     transferBatchId: transferBatchId,
     cantidadRecibida: cantRec,
