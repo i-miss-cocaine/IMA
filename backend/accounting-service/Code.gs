@@ -6990,7 +6990,7 @@ function reserveBudgetCommitmentLocked_(ss,input,actorId) {
   });
   if(budgetMatches.length!==1)return{status:"error",code:budgetMatches.length?"BUDGET_RECORD_AMBIGUOUS":"BUDGET_NOT_FOUND"};
   var budgetRecord=budgetRecordFromRow_(budgetMatches[0].row,bm),amount=Number(data.monto),amountCents=Math.round(amount*100);
-  var overrunRequested=data.autorizarSobregiroPresupuestaria===true,overrunRole=String(data.actorRole||"").trim().toLowerCase(),overrunReason=String(data.justificacionSobregiro||"").trim().slice(0,300);
+  var overrunRequested=data.autorizarSobregiroPresupuestario===true,overrunRole=String(data.actorRole||"").trim().toLowerCase(),overrunReason=String(data.justificacionSobregiro||"").trim().slice(0,300);
   if(overrunRequested&&["director","administrador"].indexOf(overrunRole)===-1)return{status:"error",code:"BUDGET_OVERRUN_ROLE_REQUIRED"};
   if(overrunRequested&&overrunReason.length<5)return{status:"error",code:"BUDGET_OVERRUN_REASON_REQUIRED"};
   if(!Number.isFinite(amount)||amount<=0||!Number.isSafeInteger(amountCents))return{status:"error",code:"BUDGET_COMMITMENT_AMOUNT_INVALID"};
@@ -7372,7 +7372,7 @@ function reservePurchaseOrderBudgetCommitmentsLocked_(ss,ordenCompraId,anoId,cen
     var reserveInput={presupuestoId:check.presupuestoId,ordenCompraId:orderId,anoId:year,centroCosto:center,
       partidaCodigo:part,monto:amountCents/100,idempotencyKey:"PO:"+orderId+":"+check.presupuestoId};
     if(overrunAuthorization&&overrunAuthorization.authorized===true){
-      reserveInput.autorizarSobregiroPresupuestaria=true;reserveInput.actorRole=overrunAuthorization.actorRole;
+      reserveInput.autorizarSobregiroPresupuestario=true;reserveInput.actorRole=overrunAuthorization.actorRole;
       reserveInput.justificacionSobregiro=overrunAuthorization.reason;
     }
     var result=reserveBudgetCommitmentLocked_(ss,reserveInput,actorId);

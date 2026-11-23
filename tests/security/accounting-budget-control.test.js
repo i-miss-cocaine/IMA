@@ -234,11 +234,11 @@ function main(){
   const overrunBudget=overrunHarness.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:100});
   const blockedOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-1",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-1:PRE"},"U-1");
   assert.equal(blockedOverrun.code,"BUDGET_OVERRUN_BLOCKED");
-  const wrongRoleOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-2",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-2:PRE",autorizarSobregiroPresupuestaria:true,actorRole:"Contador",justificacionSobregiro:"Excepción documentada"},"U-1");
+  const wrongRoleOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-2",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-2:PRE",autorizarSobregiroPresupuestario:true,actorRole:"Contador",justificacionSobregiro:"Excepción documentada"},"U-1");
   assert.equal(wrongRoleOverrun.code,"BUDGET_OVERRUN_ROLE_REQUIRED");
-  const missingReasonOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-3",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-3:PRE",autorizarSobregiroPresupuestaria:true,actorRole:"Director",justificacionSobregiro:""},"U-1");
+  const missingReasonOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-3",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-3:PRE",autorizarSobregiroPresupuestario:true,actorRole:"Director",justificacionSobregiro:""},"U-1");
   assert.equal(missingReasonOverrun.code,"BUDGET_OVERRUN_REASON_REQUIRED");
-  const authorizedOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-4",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-4:PRE",autorizarSobregiroPresupuestaria:true,actorRole:"Director",justificacionSobregiro:"Excepción extraordinaria autorizada"},"U-1");
+  const authorizedOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-4",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-4:PRE",autorizarSobregiroPresupuestario:true,actorRole:"Director",justificacionSobregiro:"Excepción extraordinaria autorizada"},"U-1");
   assert.equal(authorizedOverrun.status,"success",JSON.stringify(authorizedOverrun));
   assert.equal(overrunHarness.sheets.PresupuestosInstitucionales.rows[1][5],150);
   assert.equal(overrunHarness.sheets.CompromisosPresupuestarios.rows[1][16],"U-1");

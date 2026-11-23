@@ -1629,7 +1629,7 @@ window.approvePurchaseOrderUI = async function(ordenCompraId) {
     if (!window.confirm("El presupuesto disponible es insuficiente. ¿Desea solicitar una excepción extraordinaria como Director/Administrador? La autorización quedará auditada.")) return;
     const overrunReason = window.prompt("Justificación obligatoria del sobregiro (mínimo 5 caracteres):");
     if (!overrunReason || String(overrunReason).trim().length < 5) { alert("La justificación del sobregiro es obligatoria."); return; }
-    result = await fetchBackendAccounting("approvePurchaseOrder", Object.assign({}, approvalPayload, {autorizarSobregiroPresupuestaria:true,justificacionSobregiro:String(overrunReason).trim()}));
+    result = await fetchBackendAccounting("approvePurchaseOrder", Object.assign({}, approvalPayload, {autorizarSobregiroPresupuestario:true,justificacionSobregiro:String(overrunReason).trim()}));
   }
   if (result && result.status === "warning" && result.code === "BUDGET_THRESHOLD_CONFIRMATION_REQUIRED") {
     const details = (result.alertasPresupuestarias || []).map(function(x) {
