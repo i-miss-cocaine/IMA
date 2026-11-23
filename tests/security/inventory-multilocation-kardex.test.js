@@ -25,7 +25,7 @@ function makeHarness(){
   Object,Array,String,Number,Date,Math,JSON,RegExp,Error,isFinite,parseFloat
  };
  vm.createContext(context);
- const functions=["inventoryLegacyLocationId_","inventoryEnsureWarehouseLocations_","inventoryResolveLocation_","manageWarehouseLocation","getWarehouseLocations","inventoryEnsurePhysicalCountSheet_","inventoryCountBuckets_","createPhysicalInventoryCount","getPhysicalInventoryCounts","reconcilePhysicalCount","catalogEnsureKardexSchema_","recordInventoryMovementLocked_","recordInventoryMovement","getInventoryKardex","inventoryEnsureLedgerSheet_","inventoryEnsureReservations_","inventoryReservationRows_","inventoryPhysicalStock_","inventoryActiveReserved_","inventoryReserveRequisition_","transferInventoryStock","confirmTransferReceipt","getInventoryTransfers"];
+ const functions=["inventoryLegacyLocationId_","inventoryEnsureWarehouseLocations_","inventoryResolveLocation_","manageWarehouseLocation","getWarehouseLocations","inventoryEnsurePhysicalCountSheet_","inventoryCountBuckets_","createPhysicalInventoryCount","getPhysicalInventoryCounts","reconcilePhysicalCount","catalogEnsureKardexSchema_","recordInventoryMovementLocked_","recordInventoryMovement","getInventoryKardex","inventoryEnsureLedgerSheet_","inventoryEnsureReservations_","inventoryReservationRows_","inventoryPhysicalStock_","inventoryActiveReserved_","inventoryReserveRequisition_","inventoryEnsureTransferSheet_","transferInventoryStock","confirmTransferReceipt","getInventoryTransfers"];
  for(const name of functions)vm.runInContext(extract(name),context);
  return{context,sheets,ss,logs,setRole:r=>actorRole=r,setPermissionDenied:v=>permissionDenied=v,setLockBusy:v=>lockBusy=v,setFailCountUpdate:v=>failCountUpdate=v};
 }
@@ -59,9 +59,16 @@ function main(){
  assert.equal(sps1.stockFisico,11);assert.equal(sps1.stockReservado,2);assert.equal(sps1.stockDisponible,9);
  assert.equal(kardex.resumenExistencias[0].totalInstitucional,31);
  assert.equal(kardex.kardex.filter(x=>x.sedeCod==="SPS-01").length,3);
- const blockedTransfer=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:5,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1",requiereConfirmacionFisica:true});assert.equal(blockedTransfer.code,"INSUFFICIENT_AVAILABLE_STOCK");
+ assert.throws(()=>ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte"}),/TRANSFER_LOCATION_ID_REQUIRED/);
+ const blockedTransfer=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:7,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1",requiereConfirmacionFisica:true});assert.equal(blockedTransfer.code,"INSUFFICIENT_LOCAL_STOCK_BUCKET");
  const transfer=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:3,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1",requiereConfirmacionFisica:true});
  assert.equal(transfer.status,"success",JSON.stringify(transfer));
+ const transferList=ctx.getInventoryTransfers({});assert.ok(transferList.transferencias.some(x=>x.transferBatchId===transfer.transferBatchId),"first transfer row must be visible after transfer sheet header initialization");
+ h.setPermissionDenied(true);assert.throws(()=>ctx.getInventoryTransfers({}),/ROLE_PERMISSION_DENIED/);h.setPermissionDenied(false);
+ const lockKardexBefore=h.sheets.InventariosKardex.rows.length,lockTransfersBefore=h.sheets.TransferenciasInventario.rows.length;
+ h.setLockBusy(true);assert.throws(()=>ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1"}),/LOCK_BUSY/);h.setLockBusy(false);
+ assert.equal(h.sheets.InventariosKardex.rows.length,lockKardexBefore);assert.equal(h.sheets.TransferenciasInventario.rows.length,lockTransfersBefore);
+
  kardex=ctx.getInventoryKardex({});
  const destination=kardex.resumenPorUbicacion.find(x=>x.sedeCod==="SPS-02");
  assert.equal(destination.stockEnTransito,3);
@@ -73,6 +80,19 @@ function main(){
  assert.equal(ctx.confirmTransferReceipt({transferBatchId:transfer.transferBatchId,cantidadRecibida:3}).idempotente,true);
  assert.equal(ctx.getInventoryKardex({}).resumenPorUbicacion.find(x=>x.sedeCod==="SPS-02").stockEnTransito,0);
  const transfer2=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-2",requiereConfirmacionFisica:true});
+ const locationRows=h.sheets.AlmacenesUbicaciones.rows,destLocationRow=locationRows.find(r=>r[0]===loc2.ubicacionId),beforeInactiveReceipt=h.sheets.InventariosKardex.rows.length;
+ destLocationRow[5]="Inactivo";assert.throws(()=>ctx.confirmTransferReceipt({transferBatchId:transfer2.transferBatchId,cantidadRecibida:1}),/INVENTORY_LOCATION_NOT_FOUND/);destLocationRow[5]="Activo";
+ assert.equal(h.sheets.InventariosKardex.rows.length,beforeInactiveReceipt,"receipt into an inactive destination location must not write stock");
+ const reserveItem="ITM-RES";ctx.recordInventoryMovementLocked_(h.ss,{itemCodigo:reserveItem,cantidad:1,cantidadBase:true,tipoMovimiento:"Entrada",sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,numeroLote:"RES-A",actorUserId:"USR-1"});
+ ctx.recordInventoryMovementLocked_(h.ss,{itemCodigo:reserveItem,cantidad:5,cantidadBase:true,tipoMovimiento:"Entrada",sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,numeroLote:"RES-B",actorUserId:"USR-1"});
+ ctx.inventoryReserveRequisition_(h.ss,"REQ-RES",[{catalogItemId:"ITM-RES",itemCodigo:reserveItem,cantidad:2,factorConversionBase:1}],"Bodega Norte","USR-1","SPS-01",loc1.ubicacionId);
+ const reservedAcrossLots=ctx.transferInventoryStock({itemCodigo:reserveItem,cantidad:4,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"RES-B",requiereConfirmacionFisica:true});
+ assert.equal(reservedAcrossLots.status,"success","location-level reservations must be compared with total location stock, not subtracted twice from a selected lot");
+ const fracItem="ITM-FRAC";ctx.recordInventoryMovementLocked_(h.ss,{itemCodigo:fracItem,cantidad:2,cantidadBase:true,tipoMovimiento:"Entrada",sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,actorUserId:"USR-1"});
+ const fractionalTransfer=ctx.transferInventoryStock({itemCodigo:fracItem,cantidad:1.006,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,requiereConfirmacionFisica:true});
+ assert.equal(fractionalTransfer.cantidadTransferida,1.01);assert.equal(Number(h.sheets.TransferenciasInventario.rows.find(r=>r[0]===fractionalTransfer.transferBatchId)[4]),1.01);
+ assert.equal(Number(h.sheets.InventariosKardex.rows.filter(r=>r[25]===fractionalTransfer.transferBatchId&&r[5]==="TransferenciaSalida").at(-1)[6]),1.01);
+
  const rejected=ctx.confirmTransferReceipt({transferBatchId:transfer2.transferBatchId,cantidadRecibida:0,justificacionDiscrepancia:"Destino rechazó la entrega"});
  assert.equal(rejected.estadoTransferencia,"Rechazada");
  const serialOne=move("SPS-01",loc1.ubicacionId,2,"Entrada","LOT-SERIAL","SER-001");

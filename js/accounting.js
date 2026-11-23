@@ -3115,58 +3115,54 @@ window.loadInventoryLocationSelects = function() {
 window.loadTransferenciasData = function () {
   const container = document.getElementById('transferencias-table-container');
   if (!container) return;
-
+  const escapeTransferHtml = value => String(value == null ? "" : value).replace(/[&<>"']/g, char => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[char]));
   fetchApi('ACCOUNTING', 'getInventoryTransfers', {})
     .then(res => {
       const items = (res && res.transferencias) ? res.transferencias : [];
       if (items.length === 0) {
-        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay transferencias registradas.</div>`;
+        container.textContent = "No hay transferencias registradas.";
         return;
       }
       let html = `
         <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
-              <th class="p-2">Lote TRF</th>
-              <th class="p-2">Artículo</th>
-              <th class="p-2 text-right">Despachado</th>
-              <th class="p-2">Origen &rarr; Destino</th>
-              <th class="p-2">Estado</th>
-              <th class="p-2 text-right">Acción</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-      `;
+          <thead><tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+            <th class="p-2">Lote TRF</th><th class="p-2">Artículo</th><th class="p-2 text-right">Despachado</th>
+            <th class="p-2">Origen → Destino</th><th class="p-2">Estado</th><th class="p-2 text-right">Acción</th>
+          </tr></thead><tbody class="divide-y divide-gray-100">`;
       items.forEach(t => {
+        const state=String(t.estadoTransferencia||"");
         let badgeClass = "bg-blue-100 text-blue-800";
-        if (t.estadoTransferencia === "EnTransito") badgeClass = "bg-amber-100 text-amber-800";
-        else if (t.estadoTransferencia === "RecibidaTotal") badgeClass = "bg-emerald-100 text-emerald-800";
-        else if (t.estadoTransferencia === "RecibidaParcial") badgeClass = "bg-orange-100 text-orange-800";
-        else if (t.estadoTransferencia === "Rechazada" || t.estadoTransferencia === "Cancelada") badgeClass = "bg-rose-100 text-rose-800";
-
-        const accionBtn = (["EnTransito","RecibidaParcial"].includes(t.estadoTransferencia))
-          ? `<button onclick="handleRecibirTransferencia('${t.transferBatchId}', '${t.itemCodigo}', '${t.cantidadDespachada}', '${t.ubicacionDestino}', '${t.cantidadRecibida||0}')" class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded font-bold text-[10px] hover:bg-emerald-100 uppercase">Recibir</button>`
-          : `<span class="text-gray-400 font-bold text-[10px]">${t.cantidadRecibida || t.cantidadDespachada} rec.</span>`;
-
-        html += `
-          <tr class="hover:bg-gray-50">
-            <td class="p-2 font-mono font-bold text-indigo-600">${t.transferBatchId}</td>
-            <td class="p-2"><span class="font-bold text-gray-800">${t.itemNombre || t.itemCodigo}</span> <span class="font-mono text-gray-400 text-[10px]">(${t.itemCodigo})</span></td>
-            <td class="p-2 text-right font-mono font-bold">${t.cantidadDespachada}</td>
-            <td class="p-2 text-gray-700 font-medium">${t.ubicacionOrigen} &rarr; ${t.ubicacionDestino}</td>
-            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">${t.estadoTransferencia}</span></td>
-            <td class="p-2 text-right">${accionBtn}</td>
-          </tr>
-        `;
+        if (state === "EnTransito") badgeClass = "bg-amber-100 text-amber-800";
+        else if (state === "RecibidaTotal") badgeClass = "bg-emerald-100 text-emerald-800";
+        else if (state === "RecibidaParcial") badgeClass = "bg-orange-100 text-orange-800";
+        else if (state === "Rechazada" || state === "Cancelada") badgeClass = "bg-rose-100 text-rose-800";
+        const id=escapeTransferHtml(t.transferBatchId),itemCode=escapeTransferHtml(t.itemCodigo),itemName=escapeTransferHtml(t.itemNombre||t.itemCodigo);
+        const quantity=escapeTransferHtml(t.cantidadDespachada),origin=escapeTransferHtml(t.ubicacionOrigen),destination=escapeTransferHtml(t.ubicacionDestino),safeState=escapeTransferHtml(state);
+        const received=escapeTransferHtml(t.cantidadRecibida||0);
+        const action=(["EnTransito","RecibidaParcial"].includes(state))
+          ? `<button type="button" data-transfer-receipt="${id}" data-item-code="${itemCode}" data-dispatched="${quantity}" data-destination="${destination}" data-received="${received}" class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded font-bold text-[10px] hover:bg-emerald-100 uppercase">Recibir</button>`
+          : `<span class="text-gray-400 font-bold text-[10px]">${received || quantity} rec.</span>`;
+        html += `<tr class="hover:bg-gray-50">
+          <td class="p-2 font-mono font-bold text-indigo-600">${id}</td>
+          <td class="p-2"><span class="font-bold text-gray-800">${itemName}</span> <span class="font-mono text-gray-400 text-[10px]">(${itemCode})</span></td>
+          <td class="p-2 text-right font-mono font-bold">${quantity}</td>
+          <td class="p-2 text-gray-700 font-medium">${origin} → ${destination}</td>
+          <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">${safeState}</span></td>
+          <td class="p-2 text-right">${action}</td></tr>`;
       });
       html += `</tbody></table>`;
       container.innerHTML = html;
+      container.querySelectorAll("[data-transfer-receipt]").forEach(button => {
+        button.addEventListener("click", () => window.handleRecibirTransferencia(
+          button.dataset.transferReceipt, button.dataset.itemCode, button.dataset.dispatched,
+          button.dataset.destination, button.dataset.received
+        ));
+      });
     })
     .catch(err => {
-      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar transferencias: ${err.message}</div>`;
+      container.textContent = "Error al cargar transferencias: " + String(err && err.message || err);
     });
 };
-
 window.handleSaveTransferencia = function (e) {
   e.preventDefault();
   const origin=document.getElementById('trf-origen').selectedOptions[0],destination=document.getElementById('trf-destino').selectedOptions[0];

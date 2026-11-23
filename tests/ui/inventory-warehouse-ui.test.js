@@ -4,6 +4,9 @@ assert.doesNotThrow(()=>new vm.Script(source),"accounting UI syntax");
 for(const token of ['id="loc-sede"',"sedeCod: document.getElementById('loc-sede').value",'getWarehouseLocations','id="trf-origen"','ubicacionIdOrigen','sedeCodDestino','numeroLote','numeroSerie','["EnTransito","RecibidaParcial"].includes','Cantidad acumulada recibida','Justificación obligatoria de la diferencia'])
  assert.ok(source.includes(token),"missing warehouse UI contract: "+token);
 assert.ok(!source.includes('|| "Diferencia de conteo en destino"'),"UI must not invent a discrepancy justification");
+assert.ok(source.includes("data-transfer-receipt"),"transfer receipt buttons must use data attributes rather than inline event code");
+assert.ok(source.includes("escapeTransferHtml"),"transfer ledger data must be escaped before HTML rendering");
+assert.ok(!source.includes('onclick="handleRecibirTransferencia'),"transfer receipt action must not interpolate untrusted values into inline handlers");
 console.log("Inventory warehouse UI contract PASS: explicit warehouse/location registration, location-ID transfer selection, lot/serial fields and cumulative partial receipt with mandatory justification.");
 
 for(const token of ["kdx-count-sede","kdx-count-ubicacion","kdx-count-id","kdx-count-detail","window.startPhysicalInventoryCountUI","window.loadPhysicalInventoryCountsUI","window.reconcilePhysicalInventoryCountUI","createPhysicalInventoryCount","getPhysicalInventoryCounts","reconcilePhysicalCount","data-count-line","data-count-quantity"]) assert.ok(source.includes(token),"missing physical count UI contract: "+token);
