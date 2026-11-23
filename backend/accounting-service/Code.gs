@@ -13036,7 +13036,7 @@ function catalogEnsureKardexSchema_(ss){
   const metadata=rows.slice(1).map(function(row){
    var label=String(row[10]||"Bodega General").trim()||"Bodega General",resolved;
    try{resolved=inventoryResolveLocation_(ss,{ubicacionResponsable:label});}catch(_){resolved={sedeCod:"LEGACY",ubicacionId:inventoryLegacyLocationId_(label)};}
-   var obs=String(row[11]||""),marker=function(name){var m=obs.match(new RegExp("\\\\["+name+":([^\\\\]]+)\\\\]"));return m?String(m[1]).trim():"";};
+   var obs=String(row[11]||""),marker=function(name){var m=obs.match(new RegExp("\\[" + name + ":([^\\]]+)\\]"));return m?String(m[1]).trim():"";};
    return[String(row[20]||resolved.sedeCod||"LEGACY"),String(row[21]||resolved.ubicacionId||inventoryLegacyLocationId_(label)),String(row[22]||marker("LOTE")),String(row[23]||marker("SERIE")),String(row[24]||""),String(row[25]||marker("DOC")),String(row[26]||marker("REF"))];
   });
   sh.getRange(2,21,metadata.length,7).setValues(metadata);
