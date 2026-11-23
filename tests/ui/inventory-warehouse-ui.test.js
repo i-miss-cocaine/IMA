@@ -7,3 +7,5 @@ assert.ok(!source.includes('|| "Diferencia de conteo en destino"'),"UI must not 
 console.log("Inventory warehouse UI contract PASS: explicit warehouse/location registration, location-ID transfer selection, lot/serial fields and cumulative partial receipt with mandatory justification.");
 
 for(const token of ['id="kdx-sede"','id="kdx-ubicacion"','id="kdx-filter-sede"','id="kdx-filter-ubicacion"','id="kdx-filter-item"','id="kdx-filter-category"','id="kdx-filter-from"','id="kdx-filter-to"','payload.ubicacionId','payload.fechaInicio','payload.fechaFin','numeroLote: document.getElementById(\'kdx-lote\').value']) assert.ok(source.includes(token),"missing Kardex UI filter/location contract: "+token);
+
+for(const token of ['id="kdx-sede"','id="kdx-ubicacion"','id="kdx-filter-sede"','id="kdx-filter-ubicacion"','id="kdx-filter-item"','id="kdx-filter-category"','id="kdx-filter-from"','id="kdx-filter-to"','payload.ubicacionId','payload.fechaInicio','payload.fechaFin']) assert.ok(source.includes(token),"missing Kardex location/filter control: "+token);

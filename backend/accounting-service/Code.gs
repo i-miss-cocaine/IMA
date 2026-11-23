@@ -13286,7 +13286,7 @@ function getInventoryKardex(payload) {
  const lotFilter=String(p.numeroLote||"").trim(),serialFilter=String(p.numeroSerie||"").trim();
  const dateFrom=p.fechaInicio?new Date(p.fechaInicio):null,dateTo=p.fechaFin?new Date(p.fechaFin):null;
  if((p.fechaInicio&&isNaN(dateFrom.getTime()))||(p.fechaFin&&isNaN(dateTo.getTime())))throw new Error("INVENTORY_DATE_FILTER_INVALID");
- if(dateTo&&/^\\d{4}-\\d{2}-\\d{2}$/.test(String(p.fechaFin)))dateTo.setHours(23,59,59,999);
+ if(dateTo&&/^\d{4}-\d{2}-\d{2}$/.test(String(p.fechaFin)))dateTo.setHours(23,59,59,999);
  const bucketMap=Object.create(null),locationMap=Object.create(null),consolidated=Object.create(null),running=Object.create(null),inconsistencias=[];
  const typeSign={Entrada:1,Devolucion:1,AjustePositivo:1,Salida:-1,Prestamo:-1,Baja:-1,TransferenciaSalida:-1,Consumo:-1,AjusteNegativo:-1};
  const mappedAll=all.map(function(r,index){

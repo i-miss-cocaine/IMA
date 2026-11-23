@@ -261,7 +261,7 @@ function renderKardexView(container) {
         <div class="mb-3 grid grid-cols-1 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2 lg:grid-cols-3">
           <label class="text-[11px] font-bold text-gray-700">Almacén<select id="kdx-filter-sede" class="mt-1 w-full rounded-lg border p-2"><option value="">Todos</option></select></label>
           <label class="text-[11px] font-bold text-gray-700">Ubicación<select id="kdx-filter-ubicacion" class="mt-1 w-full rounded-lg border p-2"><option value="">Todas</option></select></label>
-          <label class="text-[11px] font-bold text-gray-700">Artículo<input id="kdx-filter-item" type="search" class="mt-1 w-full rounded-lg border p-2" placeholder="Código o artículo"></label>
+          <label class="text-[11px] font-bold text-gray-700">Artículo<input id="kdx-filter-item" type="search" class="mt-1 w-full rounded-lg border p-2" placeholder="Código exacto"></label>
           <label class="text-[11px] font-bold text-gray-700">Categoría<input id="kdx-filter-category" type="search" class="mt-1 w-full rounded-lg border p-2" placeholder="Categoría"></label>
           <label class="text-[11px] font-bold text-gray-700">Desde<input id="kdx-filter-from" type="date" data-ui-help-key="fechas.calendario" class="mt-1 w-full rounded-lg border p-2"></label>
           <label class="text-[11px] font-bold text-gray-700">Hasta<input id="kdx-filter-to" type="date" data-ui-help-key="fechas.calendario" class="mt-1 w-full rounded-lg border p-2"></label>
@@ -296,6 +296,8 @@ window.loadKardexLocationSelects = function () {
       const option=document.createElement("option");option.value=location.ubicacionId;option.textContent=label;option.dataset.sedeCod=String(location.sedeCod);option.dataset.name=String(location.nombreUbicacion);movementLocation.appendChild(option);
       const filterOption=document.createElement("option");filterOption.value=location.ubicacionId;filterOption.textContent=label;filterOption.dataset.sedeCod=String(location.sedeCod);filterLocation&&filterLocation.appendChild(filterOption);
     });
+    movementWarehouse.addEventListener("change",function(){const selected=movementWarehouse.value;if(movementLocation.selectedOptions[0]&&movementLocation.selectedOptions[0].dataset.sedeCod!==selected)movementLocation.value="";Array.from(movementLocation.options).forEach(function(option){option.hidden=!!(option.value&&selected&&option.dataset.sedeCod!==selected);});});
+    movementLocation.addEventListener("change",function(){const option=movementLocation.selectedOptions[0];if(option&&option.dataset.sedeCod)movementWarehouse.value=option.dataset.sedeCod;});
   }).catch(function(error){console.error("No se pudieron cargar las ubicaciones del Kardex:",error);});
 };
 window.clearKardexFilters = function () {

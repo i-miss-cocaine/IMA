@@ -47,6 +47,10 @@ function main(){
  const reserved=ctx.inventoryReserveRequisition_(h.ss,"REQ-1",[{catalogItemId:"ITM-1",itemCodigo:"ITM-1",cantidad:2,factorConversionBase:1}],"Bodega Norte","USR-1","SPS-01",loc1.ubicacionId);
  assert.equal(reserved.idempotent,false);
  let kardex=ctx.getInventoryKardex({sedeCod:"SPS-01"});
+ const filtered=ctx.getInventoryKardex({sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,itemCodigo:"ITM-1",numeroLote:"L-1"});
+ assert.ok(filtered.kardex.length>0);assert.ok(filtered.kardex.every(x=>x.sedeCod==="SPS-01"&&x.ubicacionId===loc1.ubicacionId&&x.numeroLote==="L-1"));
+ assert.ok(ctx.getInventoryKardex({fechaFin:new Date().toISOString().slice(0,10)}).kardex.length>0);
+ assert.throws(()=>ctx.getInventoryKardex({fechaFin:"invalid-date"}),/INVENTORY_DATE_FILTER_INVALID/);
  const sps1=kardex.resumenPorUbicacion.find(x=>x.sedeCod==="SPS-01");
  assert.equal(sps1.stockFisico,11);assert.equal(sps1.stockReservado,2);assert.equal(sps1.stockDisponible,9);
  assert.equal(kardex.resumenExistencias[0].totalInstitucional,31);
