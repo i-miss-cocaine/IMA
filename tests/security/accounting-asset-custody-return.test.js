@@ -83,6 +83,6 @@ failHistoryWrite=true;assert.throws(()=>ctx.assignAssetCustody(payload({custodio
 assert.equal(rows.AsignacionesActivos.length,beforeAssignment);assert.equal(rows.HistorialCustodiaActivos.length,beforeHistory);assert.equal(rows.ActivosPatrimoniales[1][assetHeaders.indexOf("CustodioUserId")],"","assignment failure must restore asset custody");
 const lockRows=rows.AsignacionesActivos.length;lockBusy=true;assert.throws(()=>ctx.assignAssetCustody(payload()),/LOCK_BUSY/);lockBusy=false;assert.equal(rows.AsignacionesActivos.length,lockRows);
 const identityRows=rows.AsignacionesActivos.length;onWaitLock=()=>{actor={authorized:true,userId:"EVIL",role:"Director",institutionId:"INST-1"};};assert.throws(()=>ctx.assignAssetCustody(payload()),/VERIFIED_IDENTITY_CHANGED/);actor={authorized:true,userId:"DIR-1",role:"Director",institutionId:"INST-1"};assert.equal(rows.AsignacionesActivos.length,identityRows);
-denyActions.add("returnAssetCustody");assert.throws(()=>ctx.returnAssetCustody(payload()),/ROLE_PERMISSION_DENIED/);denyActions.clear();
+denyActions.add("returnAssetCustody");const deniedReturn=ctx.returnAssetCustody(payload());assert.equal(deniedReturn.code,"ROLE_PERMISSION_DENIED");denyActions.clear();
 actor={authorized:true,userId:"DIR-1",role:"Director",institutionId:"INST-1"};
 process.stdout.write("Accounting asset custody: authorized assignment, append-only history, private return acta, idempotent duplicate rejection, maintenance escalation, department scope, lock/identity revalidation and atomic rollback PASS.\n");

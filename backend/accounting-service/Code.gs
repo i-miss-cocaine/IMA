@@ -6721,7 +6721,7 @@ function manageAssetItem(payload) {
 
 
 function assetCustodyNormalizeCondition_(value) {
-  var raw=String(value||"").trim().toLowerCase(),map={"nuevo":"Nuevo","bueno":"Bueno","regular":"Regular","dañado":"Dañado","danado":"Dañado","incompleto":"Incompleto","requierereparacion":"RequiereReparacion","requiere reparación":"RequiereReparacion"};
+  var raw=String(value||"").trim().toLowerCase(),map={"nuevo":"Nuevo","bueno":"Bueno","regular":"Regular","dañado":"Dañado","danado":"Dañado","incompleto":"Incompleto","requierereparacion":"RequiereReparacion","requiere reparación":"RequiereReparacion","requiere reparacion":"RequiereReparacion"};
   var normalized=map[raw];if(!normalized)throw new Error("ASSET_CUSTODY_CONDITION_INVALID");return normalized;
 }
 function assetCustodyParseList_(value,code) {
@@ -6794,7 +6794,7 @@ function assetCustodyCreateActPdf_(data) {
   html+="<h2>Entrega y recepción</h2><table><tr><th>Fecha de entrega</th><td>"+e(data.fechaEntrega)+"</td><th>Fecha de recepción</th><td>"+e(data.fechaRecepcion)+"</td></tr><tr><th>Ubicación de recepción</th><td>"+e(data.ubicacion)+"</td><th>Condición</th><td>"+e(data.condicionEntrega)+" → "+e(data.condicionRecepcion)+"</td></tr></table>";
   html+="<h2>Componentes y accesorios</h2><table><tr><th>Entregados</th><td>"+e((data.accesoriosEntregados||[]).join(", ")||"Ninguno")+"</td></tr><tr><th>Recibidos</th><td>"+e((data.accesoriosRecibidos||[]).join(", ")||"Ninguno")+"</td></tr><tr><th>Faltantes</th><td>"+e((data.faltantes||[]).join(", ")||"Ninguno")+"</td></tr></table>";
   html+="<h2>Observaciones e incidencias</h2><p>"+e(data.observaciones)+"</p><p><b>Orden de mantenimiento:</b> "+e(data.ordenMaintId||"No requerida")+"</p><p><b>Evidencias adjuntas:</b> "+e((data.evidencias||[]).map(function(x){return x.fileName+" ["+x.fileId+"]";}).join("; "))+"</p>";
-  html+="<div class='sign'><div>Entrega: "+e(data.firmaEntrega)+"<br>Custodio "+e(data.custodio)+"</div><div>Recibe: "+e(data.firmaRecepcion)+"<br>Responsable "+e(data.receptor)+"</div></div><p class='foot'>Documento privado generado por IMA. Identificador único: "+e(data.devolucionId)+" · Hash SHA-256: pendiente de cálculo.</p></body></html>";
+  html+="<div class='sign'><div>Entrega: "+e(data.firmaEntrega)+"<br>Custodio "+e(data.custodio)+"</div><div>Recibe: "+e(data.firmaRecepcion)+"<br>Responsable "+e(data.receptor)+"</div></div><p class='foot'>Documento privado generado por IMA. Identificador único: "+e(data.devolucionId)+"</p></body></html>";
   var fileName="Acta-Devolucion-"+String(data.devolucionId)+".pdf",blob=HtmlService.createHtmlOutput(html).getAs(MimeType.PDF);
   if(blob&&blob.setName)blob.setName(fileName);
   var bytes=blob&&blob.getBytes?blob.getBytes():null;if(!bytes||!bytes.length||bytes.length>10*1024*1024)throw new Error("ASSET_CUSTODY_ACT_PDF_INVALID");
