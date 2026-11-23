@@ -13940,8 +13940,9 @@ function confirmTransferReceipt(payload) {
   if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"NOT_FOUND"};
   const rowIndex=matches[0],row=trfData[rowIndex],state=String(row[8]||"").trim(),itemCodigo=String(row[2]||"").trim();
   const dispatched=Number(row[4]||0),previousReceived=Number(row[11]||0),received=input.cantidadRecibida===undefined?dispatched:Number(input.cantidadRecibida);
-  if(!itemCodigo||!Number.isFinite(dispatched)||dispatched<=0||!Number.isFinite(received)||received<0||received>dispatched+0.000001)
+  if(!itemCodigo||!Number.isFinite(dispatched)||dispatched<=0||!Number.isFinite(received)||received<0)
     throw new Error("TRANSFER_RECEIPT_QUANTITY_INVALID");
+  if(received>dispatched+0.000001)throw new Error("TRANSFER_RECEIPT_EXCEEDS_DISPATCHED_QUANTITY");
   if(state==="RecibidaTotal"){
     if(Math.abs(received-dispatched)<0.000001)return{status:"success",idempotente:true,transferBatchId:transferBatchId,estadoTransferencia:state,cantidadRecibida:dispatched};
     return{status:"error",code:"TRANSFER_ALREADY_RECEIVED"};
