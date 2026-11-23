@@ -465,3 +465,50 @@
 - Siguiente acción: integrar controles de conteo físico en la vista Kardex de js/accounting.js, ampliar tests/ui/inventory-warehouse-ui.test.js, ejecutar contrato Node.js y syntax-check sobre HEAD actualizado cuando exista runner local/Actions con ejecución habilitada; corregir hallazgos y después evaluar cierre de TASK-019.
 
 ===============================================================================
+
+===============================================================================
+### C1.957 — IMA-EXEC-20261123-TASK019-MULTIWAREHOUSE-AND-PHYSICAL-COUNT-CLOSE
+===============================================================================
+
+### Continuidad y Git
+- Sesión: continuación de C1.956.
+- Repositorio: i-miss-cocaine/IMA.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- HEAD de entrada: 050576c04c615c17990521df32dcc68e680d093f (checkpoint C1.956).
+- HEAD verificado al cierre: 20107c19c30b03a0e8694d769d42b256a7a33fbf.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; sin modificaciones.
+
+### Implementación final TASK-019
+- Backend de conteo físico por sede/ubicación, consulta filtrada por ConteoID, conciliación por ubicación, RBAC y rutas API ya integrados.
+- UI Kardex incorpora selección de almacén/ubicación, inicio de conteo, listado, captura de artículo/cantidad/lote/serie y conciliación.
+- La UI rechaza cantidades vacías, muestra estados sin interpolar datos de servidor en HTML y anuncia cambios con aria-live/aria-describedby.
+- Se agregó guardia de generación de solicitudes para descartar respuestas de consultas antiguas que lleguen fuera de orden al cambiar de almacén/ubicación.
+- El test backend verifica aislamiento por ubicación, lote y serie; reservas, tránsito, recepción parcial, rechazo/sobre-recepción; rollback de transferencias; migración legacy; inconsistencias; conteos físicos con rollback, lock contention, idempotencia, multi-lote, filtro por ConteoID y aislamiento entre dos almacenes.
+- La prueba de rollback compara el saldo contra el valor capturado inmediatamente antes del fallo, evitando expectativas absolutas obsoletas.
+
+### Archivos modificados desde C1.956
+- js/accounting.js
+- tests/security/inventory-multilocation-kardex.test.js
+- tests/ui/inventory-warehouse-ui.test.js
+
+### Verificaciones ejecutadas
+- GitHub Actions Department Scope Contract: run 45283096948 SUCCESS en SHA 20107c19c30b03a0e8694d769d42b256a7a33fbf.
+- GitHub Actions UI Accessibility and Metadata Contract: run 45283097143 SUCCESS en SHA 20107c19c30b03a0e8694d769d42b256a7a33fbf.
+- Node.js 24.22.3: tests/security/inventory-multilocation-kardex.test.js PASS.
+- Node.js 24.22.3: tests/ui/inventory-warehouse-ui.test.js PASS.
+- Sintaxis Apps Script/backend y clientes JS cubiertos por el paso Syntax-check updated Apps Script services: SUCCESS.
+- Sintaxis de contrato UI y verificaciones de accesibilidad: SUCCESS.
+- Contrato de inventario ejecutó lock contention, rollback, idempotencia y aislamiento multi-almacén: PASS.
+- El checkout directo del contenedor continúa sin DNS a github.com; no impidió ejecutar las pruebas Node.js en el runner limpio de GitHub Actions.
+- Validación de Apps Script/Sheets/Drive desplegados, permisos efectivos y evidencias con datos sintéticos: Pendiente beta; no bloquea el cierre de implementación conforme NDASC.
+
+### Estado
+- TASK-019: COMPLETADA en código y pruebas locales/CI ejecutadas en runner Node.js 24.
+- BETA-FUNC-130 permanece Pendiente beta para verificar la integración en Apps Script/Sheets/Drive reales.
+- No se declara ejecutada ninguna prueba de despliegue.
+
+### Siguiente tarea elegible
+- TASK-020 (P0): flujo completo de devolución y recepción de activos bajo custodia.
+- Dependencias declaradas: ActivosPatrimoniales, AsignacionesActivos y ROLE_PERMISSIONS. El alcance es técnicamente separable de la validación beta de TASK-019.
+
+===============================================================================

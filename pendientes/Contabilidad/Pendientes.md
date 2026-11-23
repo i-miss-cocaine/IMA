@@ -1003,7 +1003,7 @@
 ---
 
 <!-- ID: TASK-019 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [ ] [TASK-019] Corrección integral del control de existencias multialmacén
+### [x] [TASK-019] Corrección integral del control de existencias multialmacén
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-02), Sección G (Defecto 1) y Plan de Trabajo F19-01
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Integridad física de inventarios, auditoría por bodega, prevención de saldos inconsistentes y desabastecimiento)
@@ -1059,8 +1059,8 @@
   - Los registros históricos mantienen su trazabilidad y cantidades intactas.
   - Los conteos físicos y conciliaciones operan bajo el nuevo modelo por almacén.
   - Los reportes muestran correctamente los saldos individuales por ubicación y el consolidado institucional.
-- **Estado:** En ejecución
-- **Seguimiento C1.956:** backend de conteo físico y conciliación por sede/ubicación implementado; RBAC/API y validaciones de lote/serie, saldos negativos, precisión, idempotencia, rollback y filtro por ConteoID incorporados. Se añadieron pruebas de aislamiento entre dos almacenes y rollback relativo al saldo previo. El flujo de conteo aún no está expuesto en la UI de Kardex (js/accounting.js), y el contrato final no se ejecutó: CI previo falló por una expectativa absoluta obsoleta (4 esperado, 5 real); la prueba fue corregida, pero no hay run nuevo para HEAD final y el checkout local está bloqueado por DNS. TASK-019 sigue En ejecución.
+- **Estado:** Completada
+- **Seguimiento C1.957:** UI de conteo físico integrada en Kardex; backend/API/RBAC y conciliación por sede/ubicación verificadas. Node.js 24.22.3: contrato multialmacén y conteo físico PASS; contrato UI de almacenes y conteos PASS; sintaxis Apps Script/JS PASS en GitHub Actions. Department Scope run 45283096948 SUCCESS y UI Accessibility run 45283097143 SUCCESS sobre SHA 20107c19c30b03a0e8694d769d42b256a7a33fbf. BETA-FUNC-130 permanece Pendiente beta, no bloqueante.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1461-1501; clave TASK-020; asignación única: Contabilidad -->
 
