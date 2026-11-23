@@ -13085,8 +13085,8 @@ function getPhysicalInventoryCounts(payload) {
   var ss=SpreadsheetApp.openById(SPREADSHEET_ID),existing=ss.getSheetByName("InventariosConteosFisicos");
   if(!existing)return{status:"success",conteos:[],total:0};
   var schema=inventoryEnsurePhysicalCountSheet_(ss),rows=schema.sheet.getDataRange().getValues().slice(1),ix=function(name){return schema.headers.indexOf(name);};
-  var sede=String(input.sedeCod||"").trim(),location=String(input.ubicacionId||"").trim(),state=String(input.estadoConteo||"").trim();
-  var conteos=rows.filter(function(row){return(!sede||String(row[ix("SedeCod")]||"")===sede)&&(!location||String(row[ix("UbicacionID")]||"")===location)&&(!state||String(row[ix("EstadoConteo")]||"")===state);}).map(function(row){
+  var sede=String(input.sedeCod||"").trim(),location=String(input.ubicacionId||"").trim(),state=String(input.estadoConteo||"").trim(),countId=String(input.conteoId||"").trim();
+  var conteos=rows.filter(function(row){return(!countId||String(row[ix("ConteoID")]||"")===countId)&&(!sede||String(row[ix("SedeCod")]||"")===sede)&&(!location||String(row[ix("UbicacionID")]||"")===location)&&(!state||String(row[ix("EstadoConteo")]||"")===state);}).map(function(row){
     var parse=function(value){try{return JSON.parse(String(value||"[]"));}catch(_){return [];}};
     return{conteoId:String(row[ix("ConteoID")]||""),fechaInicio:row[ix("FechaInicio")]||"",almacenUbicacionId:String(row[ix("AlmacenUbicacionID")]||""),sedeCod:String(row[ix("SedeCod")]||""),ubicacionId:String(row[ix("UbicacionID")]||""),responsableUserId:String(row[ix("ResponsableUserId")]||""),articulosDetalle:parse(row[ix("ArticulosDetalleJSON")]),diferencias:parse(row[ix("DiferenciasJSON")]),estadoConteo:String(row[ix("EstadoConteo")]||""),aprobadoPor:String(row[ix("AprobadoPor")]||""),observaciones:String(row[ix("Observaciones")]||""),reconciliacionId:String(row[ix("ReconciliacionID")]||""),fechaConciliacion:row[ix("FechaConciliacion")]||"",conciliadoPor:String(row[ix("ConciliadoPor")]||"")};
   });

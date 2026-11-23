@@ -111,6 +111,7 @@ function main(){
  h.setRole("Bodeguero");assert.throws(()=>ctx.manageWarehouseLocation({sedeCod:"SPS-03",nombreUbicacion:"Bodega Sur"}),/WAREHOUSE_LOCATION_ROLE_NOT_ALLOWED/);
 h.setRole("Director");h.setPermissionDenied(true);assert.throws(()=>ctx.manageWarehouseLocation({sedeCod:"SPS-03",nombreUbicacion:"Bodega Sur"}),/ROLE_PERMISSION_DENIED/);
 
+ h.setPermissionDenied(false);h.setRole("Director");
  const countSeed=ctx.recordInventoryMovementLocked_(h.ss,{itemCodigo:"ITM-COUNT",cantidad:10,cantidadBase:true,tipoMovimiento:"Entrada",sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,numeroLote:"LOT-COUNT",actorUserId:"USR-1"});
  assert.equal(countSeed.stockNuevoUbicacion,10);
  const physicalCount=ctx.createPhysicalInventoryCount({sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId,observaciones:"Conteo mensual"});
