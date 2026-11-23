@@ -13023,6 +13023,132 @@ function getWarehouseLocations(payload) {
   return{status:"success",ubicaciones:rows.filter(function(row){return String(row[5]||"Activo")==="Activo"&&(!filter||String(row[1]||"").trim()===filter);}).map(function(row){return{ubicacionId:String(row[0]||""),sedeCod:String(row[1]||""),almacenId:String(row[1]||""),nombreUbicacion:String(row[2]||""),tipoArea:String(row[3]||""),responsableUserId:String(row[4]||""),estado:String(row[5]||"Activo"),observaciones:String(row[6]||"")};})};
 }
 
+function inventoryEnsurePhysicalCountSheet_(ss) {
+  var legacy=["ConteoID","FechaInicio","AlmacenUbicacionID","ResponsableUserId","ArticulosDetalleJSON","DiferenciasJSON","EstadoConteo","AprobadoPor","Observaciones"];
+  var headers=legacy.concat(["SedeCod","UbicacionID","ReconciliacionID","IdempotencyKey","PayloadHash","ResultadoJSON","FechaConciliacion","ConciliadoPor","Version"]);
+  var sheet=getOrCreateSheet(ss,"InventariosConteosFisicos"),rows=sheet.getDataRange().getValues(),first=rows[0]||[];
+  if(!rows.length||!first.some(function(v){return String(v||"").trim();})){sheet.getRange(1,1,1,headers.length).setValues([headers]);return{sheet:sheet,headers:headers};}
+  if(String(first[0]||"").trim()!=="ConteoID"){
+    if(typeof sheet.insertRowBefore!=="function")throw new Error("INVENTORY_COUNT_LEGACY_SCHEMA_MIGRATION_UNAVAILABLE");
+    sheet.insertRowBefore(1);sheet.getRange(1,1,1,headers.length).setValues([headers]);return{sheet:sheet,headers:headers};
+  }
+  for(var i=0;i<legacy.length;i++)if(String(first[i]||"").trim()!==legacy[i])throw new Error("INVENTORY_COUNT_SCHEMA_INVALID");
+  if(first.length>headers.length&&first.slice(headers.length).some(function(v){return String(v||"").trim();}))throw new Error("INVENTORY_COUNT_SCHEMA_CONFLICT");
+  if(first.length<headers.length||headers.some(function(h,i){return String(first[i]||"").trim()!==h;}))sheet.getRange(1,1,1,headers.length).setValues([headers]);
+  return{sheet:sheet,headers:headers};
+}
+
+function inventoryCountBuckets_(ss,itemCode,location) {
+  var sheet=ss.getSheetByName("InventariosKardex");if(!sheet)return [];
+  var rows=sheet.getDataRange().getValues().slice(1),code=catalogNormalizeCode_(itemCode),map=Object.create(null);
+  rows.forEach(function(row){
+    if(catalogNormalizeCode_(row[2])!==code)return;
+    var resolved=inventoryResolveLocation_(ss,{sedeCod:row[20],ubicacionId:row[21],ubicacionResponsable:row[10]});
+    if(resolved.sedeCod!==location.sedeCod||resolved.ubicacionId!==location.ubicacionId)return;
+    var lot=String(row[22]||""),serial=String(row[23]||""),key=lot+"\u001f"+serial;
+    map[key]={numeroLote:lot,numeroSerie:serial,stock:Number(row[8]||0)};
+  });
+  return Object.keys(map).map(function(key){return map[key];}).filter(function(bucket){return bucket.stock>0.0001;});
+}
+
+function createPhysicalInventoryCount(payload) {
+  var input=payload||{},actor=catalogActor_(input,true);
+  if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");
+  var permission=validateRolePermission(actor,"createPhysicalInventoryCount",input);
+  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+  if(!String(input.sedeCod||"").trim()||!String(input.ubicacionId||"").trim())throw new Error("INVENTORY_COUNT_LOCATION_REQUIRED");
+  var lock=LockService.getScriptLock();lock.waitLock(15000);
+  try{
+    var verified=catalogActor_(input,true);
+    if(String(verified.userId)!==String(actor.userId)||String(verified.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
+    permission=validateRolePermission(verified,"createPhysicalInventoryCount",input);
+    if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),location=inventoryResolveLocation_(ss,{sedeCod:input.sedeCod,ubicacionId:input.ubicacionId});
+    var schema=inventoryEnsurePhysicalCountSheet_(ss),now=new Date(),id="CNT-"+Utilities.getUuid();
+    schema.sheet.appendRow([id,now,location.ubicacionId,verified.userId,"[]","[]","EnConteo","","",location.sedeCod,location.ubicacionId,"","","","","","",1]);
+    if(typeof logStructuredEvent==="function")try{logStructuredEvent("ACCOUNTING","createPhysicalInventoryCount","INFO","INVENTORY_COUNT_CREATED","Conteo físico iniciado",{conteoId:id,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId},verified.userId);}catch(_){}
+    return{status:"success",conteoId:id,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId,estadoConteo:"EnConteo"};
+  }finally{lock.releaseLock();}
+}
+
+function getPhysicalInventoryCounts(payload) {
+  var input=payload||{},actor=catalogActor_(input,false);
+  if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");
+  var permission=validateRolePermission(actor,"getPhysicalInventoryCounts",input);
+  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+  var ss=SpreadsheetApp.openById(SPREADSHEET_ID),existing=ss.getSheetByName("InventariosConteosFisicos");
+  if(!existing)return{status:"success",conteos:[],total:0};
+  var schema=inventoryEnsurePhysicalCountSheet_(ss),rows=schema.sheet.getDataRange().getValues().slice(1),ix=function(name){return schema.headers.indexOf(name);};
+  var sede=String(input.sedeCod||"").trim(),location=String(input.ubicacionId||"").trim(),state=String(input.estadoConteo||"").trim();
+  var conteos=rows.filter(function(row){return(!sede||String(row[ix("SedeCod")]||"")===sede)&&(!location||String(row[ix("UbicacionID")]||"")===location)&&(!state||String(row[ix("EstadoConteo")]||"")===state);}).map(function(row){
+    var parse=function(value){try{return JSON.parse(String(value||"[]"));}catch(_){return [];}};
+    return{conteoId:String(row[ix("ConteoID")]||""),fechaInicio:row[ix("FechaInicio")]||"",almacenUbicacionId:String(row[ix("AlmacenUbicacionID")]||""),sedeCod:String(row[ix("SedeCod")]||""),ubicacionId:String(row[ix("UbicacionID")]||""),responsableUserId:String(row[ix("ResponsableUserId")]||""),articulosDetalle:parse(row[ix("ArticulosDetalleJSON")]),diferencias:parse(row[ix("DiferenciasJSON")]),estadoConteo:String(row[ix("EstadoConteo")]||""),aprobadoPor:String(row[ix("AprobadoPor")]||""),observaciones:String(row[ix("Observaciones")]||""),reconciliacionId:String(row[ix("ReconciliacionID")]||""),fechaConciliacion:row[ix("FechaConciliacion")]||"",conciliadoPor:String(row[ix("ConciliadoPor")]||"")};
+  });
+  return{status:"success",conteos:conteos,total:conteos.length};
+}
+
+function reconcilePhysicalCount(payload) {
+  var input=payload||{},actor=catalogActor_(input,true);
+  if(!actor||actor.authorized!==true)throw new Error(actor&&actor.code||"VERIFIED_IDENTITY_REQUIRED");
+  var permission=validateRolePermission(actor,"reconcilePhysicalCount",input);
+  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+  var conteoId=String(input.conteoId||"").trim(),raw=input.articulosDetalleJSON;
+  if(!conteoId||raw===undefined||raw===null)throw new Error("INVENTORY_COUNT_REQUIRED_FIELDS");
+  var items;try{items=typeof raw==="string"?JSON.parse(raw):raw;}catch(_){throw new Error("INVENTORY_COUNT_ITEMS_JSON_INVALID");}
+  if(!Array.isArray(items)||!items.length)throw new Error("INVENTORY_COUNT_ITEMS_REQUIRED");
+  var normalized=items.map(function(item){var code=String(item&&item.itemCodigo||"").trim(),count=Number(item&&item.cantidadContada),lot=String(item&&item.numeroLote||"").trim(),serial=String(item&&item.numeroSerie||"").trim();if(!code||!Number.isFinite(count)||count<0)throw new Error("INVENTORY_COUNT_LINE_INVALID");return{itemCodigo:code,cantidadContada:count,numeroLote:lot,numeroSerie:serial,itemNombre:String(item.itemNombre||code).trim()};});
+  var payloadHash=migrationHash_(migrationStableJson_(normalized)),idempotencyKey=String(input.idempotencyKey||"").trim().slice(0,160)||("COUNT:"+conteoId+":"+payloadHash);
+  var lock=LockService.getScriptLock();lock.waitLock(15000);
+  try{
+    var verified=catalogActor_(input,true);
+    if(String(verified.userId)!==String(actor.userId)||String(verified.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
+    permission=validateRolePermission(verified,"reconcilePhysicalCount",input);
+    if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=inventoryEnsurePhysicalCountSheet_(ss),sheet=schema.sheet,headers=schema.headers,ix=function(name){return headers.indexOf(name);},rows=sheet.getDataRange().getValues();
+    var matches=rows.slice(1).map(function(row,index){return{row:row,index:index+2};}).filter(function(x){return String(x.row[ix("ConteoID")]||"").trim()===conteoId;});
+    if(matches.length!==1)throw new Error(matches.length?"INVENTORY_COUNT_AMBIGUOUS":"INVENTORY_COUNT_NOT_FOUND");
+    var match=matches[0],record=match.row,state=String(record[ix("EstadoConteo")]||"").trim();
+    if(state==="ConciliadoAprobado"){
+      if(String(record[ix("PayloadHash")]||"")===payloadHash){var prior={};try{prior=JSON.parse(String(record[ix("ResultadoJSON")]||"{}"));}catch(_){}prior.idempotente=true;return prior;}
+      if(String(record[ix("IdempotencyKey")]||"")===idempotencyKey)throw new Error("INVENTORY_COUNT_IDEMPOTENCY_CONFLICT");
+      throw new Error("INVENTORY_COUNT_ALREADY_RECONCILED");
+    }
+    if(state!=="EnConteo")throw new Error("INVENTORY_COUNT_STATE_NOT_CONCILIABLE");
+    catalogEnsureKardexSchema_(ss);
+    var location;
+    if(String(record[ix("SedeCod")]||"").trim()&&String(record[ix("UbicacionID")]||"").trim())location=inventoryResolveLocation_(ss,{sedeCod:record[ix("SedeCod")],ubicacionId:record[ix("UbicacionID")]});
+    else{var legacyLocation=String(record[ix("AlmacenUbicacionID")]||"").trim();try{location=inventoryResolveLocation_(ss,{ubicacionId:legacyLocation});}catch(_){location=inventoryResolveLocation_(ss,{ubicacionResponsable:legacyLocation});}}
+    var groups=Object.create(null),resolved=[],differences=[];
+    normalized.forEach(function(line){
+      var item=catalogFindItem_(ss,line.itemCodigo,true);if(!item)throw new Error("INVENTORY_COUNT_ITEM_NOT_FOUND:"+line.itemCodigo);
+      var code=catalogNormalizeCode_(item.code),group=groups[code]||(groups[code]={current:inventoryCountBuckets_(ss,code,location),seen:Object.create(null)}),lot=line.numeroLote,serial=line.numeroSerie;
+      var candidates=group.current.filter(function(bucket){return(!lot||bucket.numeroLote===lot)&&(!serial||bucket.numeroSerie===serial);});
+      if(!lot&&!serial){if(group.current.length>1)throw new Error("INVENTORY_COUNT_LOT_BREAKDOWN_REQUIRED:"+code);if(group.current.length===1){lot=group.current[0].numeroLote;serial=group.current[0].numeroSerie;}}
+      else if(candidates.length>1)throw new Error("INVENTORY_COUNT_BUCKET_AMBIGUOUS:"+code);
+      if(group.current.length===1&&candidates.length===0)throw new Error("INVENTORY_COUNT_BUCKET_MISMATCH:"+code);
+      var bucketKey=lot+"\u001f"+serial;if(group.seen[bucketKey])throw new Error("INVENTORY_COUNT_DUPLICATE_BUCKET:"+code);group.seen[bucketKey]=true;
+      var existing=group.current.find(function(bucket){return bucket.numeroLote===lot&&bucket.numeroSerie===serial;}),theoretical=existing?existing.stock:0,difference=assetDeprMoney_(line.cantidadContada-theoretical);
+      resolved.push({item:item,code:code,line:line,lot:lot,serial:serial,theoretical:theoretical,difference:difference});
+      differences.push({itemCodigo:code,itemNombre:item.name||line.itemNombre,numeroLote:lot,numeroSerie:serial,stockTeorico:theoretical,cantidadContada:line.cantidadContada,diferencia:difference,ubicacion:location.nombreUbicacion,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId});
+    });
+    Object.keys(groups).forEach(function(code){groups[code].current.forEach(function(bucket){if(!groups[code].seen[bucket.numeroLote+"\u001f"+bucket.numeroSerie])throw new Error("INVENTORY_COUNT_BUCKETS_INCOMPLETE:"+code);});});
+    var kardex=catalogEnsureKardexSchema_(ss),movementStart=kardex.getLastRow()+1,snapshot=inventoryValuationSnapshot_(ss),original=record.slice(),now=new Date(),reconciliationId="RCN-"+Utilities.getUuid();
+    try{
+      resolved.forEach(function(entry){if(Math.abs(entry.difference)<=0.005)return;recordInventoryMovementLocked_(ss,{itemCodigo:entry.code,itemNombre:entry.item.name||entry.line.itemNombre,tipoMovimiento:entry.difference>0?"AjustePositivo":"AjusteNegativo",cantidad:Math.abs(entry.difference),cantidadBase:true,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId,ubicacionResponsable:location.nombreUbicacion,numeroLote:entry.lot,numeroSerie:entry.serial,actorUserId:verified.userId,documentOrigen:conteoId,referenciaMovimiento:"Conciliación de inventario físico "+reconciliationId,observaciones:"Ajuste por conteo físico. Diferencia: "+entry.difference+"; "+String(input.observaciones||"").trim()});});
+      var result={status:"success",conteoId:conteoId,reconciliacionId:reconciliationId,idempotente:false,estadoConteo:"ConciliadoAprobado",totalDiferencias:differences.filter(function(x){return Math.abs(x.diferencia)>0.005;}).length,diferencias:differences,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId,fechaConciliacion:now.toISOString()};
+      var updated=record.slice();while(updated.length<headers.length)updated.push("");
+      updated[ix("ArticulosDetalleJSON")]=JSON.stringify(normalized);updated[ix("DiferenciasJSON")]=JSON.stringify(differences);updated[ix("EstadoConteo")]="ConciliadoAprobado";updated[ix("AprobadoPor")]=verified.userId;updated[ix("Observaciones")]=String(input.observaciones||"").trim().slice(0,500);updated[ix("SedeCod")]=location.sedeCod;updated[ix("UbicacionID")]=location.ubicacionId;updated[ix("ReconciliacionID")]=reconciliationId;updated[ix("IdempotencyKey")]=idempotencyKey;updated[ix("PayloadHash")]=payloadHash;updated[ix("ResultadoJSON")]=JSON.stringify(result);updated[ix("FechaConciliacion")]=now;updated[ix("ConciliadoPor")]=verified.userId;updated[ix("Version")]=Number(record[ix("Version")]||0)+1;
+      sheet.getRange(match.index,1,1,headers.length).setValues([updated]);
+      try{if(typeof logStructuredEvent==="function")logStructuredEvent("ACCOUNTING","reconcilePhysicalCount","INFO","INVENTORY_COUNT_RECONCILED","Conteo físico conciliado",{conteoId:conteoId,reconciliacionId:reconciliationId,sedeCod:location.sedeCod,ubicacionId:location.ubicacionId,totalDiferencias:result.totalDiferencias},verified.userId);}catch(_){}
+      return result;
+    }catch(error){
+      inventoryDeleteAppendedRows_(kardex,movementStart);inventoryValuationRestore_(ss,snapshot);
+      try{var restore=original.slice();while(restore.length<headers.length)restore.push("");sheet.getRange(match.index,1,1,headers.length).setValues([restore]);}catch(_){}
+      throw new Error("INVENTORY_COUNT_RECONCILIATION_ATOMIC_FAILURE:"+String(error&&error.message||error));
+    }
+  }finally{lock.releaseLock();}
+}
+
 function catalogEnsureKardexSchema_(ss){
  const h=["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones","CatalogoItemID","CantidadBase","UnidadMedidaOriginal","FactorConversion","CostoUnitarioValoracion","CostoTotalValoracion","MetodoValoracion","EstadoCosto","SedeCod","UbicacionID","NumeroLote","NumeroSerie","UsuarioResponsable","DocumentoOrigen","ReferenciaMovimiento"];
  const sh=getOrCreateSheet(ss,"InventariosKardex"),v=sh.getDataRange().getValues();
