@@ -13284,9 +13284,15 @@ function getInventoryKardex(payload) {
  const warehouseFilter=String(p.almacenId||p.sedeCod||"").trim(),locationFilter=String(p.ubicacionId||"").trim(),labelFilter=catalogNormalizeText_(p.ubicacionResponsable||"");
  const itemFilter=p.itemCodigo?catalogNormalizeCode_(p.itemCodigo):"",categoryFilter=catalogNormalizeText_(p.categoriaTipo||"");
  const lotFilter=String(p.numeroLote||"").trim(),serialFilter=String(p.numeroSerie||"").trim();
- const dateFrom=p.fechaInicio?new Date(p.fechaInicio):null,dateTo=p.fechaFin?new Date(p.fechaFin):null;
- if((p.fechaInicio&&isNaN(dateFrom.getTime()))||(p.fechaFin&&isNaN(dateTo.getTime())))throw new Error("INVENTORY_DATE_FILTER_INVALID");
- if(dateTo&&/^\d{4}-\d{2}-\d{2}$/.test(String(p.fechaFin)))dateTo.setHours(23,59,59,999);
+ const parseInventoryDateFilter_=function(value,endOfDay){
+  if(!value)return null;
+  var raw=String(value).trim(),parts=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/),date;
+  if(parts)date=new Date(Number(parts[1]),Number(parts[2])-1,Number(parts[3]),endOfDay?23:0,endOfDay?59:0,endOfDay?59:0,endOfDay?999:0);
+  else date=new Date(value);
+  if(isNaN(date.getTime()))throw new Error("INVENTORY_DATE_FILTER_INVALID");
+  return date;
+ };
+ const dateFrom=parseInventoryDateFilter_(p.fechaInicio,false),dateTo=parseInventoryDateFilter_(p.fechaFin,true);
  const bucketMap=Object.create(null),locationMap=Object.create(null),consolidated=Object.create(null),running=Object.create(null),inconsistencias=[];
  const typeSign={Entrada:1,Devolucion:1,AjustePositivo:1,Salida:-1,Prestamo:-1,Baja:-1,TransferenciaSalida:-1,Consumo:-1,AjusteNegativo:-1};
  const mappedAll=all.map(function(r,index){
