@@ -1059,7 +1059,8 @@
   - Los registros históricos mantienen su trazabilidad y cantidades intactas.
   - Los conteos físicos y conciliaciones operan bajo el nuevo modelo por almacén.
   - Los reportes muestran correctamente los saldos individuales por ubicación y el consolidado institucional.
-- **Estado:** Pendiente
+- **Estado:** En ejecución
+- **Seguimiento C1.955:** núcleo multialmacén, reservas, disponibilidad, tránsito, filtros, migración legacy, detección de inconsistencias y transferencias implementados en la rama. El contrato extendido añade serie, sobre-recepción y rollback, pero aún no fue ejecutado en Node.js/CI sobre el HEAD actual. No se cierra hasta verificar ese contrato y aclarar la integración con el flujo de conteo físico F19-TASK14, que no existe en el código de C1.954 ni en el HEAD revisado.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1461-1501; clave TASK-020; asignación única: Contabilidad -->
 

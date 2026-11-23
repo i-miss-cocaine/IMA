@@ -379,3 +379,47 @@
 - Siguiente tarea elegible en el backlog de Contabilidad: TASK-019 (P0), corrección del control de existencias multialmacén. Antes de modificar inventario se debe verificar el estado real de recordInventoryMovement, getInventoryKardex, transferInventoryStock, InventariosKardex y AlmacenesUbicaciones, y recuperar cualquier contrato histórico que la tarea requiera.
 
 ===============================================================================
+
+===============================================================================
+### C1.955 — IMA-EXEC-20261123-TASK019-MULTIWAREHOUSE-REVIEW-IN-PROGRESS
+===============================================================================
+
+### Continuidad, rama y estado Git
+- Sesión: continuidad desde C1.954.
+- Repositorio: i-miss-cocaine/IMA.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- Rama base: NG_beta_0.0.0.1, verificada en 44d9891132332e692dbe2ba8602b41f50a508a59; sin modificaciones.
+- HEAD inicial verificado al comenzar esta sesión: 139a04f63293ac64605d273932bbbd6830967293.
+- HEAD de implementación/pruebas ampliadas: 278b8feb76eefd729b558ad7b8f2661a2881ffc3.
+- Los commits posteriores a C1.954 ya existentes en la rama incorporaron el núcleo multialmacén; esta sesión no repitió esa implementación.
+- Todos los commits de esta sesión se publicaron exclusivamente en NG_beta_0.0.0.1_work.
+
+### Tarea y revisión
+- TASK-019 (P0), control de existencias multialmacén: En ejecución; no se declara completada.
+- Revisión de recordInventoryMovement, recordInventoryMovementLocked_, getInventoryKardex, transferInventoryStock, confirmTransferReceipt, inventario de ubicaciones, reservas, tránsito, migración legacy y valoración histórica.
+- El modelo de saldo separa artículo, sede/almacén, ubicación, lote y serie; el Kardex calcula saldos por ubicación, consolidado institucional, reservas, disponibilidad, tránsito y anomalías de saldo.
+- Las escrituras principales y transferencias usan ScriptLock; transferencias contemplan verificación de disponibilidad, recepción acumulada, rechazo, idempotencia y rollback de los movimientos y valoración.
+- Se amplió tests/security/inventory-multilocation-kardex.test.js para cubrir aislamiento por número de serie, rechazo de sobre-recepción sin escritura y rollback de transferencia de dos tramos ante fallo inyectado de valoración del destino.
+
+### Archivos modificados en esta sesión
+- tests/security/inventory-multilocation-kardex.test.js
+
+### Commits de esta sesión
+- e148334cf13308bec61aba8925eade230f8f18e9 — ampliación de pruebas de serie, sobre-recepción y rollback.
+- 215662bfa443fecc7b6cd75c334c225a9a9f56ff — corrección de expectativa del saldo por ubicación en el contrato.
+- 278b8feb76eefd729b558ad7b8f2661a2881ffc3 — commit de actualización del contrato para solicitar CI.
+
+### Verificaciones y límites
+- En el HEAD anterior 139a04f63293ac64605d273932bbbd6830967293: Department Scope run 45280148336 SUCCESS; Accounting Transport Local run 45280148274 SUCCESS; Import Preflight run 45280148421 SUCCESS; Identity Mapping run 45280148299 SUCCESS; Department Reference Consumers run 45280148322 SUCCESS; Hierarchical Configuration run 45280148224 SUCCESS; Library Circulation Concurrency run 45280148214 SUCCESS.
+- Esos workflows pertenecen al HEAD anterior; no se atribuyen a los commits posteriores de esta sesión.
+- Contrato Node.js ampliado en el HEAD 278b8feb76eefd729b558ad7b8f2661a2881ffc3: NOT RUN. El conector GitHub no inició una nueva ejecución de Actions para los commits creados por API y el entorno local no pudo clonar el repositorio por fallo DNS. No se declara PASS.
+- CLI Node.js local: NOT RUN. Sintaxis local del código fuente: NOT RUN en esta sesión. La sintaxis Apps Script y los contratos del HEAD anterior sí constan en CI previo.
+- Apps Script/Sheets/Drive desplegados y permisos efectivos: PENDIENTE DE BETA.
+- El inventario histórico consultado no contiene funciones de conteo físico/reconciliación en C1.954 ni en el HEAD actual. La conciliación física tiene seguimiento independiente F19-TASK14; no se inventa evidencia de que ese flujo esté integrado ni se declara cerrado ese criterio.
+
+### Hallazgos y siguiente acción
+- TASK-019 permanece En ejecución hasta ejecutar el contrato ampliado en Node.js/CI y resolver/documentar la integración de conteos físicos con F19-TASK14.
+- BETA-FUNC-130 se registra Pendiente beta para validar en Apps Script/Sheets las ubicaciones, saldos, reservas, transferencias, recepciones parciales, rollback y migración histórica.
+- Siguiente acción concreta: ejecutar tests/security/inventory-multilocation-kardex.test.js y node --check sobre el HEAD 278b8feb76eefd729b558ad7b8f2661a2881ffc3; corregir cualquier fallo y después cerrar TASK-019 con evidencia verificable.
+
+===============================================================================

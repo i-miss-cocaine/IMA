@@ -2527,3 +2527,17 @@ BETA-F18-007 — F18-TASK07: ciclo de compromisos presupuestarios de órdenes de
 - Evidencia requerida: SHA del despliegue, IDs sintéticos, snapshots de presupuestos/ledger/órdenes antes y después, orden temporal de solicitudes concurrentes, roles/permissions efectivos, respuestas allow/deny y logs saneados sin PII ni tokens.
 - Tarea vinculada: F18-TASK07 / C1.953.
 ===============================================================================
+
+===============================================================================
+## BETA-FUNC-130 — ACCOUNTING: inventario multialmacén, transferencias y conciliación física
+- **Módulo/roles:** ACCOUNTING; Administrador, Director, Contador, Almacenista y Bodeguero conforme a permisos efectivos.
+- **Tarea/requisito:** TASK-019 / F19-01 — existencias por artículo, almacén, ubicación, lote y serie; reservas, disponibilidad, tránsito y Kardex.
+- **Objetivo:** verificar en Apps Script/Sheets desplegados que las existencias se mantienen aisladas por ubicación y que las transferencias conservan trazabilidad e integridad.
+- **Prioridad:** P0.
+- **Precondiciones:** despliegue de ACCOUNTING con esquema vigente; hojas InventariosKardex, AlmacenesUbicaciones, InventoryReservations y TransferenciasInventario; dos almacenes sintéticos con ubicaciones; artículo de prueba con lotes/series; usuarios sintéticos con grants explícitos; no usar inventario real.
+- **Pasos:** crear ubicaciones con el mismo nombre en dos almacenes; registrar entradas separadas por lote/serie; consultar Kardex filtrando por almacén, ubicación, categoría, fechas, lote y serie; reservar unidades por solicitud aprobada; verificar físico, reservado y disponible; intentar salida/transferencia superior al disponible; transferir entre almacenes; confirmar recepción parcial acumulada, recepción total, rechazo y reintento; provocar fallo controlado en la segunda escritura y comprobar rollback de Kardex, valoración y ledger; comprobar la migración de filas históricas sin ubicación a Bodega General sin alterar cantidades; comparar saldos calculados y anomalías.
+- **Resultado esperado:** ninguna ubicación altera el saldo de otra; consolidado institucional igual a la suma de ubicaciones; reservas reducen disponible; tránsito no aparece como existencia disponible en destino; recepción parcial/total y rechazo son acumulativos/idempotentes; fallos no dejan movimientos huérfanos; registros legacy conservan trazabilidad; anomalías se reportan sin corregir silenciosamente el historial.
+- **Estado:** PENDIENTE DE BETA.
+- **Evidencia requerida:** SHA del despliegue, IDs sintéticos, snapshots antes/después de Kardex/valoración/reservas/transferencias, pruebas por rol allow/deny, hashes y logs saneados. La conciliación de conteo físico se verifica cuando F19-TASK14 esté implementada.
+- **Tarea vinculada:** TASK-019 / F19-TASK14.
+===============================================================================
