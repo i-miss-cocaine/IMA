@@ -12970,6 +12970,7 @@ function inventoryEnsureWarehouseLocations_(ss) {
 function inventoryResolveLocation_(ss,payload) {
   var p=payload||{},locationId=String(p.ubicacionId||"").trim(),sedeCod=String(p.almacenId||p.sedeCod||p.sede||"").trim();
   var label=String(p.ubicacionResponsable||p.nombreUbicacion||p.ubicacion||"").trim(),sheet=ss.getSheetByName("AlmacenesUbicaciones");
+  if(sedeCod==="LEGACY"&&locationId.indexOf("UBI-LEGACY-")===0)return{ubicacionId:locationId,sedeCod:"LEGACY",nombreUbicacion:label||locationId.slice("UBI-LEGACY-".length).replace(/-/g," "),responsableUserId:"",legacy:true};
   if(sheet){
     var rows=sheet.getDataRange().getValues(),headers=(rows[0]||[]).map(function(v){return String(v||"").trim();});
     if(headers.length&&headers.some(Boolean)){
