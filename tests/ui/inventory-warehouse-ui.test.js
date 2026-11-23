@@ -7,7 +7,7 @@ assert.ok(!source.includes('|| "Diferencia de conteo en destino"'),"UI must not 
 assert.ok(source.includes("data-transfer-receipt"),"transfer receipt buttons must use data attributes rather than inline event code");
 const transferFormStart=source.indexOf('id="form-transferencia"'),transferFormEnd=source.indexOf("</form>",transferFormStart),transferForm=source.slice(transferFormStart,transferFormEnd);
 assert.ok(transferForm.includes('id="trf-estado-inicial"'),"transfer UI must expose draft, approval and direct dispatch states inside the transfer form");
-assert.ok(transferForm.includes('id="trf-idempotency-key"')&&transferForm.includes("idempotencyKey:"),"transfer submissions must reuse a request idempotency key on retries");
+assert.ok(transferForm.includes('id="trf-idempotency-key"')&&source.includes("idempotencyKey: document.getElementById('trf-idempotency-key').value"),"transfer submissions must reuse the form idempotency key on retries");
 assert.ok(source.includes("data-transfer-approve")&&source.includes("data-transfer-cancel"),"draft and pending transfers must expose approve/cancel actions");
 assert.ok(source.includes("approveInventoryTransfer")&&source.includes("cancelInventoryTransfer"),"transfer state actions must call the corresponding backend transitions");
 
