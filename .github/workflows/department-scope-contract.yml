@@ -319,6 +319,9 @@ jobs:
 
       - name: Run inventory multi-warehouse Kardex and transfer contract
         run: node tests/security/inventory-multilocation-kardex.test.js
+
+      - name: Run inventory warehouse UI contract
+        run: node tests/ui/inventory-warehouse-ui.test.js
       - name: Run budget reservation and commitment ledger contract
         run: node tests/security/accounting-budget-control.test.js
       - name: Run accounting master catalog and unit conversion contract
