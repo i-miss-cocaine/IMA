@@ -6677,9 +6677,9 @@ function getAssetItems(payload) {
   if(!scope||scope.valid!==true||scope.authorized===false)return{status:"error",code:scope&&scope.code||"RESOURCE_SCOPE_DENIED",activos:[]};
   var sheet=ss.getSheetByName("ActivosPatrimoniales");
   if(!sheet)return{status:"success",activos:[]};
-  var raw=sheet.getDataRange().getValues();
+  var schema=ensureAssetAcquisitionSchema_(ss),raw=sheet.getDataRange().getValues();
   if(!raw||!raw.length)return{status:"success",activos:[]};
-  var schema=ensureAssetAcquisitionSchema_(ss),headers=schema.assetHeaders,idIndex=headers.indexOf("ActivoID"),departmentIndex=headers.indexOf("DepartamentoID"),custodianIndex=headers.indexOf("CustodioUserId");
+  var headers=schema.assetHeaders,idIndex=headers.indexOf("ActivoID"),departmentIndex=headers.indexOf("DepartamentoID"),custodianIndex=headers.indexOf("CustodioUserId");
   if(idIndex<0)return{status:"error",code:"ASSET_SCHEMA_INVALID",activos:[]};
   var counts=Object.create(null),activeByAsset=Object.create(null),assignmentRows=schema.assignments.getDataRange().getValues(),ah=assignmentRows[0].map(function(v){return String(v||"").trim();});
   assignmentRows.slice(1).forEach(function(row){var assetId=String(row[ah.indexOf("ActivoID")]||"").trim(),state=String(row[ah.indexOf("EstadoAsignacion")]||"").trim(),returned=String(row[ah.indexOf("FechaDevolucion")]||"").trim();if(assetId&&(state==="Activa"||(!state&&!returned)))activeByAsset[assetId]=row[ah.indexOf("AsignacionID")];});
@@ -6874,7 +6874,7 @@ function getAssetAssignments(payload) {
     if(scope.institutionWide===true)return true;
     var dept=String(asset[assetHeaders.indexOf("DepartamentoID")]||"").trim();return !!dept&&Array.isArray(scope.departmentIds)&&scope.departmentIds.map(String).indexOf(dept)>=0;
   }).map(function(row){
-    var item={};ah.forEach(function(h,i){item[h.charAt(0).toLowerCase()+h.slice(1)]=row[i];});
+    var item={},aliases={AsignacionID:"asignacionId",ActivoID:"activoId",CustodioUserId:"custodioUserId",FechaEntrega:"fechaEntrega",FechaDevolucion:"fechaDevolucion",EstadoActa:"estadoActa",EstadoAsignacion:"estadoAsignacion",ReturnID:"devolucionId",EntregadoPorUserId:"entregadoPorUserId",UbicacionEntrega:"ubicacionEntrega",EstadoFisicoEntrega:"estadoFisicoEntrega",AccesoriosEntregadosJSON:"accesoriosEntregadosJSON",FirmaEntrega:"firmaEntrega"};ah.forEach(function(h,i){item[aliases[h]||h.charAt(0).toLowerCase()+h.slice(1)]=row[i];});
     var assignmentId=String(row[ah.indexOf("AsignacionID")]||"");
     var returned=returns.slice(1).filter(function(r){return String(r[rh.indexOf("AsignacionID")]||"")===assignmentId;})[0];
     item.devolucion=returned?{devolucionId:returned[rh.indexOf("DevolucionID")],fechaRecepcion:returned[rh.indexOf("FechaHoraRecepcion")],estado:returned[rh.indexOf("EstadoDevolucion")],ordenMaintId:returned[rh.indexOf("OrdenMaintID")]}:null;
