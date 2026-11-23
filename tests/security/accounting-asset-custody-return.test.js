@@ -13,10 +13,10 @@ const rows={
  ExpedientesLaborales:[["ExpedienteID","UserId","Departamento","Nombre"],["EXP-1","EMP-1","DEP-A","Empleado Uno"]],
  MantenimientoOrdenes:[]
 };
-let uuid=0,lockBusy=false,onWaitLock=null,actor={authorized:true,userId:"DIR-1",role:"Director",institutionId:"INST-1"},denyActions=new Set(),failHistoryWrite=false,files=Object.create(null),folderExists=false;
+let lastPdfHtml="",uuid=0,lockBusy=false,onWaitLock=null,actor={authorized:true,userId:"DIR-1",role:"Director",institutionId:"INST-1"},denyActions=new Set(),failHistoryWrite=false,files=Object.create(null),folderExists=false;
 function makeBlob(bytes,mime,name){return{getBytes:()=>Array.from(bytes),getContentType:()=>mime,setName(v){this.name=v;return this;},getName:()=>name||"acta.pdf"};}
-function makeFile(id,name,mime,bytes){let trashed=false,sharing="PRIVATE";const blob=makeBlob(bytes,mime,name);return{id,getId:()=>id,getName:()=>name,getMimeType:()=>mime,getSize:()=>bytes.length,getBlob:()=>blob,isTrashed:()=>trashed,setTrashed:()=>{trashed=true;},setSharing:(_a,_p)=>{sharing="PRIVATE";},getSharingAccess:()=>sharing};}
-files["EVIDENCE123456789"]=makeFile("EVIDENCE123456789","foto-recepcion.jpg","image/jpeg",Buffer.from("JPEG-TEST"));
+function makeFile(id,name,mime,bytes,initialSharing="PRIVATE"){let trashed=false,sharing=initialSharing,sharingChanges=0;const blob=makeBlob(bytes,mime,name);return{id,getId:()=>id,getName:()=>name,getMimeType:()=>mime,getSize:()=>bytes.length,getBlob:()=>blob,isTrashed:()=>trashed,setTrashed:()=>{trashed=true;},setSharing:(_a,_p)=>{sharingChanges++;sharing="PRIVATE";},getSharingAccess:()=>sharing,getSharingChanges:()=>sharingChanges};}
+files["EVIDENCE123456789"]=makeFile("EVIDENCE123456789","foto-recepcion.jpg","image/jpeg",Buffer.from("JPEG-TEST"));\nfiles["SHARED-EVIDENCE-12345"]=makeFile("SHARED-EVIDENCE-12345","shared.jpg","image/jpeg",Buffer.from("JPEG-SHARED"),"ANYONE");
 const folder={getSharingAccess:()=>"PRIVATE",setSharing:()=>{},createFile(blob){const id="PDF-"+(++uuid);const file=makeFile(id,blob.name||"acta.pdf","application/pdf",Buffer.from(blob.getBytes()));files[id]=file;return file;}};
 const rootFolder={getFoldersByName:()=>({hasNext:()=>folderExists,next:()=>folder}),createFolder:()=>{folderExists=true;return folder;}};
 function makeSheet(name){return{
@@ -36,7 +36,7 @@ const ctx={
  LockService:{getScriptLock:()=>({waitLock:()=>{if(onWaitLock){const cb=onWaitLock;onWaitLock=null;cb();}if(lockBusy)throw Error("LOCK_BUSY");},tryLock:()=>!lockBusy,releaseLock:()=>{}})},
  Utilities:{getUuid:()=> "UUID-"+(++uuid),newBlob:(value,mime)=>({getBytes:()=>Array.from(Buffer.from(String(value))),getContentType:()=>mime}),base64Encode:bytes=>Buffer.from(bytes).toString("base64")},
  DriveApp:{Access:{PRIVATE:"PRIVATE"},Permission:{NONE:"NONE"},getRootFolder:()=>rootFolder,getFileById:id=>files[id]||null},
- HtmlService:{createHtmlOutput:html=>({getAs:()=>makeBlob(Buffer.from("%PDF-"+html.slice(0,24)),"application/pdf","acta.pdf")})},
+ HtmlService:{createHtmlOutput:html=>{lastPdfHtml=String(html);return{getAs:()=>makeBlob(Buffer.from("%PDF-"+html.slice(0,24)),"application/pdf","acta.pdf")};}},
  MimeType:{PDF:"application/pdf"},
  getVerifiedAccountingIdentity_:()=>Object.assign({},actor),
  validateRolePermission:(_actor,action)=>denyActions.has(action)?{authorized:false,code:"ROLE_PERMISSION_DENIED"}:{authorized:true},
@@ -63,7 +63,7 @@ const returned=ctx.returnAssetCustody(firstReturnPayload);
 assert.equal(returned.status,"success");assert.equal(returned.estadoActivo,"available");assert.ok(returned.actaFileId);assert.ok(returned.sha256Hash);
 assetRow=rows.ActivosPatrimoniales[1];assert.equal(assetRow[assetHeaders.indexOf("CustodioUserId")],"");assert.equal(assetRow[assetHeaders.indexOf("Estado")],"available");assert.equal(assetRow[assetHeaders.indexOf("UbicacionActual")],"Bodega General");
 const assignmentRow=rows.AsignacionesActivos[1],assignmentHeaders=rows.AsignacionesActivos[0];assert.equal(assignmentRow[assignmentHeaders.indexOf("EstadoAsignacion")],"Devuelta");assert.ok(assignmentRow[assignmentHeaders.indexOf("FechaDevolucion")]);
-assert.equal(rows.DevolucionesActivos.length,2);assert.equal(rows.HistorialCustodiaActivos.length,3);
+assert.equal(rows.DevolucionesActivos.length,2);assert.equal(rows.HistorialCustodiaActivos.length,3);\nassert.ok(lastPdfHtml.includes("Responsable DIR-1"),"formal act must identify the authenticated receiver");\nassert.throws(()=>ctx.assetCustodyValidateEvidence_(["SHARED-EVIDENCE-12345"]),/ASSET_CUSTODY_EVIDENCE_NOT_PRIVATE/,"shared evidence must be rejected without changing its permissions");\nassert.equal(files["SHARED-EVIDENCE-12345"].getSharingAccess(),"ANYONE");assert.equal(files["SHARED-EVIDENCE-12345"].getSharingChanges(),0,"evidence validation must not mutate a caller-owned Drive file");
 const duplicate=ctx.returnAssetCustody(firstReturnPayload);assert.equal(duplicate.idempotente,true);assert.equal(rows.DevolucionesActivos.length,2,"identical return retry must not append a second return");
 assert.throws(()=>ctx.returnAssetCustody(payload({asignacionId:assigned.asignacionId,ubicacionRecepcion:"Otra bodega"})),/ASSET_CUSTODY_ACTIVE_ASSIGNMENT_REQUIRED/,"a changed duplicate return must be rejected");
 const pdf=ctx.getAssetCustodyActPDF({devolucionId:returned.devolucionId});assert.equal(pdf.status,"success");assert.equal(pdf.mimeType,"application/pdf");assert.equal(pdf.encoding,"base64");assert.ok(pdf.fileData.length>0);assert.equal(files[returned.actaFileId].getSharingAccess(),"PRIVATE");
@@ -72,8 +72,13 @@ assert.throws(()=>ctx.returnAssetCustody(payload({asignacionId:"UNKNOWN",recepto
 assert.throws(()=>ctx.returnAssetCustody(payload({asignacionId:"UNKNOWN",evidenciasJSON:[]})),/ASSET_CUSTODY_EVIDENCE_REQUIRED/);
 const secondAssign=ctx.assignAssetCustody(payload({ubicacionEntrega:"Bodega B",accesoriosEntregados:["Cable"]}));
 assert.equal(secondAssign.status,"success");
-const damaged=ctx.returnAssetCustody(payload({asignacionId:secondAssign.asignacionId,estadoFisico:"Dañado",condicionRecepcion:"Dañado",accesoriosRecibidos:[]}));
-assert.equal(damaged.estadoActivo,"maintenance");assert.ok(damaged.ordenMantenimientoId);assert.equal(rows.MantenimientoOrdenes.length,2);
+const damagedPayload=payload({asignacionId:secondAssign.asignacionId,estadoFisico:"Dañado",condicionRecepcion:"Dañado",accesoriosRecibidos:[]});
+const returnsBeforeFailedWrite=rows.DevolucionesActivos.length,historyBeforeFailedWrite=rows.HistorialCustodiaActivos.length,assignmentsBeforeFailedWrite=rows.AsignacionesActivos.length,maintenanceBeforeFailedWrite=rows.MantenimientoOrdenes.length;
+failHistoryWrite=true;assert.throws(()=>ctx.returnAssetCustody(damagedPayload),/ASSET_CUSTODY_RETURN_ATOMIC_FAILURE/);failHistoryWrite=false;
+assert.equal(rows.DevolucionesActivos.length,returnsBeforeFailedWrite,"failed return must not persist a return ledger row");assert.equal(rows.HistorialCustodiaActivos.length,historyBeforeFailedWrite,"failed return must not persist a custody event");assert.equal(rows.AsignacionesActivos.length,assignmentsBeforeFailedWrite,"failed return must preserve active assignment");assert.equal(rows.MantenimientoOrdenes.length,maintenanceBeforeFailedWrite+1,"only the maintenance header may be initialized after failed write");
+assetRow=rows.ActivosPatrimoniales[1];assert.equal(assetRow[assetHeaders.indexOf("Estado")],"assigned","failed return must restore asset status");
+const damaged=ctx.returnAssetCustody(damagedPayload);
+assert.equal(damaged.estadoActivo,"maintenance");assert.ok(damaged.ordenMantenimientoId);assert.equal(rows.MantenimientoOrdenes.length,maintenanceBeforeFailedWrite+2);
 assetRow=rows.ActivosPatrimoniales[1];assert.equal(assetRow[assetHeaders.indexOf("Estado")],"maintenance");assert.equal(rows.DevolucionesActivos.length,3);assert.equal(rows.HistorialCustodiaActivos.length,5);
 assert.throws(()=>ctx.assignAssetCustody(payload()),/ASSET_NOT_AVAILABLE_FOR_ASSIGNMENT/,"assets under maintenance cannot be reassigned");
 const maintenancePdf=ctx.getAssetCustodyActPDF({devolucionId:damaged.devolucionId});assert.equal(maintenancePdf.status,"success");
@@ -82,7 +87,7 @@ assetRow[assetHeaders.indexOf("Estado")]="available";assetRow[assetHeaders.index
 failHistoryWrite=true;assert.throws(()=>ctx.assignAssetCustody(payload({custodioUserId:"EMP-1"})),/ASSET_CUSTODY_ASSIGNMENT_ATOMIC_FAILURE/);failHistoryWrite=false;
 assert.equal(rows.AsignacionesActivos.length,beforeAssignment);assert.equal(rows.HistorialCustodiaActivos.length,beforeHistory);assert.equal(rows.ActivosPatrimoniales[1][assetHeaders.indexOf("CustodioUserId")],"","assignment failure must restore asset custody");
 const lockRows=rows.AsignacionesActivos.length;lockBusy=true;assert.throws(()=>ctx.assignAssetCustody(payload()),/LOCK_BUSY/);lockBusy=false;assert.equal(rows.AsignacionesActivos.length,lockRows);
-const identityRows=rows.AsignacionesActivos.length;onWaitLock=()=>{actor={authorized:true,userId:"EVIL",role:"Director",institutionId:"INST-1"};};assert.throws(()=>ctx.assignAssetCustody(payload()),/VERIFIED_IDENTITY_CHANGED/);actor={authorized:true,userId:"DIR-1",role:"Director",institutionId:"INST-1"};assert.equal(rows.AsignacionesActivos.length,identityRows);
+const identityRows=rows.AsignacionesActivos.length;onWaitLock=()=>{actor={authorized:true,userId:"EVIL",role:"Director",institutionId:"INST-1"};};assert.throws(()=>ctx.assignAssetCustody(payload()),/VERIFIED_IDENTITY_CHANGED/);actor={authorized:true,userId:"DIR-1",role:"Director",institutionId:"INST-1"};assert.equal(rows.AsignacionesActivos.length,identityRows);\nconst returnStateBeforeLock=rows.DevolucionesActivos.length;lockBusy=true;assert.throws(()=>ctx.returnAssetCustody(payload({asignacionId:secondAssign.asignacionId})),/LOCK_BUSY/);lockBusy=false;assert.equal(rows.DevolucionesActivos.length,returnStateBeforeLock,"return lock contention must not write");\nonWaitLock=()=>{actor={authorized:true,userId:"EVIL",role:"Director",institutionId:"INST-1"};};assert.throws(()=>ctx.returnAssetCustody(payload({asignacionId:secondAssign.asignacionId})),/VERIFIED_IDENTITY_CHANGED/);actor={authorized:true,userId:"DIR-1",role:"Director",institutionId:"INST-1"};assert.equal(rows.DevolucionesActivos.length,returnStateBeforeLock,"return must revalidate identity after acquiring lock");
 denyActions.add("returnAssetCustody");const deniedReturn=ctx.returnAssetCustody(payload());assert.equal(deniedReturn.code,"ROLE_PERMISSION_DENIED");denyActions.clear();
 actor={authorized:true,userId:"DIR-1",role:"Director",institutionId:"INST-1"};
 process.stdout.write("Accounting asset custody: authorized assignment, append-only history, private return acta, idempotent duplicate rejection, maintenance escalation, department scope, lock/identity revalidation and atomic rollback PASS.\n");
