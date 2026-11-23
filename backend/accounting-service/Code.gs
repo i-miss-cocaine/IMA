@@ -13373,7 +13373,8 @@ function transferInventoryStock(payload) {
    var rowLoc;try{rowLoc=inventoryResolveLocation_(ss,{sedeCod:r[20],ubicacionId:r[21],ubicacionResponsable:r[10]});}catch(_){rowLoc={sedeCod:String(r[20]||"LEGACY"),ubicacionId:String(r[21]||inventoryLegacyLocationId_(r[10]||"Bodega General"))};}
    if(rowLoc.sedeCod===origin.sedeCod&&rowLoc.ubicacionId===origin.ubicacionId&&String(r[22]||"")===lot&&String(r[23]||"")===serial)stockDisponibleOrigen=Number(r[8]||0);
   });
-  if(stockDisponibleOrigen+0.000001<qty)return{status:"error",code:"INSUFFICIENT_SOURCE_STOCK",disponible:stockDisponibleOrigen,solicitado:qty,ubicacionOrigen:uOrigen,sedeCodOrigen:origin.sedeCod};
+  const stockReservadoOrigen=inventoryActiveReserved_(ss,canonicalCode,uOrigen,"",origin.sedeCod,origin.ubicacionId),stockDisponibleReal=assetDeprMoney_(stockDisponibleOrigen-stockReservadoOrigen);
+  if(stockDisponibleReal+0.000001<qty)return{status:"error",code:"INSUFFICIENT_AVAILABLE_STOCK",stockFisico:stockDisponibleOrigen,stockReservado:stockReservadoOrigen,disponible:stockDisponibleReal,solicitado:qty,ubicacionOrigen:uOrigen,sedeCodOrigen:origin.sedeCod};
   const now=new Date(),transferBatchId="TRF-"+now.getFullYear()+"-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,""),solicitanteId=verified.userId;
   const esperaConfirmacion=requiereConfirmacionFisica!==false,estadoTransferencia=esperaConfirmacion?"EnTransito":"RecibidaTotal";
   try{
