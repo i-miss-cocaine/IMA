@@ -13426,7 +13426,13 @@ function getInventoryTransfers(payload) {
     fechaRecepcion: r[10],
     cantidadRecibida: r[11],
     discrepancia: r[12],
-    observaciones: r[13]
+    observaciones: r[13],
+    sedeCodOrigen: String(r[14]||"LEGACY"),
+    ubicacionIdOrigen: String(r[15]||""),
+    sedeCodDestino: String(r[16]||"LEGACY"),
+    ubicacionIdDestino: String(r[17]||""),
+    numeroLote: String(r[18]||""),
+    numeroSerie: String(r[19]||"")
   }));
 
   return {
@@ -13902,115 +13908,63 @@ function manageMaintenanceOrder(payload) {
 }
 
 function confirmTransferReceipt(payload) {
-  const input=payload||{},actor=catalogActor_(input,true);
-  if(!actor||!actor.userId)throw new Error("VERIFIED_IDENTITY_REQUIRED");
-  const permission=validateRolePermission(actor,"confirmTransferReceipt",input);
-  if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
-  const {
-    transferBatchId,
-    cantidadRecibida,
-    receptorUserId,
-    justificacionDiscrepancia,
-    observaciones
-  } = payload || {};
-
-  if (!transferBatchId) throw new Error("transferBatchId es requerido.");
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(15000);
-
-  try {
-    const verifiedActor=catalogActor_(input,true);
-    if(!verifiedActor||String(verifiedActor.userId)!==String(actor.userId)||String(verifiedActor.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
-    const lockedPermission=validateRolePermission(verifiedActor,"confirmTransferReceipt",input);
-    if(!lockedPermission||lockedPermission.authorized!==true)throw new Error(lockedPermission&&lockedPermission.code||"ROLE_PERMISSION_DENIED");
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const trfSheet = getOrCreateSheet(ss, "TransferenciasInventario");
-    const trfData = trfSheet.getDataRange().getValues();
-
-    const matches=[];
-    for (let i=1;i<trfData.length;i++)if(String(trfData[i][0]||"").trim()===String(transferBatchId).trim())matches.push(i);
-    if(matches.length!==1)return {status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"NOT_FOUND",message:"Transferencia no disponible."};
-    const foundIdx=matches[0],trfRow=trfData[foundIdx],estadoActual=String(trfRow[8]||"").trim();
-    if(estadoActual!=="EnTransito")return {status:"error",code:estadoActual==="Cancelada"||estadoActual==="Rechazada"?"TRANSFER_INACTIVE":"TRANSFER_NOT_IN_TRANSIT",message:"La transferencia no está pendiente de recepción."};
-
-    const itemCodigo = String(trfRow[2]).trim();
-    const itemNombre = String(trfRow[3] || itemCodigo).trim();
-    const cantDespachada = parseFloat(trfRow[4] || 0);
-    const uOrigen = String(trfRow[5]).trim();
-    const uDestino = String(trfRow[6]).trim();
-
-    if(!itemCodigo||!Number.isFinite(cantDespachada)||cantDespachada<=0||!uOrigen||!uDestino||uOrigen.toLowerCase()===uDestino.toLowerCase())
-      return {status:"error",code:"TRANSFER_RECORD_INVALID"};
-    const cantRec = cantidadRecibida !== undefined ? parseFloat(cantidadRecibida) : cantDespachada;
-    if (!Number.isFinite(cantRec) || cantRec < 0) {
-      throw new Error("La cantidad recibida no puede ser negativa.");
-    }
-    if (cantRec > cantDespachada + 0.000001) {
-      throw new Error("TRANSFER_RECEIPT_EXCEEDS_DISPATCHED_QUANTITY");
-    }
-
-    const discrepancia = parseFloat((cantDespachada - cantRec).toFixed(2));
-    const nuevoEstado = discrepancia === 0 ? "RecibidaTotal" : (cantRec > 0 ? "RecibidaParcial" : "Rechazada");
-    const now = new Date();
-    const receptor = verifiedActor.userId;
-    const kardexSheet=getOrCreateSheet(ss,"InventariosKardex"),movementStart=kardexSheet.getLastRow()+1;
-    const valuationSnapshot=inventoryValuationSnapshot_(ss),originalTransferRow=trfRow.slice();
-    let entradaRes = null;
-    try {
-      if (cantRec > 0) {
-        entradaRes = recordInventoryMovementLocked_(ss,{
-          itemCodigo,
-          itemNombre,
-          tipoMovimiento: "Entrada",
-          cantidad: cantRec,
-          cantidadBase: true,
-          capasTransferencia: inventoryValuationSliceLayers_(inventoryValuationTransferLayers_(ss,transferBatchId),cantRec),
-          ubicacionResponsable: uDestino,
-          documentOrigen: transferBatchId,
-          referenciaMovimiento: `Recepción desde ${uOrigen} [Discrepancia: ${discrepancia}]`,
-          observaciones: `Recepción física de transferencia '${transferBatchId}'. ${observaciones || ""}`
-        });
-        if(!entradaRes||entradaRes.status!=="success")throw new Error(entradaRes&&entradaRes.code||"TRANSFER_RECEIPT_INVENTORY_WRITE_FAILED");
-      }
-      const updatedTransferRow=trfRow.slice();
-      updatedTransferRow[8]=nuevoEstado;updatedTransferRow[9]=receptor;updatedTransferRow[10]=now;
-      updatedTransferRow[11]=cantRec;updatedTransferRow[12]=discrepancia;
-      let obsFin=String(trfRow[13]||"");
-      if(discrepancia!==0)obsFin+=` | [DISCREPANCIA:${discrepancia}] [MOTIVO:${justificacionDiscrepancia||"No especificado"}]`;
-      updatedTransferRow[13]=obsFin.trim();
-      trfSheet.getRange(foundIdx+1,1,1,updatedTransferRow.length).setValues([updatedTransferRow]);
-    } catch(writeError) {
-      while(kardexSheet.getLastRow()>=movementStart)kardexSheet.deleteRow(kardexSheet.getLastRow());
-      inventoryValuationRestore_(ss,valuationSnapshot);
-      try{trfSheet.getRange(foundIdx+1,1,1,originalTransferRow.length).setValues([originalTransferRow]);}catch(_){}
-      throw new Error("INVENTORY_TRANSFER_RECEIPT_ATOMIC_FAILURE:"+String(writeError&&writeError.message||writeError));
-    }
-
-    logStructuredEvent(
-      "ACCOUNTING",
-      "confirmTransferReceipt",
-      "INFO",
-      "TRANSFER_RECEIVED",
-      `Transferencia ${transferBatchId} recibida en ${uDestino}. Despachadas: ${cantDespachada}, Recibidas: ${cantRec}, Discrepancia: ${discrepancia}`,
-      { transferBatchId, itemCodigo, cantDespachada, cantRec, discrepancia, nuevoEstado },
-      receptor
-    );
-
-    return {
-      status: "success",
-      transferBatchId: transferBatchId,
-      estadoTransferencia: nuevoEstado,
-      cantidadDespachada: cantDespachada,
-      cantidadRecibida: cantRec,
-      discrepancia: discrepancia,
-      ubicacionDestino: uDestino,
-      stockNuevoDestino: entradaRes ? entradaRes.stockNuevoUbicacion : null,
-      message: `Transferencia ${transferBatchId} recibida con estado '${nuevoEstado}'. Unidades recibidas: ${cantRec}.`
-    };
-  } finally {
-    lock.releaseLock();
+ const input=payload||{},actor=catalogActor_(input,true);
+ if(!actor||!actor.userId)throw new Error("VERIFIED_IDENTITY_REQUIRED");
+ const permission=validateRolePermission(actor,"confirmTransferReceipt",input);
+ if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
+ const transferBatchId=String(input.transferBatchId||"").trim(),justification=String(input.justificacionDiscrepancia||"").trim();
+ if(!transferBatchId)throw new Error("TRANSFER_ID_REQUIRED");
+ const lock=LockService.getScriptLock();lock.waitLock(15000);
+ try{
+  const verified=catalogActor_(input,true);
+  if(String(verified.userId)!==String(actor.userId)||String(verified.role)!==String(actor.role))throw new Error("VERIFIED_IDENTITY_CHANGED");
+  const lockedPermission=validateRolePermission(verified,"confirmTransferReceipt",input);
+  if(!lockedPermission||!lockedPermission.authorized)throw new Error(lockedPermission&&lockedPermission.code||"ROLE_PERMISSION_DENIED");
+  const ss=SpreadsheetApp.openById(SPREADSHEET_ID),trfSheet=getOrCreateSheet(ss,"TransferenciasInventario"),trfData=trfSheet.getDataRange().getValues();
+  const matches=[];for(let i=1;i<trfData.length;i++)if(String(trfData[i][0]||"").trim()===transferBatchId)matches.push(i);
+  if(matches.length!==1)return{status:"error",code:matches.length?"RESOURCE_AMBIGUOUS":"NOT_FOUND"};
+  const rowIndex=matches[0],row=trfData[rowIndex],state=String(row[8]||"").trim(),itemCodigo=String(row[2]||"").trim();
+  const dispatched=Number(row[4]||0),previousReceived=Number(row[11]||0),received=input.cantidadRecibida===undefined?dispatched:Number(input.cantidadRecibida);
+  if(!itemCodigo||!Number.isFinite(dispatched)||dispatched<=0||!Number.isFinite(received)||received<0||received>dispatched+0.000001)
+    throw new Error("TRANSFER_RECEIPT_QUANTITY_INVALID");
+  if(state==="RecibidaTotal"){
+    if(Math.abs(received-dispatched)<0.000001)return{status:"success",idempotente:true,transferBatchId:transferBatchId,estadoTransferencia:state,cantidadRecibida:dispatched};
+    return{status:"error",code:"TRANSFER_ALREADY_RECEIVED"};
   }
+  if(["EnTransito","RecibidaParcial"].indexOf(state)===-1)return{status:"error",code:"TRANSFER_NOT_PENDING_RECEIPT"};
+  if(received+0.000001<previousReceived)throw new Error("TRANSFER_RECEIPT_CUMULATIVE_QUANTITY_DECREASED");
+  if(Math.abs(received-previousReceived)<0.000001&&state==="RecibidaParcial")
+    return{status:"success",idempotente:true,transferBatchId:transferBatchId,estadoTransferencia:state,cantidadRecibida:previousReceived,discrepancia:Number(row[12]||0)};
+  const discrepancy=assetDeprMoney_(dispatched-received);
+  if(discrepancy>0.005&&justification.length<5)throw new Error("TRANSFER_DISCREPANCY_JUSTIFICATION_REQUIRED");
+  const originLabel=String(row[5]||"Bodega General"),destinationLabel=String(row[6]||"Bodega General");
+  const origin={sedeCod:String(row[14]||"LEGACY"),ubicacionId:String(row[15]||inventoryLegacyLocationId_(originLabel))};
+  const destination={sedeCod:String(row[16]||"LEGACY"),ubicacionId:String(row[17]||inventoryLegacyLocationId_(destinationLabel))};
+  const lot=String(row[18]||""),serial=String(row[19]||""),delta=assetDeprMoney_(received-previousReceived);
+  const newState=received===0?"Rechazada":(discrepancy<=0.005?"RecibidaTotal":"RecibidaParcial");
+  const kardex=getOrCreateSheet(ss,"InventariosKardex"),movementStart=kardex.getLastRow()+1,valuationSnapshot=inventoryValuationSnapshot_(ss),original=row.slice();
+  let destinationResult=null,returnResult=null;
+  try{
+    if(newState==="Rechazada"){
+      const returnQty=assetDeprMoney_(dispatched-previousReceived);
+      if(returnQty>0)returnResult=recordInventoryMovementLocked_(ss,{itemCodigo:itemCodigo,itemNombre:String(row[3]||itemCodigo),tipoMovimiento:"Entrada",cantidad:returnQty,cantidadBase:true,ubicacionResponsable:originLabel,sedeCod:origin.sedeCod,ubicacionId:origin.ubicacionId,numeroLote:lot,numeroSerie:serial,actorUserId:verified.userId,documentOrigen:transferBatchId,referenciaMovimiento:"Devolución por rechazo de transferencia",observaciones:"Transferencia rechazada. "+justification});
+    }else if(delta>0){
+      destinationResult=recordInventoryMovementLocked_(ss,{itemCodigo:itemCodigo,itemNombre:String(row[3]||itemCodigo),tipoMovimiento:"Entrada",cantidad:delta,cantidadBase:true,capasTransferencia:inventoryValuationSliceLayers_(inventoryValuationTransferLayers_(ss,transferBatchId),delta),ubicacionResponsable:destinationLabel,sedeCod:destination.sedeCod,ubicacionId:destination.ubicacionId,numeroLote:lot,numeroSerie:serial,actorUserId:verified.userId,documentOrigen:transferBatchId,referenciaMovimiento:"Recepción física desde "+originLabel,observaciones:"Recepción acumulada "+received+" de "+dispatched+". "+String(input.observaciones||"")});
+    }
+    const updated=row.slice();while(updated.length<20)updated.push("");
+    updated[8]=newState;updated[9]=verified.userId;updated[10]=new Date();updated[11]=received;updated[12]=discrepancy;
+    const event=" [RECIBIDO_ACUMULADO:"+received+"]"+(discrepancy>0.005?" [DISCREPANCIA:"+discrepancy+"] [MOTIVO:"+justification+"]":"");
+    updated[13]=(String(row[13]||"")+event).trim();
+    trfSheet.getRange(rowIndex+1,1,1,updated.length).setValues([updated]);
+  }catch(error){
+    while(kardex.getLastRow()>=movementStart)kardex.deleteRow(kardex.getLastRow());
+    inventoryValuationRestore_(ss,valuationSnapshot);
+    try{trfSheet.getRange(rowIndex+1,1,1,original.length).setValues([original]);}catch(_){}
+    throw new Error("INVENTORY_TRANSFER_RECEIPT_ATOMIC_FAILURE:"+String(error&&error.message||error));
+  }
+  logStructuredEvent("ACCOUNTING","confirmTransferReceipt","INFO","TRANSFER_RECEIVED","Transferencia "+transferBatchId+" recibida: "+received+" de "+dispatched,{transferBatchId:transferBatchId,itemCodigo:itemCodigo,dispatched:dispatched,received:received,delta:delta,discrepancy:discrepancy,state:newState},verified.userId);
+  return{status:"success",transferBatchId:transferBatchId,estadoTransferencia:newState,cantidadDespachada:dispatched,cantidadRecibida:received,cantidadRecibidaEnEstaConfirmacion:delta,discrepancia:discrepancy,ubicacionDestino:destinationLabel,sedeCodDestino:destination.sedeCod,stockNuevoDestino:destinationResult?destinationResult.stockNuevoUbicacion:null,stockRestituidoOrigen:returnResult?returnResult.stockNuevoUbicacion:null};
+ }finally{lock.releaseLock();}
 }
 
 // [TASK-021] [F19-Task03] - Consulta de transferencias entre almacenes
