@@ -996,6 +996,7 @@
   - Reducir el importe de una orden ajusta la diferencia en el compromiso de forma trazable.
   - Las autorizaciones de sobregiro quedan auditadas con usuario directivo responsable y motivo.
 - **Estado:** Pendiente
+- **Continuidad C1.953:** F18-TASK07 cubre la reserva idempotente al aprobar órdenes y la liberación de compromisos al cancelar órdenes elegibles. TASK-017 permanece abierto para transferir compromisos a ejecución al facturar/liquidar, ajustar reducciones autorizadas y definir la excepción extraordinaria de sobregiro con autorización y trazabilidad; no se considera completado por el cierre de F18-TASK07.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1400-1460; clave TASK-019; asignación única: Contabilidad -->
 
@@ -1433,7 +1434,7 @@
 ---
 
 <!-- ID: F18-TASK07 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [ ] [F18-TASK07] Registrar compromisos presupuestarios al emitir órdenes de compra
+### [x] [F18-TASK07] Registrar compromisos presupuestarios al emitir órdenes de compra
 - **Severidad:** Alta (Control presupuestario preventivo)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs` (`checkBudgetAvailability`), `PresupuestosInstitucionales`.
 - **Solución Propuesta:** Al aprobar una orden de compra, incrementar automáticamente el `montoComprometido` en la partida presupuestaria del centro de costo para bloquear sobregiros antes de la facturación.
@@ -1444,8 +1445,9 @@
 - **Dependencias/riesgos:** F11-TASK14 (completada C1.952) (control presupuestario, PresupuestosInstitucionales y checkBudgetAvailability), autorización de órdenes y consistencia concurrente; riesgo de sobregiro o doble compromiso.
 - **Alcance:** reserva presupuestaria vinculada a la orden; no sustituye el registro contable del gasto.
 - **Criterios de aceptación:** aprobación actualiza el compromiso una sola vez; órdenes concurrentes no exceden el disponible; cancelación libera la reserva según estado y reglas auditables.
-- **Prioridad:** P1. **Estado:** Pendiente.
-- **Evidencia de cierre:** pendiente; no se acredita prueba de concurrencia.
+- **Prioridad:** P1. **Estado:** Completada (C1.953).
+- **Evidencia de cierre:** Department Scope run 45267083587 SUCCESS; Node.js 24; contratos de presupuesto, ledger de compromisos, reservas multi-partida, rollback, aprobación/cancelación y sintaxis de servicios Apps Script PASS. CLI local independiente NOT RUN por ausencia de checkout local; Apps Script/Sheets/Drive reales PENDIENTE DE BETA.
+- **Implementación:** approvePurchaseOrder reserva cada partida dentro del mismo ScriptLock, con clave idempotente, control de disponibilidad y rollback si falla la persistencia de la orden. cancelPurchaseOrder exige Director/Administrador y justificación, bloquea órdenes confirmadas/recibidas/facturadas y libera los compromisos de órdenes cancelables con rollback e idempotencia.
 
 ---
 

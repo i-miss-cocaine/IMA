@@ -248,3 +248,66 @@
 - F11-TASK02 permanece completada en C1.951.
 
 ===============================================================================
+
+
+===============================================================================
+### C1.953 — IMA-EXEC-20261123-F18-TASK07-BUDGET-COMMITMENT-LIFECYCLE-CLOSE
+===============================================================================
+
+### Continuidad, rama y estado Git
+- Sesión: continuidad posterior a C1.952.
+- Repositorio: i-miss-cocaine/IMA.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD inicial: d220c36b60908c638dd33ce3ff95120cffe1c3a0 (checkpoint C1.952).
+- HEAD de implementación y pruebas: 946b387eebca0847ca5ff968be01b34006e3b9d2.
+- Rama base NG_beta_0.0.0.1 verificada sin cambios: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- No se modificó ni publicó ningún cambio en otra rama.
+
+### Tarea y resultado
+- F18-TASK07 — registrar compromisos presupuestarios al aprobar órdenes de compra y liberar reservas al cancelar: completada.
+- approvePurchaseOrder revalida identidad, rol y permisos dentro de ScriptLock; valida solicitud aprobada, segregación del solicitante/aprobador, centro de costo, fecha, importes y código explícito de partida. Consulta disponibilidad por cada partida y reserva el importe mediante reservePurchaseOrderBudgetCommitmentsLocked_ / reserveBudgetCommitmentLocked_, con clave idempotente por orden/presupuesto.
+- La orden persiste actor, rol, justificación, alertas, reservas, fecha y estado del compromiso. Si falla la escritura de la orden, las reservas se compensan y la fila de la orden se restaura.
+- La reserva admite órdenes multi-partida; si falla una reserva posterior, libera las anteriores. La actualización de presupuesto y ledger conserva rollback ante fallos.
+- cancelPurchaseOrder exige Director/Administrador, permiso dinámico, identidad revalidada, justificación y ScriptLock. Solo cancela órdenes Borrador/Aprobada; bloquea órdenes con recepción o factura asociada y no libera compromisos de órdenes confirmadas/recibidas/facturadas. La liberación es idempotente y una falla al guardar la cancelación restaura el presupuesto/ledger.
+- La consola de compras presenta la acción de cancelar según capacidades del servidor; el backend permanece como autoridad y falla cerrado.
+- El alcance no sustituye el registro contable del gasto ni la transferencia de compromiso a ejecutado al facturar/liquidar. Esa parte más amplia permanece en TASK-017.
+
+### Archivos modificados en la unidad
+- backend/accounting-service/Code.gs
+- js/accounting.js
+- tests/security/accounting-budget-control.test.js
+- tests/security/accounting-purchase-order-pdf.test.js
+- tests/security/accounting-purchase-console-capabilities.test.js
+- .github/workflows/department-scope-contract.yml
+- pendientes/Contabilidad/Pendientes.md
+- changueslogs.txt
+- beta_test.txt
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt
+
+### Verificaciones
+- Budget control, audit and reservation contract: SUCCESS.
+- Budget reservation and commitment ledger contract: SUCCESS; multi-part reservation, partial rollback, idempotency, overrun protection and release verified.
+- Purchase order approval/PDF/cancellation lifecycle contract: SUCCESS; reservation boundary, cancellation role, required reason, idempotent replay, confirmed-order block, receipt/invoice blocks, release failure and cancellation-write rollback verified.
+- Purchase console capability and cancellation UI contract: SUCCESS.
+- Department Scope Contract run 45267083587: SUCCESS; Node.js 24, all configured contracts and syntax-check of updated Apps Script services completed.
+- Previous intermediate CI runs failed on test-harness omissions (missing reservation/release boundary stubs and missing budget ID in fixtures); the harness was corrected without weakening assertions, and the final run passed.
+- Independent local CLI checkout: NOT RUN; GitHub checkout was unavailable in this session. The Node.js CLI contracts were executed on the GitHub Actions runner.
+- Apps Script/Sheets/Drive deployed runtime and real permission-matrix rows: NOT RUN; remain PENDIENTE DE BETA. No real budget or purchase transaction was created.
+
+### Commits de implementación y verificación
+- 0efe55f6651721a008337d6107a6dc7d792ebe4c — reserva presupuestaria al aprobar y liberación al cancelar.
+- 33120199548b4b0dc0d4791421bf63773c949a61 — acción de cancelación controlada en UI.
+- 948cf7a68626f6ac6e9be51d092f0a9b1882ab8c — contratos de aprobación, reservas y rollback.
+- e5f2899fc6110f82615d2f853543977ddcecbc7a — pruebas de liberación y reservas multi-partida.
+- 39b513890a7f57b0212f135e1e32eb8d12111b87 — contrato UI de cancelación y visibilidad.
+- 90f3af0cfffcbf390b8404b4624553577fc80126 — corrección de persistencia/rollback de liberación presupuestaria.
+- e069aa369c49e44b51d5b9c729d6d6d7b1b38f5a, 1de0c5aec1d1889ffb56d399c4cffd08d650e9af, 3092413b745247ebc89701089a166cd4109001fb, 807a92730277e745b9e979760e47bdf5793fd907 y 946b387eebca0847ca5ff968be01b34006e3b9d2 — ampliación/corrección de contratos Node.js, multi-partida, cancelación y workflow de verificación.
+
+### Hallazgos y siguiente tarea
+- F18-TASK07 queda Completada.
+- F11-TASK14 y F11-TASK02 permanecen completadas en C1.952 y C1.951.
+- Siguiente tarea elegible: TASK-017 (P0), alcance restante: transferir montos comprometidos a ejecutados al facturar/liquidar, ajustar reducciones autorizadas de órdenes y definir autorizaciones extraordinarias de sobregiro exclusivamente para Director/Administrador con justificación y log BUDGET_OVERRUN_ALERT.
+- TASK-017 no se considera completada por F18-TASK07; debe conservarse la separación entre compromisos, ejecución contable y disponibilidad.
+
+===============================================================================

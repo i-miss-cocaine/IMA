@@ -2505,3 +2505,25 @@ BETA-EXAM-116 — AUD-NG-222 / EXAM: revalidación de identidad y scope bajo loc
 - Estado: PENDIENTE DE BETA.
 - Evidencia requerida: SHA desplegado, orden temporal de solicitudes, cambios de rol/sesión/adscripción, filas antes/después de Examenes/EntregasExamen/ResourceOwnership, resultados allow/deny y logs saneados sin tokens ni PII.
 ===============================================================================
+
+
+===============================================================================
+BETA-F18-007 — F18-TASK07: ciclo de compromisos presupuestarios de órdenes de compra
+===============================================================================
+- Módulo/acciones: ACCOUNTING — approvePurchaseOrder, cancelPurchaseOrder, getBudgetExecutionReport.
+- Objetivo: verificar en Apps Script/Sheets desplegados la reserva presupuestaria por partida al aprobar órdenes y la liberación controlada al cancelar, conservando integridad entre OrdenesCompra, PresupuestosInstitucionales y CompromisosPresupuestarios.
+- Precondiciones: despliegue beta aislado; presupuestos aprobados para dos partidas y centro de costo; orden de compra sintética aprobada en la solicitud/adjudicación; roles Director, Administrador y Contador; matriz de permisos dinámica con las acciones pertinentes; capacidad de ejecutar solicitudes concurrentes.
+- Pasos:
+  1. Aprobar una orden de una partida con Director/Administrador y verificar que la orden queda Aprobada, el ledger registra un único compromiso y MontoComprometido aumenta por el importe exacto.
+  2. Repetir la misma aprobación con la misma identidad/justificación y comprobar idempotencia sin segunda reserva.
+  3. Aprobar órdenes distintas concurrentes contra el mismo saldo; verificar que la suma comprometida nunca excede MontoAprobado - MontoEjecutado y que la segunda operación se bloquea cuando no hay saldo.
+  4. Aprobar una orden con varias partidas y verificar una reserva separada por cada PresupuestoID/PartidaCodigo, con importes exactos.
+  5. Intentar cancelar con Contador, sin justificación, una orden confirmada, una orden con recepción y una orden facturada; verificar denegación sin liberar fondos.
+  6. Cancelar una orden Aprobada y aún no recibida/facturada con Director/Administrador y justificación; verificar estado Cancelada, liberación exacta de cada compromiso, trazabilidad del actor/motivo y reintento idempotente.
+  7. Verificar que las consultas de ejecución muestran comprometido/disponible coherentes antes y después de aprobación/cancelación, sin modificar MontoEjecutado.
+- Resultado esperado: reserva y liberación atómicas, idempotentes y trazables; aislamiento por centro de costo/partida; ninguna orden concurrente genera sobregiro; las órdenes recibidas/facturadas/confirmadas no liberan compromisos mediante cancelación ordinaria.
+- Resultado real: contratos Node aislados y GitHub Actions PASS; Apps Script/Sheets reales y concurrencia del despliegue no ejecutados.
+- Estado: PENDIENTE DE BETA.
+- Evidencia requerida: SHA del despliegue, IDs sintéticos, snapshots de presupuestos/ledger/órdenes antes y después, orden temporal de solicitudes concurrentes, roles/permissions efectivos, respuestas allow/deny y logs saneados sin PII ni tokens.
+- Tarea vinculada: F18-TASK07 / C1.953.
+===============================================================================
