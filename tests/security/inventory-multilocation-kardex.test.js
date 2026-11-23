@@ -99,7 +99,7 @@ function main(){
  ctx.inventoryValuationApplyMovement_=originalValuationApply;
  assert.equal(h.sheets.InventariosKardex.rows.length,beforeOverReceiptRows,"failed two-leg transfer must roll back both Kardex writes");
  assert.equal(h.sheets.TransferenciasInventario.rows.length,transferRows,"failed transfer must not leave a transfer ledger row");
- assert.equal(ctx.inventoryPhysicalStock_(h.ss,"ITM-1","Bodega Norte","SPS-01",loc1.ubicacionId,"L-2"),4,"failed transfer must restore the origin lot balance");
+ assert.equal(ctx.inventoryPhysicalStock_(h.ss,"ITM-1","Bodega Norte","SPS-01",loc1.ubicacionId,"L-2"),originLotBeforeFailure,"failed transfer must restore the origin lot balance");
  assert.equal(ctx.inventoryPhysicalStock_(h.ss,"ITM-1","Bodega Norte","SPS-02",loc2.ubicacionId,"L-2"),0,"failed transfer must not leave destination stock");
 
  const legacyRows=[["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones","CatalogoItemID","CantidadBase","UnidadMedidaOriginal","FactorConversion"],["KDX-OLD",new Date(),"ITM-1","Equipo de prueba","Equipo","Entrada",4,0,4,5,"","[LOTE:LOT-OLD] [SERIE:SER-OLD]", "ITM-1",4,"Unidad",1]];
