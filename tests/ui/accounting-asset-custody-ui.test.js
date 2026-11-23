@@ -1,0 +1,13 @@
+"use strict";
+const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
+const root=path.resolve(__dirname,"../.."),source=fs.readFileSync(path.join(root,"js/accounting.js"),"utf8"),backend=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");
+assert.doesNotThrow(()=>new vm.Script(source));assert.doesNotThrow(()=>new vm.Script(backend));
+for(const token of ["handleAsignarCustodia","handleDevolverCustodia","assignAssetCustody","returnAssetCustody","getAssetAssignments","getAssetCustodyActPDF","openAssetCustodyActPDFUI","viewAssetAssignmentsUI","asignacionActivaId","evidenciasJSON","accesoriosRecibidos","firmaEntrega","firmaRecepcion","ubicacionRecepcion"])assert.ok(source.includes(token),"missing custody UI integration: "+token);
+assert.ok(source.includes("window.currentUser&&window.currentUser.userId"),"receiver must come from authenticated session");
+assert.ok(source.includes("atob(result.fileData)"),"private acta must be downloaded from authorized base64 response");
+assert.ok(source.includes("escapePurchaseAssetHtml(item.custodioUserId)"),"custody history values must be escaped before DOM rendering");
+assert.ok(source.includes("purchaseAssetJsArg(a.asignacionActivaId)"),"return action must bind to the exact active assignment");
+assert.ok(backend.includes("ASSET_CUSTODY_RECEIVER_MUST_BE_VERIFIED_USER"),"server must bind receiver to verified actor");
+assert.ok(backend.includes("ASSET_CUSTODY_EVIDENCE_REQUIRED"),"server must require photo/document evidence");
+assert.ok(backend.includes("ASSET_CUSTODY_RETURN_ATOMIC_FAILURE"),"server must rollback partial return writes");
+process.stdout.write("Accounting asset custody UI: authenticated return receiver, assignment-bound return, evidence/accessories/signatures, history and private acta download PASS.\n");

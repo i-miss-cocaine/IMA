@@ -325,6 +325,8 @@ jobs:
         run: node tests/ui/inventory-warehouse-ui.test.js
       - name: Run asset custody assignment, return, private acta and rollback contract
         run: node tests/security/accounting-asset-custody-return.test.js
+      - name: Run asset custody UI integration contract
+        run: node tests/ui/accounting-asset-custody-ui.test.js
       - name: Run budget reservation and commitment ledger contract
         run: node tests/security/accounting-budget-control.test.js
       - name: Run accounting master catalog and unit conversion contract
