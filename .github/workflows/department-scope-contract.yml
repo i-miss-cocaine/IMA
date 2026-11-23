@@ -323,7 +323,7 @@ jobs:
 
       - name: Run inventory warehouse UI contract
         run: node tests/ui/inventory-warehouse-ui.test.js
-      - name: Syntax check asset custody return contract
+      - name: Syntax-check asset custody return contract source and fixture
         run: node --check tests/security/accounting-asset-custody-return.test.js
       - name: Run asset custody assignment, return, private acta and rollback contract
         run: node tests/security/accounting-asset-custody-return.test.js
