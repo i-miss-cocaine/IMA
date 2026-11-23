@@ -6782,13 +6782,13 @@ function getOrCreatePrivateAssetCustodyFolder_() {
   return folder;
 }
 function assetCustodyValidateEvidence_(value) {
-  var refs=assetCustodyParseList_(value,"ASSET_CUSTODY_EVIDENCE_INVALID");if(!refs.length)throw new Error("ASSET_CUSTODY_EVIDENCE_REQUIRED");
+  var refs=assetCustodyParseList_(value,"ASSET_CUSTODY_EVIDENCE_INVALID");if(!refs.length)throw new Error("ASSET_CUSTODY_EVIDENCE_REQUIRED");if(refs.length>10)throw new Error("ASSET_CUSTODY_EVIDENCE_LIMIT_EXCEEDED");
   var saved=[];
   refs.forEach(function(ref){
     var raw=String(ref||"").trim(),match=raw.match(/\/d\/([A-Za-z0-9_-]{10,})/i)||raw.match(/[?&]id=([A-Za-z0-9_-]{10,})/i),id=match?match[1]:raw;
     if(!/^[A-Za-z0-9_-]{10,}$/.test(id))throw new Error("ASSET_CUSTODY_EVIDENCE_REFERENCE_INVALID");
     var file=DriveApp.getFileById(id);if(!file||file.isTrashed&&file.isTrashed())throw new Error("ASSET_CUSTODY_EVIDENCE_NOT_FOUND");
-    var mime=String(file.getMimeType?file.getMimeType():"").toLowerCase();if(mime.indexOf("image/")!==0&&mime!=="application/pdf")throw new Error("ASSET_CUSTODY_EVIDENCE_TYPE_INVALID");
+    var mime=String(file.getMimeType?file.getMimeType():"").toLowerCase();if(mime.indexOf("image/")!==0&&mime!=="application/pdf")throw new Error("ASSET_CUSTODY_EVIDENCE_TYPE_INVALID");if(file.getSize&&Number(file.getSize())>10*1024*1024)throw new Error("ASSET_CUSTODY_EVIDENCE_TOO_LARGE");
     file.setSharing(DriveApp.Access.PRIVATE,DriveApp.Permission.NONE);if(file.getSharingAccess()!==DriveApp.Access.PRIVATE)throw new Error("ASSET_CUSTODY_EVIDENCE_NOT_PRIVATE");
     saved.push({fileId:id,fileName:String(file.getName?file.getName():id),mimeType:mime});
   });
@@ -6831,6 +6831,7 @@ function assignAssetCustody(payload) {
   var permission=validateRolePermission(actor,"assignAssetCustody",p);if(!permission||permission.authorized!==true)return{status:"error",code:permission&&permission.code||"ROLE_PERMISSION_DENIED"};
   var lock=LockService.getScriptLock();lock.waitLock(15000);var assetBefore=null,assetRowIndex=0,assignmentSheet=null,historySheet=null,assignmentLast=0,historyLast=0;
   try{
+    var refreshedActor=getVerifiedAccountingIdentity_(p);if(!refreshedActor||refreshedActor.authorized!==true||String(refreshedActor.userId||"")!==String(actor.userId||"")||String(refreshedActor.role||"")!==String(actor.role||""))throw new Error("VERIFIED_IDENTITY_CHANGED");actor=refreshedActor;permission=validateRolePermission(actor,"assignAssetCustody",p);if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");
     var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensureAssetAcquisitionSchema_(ss),assetSheet=schema.assets,headers=schema.assetHeaders,assetId=String(p.activoId||p.assetId||"").trim(),custodianId=String(p.custodioUserId||"").trim();
     if(!assetId||!custodianId)throw new Error("ASSET_CUSTODY_ASSIGNMENT_FIELDS_REQUIRED");
     var found=assetCustodyFindAsset_(assetSheet,headers,assetId),row=found.row,idx=found.index,employee=assetCustodyResolveEmployee_(ss,custodianId),map={};headers.forEach(function(h,i){map[h]=i;});
@@ -6888,9 +6889,10 @@ function returnAssetCustody(payload) {
   if(receiver!==String(actor.userId||"").trim())throw new Error("ASSET_CUSTODY_RECEIVER_MUST_BE_VERIFIED_USER");
   var condition=assetCustodyNormalizeCondition_(p.estadoFisico||p.condicionRecepcion),location=String(p.ubicacionRecepcion||"").trim(),signatureDelivery=String(p.firmaEntrega||"").trim(),signatureReceipt=String(p.firmaRecepcion||"").trim();
   if(!location||!signatureDelivery||!signatureReceipt)throw new Error("ASSET_CUSTODY_RETURN_FIELDS_REQUIRED");
-  var accessoriesReceived=assetCustodyParseList_(p.accesoriosRecibidosJSON||p.accesoriosRecibidos),evidence=assetCustodyValidateEvidence_(p.evidenciasJSON||p.evidencias);
+  var accessoriesReceived=assetCustodyParseList_(p.accesoriosRecibidosJSON||p.accesoriosRecibidos),evidence=[];
   var lock=LockService.getScriptLock();lock.waitLock(15000);var pdf=null,assetBefore=null,assignmentBefore=null,assetRowIndex=0,assignmentRowIndex=0,returnSheet=null,historySheet=null,maintenanceSheet=null,returnLast=0,historyLast=0,maintenanceLast=0;
   try{
+    var refreshedActor=getVerifiedAccountingIdentity_(p);if(!refreshedActor||refreshedActor.authorized!==true||String(refreshedActor.userId||"")!==String(actor.userId||"")||String(refreshedActor.role||"")!==String(actor.role||""))throw new Error("VERIFIED_IDENTITY_CHANGED");actor=refreshedActor;permission=validateRolePermission(actor,"returnAssetCustody",p);if(!permission||permission.authorized!==true)throw new Error(permission&&permission.code||"ROLE_PERMISSION_DENIED");if(receiver!==String(actor.userId||"").trim())throw new Error("ASSET_CUSTODY_RECEIVER_MUST_BE_VERIFIED_USER");evidence=assetCustodyValidateEvidence_(p.evidenciasJSON||p.evidencias);
     var ss=SpreadsheetApp.openById(SPREADSHEET_ID),schema=ensureAssetAcquisitionSchema_(ss),assetId=String(p.activoId||p.assetId||"").trim(),assetHeaders=schema.assetHeaders,assetMap={};assetHeaders.forEach(function(h,i){assetMap[h]=i;});
     var assignmentRows=schema.assignments.getDataRange().getValues(),ah=assignmentRows[0].map(function(v){return String(v||"").trim();}),ai={};ah.forEach(function(h,i){ai[h]=i;});
     var assignmentId=String(p.asignacionId||p.assignmentId||"").trim();
@@ -6912,6 +6914,7 @@ function returnAssetCustody(payload) {
     var data={devolucionId:returnId,asignacionId:String(aRow[ai.AsignacionID]),codigoPatrimonial:assetRow[assetMap.CodigoPatrimonial],nombre:assetRow[assetMap.Nombre],serie:assetRow[assetMap.NumeroSerie]||assetRow[assetMap.SerieModel],custodio:employee.name,fechaEntrega:aRow[ai.FechaEntrega],fechaRecepcion:now,ubicacion:location,condicionEntrega:aRow[ai.EstadoFisicoEntrega],condicionRecepcion:condition,accesoriosEntregados:delivered,accesoriosRecibidos:accessoriesReceived,faltantes:missing,observaciones:String(p.observaciones||""),evidencias:evidence,firmaEntrega:signatureDelivery,firmaRecepcion:signatureReceipt,ordenMaintId:orderId};
     pdf=assetCustodyCreateActPdf_(data);
     returnSheet=schema.returns;historySheet=schema.history;maintenanceSheet=ss.getSheetByName("MantenimientoOrdenes");
+    if(needsMaintenance){maintenanceSheet=maintenanceSheet||getOrCreateSheet(ss,"MantenimientoOrdenes");var maintenanceRows=maintenanceSheet.getDataRange().getValues(),maintenanceBase=["OrdenMaintID","FechaReporte","ActivoIdUbicacion","TipoMantenimiento","DescripcionFalla","Prioridad","ReportadoPorUserId","AsignadoAEmpleadoId","RepuestosConsumidosJSON","CostoEstimado","CostoReal","EstadoOrden","FechaResolucion","Observaciones"];if(!maintenanceRows||!maintenanceRows.length||String((maintenanceRows[0]||[])[0]||"")!==maintenanceBase[0])maintenanceSheet.getRange(1,1,1,maintenanceBase.length).setValues([maintenanceBase]);inventoryEnsureMaintenanceSchema_(maintenanceSheet);}
     returnLast=returnSheet.getLastRow();historyLast=historySheet.getLastRow();maintenanceLast=maintenanceSheet?maintenanceSheet.getLastRow():0;
     assetBefore=assetRow.slice();assignmentBefore=aRow.slice();assetRowIndex=assetIndex;assignmentRowIndex=found.index;
     try{
