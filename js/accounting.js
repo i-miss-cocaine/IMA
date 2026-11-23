@@ -1,0 +1,3675 @@
+/**
+ * Controller for Accounting, Inventory, Assets & Maintenance Dashboard
+ * New Generation Christian Academy / Bilingual School and Institute
+ */
+
+// ---------------------------------------------------------------------------
+// [T-UX-12] [Fase 3: Experiencia de Usuario y Navegación Unificada] - CONSOLIDACIÓN DE PANELES DE CONTROL POR ROL Y DEPARTAMENTO
+// Consolida la visualización de indicadores clave, métricas financieras y accesos operativos para el departamento de contabilidad y finanzas.
+// ---------------------------------------------------------------------------
+window.consolidateAccountingDashboardSummary = function(accountingData) {
+    if (!accountingData) {
+        return { totalRevenueFormatted: window.IMARegionalFormatters.formatCurrency(0), totalExpensesFormatted: window.IMARegionalFormatters.formatCurrency(0), netBalanceFormatted: window.IMARegionalFormatters.formatCurrency(0), pendingInvoicesCount: 0 };
+    }
+    var revenue = typeof accountingData.totalRevenue === 'number' ? accountingData.totalRevenue : 0;
+    var expenses = typeof accountingData.totalExpenses === 'number' ? accountingData.totalExpenses : 0;
+    var net = revenue - expenses;
+    var pendingCount = typeof accountingData.pendingInvoicesCount === 'number' ? accountingData.pendingInvoicesCount : 0;
+
+    return {
+        totalRevenueFormatted: window.IMARegionalFormatters.formatCurrency(revenue),
+        totalExpensesFormatted: window.IMARegionalFormatters.formatCurrency(expenses),
+        netBalanceFormatted: window.IMARegionalFormatters.formatCurrency(net),
+        pendingInvoicesCount: pendingCount
+    };
+};
+
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof window.initAccountingDashboard === 'function') {
+    window.initAccountingDashboard();
+  }
+});
+
+let currentAccountingTab = 'resumen';
+let currentInventarioSubtab = 'kardex';
+
+window.switchTab = function (tab) {
+  currentAccountingTab = tab;
+  const container = document.getElementById('contabilidad-panel-container');
+  if (!container) return;
+
+  if (tab === 'inventario') {
+    renderInventarioModule(container);
+  } else if (tab === 'compras') {
+    renderComprasModule(container);
+  } else if (tab === 'biblioteca') {
+    renderBibliotecaModule(container);
+  } else if (tab === 'diario') {
+    renderDiarioModule(container);
+  } else if (tab === 'payroll-adjustments') {
+    renderPayrollAdjustmentsModule(container);
+  } else if (tab === 'presupuestos') {
+    renderPresupuestosModule(container);
+  } else if (tab === 'descuentos') {
+    renderDescuentosModule(container);
+  } else if (tab === 'tarifas-servicios') {
+    renderServiceTariffsModule(container);
+  } else if (tab === 'matricula') {
+    renderEnrollmentBillingConfigurationModule(container);
+  } else if (tab === 'reportes') {
+    renderFamilyCreditSalesReconciliationModule(container);
+  } else if (tab === 'migration-import') {
+    renderMigrationImportModule(container);
+  } else {
+    renderResumenModule(container);
+  }
+};
+
+window.initAccountingDashboard = function () {
+  window.switchTab('resumen');
+};
+
+
+function renderFamilyCreditSalesReconciliationModule(container) {
+  container.innerHTML = '<div class="space-y-5">' +
+    '<div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-indigo-100 bg-indigo-50 p-4">' +
+      '<div><h4 class="text-sm font-black uppercase text-indigo-950">Conciliación de ventas con crédito familiar</h4>' +
+      '<p class="mt-1 text-xs text-indigo-800">Tienda y cafetería · movimientos aprobados, devoluciones y pedidos pendientes</p></div>' +
+      '<button type="button" onclick="loadFamilyCreditSalesReconciliation()" class="rounded-xl bg-indigo-700 px-4 py-2 text-xs font-bold text-white">Actualizar conciliación</button>' +
+    '</div><div id="family-credit-sales-reconciliation-result" class="space-y-4">' +
+      '<div class="py-8 text-center text-xs font-bold uppercase text-gray-400">Consultando movimientos y pedidos...</div>' +
+    '</div></div>';
+  window.loadFamilyCreditSalesReconciliation();
+}
+
+window.loadFamilyCreditSalesReconciliation = function() {
+  const host = document.getElementById("family-credit-sales-reconciliation-result");
+  if (!host || !window.fetchApi) return;
+  host.textContent = "Consultando movimientos y pedidos...";
+  const escape = value => String(value === undefined || value === null ? "" : value)
+    .replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const money = value => window.IMARegionalFormatters.formatCurrency(value);
+  fetchApi("ACCOUNTING", "getFamilyCreditSalesReconciliation", {}).then(res => {
+    if (!res || res.status !== "success") throw new Error((res && res.message) || "No se pudo conciliar el crédito familiar.");
+    const store = res.resumen && res.resumen.TIENDA || {};
+    const cafe = res.resumen && res.resumen.CAFETERIA || {};
+    const total = res.total || {};
+    const statusClass = res.coincide ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-rose-700 bg-rose-50 border-rose-200";
+    const statusText = res.coincide ? "Conciliación sin diferencias" : "Se detectaron diferencias";
+    const card = (label, data) => '<div class="rounded-2xl border border-gray-200 bg-white p-4">' +
+      '<div class="mb-3 text-xs font-black uppercase text-gray-700">' + label + '</div>' +
+      '<div class="grid grid-cols-2 gap-3 text-xs">' +
+      '<div><div class="text-gray-500">Ventas brutas</div><strong>' + money(data.ventasBrutas) + '</strong></div>' +
+      '<div><div class="text-gray-500">Devoluciones</div><strong>' + money(data.devoluciones) + '</strong></div>' +
+      '<div><div class="text-gray-500">Ventas netas</div><strong>' + money(data.ventasNetas) + '</strong></div>' +
+      '<div><div class="text-gray-500">Pendientes</div><strong>' + Number(data.pedidosPendientes || 0) + '</strong></div>' +
+      '</div></div>';
+    const issues = (res.discrepancias || []).slice(0, 25).map(item =>
+      '<li class="border-b border-rose-100 py-2 text-xs">' + escape(item.codigo) + ' · ' +
+      escape(item.establecimiento || "Ledger") + ' · ' + escape(item.referencia) + '</li>'
+    ).join("");
+    host.innerHTML = '<div class="rounded-xl border px-4 py-3 text-sm font-bold ' + statusClass + '">' +
+      statusText + ' · ' + Number(res.totalDiscrepancias || 0) + ' diferencias</div>' +
+      '<div class="grid grid-cols-1 gap-3 md:grid-cols-3">' + card("Tienda", store) +
+      card("Cafetería", cafe) + card("Total", total) + '</div>' +
+      (issues ? '<div class="rounded-2xl border border-rose-200 bg-white p-4"><h5 class="mb-2 text-xs font-black uppercase text-rose-800">Diferencias detectadas</h5><ul>' + issues + '</ul></div>' : '') +
+      '<p class="text-[11px] text-gray-500">' + escape(res.message || "") + '</p>';
+  }).catch(err => {
+    host.innerHTML = '<div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-700">' +
+      escape(err.message || "Error de conciliación.") + '</div>';
+  });
+};
+
+// ---------------------------------------------------------------------------
+// MÓDULO DE INVENTARIO, ACTIVOS FIJOS Y MANTENIMIENTO (FASE 19)
+// ---------------------------------------------------------------------------
+
+function renderInventarioModule(container) {
+  container.innerHTML = `
+    <div class="space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+        <h4 class="text-base font-black uppercase text-gray-800 flex items-center gap-2">
+          <i class="fas fa-boxes text-blue-600"></i> Inventario, Activos Fijos & Mantenimiento (Fase 19)
+        </h4>
+        <div class="flex flex-wrap gap-2 text-xs font-bold uppercase">
+          <button onclick="switchInventarioSubtab('kardex')" id="btn-sub-kardex" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-blue-600 text-white">Kardex</button>
+          <button onclick="switchInventarioSubtab('catalogo')" id="btn-sub-catalogo" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Catálogo</button>
+          <button onclick="switchInventarioSubtab('almacenes')" id="btn-sub-almacenes" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Almacenes</button>
+          <button onclick="switchInventarioSubtab('transferencias')" id="btn-sub-transferencias" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Transferencias</button>
+          <button onclick="switchInventarioSubtab('solicitudes')" id="btn-sub-solicitudes" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Solicitudes & Entregas</button>
+          <button onclick="switchInventarioSubtab('reposicion')" id="btn-sub-reposicion" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Reposición inteligente</button>
+          <button onclick="switchInventarioSubtab('activos')" id="btn-sub-activos" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Activos Fijos</button>
+          <button onclick="switchInventarioSubtab('mantenimiento')" id="btn-sub-mantenimiento" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Mantenimiento</button>
+          <button onclick="switchInventarioSubtab('bajas')" id="btn-sub-bajas" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Bajas</button>
+        </div>
+      </div>
+
+      <div id="inventario-subtab-container" class="space-y-4">
+        <div class="text-center py-6 text-gray-400 text-xs font-bold uppercase">Cargando datos de inventario...</div>
+      </div>
+    </div>
+  `;
+  switchInventarioSubtab('kardex');
+}
+
+window.switchInventarioSubtab = function (subtab) {
+  currentInventarioSubtab = subtab;
+  ['kardex', 'catalogo', 'almacenes', 'transferencias', 'solicitudes', 'reposicion', 'activos', 'mantenimiento', 'bajas'].forEach(s => {
+    const btn = document.getElementById(`btn-sub-${s}`);
+    if (btn) {
+      if (s === subtab) {
+        btn.className = "px-3 py-1.5 rounded-xl transition-all shadow-sm bg-blue-600 text-white font-bold";
+      } else {
+        btn.className = "px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100 font-bold";
+      }
+    }
+  });
+
+  const subContainer = document.getElementById('inventario-subtab-container');
+  if (!subContainer) return;
+
+  if (subtab === 'kardex') renderKardexView(subContainer);
+  else if (subtab === 'catalogo') renderCatalogoView(subContainer);
+  else if (subtab === 'almacenes') renderAlmacenesView(subContainer);
+  else if (subtab === 'transferencias') renderTransferenciasView(subContainer);
+  else if (subtab === 'solicitudes') renderSolicitudesView(subContainer);
+  else if (subtab === 'reposicion') renderReposicionView(subContainer);
+  else if (subtab === 'activos') renderActivosView(subContainer);
+  else if (subtab === 'mantenimiento') renderMantenimientoView(subContainer);
+  else if (subtab === 'bajas') renderBajasView(subContainer);
+};
+
+// --- SUB-VISTAS DE INVENTARIO ---
+
+
+function catalogHtmlEscape(value){return String(value===undefined||value===null?"":value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+window.populateCatalogSelect=function(select,selected,unitSelect){if(!select)return;select.innerHTML='<option value="">Cargando catálogo...</option>';fetchApi('ACCOUNTING','getCatalogItems',{}).then(res=>{select.innerHTML='<option value="">Seleccione artículo</option>';(res.items||[]).forEach(item=>{const o=document.createElement('option');o.value=item.itemCodigo;o.textContent=item.itemCodigo+' · '+item.itemNombre;o.dataset.name=item.itemNombre;o.dataset.itemId=item.itemId;o.dataset.unit=item.unidadMedida;if(selected===item.itemCodigo)o.selected=true;select.appendChild(o);});}).catch(()=>{select.innerHTML='<option value="">Error de catálogo</option>';});if(unitSelect){fetchApi('ACCOUNTING','getCatalogUnits',{}).then(res=>{unitSelect.innerHTML=(res.unidades||[]).map(u=>'<option value="'+catalogHtmlEscape(u.nombre)+'">'+catalogHtmlEscape(u.nombre)+' → '+catalogHtmlEscape(u.unidadBase)+'</option>').join('');}).catch(()=>{});}};
+function renderCatalogoView(container){
+ container.innerHTML='<div class="space-y-4"><div class="flex flex-wrap justify-between gap-2"><div><h5 class="font-black text-sm">Catálogo maestro de artículos e insumos</h5><p class="text-xs text-gray-500">Códigos únicos, ficha técnica, categorías, unidades y conversiones.</p></div><div class="flex gap-2"><button onclick="exportCatalogItemsUI()" class="px-3 py-2 bg-slate-700 text-white rounded-lg text-xs font-bold">Exportar CSV para Excel</button><label class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold cursor-pointer">Importar CSV<input type="file" accept=".csv,text/csv" class="hidden" onchange="importCatalogItemsUI(event)"></label></div></div><form id="catalog-item-form" onsubmit="saveCatalogItemUI(event)" class="grid grid-cols-1 md:grid-cols-3 gap-2 border rounded-xl p-4 text-xs"><input id="cat-item-id" type="hidden"><input id="cat-code" required class="p-2 border rounded-lg" placeholder="Código institucional *"><input id="cat-name" required class="p-2 border rounded-lg" placeholder="Nombre del artículo *"><select id="cat-category" required class="p-2 border rounded-lg"></select><select id="cat-unit" required class="p-2 border rounded-lg"></select><input id="cat-subcategory" class="p-2 border rounded-lg" placeholder="Subcategoría"><input id="cat-brand" class="p-2 border rounded-lg" placeholder="Marca"><input id="cat-model" class="p-2 border rounded-lg" placeholder="Modelo / referencia"><input id="cat-image-url" type="url" class="p-2 border rounded-lg" placeholder="URL de imagen"><input id="cat-barcode" class="p-2 border rounded-lg" placeholder="Código de barras"><input id="cat-qr" class="p-2 border rounded-lg" placeholder="Código QR"><input id="cat-supplier" class="p-2 border rounded-lg" placeholder="Proveedor habitual (ID)"><input id="cat-cost" type="number" min="0" step="0.01" value="0" class="p-2 border rounded-lg" placeholder="Costo referencial"><input id="cat-last-cost" type="number" min="0" step="0.01" value="0" class="p-2 border rounded-lg" placeholder="Última adquisición"><input id="cat-average-cost" type="number" min="0" step="0.01" value="0" class="p-2 border rounded-lg" placeholder="Costo promedio"><input id="cat-min" type="number" min="0" step="0.01" value="0" class="p-2 border rounded-lg" placeholder="Stock mínimo"><input id="cat-max" type="number" min="0" step="0.01" value="0" class="p-2 border rounded-lg" placeholder="Stock máximo"><input id="cat-reorder" type="number" min="0" step="0.01" value="0" class="p-2 border rounded-lg" placeholder="Punto de reposición"><input id="cat-asset" class="p-2 border rounded-lg" placeholder="Activo fijo relacionado (ID)"><textarea id="cat-description" class="p-2 border rounded-lg md:col-span-2" placeholder="Descripción"></textarea><textarea id="cat-specs" class="p-2 border rounded-lg md:col-span-2" placeholder="Especificaciones técnicas"></textarea><textarea id="cat-observations" class="p-2 border rounded-lg md:col-span-2" placeholder="Observaciones"></textarea><button id="cat-save-button" class="p-2 bg-blue-600 text-white rounded-lg font-bold">Guardar artículo</button><button type="button" onclick="resetCatalogItemFormUI()" class="p-2 border rounded-lg">Limpiar</button></form><div class="grid grid-cols-1 md:grid-cols-2 gap-2"><form onsubmit="saveCatalogCategoryUI(event)" class="border rounded-xl p-3 flex gap-2"><input id="cat-new-category" required class="p-2 border rounded-lg flex-1" placeholder="Nueva categoría"><button class="p-2 bg-slate-700 text-white rounded-lg">Agregar</button></form><form onsubmit="saveCatalogUnitUI(event)" class="border rounded-xl p-3 grid grid-cols-2 gap-2"><input id="cat-new-unit" required class="p-2 border rounded-lg" placeholder="Nueva unidad"><select id="cat-unit-base" required class="p-2 border rounded-lg"></select><input id="cat-unit-factor" required type="number" min="0.000001" step="any" class="p-2 border rounded-lg" placeholder="Factor base"><input id="cat-unit-type" value="Cantidad" class="p-2 border rounded-lg"><button class="p-2 bg-slate-700 text-white rounded-lg col-span-2">Guardar conversión</button></form></div><div id="catalog-legacy" class="text-xs"></div><div id="catalog-items-table" class="overflow-x-auto text-xs">Cargando catálogo...</div></div>';
+ loadCatalogoData();
+}
+window.resetCatalogItemFormUI=function(){const f=document.getElementById('catalog-item-form');if(f)f.reset();const id=document.getElementById('cat-item-id');if(id)id.value='';const b=document.getElementById('cat-save-button');if(b)b.textContent='Guardar artículo';const code=document.getElementById('cat-code');if(code)code.readOnly=false;};
+window.loadCatalogoData=function(){Promise.all([fetchApi('ACCOUNTING','getCatalogItems',{incluirInactivos:true}),fetchApi('ACCOUNTING','getCatalogCategories',{}),fetchApi('ACCOUNTING','getCatalogUnits',{})]).then(([items,cats,units])=>{window.catalogItemsCache=items.items||[];const cat=document.getElementById('cat-category'),unit=document.getElementById('cat-unit'),base=document.getElementById('cat-unit-base');if(cat)cat.innerHTML=(cats.categorias||[]).map(x=>'<option value="'+catalogHtmlEscape(x.nombre)+'">'+catalogHtmlEscape(x.nombre)+'</option>').join('');const opts=(units.unidades||[]).map(x=>'<option value="'+catalogHtmlEscape(x.nombre)+'">'+catalogHtmlEscape(x.nombre)+' → '+catalogHtmlEscape(x.unidadBase)+'</option>').join('');if(unit)unit.innerHTML=opts;if(base)base.innerHTML=opts;const legacy=document.getElementById('catalog-legacy');if(legacy){const p=items.pendientesReconciliacion||[];legacy.innerHTML=p.length?'<div class="border border-amber-300 bg-amber-50 rounded-xl p-3"><b>Históricos por reconciliar ('+p.length+')</b>'+p.map(x=>'<div class="flex justify-between py-1"><span>'+catalogHtmlEscape(x.itemCodigo)+' · '+catalogHtmlEscape(x.itemNombre)+'</span><button data-code="'+catalogHtmlEscape(x.itemCodigo)+'" data-name="'+catalogHtmlEscape(x.itemNombre)+'" onclick="reconcileLegacyCatalogItemUI(this.dataset.code,this.dataset.name)">Marcar pendiente</button></div>').join('')+'</div>':'';}const host=document.getElementById('catalog-items-table');if(host)host.innerHTML='<table class="w-full text-left"><thead><tr><th>Código</th><th>Artículo</th><th>Categoría</th><th>Unidad</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>'+(items.items||[]).map(x=>'<tr class="border-b"><td>'+catalogHtmlEscape(x.itemCodigo)+'</td><td>'+catalogHtmlEscape(x.itemNombre)+'</td><td>'+catalogHtmlEscape(x.categoria)+'</td><td>'+catalogHtmlEscape(x.unidadMedida)+' / '+catalogHtmlEscape(x.unidadBase)+'</td><td>'+catalogHtmlEscape(x.estado)+'</td><td><button data-code="'+catalogHtmlEscape(x.itemCodigo)+'" onclick="editCatalogItemUI(this.dataset.code)">Editar</button> <button data-code="'+catalogHtmlEscape(x.itemCodigo)+'" data-action="'+(x.estado==='Activo'?'desactivar':'activar')+'" onclick="toggleCatalogItemUI(this.dataset.code,this.dataset.action)">'+(x.estado==='Activo'?'Desactivar':'Activar')+'</button></td></tr>').join('')+'</tbody></table>';}).catch(e=>{const h=document.getElementById('catalog-items-table');if(h)h.textContent=e.message||String(e);});};
+window.editCatalogItemUI=function(code){const x=(window.catalogItemsCache||[]).find(i=>i.itemCodigo===code);if(!x)return;const fields={ 'cat-item-id':'itemId','cat-code':'itemCodigo','cat-name':'itemNombre','cat-category':'categoria','cat-unit':'unidadMedida','cat-subcategory':'subcategoria','cat-brand':'marca','cat-model':'modeloReferencia','cat-image-url':'imagenUrl','cat-barcode':'codigoBarras','cat-qr':'codigoQR','cat-supplier':'proveedorHabitualId','cat-cost':'costoReferencial','cat-last-cost':'costoUltimaAdquisicion','cat-average-cost':'costoPromedio','cat-min':'stockMinimo','cat-max':'stockMaximo','cat-reorder':'puntoReposicion','cat-asset':'activoFijoRelacionadoId','cat-description':'descripcion','cat-specs':'especificacionesTecnicas','cat-observations':'observaciones'};Object.keys(fields).forEach(id=>{const el=document.getElementById(id);if(el)el.value=x[fields[id]]===undefined?'':x[fields[id]];});const b=document.getElementById('cat-save-button');if(b)b.textContent='Actualizar artículo';const codeField=document.getElementById('cat-code');if(codeField)codeField.readOnly=true;document.getElementById('catalog-item-form').scrollIntoView({behavior:'smooth',block:'start'});};
+window.saveCatalogItemUI=function(e){e.preventDefault();const val=id=>document.getElementById(id).value;const p={itemId:val('cat-item-id'),itemCodigo:val('cat-code'),itemNombre:val('cat-name'),categoria:val('cat-category'),unidadMedida:val('cat-unit'),subcategoria:val('cat-subcategory'),marca:val('cat-brand'),modeloReferencia:val('cat-model'),imagenUrl:val('cat-image-url'),codigoBarras:val('cat-barcode'),codigoQR:val('cat-qr'),proveedorHabitualId:val('cat-supplier'),costoReferencial:val('cat-cost'),costoUltimaAdquisicion:val('cat-last-cost'),costoPromedio:val('cat-average-cost'),stockMinimo:val('cat-min'),stockMaximo:val('cat-max'),puntoReposicion:val('cat-reorder'),activoFijoRelacionadoId:val('cat-asset'),descripcion:val('cat-description'),especificacionesTecnicas:val('cat-specs'),observaciones:val('cat-observations')};fetchApi('ACCOUNTING','manageCatalogItem',p).then(r=>{if(r.status==='warning'){const detail=(r.suggestions||[]).map(x=>x.itemCodigo+' · '+x.itemNombre).join('\\n');if(!confirm('Posibles artículos duplicados:\\n'+detail+'\\n¿Desea guardar de todos modos?'))return {cancelled:true};p.confirmarDuplicado=true;return fetchApi('ACCOUNTING','manageCatalogItem',p);}return r;}).then(r=>{if(r&&r.cancelled)return;resetCatalogItemFormUI();loadCatalogoData();}).catch(x=>alert(x.message||x));};
+window.saveCatalogCategoryUI=function(e){e.preventDefault();fetchApi('ACCOUNTING','manageCatalogCategory',{nombre:document.getElementById('cat-new-category').value}).then(()=>loadCatalogoData()).catch(x=>alert(x.message||x));};
+window.saveCatalogUnitUI=function(e){e.preventDefault();fetchApi('ACCOUNTING','manageCatalogUnit',{nombre:document.getElementById('cat-new-unit').value,unidadBase:document.getElementById('cat-unit-base').value,factorConversionBase:document.getElementById('cat-unit-factor').value,tipo:document.getElementById('cat-unit-type').value}).then(()=>loadCatalogoData()).catch(x=>alert(x.message||x));};
+window.toggleCatalogItemUI=function(code,accion){fetchApi('ACCOUNTING','manageCatalogItem',{itemCodigo:code,accion:accion}).then(()=>loadCatalogoData()).catch(x=>alert(x.message||x));};
+window.reconcileLegacyCatalogItemUI=function(code,name){fetchApi('ACCOUNTING','manageCatalogItem',{itemCodigo:code,itemNombre:name,categoria:'Otros',unidadMedida:'Unidad',estado:'PendienteReconciliacion'}).then(()=>loadCatalogoData()).catch(e=>alert(e.message||e));};
+window.exportCatalogItemsUI=function(){fetchApi('ACCOUNTING','exportCatalogItems',{}).then(r=>{const b=new Blob([r.csv],{type:'text/csv;charset=utf-8;'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=r.filename;a.click();URL.revokeObjectURL(u);}).catch(e=>alert(e.message||e));};
+window.importCatalogItemsUI=function(e){const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>fetchApi('ACCOUNTING','importCatalogItems',{csv:String(r.result||'')}).then(()=>loadCatalogoData()).catch(x=>alert(x.message||x));r.readAsText(f);};
+function renderKardexView(container) {
+  container.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
+        <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-plus-circle text-emerald-600"></i> Registrar Movimiento</h5>
+        <form id="form-movimiento-kardex" onsubmit="handleMovimientoKardex(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Artículo del catálogo *</label>
+            <select id="kdx-codigo" required class="w-full p-2 border border-gray-300 rounded-xl font-bold"></select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Unidad de movimiento *</label>
+            <select id="kdx-unidad" required class="w-full p-2 border border-gray-300 rounded-xl"></select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Tipo Movimiento</label>
+            <select id="kdx-tipo" class="w-full p-2 border border-gray-300 rounded-xl">
+              <option value="Entrada">Entrada (Compra / Recepción)</option>
+              <option value="Salida">Salida (Consumo Operativo)</option>
+              <option value="Devolucion">Devolución al Almacén</option>
+              <option value="Baja">Baja / Deterioro</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-bold text-gray-600 mb-1">Cantidad *</label>
+              <input type="number" step="0.01" id="kdx-cantidad" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="10">
+            </div>
+            <div>
+              <label class="block font-bold text-gray-600 mb-1">Stock Mínimo</label>
+              <input type="number" id="kdx-minimo" value="5" class="w-full p-2 border border-gray-300 rounded-xl">
+            </div>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Almacén / Sede *</label>
+            <select id="kdx-sede" required class="w-full p-2 border border-gray-300 rounded-xl"><option value="">Seleccione almacén</option></select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Ubicación física *</label>
+            <select id="kdx-ubicacion" required class="w-full p-2 border border-gray-300 rounded-xl"><option value="">Seleccione ubicación</option></select>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="block font-bold text-gray-600 mb-1">Lote (si aplica)</label><input type="text" id="kdx-lote" class="w-full p-2 border border-gray-300 rounded-xl"></div>
+            <div><label class="block font-bold text-gray-600 mb-1">Serie (si aplica)</label><input type="text" id="kdx-serie" class="w-full p-2 border border-gray-300 rounded-xl"></div>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Observaciones</label>
+            <input type="text" id="kdx-obs" class="w-full p-2 border border-gray-300 rounded-xl">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all uppercase">
+            Guardar Movimiento
+          </button>
+        </form>
+      </div>
+
+      <div class="md:col-span-2 bg-white p-5 rounded-2xl border border-gray-200">
+        <div class="flex justify-between items-center mb-4">
+          <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-list text-blue-600"></i> Historial Kardex de Existencias</h5>
+          <button onclick="loadKardexData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+        </div>
+        <div class="mb-3 grid grid-cols-1 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2 lg:grid-cols-3">
+          <label class="text-[11px] font-bold text-gray-700">Almacén<select id="kdx-filter-sede" class="mt-1 w-full rounded-lg border p-2"><option value="">Todos</option></select></label>
+          <label class="text-[11px] font-bold text-gray-700">Ubicación<select id="kdx-filter-ubicacion" class="mt-1 w-full rounded-lg border p-2"><option value="">Todas</option></select></label>
+          <label class="text-[11px] font-bold text-gray-700">Artículo<input id="kdx-filter-item" type="search" class="mt-1 w-full rounded-lg border p-2" placeholder="Código exacto"></label>
+          <label class="text-[11px] font-bold text-gray-700">Categoría<input id="kdx-filter-category" type="search" class="mt-1 w-full rounded-lg border p-2" placeholder="Categoría"></label>
+          <label class="text-[11px] font-bold text-gray-700">Desde<input id="kdx-filter-from" type="date" data-ui-help-key="fechas.calendario" class="mt-1 w-full rounded-lg border p-2"></label>
+          <label class="text-[11px] font-bold text-gray-700">Hasta<input id="kdx-filter-to" type="date" data-ui-help-key="fechas.calendario" class="mt-1 w-full rounded-lg border p-2"></label>
+          <div class="flex items-end gap-2"><button type="button" onclick="loadKardexData()" class="rounded-lg bg-blue-700 px-3 py-2 text-[11px] font-bold text-white">Aplicar filtros</button><button type="button" onclick="clearKardexFilters()" class="rounded-lg border px-3 py-2 text-[11px] font-bold">Limpiar</button></div>
+        </div>
+        <div id="kardex-table-container" class="overflow-x-auto text-xs">
+          <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando movimientos...</div>
+        </div>
+      </div>
+    </div>
+  `;
+  container.insertAdjacentHTML("beforeend", "<section class=\"md:col-span-3 rounded-2xl border border-amber-200 bg-amber-50 p-4\" aria-labelledby=\"physical-count-title\"><div class=\"flex flex-wrap items-center justify-between gap-2\"><div><h5 id=\"physical-count-title\" class=\"font-black text-xs uppercase text-amber-900\">Conteo físico por ubicación</h5><p class=\"text-[11px] text-amber-800\">Registra cantidades por artículo, lote y serie; la conciliación aplica únicamente diferencias verificadas.</p></div><button type=\"button\" onclick=\"loadPhysicalInventoryCountsUI()\" class=\"rounded-lg border border-amber-300 bg-white px-3 py-2 text-[11px] font-bold text-amber-900\">Actualizar</button></div><div class=\"mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3\"><label class=\"text-[11px] font-bold text-gray-700\">Almacén<select id=\"kdx-count-sede\" class=\"mt-1 w-full rounded-lg border bg-white p-2\"><option value=\"\">Seleccione almacén</option></select></label><label class=\"text-[11px] font-bold text-gray-700\">Ubicación física<select id=\"kdx-count-ubicacion\" class=\"mt-1 w-full rounded-lg border bg-white p-2\"><option value=\"\">Seleccione ubicación</option></select></label><div class=\"flex items-end\"><button type=\"button\" onclick=\"startPhysicalInventoryCountUI()\" class=\"w-full rounded-lg bg-amber-700 px-3 py-2 text-[11px] font-bold text-white\">Iniciar conteo</button></div></div><label class=\"mt-3 block text-[11px] font-bold text-gray-700\">Conteo registrado<select id=\"kdx-count-id\" onchange=\"renderPhysicalInventoryCountUI()\" class=\"mt-1 w-full rounded-lg border bg-white p-2\"><option value=\"\">Seleccione un conteo</option></select></label><div id=\"kdx-count-detail\" class=\"mt-3 rounded-xl border border-amber-200 bg-white p-3 text-xs text-gray-600\">Seleccione almacén y ubicación.</div></section>");
+  loadCatalogSelectOptions("kdx-codigo","kdx-unidad");
+  loadKardexLocationSelects();
+  loadKardexData();
+}
+
+window.loadCatalogSelectOptions=function(itemId,unitId){const item=document.getElementById(itemId),unit=document.getElementById(unitId);if(item)populateCatalogSelect(item,"",unit);};
+
+// [TASK-019] [F19-Task01] - Carga y renderizado de existencias multialmacén e historial de Kardex
+window.loadKardexLocationSelects = function () {
+  const movementWarehouse=document.getElementById("kdx-sede"),movementLocation=document.getElementById("kdx-ubicacion");
+  const filterWarehouse=document.getElementById("kdx-filter-sede"),filterLocation=document.getElementById("kdx-filter-ubicacion");
+  if(!movementWarehouse||!movementLocation)return;
+  fetchApi("ACCOUNTING","getWarehouseLocations",{}).then(function(result){
+    const locations=Array.isArray(result&&result.ubicaciones)?result.ubicaciones:[];
+    const fill=function(select,placeholder){if(!select)return;select.innerHTML="";const option=document.createElement("option");option.value="";option.textContent=placeholder;select.appendChild(option);};
+    fill(movementWarehouse,"Seleccione almacén");fill(movementLocation,"Seleccione ubicación");fill(filterWarehouse,"Todos");fill(filterLocation,"Todas");
+    const warehouses=Array.from(new Set(locations.map(x=>String(x.sedeCod||"")))).filter(Boolean).sort();
+    warehouses.forEach(function(code){const option=document.createElement("option");option.value=code;option.textContent=code;movementWarehouse.appendChild(option);const filterOption=document.createElement("option");filterOption.value=code;filterOption.textContent=code;filterWarehouse&&filterWarehouse.appendChild(filterOption);});
+    locations.forEach(function(location){
+      const label=String(location.sedeCod)+" — "+String(location.nombreUbicacion);
+      const option=document.createElement("option");option.value=location.ubicacionId;option.textContent=label;option.dataset.sedeCod=String(location.sedeCod);option.dataset.name=String(location.nombreUbicacion);movementLocation.appendChild(option);
+      const filterOption=document.createElement("option");filterOption.value=location.ubicacionId;filterOption.textContent=label;filterOption.dataset.sedeCod=String(location.sedeCod);filterLocation&&filterLocation.appendChild(filterOption);
+    });
+    movementWarehouse.addEventListener("change",function(){const selected=movementWarehouse.value;if(movementLocation.selectedOptions[0]&&movementLocation.selectedOptions[0].dataset.sedeCod!==selected)movementLocation.value="";Array.from(movementLocation.options).forEach(function(option){option.hidden=!!(option.value&&selected&&option.dataset.sedeCod!==selected);});});
+    movementLocation.addEventListener("change",function(){const option=movementLocation.selectedOptions[0];if(option&&option.dataset.sedeCod)movementWarehouse.value=option.dataset.sedeCod;});
+  }).catch(function(error){console.error("No se pudieron cargar las ubicaciones del Kardex:",error);});
+};
+window.clearKardexFilters = function () {
+  ["kdx-filter-sede","kdx-filter-ubicacion","kdx-filter-item","kdx-filter-category","kdx-filter-from","kdx-filter-to"].forEach(function(id){const el=document.getElementById(id);if(el)el.value="";});
+  window.loadKardexData();
+};
+window.loadKardexData = function (filtroUbicacion) {
+  const container = document.getElementById('kardex-table-container');
+  if (!container) return;
+
+  const value=function(id){const el=document.getElementById(id);return el?String(el.value||"").trim():"";};
+  const payload = {};
+  if (filtroUbicacion) payload.ubicacionResponsable = filtroUbicacion;
+  const warehouse=value("kdx-filter-sede"),location=value("kdx-filter-ubicacion"),item=value("kdx-filter-item"),category=value("kdx-filter-category"),from=value("kdx-filter-from"),to=value("kdx-filter-to");
+  if(warehouse)payload.sedeCod=warehouse;
+  if(location){payload.ubicacionId=location;const selected=document.getElementById("kdx-filter-ubicacion").selectedOptions[0];if(selected&&selected.dataset.sedeCod)payload.sedeCod=selected.dataset.sedeCod;}
+  if(item)payload.itemCodigo=item;if(category)payload.categoriaTipo=category;if(from)payload.fechaInicio=from;if(to)payload.fechaFin=to;
+
+  fetchApi('ACCOUNTING', 'getInventoryKardex', payload)
+    .then(res => {
+      const items = (res && (res.kardex || res.data)) ? (res.kardex || res.data) : [];
+      const resumenUbicaciones = (res && res.resumenPorUbicacion) ? res.resumenPorUbicacion : [];
+      const resumenConsolidado = (res && res.resumenExistencias) ? res.resumenExistencias : [];
+
+      if (items.length === 0 && resumenConsolidado.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay registros en el Kardex de inventario.</div>`;
+        return;
+      }
+
+      let html = "";
+
+      // 1. Tarjeta resumen de existencias multialmacén vs consolidado institucional
+      if (resumenConsolidado.length > 0) {
+        html += `
+          <div class="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-3">
+            <h6 class="font-black text-[11px] text-blue-900 uppercase mb-2"><i class="fas fa-warehouse text-blue-600"></i> Resumen de Existencias por Almacén y Consolidado Institucional</h6>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        `;
+        resumenConsolidado.forEach(item => {
+          const ubs = item.ubicaciones || {};
+          html += `
+            <div class="bg-white p-2.5 rounded-lg border border-blue-100 shadow-sm">
+              <div class="flex justify-between items-start">
+                <span class="font-bold text-gray-800 text-xs">${item.itemNombre}</span>
+                <span class="font-mono text-[10px] text-blue-600 bg-blue-100 px-1 rounded">${item.itemCodigo}</span>
+              </div>
+              <div class="mt-1 text-[11px] text-gray-600 space-y-0.5">
+          `;
+          Object.keys(ubs).forEach(ub => {
+            html += `<div class="flex justify-between"><span>📍 ${ub}:</span><span class="font-bold">${ubs[ub]}</span></div>`;
+          });
+          html += `
+              </div>
+              <div class="mt-2 pt-1 border-t border-gray-100 flex justify-between font-black text-xs ${item.alertaStockMinimo ? 'text-rose-600' : 'text-emerald-700'}">
+                <span>Total Institucional:</span>
+                <span>${item.totalInstitucional} ${item.alertaStockMinimo ? '⚠️' : ''}</span>
+              </div>
+            </div>
+          `;
+        });
+        html += `</div></div>`;
+      }
+
+      // TASK-189: informe de valoración económica por fecha, categoría y almacén.
+      html += `
+        <section class="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div><h5 class="font-black text-xs uppercase text-indigo-900">Valoración económica del inventario</h5><p class="text-[11px] text-indigo-700">PEPS / promedio ponderado · corte histórico · conciliación contable</p></div>
+            <button type="button" onclick="loadValuatedInventoryReport()" class="rounded-lg bg-indigo-700 px-3 py-2 text-[11px] font-bold text-white">Consultar valoración</button>
+          </div>
+          <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <label class="text-[11px] font-bold text-gray-700">Fecha de corte<input id="valuation-cutoff" type="date" class="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2 text-xs" data-ui-help-key="fechas.calendario"></label>
+            <label class="text-[11px] font-bold text-gray-700">Categoría<input id="valuation-category" type="text" class="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2 text-xs" placeholder="Todas las categorías"></label>
+            <label class="text-[11px] font-bold text-gray-700">Almacén / ubicación<input id="valuation-location" type="text" class="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2 text-xs" placeholder="Todas las ubicaciones"></label>
+          </div>
+          <div class="mt-2 flex flex-wrap items-end gap-2">
+            <label class="text-[11px] font-bold text-gray-700">Método de valoración por categoría<select id="valuation-method" class="mt-1 rounded-lg border border-gray-300 bg-white p-2 text-xs"><option value="PEPS">PEPS (FIFO)</option><option value="PROMEDIO_PONDERADO">Promedio ponderado</option></select></label>
+            <button type="button" onclick="saveInventoryValuationPolicy()" class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-[11px] font-bold text-indigo-800">Guardar método para categoría</button>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <button type="button" onclick="exportValuatedInventoryCSV()" class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-[11px] font-bold text-indigo-800">Exportar Excel (CSV)</button>
+            <button type="button" onclick="exportValuatedInventoryPDF()" class="rounded-lg border border-indigo-300 bg-white px-3 py-2 text-[11px] font-bold text-indigo-800">Generar PDF</button>
+          </div>
+          <div id="inventory-valuation-results" class="mt-3 text-xs text-gray-700">Selecciona filtros y consulta para generar el informe.</div>
+        </section>
+      `;
+      // 2. Tabla detallada de movimientos Kardex
+      html += `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">Código</th>
+              <th class="p-2">Ítem</th>
+              <th class="p-2">Movimiento</th>
+              <th class="p-2 text-right">Cant.</th>
+              <th class="p-2 text-right">Stock Ant.</th>
+              <th class="p-2 text-right">Stock Nuevo</th>
+              <th class="p-2">Ubicación / Almacén</th>
+              <th class="p-2">Observaciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      items.forEach(k => {
+        const isBajo = k.stockNuevo <= k.stockMinimo;
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-blue-600">${k.itemCodigo}</td>
+            <td class="p-2 font-bold text-gray-800">${k.itemNombre}</td>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${k.tipoMovimiento.includes('Entrada') || k.tipoMovimiento === 'Devolucion' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${k.tipoMovimiento}</span></td>
+            <td class="p-2 text-right font-bold">${k.cantidad}</td>
+            <td class="p-2 text-right text-gray-500 font-mono">${k.stockAnterior !== undefined ? k.stockAnterior : '-'}</td>
+            <td class="p-2 text-right font-black ${isBajo ? 'text-rose-600' : 'text-emerald-600'}">${k.stockNuevo} ${isBajo ? '⚠️' : ''}</td>
+            <td class="p-2 text-gray-700 font-semibold">📍 ${k.ubicacionResponsable || 'Bodega General'}</td>
+            <td class="p-2 text-gray-500 text-[11px] truncate max-w-[150px]">${k.observaciones || ''}</td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+      const headerRow=container.querySelector("thead tr"),tableRows=container.querySelectorAll("tbody tr");
+      if(headerRow){const th=document.createElement("th");th.className="p-2";th.textContent="Acción";headerRow.appendChild(th);}
+      ords.forEach((o,i)=>{const tr=tableRows[i];if(!tr)return;const td=document.createElement("td");td.className="p-2";if(o.planMantenimientoId&&!["Resuelto","Completado"].includes(String(o.estadoOrden))){const btn=document.createElement("button");btn.type="button";btn.className="text-emerald-700 underline";btn.textContent="Completar";btn.addEventListener("click",()=>completePreventiveMaintenanceOrder(o));td.appendChild(btn);}else td.textContent="—";tr.appendChild(td);});
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar Kardex: ${err.message}</div>`;
+    });
+};
+
+window.inventoryValuationPayload = function () {
+  const value = id => { const el=document.getElementById(id); return el ? String(el.value||"").trim() : ""; };
+  const payload={};
+  const cutoff=value("valuation-cutoff"),category=value("valuation-category"),location=value("valuation-location");
+  if(cutoff)payload.fechaCorte=cutoff;if(category)payload.categoria=category;if(location)payload.ubicacion=location;
+  return payload;
+};
+window.loadValuatedInventoryReport = function () {
+  const target=document.getElementById("inventory-valuation-results");if(!target)return;
+  target.innerHTML='<div class="p-3 text-center text-gray-500">Calculando valoración…</div>';
+  fetchApi("ACCOUNTING","getValuatedInventoryReport",inventoryValuationPayload()).then(res=>{
+    const rows=Array.isArray(res.detalle)?res.detalle:[],money=n=>window.IMARegionalFormatters.formatCurrency(n),safe=v=>String(v===undefined||v===null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const rec=res.conciliacion||{},summary=res.resumen||{};
+    let html='<div class="grid grid-cols-1 gap-2 sm:grid-cols-3"><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Artículos</div><b>'+safe(summary.articulos||0)+'</b></div><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Cantidad total</div><b>'+safe(summary.cantidad||0)+'</b></div><div class="rounded-lg bg-white p-2"><div class="text-[10px] text-gray-500">Valor total</div><b>'+money(summary.valor)+'</b></div></div>';
+    html+='<div class="mt-2 rounded-lg '+(rec.conciliado?'bg-emerald-50 text-emerald-800':'bg-amber-50 text-amber-900')+' p-2 text-[11px] font-bold">Conciliación: '+(rec.conciliado?'Conciliado':'Pendiente de conciliación')+(rec.diferencia===null?'':' · Diferencia: '+money(rec.diferencia))+(summary.valorIncompleto?' · Existen costos pendientes':'')+'</div>';
+    html+='<div class="mt-2 overflow-x-auto"><table class="w-full min-w-[620px] text-left text-[11px]"><thead><tr class="border-b bg-white"><th class="p-2">Código</th><th class="p-2">Artículo</th><th class="p-2">Ubicación</th><th class="p-2 text-right">Cantidad</th><th class="p-2 text-right">Costo unit.</th><th class="p-2 text-right">Valor</th><th class="p-2">Método</th></tr></thead><tbody>';
+    rows.forEach(x=>{html+='<tr class="border-b border-gray-200"><td class="p-2">'+safe(x.itemCodigo)+'</td><td class="p-2">'+safe(x.itemNombre)+'</td><td class="p-2">'+safe(x.ubicacion)+'</td><td class="p-2 text-right">'+safe(x.cantidad)+'</td><td class="p-2 text-right">'+money(x.costoUnitario)+'</td><td class="p-2 text-right">'+money(x.valor)+(x.valorIncompleto?' *':'')+'</td><td class="p-2">'+safe(x.metodo)+'</td></tr>';});
+    html+='</tbody></table></div>';if(!rows.length)html+='<p class="p-3 text-center text-gray-500">No hay existencias valorizadas para los filtros seleccionados.</p>';
+    target.innerHTML=html;
+  }).catch(err=>{target.innerHTML='<div class="rounded-lg bg-rose-50 p-3 text-rose-700">No se pudo generar el informe: '+String(err.message||err)+'</div>';});
+};
+window.saveInventoryValuationPolicy = function () {
+  const category=document.getElementById("valuation-category"),method=document.getElementById("valuation-method");
+  const name=category?String(category.value||"").trim():"";
+  if(!name){alert("Indica la categoría para configurar su método de valoración.");return;}
+  fetchApi("ACCOUNTING","configureInventoryValuationPolicy",{categoria:name,metodo:method?method.value:"PEPS"}).then(res=>{
+    alert("Método "+res.metodo+" guardado para "+res.categoria+".");loadValuatedInventoryReport();
+  }).catch(err=>alert("No se pudo guardar el método: "+err.message));
+};
+window.exportValuatedInventoryCSV = function () {
+  fetchApi("ACCOUNTING","exportValuatedInventoryReportCSV",inventoryValuationPayload()).then(res=>{
+    const blob=new Blob([res.csv||""],{type:"text/csv;charset=utf-8;"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download=res.filename||"inventario-valorizado.csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  }).catch(err=>alert("No se pudo exportar el informe: "+err.message));
+};
+window.exportValuatedInventoryPDF = function () {
+  fetchApi("ACCOUNTING","exportValuatedInventoryReportPDF",inventoryValuationPayload()).then(res=>{
+    if(!res||!res.url)throw new Error("PDF_URL_NOT_RETURNED");window.open(res.url,"_blank","noopener");
+  }).catch(err=>alert("No se pudo generar el PDF: "+err.message));
+};
+
+window.handleMovimientoKardex = function (e) {
+  e.preventDefault();
+  const payload = {
+    itemCodigo: document.getElementById('kdx-codigo').value,
+    unidadMedida: document.getElementById('kdx-unidad').value,
+    tipoMovimiento: document.getElementById('kdx-tipo').value,
+    cantidad: document.getElementById('kdx-cantidad').value,
+    stockMinimo: document.getElementById('kdx-minimo').value,
+    sedeCod: document.getElementById('kdx-sede').value,
+    ubicacionId: document.getElementById('kdx-ubicacion').value,
+    ubicacionResponsable: document.getElementById('kdx-ubicacion').selectedOptions[0]?.dataset.name || "",
+    numeroLote: document.getElementById('kdx-lote').value,
+    numeroSerie: document.getElementById('kdx-serie').value,
+    observaciones: document.getElementById('kdx-obs').value
+  };
+
+  if(!payload.sedeCod||!payload.ubicacionId){alert("Seleccione una sede y una ubicación física registrada.");return;}
+  fetchApi('ACCOUNTING', 'recordInventoryMovement', payload)
+    .then(res => {
+      alert(res.message || "Movimiento registrado con éxito.");
+      document.getElementById('form-movimiento-kardex').reset();
+      loadKardexData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+// --- ALMACENES & UBICACIONES ---
+
+function renderAlmacenesView(container) {
+  container.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
+        <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-warehouse text-blue-600"></i> Registrar Ubicación / Almacén</h5>
+        <form id="form-almacen" onsubmit="handleSaveAlmacen(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Código de Sede / Almacén *</label>
+            <input type="text" id="loc-sede" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: SPS-01">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Nombre de Ubicación *</label>
+            <input type="text" id="loc-nombre" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: Bodega de Ciencias">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Tipo de Área</label>
+            <select id="loc-tipo" class="w-full p-2 border border-gray-300 rounded-xl">
+              <option value="Bodega">Bodega</option>
+              <option value="Laboratorio">Laboratorio</option>
+              <option value="Aula">Aula</option>
+              <option value="Oficina">Oficina</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Responsable (UserId / Empleado)</label>
+            <input type="text" id="loc-responsable" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: EMP-01">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Observaciones</label>
+            <input type="text" id="loc-obs" class="w-full p-2 border border-gray-300 rounded-xl">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all uppercase">
+            Guardar Ubicación
+          </button>
+        </form>
+      </div>
+
+      <div class="md:col-span-2 bg-white p-5 rounded-2xl border border-gray-200">
+        <div class="flex justify-between items-center mb-4">
+          <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-map-marker-alt text-emerald-600"></i> Catálogo de Ubicaciones Institucionales</h5>
+          <button onclick="loadAlmacenesData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+        </div>
+        <div id="almacenes-table-container" class="overflow-x-auto text-xs">
+          <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando ubicaciones...</div>
+        </div>
+      </div>
+    </div>
+  `;
+  loadAlmacenesData();
+}
+
+window.loadAlmacenesData = function () {
+  const container = document.getElementById('almacenes-table-container');
+  if (!container) return;
+
+  fetchApi('ACCOUNTING', 'getWarehouseLocations', {})
+    .then(res => {
+      const ubs = (res && res.ubicaciones) ? res.ubicaciones : [];
+      if (ubs.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay ubicaciones registradas.</div>`;
+        return;
+      }
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">ID</th>
+              <th class="p-2">Sede / Almacén</th>
+              <th class="p-2">Ubicación física</th>
+              <th class="p-2">Tipo</th>
+              <th class="p-2">Responsable</th>
+              <th class="p-2">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      ubs.forEach(u => {
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-blue-600">${u.ubicacionId}</td>
+            <td class="p-2 font-mono text-gray-700">${u.sedeCod}</td>
+            <td class="p-2 font-bold text-gray-800">${u.nombreUbicacion}</td>
+            <td class="p-2 text-gray-500">${u.tipoArea}</td>
+            <td class="p-2 text-gray-700 font-medium">${u.responsableUserId || 'Sin asignar'}</td>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">${u.estado}</span></td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar almacenes: ${err.message}</div>`;
+    });
+};
+
+window.handleSaveAlmacen = function (e) {
+  e.preventDefault();
+  const payload = {
+    sedeCod: document.getElementById('loc-sede').value,
+    nombreUbicacion: document.getElementById('loc-nombre').value,
+    tipoArea: document.getElementById('loc-tipo').value,
+    responsableUserId: document.getElementById('loc-responsable').value,
+    observaciones: document.getElementById('loc-obs').value
+  };
+
+  fetchApi('ACCOUNTING', 'manageWarehouseLocation', payload)
+    .then(res => {
+      alert(res.message || "Ubicación guardada con éxito.");
+      document.getElementById('form-almacen').reset();
+      loadAlmacenesData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+// --- SOLICITUDES & ENTREGAS ---
+
+function renderSolicitudesView(container) {
+ container.innerHTML='<div class="space-y-4"><div class="border rounded-xl p-4 space-y-3"><h5 class="font-black text-xs uppercase">Nueva solicitud interna de materiales</h5><div class="grid grid-cols-1 md:grid-cols-2 gap-2"><input id="mat-departamento" required class="p-2 border rounded-lg" placeholder="Departamento solicitante"><input id="mat-centro-costo" required class="p-2 border rounded-lg" placeholder="Centro de costo"><input id="mat-ubicacion-origen" required class="p-2 border rounded-lg" value="Bodega General" placeholder="Almacén de origen"><input id="mat-motivo" class="p-2 border rounded-lg" placeholder="Motivo"><select id="mat-modo-reconocimiento" class="p-2 border rounded-lg"><option value="GASTO_INMEDIATO">Reconocer gasto al entregar</option><option value="ASIGNADO">Mantener como material asignado</option></select><button type="button" onclick="addMaterialRequestLine()" class="p-2 bg-slate-700 text-white rounded-lg">Agregar artículo</button></div><div id="mat-request-lines" class="space-y-2"></div><button onclick="submitMaterialRequisition()" class="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold text-xs">Enviar solicitud</button></div><div class="bg-white p-5 rounded-2xl border border-gray-200"><div class="flex justify-between items-center mb-4"><h5 class="font-black text-xs uppercase text-gray-800">Solicitudes internas de materiales</h5><button onclick="loadSolicitudesData()" class="px-3 py-1 bg-gray-100 rounded-lg text-xs font-bold">Actualizar</button></div><div id="solicitudes-table-container" class="overflow-x-auto text-xs">Cargando...</div></div></div>';
+ addMaterialRequestLine();loadSolicitudesData();
+}
+window.addMaterialRequestLine=function(){const host=document.getElementById('mat-request-lines');if(!host)return;const row=document.createElement('div');row.className='grid grid-cols-1 md:grid-cols-4 gap-2 border rounded-lg p-2';row.innerHTML='<select data-field="item" required class="p-2 border rounded-lg"></select><select data-field="unit" required class="p-2 border rounded-lg"></select><input data-field="qty" type="number" min="0.0001" step="any" value="1" class="p-2 border rounded-lg"><button type="button" class="text-rose-600 font-bold" onclick="this.parentElement.remove()">Quitar</button>';host.appendChild(row);populateCatalogSelect(row.querySelector('[data-field="item"]'),"",row.querySelector('[data-field="unit"]'));};
+window.submitMaterialRequisition=function(){const rows=Array.from(document.querySelectorAll('#mat-request-lines > div')),items=rows.map(r=>({itemCodigo:r.querySelector('[data-field="item"]').value,unidadMedida:r.querySelector('[data-field="unit"]').value,cantidad:Number(r.querySelector('[data-field="qty"]').value)}));if(!items.length||items.some(x=>!x.itemCodigo||!x.unidadMedida||!Number.isFinite(x.cantidad)||x.cantidad<=0)){alert('Seleccione artículos del catálogo y cantidades válidas.');return;}fetchApi('ACCOUNTING','createMaterialRequisition',{departamento:document.getElementById('mat-departamento').value,centroCosto:document.getElementById('mat-centro-costo').value,ubicacionOrigen:document.getElementById('mat-ubicacion-origen').value,modoReconocimiento:document.getElementById('mat-modo-reconocimiento').value,motivo:document.getElementById('mat-motivo').value,articulosJSON:items}).then(r=>{alert(r.message||'Solicitud registrada.');loadSolicitudesData();}).catch(e=>alert(e.message||e));};
+
+window.loadSolicitudesData = function () {
+  const container = document.getElementById('solicitudes-table-container');
+  if (!container) return;
+
+  fetchApi('ACCOUNTING', 'getMaterialRequisitions', {})
+    .then(res => {
+      const sols = (res && res.solicitudes) ? res.solicitudes : [];
+      if (sols.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay solicitudes internas de materiales.</div>`;
+        return;
+      }
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">ID Solicitud</th>
+              <th class="p-2">Departamento</th>
+              <th class="p-2">Centro de costo</th>
+              <th class="p-2">Reconocimiento</th>
+              <th class="p-2">Solicitante</th>
+              <th class="p-2">Motivo</th>
+              <th class="p-2">Estado</th>
+              <th class="p-2 text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      sols.forEach(s => {
+        const isPend = s.estadoAprobacion === 'PendienteAprobacion' || s.estadoAprobacion === 'Aprobada';
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-purple-600">${s.solicitudMatId}</td>
+            <td class="p-2 font-bold text-gray-800">${catalogHtmlEscape(s.departamento)}</td>
+            <td class="p-2 text-gray-700">${catalogHtmlEscape(s.centroCosto || s.departamento)}</td>
+            <td class="p-2 text-gray-600">${s.modoReconocimiento === "ASIGNADO" ? "Material asignado" : "Gasto inmediato"}</td>
+            <td class="p-2 text-gray-600">${s.solicitanteUserId}</td>
+            <td class="p-2 text-gray-500">${s.motivo || 'Consumo'}</td>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.estadoAprobacion === 'Entregado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${s.estadoAprobacion}</span></td>
+            <td class='p-2 text-right'>${s.estadoAprobacion === 'PendienteAprobacion' ? `<button type='button' class='req-approve px-3 py-1 bg-blue-600 text-white rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Aprobar y reservar</button>` : s.estadoAprobacion === 'Aprobada' ? `<button type='button' class='req-deliver px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Entregar</button>` : `<span class='text-gray-400 text-[10px]'>${catalogHtmlEscape(s.estadoAprobacion)}</span>`} ${isPend ? `<button type='button' class='req-modify px-2 py-1 bg-sky-50 text-sky-700 rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}' data-items='${catalogHtmlEscape(s.articulosJSON)}'>Modificar</button><button type='button' class='req-cancel px-2 py-1 bg-rose-50 text-rose-700 rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Cancelar</button>` : ''} ${s.estadoAprobacion === 'PendienteAprobacion' ? `<button type='button' class='req-reject px-2 py-1 bg-rose-700 text-white rounded-lg font-bold text-[10px] uppercase' data-request-id='${catalogHtmlEscape(s.solicitudMatId)}'>Rechazar</button>` : ''}</td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+      container.querySelectorAll('.req-approve').forEach(b=>b.addEventListener('click',()=>handleApproveMaterialRequisition(b.dataset.requestId)));
+      container.querySelectorAll('.req-deliver').forEach(b=>b.addEventListener('click',()=>handleEntregarSolicitud(b.dataset.requestId)));
+      container.querySelectorAll('.req-cancel').forEach(b=>b.addEventListener('click',()=>handleCancelMaterialRequisition(b.dataset.requestId)));
+      container.querySelectorAll('.req-reject').forEach(b=>b.addEventListener('click',()=>handleRejectMaterialRequisition(b.dataset.requestId)));
+      container.querySelectorAll('.req-modify').forEach(b=>b.addEventListener('click',()=>handleModifyMaterialRequisition(b.dataset.requestId,b.dataset.items)));
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar solicitudes: ${err.message}</div>`;
+    });
+};
+
+window.handleEntregarSolicitud = function (solId) {
+  if (!confirm(`¿Confirmar la entrega física de los materiales para la solicitud ${solId}?`)) return;
+
+  fetchApi('ACCOUNTING', 'deliverMaterialRequisition', { solicitudMatId: solId })
+    .then(res => {
+      alert(res.message || "Entrega de materiales procesada con éxito.");
+      loadSolicitudesData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+
+window.handleApproveMaterialRequisition=function(solId){
+ if(!confirm("¿Aprobar y reservar las existencias disponibles para "+solId+"?"))return;
+ fetchApi("ACCOUNTING","manageMaterialRequisition",{solicitudMatId:solId,operacion:"aprobar"}).then(r=>{alert(r.message||"Solicitud aprobada y reservada.");loadSolicitudesData();}).catch(e=>alert(e.message||e));
+};
+window.handleRejectMaterialRequisition=function(solId){
+ if(!confirm("¿Rechazar la solicitud "+solId+" y liberar sus reservas?"))return;
+ fetchApi("ACCOUNTING","manageMaterialRequisition",{solicitudMatId:solId,operacion:"rechazar"}).then(r=>{alert(r.message||"Solicitud rechazada.");loadSolicitudesData();}).catch(e=>alert(e.message||e));
+};
+window.handleModifyMaterialRequisition=function(solId,raw){
+ let initial;try{initial=JSON.parse(raw||"[]");}catch(_){alert("El detalle guardado no es válido.");return;}
+ const value=prompt("Edite las partidas como JSON. La modificación libera las reservas y requiere nueva aprobación.",JSON.stringify(initial,null,2));if(value===null)return;
+ let items;try{items=JSON.parse(value);}catch(_){alert("JSON inválido; no se modificó la solicitud.");return;}
+ fetchApi("ACCOUNTING","manageMaterialRequisition",{solicitudMatId:solId,operacion:"modificar",articulosJSON:items}).then(r=>{alert(r.message||"Solicitud modificada.");loadSolicitudesData();}).catch(e=>alert(e.message||e));
+};
+window.handleCancelMaterialRequisition=function(solId){
+ if(!confirm("¿Cancelar la solicitud "+solId+" y liberar sus reservas?"))return;
+ fetchApi("ACCOUNTING","manageMaterialRequisition",{solicitudMatId:solId,operacion:"cancelar"}).then(r=>{alert(r.message||"Solicitud cancelada.");loadSolicitudesData();}).catch(e=>alert(e.message||e));
+};
+function renderReposicionView(container){
+ container.innerHTML='<div class="space-y-4"><div class="rounded-xl border p-4"><h5 class="font-black text-sm mb-2">Política de reposición por artículo y almacén</h5><form id="inventory-replenishment-policy" class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs"><select id="rep-item" required class="p-2 border rounded-lg"></select><input id="rep-location" required class="p-2 border rounded-lg" value="Bodega General" placeholder="Almacén / ubicación"><input id="rep-min" type="number" min="0" step="any" required class="p-2 border rounded-lg" placeholder="Stock mínimo"><input id="rep-max" type="number" min="0" step="any" required class="p-2 border rounded-lg" placeholder="Stock máximo"><input id="rep-target" type="number" min="0" step="any" required class="p-2 border rounded-lg" placeholder="Stock objetivo"><input id="rep-lead" type="number" min="0" max="365" step="1" required class="p-2 border rounded-lg" placeholder="Plazo de entrega (días)"><input id="rep-department" required class="p-2 border rounded-lg" placeholder="Departamento autorizado"><button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded-lg font-bold">Guardar política</button><button type="button" onclick="loadInventoryReplenishmentSuggestions()" class="px-3 py-2 bg-slate-700 text-white rounded-lg font-bold">Actualizar sugerencias</button></form></div><div class="rounded-xl border p-4"><h5 class="font-black text-sm mb-2">Disponibilidad y reposición sugerida</h5><div id="inventory-replenishment-results" class="overflow-x-auto text-xs">Cargando sugerencias...</div></div></div>';
+ populateCatalogSelect(document.getElementById("rep-item"),"");
+ document.getElementById("inventory-replenishment-policy").addEventListener("submit",saveInventoryReplenishmentPolicy);
+ loadInventoryReplenishmentSuggestions();
+}
+window.saveInventoryReplenishmentPolicy=function(event){
+ if(event)event.preventDefault();
+ const p={itemCodigo:document.getElementById("rep-item").value,departamento:document.getElementById("rep-department").value,ubicacion:document.getElementById("rep-location").value,stockMinimo:Number(document.getElementById("rep-min").value),stockMaximo:Number(document.getElementById("rep-max").value),stockObjetivo:Number(document.getElementById("rep-target").value),plazoEntregaDias:Number(document.getElementById("rep-lead").value)};
+ fetchApi("ACCOUNTING","manageInventoryReplenishmentPolicy",p).then(r=>{alert("Política guardada para "+r.itemCodigo+".");loadInventoryReplenishmentSuggestions();}).catch(e=>alert(e.message||e));
+};
+window.loadInventoryReplenishmentSuggestions=function(){
+ const host=document.getElementById("inventory-replenishment-results");if(!host)return;
+ const department=String((document.getElementById("rep-department")||{}).value||"").trim(),location=String((document.getElementById("rep-location")||{}).value||"").trim();
+ if(!department){host.innerHTML='<p class="text-amber-700">Indique el departamento autorizado para consultar las políticas.</p>';return;}
+ fetchApi("ACCOUNTING","getInventoryReplenishmentSuggestions",{departamento:department,ubicacion:location}).then(r=>{
+  const items=r.sugerencias||[];if(!items.length){host.innerHTML='<p class="text-gray-500">No hay políticas activas para esta ubicación.</p>';return;}
+  host.innerHTML='<table class="w-full text-left"><thead><tr><th class="p-2">Artículo</th><th class="p-2">Físico</th><th class="p-2">Reservado</th><th class="p-2">Disponible</th><th class="p-2">En tránsito</th><th class="p-2">Pendiente recepción</th><th class="p-2">Consumo/día</th><th class="p-2">Cobertura</th><th class="p-2">Sugerido</th><th class="p-2">Estado</th><th class="p-2">Acción</th></tr></thead><tbody>'+items.map(x=>'<tr class="border-t"><td class="p-2">'+catalogHtmlEscape(x.itemCodigo)+' · '+catalogHtmlEscape(x.itemNombre)+'</td><td class="p-2">'+x.existenciaFisica+'</td><td class="p-2">'+x.reservada+'</td><td class="p-2">'+x.disponible+'</td><td class="p-2">'+x.enTransito+'</td><td class="p-2">'+x.pendienteRecepcion+'</td><td class="p-2">'+x.consumoPromedioDiario+'</td><td class="p-2">'+(x.diasCobertura===null?"—":x.diasCobertura+" d")+'</td><td class="p-2 font-bold">'+x.cantidadSugerida+'</td><td class="p-2">'+catalogHtmlEscape(x.estado)+'</td><td class="p-2">'+(x.cantidadSugerida>0?'<button type="button" class="rep-create-purchase px-2 py-1 bg-emerald-600 text-white rounded" data-code="'+catalogHtmlEscape(x.itemCodigo)+'" data-id="'+catalogHtmlEscape(x.catalogItemId)+'" data-qty="'+x.cantidadSugerida+'" data-unit="'+catalogHtmlEscape(x.unidadMedida||"Unidad")+'" data-cost="'+Number(x.costoUnitarioEstimado||0)+'">Crear compra</button>':"—")+'</td></tr>').join("")+'</tbody></table>';
+  host.querySelectorAll(".rep-create-purchase").forEach(btn=>btn.addEventListener("click",()=>createPurchaseRequestFromSuggestion(btn.dataset.id,btn.dataset.code,Number(btn.dataset.qty),btn.dataset.unit,Number(btn.dataset.cost),department,location)));
+ }).catch(e=>{host.innerHTML='<p class="text-rose-600">'+catalogHtmlEscape(e.message||e)+'</p>';});
+};
+window.createPurchaseRequestFromSuggestion=function(itemId,itemCode,qty,unit,cost,department,location){
+ const partidaCodigo=window.prompt("Ingrese el código de partida presupuestaria para este artículo:");
+ if(!partidaCodigo||!String(partidaCodigo).trim()){alert("La partida presupuestaria es obligatoria.");return;}
+ fetchApi("ACCOUNTING","createPurchaseRequest",{departamento:department,justificacion:"Reposición sugerida por el motor de inventario para "+itemCode+" en "+location,categoria:"Materiales/Insumos",detalleItems:[{catalogItemId:itemId,codigoItem:itemCode,unidadMedida:unit,cantidad:qty,clasificacionInventario:"Consumible",partidaCodigo:String(partidaCodigo).trim()}],montoEstimado:Math.round(Number(cost||0)*qty*100)/100,centroCosto:department}).then(r=>alert(r.message||"Solicitud de compra creada: "+r.solicitudId)).catch(e=>alert(e.message||e));
+};
+
+// --- ACTIVOS FIJOS & CUSTODIAS ---
+
+function renderActivosView(container) {
+  container.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
+        <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-desktop text-indigo-600"></i> Registrar Activo Patrimonial</h5>
+        <form id="form-activo" onsubmit="handleSaveActivo(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Código Patrimonial *</label>
+            <input type="text" id="act-codigo" required class="w-full p-2 border border-gray-300 rounded-xl font-bold" placeholder="EJ: PAT-LAB-01">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Nombre del Activo *</label>
+            <input type="text" id="act-nombre" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: Computadora All-in-One HP">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Categoría</label>
+            <select id="act-categoria" class="w-full p-2 border border-gray-300 rounded-xl">
+              <option value="Equipo Computacional">Equipo Computacional</option>
+              <option value="Audiovisual">Audiovisual</option>
+              <option value="Mobiliario">Mobiliario</option>
+              <option value="Maquinaria">Maquinaria / Climatización</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Marca</label><input type="text" id="act-marca" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Marca">
+          <label class="block font-bold text-gray-600 mb-1">Modelo</label><input type="text" id="act-serie" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Modelo">
+          <label class="block font-bold text-gray-600 mb-1">Número de serie único</label><input type="text" id="act-numero-serie" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Número de serie">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Ubicación Actual</label>
+            <input type="text" id="act-ubicacion" value="Laboratorio Cómputo 1" class="w-full p-2 border border-gray-300 rounded-xl">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all uppercase">
+            Guardar Activo
+          </button>
+        </form>
+      </div>
+
+      <div class="md:col-span-2 bg-white p-5 rounded-2xl border border-gray-200">
+        <div class="flex justify-between items-center mb-4">
+          <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-landmark text-blue-600"></i> Inventario de Activos Patrimoniales</h5>
+          <button onclick="loadActivosData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+        </div>
+        <div id="activos-table-container" class="overflow-x-auto text-xs">
+          <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando activos...</div>
+        </div>
+      </div>
+    </div>
+  `;
+  container.insertAdjacentHTML("beforeend",'<section class="mt-6 rounded-2xl border border-indigo-100 bg-white p-5 space-y-4"><div><h5 class="font-black text-sm">Depreciación y valor patrimonial</h5><p class="text-xs text-gray-500">Configura políticas por categoría, ficha financiera, mejoras capitalizables y calendario contable.</p></div><div class="grid md:grid-cols-3 gap-3"><label class="text-xs font-bold">Categoría contable<input id="asset-depr-category" class="mt-1 w-full rounded-lg border p-2" placeholder="Mobiliario"></label><label class="text-xs font-bold">Método<select id="asset-depr-method" class="mt-1 w-full rounded-lg border p-2"><option value="LineaRecta">Línea recta</option><option value="SaldoDecreciente">Saldo decreciente</option><option value="UnidadesProduccion">Unidades de producción</option></select></label><label class="text-xs font-bold">Vida útil (meses)<input id="asset-depr-life" type="number" min="1" class="mt-1 w-full rounded-lg border p-2" value="60"></label><label class="text-xs font-bold">Cuenta de activo<input id="asset-depr-account" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Cuenta depreciación acumulada<input id="asset-depr-accum" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Cuenta gasto depreciación<input id="asset-depr-expense" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Cuenta ganancia por baja<input id="asset-depr-gain" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Cuenta pérdida por baja<input id="asset-depr-loss" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Cuenta contrapartida de venta<input id="asset-depr-cash" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Residual (%)<input id="asset-depr-residual-pct" type="number" min="0" max="99.99" step="0.01" value="0" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Tasa anual (saldo decreciente)<input id="asset-depr-rate" type="number" min="0.01" max="0.99" step="0.01" value="0.2" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Unidades totales<input id="asset-depr-units" type="number" min="1" class="mt-1 w-full rounded-lg border p-2"></label></div><button type="button" onclick="saveAssetDeprPolicyUI()" class="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white">Guardar política de categoría</button><div class="border-t pt-4"><h6 class="font-black text-xs">Ficha financiera del activo</h6><div class="grid md:grid-cols-4 gap-3 mt-2"><label class="text-xs font-bold">Activo ID / Código<input id="asset-depr-id" class="mt-1 w-full rounded-lg border p-2" placeholder="ACT-..."></label><label class="text-xs font-bold">Fecha puesta en servicio<input id="asset-depr-placed" type="date" class="mt-1 w-full rounded-lg border p-2" data-ui-help-key="fechas.calendario"></label><label class="text-xs font-bold">Costo capitalizado<input id="asset-depr-cost" type="number" min="0.01" step="0.01" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Valor residual (moneda)<input id="asset-depr-salvage" type="number" min="0" step="0.01" value="0" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Depreciación acumulada inicial<input id="asset-depr-opening" type="number" min="0" step="0.01" value="0" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Fecha corte de apertura<input id="asset-depr-cutoff" type="date" class="mt-1 w-full rounded-lg border p-2" data-ui-help-key="fechas.calendario"></label><label class="text-xs font-bold">Centro de costo<input id="asset-depr-cost-center" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Moneda<input id="asset-depr-currency" value="HNL" class="mt-1 w-full rounded-lg border p-2"></label></div><button type="button" onclick="saveAssetDeprProfileUI()" class="mt-3 rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-white">Guardar ficha financiera</button><div class="mt-4 grid md:grid-cols-4 gap-2"><label class="text-xs font-bold">Fecha de mejora<input id="asset-improvement-date" type="date" class="mt-1 w-full rounded-lg border p-2" data-ui-help-key="fechas.calendario"></label><label class="text-xs font-bold">Descripción<input id="asset-improvement-description" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Importe capitalizable<input id="asset-improvement-amount" type="number" min="0.01" step="0.01" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Vida útil (meses)<input id="asset-improvement-life" type="number" min="1" class="mt-1 w-full rounded-lg border p-2"></label></div><button type="button" onclick="registerAssetImprovementUI()" class="mt-2 rounded-lg border px-4 py-2 text-xs font-bold">Registrar mejora capitalizable</button></div><div class="border-t pt-4"><h6 class="font-black text-xs">Cierre mensual y calendario</h6><div class="flex flex-wrap gap-2 items-end"><label class="text-xs font-bold">Período<input id="asset-depr-period" type="month" class="mt-1 rounded-lg border p-2"></label><label class="text-xs font-bold">Unidades utilizadas (si aplica)<input id="asset-depr-period-units" type="number" min="0" step="0.01" value="0" class="mt-1 rounded-lg border p-2"></label><button type="button" onclick="runAssetDeprUI(false)" class="rounded-lg bg-gray-700 px-4 py-2 text-xs font-bold text-white">Previsualizar</button><button type="button" onclick="runAssetDeprUI(true)" class="rounded-lg bg-emerald-700 px-4 py-2 text-xs font-bold text-white">Contabilizar período</button><button type="button" onclick="loadAssetDeprScheduleUI()" class="rounded-lg border px-4 py-2 text-xs font-bold">Actualizar calendario</button><label class="text-xs font-bold">Motivo de reversión<input id="asset-depr-reversal-reason" class="mt-1 rounded-lg border p-2" placeholder="Motivo y soporte"></label><button type="button" onclick="reverseAssetDeprUI()" class="rounded-lg border border-rose-300 text-rose-700 px-4 py-2 text-xs font-bold">Revertir período contabilizado</button></div><div id="asset-depr-results" class="overflow-x-auto text-xs"></div></div></section>');
+  loadActivosData();
+}
+
+window.loadActivosData = function () {
+  const container=document.getElementById("activos-table-container");if(!container)return;
+  fetchApi("ACCOUNTING","getAssetItems",{}).then(res=>{
+    const items=res&&res.activos?res.activos:[];
+    if(!items.length){container.innerHTML='<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay activos registrados.</div>';return;}
+    const esc=escapePurchaseAssetHtml;
+    let html='<table class="w-full text-left border-collapse"><thead><tr class="bg-gray-50 border-b text-gray-600 font-bold uppercase"><th class="p-2">Código</th><th class="p-2">Activo</th><th class="p-2">Serie</th><th class="p-2">Ubicación</th><th class="p-2">Custodio</th><th class="p-2">Adquisición</th><th class="p-2">Acciones</th></tr></thead><tbody class="divide-y divide-gray-100">';
+    items.forEach(a=>{
+      const acquisition=a.ordenCompraId?`<button onclick="viewAssetAcquisitionRecord(${purchaseAssetJsArg(a.activoId)})" class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded font-bold text-[10px]">Ver expediente</button>`:"—";
+      html+=`<tr><td class="p-2 font-mono font-bold text-indigo-600">${esc(a.codigoPatrimonial)}</td><td class="p-2 font-bold">${esc(a.nombre)}<div class="text-[10px] text-gray-500">${esc(a.categoria)}</div></td><td class="p-2">${esc(a.numeroSerie||a.serieModel)}</td><td class="p-2">${esc(a.ubicacionActual)}</td><td class="p-2">${esc(a.custodioUserId||"Sin custodio")}</td><td class="p-2">${acquisition}</td><td class="p-2 whitespace-nowrap"><button onclick="handleAsignarCustodia(${purchaseAssetJsArg(a.activoId)})" class="px-2 py-1 bg-blue-50 text-blue-600 rounded font-bold text-[10px]">Asignar</button>${a.custodioUserId||a.estado==="assigned"?` <button onclick="handleDevolverCustodia(${purchaseAssetJsArg(a.activoId)},${purchaseAssetJsArg(a.codigoPatrimonial)},${purchaseAssetJsArg(a.nombre)},${purchaseAssetJsArg(a.custodioUserId)})" class="px-2 py-1 bg-rose-50 text-rose-600 rounded font-bold text-[10px]">Devolver</button>`:""}</td></tr>`;
+    });
+    container.innerHTML=html+"</tbody></table>";
+  }).catch(err=>{container.innerHTML='<div class="p-4 text-rose-600 font-bold text-center">Error al cargar activos: '+escapePurchaseAssetHtml(err.message)+'</div>';});
+};
+window.viewAssetAcquisitionRecord=function(activoId){
+  fetchApi("ACCOUNTING","getAssetItems",{}).then(res=>{
+    const asset=(res.activos||[]).find(item=>String(item.activoId)===String(activoId));if(!asset||!asset.ordenCompraId){alert("El activo no tiene un expediente de adquisición vinculado.");return;}
+    const existing=document.getElementById("asset-acquisition-modal");if(existing)existing.remove();
+    const modal=document.createElement("div");modal.id="asset-acquisition-modal";modal.className="fixed inset-0 z-[110] bg-black/60 flex items-center justify-center p-3";
+    modal.innerHTML=`<div class="bg-white rounded-2xl p-5 max-w-xl w-full space-y-3"><div class="flex justify-between"><h3 class="font-black text-sm">Expediente de adquisición</h3><button onclick="document.getElementById('asset-acquisition-modal').remove()" class="text-xl">×</button></div>
+      <dl class="grid grid-cols-2 gap-2 text-xs"><dt>Activo</dt><dd>${escapePurchaseAssetHtml(asset.nombre)}</dd><dt>Orden</dt><dd>${escapePurchaseAssetHtml(asset.ordenCompraId)}</dd><dt>Recepción</dt><dd>${escapePurchaseAssetHtml(asset.recepcionId)}</dd><dt>Proveedor</dt><dd>${escapePurchaseAssetHtml(asset.proveedorId)}</dd><dt>Factura</dt><dd>${escapePurchaseAssetHtml(asset.numeroFactura)}</dd><dt>Obligación</dt><dd>${escapePurchaseAssetHtml(asset.obligacionId)}</dd><dt>Fecha adquisición</dt><dd>${asset.fechaAdquisicion?window.IMARegionalFormatters.formatDate(asset.fechaAdquisicion):"—"}</dd><dt>Costo de adquisición</dt><dd>${window.IMARegionalFormatters.formatCurrency(asset.costoAdquisicion)}</dd><dt>Número de serie</dt><dd>${escapePurchaseAssetHtml(asset.numeroSerie)}</dd></dl>
+      <button onclick="openPurchaseReceiptRecord(${purchaseAssetJsArg(asset.recepcionId)})" class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Ir a recepciones</button></div>`;
+    document.body.appendChild(modal);
+  }).catch(err=>alert("No se pudo abrir el expediente: "+(err.message||err)));
+};
+
+window.handleSaveActivo = function (e) {
+  e.preventDefault();
+  const payload = {
+    codigoPatrimonial: document.getElementById('act-codigo').value,
+    nombre: document.getElementById('act-nombre').value,
+    categoria: document.getElementById('act-categoria').value,
+    serieModel: document.getElementById('act-serie').value,
+    numeroSerie: document.getElementById('act-numero-serie').value,
+    marca: document.getElementById('act-marca').value,
+    modelo: document.getElementById('act-serie').value,
+    ubicacionActual: document.getElementById('act-ubicacion').value
+  };
+
+  fetchApi('ACCOUNTING', 'manageAssetItem', payload)
+    .then(res => {
+      alert(res.message || "Activo registrado con éxito.");
+      document.getElementById('form-activo').reset();
+      loadActivosData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+
+window.saveAssetDeprPolicyUI=function(){
+ const value=id=>document.getElementById(id).value;
+ fetchApi("ACCOUNTING","saveAssetDepreciationPolicy",{categoria:value("asset-depr-category"),metodo:value("asset-depr-method"),vidaUtilMeses:Number(value("asset-depr-life")),valorResidualPorcentaje:Number(value("asset-depr-residual-pct")),tasaAnual:Number(value("asset-depr-rate")),unidadesTotales:Number(value("asset-depr-units")),cuentaActivo:value("asset-depr-account"),cuentaDepreciacionAcumulada:value("asset-depr-accum"),cuentaGastoDepreciacion:value("asset-depr-expense"),cuentaGananciaBaja:value("asset-depr-gain"),cuentaPerdidaBaja:value("asset-depr-loss"),cuentaEfectivoBaja:value("asset-depr-cash")}).then(()=>alert("Política de depreciación guardada.")).catch(e=>alert(e.message||String(e)));
+};
+window.saveAssetDeprProfileUI=function(){
+ const value=id=>document.getElementById(id).value;
+ fetchApi("ACCOUNTING","configureAssetDepreciationProfile",{activoId:value("asset-depr-id"),categoriaContable:value("asset-depr-category"),fechaPuestaFuncionamiento:value("asset-depr-placed"),fechaInicioDepreciacion:value("asset-depr-placed"),costoCapitalizado:Number(value("asset-depr-cost")),valorResidual:Number(value("asset-depr-salvage")),vidaUtilMeses:Number(value("asset-depr-life")),metodo:value("asset-depr-method"),tasaAnual:Number(value("asset-depr-rate")),cuentaActivo:value("asset-depr-account"),cuentaDepreciacionAcumulada:value("asset-depr-accum"),cuentaGastoDepreciacion:value("asset-depr-expense"),cuentaGananciaBaja:value("asset-depr-gain"),cuentaPerdidaBaja:value("asset-depr-loss"),cuentaEfectivoBaja:value("asset-depr-cash"),depreciacionAcumuladaInicial:Number(value("asset-depr-opening")),fechaCorteApertura:value("asset-depr-cutoff"),centroCosto:value("asset-depr-cost-center"),moneda:value("asset-depr-currency"),unidadesTotales:Number(value("asset-depr-units"))}).then(()=>{alert("Ficha financiera guardada.");loadAssetDeprScheduleUI();}).catch(e=>alert(e.message||String(e)));
+};
+window.registerAssetImprovementUI=function(){const value=id=>document.getElementById(id).value;fetchApi("ACCOUNTING","registerCapitalizableAssetImprovement",{activoId:value("asset-depr-id"),fechaCapitalizacion:value("asset-improvement-date"),descripcion:value("asset-improvement-description"),importe:Number(value("asset-improvement-amount")),vidaUtilMeses:Number(value("asset-improvement-life")),metodo:"LineaRecta"}).then(()=>{alert("Mejora capitalizable registrada.");loadAssetDeprScheduleUI();}).catch(e=>alert(e.message||String(e)));};
+window.runAssetDeprUI=function(post){
+ const value=id=>document.getElementById(id).value,host=document.getElementById("asset-depr-results");host.textContent="Procesando...";
+ fetchApi("ACCOUNTING","calculateAssetDepreciation",{activoId:value("asset-depr-id"),periodo:value("asset-depr-period"),unidadesPeriodo:Number(value("asset-depr-period-units")),post:!!post}).then(result=>{
+  host.innerHTML="";const title=document.createElement("p");title.className="font-bold my-2";title.textContent="Período "+result.periodo+" · Total "+result.totalDepreciacion;host.appendChild(title);
+  (result.resultados||[]).forEach(r=>{const line=document.createElement("p");line.textContent=r.codigoPatrimonial+" · "+r.nombre+" · "+r.status+" · Depreciación "+r.depreciacionPeriodo+" · Valor neto "+r.valorNetoLibros+(r.asientoId?" · Asiento "+r.asientoId:"");host.appendChild(line);});
+  if(post)loadAssetDeprScheduleUI();
+ }).catch(e=>{host.textContent=e.message||String(e);});
+};
+window.loadAssetDeprScheduleUI=function(){
+ const value=id=>document.getElementById(id).value,host=document.getElementById("asset-depr-results");if(!host)return;host.textContent="Cargando calendario...";
+ fetchApi("ACCOUNTING","getAssetDepreciationSchedule",{activoId:value("asset-depr-id")}).then(result=>{
+  host.innerHTML="";
+  const addTitle=text=>{const h=document.createElement("h6");h.className="font-black mt-4 mb-2";h.textContent=text;host.appendChild(h);};
+  const addTable=(headers,rows)=>{const table=document.createElement("table");table.className="w-full text-left border-collapse mb-3";const head=document.createElement("tr");headers.forEach(v=>{const th=document.createElement("th");th.className="border-b p-2";th.textContent=v;head.appendChild(th);});table.appendChild(head);rows.forEach(values=>{const tr=document.createElement("tr");values.forEach(v=>{const td=document.createElement("td");td.className="border-b p-2";td.textContent=String(v===undefined||v===null?"":v);tr.appendChild(td);});table.appendChild(tr);});host.appendChild(table);};
+  const totals=document.createElement("p");totals.className="font-bold my-2";totals.textContent="Costo registrado "+result.totales.costo+" · Depreciación acumulada "+result.totales.depreciacionAcumulada+" · Valor neto "+result.totales.valorNeto+" · Totalmente depreciados "+result.totales.activosTotalmenteDepreciados;host.appendChild(totals);
+  const rec=document.createElement("p");rec.className="text-xs my-2 "+(result.conciliacion.estado==="Conciliado"?"text-emerald-700":"text-amber-700");rec.textContent="Conciliación de depreciación: "+result.conciliacion.estado+" · Registro "+result.conciliacion.depreciacionRegistrada+" · Libro mayor "+result.conciliacion.depreciacionEnLibroMayor+" · Diferencia "+result.conciliacion.diferencia;host.appendChild(rec);const balance=result.conciliacion.balancePatrimonial;if(balance){const bal=document.createElement("p");bal.className="text-xs my-2 "+(balance.estado==="Conciliado"?"text-emerald-700":"text-amber-700");bal.textContent="Conciliación patrimonial: "+balance.estado+" · Inventario neto "+balance.valorNetoInventario+" · Libro mayor "+balance.valorNetoLibroMayor+" · Diferencia "+balance.diferencia+" · Activos sin ficha "+balance.activosSinFicha;host.appendChild(bal);}
+  addTitle("Activos y vida útil");
+  addTable(["Activo","Categoría","Costo","Residual","Acumulada","Valor neto","Vida transcurrida / restante","Mejoras","Fin estimado"],(result.activos||[]).map(x=>[x.activoId,x.categoria,x.costoCapitalizado,x.valorResidual,x.depreciacionAcumulada,x.valorNetoLibros,x.vidaUtilTranscurridaMeses+" / "+x.vidaUtilRestanteMeses+" meses",(x.mejorasCapitalizables||[]).length,String(x.fechaFinEstimada||"").slice(0,10)]));
+  addTitle("Acumulado por categoría");
+  addTable(["Categoría","Activos","Costo","Depreciación acumulada","Valor neto","Totalmente depreciados"],(result.resumenCategoria||[]).map(x=>[x.categoria,x.activos,x.costo,x.depreciacionAcumulada,x.valorNeto,x.totalmenteDepreciados]));
+  addTitle("Resumen anual");
+  addTable(["Año","Depreciación","Períodos"],(result.resumenAnual||[]).map(x=>[x.anio,x.depreciacion,x.periodos]));
+  addTitle("Calendario mensual");
+  addTable(["Activo","Período","Método","Depreciación","Acumulada","Valor neto","Asiento","Estado","Asiento reversión","Motivo reversión"],(result.calendario||[]).map(r=>[r.activoId,r.periodo,r.metodo,r.depreciacionPeriodo,r.depreciacionAcumulada,r.valorNetoLibros,r.asientoId||"",r.estado,r.asientoReversionId||"",r.motivoReversion||""]));
+ }).catch(e=>{host.textContent=e.message||String(e);});
+};
+
+window.reverseAssetDeprUI=function(){const value=id=>document.getElementById(id).value,activoId=value("asset-depr-id"),periodo=value("asset-depr-period"),motivo=value("asset-depr-reversal-reason");if(!activoId||!periodo||!motivo){alert("Indique el activo, período y motivo de reversión.");return;}if(!confirm("Se conservará el asiento original y se registrará un asiento inverso. ¿Continuar?"))return;fetchApi("ACCOUNTING","reverseAssetDepreciationEntry",{activoId,periodo,motivo}).then(result=>{alert("Reversión registrada: "+result.asientoReversionId);loadAssetDeprScheduleUI();}).catch(e=>alert(e.message||String(e)));};
+
+window.handleAsignarCustodia = function (activoId) {
+  const custodio = prompt("Ingrese el UserId del custodio o empleado responsable (EJ: EMP-01):");
+  if (!custodio) return;
+
+  fetchApi('ACCOUNTING', 'assignAssetCustody', { activoId: activoId, custodioUserId: custodio })
+    .then(res => {
+      alert(res.message || "Custodia asignada correctamente.");
+      loadActivosData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+window.handleDevolverCustodia = function (activoId, codigoPatrimonial, nombre, custodioUserId) {
+  const custodio = prompt(`Confirmar custodio que entrega el activo (${codigoPatrimonial} - ${nombre}):`, custodioUserId || "");
+  if (!custodio) return;
+
+  const receptor = prompt("UserId o nombre del responsable institucional que recibe el activo:", (window.currentUser && window.currentUser.userId) || "DIR-01");
+  if (!receptor) return;
+
+  const condicionPrompt = prompt("Condición física al reingreso (Nuevo, Bueno, Regular, Dañado, Incompleto, RequiereReparacion):", "Bueno");
+  if (!condicionPrompt) return;
+
+  const obs = prompt("Observaciones de la entrega / componentes o detalles:", "Devolución en orden y revisión conforme");
+
+  fetchApi('ACCOUNTING', 'returnAssetCustody', {
+    activoId: activoId,
+    custodioUserId: custodio,
+    recibidoPor: receptor,
+    receptorUserId: receptor,
+    estadoFisico: condicionPrompt,
+    condicionRecepcion: condicionPrompt,
+    observaciones: obs || "Recepción formal de custodia",
+    ubicacionRecepcion: "Bodega General"
+  })
+    .then(res => {
+      let msg = res.message || "Devolución registrada correctamente.";
+      if (res.ordenMantenimientoId) {
+        msg += `\nSe generó orden de mantenimiento: ${res.ordenMantenimientoId}`;
+      }
+      if (res.actaDevolucionId) {
+        msg += `\nActa de Entrega-Recepción: ${res.actaDevolucionId}`;
+      }
+      alert(msg);
+      loadActivosData();
+    })
+    .catch(err => alert("Error al devolver custodia: " + (err.message || err)));
+};
+
+// --- MANTENIMIENTO ---
+
+function renderMantenimientoView(container) {
+  container.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
+        <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-tools text-amber-600"></i> Orden de Mantenimiento</h5>
+        <form id="form-mantenimiento" onsubmit="handleSaveMantenimiento(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Activo / Ubicación Afecada *</label>
+            <input type="text" id="mnt-activo" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: PAT-LAB-01 / Lab Cómputo">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Tipo Mantenimiento</label>
+            <select id="mnt-tipo" class="w-full p-2 border border-gray-300 rounded-xl">
+              <option value="Correctivo">Correctivo (Reparación de Falla)</option>
+              <option value="Preventivo">Preventivo (Programado)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Descripción de la Falla *</label>
+            <textarea id="mnt-falla" required class="w-full p-2 border border-gray-300 rounded-xl" rows="2" placeholder="Describa el problema reportado..."></textarea>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Prioridad</label>
+            <select id="mnt-prioridad" class="w-full p-2 border border-gray-300 rounded-xl">
+              <option value="Baja">Baja</option>
+              <option value="Media" selected>Media</option>
+              <option value="Alta">Alta / Urgente</option>
+            </select>
+          </div>
+          <div><label class="block font-bold text-gray-600 mb-1">Departamento responsable</label><input type="text" id="mnt-departamento" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Departamento solicitante"></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Centro de costo</label><input type="text" id="mnt-centro-costo" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Centro de costo"></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Almacén de origen</label><input type="text" id="mnt-ubicacion-origen" value="Bodega General" class="w-full p-2 border border-gray-300 rounded-xl"></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Estado de la orden</label><select id="mnt-estado" class="w-full p-2 border border-gray-300 rounded-xl"><option value="Reportado" selected>Reportado</option><option value="EnProceso">En proceso</option><option value="Resuelto">Resuelto</option><option value="Completado">Completado</option></select></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Repuestos consumidos (JSON, opcional)</label><textarea id="mnt-repuestos" rows="3" class="w-full p-2 border border-gray-300 rounded-xl font-mono" placeholder='[{"itemCodigo":"MAT-001","unidadMedida":"Unidad","cantidad":1}]'></textarea></div>
+          <button type="submit" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all uppercase">
+            Crear Orden
+          </button>
+        </form>
+      </div>
+
+      <div class="md:col-span-2 bg-white p-5 rounded-2xl border border-gray-200">
+        <div class="flex justify-between items-center mb-4">
+          <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-wrench text-amber-600"></i> Órdenes de Mantenimiento</h5>
+          <button onclick="loadMantenimientoData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+        </div>
+        <div id="mantenimiento-table-container" class="overflow-x-auto text-xs">
+          <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando mantenimiento...</div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section class="bg-white p-5 rounded-2xl border border-gray-200">
+        <h5 class="font-black text-xs uppercase text-gray-800 mb-3">Plan preventivo</h5>
+        <form id="form-plan-mantenimiento" onsubmit="handleSavePreventiveMaintenancePlan(event)" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <label class="font-bold text-gray-600">Plantilla<select id="mnt-plan-template" onchange="applyPreventiveMaintenanceTemplate()" class="w-full p-2 border rounded-xl"><option value="">Seleccionar plantilla...</option></select></label>
+          <label class="font-bold text-gray-600">Tipo de objetivo<select id="mnt-plan-target-type" class="w-full p-2 border rounded-xl"><option value="ACTIVO">Activo específico</option><option value="CATEGORIA">Categoría de activos</option><option value="UBICACION">Ubicación</option><option value="INSTALACION">Instalación</option><option value="GRUPO">Grupo de equipos</option></select></label>
+          <label class="font-bold text-gray-600">Objetivo / ID / ubicación<input id="mnt-plan-target" required class="w-full p-2 border rounded-xl" placeholder="Activo, categoría o ubicación"></label>
+          <label class="font-bold text-gray-600">Categoría (si aplica)<input id="mnt-plan-category" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Frecuencia<select id="mnt-plan-frequency" class="w-full p-2 border rounded-xl"><option value="DIARIA">Diaria</option><option value="SEMANAL">Semanal</option><option value="QUINCENAL">Quincenal</option><option value="MENSUAL" selected>Mensual</option><option value="TRIMESTRAL">Trimestral</option><option value="SEMESTRAL">Semestral</option><option value="ANUAL">Anual</option><option value="DIAS">Intervalo en días</option><option value="HORAS_USO">Horas de uso</option></select></label>
+          <label class="font-bold text-gray-600">Intervalo / horas<input id="mnt-plan-frequency-value" type="number" min="1" value="1" required class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Último mantenimiento<input id="mnt-plan-last" type="date" data-ui-help-key="fechas.calendario" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Próximo mantenimiento<input id="mnt-plan-next" type="date" data-ui-help-key="fechas.calendario" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Lectura de uso última<input id="mnt-plan-reading-last" type="number" min="0" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Lectura de uso próxima<input id="mnt-plan-reading-next" type="number" min="1" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Duración estimada (horas)<input id="mnt-plan-duration" type="number" min="0" step="0.25" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Costo presupuestado<input id="mnt-plan-budget" type="number" min="0" step="0.01" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Tiempo de inactividad (horas)<input id="mnt-plan-downtime" type="number" min="0" step="0.25" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Departamento<input id="mnt-plan-department" required class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Centro de costo<input id="mnt-plan-cost-center" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Responsable técnico<input id="mnt-plan-owner" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600">Días de anticipación<input id="mnt-plan-alert-days" type="number" min="0" max="90" value="30" class="w-full p-2 border rounded-xl"></label>
+          <label class="font-bold text-gray-600 md:col-span-2">Procedimiento<textarea id="mnt-plan-procedure" rows="2" class="w-full p-2 border rounded-xl"></textarea></label>
+          <label class="font-bold text-gray-600">Checklist (JSON)<textarea id="mnt-plan-checklist" rows="2" class="w-full p-2 border rounded-xl font-mono"></textarea></label>
+          <label class="font-bold text-gray-600">Repuestos necesarios (JSON)<textarea id="mnt-plan-parts" rows="2" class="w-full p-2 border rounded-xl font-mono"></textarea></label>
+          <div class="md:col-span-2"><button type="submit" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl">Guardar plan preventivo</button></div>
+        </form>
+      </section>
+      <section class="bg-white p-5 rounded-2xl border border-gray-200">
+        <div class="flex items-center justify-between gap-3 mb-3"><h5 class="font-black text-xs uppercase text-gray-800">Alertas y planes</h5><button type="button" onclick="generatePreventiveMaintenanceOrders()" class="px-3 py-2 bg-amber-100 text-amber-800 rounded-lg font-bold">Generar órdenes próximas</button></div>
+        <div id="mnt-plan-alerts" class="mb-4 text-xs">Cargando alertas...</div>
+        <div id="mnt-plan-list" class="text-xs">Cargando planes...</div>
+      </section>
+    </div>
+  `;
+  loadMantenimientoData();
+  loadPreventiveMaintenanceData();
+}
+
+window.loadMantenimientoData = function () {
+  const container = document.getElementById('mantenimiento-table-container');
+  if (!container) return;
+
+  fetchApi('ACCOUNTING', 'generatePreventiveMaintenanceOrders', {}).catch(() => null)
+    .then(() => fetchApi('ACCOUNTING', 'getMaintenanceOrders', {}))
+    .then(res => {
+      const ords = (res && res.ordenes) ? res.ordenes : [];
+      if (ords.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay órdenes de mantenimiento activas.</div>`;
+        return;
+      }
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">ID Orden</th>
+              <th class="p-2">Activo / Ubicación</th>
+              <th class="p-2">Tipo</th>
+              <th class="p-2">Descripción</th>
+              <th class="p-2">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      ords.forEach(o => {
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-amber-600">${o.ordenMaintId}</td>
+            <td class="p-2 font-bold text-gray-800">${o.activoIdUbicacion}</td>
+            <td class="p-2 text-gray-500">${o.tipoMantenimiento}</td>
+            <td class="p-2 text-gray-600">${o.descripcionFalla}</td>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${o.estadoOrden === 'Resuelto' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${o.estadoOrden}</span></td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar mantenimientos: ${err.message}</div>`;
+    });
+};
+
+window.completePreventiveMaintenanceOrder=function(order){
+ fetchApi("ACCOUNTING","getPreventiveMaintenancePlans",{}).then(p=>{
+  const plan=(p.planes||[]).find(x=>String(x.planId)===String(order.planMantenimientoId));if(!plan)throw new Error("No se encontró el plan preventivo.");
+  let reading="";if(plan.frecuenciaTipo==="HORAS_USO"){reading=prompt("Lectura actual del contador de uso (horas):",String(plan.lecturaUsoProxima||""));if(reading===null)return null;if(!Number.isFinite(Number(reading))||Number(reading)<Number(plan.lecturaUsoUltima||0))throw new Error("Lectura de uso inválida.");}
+  const payload={ordenMaintId:order.ordenMaintId,activoIdUbicacion:order.activoIdUbicacion,descripcionFalla:order.descripcionFalla,tipoMantenimiento:"Preventivo",prioridad:order.prioridad,estadoOrden:"Completado",fechaResolucion:new Date().toISOString(),departamento:order.departamento,centroCosto:order.centroCosto,planMantenimientoId:order.planMantenimientoId,cicloMantenimientoId:order.cicloMantenimientoId,checklistJSON:order.checklistJSON,fechaProgramada:order.fechaProgramada,lecturaUsoAlCompletar:reading};
+  return fetchApi("ACCOUNTING","manageMaintenanceOrder",payload);
+ }).then(result=>{if(result){alert("Intervención completada y próximo ciclo actualizado.");loadMantenimientoData();loadPreventiveMaintenanceData();}}).catch(err=>alert("No se pudo completar la orden: "+err.message));
+};
+window.handleSaveMantenimiento = function (e) {
+  e.preventDefault();
+  const rawParts=document.getElementById('mnt-repuestos').value.trim();let parts=[];
+  if(rawParts){try{parts=JSON.parse(rawParts);if(!Array.isArray(parts))throw new Error("Debe ingresar un arreglo JSON de repuestos.");}catch(err){alert("Repuestos inválidos: "+err.message);return;}}
+  const payload = {
+    activoIdUbicacion: document.getElementById('mnt-activo').value,
+    tipoMantenimiento: document.getElementById('mnt-tipo').value,
+    descripcionFalla: document.getElementById('mnt-falla').value,
+    prioridad: document.getElementById('mnt-prioridad').value,
+    departamento: document.getElementById('mnt-departamento').value,
+    centroCosto: document.getElementById('mnt-centro-costo').value,
+    ubicacionOrigen: document.getElementById('mnt-ubicacion-origen').value,
+    estadoOrden: document.getElementById('mnt-estado').value,
+    repuestosConsumidosJSON: parts
+  };
+  fetchApi('ACCOUNTING', 'manageMaintenanceOrder', payload)
+    .then(res => {
+      alert(res.message || "Orden de mantenimiento creada con éxito."+(res.asientoId?" Asiento: "+res.asientoId:""));
+      document.getElementById('form-mantenimiento').reset();
+      loadMantenimientoData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+
+window.applyPreventiveMaintenanceTemplate=function(){const id=document.getElementById("mnt-plan-template").value,t=(window._preventiveMaintenanceTemplates||[]).find(x=>x.id===id);if(!t)return;document.getElementById("mnt-plan-procedure").value=t.procedimiento;document.getElementById("mnt-plan-checklist").value=JSON.stringify(t.checklist,null,2);};
+function maintenancePlanEscapeHtml(value){return String(value==null?"":value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+window.handleSavePreventiveMaintenancePlan=function(e){
+ e.preventDefault();const parse=(id)=>{const raw=document.getElementById(id).value.trim();if(!raw)return [];const v=JSON.parse(raw);if(!Array.isArray(v))throw new Error("El valor debe ser un arreglo JSON.");return v;};
+ let checklist,parts;try{checklist=parse("mnt-plan-checklist");parts=parse("mnt-plan-parts");}catch(err){alert("JSON inválido: "+err.message);return;}
+ const payload={tipoObjetivo:document.getElementById("mnt-plan-target-type").value,objetivoId:document.getElementById("mnt-plan-target").value,categoria:document.getElementById("mnt-plan-category").value,frecuenciaTipo:document.getElementById("mnt-plan-frequency").value,frecuenciaValor:Number(document.getElementById("mnt-plan-frequency-value").value),fechaUltimoMantenimiento:document.getElementById("mnt-plan-last").value,fechaProximoMantenimiento:document.getElementById("mnt-plan-next").value,lecturaUsoUltima:Number(document.getElementById("mnt-plan-reading-last").value||0),lecturaUsoProxima:Number(document.getElementById("mnt-plan-reading-next").value||0),duracionEstimadaHoras:Number(document.getElementById("mnt-plan-duration").value||0),costoPresupuestado:Number(document.getElementById("mnt-plan-budget").value||0),tiempoInactividadHoras:Number(document.getElementById("mnt-plan-downtime").value||0),departamento:document.getElementById("mnt-plan-department").value,centroCosto:document.getElementById("mnt-plan-cost-center").value,responsableTecnico:document.getElementById("mnt-plan-owner").value,diasAnticipacion:Number(document.getElementById("mnt-plan-alert-days").value),procedimiento:document.getElementById("mnt-plan-procedure").value,checklist:checklist,repuestosNecesarios:parts};
+ fetchApi("ACCOUNTING","managePreventiveMaintenancePlan",payload).then(r=>{alert("Plan preventivo guardado: "+r.planId);document.getElementById("form-plan-mantenimiento").reset();loadPreventiveMaintenanceData();}).catch(err=>alert("Error: "+err.message));
+};
+window.generatePreventiveMaintenanceOrders=function(){
+ fetchApi("ACCOUNTING","generatePreventiveMaintenanceOrders",{}).then(r=>{alert("Órdenes generadas: "+(r.generadas||[]).length);loadMantenimientoData();loadPreventiveMaintenanceData();}).catch(err=>alert("Error al generar órdenes: "+err.message));
+};
+window.postponeMaintenancePlan=function(encodedId){
+ const planId=decodeURIComponent(encodedId),date=prompt("Nueva fecha programada (AAAA-MM-DD):");if(!date)return;const reason=prompt("Justificación obligatoria de la postergación:");if(!reason||!reason.trim()){alert("Debe indicar una justificación.");return;}
+ fetchApi("ACCOUNTING","managePreventiveMaintenancePlan",{accion:"posponer",planId:planId,fechaPospuestaHasta:date,motivoPostergacion:reason}).then(()=>loadPreventiveMaintenanceData()).catch(err=>alert("Error: "+err.message));
+};
+window.loadPreventiveMaintenanceData=function(){
+ const alerts=document.getElementById("mnt-plan-alerts"),list=document.getElementById("mnt-plan-list");if(!alerts||!list)return;
+ Promise.all([fetchApi("ACCOUNTING","getPreventiveMaintenanceAlerts",{}),fetchApi("ACCOUNTING","getPreventiveMaintenancePlans",{}),fetchApi("ACCOUNTING","getPreventiveMaintenanceTemplates",{})]).then(([a,p,t])=>{
+  const esc=maintenancePlanEscapeHtml,items=a.alertas||[],plans=p.planes||[],templateSelect=document.getElementById("mnt-plan-template");window._preventiveMaintenanceTemplates=t.plantillas||[];if(templateSelect&&templateSelect.options.length<=1)window._preventiveMaintenanceTemplates.forEach(x=>{const option=document.createElement("option");option.value=x.id;option.textContent=x.nombre;templateSelect.appendChild(option);});
+  alerts.innerHTML=items.length?items.map(x=>'<div class="p-2 mb-1 rounded-lg bg-amber-50 text-amber-900"><strong>'+esc(x.estado)+'</strong> · '+esc(x.objetivo)+' · '+esc(x.fechaProgramada||("Lectura "+x.lecturaProgramada))+'</div>').join(""):'<p class="text-gray-500">No hay alertas preventivas en el período.</p>';
+  list.innerHTML=plans.length?plans.map(x=>'<div class="border-b py-2"><div class="font-bold">'+esc(x.planId)+' · '+esc(x.objetivoNombre)+'</div><div class="text-gray-500">'+esc(x.frecuenciaTipo)+' ('+esc(x.frecuenciaValor)+') · Próximo: '+esc(x.fechaProximoMantenimiento||"Por horas de uso")+'</div><button type="button" onclick="postponeMaintenancePlan(\''+encodeURIComponent(x.planId)+'\')" class="mt-1 text-amber-700 underline">Posponer con justificación</button></div>').join(""):'<p class="text-gray-500">No hay planes preventivos configurados.</p>';
+ }).catch(err=>{alerts.textContent="No se pudieron cargar alertas: "+err.message;list.textContent="No se pudieron cargar los planes.";});
+};
+
+// --- BAJAS DE BIENES ---
+
+function renderBajasView(container) {
+  container.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
+        <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-trash-alt text-rose-600"></i> Registrar Baja de Bien</h5>
+        <form id="form-baja" onsubmit="handleSaveBaja(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Código / ID de Bien *</label>
+            <input type="text" id="baj-codigo" required class="w-full p-2 border border-gray-300 rounded-xl font-bold" placeholder="EJ: PAT-LAB-01 / MAT-01">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Nombre de Bien</label>
+            <input type="text" id="baj-nombre" class="w-full p-2 border border-gray-300 rounded-xl">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Tipo de Bien</label>
+            <select id="baj-tipo" class="w-full p-2 border border-gray-300 rounded-xl">
+              <option value="ActivoFijo">Activo Fijo Patrimonial</option>
+              <option value="Inventario">Insumo / Material de Inventario</option>
+            </select>
+          </div>
+          <div><label class="block font-bold text-gray-600 mb-1">Fecha efectiva de baja (cierre mensual para activos depreciables)</label><input type="date" id="baj-fecha" required class="w-full p-2 border border-gray-300 rounded-xl" data-ui-help-key="fechas.calendario"></div><div><label class="block font-bold text-gray-600 mb-1">Valor de venta / recuperación</label><input type="number" min="0" step="0.01" value="0" id="baj-valor-venta" class="w-full p-2 border border-gray-300 rounded-xl"></div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Motivo de Baja *</label>
+            <textarea id="baj-motivo" required class="w-full p-2 border border-gray-300 rounded-xl" rows="2" placeholder="Desuso, obsolescencia, daño irreparable..."></textarea>
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-all uppercase">
+            Confirmar Baja
+          </button>
+        </form>
+      </div>
+
+      <div class="md:col-span-2 bg-white p-5 rounded-2xl border border-gray-200">
+        <div class="flex justify-between items-center mb-4">
+          <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-history text-rose-600"></i> Historial de Bajas Institucionales</h5>
+          <button onclick="loadBajasData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+        </div>
+        <div id="bajas-table-container" class="overflow-x-auto text-xs">
+          <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando bajas...</div>
+        </div>
+      </div>
+    </div>
+  `;
+  loadBajasData();
+}
+
+window.loadBajasData = function () {
+  const container = document.getElementById('bajas-table-container');
+  if (!container) return;
+
+  fetchApi('ACCOUNTING', 'getAssetDisposals', {})
+    .then(res => {
+      const bjs = (res && res.bajas) ? res.bajas : [];
+      if (bjs.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay registros de baja institucionales.</div>`;
+        return;
+      }
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">ID Baja</th>
+              <th class="p-2">Código Bien</th>
+              <th class="p-2">Bien</th>
+              <th class="p-2">Tipo</th>
+              <th class="p-2">Motivo</th>
+              <th class="p-2">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      bjs.forEach(b => {
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-rose-600">${b.bajaId}</td>
+            <td class="p-2 font-mono font-bold text-gray-700">${b.bienIdCodigo}</td>
+            <td class="p-2 font-bold text-gray-800">${b.nombreBien}</td>
+            <td class="p-2 text-gray-500">${b.tipoBien}</td>
+            <td class="p-2 text-gray-600">${b.motivoBaja}</td>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">${b.estado}</span></td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar bajas: ${err.message}</div>`;
+    });
+};
+
+window.handleSaveBaja = function (e) {
+  e.preventDefault();
+  const payload = {
+    bienIdCodigo: document.getElementById('baj-codigo').value,
+    nombreBien: document.getElementById('baj-nombre').value,
+    tipoBien: document.getElementById('baj-tipo').value,
+    motivoBaja: document.getElementById('baj-motivo').value,
+    fechaBaja: document.getElementById('baj-fecha').value,
+    valorVenta: Number(document.getElementById('baj-valor-venta').value || 0)
+  };
+
+  fetchApi('ACCOUNTING', 'registerAssetDisposal', payload)
+    .then(res => {
+      alert(res.message || "Baja registrada con éxito.");
+      document.getElementById('form-baja').reset();
+      loadBajasData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+// --- OTROS MÓDULOS DEL PANEL CONTABLE ---
+
+// [TASK-014] [F18-Task03] - Interfaz operativa completa del módulo de compras & proveedores
+let currentComprasSubtab = 'solicitudes';
+let purchaseActionCapabilitiesRequestId = 0;
+window.purchaseActionCapabilities = Object.create(null);
+window.hasPurchaseActionCapability = function(action) {
+  return window.purchaseActionCapabilities && window.purchaseActionCapabilities[action] === true;
+};
+window.applyPurchaseActionVisibility = function(root) {
+  const scope = root || document;
+  if (!scope || typeof scope.querySelectorAll !== "function") return;
+  Array.prototype.forEach.call(scope.querySelectorAll("[data-purchase-action]"), control => {
+    const action = String(control.getAttribute("data-purchase-action") || "").trim();
+    const allowed = !!action && window.hasPurchaseActionCapability(action);
+    control.hidden = !allowed;
+    control.disabled = !allowed;
+    if (control.setAttribute) control.setAttribute("aria-hidden", String(!allowed));
+  });
+};
+window.loadPurchaseActionCapabilities = function() {
+  const requestId = ++purchaseActionCapabilitiesRequestId;
+  window.purchaseActionCapabilities = Object.create(null);
+  window.applyPurchaseActionVisibility(document.getElementById("compras-subtab-container") || document);
+  return fetchBackendAccounting("getPurchaseActionCapabilities", {}).then(result => {
+    if (requestId !== purchaseActionCapabilitiesRequestId) return result;
+    if (!result || result.status !== "success" || !result.actions || typeof result.actions !== "object" || Array.isArray(result.actions)) {
+      throw new Error(result && result.code || "PURCHASE_CAPABILITIES_UNAVAILABLE");
+    }
+    window.purchaseActionCapabilities = Object.assign(Object.create(null), result.actions);
+    window.applyPurchaseActionVisibility(document.getElementById("compras-subtab-container") || document);
+    return result;
+  }).catch(error => {
+    if (requestId === purchaseActionCapabilitiesRequestId) {
+      window.purchaseActionCapabilities = Object.create(null);
+      window.applyPurchaseActionVisibility(document.getElementById("compras-subtab-container") || document);
+    }
+    return { status: "error", code: String(error && error.message || "PURCHASE_CAPABILITIES_UNAVAILABLE") };
+  });
+};
+
+function renderComprasModule(container) {
+  container.innerHTML = `
+    <div class="space-y-6">
+      <!-- HEADER Y NAVEGACIÓN DE SUBPESTAÑAS -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+        <h4 class="text-base font-black uppercase text-gray-800 flex items-center gap-2">
+          <i class="fas fa-shopping-cart text-purple-600"></i> Gestión de Compras & Proveedores (Fase 18)
+        </h4>
+        <div class="flex flex-wrap gap-2 text-xs font-bold uppercase">
+          <button onclick="switchComprasSubtab('solicitudes')" id="btn-cmp-solicitudes" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-purple-600 text-white">Solicitudes</button>
+          <button onclick="switchComprasSubtab('cotizaciones')" id="btn-cmp-cotizaciones" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Cotizaciones</button>
+          <button onclick="switchComprasSubtab('ordenes')" id="btn-cmp-ordenes" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Órdenes de Compra</button>
+          <button onclick="switchComprasSubtab('recepciones')" id="btn-cmp-recepciones" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Recepciones</button>
+          <button onclick="switchComprasSubtab('threeway')" id="btn-cmp-threeway" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Three-Way Match</button>
+          <button onclick="switchComprasSubtab('expediente')" id="btn-cmp-expediente" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Expediente 360°</button>
+          <button onclick="switchComprasSubtab('proveedores')" id="btn-cmp-proveedores" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Proveedores</button>
+          <button onclick="switchComprasSubtab('cuentas-pagar')" id="btn-cmp-cuentas-pagar" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Cuentas por pagar</button>
+        </div>
+      </div>
+
+      <!-- KPI METRICS SUMMARY -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div class="p-4 bg-purple-50 rounded-2xl border border-purple-100">
+          <span class="text-xs uppercase font-bold text-purple-600 block">Solicitudes Pendientes</span>
+          <span class="text-xl font-black text-purple-900" id="kpi-cmp-solicitudes">--</span>
+        </div>
+        <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+          <span class="text-xs uppercase font-bold text-blue-600 block">Órdenes por Entregar</span>
+          <span class="text-xl font-black text-blue-900" id="kpi-cmp-ordenes">--</span>
+        </div>
+        <div class="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+          <span class="text-xs uppercase font-bold text-amber-600 block">Entregas Parciales</span>
+          <span class="text-xl font-black text-amber-900" id="kpi-cmp-parciales">--</span>
+        </div>
+        <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+          <span class="text-xs uppercase font-bold text-emerald-600 block">Conciliación 3-Vías</span>
+          <span class="text-xl font-black text-emerald-900" id="kpi-cmp-conciliadas">Activa</span>
+        </div>
+      </div>
+
+      <!-- CONTENEDOR DE SUBPESTAÑA DINÁMICA -->
+      <div id="compras-subtab-container" class="space-y-4">
+        <!-- Renderizado dinámico -->
+      </div>
+    </div>
+  `;
+
+  window.switchComprasSubtab('solicitudes');
+  if (window.loadPurchaseActionCapabilities) window.loadPurchaseActionCapabilities();
+}
+
+window.switchComprasSubtab = function (subtab) {
+  currentComprasSubtab = subtab;
+  const tabs = ['solicitudes', 'cotizaciones', 'ordenes', 'recepciones', 'threeway', 'expediente', 'proveedores', 'cuentas-pagar'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`btn-cmp-${t}`);
+    if (btn) {
+      if (t === subtab) {
+        btn.className = "px-3 py-1.5 rounded-xl transition-all shadow-sm bg-purple-600 text-white";
+      } else {
+        btn.className = "px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100";
+      }
+    }
+  });
+
+  const subContainer = document.getElementById('compras-subtab-container');
+  if (!subContainer) return;
+
+  if (subtab === 'solicitudes') {
+    renderComprasSolicitudesView(subContainer);
+  } else if (subtab === 'cotizaciones') {
+    renderComprasCotizacionesView(subContainer);
+  } else if (subtab === 'ordenes') {
+    renderComprasOrdenesView(subContainer);
+  } else if (subtab === 'recepciones') {
+    renderComprasRecepcionesView(subContainer);
+  } else if (subtab === 'threeway') {
+    renderComprasThreeWayView(subContainer);
+  } else if (subtab === 'expediente') {
+    renderComprasExpedienteView(subContainer);
+  } else if (subtab === 'proveedores') {
+    renderComprasProveedoresView(subContainer);
+  } else if (subtab === 'cuentas-pagar') {
+    renderComprasCuentasPorPagarView(subContainer);
+  }
+  if (window.applyPurchaseActionVisibility) window.applyPurchaseActionVisibility(subContainer);
+};
+
+function renderComprasExpedienteView(container){
+  container.innerHTML='<div class="bg-white p-5 rounded-2xl border space-y-3"><h5 class="font-black text-sm">Expediente digital de adquisiciones · Trazabilidad 360°</h5><p class="text-xs text-gray-500">Buscar por solicitud, orden, factura o proveedor.</p><div class="flex gap-2"><input id="purchase-dossier-query" class="flex-1 p-3 border rounded-xl" placeholder="Número de solicitud, orden, factura o proveedor"><button onclick="searchPurchaseDossier()" class="px-4 py-3 bg-indigo-600 text-white rounded-xl">Buscar</button></div><div id="purchase-dossier-results"></div></div>';
+}
+window.registerPurchaseOrderConfirmationUI=function(orderId){const contactoProveedor=prompt("Nombre del contacto del proveedor");if(!contactoProveedor)return;const estadoConfirmacion=prompt("Estado: Confirmada, Rechazada o SolicitaCambios","Confirmada");if(!estadoConfirmacion)return;const canal=prompt("Canal: Correo, Portal, Telefono u Otro","Correo");if(!canal)return;const documentoUrl=prompt("Enlace HTTPS al correo o documento de confirmación (opcional)","")||"";const observaciones=prompt("Observaciones (opcional)","")||"";fetchBackendAccounting("recordPurchaseOrderConfirmation",{ordenCompraId:orderId,contactoProveedor,estadoConfirmacion,canal,documentoUrl,observaciones}).then(()=>{alert("Confirmación del proveedor registrada.");window.searchPurchaseDossier();}).catch(error=>alert("No se pudo registrar la confirmación: "+(error.message||error)));};
+window.searchPurchaseDossier=function(){
+  const query=document.getElementById("purchase-dossier-query").value.trim(),host=document.getElementById("purchase-dossier-results");if(!query||!host)return;host.textContent="Consultando...";
+  fetchBackendAccounting("getPurchaseDossier",{query}).then(result=>{
+    host.innerHTML="";
+    (result.expedientes||[]).forEach(exp=>{
+      const card=document.createElement("div");card.className="border rounded-xl p-4 my-3";
+      const title=document.createElement("h6");title.className="font-black";title.textContent=exp.orden.ordenCompraId+" · "+exp.proveedor.nombre;card.appendChild(title);
+      const m=exp.metricas||{},metrics=document.createElement("p");metrics.className="text-xs my-2";metrics.textContent="Pedidas "+m.cantidadPedida+" · Recibidas "+m.cantidadRecibida+" · Facturadas "+m.cantidadFacturada+" · Pendientes "+m.cantidadPendiente+" · Autorizado L "+m.importeAutorizado+" · Facturado L "+m.importeFacturado+" · Pagado L "+m.importePagado+" · Saldo L "+m.saldoPendiente;card.appendChild(metrics);const confirmationButton=document.createElement("button");confirmationButton.className="px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold";confirmationButton.textContent="Registrar confirmación del proveedor";confirmationButton.dataset.purchaseAction="recordPurchaseOrderConfirmation";confirmationButton.onclick=()=>window.registerPurchaseOrderConfirmationUI(exp.orden.ordenCompraId);card.appendChild(confirmationButton);
+      (exp.timeline||[]).forEach(ev=>{const p=document.createElement("p");p.className="text-xs";p.textContent=ev.etapa+" · "+(ev.fecha?window.IMARegionalFormatters.formatDateTime(ev.fecha):"Fecha no registrada")+" · "+ev.estado+" · "+ev.responsable;card.appendChild(p);});
+      (exp.documentos||[]).forEach(doc=>{const a=document.createElement("a");a.href=doc.url;a.target="_blank";a.rel="noopener noreferrer";a.className="block text-xs text-indigo-600 underline";a.textContent=doc.nombre;card.appendChild(a);});
+      if(exp.documentosRestringidos){const note=document.createElement("p");note.className="text-xs text-amber-700";note.textContent="Los enlaces documentales están restringidos para este rol.";card.appendChild(note);}
+      (exp.facturas||[]).forEach(f=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Factura "+f.numeroFactura+" · "+f.estadoPago+" · Total "+f.total+" · Pagado "+f.pagado+" · Saldo "+f.saldo;card.appendChild(p);});
+      if(exp.adjudicacion){const a=document.createElement("p");a.className="text-xs";a.textContent="Adjudicación "+exp.adjudicacion.actaId+" · "+exp.adjudicacion.estado+" · "+exp.adjudicacion.justificacion;card.appendChild(a);}
+      (exp.cotizaciones||[]).forEach(q=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Cotización "+q.cotizacionId+" · "+q.estado+" · Total L "+q.precioTotal+" · Entrega "+q.plazoEntregaDias+" días · "+q.condicionesPago;card.appendChild(p);(q.detalle||[]).forEach(d=>{const line=document.createElement("p");line.className="text-xs pl-3";line.textContent="Partida "+d.itemId+" · "+d.descripcion+" · Solicitada "+d.cantidadSolicitada+" · Cotizada "+d.cantidadCotizada+" · Unitario L "+d.precioUnitario+" · Total L "+d.total+" · Cumplimiento "+d.especificacionesCumplidas;card.appendChild(line);});});
+      (exp.cantidades||[]).forEach(q=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Partida "+q.itemId+" · Pedida "+q.cantidadPedida+" · Recibida "+q.cantidadRecibida+" · Facturada "+q.cantidadFacturada+" · Pendiente "+q.cantidadPendiente;card.appendChild(p);});
+      (exp.pagos||[]).forEach(pago=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Pago "+pago.pagoRefId+" · "+pago.fecha+" · L "+pago.monto+" · "+pago.metodoPago+" · "+pago.referencia;card.appendChild(p);});
+      (exp.asientos||[]).forEach(asiento=>{const p=document.createElement("p");p.className="text-xs";p.textContent="Asiento "+asiento.asientoId+" · "+asiento.fecha+" · "+asiento.descripcion+" · "+asiento.estado;card.appendChild(p);});
+      host.appendChild(card);
+    });
+    if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(host);
+    if(!host.childElementCount)host.textContent="No se encontraron expedientes dentro del ámbito autorizado.";
+  }).catch(error=>{host.textContent=error.message||String(error);});
+};
+
+function renderComprasSolicitudesView(container) {
+  container.innerHTML = `
+    <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h5 class="text-sm font-black uppercase text-gray-800">Solicitudes de Compra Institucionales</h5>
+        <button onclick="openNewPurchaseRequestModal()" data-purchase-action="createPurchaseRequest" hidden class="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase hover:bg-purple-700 shadow-sm flex items-center gap-2">
+          <i class="fas fa-plus"></i> Nueva Solicitud
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-gray-700">
+          <thead class="bg-gray-50 text-gray-500 uppercase font-black">
+            <tr>
+              <th class="p-3">ID Solicitud</th>
+              <th class="p-3">Departamento</th>
+              <th class="p-3">Justificación</th>
+              <th class="p-3">Monto Est.</th>
+              <th class="p-3">Estado</th>
+              <th class="p-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-compras-solicitudes" class="divide-y divide-gray-100">
+            <tr><td colspan="6" class="p-4 text-center text-gray-400">Cargando solicitudes de compra...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Cargar solicitudes de compra desde el backend
+  fetchBackendAccounting('getPurchaseRequests', {})
+    .then(res => {
+      const tbody = document.getElementById('tbl-compras-solicitudes');
+      const kpi = document.getElementById('kpi-cmp-solicitudes');
+      if (!tbody) return;
+      const list = res.solicitudes || [];
+      if (kpi) kpi.innerText = list.filter(s => s.estadoAprobacion === 'PendienteAprobacion' || s.estadoAprobacion === 'Pendiente').length;
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">No hay solicitudes de compra registradas.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(s => `
+        <tr class="hover:bg-gray-50">
+          <td class="p-3 font-bold text-gray-900">${s.solicitudId}</td>
+          <td class="p-3">${s.departamento || '-'}</td>
+          <td class="p-3 max-w-xs truncate">${s.justificacion || '-'}</td>
+          <td class="p-3 font-bold text-gray-900">${window.IMARegionalFormatters.formatCurrency(s.montoEstimado)}</td>
+          <td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-bold ${s.estadoAprobacion === 'Aprobada' ? 'bg-emerald-100 text-emerald-800' : (s.estadoAprobacion === 'Rechazada' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')}">${s.estadoAprobacion}</span></td>
+          <td class="p-3 space-x-1">
+            <button onclick="viewPurchaseRequestDetails('${s.solicitudId}')" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 font-bold text-[10px]">Detalle</button>
+          </td>
+        </tr>
+      `).join('');
+    })
+    .catch(err => {
+      const tbody = document.getElementById('tbl-compras-solicitudes');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error al consultar solicitudes: ${err.message}</td></tr>`;
+    });
+}
+
+function renderComprasCotizacionesView(container) {
+  container.innerHTML = `
+    <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h5 class="text-sm font-black uppercase text-gray-800">Cotizaciones & Cuadro Comparativo de Ofertas</h5>
+      </div>
+      <p class="text-xs text-gray-600">Registro de ofertas de proveedores, comparación de precios y adjudicación formal.</p>
+      <div class="rounded-xl border border-gray-200 p-4 space-y-3"><h6 class="font-black text-xs uppercase text-gray-700">Registrar cotización detallada</h6><div class="grid md:grid-cols-4 gap-2"><label class="text-xs font-bold">Solicitud<input id="cmp-entry-request-id" class="mt-1 w-full rounded-lg border p-2" placeholder="REQ-CMP-..."></label><label class="text-xs font-bold">Proveedor ID<input id="cmp-entry-supplier-id" class="mt-1 w-full rounded-lg border p-2" placeholder="PRV-..."></label><label class="text-xs font-bold">Entrega (días)<input id="cmp-entry-delivery-days" type="number" min="0" value="5" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold">Vigencia<input id="cmp-entry-validity" value="30 días" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold md:col-span-2">Condiciones de pago<input id="cmp-entry-payment-terms" value="Contado" class="mt-1 w-full rounded-lg border p-2"></label></div><button id="btn-cmp-entry-load" class="px-3 py-2 rounded-lg bg-gray-800 text-white text-xs font-bold">Cargar partidas de la solicitud</button><div id="cmp-entry-lines" class="space-y-2"></div></div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-gray-700">
+          <thead class="bg-gray-50 text-gray-500 uppercase font-black">
+            <tr>
+              <th class="p-3">Cotización ID</th>
+              <th class="p-3">Solicitud</th>
+              <th class="p-3">Proveedor</th>
+              <th class="p-3">Precio Ofertado</th>
+              <th class="p-3">Plazo Entrega</th>
+              <th class="p-3">Estado Selección</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-compras-cotizaciones" class="divide-y divide-gray-100">
+            <tr><td colspan="6" class="p-4 text-center text-gray-400">Cargando cotizaciones...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="rounded-xl border border-purple-100 bg-purple-50/40 p-4 space-y-3"><div class="flex flex-wrap gap-2 items-end"><label class="text-xs font-bold text-gray-700 flex-1 min-w-48">ID de solicitud para comparar<input id="cmp-matrix-request-id" class="mt-1 w-full rounded-lg border border-gray-300 p-2" placeholder="REQ-CMP-..."></label><button id="btn-cmp-load-matrix" class="px-4 py-2 rounded-lg bg-purple-700 text-white text-xs font-bold">Comparar hasta 5 proveedores</button></div><div id="cmp-matrix-result" class="space-y-3 text-xs text-gray-700"></div></div>
+    </div>
+  `;
+
+  const entryLoad=document.getElementById('btn-cmp-entry-load');if(entryLoad)entryLoad.addEventListener('click',()=>window.loadPurchaseQuotationEntry());
+  const matrixButton=document.getElementById('btn-cmp-load-matrix');
+  if(matrixButton)matrixButton.addEventListener('click',()=>window.loadPurchaseQuotationMatrix());
+  const requestInput=document.getElementById('cmp-matrix-request-id');
+  if(requestInput)requestInput.addEventListener('keydown',event=>{if(event.key==='Enter')window.loadPurchaseQuotationMatrix();});
+  fetchBackendAccounting('getPurchaseQuotations', {})
+    .then(res => {
+      const tbody = document.getElementById('tbl-compras-cotizaciones');
+      if (!tbody) return;
+      const list = res.cotizaciones || [];
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">No hay cotizaciones registradas.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(c => `
+        <tr class="hover:bg-gray-50">
+          <td class="p-3 font-bold text-gray-900">${c.cotizacionId}</td>
+          <td class="p-3">${c.solicitudId}</td>
+          <td class="p-3">${c.proveedorId}</td>
+          <td class="p-3 font-bold text-gray-900">${window.IMARegionalFormatters.formatCurrency(c.precioTotal)}</td>
+          <td class="p-3">${c.plazoEntregaDias ? c.plazoEntregaDias + ' días' : '-'}</td>
+          <td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-bold ${c.estadoSelection === 'Adjudicada' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700'}">${c.estadoSelection || 'Registrada'}</span></td>
+        </tr>
+      `).join('');
+    })
+    .catch(err => {
+      const tbody = document.getElementById('tbl-compras-cotizaciones');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ${err.message}</td></tr>`;
+    });
+}
+
+
+
+window.loadPurchaseQuotationEntry=async function(){
+ const requestId=document.getElementById('cmp-entry-request-id'),supplierId=document.getElementById('cmp-entry-supplier-id'),target=document.getElementById('cmp-entry-lines');
+ if(!target||!String(requestId&&requestId.value||'').trim()||!String(supplierId&&supplierId.value||'').trim()){if(target)target.textContent='Ingrese la solicitud y el proveedor.';return;}
+ target.textContent='Cargando partidas solicitadas...';
+ try{const matrix=await fetchBackendAccounting('getPurchaseQuotationMatrix',{solicitudId:requestId.value.trim()});if(!matrix||matrix.status!=='success')throw new Error(matrix&&matrix.message||'No se pudo cargar la solicitud.');window.renderPurchaseQuotationEntry(matrix,target);}
+ catch(error){target.textContent=error.message||'Error al cargar las partidas.';}
+};
+window.renderPurchaseQuotationEntry=function(matrix,target){
+ target.replaceChildren();
+ const addText=(parent,value,tag='div',cls='')=>{const el=document.createElement(tag);el.className=cls;el.textContent=String(value==null?'':value);parent.appendChild(el);return el;};
+ if(matrix.adjudicada){addText(target,'La solicitud ya fue adjudicada; no admite nuevas cotizaciones.','div','text-amber-700 font-bold');return;}
+ const tableWrap=document.createElement('div');tableWrap.className='overflow-x-auto';
+ const table=document.createElement('table');table.className='min-w-full text-left text-[11px]';
+ const header=document.createElement('tr');['Partida','Cantidad solicitada','Cantidad ofertada','Precio unitario','Descuento','Impuestos','Flete','Garantía','Cumplimiento técnico','Total'].forEach(v=>addText(header,v,'th','p-2 bg-gray-100'));table.appendChild(header);
+ matrix.partidas.forEach(part=>{
+  const tr=document.createElement('tr');tr.className='cmp-quote-line border-b';tr.dataset.itemId=part.itemId;
+  addText(tr,part.descripcion+' · '+part.itemId,'td','p-2 font-bold');
+  addText(tr,part.cantidadSolicitada+' '+part.unidad,'td','p-2');
+  const makeInput=(type,value)=>{const input=document.createElement('input');input.type=type;input.value=String(value);input.className='w-24 rounded border p-1';if(type==='number'){input.min='0';input.step='0.01';}input.addEventListener('input',()=>window.updatePurchaseQuotationEntryTotal(tr));return input;};
+  const qty=makeInput('number',part.cantidadSolicitada);qty.max=String(part.cantidadSolicitada);qty.dataset.field='cantidadCotizada';
+  const unit=makeInput('number','0');unit.dataset.field='precioUnitario';
+  const discount=makeInput('number','0');discount.dataset.field='descuento';
+  const tax=makeInput('number','0');tax.dataset.field='impuestos';
+  const freight=makeInput('number','0');freight.dataset.field='flete';
+  [qty,unit,discount,tax,freight].forEach((input,index)=>{if(index===0){const cell=document.createElement('td');cell.className='p-2';cell.appendChild(input);tr.appendChild(cell);}else{const cell=document.createElement('td');cell.className='p-2';cell.appendChild(input);tr.appendChild(cell);}});
+  const warrantyCell=document.createElement('td');warrantyCell.className='p-2';const warranty=document.createElement('input');warranty.className='w-28 rounded border p-1';warranty.placeholder='Garantía';warranty.dataset.field='garantia';warrantyCell.appendChild(warranty);tr.appendChild(warrantyCell);
+  const complianceCell=document.createElement('td');complianceCell.className='p-2';const compliance=document.createElement('select');compliance.className='rounded border p-1';compliance.dataset.field='cumplimientoTecnico';[['','Evaluar'],['Cumple','Cumple'],['No cumple','No cumple'],['Parcial','Parcial']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;compliance.appendChild(o);});complianceCell.appendChild(compliance);tr.appendChild(complianceCell);
+  const totalCell=document.createElement('td');totalCell.className='p-2 font-bold';totalCell.dataset.lineTotal='1';totalCell.textContent='L 0.00';tr.appendChild(totalCell);table.appendChild(tr);
+ });
+ tableWrap.appendChild(table);target.appendChild(tableWrap);
+ const total=document.createElement('div');total.id='cmp-entry-grand-total';total.className='text-right font-black text-gray-800';total.textContent='Total ofertado: L 0.00';target.appendChild(total);
+ const submit=document.createElement('button');submit.type='button';submit.dataset.purchaseAction='submitPurchaseQuotation';submit.hidden=true;submit.className='px-4 py-2 rounded-lg bg-purple-700 text-white text-xs font-bold';submit.textContent='Registrar cotización';submit.addEventListener('click',()=>window.submitPurchaseQuotationEntry(matrix,target,submit));target.appendChild(submit);if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(target);
+};
+window.updatePurchaseQuotationEntryTotal=function(row){
+ const get=name=>Number(row.querySelector('[data-field="'+name+'"]').value||0),qty=get('cantidadCotizada'),unit=get('precioUnitario'),discount=get('descuento'),tax=get('impuestos'),freight=get('flete'),total=Math.round((qty*unit-discount+tax+freight)*100)/100;
+ row.querySelector('[data-line-total]').textContent=window.IMARegionalFormatters.formatCurrency(total);
+ const grand=[...document.querySelectorAll('#cmp-entry-lines [data-line-total]')].reduce((sum,cell)=>sum+Number(cell.closest('tr').querySelector('[data-field="cantidadCotizada"]').value||0)*Number(cell.closest('tr').querySelector('[data-field="precioUnitario"]').value||0)-Number(cell.closest('tr').querySelector('[data-field="descuento"]').value||0)+Number(cell.closest('tr').querySelector('[data-field="impuestos"]').value||0)+Number(cell.closest('tr').querySelector('[data-field="flete"]').value||0),0);
+ const target=document.getElementById('cmp-entry-grand-total');if(target)target.textContent='Total ofertado: L '+Math.round(grand*100)/100;
+};
+window.submitPurchaseQuotationEntry=async function(matrix,target,button){
+ const rows=[...target.querySelectorAll('.cmp-quote-line')],details=rows.map(row=>{const value=name=>row.querySelector('[data-field="'+name+'"]').value;return {itemId:row.dataset.itemId,cantidadCotizada:Number(value('cantidadCotizada')),precioUnitario:Number(value('precioUnitario')),descuento:Number(value('descuento')||0),impuestos:Number(value('impuestos')||0),flete:Number(value('flete')||0),garantia:value('garantia'),cumplimientoTecnico:value('cumplimientoTecnico'),especificacionesCumplidas:value('cumplimientoTecnico')==='Cumple'};});
+ const total=Math.round(details.reduce((sum,line)=>sum+line.cantidadCotizada*line.precioUnitario-line.descuento+line.impuestos+line.flete,0)*100)/100;
+ const payload={solicitudId:matrix.solicitud.solicitudId,proveedorId:document.getElementById('cmp-entry-supplier-id').value.trim(),precioTotal:total,detalleItems:details,plazoEntregaDias:Number(document.getElementById('cmp-entry-delivery-days').value||5),vigenciaOferta:document.getElementById('cmp-entry-validity').value.trim(),condicionesPago:document.getElementById('cmp-entry-payment-terms').value.trim()};
+ button.disabled=true;button.textContent='Registrando...';
+ try{const result=await fetchBackendAccounting('submitPurchaseQuotation',payload);if(!result||result.status!=='success')throw new Error(result&&result.message||result&&result.code||'No se pudo registrar la cotización.');const message=document.createElement('div');message.className='rounded-lg bg-emerald-50 text-emerald-800 p-2 font-bold';message.textContent='Cotización '+result.cotizacionId+' registrada. Total: '+window.IMARegionalFormatters.formatCurrency(total);target.appendChild(message);window.switchComprasSubtab('cotizaciones');}
+ catch(error){const message=document.createElement('div');message.className='rounded-lg bg-red-50 text-red-700 p-2';message.textContent=error.message||'Error al registrar cotización.';target.appendChild(message);button.disabled=false;button.textContent='Registrar cotización';}
+};
+
+window.loadPurchaseQuotationMatrix=async function(){
+ const requestInput=document.getElementById('cmp-matrix-request-id'),target=document.getElementById('cmp-matrix-result'),solicitudId=String(requestInput&&requestInput.value||'').trim();
+ if(!target||!solicitudId){if(target)target.textContent='Ingrese el ID de una solicitud de compra.';return;}
+ target.textContent='Cargando matriz comparativa...';
+ try{const result=await fetchBackendAccounting('getPurchaseQuotationMatrix',{solicitudId:solicitudId});if(!result||result.status!=='success')throw new Error(result&&result.message||'No se pudo consultar la matriz.');window.renderPurchaseQuotationMatrix(result,target);}
+ catch(error){target.textContent=error.message||'Error al consultar cotizaciones.';}
+};
+window.renderPurchaseQuotationMatrix=function(matrix,target){
+ target.replaceChildren();
+ const addText=(parent,value,tag='div',className='')=>{const el=document.createElement(tag);el.className=className;el.textContent=String(value==null?'':value);parent.appendChild(el);return el;};
+ const money=value=>window.IMARegionalFormatters.formatCurrency(value);
+ addText(target,'Solicitud '+matrix.solicitud.solicitudId+' · '+matrix.solicitud.departamento+' · '+matrix.totalCotizaciones+' cotización(es)','div','font-bold text-gray-800');
+ if(matrix.advertencia)addText(target,matrix.advertencia,'div','rounded-lg bg-amber-50 text-amber-800 p-2');
+ if(matrix.adjudicada){addText(target,'Esta solicitud ya tiene acta de adjudicación '+matrix.actaId+'. La matriz muestra la instantánea aprobada y queda en modo consulta.','div','rounded-lg bg-emerald-50 text-emerald-800 p-2');const award=matrix.adjudicacion||{};addText(target,'Fecha: '+(award.fecha?window.IMARegionalFormatters.formatDateTime(award.fecha):'-')+' · Monto adjudicado: '+money(award.montoAdjudicado),'div','font-bold text-gray-800');addText(target,'Responsables: '+(award.responsablesEvaluacion||[]).join(', '),'div','text-gray-700');addText(target,'Dictamen: '+(award.dictamen||''),'div','text-gray-700');addText(target,'Justificación: '+(award.justificacion||''),'div','text-gray-700');(award.ordenes||[]).forEach(order=>addText(target,'Orden '+order.ordenCompraId+' · Proveedor '+order.proveedorId+' · '+money(order.montoTotal),'div','text-gray-700'));(award.ofertasDescartadas||[]).forEach(offer=>addText(target,'Oferta descartada '+offer.cotizacionId+': '+offer.motivo,'div','text-amber-700'));}
+ if(!matrix.cotizaciones.length){addText(target,'No hay cotizaciones registradas para esta solicitud.','div','text-gray-500');return;}
+ const wrapper=document.createElement('div');wrapper.className='overflow-x-auto border border-gray-200 rounded-xl';
+ const table=document.createElement('table');table.className='min-w-full text-left text-[11px]';
+ const head=document.createElement('tr');['Partida solicitada','Cantidad',...matrix.cotizaciones.map(q=>(q.proveedorNombre||q.proveedorId)+' · '+q.cotizacionId+' · '+money(q.precioTotal)+' · '+q.plazoEntregaDias+' días · '+q.condicionesPago)].forEach(v=>addText(head,v,'th','p-2 bg-gray-100 border-b font-black text-gray-700'));table.appendChild(head);
+ matrix.partidas.forEach(part=>{
+  const tr=document.createElement('tr');tr.className='border-b align-top';addText(tr,part.descripcion+(part.especificaciones?' · '+part.especificaciones:''),'td','p-2 font-bold');addText(tr,part.cantidadSolicitada+' '+part.unidad,'td','p-2');
+  part.ofertas.forEach(offer=>{
+   const cell=document.createElement('td');cell.className='p-2 min-w-44 border-l align-top';
+   if(offer.estadoOferta==='NO_COTIZADA'){addText(cell,'No cotizada','div','font-bold text-red-700');}
+   else{
+    addText(cell,offer.estadoOferta==='PARCIAL'?'Cotización parcial':'Cotización completa','div',offer.estadoOferta==='PARCIAL'?'font-bold text-amber-700':'font-bold text-gray-800');
+    addText(cell,'Cantidad: '+offer.cantidadCotizada+' / '+offer.cantidadSolicitada);
+    addText(cell,'Unitario: '+money(offer.precioUnitario));
+    addText(cell,'Subtotal: '+money(offer.subtotal));
+    addText(cell,'Descuento: '+money(offer.descuento)+' · Impuestos: '+money(offer.impuestos));
+    addText(cell,'Flete: '+money(offer.flete)+' · Total: '+money(offer.total));
+    addText(cell,'Garantía: '+(offer.garantia||'No indicada'));
+    addText(cell,'Técnico: '+(offer.cumplimientoTecnico||'Sin dictamen'));
+    addText(cell,offer.menorPrecio?'Menor costo unitario total':(offer.vigente?'':'Oferta vencida'),'div',offer.menorPrecio?'text-emerald-700 font-bold':'text-gray-500');
+    if(!offer.vigente)addText(cell,'Oferta vencida','div','text-red-700 font-bold');if(!offer.proveedorActivo)addText(cell,'Proveedor inactivo','div','text-red-700 font-bold');
+    const selectLabel=document.createElement('label');selectLabel.className='flex items-center gap-1 mt-2 font-bold';
+    const check=document.createElement('input');check.type='checkbox';check.dataset.quoteId=offer.cotizacionId;check.dataset.itemId=part.itemId;check.disabled=matrix.adjudicada||!offer.vigente||!offer.proveedorActivo||!offer.especificacionesCumplidas;selectLabel.appendChild(check);selectLabel.appendChild(document.createTextNode('Adjudicar'));
+    cell.appendChild(selectLabel);
+    const qty=document.createElement('input');qty.type='number';qty.min='0.01';qty.max=String(offer.cantidadCotizada);qty.step='0.01';qty.value=String(Math.min(part.cantidadSolicitada,offer.cantidadCotizada));qty.className='mt-1 w-full rounded border p-1';qty.dataset.quoteId=offer.cotizacionId;qty.dataset.itemId=part.itemId;qty.disabled=check.disabled;addText(cell,'Cantidad a adjudicar','label','mt-1 text-gray-500');cell.appendChild(qty);
+   }
+   tr.appendChild(cell);
+  });
+  table.appendChild(tr);
+ });
+ wrapper.appendChild(table);target.appendChild(wrapper);
+ if(matrix.adjudicada)return;
+ const form=document.createElement('div');form.className='grid md:grid-cols-2 gap-2 rounded-xl border border-gray-200 p-3';
+ const dictamen=document.createElement('textarea');dictamen.id='cmp-award-dictamen';dictamen.placeholder='Dictamen de evaluación (obligatorio)';dictamen.className='rounded-lg border p-2 min-h-20';
+ const justification=document.createElement('textarea');justification.id='cmp-award-justification';justification.placeholder='Justificación de la decisión y excepciones al menor precio (obligatoria)';justification.className='rounded-lg border p-2 min-h-20';
+ const rejected=document.createElement('textarea');rejected.id='cmp-award-rejection';rejected.placeholder='Motivo para descartar ofertas no seleccionadas (obligatorio)';rejected.className='rounded-lg border p-2 min-h-16 md:col-span-2';
+ const responsible=document.createElement('input');responsible.id='cmp-award-responsibles';responsible.placeholder='Responsables de evaluación (IDs separados por coma; el usuario autenticado se agrega automáticamente)';responsible.className='rounded-lg border p-2 md:col-span-2';
+ form.append(dictamen,justification,rejected,responsible);target.appendChild(form);
+ const button=document.createElement('button');button.type='button';button.dataset.purchaseAction='adjudicatePurchaseQuotations';button.hidden=true;button.className='px-4 py-2 rounded-lg bg-emerald-700 text-white font-bold';button.textContent='Emitir acta y generar órdenes por proveedor';button.addEventListener('click',async()=>{
+  const selected=[...target.querySelectorAll('input[type="checkbox"][data-quote-id]:checked')],allocations=selected.map(check=>{const cell=check.closest('td'),qty=cell&&cell.querySelector('input[type="number"]');return {itemId:check.dataset.itemId,cotizacionId:check.dataset.quoteId,cantidadAdjudicada:Number(qty&&qty.value||0)};});
+  const used=new Set(allocations.map(x=>x.cotizacionId)),rejections=matrix.cotizaciones.filter(q=>!used.has(q.cotizacionId)).map(q=>({cotizacionId:q.cotizacionId,motivo:rejected.value.trim()}));
+  const payload={solicitudId:matrix.solicitud.solicitudId,adjudicaciones:allocations,dictamen:dictamen.value.trim(),justificacion:justification.value.trim(),responsablesEvaluacion:responsible.value.split(',').map(x=>x.trim()).filter(Boolean),ofertasDescartadas:rejections,idempotencyKey:'AWARD-'+matrix.solicitud.solicitudId+'-'+(window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now()+'-'+Math.random())};
+  button.disabled=true;button.textContent='Registrando adjudicación...';
+  try{const response=await fetchBackendAccounting('adjudicatePurchaseQuotations',payload);if(!response||response.status!=='success')throw new Error(response&&response.message||response&&response.code||'No se pudo adjudicar.');addText(target,'Acta '+response.actaId+' creada. Órdenes en borrador: '+response.ordenes.map(o=>o.ordenCompraId).join(', '),'div','rounded-lg bg-emerald-50 text-emerald-800 p-3 font-bold');window.loadPurchaseQuotationMatrix();}
+  catch(error){addText(target,error.message||'Error al adjudicar.','div','rounded-lg bg-red-50 text-red-700 p-2');button.disabled=false;button.textContent='Emitir acta y generar órdenes por proveedor';}
+ });
+ target.appendChild(button);if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(target);
+};
+
+function renderComprasOrdenesView(container) {
+  container.innerHTML = '<div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">' +
+    '<div class="flex flex-wrap items-center justify-between gap-3"><h5 class="text-sm font-black uppercase text-gray-800">Órdenes de Compra</h5>' +
+    '<button onclick="openPurchaseReceiptModal()" data-purchase-action="recordPurchaseReceipt" hidden class="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold">Registrar recepción</button></div>' +
+    '<div class="overflow-x-auto"><table class="w-full text-left text-xs text-gray-700"><thead class="bg-gray-50 text-gray-500 uppercase font-black"><tr>' +
+    '<th class="p-3">Orden ID</th><th class="p-3">Proveedor</th><th class="p-3">Monto Total</th><th class="p-3">Fecha Entrega Est.</th><th class="p-3">Estado Orden</th><th class="p-3">Documento y acciones</th>' +
+    '</tr></thead><tbody id="tbl-compras-ordenes" class="divide-y divide-gray-100"><tr><td colspan="6" class="p-4 text-center text-gray-400">Cargando órdenes de compra...</td></tr></tbody></table></div></div>';
+  fetchBackendAccounting("getPurchaseOrders", {}).then(res => {
+    if (!res || res.status !== "success") throw new Error(res && res.code || "PURCHASE_ORDERS_UNAVAILABLE");
+    const tbody = document.getElementById("tbl-compras-ordenes");
+    const kpi = document.getElementById("kpi-cmp-ordenes");
+    const kpiParcial = document.getElementById("kpi-cmp-parciales");
+    if (!tbody) return;
+    const list = Array.isArray(res.ordenes) ? res.ordenes : [];
+    if (kpi) kpi.innerText = list.filter(o => !["RecibidaTotal","Cancelada","Cerrada"].includes(String(o.estadoOrden))).length;
+    if (kpiParcial) kpiParcial.innerText = list.filter(o => o.estadoOrden === "RecibidaParcial").length;
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No hay órdenes de compra registradas.</td></tr>';
+      return;
+    }
+    window.purchaseOrderAdjustmentItemsById = Object.create(null);
+    tbody.innerHTML = list.map(o => {
+      const orderId = String(o.ordenId || o.ordenCompraId || "");
+      const safeId = escapePurchaseAssetHtml(orderId);
+      const arg = purchaseAssetJsArg(orderId);
+      const state = String(o.estadoOrden || "");
+      const stateLower = state.toLowerCase();
+      window.purchaseOrderAdjustmentItemsById[orderId] = Array.isArray(o.detalleItems) ? o.detalleItems : [];
+      const statusClass = stateLower === "recibidatotal" || stateLower === "cerrada" ? "bg-emerald-100 text-emerald-800" :
+        stateLower === "recibidaparcial" ? "bg-amber-100 text-amber-800" :
+        stateLower === "aprobada" || stateLower === "emitida" || stateLower === "confirmada" ? "bg-blue-100 text-blue-800" :
+        stateLower === "endisputa" ? "bg-rose-100 text-rose-800" : "bg-gray-100 text-gray-700";
+      let actions = "";
+      if (stateLower === "borrador") {
+        actions += '<button onclick="approvePurchaseOrderUI(' + arg + ')" data-purchase-action="approvePurchaseOrder" hidden class="px-2 py-1 rounded bg-blue-50 text-blue-700 font-bold">Aprobar</button> ';
+      }
+      if (stateLower === "aprobada" && !o.tienePdf) {
+        actions += '<button onclick="adjustPurchaseOrderCommitmentUI(' + arg + ')" data-purchase-action="adjustPurchaseOrderCommitment" hidden class="px-2 py-1 rounded bg-amber-50 text-amber-700 font-bold">Reducir</button> ';
+        actions += '<button onclick="generatePurchaseOrderPDFUI(' + arg + ')" data-purchase-action="generatePurchaseOrderPDF" hidden class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Emitir PDF</button> ';
+      }
+      if (o.tienePdf) {
+        actions += '<button onclick="downloadPurchaseOrderPDFUI(' + arg + ')" data-purchase-action="getPurchaseOrderPDFFile" hidden class="px-2 py-1 rounded bg-emerald-50 text-emerald-700 font-bold">Descargar ' + escapePurchaseAssetHtml(o.numeroCorrelativoPDF || "PDF") + '</button> ';
+      }
+      if (stateLower === "emitida") {
+        actions += '<button onclick="registerPurchaseOrderConfirmationUI(' + arg + ')" data-purchase-action="recordPurchaseOrderConfirmation" hidden class="px-2 py-1 rounded bg-amber-50 text-amber-700 font-bold">Confirmación</button>';
+      }
+      if (stateLower === "borrador" || stateLower === "aprobada") {
+        actions += '<button onclick="cancelPurchaseOrderUI(' + arg + ')" data-purchase-action="cancelPurchaseOrder" hidden class="px-2 py-1 rounded bg-rose-50 text-rose-700 font-bold">Cancelar</button> ';
+      }
+      return '<tr class="hover:bg-gray-50"><td class="p-3 font-bold text-gray-900">' + safeId + '</td>' +
+        '<td class="p-3">' + escapePurchaseAssetHtml(o.proveedorId) + '</td>' +
+        '<td class="p-3 font-bold text-gray-900">' + window.IMARegionalFormatters.formatCurrency(o.montoTotal) + '</td>' +
+        '<td class="p-3">' + (o.fechaEntregaEstimada ? window.IMARegionalFormatters.formatDate(o.fechaEntregaEstimada) : "-") + '</td>' +
+        '<td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-bold ' + statusClass + '">' + escapePurchaseAssetHtml(state) + '</span></td>' +
+        '<td class="p-3"><div class="flex flex-wrap gap-2">' + (actions || '<span class="text-gray-400">—</span>') + '</div></td></tr>';
+    }).join("");
+    if (window.applyPurchaseActionVisibility) window.applyPurchaseActionVisibility(tbody);
+  }).catch(err => {
+    const tbody = document.getElementById("tbl-compras-ordenes");
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500">Error: ' + escapePurchaseAssetHtml(err && err.message || err) + '</td></tr>';
+  });
+}
+
+window.adjustPurchaseOrderCommitmentUI = async function(ordenCompraId) {
+  const orderId=String(ordenCompraId||"");
+  if(!window.hasPurchaseActionCapability("adjustPurchaseOrderCommitment")){alert("No tiene permisos para reducir órdenes de compra.");return;}
+  const items=window.purchaseOrderAdjustmentItemsById&&window.purchaseOrderAdjustmentItemsById[orderId];
+  if(!Array.isArray(items)||!items.length){alert("No se encontró el detalle de la orden.");return;}
+  const reduced=[];
+  for(const item of items){
+    const itemId=String(item.itemId||item.codigoItem||item.ItemId||item.codigo||"");
+    const current=Number(item.cantidadSolicitada===undefined?(item.cantidad===undefined?item.Cantidad:item.cantidad):item.cantidadSolicitada);
+    if(!itemId||!Number.isFinite(current)||current<=0){alert("El detalle de la orden no es válido.");return;}
+    const value=window.prompt("Nueva cantidad para "+String(item.descripcion||item.nombreItem||itemId)+" (actual: "+current+")",String(current));
+    if(value===null)return;
+    const quantity=Number(String(value).trim());
+    if(!Number.isFinite(quantity)||quantity<=0||quantity>current){alert("La cantidad debe ser mayor que cero y no superar la cantidad actual.");return;}
+    reduced.push({itemId:itemId,cantidad:quantity});
+  }
+  const currentTotal=items.reduce((sum,item)=>sum+Number(item.total===undefined?Number(item.precioUnitario||item.costoUnitario||0)*Number(item.cantidadSolicitada===undefined?item.cantidad:item.cantidadSolicitada):item.total),0);
+  const nextTotal=reduced.reduce((sum,line,index)=>sum+Number(items[index].precioUnitario||items[index].costoUnitario||0)*line.cantidad,0);
+  if(!Number.isFinite(currentTotal)||!Number.isFinite(nextTotal)||nextTotal>=currentTotal){alert("La nueva cantidad no reduce el importe de la orden.");return;}
+  const reason=window.prompt("Justificación obligatoria de la reducción (mínimo 5 caracteres):");
+  if(!reason||String(reason).trim().length<5){alert("La justificación de la reducción es obligatoria.");return;}
+  const result=await fetchBackendAccounting("adjustPurchaseOrderCommitment",{ordenCompraId:orderId,detalleItems:reduced,justificacion:String(reason).trim(),idempotencyKey:"ADJ-"+orderId+"-"+Date.now()});
+  if(!result||result.status!=="success"){alert(result&&result.code||"No se pudo reducir la orden.");return;}
+  alert("Orden reducida. Importe liberado: "+window.IMARegionalFormatters.formatCurrency(result.montoLiberado));
+  if(typeof switchComprasSubtab==="function")switchComprasSubtab("ordenes");
+};
+
+window.approvePurchaseOrderUI = async function(ordenCompraId) {
+  if (!window.hasPurchaseActionCapability("approvePurchaseOrder")) { alert("No tiene permisos para aprobar órdenes."); return; }
+  const justification = window.prompt("Ingrese la justificación de aprobación (mínimo 5 caracteres):");
+  if (!justification || String(justification).trim().length < 5) { alert("La justificación de aprobación es obligatoria."); return; }
+  const approvalPayload = {ordenCompraId: String(ordenCompraId || ""), justificacion: String(justification).trim()};
+  let result = await fetchBackendAccounting("approvePurchaseOrder", approvalPayload);
+  if (result && result.status === "error" && result.code === "BUDGET_OVERRUN_BLOCKED") {
+    if (!window.confirm("El presupuesto disponible es insuficiente. ¿Desea solicitar una excepción extraordinaria como Director/Administrador? La autorización quedará auditada.")) return;
+    const overrunReason = window.prompt("Justificación obligatoria del sobregiro (mínimo 5 caracteres):");
+    if (!overrunReason || String(overrunReason).trim().length < 5) { alert("La justificación del sobregiro es obligatoria."); return; }
+    result = await fetchBackendAccounting("approvePurchaseOrder", Object.assign({}, approvalPayload, {autorizarSobregiroPresupuestario:true,justificacionSobregiro:String(overrunReason).trim()}));
+  }
+  if (result && result.status === "warning" && result.code === "BUDGET_THRESHOLD_CONFIRMATION_REQUIRED") {
+    const details = (result.alertasPresupuestarias || []).map(function(x) {
+      return String(x.centroCosto || "") + " / " + String(x.partidaCodigo || "") + ": " + String(x.porcentajeProyectado || "") + "%";
+    }).join("\n");
+    if (!window.confirm("Advertencia presupuestaria:\n" + details + "\n\n¿Desea continuar con la aprobación?")) return;
+    result = await fetchBackendAccounting("approvePurchaseOrder", Object.assign({}, approvalPayload, {confirmarAlertaPresupuestaria:true}));
+  }
+  if (!result || result.status !== "success") { alert("No se pudo aprobar la orden: " + String(result && result.code || "ERROR")); return; }
+  alert(result.alertasPresupuestarias && result.alertasPresupuestarias.length
+    ? "Orden aprobada con alerta presupuestaria registrada. Ya puede emitirse el PDF oficial."
+    : "Orden aprobada. Ya puede emitirse el PDF oficial.");
+  const host = document.getElementById("compras-subtab-container");
+  if (host) renderComprasOrdenesView(host);
+};
+window.cancelPurchaseOrderUI = async function(ordenCompraId) {
+  if (!window.hasPurchaseActionCapability("cancelPurchaseOrder")) { alert("No tiene permisos para cancelar órdenes de compra."); return; }
+  const justification = window.prompt("Ingrese la justificación de cancelación (mínimo 5 caracteres):");
+  if (!justification || String(justification).trim().length < 5) { alert("La justificación de cancelación es obligatoria."); return; }
+  const result = await fetchBackendAccounting("cancelPurchaseOrder", {ordenCompraId:String(ordenCompraId || ""),justificacion:String(justification).trim()});
+  if (!result || result.status !== "success") { alert("No se pudo cancelar la orden: " + String(result && result.code || "ERROR")); return; }
+  const released = Array.isArray(result.compromisosLiberados) ? result.compromisosLiberados.length : 0;
+  alert("Orden cancelada. Compromisos presupuestarios liberados: " + released + ".");
+  const host = document.getElementById("compras-subtab-container");
+  if (host) renderComprasOrdenesView(host);
+};
+window.generatePurchaseOrderPDFUI = async function(ordenCompraId) {
+  if (!window.hasPurchaseActionCapability("generatePurchaseOrderPDF")) { alert("No tiene permisos para emitir órdenes de compra."); return; }
+  const result = await fetchBackendAccounting("generatePurchaseOrderPDF", {ordenCompraId: String(ordenCompraId || "")});
+  if (!result || result.status !== "success") { alert("No se pudo emitir la orden: " + String(result && result.code || "ERROR")); return; }
+  alert("Orden emitida: " + String(result.numeroCorrelativo || ""));
+  await window.downloadPurchaseOrderPDFUI(ordenCompraId);
+  const host = document.getElementById("compras-subtab-container");
+  if (host) renderComprasOrdenesView(host);
+};
+window.downloadPurchaseOrderPDFUI = async function(ordenCompraId) {
+  if (!window.hasPurchaseActionCapability("getPurchaseOrderPDFFile")) { alert("No tiene permisos para descargar órdenes de compra."); return; }
+  const result = await fetchBackendAccounting("getPurchaseOrderPDFFile", {ordenCompraId: String(ordenCompraId || "")});
+  if (!result || result.status !== "success" || result.encoding !== "base64" || !result.fileData) {
+    alert("No se pudo descargar el PDF: " + String(result && result.code || "ARCHIVO_NO_DISPONIBLE")); return;
+  }
+  const binary = atob(result.fileData);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], {type: "application/pdf"});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url; link.download = result.fileName || "OrdenCompra.pdf";
+  document.body.appendChild(link); link.click(); link.remove();
+  URL.revokeObjectURL(url);
+};
+function renderComprasRecepcionesView(container) {
+  container.innerHTML = `
+    <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3"><h5 class="text-sm font-black uppercase text-gray-800">Recepciones de Mercancía en Almacén</h5><button onclick="openPurchaseReceiptModal()" data-purchase-action="recordPurchaseReceipt" hidden class="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold">Registrar recepción</button></div>
+      <p class="text-xs text-gray-600">Entregas escalonadas, control de faltantes y capitalización de bienes duraderos recibidos conforme.</p>
+      <div class="overflow-x-auto"><table class="w-full text-left text-xs text-gray-700">
+        <thead class="bg-gray-50 text-gray-500 uppercase font-black"><tr><th class="p-3">Recepción ID</th><th class="p-3">Orden Compra</th><th class="p-3">Fecha</th><th class="p-3">Receptor</th><th class="p-3">Conformidad</th><th class="p-3">Activos</th></tr></thead>
+        <tbody id="tbl-compras-recepciones" class="divide-y divide-gray-100"><tr><td colspan="6" class="p-4 text-center text-gray-400">Cargando recepciones...</td></tr></tbody>
+      </table></div>
+    </div>`;
+  fetchBackendAccounting("getPurchaseReceipts",{}).then(res=>{
+    const tbody=document.getElementById("tbl-compras-recepciones");if(!tbody)return;
+    const list=res.recepciones||[];
+    if(!list.length){tbody.innerHTML='<tr><td colspan="6" class="p-4 text-center text-gray-400">No hay recepciones físicas registradas.</td></tr>';return;}
+    tbody.innerHTML=list.map(r=>`<tr class="hover:bg-gray-50" data-receipt-id="${escapePurchaseAssetHtml(r.recepcionId)}">
+      <td class="p-3 font-bold text-gray-900">${escapePurchaseAssetHtml(r.recepcionId)}</td>
+      <td class="p-3 font-semibold text-purple-700">${escapePurchaseAssetHtml(r.ordenCompraId)}</td>
+      <td class="p-3">${r.fechaRecepcion?window.IMARegionalFormatters.formatDateTime(r.fechaRecepcion):"-"}</td>
+      <td class="p-3">${escapePurchaseAssetHtml(r.receptorUserId)}</td>
+      <td class="p-3">${escapePurchaseAssetHtml(r.estadoConformidad)}</td>
+      <td class="p-3">${r.estadoConformidad==="Conforme"?`<button onclick="openReceiptAssetRegistration(${purchaseAssetJsArg(r.recepcionId)})" data-purchase-action="registerAssetsFromPurchaseReceipt" hidden class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 font-bold">Registrar activos</button>`:"—"}</td>
+    </tr>`).join("");
+    if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(tbody);
+    if(window.pendingPurchaseReceiptFocus){const target=Array.from(tbody.querySelectorAll("[data-receipt-id]")).find(row=>row.dataset.receiptId===window.pendingPurchaseReceiptFocus);if(target){target.scrollIntoView({behavior:"smooth",block:"center"});window.pendingPurchaseReceiptFocus="";}}
+  }).catch(err=>{const tbody=document.getElementById("tbl-compras-recepciones");if(tbody)tbody.innerHTML='<tr><td colspan="6" class="p-4 text-center text-red-500">Error: '+escapePurchaseAssetHtml(err.message)+'</td></tr>';});
+}
+function escapePurchaseAssetHtml(value){return String(value==null?"":value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
+function purchaseAssetJsArg(value){return JSON.stringify(String(value==null?"":value)).replace(/&/g,"\\u0026").replace(/</g,"\\u003c").replace(/>/g,"\\u003e").replace(/"/g,"&quot;");}
+window.openReceiptAssetRegistration=function(recepcionId){
+  fetchBackendAccounting("getPurchaseReceiptAssetCandidates",{recepcionId}).then(result=>{
+    const candidates=(result.candidatos||[]).filter(item=>item.unidadesDisponibles>0);
+    if(!candidates.length){alert("Esta recepción no tiene unidades capitalizables conformes pendientes de registrar.");return;}
+    if(!result.facturasDisponibles||!result.facturasDisponibles.length){alert("No existe una factura de proveedor aprobada y conciliada vinculada a esta orden. Registre y concilie la factura antes de capitalizar.");return;}
+    const rows=[];
+    candidates.forEach(candidate=>{for(let i=0;i<Math.min(candidate.unidadesDisponibles,100);i++)rows.push({itemId:candidate.itemId,descripcion:candidate.descripcion,costo:candidate.costoUnitarioAdquisicion});});
+    const modal=document.createElement("div");modal.id="receipt-asset-modal";modal.className="fixed inset-0 z-[110] bg-black/60 flex items-center justify-center p-3";
+    const invoiceOptions=result.facturasDisponibles.map(invoice=>`<option value="${escapePurchaseAssetHtml(invoice.numeroFactura)}">${escapePurchaseAssetHtml(invoice.numeroFactura)} — ${escapePurchaseAssetHtml(invoice.estadoConciliacion)}</option>`).join("");
+    const cards=rows.map((item,index)=>`<div data-asset-row data-item-id="${escapePurchaseAssetHtml(item.itemId)}" class="border rounded-xl p-3 grid grid-cols-1 md:grid-cols-4 gap-2">
+      <div class="md:col-span-4 text-xs font-bold">${escapePurchaseAssetHtml(item.descripcion)} · Partida ${escapePurchaseAssetHtml(item.itemId)} · Costo unitario ${window.IMARegionalFormatters.formatCurrency(item.costo)}</div>
+      <label class="text-[10px] font-bold">Código patrimonial<input data-field="codigoPatrimonial" class="w-full mt-1 p-2 border rounded-lg" placeholder="PAT-0001"></label>
+      <label class="text-[10px] font-bold">Número de serie<input data-field="numeroSerie" class="w-full mt-1 p-2 border rounded-lg" placeholder="Serie única"></label>
+      <label class="text-[10px] font-bold">Categoría patrimonial<input data-field="categoriaPatrimonial" class="w-full mt-1 p-2 border rounded-lg" placeholder="Equipo computacional"></label>
+      <label class="text-[10px] font-bold">Marca<input data-field="marca" class="w-full mt-1 p-2 border rounded-lg" placeholder="Marca"></label>
+      <label class="text-[10px] font-bold">Modelo<input data-field="modelo" class="w-full mt-1 p-2 border rounded-lg" placeholder="Modelo"></label>
+      <label class="text-[10px] font-bold">Ubicación inicial<input data-field="ubicacionActual" class="w-full mt-1 p-2 border rounded-lg" placeholder="Ubicación física"></label>
+      <label class="text-[10px] font-bold md:col-span-2">Custodio inicial (opcional)<input data-field="custodioUserId" class="w-full mt-1 p-2 border rounded-lg" placeholder="UserId"></label>
+    </div>`).join("");
+    modal.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[94vh] overflow-y-auto p-5 space-y-4">
+      <div class="flex justify-between items-center"><h3 class="font-black text-sm uppercase">Capitalizar bienes recibidos</h3><button type="button" onclick="closeReceiptAssetModal()" class="text-xl text-gray-500">×</button></div>
+      <p class="text-xs text-gray-600">Cada fila representa una unidad física. Las unidades incompletas se omiten; no se capitalizan consumibles, materiales ni artículos dañados.</p>
+      <label class="block text-xs font-bold">Factura aprobada y conciliada *<select id="receipt-asset-invoice" class="w-full mt-1 p-2 border rounded-lg">${invoiceOptions}</select></label>
+      <form id="receipt-asset-form" onsubmit="submitReceiptAssetRegistration(event,${purchaseAssetJsArg(recepcionId)})" class="space-y-3">${cards}
+        <div class="flex justify-end gap-2"><button type="button" onclick="closeReceiptAssetModal()" class="px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Cancelar</button><button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Registrar activos seleccionados</button></div>
+      </form></div>`;
+    document.body.appendChild(modal);
+  }).catch(error=>alert("No se pudo consultar la recepción: "+(error.message||error)));
+};
+window.openPurchaseReceiptRecord=function(receiptId){window.pendingPurchaseReceiptFocus=String(receiptId||"");switchComprasSubtab("recepciones");};
+window.closeReceiptAssetModal=function(){document.getElementById("receipt-asset-modal")?.remove();};
+window.submitReceiptAssetRegistration=function(event,recepcionId){
+  event.preventDefault();const rows=Array.from(document.querySelectorAll("#receipt-asset-form [data-asset-row]")),assets=[];
+  for(const row of rows){
+    const read=field=>row.querySelector('[data-field="'+field+'"]')?.value?.trim()||"";
+    const values={codigoPatrimonial:read("codigoPatrimonial"),numeroSerie:read("numeroSerie"),categoriaPatrimonial:read("categoriaPatrimonial"),marca:read("marca"),modelo:read("modelo"),ubicacionActual:read("ubicacionActual"),custodioUserId:read("custodioUserId")};
+    if(!Object.values(values).some(Boolean))continue;
+    if(!values.codigoPatrimonial||!values.numeroSerie||!values.categoriaPatrimonial||!values.marca||!values.modelo||!values.ubicacionActual){alert("Complete todos los datos obligatorios de cada unidad seleccionada.");return;}
+    assets.push({...values,itemId:row.dataset.itemId});
+  }
+  if(!assets.length){alert("Complete al menos una unidad.");return;}
+  const payload={recepcionId,numeroFactura:document.getElementById("receipt-asset-invoice").value,activos:assets};
+  const submit=document.querySelector("#receipt-asset-form button[type='submit']");if(submit)submit.disabled=true;
+  fetchBackendAccounting("registerAssetsFromPurchaseReceipt",payload).then(result=>{alert(result.message||"Activos registrados.");closeReceiptAssetModal();switchComprasSubtab("recepciones");}).catch(error=>{if(submit)submit.disabled=false;alert("No se pudieron registrar los activos: "+(error.message||error));});
+};
+
+function renderComprasThreeWayView(container) {
+  container.innerHTML = `
+    <div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center justify-between gap-2"><h5 class="text-sm font-black uppercase text-gray-800">Conciliación Documental de Tres Vías (Three-Way Match)</h5><button onclick="openPurchaseInvoiceModal()" data-purchase-action="recordAccountsPayableExpense" hidden class="px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold">Registrar factura</button></div>
+      </div>
+      <p class="text-xs text-gray-600">Validación cruzada entre Orden de Compra, Recepciones Físicas en Bodega y Factura Fiscal del Proveedor.</p>
+
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Orden de Compra ID</label>
+          <input type="text" id="inp-match-orden" placeholder="ORD-CMP-..." class="w-full text-xs p-2.5 rounded-lg border border-gray-300">
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Número Factura Proveedor</label>
+          <input type="text" id="inp-match-factura" placeholder="000-001-01-..." class="w-full text-xs p-2.5 rounded-lg border border-gray-300">
+        </div>
+        <div class="flex items-end">
+          <button onclick="executeThreeWayMatchTest()" data-purchase-action="verifyThreeWayMatch" hidden class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase rounded-lg shadow-sm">
+            <i class="fas fa-check-double mr-1"></i> Ejecutar Conciliación
+          </button>
+        </div>
+      </div>
+
+      <div id="match-results-container" class="p-4 bg-purple-50 rounded-xl text-xs text-purple-900 font-semibold border border-purple-200">
+        Ingrese el identificador de orden y factura para ejecutar el cotejo de 3 vías y detectar sobreprecios o cantidades no recibidas.
+      </div>
+    </div>
+  `;
+}
+
+window.openPurchaseInvoiceModal = async function() {
+  if (!window.hasPurchaseActionCapability("recordAccountsPayableExpense")) {
+    alert("No tiene permisos para registrar facturas de proveedores.");
+    return;
+  }
+  const existing = document.getElementById("purchase-invoice-modal");
+  if (existing) existing.remove();
+  const modal = document.createElement("div");
+  modal.id = "purchase-invoice-modal";
+  modal.className = "fixed inset-0 z-[130] bg-black/60 flex items-center justify-center p-3";
+  modal.innerHTML = "<form id=\"purchase-invoice-form\" class=\"bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[94vh] overflow-y-auto p-5 space-y-4\">" +
+    "<div class=\"flex items-center justify-between gap-3\"><h3 class=\"font-black text-sm uppercase\">Registrar factura de proveedor</h3><button type=\"button\" id=\"purchase-invoice-close\" class=\"text-xl\" aria-label=\"Cerrar\">×</button></div>" +
+    "<div class=\"grid grid-cols-1 md:grid-cols-3 gap-3 text-xs\"><label class=\"font-bold\">Orden de compra *<select id=\"purchase-invoice-order\" required class=\"mt-1 w-full p-2 border rounded-lg\"><option value=\"\">Cargando órdenes autorizadas...</option></select></label>" +
+    "<label class=\"font-bold\">Número de factura *<input id=\"purchase-invoice-number\" required maxlength=\"100\" class=\"mt-1 w-full p-2 border rounded-lg\"></label>" +
+    "<label class=\"font-bold\">Vencimiento<input id=\"purchase-invoice-due\" type=\"date\" class=\"mt-1 w-full p-2 border rounded-lg\"></label></div>" +
+    "<div class=\"overflow-x-auto border rounded-xl\"><table class=\"w-full text-left text-xs\"><thead class=\"bg-gray-50\"><tr><th class=\"p-2\">Partida</th><th class=\"p-2\">Cantidad ordenada</th><th class=\"p-2\">Recibido conforme</th><th class=\"p-2\">Cantidad facturada</th><th class=\"p-2\">Precio unitario</th><th class=\"p-2\">Importe</th></tr></thead><tbody id=\"purchase-invoice-lines\"><tr><td colspan=\"6\" class=\"p-4 text-center text-gray-400\">Seleccione una orden.</td></tr></tbody></table></div>" +
+    "<div class=\"grid grid-cols-1 md:grid-cols-3 gap-3 text-xs\"><label class=\"font-bold\">Subtotal (calculado)<input id=\"purchase-invoice-subtotal\" readonly class=\"mt-1 w-full p-2 border rounded-lg bg-gray-50\" value=\"0.00\"></label>" +
+    "<label class=\"font-bold\">Impuestos<input id=\"purchase-invoice-tax\" type=\"number\" min=\"0\" step=\"0.01\" value=\"0\" class=\"mt-1 w-full p-2 border rounded-lg\"></label>" +
+    "<label class=\"font-bold\">Total (calculado)<input id=\"purchase-invoice-total\" readonly class=\"mt-1 w-full p-2 border rounded-lg bg-gray-50\" value=\"0.00\"></label></div>" +
+    "<label class=\"block text-xs font-bold\">Observaciones<textarea id=\"purchase-invoice-notes\" maxlength=\"500\" rows=\"2\" class=\"mt-1 w-full p-2 border rounded-lg\"></textarea></label>" +
+    "<p id=\"purchase-invoice-status\" role=\"status\" aria-live=\"polite\" class=\"text-xs text-gray-600\">Las cantidades y precios se concilian contra la orden y las recepciones conformes. Las diferencias quedarán bloqueadas para pago.</p>" +
+    "<div class=\"flex justify-end gap-2\"><button type=\"button\" id=\"purchase-invoice-cancel\" class=\"px-4 py-2 rounded-lg bg-gray-100 text-xs font-bold\">Cancelar</button><button type=\"submit\" id=\"purchase-invoice-submit\" data-purchase-action=\"recordAccountsPayableExpense\" hidden disabled class=\"px-4 py-2 rounded-lg bg-emerald-700 text-white text-xs font-bold\">Registrar y conciliar factura</button></div></form>";
+  document.body.appendChild(modal);
+  const form = modal.querySelector("#purchase-invoice-form");
+  const orderSelect = modal.querySelector("#purchase-invoice-order");
+  const linesHost = modal.querySelector("#purchase-invoice-lines");
+  const taxInput = modal.querySelector("#purchase-invoice-tax");
+  const subtotalInput = modal.querySelector("#purchase-invoice-subtotal");
+  const totalInput = modal.querySelector("#purchase-invoice-total");
+  const status = modal.querySelector("#purchase-invoice-status");
+  const submit = modal.querySelector("#purchase-invoice-submit");
+  const close = () => modal.remove();
+  modal.querySelector("#purchase-invoice-close").addEventListener("click", close);
+  modal.querySelector("#purchase-invoice-cancel").addEventListener("click", close);
+  const ordersById = Object.create(null);
+  const money = value => String(Math.round((Number(value) + Number.EPSILON) * 100) / 100);
+  const recalculate = () => {
+    let subtotal = 0;
+    linesHost.querySelectorAll("tr[data-invoice-item]").forEach(row => {
+      const quantity = Number(row.querySelector("[data-invoice-quantity]").value || 0);
+      const price = Number(row.querySelector("[data-invoice-price]").value || 0);
+      const amount = quantity * price;
+      row.querySelector("[data-invoice-total]").textContent = money(amount);
+      subtotal += amount;
+    });
+    subtotalInput.value = money(subtotal);
+    totalInput.value = money(subtotal + Number(taxInput.value || 0));
+  };
+  const renderLines = () => {
+    linesHost.replaceChildren();
+    const order = ordersById[orderSelect.value];
+    if (!order) {
+      linesHost.innerHTML = "<tr><td colspan=\"6\" class=\"p-4 text-center text-gray-400\">Seleccione una orden.</td></tr>";
+      recalculate();
+      return;
+    }
+    (order.detalleItems || []).forEach(item => {
+      const itemId = String(item.itemId || item.codigoItem || item.ItemId || "").trim();
+      if (!itemId) return;
+      const row = document.createElement("tr");
+      row.dataset.invoiceItem = itemId;
+      const label = document.createElement("td");
+      label.className = "p-2";
+      label.textContent = String(item.descripcion || item.nombre || itemId) + " · " + itemId;
+      const ordered = document.createElement("td");
+      ordered.className = "p-2";
+      ordered.textContent = String(Number(item.cantidadSolicitada || 0));
+      const received = document.createElement("td");
+      received.className = "p-2";
+      received.textContent = String(Number(item.cantidadRecibidaConforme || 0));
+      const quantityCell = document.createElement("td");
+      quantityCell.className = "p-2";
+      const quantity = document.createElement("input");
+      quantity.type = "number"; quantity.min = "0";
+      quantity.step = "0.01";
+      quantity.value = String(Number(item.cantidadRecibidaConforme || 0));
+      quantity.dataset.invoiceQuantity = "true"; quantity.className = "w-24 p-1 border rounded";
+      quantity.addEventListener("input", recalculate); quantityCell.appendChild(quantity);
+      const priceCell = document.createElement("td");
+      priceCell.className = "p-2";
+      const price = document.createElement("input");
+      price.type = "number"; price.min = "0"; price.step = "0.01";
+      price.value = String(Number(item.precioUnitario === undefined ? item.costoUnitario || 0 : item.precioUnitario));
+      price.dataset.invoicePrice = "true"; price.className = "w-28 p-1 border rounded";
+      price.addEventListener("input", recalculate); priceCell.appendChild(price);
+      const totalCell = document.createElement("td");
+      totalCell.className = "p-2 text-right font-bold";
+      totalCell.dataset.invoiceTotal = "true"; totalCell.textContent = "0.00";
+      row.append(label, ordered, received, quantityCell, priceCell, totalCell);
+      linesHost.appendChild(row);
+    });
+    recalculate();
+  };
+  orderSelect.addEventListener("change", renderLines);
+  taxInput.addEventListener("input", recalculate);
+  form.dataset.idempotencyKey = "INV-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+  try {
+    const result = await fetchBackendAccounting("getPurchaseOrders", {});
+    if (!result || result.status !== "success") throw new Error(result && result.code || "PURCHASE_ORDERS_UNAVAILABLE");
+    const orders = Array.isArray(result.ordenes) ? result.ordenes : [];
+    orderSelect.replaceChildren();
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = orders.length ? "Seleccione una orden autorizada" : "No hay órdenes disponibles";
+    orderSelect.appendChild(placeholder);
+    orders.forEach(order => {
+      const id = String(order.ordenId || order.ordenCompraId || "").trim();
+      if (!id) return;
+      ordersById[id] = order;
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = id + " · " + String(order.proveedorId || "");
+      orderSelect.appendChild(option);
+    });
+    if (!orders.length) status.textContent = "No hay órdenes dentro del ámbito autorizado.";
+  } catch (error) {
+    orderSelect.replaceChildren();
+    status.textContent = "No fue posible cargar órdenes autorizadas: " + String(error && error.message || error);
+  }
+  if (window.applyPurchaseActionVisibility) window.applyPurchaseActionVisibility(modal);
+  form.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!window.hasPurchaseActionCapability("recordAccountsPayableExpense")) {
+      status.textContent = "No tiene permisos para registrar facturas.";
+      return;
+    }
+    const order = ordersById[orderSelect.value];
+    const number = modal.querySelector("#purchase-invoice-number").value.trim();
+    const partidasFacturadas = [];
+    linesHost.querySelectorAll("tr[data-invoice-item]").forEach(row => {
+      const cantidad = Number(row.querySelector("[data-invoice-quantity]").value || 0);
+      const precioUnitario = Number(row.querySelector("[data-invoice-price]").value || 0);
+      if (cantidad > 0) partidasFacturadas.push({ itemId: row.dataset.invoiceItem, cantidad, precioUnitario, total: Math.round(cantidad * precioUnitario * 100) / 100 });
+    });
+    if (!order || !number || !partidasFacturadas.length) {
+      status.textContent = "Seleccione una orden, indique el número de factura y al menos una partida facturada.";
+      return;
+    }
+    submit.disabled = true;
+    status.textContent = "Registrando y conciliando la factura...";
+    try {
+      const response = await fetchBackendAccounting("recordAccountsPayableExpense", {
+        ordenCompraId: order.ordenId || order.ordenCompraId,
+        idempotencyKey: form.dataset.idempotencyKey,
+        facturaProveedor: {
+          numeroFactura: number, proveedorId: String(order.proveedorId || ""), partidasFacturadas,
+          importe: Number(subtotalInput.value || 0), impuestos: Number(taxInput.value || 0),
+          totalMonto: Number(totalInput.value || 0), fechaVencimiento: modal.querySelector("#purchase-invoice-due").value,
+          observaciones: modal.querySelector("#purchase-invoice-notes").value.trim()
+        }
+      });
+      if (!response || response.status !== "success") throw new Error(response && response.code || "PURCHASE_INVOICE_REGISTRATION_FAILED");
+      status.textContent = response.message || (response.bloqueadoParaPago ? "Factura registrada y bloqueada para pago." : "Factura registrada.");
+      alert(response.message || "Factura registrada.");
+      close();
+      window.switchComprasSubtab("threeway");
+      const orderInput = document.getElementById("inp-match-orden");
+      const invoiceInput = document.getElementById("inp-match-factura");
+      if (orderInput) orderInput.value = order.ordenId || order.ordenCompraId;
+      if (invoiceInput) invoiceInput.value = number;
+    } catch (error) {
+      status.textContent = "No se pudo registrar la factura: " + String(error && error.message || error);
+      submit.disabled = false;
+    }
+  });
+};
+
+window.executeThreeWayMatchTest = function () {
+  const ordId = document.getElementById('inp-match-orden')?.value.trim();
+  const fctNum = document.getElementById('inp-match-factura')?.value.trim();
+  const resBox = document.getElementById('match-results-container');
+  if (!ordId || !fctNum) {
+    alert("Por favor ingrese tanto el ID de la orden de compra como el número de factura.");
+    return;
+  }
+
+  if (resBox) resBox.innerHTML = "Verificando Three-Way Match con el servidor...";
+
+  fetchBackendAccounting('verifyThreeWayMatch', {
+    ordenCompraId: ordId,
+    facturaProveedor: {
+      numeroFactura: fctNum
+    }
+  })
+  .then(res => {
+    if (resBox) {
+      resBox.innerHTML = `
+        <div class="space-y-2">
+          <div class="font-bold text-sm ${res.bloqueadoParaPago ? 'text-red-700' : 'text-emerald-700'}">
+            Estado Conciliación: ${res.estadoConciliacion} (${res.bloqueadoParaPago ? 'BLOQUEADO PARA PAGO' : 'HABILITADO PARA PAGO'})
+          </div>
+          <p>${res.message || res.mensaje || "Verificación completada."}</p>
+        </div>
+      `;
+    }
+  })
+  .catch(err => {
+    if (resBox) resBox.innerHTML = `<span class="text-red-600 font-bold">Error en verificación: ${err.message}</span>`;
+  });
+};
+
+function renderComprasProveedoresView(container) {
+  container.innerHTML=`<div class="bg-white p-5 rounded-2xl border border-gray-100 space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-3"><h5 class="text-sm font-black uppercase text-gray-800">Directorio de proveedores</h5><button onclick="openNewSupplierModal()" data-purchase-action="registerSupplier" hidden class="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold text-xs">Registrar proveedor</button></div>
+    <div class="overflow-x-auto"><table class="w-full text-left text-xs text-gray-700"><thead class="bg-gray-50 text-gray-500 uppercase font-black"><tr><th class="p-3">Proveedor / RTN</th><th class="p-3">Contactos</th><th class="p-3">Direcciones</th><th class="p-3">Condiciones</th><th class="p-3">Cuenta bancaria</th><th class="p-3">Estado</th><th class="p-3">Acciones</th></tr></thead><tbody id="tbl-compras-proveedores"><tr><td colspan="7" class="p-4 text-center text-gray-400">Cargando...</td></tr></tbody></table></div>
+  </div>`;
+  fetchBackendAccounting("getSuppliers",{}).then(res=>{
+    const tbody=document.getElementById("tbl-compras-proveedores");if(!tbody)return;const list=res.proveedores||[];
+    if(!list.length){tbody.innerHTML='<tr><td colspan="7" class="p-4 text-center text-gray-400">No hay proveedores registrados.</td></tr>';return;}
+    tbody.innerHTML=list.map(p=>{const e=escapePurchaseAssetHtml,terms=p.condicionesComerciales,contactNames=(p.contactos||[]).map(c=>e(c.nombre)+(c.esPrincipal?" (principal)":"")).join("<br>"),addressNames=(p.direcciones||[]).map(a=>e(a.tipoDireccion)+": "+e(a.direccion)).join("<br>");return `<tr data-proveedor-id="${e(p.proveedorId)}" class="border-b hover:bg-gray-50"><td class="p-3"><b>${e(p.nombreProveedor)}</b><div class="text-gray-500">${e(p.proveedorId)} · RTN ${e(p.rtn)}</div></td><td class="p-3">${contactNames||"Sin contactos"}<div><button onclick="openSupplierContactModal('${e(p.proveedorId)}')" data-purchase-action="manageSupplierContact" hidden class="text-indigo-600 font-bold mt-1">+ Contacto</button></div></td><td class="p-3">${addressNames||"Sin direcciones"}</td><td class="p-3">${terms?e(String(terms.plazoCreditoDias))+" días · "+e(terms.moneda)+" · entrega "+e(String(terms.tiempoEntregaDias))+" días":"Sin condiciones"}</td><td class="p-3">${p.tieneCuentaBancaria?e(p.cuentaBancariaEnmascarada):"No registrada"}</td><td class="p-3"><span class="px-2 py-1 rounded bg-gray-100 font-bold">${e(p.estado)}</span></td><td class="p-3 whitespace-nowrap"><button onclick="viewSupplierBankAccount('${e(p.proveedorId)}')" data-purchase-action="getSupplierBankAccount" hidden class="text-indigo-600 font-bold">Ver cuenta</button> <button onclick="updateSupplierBankAccount(this.parentElement.parentElement.dataset.proveedorId)" data-purchase-action="manageSupplierBankAccount" hidden class="text-indigo-600 font-bold">Actualizar cuenta</button></td></tr>`;}).join("");
+    if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(tbody);
+  }).catch(err=>{const tbody=document.getElementById("tbl-compras-proveedores");if(tbody)tbody.innerHTML='<tr><td colspan="7" class="p-4 text-center text-red-500">Error: '+escapePurchaseAssetHtml(err.message)+'</td></tr>';});
+}
+
+function openNewPurchaseRequestModal() {
+  if (!window.hasPurchaseActionCapability("createPurchaseRequest")) { alert("No tiene permisos para esta operación."); return; }
+  const existing=document.getElementById("purchase-request-modal");if(existing)existing.remove();
+  const modal=document.createElement("div");modal.id="purchase-request-modal";modal.className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-3";
+  modal.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto p-5 space-y-4">
+    <div class="flex justify-between items-center"><h3 class="font-black text-sm uppercase">Nueva solicitud de compra</h3><button type="button" onclick="closePurchaseRequestModal()" class="text-gray-500 text-xl">×</button></div>
+    <form id="purchase-request-form" onsubmit="submitNewPurchaseRequest(event)" class="space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <label class="text-xs font-bold">Departamento *<input id="purchase-request-department" required class="w-full mt-1 p-2 border rounded-lg" placeholder="Departamento solicitante"></label>
+        <label class="text-xs font-bold">Centro de costo<input id="purchase-request-cost-center" class="w-full mt-1 p-2 border rounded-lg" placeholder="Centro de costo"></label>
+        <label class="text-xs font-bold">Categoría general<input id="purchase-request-category" class="w-full mt-1 p-2 border rounded-lg" value="Bienes y suministros"></label>
+      </div>
+      <label class="block text-xs font-bold">Justificación *<textarea id="purchase-request-justification" required rows="2" class="w-full mt-1 p-2 border rounded-lg" placeholder="Motivo y necesidad de la compra"></textarea></label>
+      <div class="flex justify-between items-center"><h4 class="font-black text-xs uppercase">Partidas solicitadas</h4><button type="button" onclick="addPurchaseRequestLine()" class="px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold">Agregar partida</button></div>
+      <div id="purchase-request-lines" class="space-y-3"></div>
+      <div class="flex justify-end gap-2"><button type="button" onclick="closePurchaseRequestModal()" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-bold">Cancelar</button><button type="submit" class="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold">Guardar solicitud</button></div>
+    </form></div>`;
+  document.body.appendChild(modal);window.addPurchaseRequestLine();
+}
+window.closePurchaseRequestModal=function(){document.getElementById("purchase-request-modal")?.remove();};
+window.addPurchaseRequestLine=function(){
+ const host=document.getElementById("purchase-request-lines");if(!host)return;const row=document.createElement("div");row.className="purchase-request-line border rounded-xl p-3 grid grid-cols-1 md:grid-cols-6 gap-2";
+ row.innerHTML='<label class="text-[10px] font-bold md:col-span-2">Artículo del catálogo *<select data-field="item" required class="w-full mt-1 p-2 border rounded-lg text-xs"></select></label><label class="text-[10px] font-bold">Unidad *<select data-field="unidad" required class="w-full mt-1 p-2 border rounded-lg text-xs"></select></label><label class="text-[10px] font-bold">Cantidad *<input data-field="cantidad" type="number" min="0.01" step="0.01" value="1" required class="w-full mt-1 p-2 border rounded-lg text-xs"></label><label class="text-[10px] font-bold">Precio estimado<input data-field="precioUnitario" type="number" min="0" step="0.01" value="0" class="w-full mt-1 p-2 border rounded-lg text-xs"></label><label class="text-[10px] font-bold">Clasificación *<select data-field="clasificacionInventario" required class="w-full mt-1 p-2 border rounded-lg text-xs"><option value="MaterialInventariable">Material inventariable</option><option value="Consumible">Consumible</option><option value="ActivoFijo">Activo fijo</option></select></label><div class="md:col-span-6 flex justify-end"><button type="button" onclick="this.closest(\'.purchase-request-line\').remove()" class="px-3 py-2 text-rose-600 text-xs font-bold">Quitar partida</button></div>';
+ host.appendChild(row);populateCatalogSelect(row.querySelector('[data-field="item"]'),"",row.querySelector('[data-field="unidad"]'));
+};
+window.submitNewPurchaseRequest=function(event){
+ event.preventDefault();const lines=Array.from(document.querySelectorAll("#purchase-request-lines .purchase-request-line")).map(row=>{const item=row.querySelector('[data-field="item"]'),option=item.selectedOptions[0];return {catalogItemId:option?.dataset.itemId||"",codigoItem:item.value,itemId:item.value,descripcion:option?.dataset.name||"",unidad:row.querySelector('[data-field="unidad"]').value,unidadMedida:row.querySelector('[data-field="unidad"]').value,cantidad:Number(row.querySelector('[data-field="cantidad"]').value),precioUnitario:Number(row.querySelector('[data-field="precioUnitario"]').value||0),clasificacionInventario:row.querySelector('[data-field="clasificacionInventario"]').value};});
+ if(!lines.length||lines.some(x=>!x.catalogItemId||!x.codigoItem||!x.unidad||!Number.isFinite(x.cantidad)||x.cantidad<=0||!Number.isFinite(x.precioUnitario)||x.precioUnitario<0)){alert("Seleccione artículos del catálogo y revise cantidades/precios.");return;}const ids=lines.map(x=>x.codigoItem.toUpperCase());if(new Set(ids).size!==ids.length){alert("Cada artículo debe aparecer una sola vez en la solicitud.");return;}
+ const payload={departamento:document.getElementById("purchase-request-department").value.trim(),centroCosto:document.getElementById("purchase-request-cost-center").value.trim(),categoria:document.getElementById("purchase-request-category").value.trim(),justificacion:document.getElementById("purchase-request-justification").value.trim(),detalleItems:lines,montoEstimado:lines.reduce((s,x)=>s+x.cantidad*x.precioUnitario,0)};if(!payload.departamento||!payload.justificacion){alert("Departamento y justificación son obligatorios.");return;}
+ const submit=document.querySelector("#purchase-request-form button[type='submit']");if(submit)submit.disabled=true;fetchBackendAccounting("createPurchaseRequest",payload).then(result=>{alert(result.message||"Solicitud registrada.");closePurchaseRequestModal();switchComprasSubtab("solicitudes");}).catch(error=>{if(submit)submit.disabled=false;alert("No fue posible registrar la solicitud: "+(error.message||error));});
+};
+
+function viewPurchaseRequestDetails(solId) {
+  alert(`Detalle de solicitud de compra ${solId} cargado.`);
+}
+
+function openNewSupplierModal() {
+  if (!window.hasPurchaseActionCapability("registerSupplier")) { alert("No tiene permisos para esta operación."); return; }
+  const existing=document.getElementById("supplier-profile-modal");if(existing)existing.remove();
+  const modal=document.createElement("div");modal.id="supplier-profile-modal";modal.className="fixed inset-0 z-[120] bg-black/60 flex items-center justify-center p-3";
+  modal.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] overflow-y-auto p-5 space-y-4">
+    <div class="flex justify-between items-center"><h3 class="font-black text-sm uppercase">Registrar proveedor</h3><button type="button" onclick="closeSupplierProfileModal()" class="text-xl">×</button></div>
+    <form id="supplier-profile-form" onsubmit="submitSupplierProfile(event)" class="space-y-4 text-xs">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <label class="font-bold">Nombre comercial *<input id="supplier-name" required class="w-full p-2 border rounded-lg mt-1"></label>
+        <label class="font-bold">RTN (14 dígitos) *<input id="supplier-rtn" required inputmode="numeric" pattern="[0-9]{14}" maxlength="14" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label class="font-bold">Rubro / servicio<input id="supplier-category" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label class="font-bold">Teléfono general<input id="supplier-phone" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label class="font-bold">Correo general<input id="supplier-email" type="email" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label class="font-bold">Estado<select id="supplier-status" class="w-full p-2 border rounded-lg mt-1"><option>Activo</option><option>EnEvaluacion</option><option>Inactivo</option><option>Suspendido</option></select></label>
+      </div>
+      <div class="border-t pt-3"><b>Contacto principal inicial</b><div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+        <input id="supplier-contact-name" class="p-2 border rounded-lg" placeholder="Nombre del contacto"><input id="supplier-contact-title" class="p-2 border rounded-lg" placeholder="Cargo"><input id="supplier-contact-phone" class="p-2 border rounded-lg" placeholder="Teléfono">
+        <input id="supplier-contact-email" type="email" class="p-2 border rounded-lg" placeholder="Correo"><select id="supplier-contact-area" class="p-2 border rounded-lg"><option value="Ventas">Ventas</option><option value="Cobranzas">Cobranzas</option><option value="Soporte">Soporte</option><option value="Entregas">Entregas</option></select>
+      </div></div>
+      <div class="border-t pt-3"><b>Direcciones</b><div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+        <label>Facturación fiscal<input id="supplier-billing-address" class="w-full p-2 border rounded-lg mt-1" placeholder="Dirección fiscal"></label>
+        <label>Entrega de mercancía<input id="supplier-delivery-address" class="w-full p-2 border rounded-lg mt-1" placeholder="Dirección de entrega"></label>
+        <input id="supplier-city" class="p-2 border rounded-lg" placeholder="Ciudad"><input id="supplier-department" class="p-2 border rounded-lg" placeholder="Departamento">
+      </div></div>
+      <div class="border-t pt-3"><b>Condiciones comerciales</b><div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-2">
+        <label>Crédito (días)<select id="supplier-credit" class="w-full p-2 border rounded-lg mt-1"><option value="0">Contado</option><option value="15">15</option><option value="30">30</option><option value="60">60</option></select></label>
+        <label>Moneda<select id="supplier-currency" class="w-full p-2 border rounded-lg mt-1"><option>HNL</option><option>USD</option><option>EUR</option></select></label>
+        <label>Descuento pronto pago %<input id="supplier-discount" type="number" min="0" max="100" step="0.01" value="0" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label>Días de descuento<input id="supplier-discount-days" type="number" min="0" value="0" class="w-full p-2 border rounded-lg mt-1"></label>
+        <label>Entrega habitual (días)<input id="supplier-delivery-days" type="number" min="0" value="0" class="w-full p-2 border rounded-lg mt-1"></label>
+      </div></div>
+      <div class="border-t pt-3"><b>Cuenta bancaria (opcional; roles autorizados)</b><div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2"><input id="supplier-bank-name" class="p-2 border rounded-lg" placeholder="Banco"><select id="supplier-bank-type" class="p-2 border rounded-lg"><option value="Ahorro">Ahorro</option><option value="Corriente">Corriente</option></select><input id="supplier-bank-number" class="p-2 border rounded-lg" placeholder="Número de cuenta"><input id="supplier-bank-beneficiary" class="p-2 border rounded-lg" placeholder="Beneficiario"><input id="supplier-bank-reason" class="p-2 border rounded-lg" placeholder="Motivo documentado"><input id="supplier-bank-reference" class="p-2 border rounded-lg" placeholder="Referencia de autorización"></div><p class="text-[11px] text-gray-500 mt-1">La cuenta completa no se devuelve en el directorio ni se incluye en auditoría.</p></div>
+      <div class="flex justify-end gap-2"><button type="button" onclick="closeSupplierProfileModal()" class="px-4 py-2 bg-gray-100 rounded-lg">Cancelar</button><button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold">Guardar proveedor</button></div>
+    </form></div>`;
+  document.body.appendChild(modal);
+}
+window.closeSupplierProfileModal=function(){document.getElementById("supplier-profile-modal")?.remove();};
+window.submitSupplierProfile=function(event){
+  event.preventDefault();const val=id=>document.getElementById(id).value.trim();
+  const payload={nombreProveedor:val("supplier-name"),rtn:val("supplier-rtn"),rubroServicio:val("supplier-category"),telefono:val("supplier-phone"),email:val("supplier-email"),estado:val("supplier-status")};
+  if(!/^\d{14}$/.test(payload.rtn)){alert("El RTN debe contener exactamente 14 dígitos.");return;}
+  const btn=document.querySelector("#supplier-profile-form button[type='submit']");if(btn)btn.disabled=true;
+  fetchBackendAccounting("registerSupplier",payload).then(async result=>{
+    const id=result.proveedorId,contactName=val("supplier-contact-name");
+    if(contactName)await fetchBackendAccounting("manageSupplierContact",{proveedorId:id,nombre:contactName,cargo:val("supplier-contact-title"),telefono:val("supplier-contact-phone"),email:val("supplier-contact-email"),area:val("supplier-contact-area"),esPrincipal:true});
+    for(const [field,type] of [["supplier-billing-address","FacturacionFiscal"],["supplier-delivery-address","EntregaMercancia"]])if(val(field))await fetchBackendAccounting("manageSupplierAddress",{proveedorId:id,tipoDireccion:type,direccion:val(field),ciudad:val("supplier-city"),departamento:val("supplier-department"),pais:"Honduras",esPrincipal:true});
+    await fetchBackendAccounting("manageSupplierCommercialTerms",{proveedorId:id,plazoCreditoDias:Number(val("supplier-credit")),moneda:val("supplier-currency"),descuentoProntoPagoPorcentaje:Number(val("supplier-discount")),diasDescuento:Number(val("supplier-discount-days")),tiempoEntregaDias:Number(val("supplier-delivery-days"))});
+    if(val("supplier-bank-number"))await fetchBackendAccounting("manageSupplierBankAccount",{proveedorId:id,banco:val("supplier-bank-name"),tipoCuenta:val("supplier-bank-type"),numeroCuenta:val("supplier-bank-number"),beneficiario:val("supplier-bank-beneficiary"),motivoAutorizacion:val("supplier-bank-reason"),referenciaAutorizacion:val("supplier-bank-reference")});
+    alert("Proveedor y perfil comercial guardados. ID: "+id);closeSupplierProfileModal();switchComprasSubtab("proveedores");
+  }).catch(error=>{if(btn)btn.disabled=false;alert("No se completó el registro del proveedor: "+(error.message||error)+". Revise si el proveedor base ya fue guardado antes de reintentar.");});
+};
+window.openSupplierContactModal=function(proveedorId){
+  if(!window.hasPurchaseActionCapability("manageSupplierContact")){alert("No tiene permisos para administrar contactos de proveedores.");return;}
+  const modal=document.createElement("div");modal.id="supplier-contact-modal";modal.className="fixed inset-0 z-[125] bg-black/60 flex items-center justify-center p-3";
+  modal.innerHTML=`<form id="supplier-contact-form" class="bg-white rounded-2xl p-5 w-full max-w-xl space-y-3" onsubmit="submitSupplierContact(event,'${escapePurchaseAssetHtml(proveedorId)}')"><h3 class="font-black text-sm">Agregar contacto</h3><input id="supplier-extra-contact-name" required class="w-full p-2 border rounded-lg" placeholder="Nombre"><input id="supplier-extra-contact-title" class="w-full p-2 border rounded-lg" placeholder="Cargo"><input id="supplier-extra-contact-phone" required class="w-full p-2 border rounded-lg" placeholder="Teléfono"><input id="supplier-extra-contact-email" type="email" required class="w-full p-2 border rounded-lg" placeholder="Correo"><select id="supplier-extra-contact-area" class="w-full p-2 border rounded-lg"><option>Ventas</option><option>Cobranzas</option><option>Soporte</option><option>Entregas</option></select><label><input id="supplier-extra-contact-primary" type="checkbox"> Contacto principal</label><div class="flex justify-end gap-2"><button type="button" onclick="document.getElementById('supplier-contact-modal').remove()" class="px-3 py-2 bg-gray-100 rounded-lg">Cancelar</button><button class="px-3 py-2 bg-indigo-600 text-white rounded-lg">Guardar</button></div></form>`;
+  document.body.appendChild(modal);
+};
+window.submitSupplierContact=function(event,id){event.preventDefault();const val=field=>document.getElementById(field).value.trim();fetchBackendAccounting("manageSupplierContact",{proveedorId:id,nombre:val("supplier-extra-contact-name"),cargo:val("supplier-extra-contact-title"),telefono:val("supplier-extra-contact-phone"),email:val("supplier-extra-contact-email"),area:val("supplier-extra-contact-area"),esPrincipal:document.getElementById("supplier-extra-contact-primary").checked}).then(()=>{document.getElementById("supplier-contact-modal")?.remove();switchComprasSubtab("proveedores");}).catch(error=>alert(error.message||error));};
+window.updateSupplierBankAccount=function(id){if(!window.hasPurchaseActionCapability("manageSupplierBankAccount")){alert("No tiene permisos para modificar cuentas bancarias.");return;}const banco=prompt("Banco receptor");if(!banco)return;const tipoCuenta=prompt("Tipo de cuenta: Ahorro o Corriente");if(!tipoCuenta)return;const numeroCuenta=prompt("Número de cuenta");if(!numeroCuenta)return;const beneficiario=prompt("Beneficiario");if(!beneficiario)return;const motivoAutorizacion=prompt("Motivo documentado de la modificación (mínimo 10 caracteres)");if(!motivoAutorizacion)return;const referenciaAutorizacion=prompt("Referencia del documento de autorización");if(!referenciaAutorizacion)return;fetchBackendAccounting("manageSupplierBankAccount",{proveedorId:id,banco:banco,tipoCuenta:tipoCuenta,numeroCuenta:numeroCuenta,beneficiario:beneficiario,motivoAutorizacion:motivoAutorizacion,referenciaAutorizacion:referenciaAutorizacion}).then(()=>{alert("Cuenta actualizada; el historial anterior se conserva.");switchComprasSubtab("proveedores");}).catch(error=>alert("No se pudo actualizar la cuenta: "+(error.message||error)));};
+window.viewSupplierBankAccount=function(proveedorId){if(!window.hasPurchaseActionCapability("getSupplierBankAccount")){alert("No tiene permisos para consultar cuentas bancarias.");return;}fetchBackendAccounting("getSupplierBankAccount",{proveedorId}).then(result=>{const account=result.cuenta,modal=document.createElement("div");modal.className="fixed inset-0 z-[125] bg-black/60 flex items-center justify-center p-3";modal.innerHTML='<div class="bg-white rounded-2xl p-5 max-w-md w-full space-y-2"><h3 class="font-black">Cuenta bancaria protegida</h3><p class="text-xs">Banco: '+escapePurchaseAssetHtml(account.banco)+'</p><p class="text-xs">Tipo: '+escapePurchaseAssetHtml(account.tipoCuenta)+'</p><p class="text-xs">Cuenta: '+escapePurchaseAssetHtml(account.numeroCuenta)+'</p><p class="text-xs">Beneficiario: '+escapePurchaseAssetHtml(account.beneficiario)+'</p><button class="px-3 py-2 bg-gray-100 rounded-lg" onclick="this.closest(\'div.fixed\').remove()">Cerrar</button></div>';document.body.appendChild(modal);}).catch(error=>alert("Acceso no disponible: "+(error.message||error)));};
+
+
+function renderBibliotecaModule(container) {
+  container.innerHTML = `
+    <div class="space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+        <h4 class="text-base font-black uppercase text-gray-800 flex items-center gap-2">
+          <i class="fas fa-book-reader text-indigo-600"></i> Biblioteca & Recursos Educativos (Fase 20)
+        </h4>
+        <div class="flex flex-wrap gap-2 text-xs font-bold uppercase">
+          <button onclick="switchBibliotecaSubtab('libros')" id="btn-bib-libros" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-indigo-600 text-white">Catálogo & Ejemplares</button>
+          <button onclick="switchBibliotecaSubtab('prestamos')" id="btn-bib-prestamos" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Préstamos</button>
+          <button onclick="switchBibliotecaSubtab('reservas')" id="btn-bib-reservas" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Reservas</button>
+          <button onclick="switchBibliotecaSubtab('incidencias')" id="btn-bib-incidencias" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Incidencias</button>
+          <button onclick="switchBibliotecaSubtab('digitales')" id="btn-bib-digitales" class="px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100">Recursos Digitales</button>
+        </div>
+      </div>
+
+      <div id="biblioteca-subtab-container" class="space-y-4">
+        <div class="text-center py-6 text-gray-400 text-xs font-bold uppercase">Cargando biblioteca...</div>
+      </div>
+    </div>
+  `;
+  switchBibliotecaSubtab('libros');
+}
+
+window.switchBibliotecaSubtab = function (subtab) {
+  currentBibliotecaSubtab = subtab;
+  ['libros', 'prestamos', 'reservas', 'incidencias', 'digitales'].forEach(s => {
+    const btn = document.getElementById(`btn-bib-${s}`);
+    if (btn) {
+      if (s === subtab) {
+        btn.className = "px-3 py-1.5 rounded-xl transition-all shadow-sm bg-indigo-600 text-white font-bold";
+      } else {
+        btn.className = "px-3 py-1.5 rounded-xl transition-all shadow-sm bg-white text-gray-700 hover:bg-gray-100 font-bold";
+      }
+    }
+  });
+
+  const subContainer = document.getElementById('biblioteca-subtab-container');
+  if (!subContainer) return;
+
+  if (subtab === 'libros') renderLibrosView(subContainer);
+  else if (subtab === 'prestamos') renderPrestamosBibView(subContainer);
+  else if (subtab === 'reservas') renderReservasBibView(subContainer);
+  else if (subtab === 'incidencias') renderIncidenciasBibView(subContainer);
+  else if (subtab === 'digitales') renderDigitalesBibView(subContainer);
+};
+
+function renderLibrosView(container) {
+  container.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
+        <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-book text-indigo-600"></i> Registrar Obra / Ejemplar</h5>
+        <form id="form-libro" onsubmit="handleSaveLibro(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Título de la Obra *</label>
+            <input type="text" id="bib-titulo" required class="w-full p-2 border border-gray-300 rounded-xl font-bold" placeholder="EJ: Cien Años de Soledad">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Autor *</label>
+            <input type="text" id="bib-autor" required class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: Gabriel García Márquez">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Código ISBN</label>
+            <input type="text" id="bib-isbn" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="EJ: 978-0307474728">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Categoría Temática</label>
+            <input type="text" id="bib-categoria" value="Literatura" class="w-full p-2 border border-gray-300 rounded-xl">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Ubicación Física / Estante</label>
+            <input type="text" id="bib-ubicacion" value="Estante A1" class="w-full p-2 border border-gray-300 rounded-xl">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all uppercase">
+            Guardar en Catálogo
+          </button>
+        </form>
+      </div>
+
+      <div class="md:col-span-2 bg-white p-5 rounded-2xl border border-gray-200">
+        <div class="flex justify-between items-center mb-4">
+          <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-search text-indigo-600"></i> Catálogo Bibliográfico</h5>
+          <button onclick="loadLibrosData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+        </div>
+        <div id="libros-table-container" class="overflow-x-auto text-xs">
+          <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando libros...</div>
+        </div>
+      </div>
+    </div>
+  `;
+  loadLibrosData();
+}
+
+window.loadLibrosData = function () {
+  const container = document.getElementById('libros-table-container');
+  if (!container) return;
+
+  // Consultar Obras Maestras normalizadas con disponibilidad consolidada (FRBR/RDA) [TASK-025]
+  fetchApi('ACCOUNTING', 'getBibliographicWorks', {})
+    .then(res => {
+      const obras = (res && res.obras) ? res.obras : [];
+      if (obras.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay obras registradas en el catálogo FRBR.</div>`;
+        return;
+      }
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">Obra ID / ISBN</th>
+              <th class="p-2">Título de Obra</th>
+              <th class="p-2">Autores</th>
+              <th class="p-2">Categoría</th>
+              <th class="p-2">Copias Totales</th>
+              <th class="p-2">Disponibles</th>
+              <th class="p-2">Prestadas</th>
+              <th class="p-2">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      obras.forEach(o => {
+        const autoresStr = Array.isArray(o.autores) ? o.autores.join(', ') : o.autores;
+        const total = (o.metricasEjemplares && o.metricasEjemplares.total) || 0;
+        const avail = (o.metricasEjemplares && o.metricasEjemplares.available) || 0;
+        const onLoan = (o.metricasEjemplares && o.metricasEjemplares.on_loan) || 0;
+        const badgeColor = avail > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800';
+
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-indigo-700">${o.obraId}<div class="text-[10px] text-gray-400">${o.isbnCodigo || 'S/ISBN'}</div></td>
+            <td class="p-2 font-bold text-gray-800">${o.titulo}${o.subtitulo ? ` <span class="font-normal text-gray-500 text-[11px]">(${o.subtitulo})</span>` : ''}</td>
+            <td class="p-2 text-gray-600">${autoresStr}</td>
+            <td class="p-2 text-gray-500">${o.categoria}</td>
+            <td class="p-2 font-mono text-center font-bold text-gray-700">${total}</td>
+            <td class="p-2 font-mono text-center font-bold text-emerald-600">${avail}</td>
+            <td class="p-2 font-mono text-center font-bold text-amber-600">${onLoan}</td>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${badgeColor}">${avail > 0 ? 'En Existencia' : 'Agotado'}</span></td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar obras: ${err.message}</div>`;
+    });
+};
+
+window.handleSaveLibro = function (e) {
+  e.preventDefault();
+  const payload = {
+    titulo: document.getElementById('bib-titulo').value,
+    autor: document.getElementById('bib-autor').value,
+    isbnCodigo: document.getElementById('bib-isbn').value,
+    categoria: document.getElementById('bib-categoria').value,
+    ubicacionFisica: document.getElementById('bib-ubicacion').value
+  };
+
+  fetchApi('ACCOUNTING', 'manageLibraryBook', payload)
+    .then(res => {
+      alert(res.message || "Ejemplar bibliográfico registrado con éxito.");
+      document.getElementById('form-libro').reset();
+      loadLibrosData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+window.handlePrestarLibro = function (ejemplarId) {
+  const uId = prompt("Ingrese el UserId del prestatario (EJ: EST-01 / EMP-01):");
+  if (!uId) return;
+
+  fetchApi('ACCOUNTING', 'processLibraryLoan', { ejemplarId: ejemplarId, userId: uId, accion: 'Prestamo' })
+    .then(res => {
+      alert(res.message || "Préstamo registrado exitosamente.");
+      loadLibrosData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+window.handleReservarLibro = function (ejemplarId) {
+  const uId = prompt("Ingrese el UserId para la reserva:");
+  if (!uId) return;
+
+  fetchApi('ACCOUNTING', 'reserveLibraryBook', { ejemplarId: ejemplarId, userId: uId })
+    .then(res => {
+      alert(res.message || "Reserva registrada con éxito.");
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+function renderPrestamosBibView(container) {
+  container.innerHTML = `
+    <div class="bg-white p-5 rounded-2xl border border-gray-200">
+      <div class="flex justify-between items-center mb-4">
+        <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-exchange-alt text-indigo-600"></i> Registro de Préstamos Activos</h5>
+        <button onclick="loadPrestamosBibData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+      </div>
+      <div id="prestamos-table-container" class="overflow-x-auto text-xs">
+        <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando préstamos...</div>
+      </div>
+    </div>
+  `;
+  loadPrestamosBibData();
+}
+
+window.loadPrestamosBibData = function () {
+  const container = document.getElementById('prestamos-table-container');
+  if (!container) return;
+
+  fetchApi('ACCOUNTING', 'getLibraryLoans', {})
+    .then(res => {
+      const loans = (res && res.prestamos) ? res.prestamos : [];
+      if (loans.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay préstamos activos.</div>`;
+        return;
+      }
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">ID Préstamo</th>
+              <th class="p-2">Ejemplar ID</th>
+              <th class="p-2">Prestatario (UserId)</th>
+              <th class="p-2">Fecha Préstamo</th>
+              <th class="p-2">Devolución Prevista</th>
+              <th class="p-2">Estado</th>
+              <th class="p-2 text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      loans.forEach(l => {
+        const isActivo = l.estado === 'on_loan';
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-indigo-600">${l.prestamoId}</td>
+            <td class="p-2 font-bold text-gray-800">${l.ejemplarId}</td>
+            <td class="p-2 text-gray-600">${l.userId}</td>
+            <td class="p-2 text-gray-500">${window.IMARegionalFormatters.formatDate(l.fechaPrestamo)}</td>
+            <td class="p-2 text-gray-500">${window.IMARegionalFormatters.formatDate(l.fechaDevolucionPrevista)}</td>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isActivo ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${l.estado}</span></td>
+            <td class="p-2 text-right">
+              ${isActivo ? `<button onclick="handleDevolverLibro('${l.ejemplarId}', '${l.userId}')" class="px-2.5 py-1 bg-emerald-600 text-white rounded font-bold text-[10px] hover:bg-emerald-700 uppercase">Devolver</button>` : '<span class="text-gray-400 text-[10px]">Devuelto</span>'}
+            </td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar préstamos: ${err.message}</div>`;
+    });
+};
+
+window.handleDevolverLibro = function (ejemplarId, userId) {
+  if (!confirm(`¿Confirmar recepción y devolución del ejemplar ${ejemplarId}?`)) return;
+
+  fetchApi('ACCOUNTING', 'processLibraryLoan', { ejemplarId: ejemplarId, userId: userId, accion: 'Devolucion' })
+    .then(res => {
+      alert(res.message || "Devolución registrada.");
+      loadPrestamosBibData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+function renderReservasBibView(container) {
+  container.innerHTML = `
+    <div class="bg-white p-5 rounded-2xl border border-gray-200">
+      <div class="flex justify-between items-center mb-4">
+        <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-bookmark text-indigo-600"></i> Reservas & Lista de Espera</h5>
+        <button onclick="loadReservasBibData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+      </div>
+      <div id="reservas-table-container" class="overflow-x-auto text-xs">
+        <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando reservas...</div>
+      </div>
+    </div>
+  `;
+  loadReservasBibData();
+}
+
+window.loadReservasBibData = function () {
+  const container = document.getElementById('reservas-table-container');
+  if (!container) return;
+
+  fetchApi('ACCOUNTING', 'getLibraryReservations', {})
+    .then(res => {
+      const resv = (res && res.reservas) ? res.reservas : [];
+      if (resv.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay reservas registradas.</div>`;
+        return;
+      }
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">ID Reserva</th>
+              <th class="p-2">Ejemplar ID</th>
+              <th class="p-2">Usuario</th>
+              <th class="p-2">Fecha Solicitud</th>
+              <th class="p-2">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      resv.forEach(r => {
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-indigo-600">${r.reservaId}</td>
+            <td class="p-2 font-bold text-gray-800">${r.ejemplarId}</td>
+            <td class="p-2 text-gray-600">${r.userId}</td>
+            <td class="p-2 text-gray-500">${window.IMARegionalFormatters.formatDate(r.fechaSolicitud)}</td>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800">${r.estadoReserva}</span></td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar reservas: ${err.message}</div>`;
+    });
+};
+
+function renderIncidenciasBibView(container) {
+  container.innerHTML = `
+    <div class="bg-white p-5 rounded-2xl border border-gray-200">
+      <div class="flex justify-between items-center mb-4">
+        <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-exclamation-triangle text-rose-600"></i> Incidencias Bibliotecarias (Daños / Pérdidas)</h5>
+        <button onclick="loadIncidenciasBibData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+      </div>
+      <div id="incidencias-table-container" class="overflow-x-auto text-xs">
+        <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando incidencias...</div>
+      </div>
+    </div>
+  `;
+  loadIncidenciasBibData();
+}
+
+window.loadIncidenciasBibData = function () {
+  const container = document.getElementById('incidencias-table-container');
+  if (!container) return;
+
+  fetchApi('ACCOUNTING', 'getLibraryIncidents', {})
+    .then(res => {
+      const incs = (res && res.incidencias) ? res.incidencias : [];
+      if (incs.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay incidencias reportadas.</div>`;
+        return;
+      }
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">ID Incidencia</th>
+              <th class="p-2">Ejemplar ID</th>
+              <th class="p-2">Usuario</th>
+              <th class="p-2">Tipo</th>
+              <th class="p-2">Descripción</th>
+              <th class="p-2">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      incs.forEach(i => {
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-rose-600">${i.incidenciaId}</td>
+            <td class="p-2 font-bold text-gray-800">${i.ejemplarId}</td>
+            <td class="p-2 text-gray-600">${i.userId}</td>
+            <td class="p-2 font-bold text-rose-700">${i.tipoIncidencia}</td>
+            <td class="p-2 text-gray-600">${i.descripcion}</td>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">${i.estado}</span></td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar incidencias: ${err.message}</div>`;
+    });
+};
+
+function renderDigitalesBibView(container) {
+  container.innerHTML = `
+    <div class="bg-white p-5 rounded-2xl border border-gray-200">
+      <div class="flex justify-between items-center mb-4">
+        <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-cloud-download-alt text-indigo-600"></i> Recursos Educativos Digitales</h5>
+        <button onclick="loadDigitalesBibData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+      </div>
+      <div id="digitales-table-container" class="overflow-x-auto text-xs">
+        <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando recursos digitales...</div>
+      </div>
+    </div>
+  `;
+  loadDigitalesBibData();
+}
+
+window.loadDigitalesBibData = function () {
+  const container = document.getElementById('digitales-table-container');
+  if (!container) return;
+
+  fetchApi('ACCOUNTING', 'getDigitalResources', {})
+    .then(res => {
+      const recs = (res && res.recursos) ? res.recursos : [];
+      if (recs.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay recursos digitales cargados.</div>`;
+        return;
+      }
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">ID Recurso</th>
+              <th class="p-2">Título</th>
+              <th class="p-2">Autor / Editorial</th>
+              <th class="p-2">Categoría</th>
+              <th class="p-2 text-right">Enlace / Acceso</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      recs.forEach(r => {
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-indigo-600">${r.recursoId}</td>
+            <td class="p-2 font-bold text-gray-800">${r.titulo}</td>
+            <td class="p-2 text-gray-600">${r.autorColaboradores}</td>
+            <td class="p-2 text-gray-500">${r.categoria}</td>
+            <td class="p-2 text-right">
+              <a href="${r.formatoUrl}" target="_blank" class="px-2.5 py-1 bg-indigo-600 text-white rounded font-bold text-[10px] hover:bg-indigo-700 uppercase"><i class="fas fa-external-link-alt"></i> Abrir</a>
+            </td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar recursos digitales: ${err.message}</div>`;
+    });
+};
+
+function renderDiarioModule(container) {
+  container.innerHTML = `
+    <div class="bg-white p-6 rounded-2xl border border-gray-100 space-y-4">
+      <h4 class="text-base font-black text-gray-800 uppercase flex items-center gap-2">
+        <i class="fas fa-book text-emerald-600"></i> Libro Diario & Asientos Contables (Fase 14)
+      </h4>
+      <p class="text-xs text-gray-600">Consulta y registro de partidas dobles y asientos de cierre.</p>
+    </div>
+  `;
+}
+
+
+function renderPayrollAdjustmentsModule(container) {
+  container.innerHTML = `
+    <section class="space-y-5" aria-labelledby="payroll-adjustment-title">
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+        <h4 id="payroll-adjustment-title" class="text-base font-black uppercase text-amber-900"><i class="fas fa-file-invoice-dollar"></i> Ajustes compensatorios de nómina</h4>
+        <p class="mt-2 text-sm text-amber-900">Solo para planillas cerradas. El asiento original se conserva; el ajuste crea un nuevo asiento equilibrado y documentado. Requiere rol Contador o Administrador y ámbito de propiedad autorizado.</p>
+      </div>
+      <form id="payroll-adjustment-form" class="space-y-4" onsubmit="submitPayrollJournalAdjustment(event)">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="block text-xs font-bold uppercase text-gray-600">ID de planilla cerrada
+            <input id="payroll-adjust-planilla" required maxlength="100" class="mt-1 w-full rounded-xl border border-gray-300 p-3 text-sm" placeholder="ID de planilla">
+          </label>
+          <label class="block text-xs font-bold uppercase text-gray-600">Referencia única del ajuste
+            <input id="payroll-adjust-reference" required minlength="6" maxlength="80" pattern="[A-Za-z0-9_-]{6,80}" class="mt-1 w-full rounded-xl border border-gray-300 p-3 text-sm" placeholder="AJUSTE-2026-001">
+          </label>
+        </div>
+        <label class="block text-xs font-bold uppercase text-gray-600">Motivo y soporte documental
+          <textarea id="payroll-adjust-reason" required minlength="12" maxlength="500" rows="3" class="mt-1 w-full rounded-xl border border-gray-300 p-3 text-sm" placeholder="Explique la rectificación y su respaldo documental"></textarea>
+        </label>
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <h5 class="text-xs font-black uppercase text-gray-700">Líneas contables del ajuste</h5>
+            <button type="button" onclick="addPayrollAdjustmentLine()" class="rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold uppercase">+ Agregar línea</button>
+          </div>
+          <div class="grid grid-cols-12 gap-2 text-[10px] font-black uppercase text-gray-500">
+            <span class="col-span-2">Cuenta</span><span class="col-span-4">Descripción</span><span class="col-span-2">Debe (L)</span><span class="col-span-2">Haber (L)</span><span class="col-span-2">Acción</span>
+          </div>
+          <div id="payroll-adjustment-lines" class="space-y-2"></div>
+        </div>
+        <div id="payroll-adjustment-status" role="status" aria-live="polite" class="min-h-5 text-sm text-gray-600"></div>
+        <div class="flex flex-wrap justify-end gap-2">
+          <button type="reset" onclick="resetPayrollAdjustmentLines()" class="rounded-xl border border-gray-300 bg-white px-4 py-3 text-xs font-bold uppercase">Limpiar</button>
+          <button id="payroll-adjustment-submit" type="submit" class="rounded-xl bg-amber-600 px-5 py-3 text-xs font-black uppercase text-white hover:bg-amber-700">Registrar ajuste compensatorio</button>
+        </div>
+      </form>
+    </section>`;
+  window.resetPayrollAdjustmentLines();
+}
+window.addPayrollAdjustmentLine = function() {
+  const container=document.getElementById("payroll-adjustment-lines");if(!container)return;
+  const row=document.createElement("div");row.className="grid grid-cols-12 gap-2";row.setAttribute("data-payroll-adjustment-line","1");
+  row.innerHTML='<input data-account class="col-span-2 min-w-0 rounded-lg border border-gray-300 p-2 text-sm" maxlength="20" placeholder="5101" aria-label="Código de cuenta"><input data-name class="col-span-4 min-w-0 rounded-lg border border-gray-300 p-2 text-sm" maxlength="120" placeholder="Descripción" aria-label="Descripción de cuenta"><input data-debit type="number" min="0" step="0.01" class="col-span-2 min-w-0 rounded-lg border border-gray-300 p-2 text-sm" placeholder="0.00" aria-label="Debe"><input data-credit type="number" min="0" step="0.01" class="col-span-2 min-w-0 rounded-lg border border-gray-300 p-2 text-sm" placeholder="0.00" aria-label="Haber"><button type="button" class="col-span-2 rounded-lg border border-rose-200 bg-rose-50 px-2 py-2 text-[10px] font-bold uppercase text-rose-700" aria-label="Quitar línea">Quitar</button>';
+  row.querySelector("button").addEventListener("click",()=>row.remove());container.appendChild(row);
+};
+window.resetPayrollAdjustmentLines = function() {
+  const container=document.getElementById("payroll-adjustment-lines");if(!container)return;
+  container.innerHTML="";window.addPayrollAdjustmentLine();window.addPayrollAdjustmentLine();
+  const status=document.getElementById("payroll-adjustment-status");if(status)status.textContent="";
+};
+window.submitPayrollJournalAdjustment = async function(event) {
+  if(event&&event.preventDefault)event.preventDefault();
+  const status=document.getElementById("payroll-adjustment-status"),button=document.getElementById("payroll-adjustment-submit");
+  const lines=Array.from(document.querySelectorAll("#payroll-adjustment-lines [data-payroll-adjustment-line]")).map(row=>({
+    cuenta:row.querySelector("[data-account]").value.trim(),
+    nombre:row.querySelector("[data-name]").value.trim(),
+    debe:Number(row.querySelector("[data-debit]").value||0),
+    haber:Number(row.querySelector("[data-credit]").value||0)
+  }));
+  if(lines.length<2||lines.some(x=>!x.cuenta||!x.nombre||!Number.isFinite(x.debe)||!Number.isFinite(x.haber)||x.debe<0||x.haber<0||(x.debe>0&&x.haber>0)||(x.debe===0&&x.haber===0))){
+    if(status)status.textContent="Cada línea requiere cuenta, descripción y un importe positivo en Debe o Haber, nunca ambos.";return;
+  }
+  const debit=Math.round(lines.reduce((t,x)=>t+x.debe,0)*100)/100,credit=Math.round(lines.reduce((t,x)=>t+x.haber,0)*100)/100;
+  if(Math.abs(debit-credit)>0.01){if(status)status.textContent="El ajuste no está cuadrado. Debe y Haber deben coincidir dentro de L 0.01.";return;}
+  const payload={planillaId:document.getElementById("payroll-adjust-planilla").value.trim(),referenciaAjuste:document.getElementById("payroll-adjust-reference").value.trim(),motivo:document.getElementById("payroll-adjust-reason").value.trim(),lineas};
+  if(!payload.planillaId||!payload.referenciaAjuste||payload.motivo.length<12){if(status)status.textContent="Complete la planilla, referencia única y motivo.";return;}
+  if(button)button.disabled=true;if(status)status.textContent="Registrando ajuste y verificando el asiento original…";
+  try{
+    const result=await window.recordPayrollJournalAdjustment(payload);
+    if(!result||result.status!=="success")throw new Error(result&&result.message||result&&result.code||"No fue posible registrar el ajuste.");
+    if(status)status.textContent="Ajuste registrado: "+result.ajusteId+" · Asiento: "+result.asientoId+" · Asiento original conservado: "+result.asientoOriginalId;
+  }catch(error){if(status)status.textContent=error&&error.message?error.message:"Error al registrar el ajuste.";}
+  finally{if(button)button.disabled=false;}
+};
+
+function renderPresupuestosModule(container) {
+  container.innerHTML = `
+    <div class="bg-white p-6 rounded-2xl border border-gray-100 space-y-4">
+      <h4 class="text-base font-black text-gray-800 uppercase flex items-center gap-2">
+        <i class="fas fa-calculator text-indigo-600"></i> Control Presupuestario por Centro de Costo (Fase 14)
+      </h4>
+      <p class="text-xs text-gray-600">Monitoreo de ejecución presupuestaria anual e indicadores por área.</p>
+    </div>
+  `;
+}
+
+
+function enrollmentBillingEscapeHtml_(value) {
+  return String(value === null || value === undefined ? "" : value)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function renderEnrollmentBillingConfigurationModule(container) {
+  const currentYear = new Date().getFullYear();
+  container.innerHTML = '<section class="space-y-5" aria-labelledby="enrollment-billing-title">' +
+    '<div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5"><h4 id="enrollment-billing-title" class="text-base font-black uppercase text-indigo-900"><i class="fas fa-sliders-h"></i> Configuración de cargos al matricular</h4>' +
+    '<p class="text-sm text-indigo-900 mt-2">Guarda la política de cargos por año lectivo y grado. La aplicación automática de esta política al crear matrículas sigue en integración dentro de AUD-NG-129; guardar aquí no crea ni modifica cargos.</p></div>' +
+    '<form id="enrollment-billing-load-form" class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">' +
+    '<label class="text-xs font-bold text-gray-700">Año lectivo<input id="enrollment-billing-year" type="number" data-ui-help-key="matricula.anoLectivo" min="2000" max="2200" required value="' + currentYear + '" class="mt-1 w-full p-2.5 border border-gray-300 rounded-xl text-sm"></label>' +
+    '<label class="text-xs font-bold text-gray-700">Grado<input id="enrollment-billing-grade" type="text" data-ui-help-key="matricula.grado" maxlength="80" required placeholder="Ej. Séptimo grado" class="mt-1 w-full p-2.5 border border-gray-300 rounded-xl text-sm"></label>' +
+    '<div class="flex items-end"><button type="submit" class="w-full px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase hover:bg-indigo-700">Consultar configuración</button></div></form>' +
+    '<div id="enrollment-billing-feedback" role="status" aria-live="polite" class="text-sm text-gray-600"></div><div id="enrollment-billing-editor" class="hidden space-y-4"></div></section>';
+  document.getElementById("enrollment-billing-load-form").addEventListener("submit", function(event) {
+    event.preventDefault();
+    window.loadEnrollmentBillingConfiguration();
+  });
+}
+
+window.updateEnrollmentBillingModeUI = function() {
+  const mode = document.getElementById("enrollment-billing-mode");
+  const concept = document.getElementById("enrollment-billing-concept-wrap");
+  if (mode && concept) concept.classList.toggle("hidden", mode.value !== "MATRICULA_ONLY");
+};
+
+window.loadEnrollmentBillingConfiguration = async function() {
+  const year = String(document.getElementById("enrollment-billing-year").value || "").trim();
+  const grade = String(document.getElementById("enrollment-billing-grade").value || "").trim();
+  const feedback = document.getElementById("enrollment-billing-feedback");
+  const editor = document.getElementById("enrollment-billing-editor");
+  if (!year || !grade) {
+    feedback.textContent = "Indica el año lectivo y el grado para consultar sus tarifas.";
+    editor.classList.add("hidden");
+    return;
+  }
+  feedback.textContent = "Consultando tarifas y configuración...";
+  editor.classList.add("hidden");
+  try {
+    const response = await window.fetchApi("ACCOUNTING", "getEnrollmentBillingConfiguration", { anoLectivo: year, nivelGrado: grade });
+    if (!response || response.status !== "success") throw new Error(response && (response.message || response.code) || "No fue posible consultar la configuración.");
+    const tariffs = response.tarifas || [];
+    const config = response.config || null;
+    window.currentEnrollmentBillingConfiguration_ = { anoLectivo: year, nivelGrado: grade, tarifas: tariffs, config: config };
+    const options = tariffs.map(function(t) {
+      const label = (t.conceptoNombre || t.conceptoId) + " — " + window.IMARegionalFormatters.formatCurrency(t.montoTotal) + " / " + Number(t.cuotasNum) + " cuota(s)";
+      return '<option value="' + enrollmentBillingEscapeHtml_(t.conceptoId) + '">' + enrollmentBillingEscapeHtml_(label) + '</option>';
+    }).join("");
+    const summary = tariffs.length ? tariffs.map(function(t) {
+      return '<li class="flex flex-wrap justify-between gap-2 border-b border-gray-100 py-2 text-sm"><span>' + enrollmentBillingEscapeHtml_(t.conceptoNombre || t.conceptoId) +
+        '</span><span class="font-semibold">' + window.IMARegionalFormatters.formatCurrency(t.montoTotal) + ' · ' + Number(t.cuotasNum) + ' cuota(s)</span></li>';
+    }).join("") : '<li class="text-sm text-amber-700 py-2">No hay tarifas activas para este grado y año lectivo.</li>';
+    editor.innerHTML = '<form id="enrollment-billing-save-form" class="space-y-4 border border-gray-200 rounded-2xl p-5">' +
+      '<div class="flex flex-wrap justify-between gap-2"><h5 class="font-black text-gray-900 uppercase text-sm">Regla de generación</h5><span class="text-xs text-gray-500">' +
+      (config ? "Configuración existente" : "Sin configuración guardada") + '</span></div>' +
+      '<label class="block text-xs font-bold text-gray-700">¿Qué cargos debe crear la matrícula?<select id="enrollment-billing-mode" required onchange="updateEnrollmentBillingModeUI()" class="mt-1 w-full p-3 border border-gray-300 rounded-xl text-sm bg-white">' +
+      '<option value="MANUAL">Manual — no generar cargos automáticamente</option><option value="MATRICULA_ONLY">Solo el concepto de matrícula seleccionado</option>' +
+      '<option value="ALL_ACTIVE_TARIFFS">Plan completo — todos los conceptos con tarifa activa</option></select></label>' +
+      '<label id="enrollment-billing-concept-wrap" class="block text-xs font-bold text-gray-700">Tarifa / concepto de matrícula<select id="enrollment-billing-concept" class="mt-1 w-full p-3 border border-gray-300 rounded-xl text-sm bg-white">' +
+      '<option value="">Selecciona una tarifa activa</option>' + options + '</select></label>' +
+      '<div class="bg-gray-50 rounded-xl p-4"><h6 class="font-bold text-xs uppercase text-gray-700 mb-2">Tarifas activas disponibles</h6><ul class="divide-y divide-gray-100">' + summary + '</ul></div>' +
+      '<p class="text-xs text-gray-500">El plan completo utiliza solo tarifas activas del año y grado seleccionados. Hasta finalizar la integración del motor, esta pantalla solo guarda la política: no activa ni genera cargos.</p>' +
+      '<button type="submit" class="px-5 py-3 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase hover:bg-indigo-700">Guardar configuración</button></form>';
+    document.getElementById("enrollment-billing-mode").value = config && config.modoGeneracion || "MANUAL";
+    document.getElementById("enrollment-billing-concept").value = config && config.conceptoMatriculaId || "";
+    window.updateEnrollmentBillingModeUI();
+    document.getElementById("enrollment-billing-save-form").addEventListener("submit", function(event) {
+      event.preventDefault();
+      window.saveEnrollmentBillingConfiguration();
+    });
+    editor.classList.remove("hidden");
+    feedback.textContent = "Configuración cargada. " + tariffs.length + " tarifa(s) activa(s) disponibles.";
+  } catch (error) {
+    feedback.textContent = "Error: " + String(error.message || error);
+  }
+};
+
+window.saveEnrollmentBillingConfiguration = async function() {
+  const context = window.currentEnrollmentBillingConfiguration_;
+  const feedback = document.getElementById("enrollment-billing-feedback");
+  if (!context) { feedback.textContent = "Primero consulta el año lectivo y el grado."; return; }
+  const mode = document.getElementById("enrollment-billing-mode").value;
+  const conceptId = document.getElementById("enrollment-billing-concept").value;
+  if (mode === "MATRICULA_ONLY" && !conceptId) { feedback.textContent = "Selecciona una tarifa activa para el concepto de matrícula."; return; }
+  feedback.textContent = "Guardando configuración...";
+  try {
+    const response = await window.fetchApi("ACCOUNTING", "saveEnrollmentBillingConfiguration", {
+      anoLectivo: context.anoLectivo, nivelGrado: context.nivelGrado, modoGeneracion: mode,
+      conceptoMatriculaId: mode === "MATRICULA_ONLY" ? conceptId : ""
+    });
+    if (!response || response.status !== "success") throw new Error(response && (response.message || response.code) || "No fue posible guardar la configuración.");
+    feedback.textContent = "Política guardada: " + mode + ". Su aplicación automática se habilitará al completar la integración de AUD-NG-129.";
+    await window.loadEnrollmentBillingConfiguration();
+  } catch (error) {
+    feedback.textContent = "Error: " + String(error.message || error);
+  }
+};
+
+
+function serviceTariffEscape_(value){return String(value===undefined||value===null?"":value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function renderServiceTariffsModule(container){
+ container.innerHTML='<div class="space-y-5"><div><h4 class="text-base font-black uppercase text-gray-800">Tarifas centralizadas de servicios</h4><p class="text-xs text-gray-500 mt-1">Administre importes, modalidades, vigencias, descuentos familiares y reglas de prorrateo. Las nuevas vigencias no modifican cargos históricos.</p></div><section class="border rounded-2xl p-4 space-y-3"><h5 class="text-xs font-black uppercase">Registrar tarifa o nueva vigencia</h5><div class="grid grid-cols-1 md:grid-cols-4 gap-2"><select id="service-tariff-service" class="p-2 border rounded-lg"><option value="TRANSPORTE">Transporte escolar</option><option value="CAFETERIA">Cafetería</option><option value="TIENDA">Tienda</option><option value="EXTRACURRICULAR">Actividades extracurriculares</option><option value="OTRO">Otro servicio</option></select><select id="service-tariff-mode" class="p-2 border rounded-lg"><option value="COMPLETA">Completa</option><option value="MEDIA">Media</option><option value="GENERAL">General</option></select><input id="service-tariff-route" class="p-2 border rounded-lg" placeholder="ID de ruta (obligatorio en transporte)"><select id="service-tariff-period" class="p-2 border rounded-lg"><option value="MENSUAL">Mensual</option><option value="DIARIO">Diario</option><option value="ANUAL">Anual</option><option value="EVENTO">Por evento</option><option value="POR_PERIODO">Por período</option></select><input id="service-tariff-amount" type="number" data-ui-help-key="cobros.monto" min="0.01" step="0.01" class="p-2 border rounded-lg" placeholder="Importe"><input id="service-tariff-start" type="date" class="p-2 border rounded-lg" data-ui-help-key="fechas.calendario"><input id="service-tariff-end" type="date" class="p-2 border rounded-lg" placeholder="Fin de vigencia (opcional)" data-ui-help-key="fechas.calendario"><input id="service-tariff-sibling" type="number" min="0" max="100" step="0.01" value="0" class="p-2 border rounded-lg" placeholder="Descuento hermanos %"><input id="service-tariff-cap" type="number" min="0" max="100" step="0.01" value="100" class="p-2 border rounded-lg" placeholder="Descuento máximo %"></div><div class="flex flex-wrap gap-4 text-xs"><label class="flex items-center gap-2"><input id="service-tariff-prorate-start" type="checkbox" checked> Prorratear altas</label><label class="flex items-center gap-2"><input id="service-tariff-prorate-end" type="checkbox" checked> Prorratear bajas</label></div><div class="flex gap-2"><button onclick="saveServiceTariff()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold">Guardar tarifa / vigencia</button><button onclick="loadServiceTariffs()" class="px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Actualizar listado</button></div><p id="service-tariff-message" class="text-xs text-gray-500"></p></section><section class="border rounded-2xl p-4"><h5 class="text-xs font-black uppercase mb-3">Tarifas registradas</h5><div id="service-tariffs-list" class="overflow-x-auto text-xs">Cargando tarifas...</div></section><p class="text-xs text-gray-500">Las becas aprobadas se aplican según las reglas de Descuentos/Becas; el descuento por hermanos utiliza relaciones familiares autorizadas y el límite máximo configurado en la tarifa.</p></div>';
+ loadServiceTariffs();
+}
+window.saveServiceTariff=function(){
+ const val=id=>document.getElementById(id).value,payload={servicio:val("service-tariff-service"),modalidad:val("service-tariff-mode"),rutaId:val("service-tariff-route"),periodo:val("service-tariff-period"),monto:Number(val("service-tariff-amount")),fechaVigenciaInicio:val("service-tariff-start"),fechaVigenciaFin:val("service-tariff-end"),descuentoHermanosPct:Number(val("service-tariff-sibling")||0),descuentoMaximoPct:Number(val("service-tariff-cap")||100),prorrateoAlta:document.getElementById("service-tariff-prorate-start").checked,prorrateoBaja:document.getElementById("service-tariff-prorate-end").checked},host=document.getElementById("service-tariff-message");
+ host.textContent="Guardando...";fetchApi("ACCOUNTING","manageServiceTariff",payload).then(r=>{host.textContent=r.message||"Tarifa guardada.";loadServiceTariffs();}).catch(e=>{host.textContent=e.message||String(e);});
+};
+window.loadServiceTariffs=function(){
+ const host=document.getElementById("service-tariffs-list");if(!host)return;host.textContent="Consultando tarifas...";
+ fetchApi("ACCOUNTING","getServiceTariffs",{}).then(r=>{const rows=r.tarifas||[];if(!rows.length){host.textContent="No hay tarifas registradas.";return;}let h='<table class="w-full text-left border-collapse"><thead><tr class="bg-gray-50"><th class="p-2">Servicio</th><th class="p-2">Modalidad</th><th class="p-2">Ruta</th><th class="p-2">Período</th><th class="p-2">Importe</th><th class="p-2">Vigencia</th><th class="p-2">Hermanos</th><th class="p-2">Máx. descuento</th><th class="p-2">Prorrateo</th><th class="p-2">Estado</th></tr></thead><tbody>';
+ rows.forEach(x=>{const start=x.fechaVigenciaInicio?window.IMARegionalFormatters.formatDate(x.fechaVigenciaInicio):"—",end=x.fechaVigenciaFin?window.IMARegionalFormatters.formatDate(x.fechaVigenciaFin):"Abierta";h+='<tr class="border-t"><td class="p-2">'+serviceTariffEscape_(x.servicio)+'</td><td class="p-2">'+serviceTariffEscape_(x.modalidad)+'</td><td class="p-2">'+serviceTariffEscape_(x.rutaId||"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.periodo)+'</td><td class="p-2 font-bold">'+window.IMARegionalFormatters.formatCurrency(x.monto)+'</td><td class="p-2">'+start+' – '+end+'</td><td class="p-2">'+Number(x.descuentoHermanosPct||0)+'%</td><td class="p-2">'+Number(x.descuentoMaximoPct||0)+'%</td><td class="p-2">'+(x.prorrateoAlta?"Alta":"—")+' / '+(x.prorrateoBaja?"Baja":"—")+'</td><td class="p-2">'+serviceTariffEscape_(x.estado)+'</td></tr>';});
+ host.innerHTML=h+'</tbody></table>';
+ }).catch(e=>{host.textContent=e.message||String(e);});
+};
+
+function renderDescuentosModule(container) {
+  container.innerHTML = `
+    <div class="bg-white p-6 rounded-2xl border border-gray-100 space-y-4">
+      <h4 class="text-base font-black text-gray-800 uppercase flex items-center gap-2">
+        <i class="fas fa-tags text-pink-600"></i> Reglas de Descuentos & Becas (Fase 15)
+      </h4>
+      <p class="text-xs text-gray-600">Administración de políticas de descuentos por hermano, becas y pronto pago.</p>
+    </div>
+  `;
+}
+
+function renderResumenModule(container) {
+  container.innerHTML = `
+    <div class="bg-white p-6 rounded-2xl border border-gray-100 space-y-4">
+      <h4 class="text-base font-black text-gray-800 uppercase flex items-center gap-2">
+        <i class="fas fa-chart-line text-blue-600"></i> Resumen Financiero & Balance Operativo
+      </h4>
+      <p class="text-xs text-gray-600">Consolidado institucional de ingresos, egresos, cuentas por cobrar y valorización de inventarios.</p>
+    </div>
+  `;
+}
+
+
+// [TASK-002] [F15-Task02] - Métodos clientes para simulación y generación masiva de mensualidades escolares
+window.previewBatchMonthlyCharges = async function(payload) {
+  try {
+    return await window.callApi('ACCOUNTING', 'previewBatchMonthlyCharges', payload || {});
+  } catch (error) {
+    console.error('[ACCOUNTING] Error en simulación previa de mensualidades:', error);
+    throw error;
+  }
+};
+
+window.generateBatchMonthlyCharges = async function(payload) {
+  try {
+    return await window.callApi('ACCOUNTING', 'generateBatchMonthlyCharges', payload || {});
+  } catch (error) {
+    console.error('[ACCOUNTING] Error en generación masiva de mensualidades:', error);
+    throw error;
+  }
+};
+
+
+// [TASK-003] [F15-Task03] - Métodos clientes para anulaciones, reversión de pagos, notas de crédito y reembolsos
+function confirmAccountingSensitiveOperation_(action, payload) {
+  const p = payload || {};
+  const reference = String(p.cargoId || p.paymentId || p.pagoId || p.id || "registro seleccionado");
+  const messages = {
+    voidCharge: {
+      title: "Anulación de cargo financiero",
+      details: "Se solicitará la anulación del cargo " + reference + ".",
+      consequence: "Si se aprueba, el cargo dejará de ser exigible y puede cambiar el saldo pendiente y la conciliación. El registro queda sujeto a auditoría."
+    },
+    reversePayment: {
+      title: "Reversión de pago",
+      details: "Se solicitará revertir el pago " + reference + ".",
+      consequence: "La reversión puede modificar el saldo del estudiante y la conciliación; el registro original no se elimina."
+    },
+    issueFiscalCreditNote: {
+      title: "Emisión de nota de crédito fiscal",
+      details: "Se solicitará una nota de crédito para el registro " + reference + ".",
+      consequence: "Puede producir efectos contables y fiscales. Verifique el documento, importe y referencia antes de emitir."
+    },
+    processPaymentRefund: {
+      title: "Procesamiento de reembolso",
+      details: "Se solicitará el reembolso del pago " + reference + ".",
+      consequence: "Puede generar una salida de fondos y modificar el saldo y la conciliación. Verifique beneficiario, importe y evidencia."
+    }
+  };
+  const config = messages[action];
+  if (!config) return false;
+  if (window.confirmCriticalOperation) return window.confirmCriticalOperation(config);
+  return typeof window.confirm === "function" && window.confirm(config.title + "\n\n" + config.details + "\n\nConsecuencia: " + config.consequence + "\n\n¿Confirma que desea continuar?");
+}
+
+window.voidCharge = async function(payload) {
+  if (!confirmAccountingSensitiveOperation_("voidCharge", payload)) return { status: "cancelled", code: "USER_CANCELLED" };
+  try {
+    return await window.callApi('ACCOUNTING', 'voidCharge', payload || {});
+  } catch (error) {
+    console.error('[ACCOUNTING] Error en anulación de cargo:', error);
+    throw error;
+  }
+};
+
+window.reversePayment = async function(payload) {
+  if (!confirmAccountingSensitiveOperation_("reversePayment", payload)) return { status: "cancelled", code: "USER_CANCELLED" };
+  try {
+    return await window.callApi('ACCOUNTING', 'reversePayment', payload || {});
+  } catch (error) {
+    console.error('[ACCOUNTING] Error en reversión de pago:', error);
+    throw error;
+  }
+};
+
+window.issueFiscalCreditNote = async function(payload) {
+  if (!confirmAccountingSensitiveOperation_("issueFiscalCreditNote", payload)) return { status: "cancelled", code: "USER_CANCELLED" };
+  try {
+    return await window.callApi('ACCOUNTING', 'issueFiscalCreditNote', payload || {});
+  } catch (error) {
+    console.error('[ACCOUNTING] Error en emisión de nota de crédito:', error);
+    throw error;
+  }
+};
+
+window.processPaymentRefund = async function(payload) {
+  if (!confirmAccountingSensitiveOperation_("processPaymentRefund", payload)) return { status: "cancelled", code: "USER_CANCELLED" };
+  try {
+    return await window.callApi('ACCOUNTING', 'processPaymentRefund', payload || {});
+  } catch (error) {
+    console.error('[ACCOUNTING] Error en procesamiento de reembolso:', error);
+    throw error;
+  }
+};
+
+// [TASK-179] Registrar ajustes compensatorios de planillas cerradas.
+window.recordPayrollJournalAdjustment = async function(payload) {
+  try {
+    return await window.callApi('ACCOUNTING', 'recordPayrollJournalAdjustment', payload || {});
+  } catch (error) {
+    console.error('[ACCOUNTING] Error al registrar ajuste compensatorio de nómina:', error);
+    throw error;
+  }
+};
+
+
+// [TASK-006] [F16-Task03] - Método cliente para desvinculación laboral coordinada (Offboarding)
+window.processEmployeeOffboarding = async function(payload) {
+  try {
+    return await window.callApi('ACCOUNTING', 'processEmployeeOffboarding', payload || {});
+  } catch (error) {
+    console.error('[ACCOUNTING] Error en desvinculación laboral coordinada:', error);
+    throw error;
+  }
+};
+
+
+
+// --- [TASK-021] [F19-Task03] TRANSFERENCIAS ENTRE ALMACENES ---
+
+function renderTransferenciasView(container) {
+  container.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-gray-50 p-5 rounded-2xl border border-gray-200">
+        <h5 class="font-black text-xs uppercase text-gray-800 mb-3"><i class="fas fa-dolly text-blue-600"></i> Despachar Transferencia</h5>
+        <form id="form-transferencia" onsubmit="handleSaveTransferencia(event)" class="space-y-3 text-xs">
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Artículo del catálogo *</label>
+            <select id="trf-codigo" required class="w-full p-2 border border-gray-300 rounded-xl"></select>
+          </div>
+          <div><label class="block font-bold text-gray-600 mb-1">Cantidad (unidad base) *</label>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Cantidad a Transferir *</label>
+            <input type="number" id="trf-cantidad" required step="1" min="1" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="1">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Sede / Ubicación Origen *</label>
+            <select id="trf-origen" required class="w-full p-2 border border-gray-300 rounded-xl"><option value="">Seleccione ubicación de origen</option></select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Sede / Ubicación Destino *</label>
+            <select id="trf-destino" required class="w-full p-2 border border-gray-300 rounded-xl"><option value="">Seleccione ubicación de destino</option></select>
+          </div>
+          <div><label class="block font-bold text-gray-600 mb-1">Número de lote (si aplica)</label><input type="text" id="trf-lote" class="w-full p-2 border border-gray-300 rounded-xl"></div>
+          <div><label class="block font-bold text-gray-600 mb-1">Número de serie (si aplica)</label><input type="text" id="trf-serie" class="w-full p-2 border border-gray-300 rounded-xl"></div>
+          <div class="flex items-center gap-2 pt-1">
+            <input type="checkbox" id="trf-requiere-recepcion" checked class="rounded text-blue-600">
+            <label for="trf-requiere-recepcion" class="font-bold text-gray-700 text-[11px]">Requiere confirmación física en destino (En Tránsito)</label>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Observaciones</label>
+            <input type="text" id="trf-obs" class="w-full p-2 border border-gray-300 rounded-xl" placeholder="Motivo o referencia del traslado">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all uppercase">
+            Emitir Transferencia
+          </button>
+        </form>
+      </div>
+
+      <div class="md:col-span-2 bg-white p-5 rounded-2xl border border-gray-200">
+        <div class="flex justify-between items-center mb-4">
+          <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-exchange-alt text-indigo-600"></i> Historial y Seguimiento de Transferencias</h5>
+          <button onclick="loadTransferenciasData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
+        </div>
+        <div id="transferencias-table-container" class="overflow-x-auto text-xs">
+          <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando transferencias...</div>
+        </div>
+      </div>
+    </div>
+  `;
+  populateCatalogSelect(document.getElementById("trf-codigo"));
+  loadInventoryLocationSelects();
+  loadTransferenciasData();
+}
+
+
+window.loadInventoryLocationSelects = function() {
+  const origin=document.getElementById("trf-origen"),destination=document.getElementById("trf-destino");
+  if(!origin||!destination)return;
+  fetchApi("ACCOUNTING","getWarehouseLocations",{}).then(function(result){
+    const locations=Array.isArray(result&&result.ubicaciones)?result.ubicaciones:[];
+    [origin,destination].forEach(function(select){
+      select.innerHTML="";
+      const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent="Seleccione ubicación";select.appendChild(placeholder);
+      locations.forEach(function(location){
+        const option=document.createElement("option");option.value=location.ubicacionId;
+        option.textContent=String(location.sedeCod)+" — "+String(location.nombreUbicacion);
+        option.dataset.sedeCod=String(location.sedeCod);option.dataset.name=String(location.nombreUbicacion);select.appendChild(option);
+      });
+    });
+  }).catch(function(error){console.error("No se pudieron cargar las ubicaciones:",error);});
+};
+
+window.loadTransferenciasData = function () {
+  const container = document.getElementById('transferencias-table-container');
+  if (!container) return;
+
+  fetchApi('ACCOUNTING', 'getInventoryTransfers', {})
+    .then(res => {
+      const items = (res && res.transferencias) ? res.transferencias : [];
+      if (items.length === 0) {
+        container.innerHTML = `<div class="p-4 text-center text-gray-400 font-bold uppercase">No hay transferencias registradas.</div>`;
+        return;
+      }
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 font-bold uppercase">
+              <th class="p-2">Lote TRF</th>
+              <th class="p-2">Artículo</th>
+              <th class="p-2 text-right">Despachado</th>
+              <th class="p-2">Origen &rarr; Destino</th>
+              <th class="p-2">Estado</th>
+              <th class="p-2 text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+      `;
+      items.forEach(t => {
+        let badgeClass = "bg-blue-100 text-blue-800";
+        if (t.estadoTransferencia === "EnTransito") badgeClass = "bg-amber-100 text-amber-800";
+        else if (t.estadoTransferencia === "RecibidaTotal") badgeClass = "bg-emerald-100 text-emerald-800";
+        else if (t.estadoTransferencia === "RecibidaParcial") badgeClass = "bg-orange-100 text-orange-800";
+        else if (t.estadoTransferencia === "Rechazada" || t.estadoTransferencia === "Cancelada") badgeClass = "bg-rose-100 text-rose-800";
+
+        const accionBtn = (["EnTransito","RecibidaParcial"].includes(t.estadoTransferencia))
+          ? `<button onclick="handleRecibirTransferencia('${t.transferBatchId}', '${t.itemCodigo}', '${t.cantidadDespachada}', '${t.ubicacionDestino}', '${t.cantidadRecibida||0}')" class="px-2 py-1 bg-emerald-50 text-emerald-600 rounded font-bold text-[10px] hover:bg-emerald-100 uppercase">Recibir</button>`
+          : `<span class="text-gray-400 font-bold text-[10px]">${t.cantidadRecibida || t.cantidadDespachada} rec.</span>`;
+
+        html += `
+          <tr class="hover:bg-gray-50">
+            <td class="p-2 font-mono font-bold text-indigo-600">${t.transferBatchId}</td>
+            <td class="p-2"><span class="font-bold text-gray-800">${t.itemNombre || t.itemCodigo}</span> <span class="font-mono text-gray-400 text-[10px]">(${t.itemCodigo})</span></td>
+            <td class="p-2 text-right font-mono font-bold">${t.cantidadDespachada}</td>
+            <td class="p-2 text-gray-700 font-medium">${t.ubicacionOrigen} &rarr; ${t.ubicacionDestino}</td>
+            <td class="p-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">${t.estadoTransferencia}</span></td>
+            <td class="p-2 text-right">${accionBtn}</td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="p-4 text-rose-600 font-bold text-center">Error al cargar transferencias: ${err.message}</div>`;
+    });
+};
+
+window.handleSaveTransferencia = function (e) {
+  e.preventDefault();
+  const origin=document.getElementById('trf-origen').selectedOptions[0],destination=document.getElementById('trf-destino').selectedOptions[0];
+  if(!origin||!destination||!origin.value||!destination.value){alert("Seleccione ubicaciones registradas de origen y destino.");return;}
+  const payload = {
+    itemCodigo: document.getElementById('trf-codigo').value,
+    itemNombre: document.getElementById('trf-codigo').selectedOptions[0]?.dataset.name || '',
+    cantidad: document.getElementById('trf-cantidad').value,
+    ubicacionOrigen: origin.dataset.name, ubicacionIdOrigen: origin.value, sedeCodOrigen: origin.dataset.sedeCod,
+    ubicacionDestino: destination.dataset.name, ubicacionIdDestino: destination.value, sedeCodDestino: destination.dataset.sedeCod,
+    numeroLote: document.getElementById('trf-lote').value, numeroSerie: document.getElementById('trf-serie').value,
+    requiereConfirmacionFisica: document.getElementById('trf-requiere-recepcion').checked,
+    observaciones: document.getElementById('trf-obs').value
+  };
+
+  fetchApi('ACCOUNTING', 'transferInventoryStock', payload)
+    .then(res => {
+      alert(res.message || "Transferencia despachada con éxito.");
+      document.getElementById('form-transferencia').reset();
+      loadTransferenciasData();
+      if (typeof loadKardexData === "function") loadKardexData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+window.handleRecibirTransferencia = function (transferBatchId, itemCodigo, cantDespachada, uDestino, cantidadAnterior) {
+  const anterior=Number(cantidadAnterior||0);
+  const cantStr = prompt(`Cantidad acumulada recibida en ${uDestino} (Despachadas: ${cantDespachada}; recibidas antes: ${anterior}):`, String(anterior));
+  if (cantStr === null) return;
+  const cantRec = parseFloat(cantStr);
+  if (!Number.isFinite(cantRec) || cantRec < anterior || cantRec > Number(cantDespachada)) { alert("La cantidad acumulada debe ser válida, no disminuir lo recibido y no superar lo despachado."); return; }
+  let justif = "";
+  if (cantRec < Number(cantDespachada)) {
+    justif = prompt("Justificación obligatoria de la diferencia o recepción parcial:") || "";
+    if (justif.trim().length < 5) { alert("Debe proporcionar una justificación de al menos cinco caracteres."); return; }
+  }
+  fetchApi('ACCOUNTING', 'confirmTransferReceipt', {
+    transferBatchId: transferBatchId,
+    cantidadRecibida: cantRec,
+    justificacionDiscrepancia: justif,
+    observaciones: "Recepción confirmada desde interfaz contable"
+  })
+    .then(res => {
+      alert(res.message || "Recepción confirmada con éxito.");
+      loadTransferenciasData();
+      if (typeof loadKardexData === "function") loadKardexData();
+    })
+    .catch(err => alert("Error: " + err.message));
+};
+
+
+// ---------------------------------------------------------------------------
+// Importación institucional: análisis, mapeo y preflight de solo lectura.
+// La persistencia se habilita únicamente después de una confirmación vinculada
+// al hash de previsualización emitido por ACCOUNTING.
+// ---------------------------------------------------------------------------
+let migrationImportState = {
+  workbook: null, file: null, fileName: "", sheetName: "", headers: [],
+  rows: [], dataRowNumbers: [], structural: null, fileDataBase64: "", payload: null, preview: null, profiles: [], mappingPreset: null
+};
+
+const MIGRATION_IMPORT_TARGETS = {
+  curso: { sheet: "Cursos", destination: "ACCOUNTING", fields: ["NombreCurso", "Categoria", "ProveedorResponsable", "Modalidad", "DuracionHoras", "Requisitos", "DirigidoA", "Estado", "CreadoPor", "FechaCreacion", "UltimaModificacion"], required: ["NombreCurso"] },
+  estudiante: { sheet: "ExpedientesEstudiantes", destination: "ACADEMIC",
+    fields: ["PersonaID", "CodigoInstitucional", "FechaNacimiento", "Nacionalidad", "DireccionResidencia", "FotografiaUrl", "EstadoExpediente", "FechaCreacion", "FechaActualizacion", "Observaciones"],
+    required: ["PersonaID"] },
+  empleado: { sheet: "ExpedientesLaborales", destination: "ACCOUNTING",
+    fields: ["PersonaId", "UserId", "Puesto", "Departamento", "CentroCosto", "FechaIngreso", "FechaSalida", "EstadoLaboral", "Observaciones"],
+    required: ["PersonaId", "Puesto", "Departamento"] }
+};
+
+function migrationImportEscape(value) {
+  return String(value === undefined || value === null ? "" : value)
+    .replace(/[&<>"']/g, function(ch) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+    });
+}
+
+function migrationImportBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
+}
+
+function resetMigrationImportPreview() {
+  migrationImportState.preview = null;
+  migrationImportState.payload = null;
+  var results = document.getElementById("migration-import-results");
+  if (results) results.textContent = "Seleccione un archivo y configure el mapeo para ejecutar la validación.";
+  var commit = document.getElementById("migration-import-commit");
+  if (commit) commit.disabled = true;
+  updateMigrationImportCommitState();
+}
+
+function updateMigrationImportCommitState() {
+  var button = document.getElementById("migration-import-commit");
+  var partial = document.getElementById("migration-import-allow-partial");
+  var preview = migrationImportState.preview;
+  if (!button) return;
+  var valid = !!(preview && preview.status === "success" &&
+    (preview.validForImport === true || (preview.validForPartialImport === true && partial && partial.checked)));
+  button.disabled = !valid;
+}
+
+function renderMigrationImportModule(container) {
+  container.innerHTML = `
+    <section class="space-y-5" aria-labelledby="migration-import-title">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+        <div>
+          <h3 id="migration-import-title" class="text-sm font-black uppercase text-emerald-950">Importación y migración de datos</h3>
+          <p class="mt-1 text-xs text-emerald-800">Previsualización semántica, correspondencia de identidades y revisión de destino. No se escribe hasta confirmar.</p>
+        </div>
+        <span class="rounded-lg bg-white px-3 py-2 text-[10px] font-black uppercase text-emerald-800">ACCOUNTING · Preflight</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><label for="migration-import-source" class="mb-1 block text-xs font-bold text-slate-700">Sistema de origen</label>
+          <input id="migration-import-source" class="w-full rounded-xl border border-slate-300 p-3 text-sm" placeholder="Nombre exacto del sistema legado"></div>
+        <div><label for="migration-import-entity" class="mb-1 block text-xs font-bold text-slate-700">Tipo de entidad</label>
+          <select id="migration-import-entity" class="w-full rounded-xl border border-slate-300 p-3 text-sm">
+            <option value="curso">Cursos</option><option value="estudiante">Estudiantes</option><option value="empleado">Expedientes laborales</option>
+          </select></div>
+        <div id="migration-import-department-wrap" class="hidden md:col-span-2">
+          <label for="migration-import-department" class="mb-1 block text-xs font-bold text-slate-700">Departamento activo (ID institucional)</label>
+          <input id="migration-import-department" class="w-full rounded-xl border border-slate-300 p-3 text-sm" placeholder="ID del departamento autorizado">
+        </div>
+        <div class="md:col-span-2"><label for="migration-import-file" class="mb-1 block text-xs font-bold text-slate-700">Libro Excel (.xlsx, máximo 10 MB)</label>
+          <input id="migration-import-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="block w-full rounded-xl border border-slate-300 p-3 text-sm">
+          <p class="mt-1 text-[11px] text-slate-500">Los archivos se analizan en el navegador y sus filas se envían a ACCOUNTING para validación de identidad, permisos, estructura y destino.</p>
+        </div>
+        <div><label for="migration-import-sheet" class="mb-1 block text-xs font-bold text-slate-700">Hoja</label><select id="migration-import-sheet" class="w-full rounded-xl border border-slate-300 p-3 text-sm" disabled><option value="">Seleccione un libro</option></select></div>
+        <div><label for="migration-import-header" class="mb-1 block text-xs font-bold text-slate-700">Fila de encabezados</label><select id="migration-import-header" class="w-full rounded-xl border border-slate-300 p-3 text-sm" disabled></select></div>
+      </div>
+      <div id="migration-import-mapping" class="hidden rounded-2xl border border-slate-200 p-4 space-y-3">
+        <div><h4 class="text-xs font-black uppercase text-slate-800">Correspondencia de columnas</h4><p class="mt-1 text-[11px] text-slate-500">Seleccione la columna de identificador legado y asigne las columnas de origen a los campos de destino.</p></div>
+        <div><label for="migration-import-identifier" class="mb-1 block text-xs font-bold text-slate-700">Identificador legado *</label><select id="migration-import-identifier" class="w-full rounded-lg border border-slate-300 p-2 text-sm"></select></div>
+        <div id="migration-import-field-mapping" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 rounded-xl bg-slate-50 p-3">
+          <div><label for="migration-import-profile" class="mb-1 block text-xs font-bold text-slate-700">Perfil guardado</label><select id="migration-import-profile" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm"><option value="">Sin perfil</option></select></div>
+          <div><label for="migration-import-profile-name" class="mb-1 block text-xs font-bold text-slate-700">Nombre del perfil</label><input id="migration-import-profile-name" maxlength="80" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm" placeholder="Ej. Matrícula SACE 2026"></div>
+          <div class="flex items-end"><button id="migration-import-profile-save" type="button" class="w-full rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white">Guardar perfil</button></div>
+          <p id="migration-import-profile-status" class="md:col-span-3 text-[11px] text-slate-500" role="status" aria-live="polite">Los perfiles son privados del usuario y solo se aplican si coinciden exactamente los encabezados.</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 rounded-xl border border-slate-200 p-3">
+        <div class="md:col-span-1"><label for="migration-import-duplicate-policy" class="mb-1 block text-xs font-bold text-slate-700">Política de duplicados</label>
+          <select id="migration-import-duplicate-policy" class="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm">
+            <option value="RECHAZAR">Rechazar coincidencias (seguro)</option>
+            <option value="ACTUALIZAR">Actualizar solo si coincide el ID canónico</option>
+            <option value="VINCULAR">Vincular (requiere correspondencia confirmada)</option>
+          </select>
+        </div>
+        <p class="md:col-span-2 self-end text-[11px] text-slate-500">DNI/correo y claves naturales se comparan antes de escribir. Los nombres solo generan coincidencias posibles; nunca fusionan personas automáticamente.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="migration-import-preview" type="button" disabled class="rounded-xl bg-indigo-700 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">Validar y previsualizar</button>
+        <label class="flex items-center gap-2 text-xs text-slate-700"><input id="migration-import-allow-partial" type="checkbox" class="rounded border-slate-300"> Permitir importación parcial de filas válidas</label>
+        <button id="migration-import-commit" type="button" disabled class="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white disabled:opacity-40">Confirmar importación</button>
+      </div>
+      <div id="migration-import-results" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700" role="status" aria-live="polite">Seleccione un archivo y configure el mapeo para ejecutar la validación.</div>
+    </section>`;
+
+  const entity = document.getElementById("migration-import-entity");
+  const fileInput = document.getElementById("migration-import-file");
+  const sheetSelect = document.getElementById("migration-import-sheet");
+  const headerSelect = document.getElementById("migration-import-header");
+  const sourceInput = document.getElementById("migration-import-source");
+  const departmentWrap = document.getElementById("migration-import-department-wrap");
+  const mappingWrap = document.getElementById("migration-import-mapping");
+  const previewButton = document.getElementById("migration-import-preview");
+  const commitButton = document.getElementById("migration-import-commit");
+  const partialToggle = document.getElementById("migration-import-allow-partial");
+  const duplicatePolicySelect = document.getElementById("migration-import-duplicate-policy");
+  const profileSelect = document.getElementById("migration-import-profile");
+  const profileNameInput = document.getElementById("migration-import-profile-name");
+  const profileSaveButton = document.getElementById("migration-import-profile-save");
+  const profileStatus = document.getElementById("migration-import-profile-status");
+
+  function resetPreviewOnEdit() {
+    resetMigrationImportPreview();
+    updateMigrationImportPreviewButton();
+  }
+  function updateMigrationImportPreviewButton() {
+    if (previewButton) previewButton.disabled = !(migrationImportState.rows.length && sourceInput.value.trim() &&
+      document.getElementById("migration-import-identifier")?.value &&
+      document.querySelectorAll("#migration-import-field-mapping select[data-target-field]").length);
+  }
+  function renderFieldMapping() {
+    const host = document.getElementById("migration-import-field-mapping");
+    const identifier = document.getElementById("migration-import-identifier");
+    const target = MIGRATION_IMPORT_TARGETS[entity.value] || MIGRATION_IMPORT_TARGETS.curso;
+    if (!host || !identifier) return;
+    const headers = migrationImportState.headers;
+    const preset = migrationImportState.mappingPreset;
+    identifier.innerHTML = '<option value="">Seleccione identificador legado</option>' +
+      headers.map(header => '<option value="' + migrationImportEscape(header) + '">' + migrationImportEscape(header) + '</option>').join("");
+    identifier.value = preset && headers.indexOf(preset.identificador) >= 0 ? preset.identificador : (headers[0] || "");
+    host.innerHTML = target.fields.map(field => {
+      const preferred = headers.indexOf(field) >= 0 ? field : "";
+      return '<div><label class="mb-1 block text-xs font-bold text-slate-700" for="migration-map-' + migrationImportEscape(field) + '">' +
+        migrationImportEscape(field) + (target.required.indexOf(field) >= 0 ? " *" : "") + '</label><select data-target-field="' +
+        migrationImportEscape(field) + '" id="migration-map-' + migrationImportEscape(field) +
+        '" class="w-full rounded-lg border border-slate-300 p-2 text-sm"><option value="">— No mapear —</option>' +
+        headers.map(header => '<option value="' + migrationImportEscape(header) + '">' + migrationImportEscape(header) + '</option>').join("") +
+        '</select></div>';
+    }).join("");
+    target.fields.forEach(field => {
+      const select = host.querySelector('[data-target-field="' + field.replace(/"/g, '\"') + '"]');
+      if (select) select.value = preset && preset.campos && headers.indexOf(preset.campos[field]) >= 0 ? preset.campos[field] : (headers.indexOf(field) >= 0 ? field : "");
+    });
+    host.querySelectorAll("select").forEach(select => select.addEventListener("change", resetPreviewOnEdit));
+    identifier.addEventListener("change", resetPreviewOnEdit, { once: true });
+    if (mappingWrap) mappingWrap.classList.toggle("hidden", !headers.length);
+    if (departmentWrap) departmentWrap.classList.toggle("hidden", entity.value !== "empleado");
+    migrationImportState.mappingPreset = null;
+    updateMigrationImportPreviewButton();
+  }
+  async function loadImportMappingProfiles() {
+    if (!profileSelect || !window.fetchApi || !sourceInput.value.trim()) return;
+    profileSelect.innerHTML = '<option value="">Sin perfil</option>';
+    migrationImportState.profiles = [];
+    try {
+      const envelope = await fetchApi("ACCOUNTING", "getImportMappingProfiles", { tipoEntidad: entity.value, sistemaOrigen: sourceInput.value.trim() });
+      const data = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
+      if (!data || data.status !== "success" || !Array.isArray(data.profiles)) throw new Error(data && data.code || "IMPORT_MAPPING_PROFILES_UNAVAILABLE");
+      migrationImportState.profiles = data.profiles;
+      data.profiles.forEach(profile => { const option = document.createElement("option"); option.value = profile.profileId; option.textContent = profile.profileName + " · v" + profile.version; profileSelect.appendChild(option); });
+      if (profileStatus) profileStatus.textContent = data.profiles.length ? "Perfiles disponibles: " + data.profiles.length + ". Solo se aplican con encabezados idénticos." : "No hay perfiles guardados para este origen y entidad.";
+    } catch (error) { if (profileStatus) profileStatus.textContent = "No se pudieron cargar los perfiles guardados. Puede continuar con el mapeo manual."; }
+  }
+  function buildWorkbookRows() {
+    const workbook = migrationImportState.workbook;
+    const sheetName = sheetSelect.value;
+    const sheet = workbook && workbook.Sheets[sheetName];
+    if (!sheet) { migrationImportState.rows = []; return; }
+    const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "", blankrows: true });
+    const headerIndex = Math.max(0, Number(headerSelect.value || 0));
+    const headerRow = matrix[headerIndex] || [];
+    const headers = headerRow.map(value => String(value === undefined || value === null ? "" : value).trim());
+    migrationImportState.headers = headers.filter(Boolean);
+    const rows = [], rowNumbers = [], blankRows = [], repeatedHeaderRows = [];
+    for (let i = headerIndex + 1; i < matrix.length; i++) {
+      const values = matrix[i] || [];
+      const empty = values.every(value => value === "" || value === null || value === undefined);
+      if (empty) { blankRows.push(i + 1); continue; }
+      if (headers.length && headers.every((header, index) => String(values[index] || "").trim() === header)) {
+        repeatedHeaderRows.push(i + 1); continue;
+      }
+      const row = {};
+      headers.forEach((header, index) => { if (header) row[header] = values[index] === undefined ? "" : values[index]; });
+      rows.push(row); rowNumbers.push(i + 1);
+    }
+    const normalized = headers.map(value => value.toLowerCase().replace(/\s+/g, " "));
+    const duplicates = normalized.filter((value, index) => value && normalized.indexOf(value) !== index);
+    const typeInconsistencies = [];
+    headers.forEach((header, index) => {
+      const types = {};
+      rows.forEach(row => {
+        const value = row[header];
+        if (value === "" || value === null || value === undefined) return;
+        const typeName = value instanceof Date ? "date" : typeof value;
+        types[typeName] = true;
+      });
+      if (Object.keys(types).length > 1) typeInconsistencies.push({ column: header, types: Object.keys(types) });
+    });
+    const unresolvedFormulas = Object.keys(sheet).filter(address => !address.startsWith("!") &&
+      sheet[address] && sheet[address].f && (sheet[address].v === undefined || sheet[address].v === null || sheet[address].v === ""));
+    const merges = (sheet["!merges"] || []).map(range => XLSX.utils.encode_range(range));
+    const sheetMeta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ?
+      workbook.Workbook.Sheets.find(item => item.name === sheetName) : null;
+    const visibleSheets = workbook.SheetNames.filter(name => {
+      const meta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ?
+        workbook.Workbook.Sheets.find(item => item.name === name) : null;
+      return !(meta && Number(meta.Hidden || 0) > 0);
+    });
+    migrationImportState.rows = rows;
+    migrationImportState.dataRowNumbers = rowNumbers;
+    migrationImportState.sheetName = sheetName;
+    migrationImportState.structural = {
+      selectedSheet: sheetName, visibleSheetCount: visibleSheets.length,
+      hiddenSheets: workbook.SheetNames.filter(name => {
+        const meta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ?
+          workbook.Workbook.Sheets.find(item => item.name === name) : null;
+        return !!(meta && Number(meta.Hidden || 0) > 0);
+      }),
+      headerRowIndex: headerIndex, dataRowNumbers: rowNumbers, blankRows: blankRows,
+      duplicateHeaders: duplicates, repeatedHeaderRows: repeatedHeaderRows,
+      unresolvedFormulas: unresolvedFormulas, mergedCells: merges,
+      typeInconsistencies: typeInconsistencies
+    };
+    renderFieldMapping();
+    resetPreviewOnEdit();
+  }
+
+  entity.addEventListener("change", function() { renderFieldMapping(); resetPreviewOnEdit(); });
+  sourceInput.addEventListener("input", resetPreviewOnEdit);
+  document.getElementById("migration-import-department")?.addEventListener("input", resetPreviewOnEdit);
+  partialToggle.addEventListener("change", updateMigrationImportCommitState);
+  sheetSelect.addEventListener("change", buildWorkbookRows);
+  headerSelect.addEventListener("change", buildWorkbookRows);
+  fileInput.addEventListener("change", async function() {
+    resetPreviewOnEdit();
+    const file = fileInput.files && fileInput.files[0];
+    migrationImportState = { workbook: null, file: null, fileName: "", sheetName: "", headers: [], rows: [], dataRowNumbers: [], structural: null, fileDataBase64: "", payload: null, preview: null };
+    sheetSelect.replaceChildren(); headerSelect.replaceChildren();
+    if (!file) return;
+    if (file.size <= 0 || file.size > 10 * 1024 * 1024 || !/\.xlsx$/i.test(file.name)) {
+      alert("Seleccione un archivo .xlsx válido de hasta 10 MB.");
+      fileInput.value = ""; return;
+    }
+    if (!window.XLSX) { alert("La biblioteca de Excel no está disponible."); return; }
+    try {
+      const bytes = await file.arrayBuffer();
+      const signature = new Uint8Array(bytes.slice(0, 4));
+      if (signature.length < 4 || signature[0] !== 0x50 || signature[1] !== 0x4b) throw new Error("El archivo no contiene una cabecera ZIP válida.");
+      const workbook = XLSX.read(bytes, { type: "array", cellDates: true, cellFormula: true, cellNF: true });
+      if (!Array.isArray(workbook.SheetNames) || !workbook.SheetNames.length) throw new Error("El libro no contiene hojas.");
+      migrationImportState.workbook = workbook;
+      migrationImportState.file = file;
+      migrationImportState.fileName = file.name;
+      migrationImportState.fileDataBase64 = migrationImportBase64(bytes);
+      sheetSelect.disabled = false;
+      sheetSelect.innerHTML = '<option value="">Seleccione hoja</option>' + workbook.SheetNames.map(name =>
+        '<option value="' + migrationImportEscape(name) + '">' + migrationImportEscape(name) + '</option>').join("");
+      headerSelect.disabled = false;
+      for (let row = 0; row < 20; row++) {
+        const option = document.createElement("option"); option.value = String(row); option.textContent = "Fila " + (row + 1);
+        headerSelect.appendChild(option);
+      }
+      const visible = workbook.SheetNames.filter(name => {
+        const meta = workbook.Workbook && Array.isArray(workbook.Workbook.Sheets) ? workbook.Workbook.Sheets.find(item => item.name === name) : null;
+        return !(meta && Number(meta.Hidden || 0) > 0);
+      });
+      if (visible.length === 1) sheetSelect.value = visible[0];
+      if (visible.length === 1) buildWorkbookRows();
+      else {
+        const results = document.getElementById("migration-import-results");
+        if (results) results.textContent = "Seleccione manualmente la hoja que desea validar.";
+      }
+    } catch (error) {
+      migrationImportState.workbook = null;
+      alert("No se pudo abrir el libro: " + String(error && error.message || error));
+    }
+  });
+
+  if (profileSelect) profileSelect.addEventListener("change", function() {
+    const profile = migrationImportState.profiles.find(item => item.profileId === profileSelect.value);
+    if (!profile) return;
+    if (JSON.stringify(profile.sourceHeaders || []) !== JSON.stringify(migrationImportState.headers || [])) { if (profileStatus) profileStatus.textContent = "Perfil incompatible: los encabezados o su orden no coinciden. No se aplicó ningún cambio."; profileSelect.value = ""; return; }
+    migrationImportState.mappingPreset = profile.columnaMapeo || null;
+    profileNameInput.value = profile.profileName || "";
+    renderFieldMapping(); resetPreviewOnEdit();
+    if (profileStatus) profileStatus.textContent = "Perfil v" + profile.version + " aplicado. Revise el mapeo y ejecute la previsualización antes de importar.";
+  });
+  if (profileSaveButton) profileSaveButton.addEventListener("click", async function() {
+    const target = MIGRATION_IMPORT_TARGETS[entity.value], mapping = {};
+    document.querySelectorAll("#migration-import-field-mapping select[data-target-field]").forEach(select => { if (select.value) mapping[select.dataset.targetField] = select.value; });
+    const profileName = String(profileNameInput.value || "").trim(), identifier = document.getElementById("migration-import-identifier").value;
+    if (!profileName || !sourceInput.value.trim() || !identifier || !Object.keys(mapping).length) { if (profileStatus) profileStatus.textContent = "Indique nombre, origen, identificador y al menos un campo mapeado."; return; }
+    profileSaveButton.disabled = true; profileSaveButton.textContent = "Guardando…";
+    try {
+      const envelope = await fetchApi("ACCOUNTING", "saveImportMappingProfile", { profileName: profileName, sistemaOrigen: sourceInput.value.trim(), tipoEntidad: entity.value, destinoModulo: target.destination, sourceHeaders: migrationImportState.headers, columnaMapeo: { identificador: identifier, campos: mapping }, profileId: profileSelect.value || "" });
+      const data = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
+      if (!data || data.status !== "success") throw new Error(data && data.code || "IMPORT_MAPPING_PROFILE_SAVE_FAILED");
+      await loadImportMappingProfiles(); profileSelect.value = data.profileId;
+      if (profileStatus) profileStatus.textContent = "Perfil guardado correctamente · versión " + data.version + ". El historial anterior se conserva.";
+    } catch (error) { if (profileStatus) profileStatus.textContent = "No se pudo guardar el perfil: " + String(error && error.message || error); }
+    finally { profileSaveButton.disabled = false; profileSaveButton.textContent = "Guardar perfil"; }
+  });
+  sourceInput.addEventListener("change", loadImportMappingProfiles);
+  entity.addEventListener("change", function() { loadImportMappingProfiles(); });
+  if (duplicatePolicySelect) duplicatePolicySelect.addEventListener("change", resetPreviewOnEdit);
+    previewButton.addEventListener("click", async function() {
+    if (!window.fetchApi || !migrationImportState.rows.length) return;
+    const target = MIGRATION_IMPORT_TARGETS[entity.value];
+    const mapping = {};
+    document.querySelectorAll("#migration-import-field-mapping select[data-target-field]").forEach(select => {
+      if (select.value) mapping[select.dataset.targetField] = select.value;
+    });
+    const missing = target.required.filter(field => !mapping[field]);
+    if (missing.length) { alert("Debe mapear los campos obligatorios: " + missing.join(", ")); return; }
+    const identifier = document.getElementById("migration-import-identifier").value;
+    if (!identifier) { alert("Seleccione el identificador legado."); return; }
+    if (!sourceInput.value.trim()) { alert("Indique el sistema de origen."); return; }
+    if (entity.value === "empleado" && !document.getElementById("migration-import-department").value.trim()) {
+      alert("Indique el ID del departamento activo."); return;
+    }
+    const payload = {
+      sistemaOrigen: sourceInput.value.trim(), tipoEntidad: entity.value,
+      destinoModulo: target.destination, nombreArchivo: migrationImportState.fileName,
+      mimeTypeArchivo: migrationImportState.file && migrationImportState.file.type ||
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      fileDataBase64: migrationImportState.fileDataBase64,
+      hojaSeleccionada: migrationImportState.sheetName,
+      politicaDuplicados: duplicatePolicySelect ? duplicatePolicySelect.value : "RECHAZAR",
+      columnaMapeo: { identificador: identifier, campos: mapping },
+      filasData: migrationImportState.rows,
+      analisisEstructural: migrationImportState.structural
+    };
+    if (entity.value === "empleado") payload.activeDepartmentId = document.getElementById("migration-import-department").value.trim();
+    previewButton.disabled = true;
+    previewButton.textContent = "Validando…";
+    const results = document.getElementById("migration-import-results");
+    if (results) results.textContent = "ACCOUNTING está validando permisos, identidades, referencias y registros de destino…";
+    try {
+      const envelope = await fetchApi("ACCOUNTING", "validateImportPreview", payload);
+      const responseData = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
+      const response = Object.assign({}, responseData || {}, { status: envelope && envelope.status || responseData && responseData.status || "error" });
+      migrationImportState.payload = payload;
+      migrationImportState.preview = response;
+      renderMigrationImportResult(response);
+    } catch (error) {
+      migrationImportState.preview = null;
+      if (results) results.textContent = "No se pudo validar: " + String(error && error.message || error);
+    } finally {
+      previewButton.textContent = "Validar y previsualizar";
+      updateMigrationImportPreviewButton();
+      updateMigrationImportCommitState();
+    }
+  });
+
+  commitButton.addEventListener("click", async function() {
+    const preview = migrationImportState.preview;
+    if (!preview || !migrationImportState.payload || !preview.previewHash) return;
+    const allowPartial = !!partialToggle.checked;
+    if (preview.validForImport !== true && !(allowPartial && preview.validForPartialImport === true)) return;
+    if (!confirm("La validación terminó. ¿Confirma la escritura de los registros válidos en el servicio propietario?")) return;
+    commitButton.disabled = true;
+    commitButton.textContent = "Importando…";
+    try {
+      const envelope = await fetchApi("ACCOUNTING", "importDataWithColumnMapping", Object.assign({}, migrationImportState.payload, {
+        previewConfirmed: true, previewHash: preview.previewHash, allowPartialImport: allowPartial
+      }));
+      const responseData = envelope && envelope.data && typeof envelope.data === "object" ? envelope.data : envelope;
+      const response = Object.assign({}, responseData || {}, { status: envelope && envelope.status || responseData && responseData.status || "error" });
+      const results = document.getElementById("migration-import-results");
+      if (results) results.textContent = response && response.status === "success" ?
+        "Importación completada. Registros insertados/actualizados: " + Number(response.registrosEscritos || 0) + " · vinculados sin escritura: " + Number(response.registrosVinculados || 0) :
+        "La importación no se completó: " + String(response && (response.message || response.code) || "Error desconocido");
+      migrationImportState.preview = null;
+      migrationImportState.payload = null;
+    } catch (error) {
+      const results = document.getElementById("migration-import-results");
+      if (results) results.textContent = "La importación fue rechazada o no pudo completarse: " + String(error && error.message || error);
+    } finally {
+      commitButton.textContent = "Confirmar importación";
+      updateMigrationImportCommitState();
+    }
+  });
+  renderFieldMapping();
+  loadImportMappingProfiles();
+}
+
+function renderMigrationImportResult(response) {
+  const host = document.getElementById("migration-import-results");
+  if (!host) return;
+  if (!response || response.status !== "success") {
+    host.innerHTML = '<p class="font-bold text-rose-700">Validación rechazada: ' +
+      migrationImportEscape(response && (response.message || response.code) || "Respuesta inválida") + '</p>';
+    return;
+  }
+  const errors = Array.isArray(response.errores) ? response.errores : [];
+  const warnings = Array.isArray(response.advertencias) ? response.advertencias : [];
+  const valid = Number(response.filasValidas || 0), failed = Number(response.filasFallidas || 0);
+  let html = '<div class="space-y-3"><div class="grid grid-cols-2 md:grid-cols-6 gap-2">' +
+    [['Filas', response.totalFilas], ['Válidas', valid], ['Con errores', failed], ['Coincidencias', Array.isArray(response.duplicateMatches) ? response.duplicateMatches.length : 0], ['Vinculadas', Number(response.filasVinculadas || 0)], ['Advertencias', warnings.length]].map(item =>
+      '<div class="rounded-xl border border-slate-200 bg-white p-3"><div class="text-[10px] font-bold uppercase text-slate-500">' +
+      migrationImportEscape(item[0]) + '</div><div class="mt-1 text-lg font-black text-slate-900">' + migrationImportEscape(item[1] || 0) + '</div></div>').join("") +
+    '</div><p class="text-xs font-bold ' + (response.validForImport ? "text-emerald-700" : response.validForPartialImport ? "text-amber-700" : "text-rose-700") + '">' +
+    (response.validForImport ? "Preflight aprobado: listo para confirmar." : response.validForPartialImport ? "Hay filas válidas y filas rechazadas. La importación parcial requiere autorización explícita." : "La importación está bloqueada hasta corregir los errores.") + '</p>';
+  if (errors.length) html += '<div><h4 class="mb-1 text-xs font-black uppercase text-rose-700">Errores</h4><ul class="space-y-1 text-xs">' +
+    errors.slice(0, 80).map(item => '<li class="rounded-lg bg-rose-50 p-2 text-rose-800">' +
+      migrationImportEscape(item.codigo || item.error || "ERROR") + (item.fila ? " · fila " + migrationImportEscape(item.fila) : "") +
+      (item.mensaje ? " · " + migrationImportEscape(item.mensaje) : "") + '</li>').join("") + '</ul></div>';
+  const duplicateMatches = Array.isArray(response.duplicateMatches) ? response.duplicateMatches : [];
+  if (duplicateMatches.length) html += '<div><h4 class="mb-1 text-xs font-black uppercase text-indigo-700">Coincidencias detectadas</h4><ul class="space-y-1 text-xs">' +
+    duplicateMatches.slice(0, 80).map(item => '<li class="rounded-lg bg-indigo-50 p-2 text-indigo-900">Fila ' +
+      migrationImportEscape(item.sourceRow || Number(item.rowIndex || 0) + 2) + ' · ' + migrationImportEscape(item.field || "Clave natural") +
+      ' · ' + migrationImportEscape(item.matchType || "COINCIDENCIA") + ' · ID destino ' + migrationImportEscape(item.targetId || "no disponible") + '</li>').join("") + '</ul></div>';
+  if (warnings.length) html += '<div><h4 class="mb-1 text-xs font-black uppercase text-amber-700">Advertencias</h4><ul class="space-y-1 text-xs">' +
+    warnings.slice(0, 80).map(item => '<li class="rounded-lg bg-amber-50 p-2 text-amber-800">' +
+      migrationImportEscape(item.codigo || "WARNING") + " · " + migrationImportEscape(item.mensaje || "") + '</li>').join("") + '</ul></div>';
+  if (response.previewHash) html += '<p class="break-all text-[10px] text-slate-500">Hash de previsualización: ' + migrationImportEscape(response.previewHash) + '</p>';
+  html += '</div>';
+  host.innerHTML = html;
+}
+
+
+function renderComprasCuentasPorPagarView(container) {
+  container.innerHTML = '<section class="rounded-2xl border border-gray-200 bg-white p-5 space-y-4"><div class="flex flex-wrap items-center justify-between gap-3"><div><h5 class="text-sm font-black uppercase text-gray-800">Cuentas por pagar</h5><p class="text-xs text-gray-600">Abonos parciales, notas de crédito y vencimientos de facturas conciliadas</p></div><button id="btn-cxp-refresh" data-purchase-action="getAccountsPayablePortfolio" class="rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white">Actualizar cartera</button></div><div class="grid md:grid-cols-3 gap-2 items-end"><label class="text-xs font-bold text-gray-700">Vencimiento desde<input id="cxp-date-from" type="date" data-ui-help-key="fechas.calendario" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold text-gray-700">Vencimiento hasta<input id="cxp-date-to" type="date" data-ui-help-key="fechas.calendario" class="mt-1 w-full rounded-lg border p-2"></label><label class="text-xs font-bold text-gray-700">Buscar<input id="cxp-query" type="search" class="mt-1 w-full rounded-lg border p-2" placeholder="Factura, proveedor u orden"></label></div><div id="cxp-summary" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs"></div><div id="cxp-results" class="space-y-3">Cargando cartera...</div></section>';
+  var refresh=document.getElementById("btn-cxp-refresh");if(refresh)refresh.addEventListener("click",function(){window.loadAccountsPayablePortfolio();});
+  window.loadAccountsPayablePortfolio();
+}
+window.loadAccountsPayablePortfolio=async function(query) {
+  var target=document.getElementById("cxp-results"),summary=document.getElementById("cxp-summary");if(!target)return;target.textContent="Consultando cartera...";
+  var from=document.getElementById("cxp-date-from"),to=document.getElementById("cxp-date-to"),search=document.getElementById("cxp-query");
+  try{var result=await fetchBackendAccounting("getAccountsPayablePortfolio",{query:String(query||search&&search.value||"").trim(),desde:from&&from.value||"",hasta:to&&to.value||""});
+    if(!result||result.status!=="success")throw new Error(result&&result.code||"ACCOUNTS_PAYABLE_PORTFOLIO_FAILED");
+    window.renderAccountsPayablePortfolio(result,target,summary);
+  }catch(error){target.textContent=error.message||"No se pudo consultar la cartera.";}
+};
+window.renderAccountsPayablePortfolio=function(result,target,summary) {
+  target.replaceChildren();
+  if(summary){summary.replaceChildren();[["Obligaciones",result.resumen.obligaciones],["Saldo total",result.resumen.saldoTotal],["Saldo vencido",result.resumen.saldoVencido],["Saldo vigente",result.resumen.saldoVigente]].forEach(function(item){
+    var card=document.createElement("div");card.className="rounded-xl border border-gray-200 bg-gray-50 p-3";var label=document.createElement("div");label.className="text-gray-500 uppercase font-bold";label.textContent=item[0];card.appendChild(label);
+    var value=document.createElement("div");value.className="text-lg font-black text-gray-900";value.textContent=typeof item[1]==="number"?window.IMARegionalFormatters.formatCurrency(item[1]):String(item[1]);card.appendChild(value);summary.appendChild(card);});}
+  if(!result.cartera||!result.cartera.length){target.textContent="No hay facturas en la cartera para el ámbito consultado.";return;}
+  result.cartera.forEach(function(invoice){
+    var card=document.createElement("article");card.className="rounded-xl border border-gray-200 p-4 space-y-3";card.dataset.obligationId=invoice.obligacionId;
+    var title=document.createElement("div");title.className="flex flex-wrap justify-between gap-2";var name=document.createElement("strong");name.textContent=invoice.numeroFactura+" · "+invoice.proveedorNombre;title.appendChild(name);
+    var state=document.createElement("span");state.className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold";state.textContent=invoice.estadoCartera+" · "+invoice.rangoVencimiento;title.appendChild(state);card.appendChild(title);
+    var detail=document.createElement("p");detail.className="text-xs text-gray-600";detail.textContent="Vence: "+(invoice.fechaVencimiento||"Sin fecha")+" · Orden: "+invoice.ordenCompraId+" · Total: "+window.IMARegionalFormatters.formatCurrency(invoice.total)+" · Abonado: "+window.IMARegionalFormatters.formatCurrency(invoice.totalAbonado)+" · Notas de crédito: "+window.IMARegionalFormatters.formatCurrency(invoice.totalNotasCredito)+" · Saldo: "+window.IMARegionalFormatters.formatCurrency(invoice.saldoPendiente);card.appendChild(detail);
+    var history=document.createElement("div");history.className="text-xs text-gray-500 space-y-1";(invoice.movimientos||[]).forEach(function(m){var line=document.createElement("p");line.textContent=m.tipo+" · "+m.fecha+" · "+window.IMARegionalFormatters.formatCurrency(m.monto)+" · "+(m.referencia||m.numeroNotaCredito||"")+" · "+(m.motivo||"");history.appendChild(line);});card.appendChild(history);
+    var approval=String(invoice.estadoAprobacion||"").toLowerCase(),blocked=invoice.estadoConciliacion!=="Conciliada"||(approval!=="aprobado"&&approval!=="aprobada");
+    function field(parent,labelText,type,value,placeholder){var label=document.createElement("label");label.className="text-xs font-bold text-gray-700";label.textContent=labelText;var input=document.createElement("input");input.type=type;input.value=value||"";input.placeholder=placeholder||"";input.className="mt-1 w-full rounded-lg border p-2";if(type==="date")input.dataset.uiHelpKey="fechas.calendario";if(type==="number"){input.min="0.01";input.step="0.01";input.max=String(invoice.saldoPendiente);}label.appendChild(input);parent.appendChild(label);return input;}
+    if(String(invoice.estadoAprobacion||"").toLowerCase()==="pendienteaprobacion"&&invoice.estadoConciliacion==="Conciliada"){
+      var approval=document.createElement("div");approval.className="flex flex-wrap gap-2 items-end border-t pt-3";
+      var approvalReason=field(approval,"Justificación de aprobación","text","","Motivo y revisión de factura");
+      var approveButton=document.createElement("button");approveButton.type="button";approveButton.dataset.purchaseAction="approveAccountsPayableInvoice";approveButton.className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white";approveButton.textContent="Aprobar factura";
+      approveButton.addEventListener("click",function(){window.approveAccountsPayableInvoice(invoice.obligacionId,approvalReason.value,approveButton);});approval.appendChild(approveButton);card.appendChild(approval);
+    }
+    var payment=document.createElement("div");payment.className="grid md:grid-cols-4 gap-2 items-end";
+    var paymentAmount=field(payment,"Monto del abono","number","","0.00"),paymentMethod=field(payment,"Método","text","","Transferencia"),paymentReference=field(payment,"Referencia","text","","Comprobante / transferencia"),paymentDate=field(payment,"Fecha","date",new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10),"");
+    var paymentButton=document.createElement("button");paymentButton.type="button";paymentButton.dataset.purchaseAction="recordAccountsPayablePayment";paymentButton.className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white";paymentButton.textContent="Registrar abono";paymentButton.disabled=blocked||invoice.saldoPendiente<=0;
+    paymentButton.addEventListener("click",function(){window.recordAccountsPayablePayment(invoice.obligacionId,{monto:paymentAmount.value,metodo:paymentMethod.value,referencia:paymentReference.value,fechaMovimiento:paymentDate.value},paymentButton);});payment.appendChild(paymentButton);card.appendChild(payment);
+    var credit=document.createElement("div");credit.className="grid md:grid-cols-4 gap-2 items-end border-t pt-3";
+    var creditAmount=field(credit,"Monto nota de crédito","number","","0.00"),creditNumber=field(credit,"Número de nota","text","","NC-..."),returnRef=field(credit,"Referencia de devolución","text","","Recepción / devolución"),reason=field(credit,"Motivo","text","","Detalle de devolución"),creditDate=field(credit,"Fecha","date",new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10),"");
+    var creditButton=document.createElement("button");creditButton.type="button";creditButton.dataset.purchaseAction="recordAccountsPayableCreditNote";creditButton.className="rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white";creditButton.textContent="Aplicar nota de crédito";creditButton.disabled=blocked||invoice.saldoPendiente<=0;
+    creditButton.addEventListener("click",function(){window.recordAccountsPayableCreditNote(invoice.obligacionId,{monto:creditAmount.value,numeroNotaCredito:creditNumber.value,referenciaDevolucion:returnRef.value,motivo:reason.value,fechaMovimiento:creditDate.value},creditButton);});credit.appendChild(creditButton);card.appendChild(credit);
+    if(blocked){var notice=document.createElement("p");notice.className="text-xs text-amber-700";notice.textContent="Bloqueada: requiere factura aprobada y conciliada antes de aplicar movimientos.";card.appendChild(notice);}target.appendChild(card);
+  });
+  if(window.applyPurchaseActionVisibility)window.applyPurchaseActionVisibility(target);
+};
+window.approveAccountsPayableInvoice=async function(obligacionId,justificacion,button){
+  if(button){button.disabled=true;button.textContent="Aprobando...";}
+  try{var result=await fetchBackendAccounting("approveAccountsPayableInvoice",{obligacionId:obligacionId,justificacion:justificacion});
+    if(!result||result.status!=="success")throw new Error(result&&result.code||"PURCHASE_INVOICE_APPROVAL_FAILED");await window.loadAccountsPayablePortfolio();
+  }catch(error){if(button){button.disabled=false;button.textContent="Aprobar factura";}window.alert(error.message||"No se pudo aprobar la factura.");}
+};
+window.recordAccountsPayablePayment=async function(obligacionId,data,button){
+  if(button){button.disabled=true;button.textContent="Registrando...";}
+  try{var key="CXP-PAGO-"+(window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now()+"-"+Math.random());
+    var result=await fetchBackendAccounting("recordAccountsPayablePayment",Object.assign({},data,{obligacionId:obligacionId,idempotencyKey:key}));
+    if(!result||result.status!=="success")throw new Error(result&&result.code||"ACCOUNTS_PAYABLE_PAYMENT_FAILED");await window.loadAccountsPayablePortfolio();
+  }catch(error){if(button){button.disabled=false;button.textContent="Registrar abono";}window.alert(error.message||"No se pudo registrar el abono.");}
+};
+window.recordAccountsPayableCreditNote=async function(obligacionId,data,button){
+  if(button){button.disabled=true;button.textContent="Aplicando...";}
+  try{var key="CXP-NC-"+(window.crypto&&window.crypto.randomUUID?window.crypto.randomUUID():Date.now()+"-"+Math.random());
+    var result=await fetchBackendAccounting("recordAccountsPayableCreditNote",Object.assign({},data,{obligacionId:obligacionId,idempotencyKey:key}));
+    if(!result||result.status!=="success")throw new Error(result&&result.code||"ACCOUNTS_PAYABLE_CREDIT_NOTE_FAILED");await window.loadAccountsPayablePortfolio();
+  }catch(error){if(button){button.disabled=false;button.textContent="Aplicar nota de crédito";}window.alert(error.message||"No se pudo aplicar la nota de crédito.");}
+};
