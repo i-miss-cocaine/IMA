@@ -7456,7 +7456,7 @@ function cancelPurchaseOrder(payload) {
 function ensureBudgetCommitmentAdjustmentSchema_(ss) {
   var sheet=getOrCreateSheet(ss,"AjustesCompromisosPresupuestarios");
   if(!sheet||typeof sheet.getDataRange!=="function")throw new Error("BUDGET_COMMITMENT_ADJUSTMENT_SCHEMA_INVALID");
-  var expected=["AjusteID","OrdenCompraID","PresupuestoID","CompromisoID","PartidaCodigo","MontoAnterior","MontoLiberado","MontoRestante","DetalleAnteriorHash","DetalleNuevoHash","IdempotencyKey","PayloadHash","Justificacion","AutorizadoPor","RolAutorizador","FechaAjuste"];
+  var expected=["AjusteID","OrdenCompraID","PresupuestoID","CompromisoID","PartidaCodigo","MontoAnterior","MontoLiberado","MontoRestante","DetalleAnteriorHash","DetalleNuevoHash","IdempotencyKey","PayloadHash","Justificacion","AutorizadoPor","RolAutorizador","FechaAjuste","DetalleAjusteJSON"];
   var values=sheet.getDataRange().getValues();
   if(!values||!values.length||!values[0]||!values[0].length||String(values[0][0]||"").trim()===""){sheet.getRange(1,1,1,expected.length).setValues([expected]);values=[expected];}
   var headers=values[0].map(function(v){return String(v||"").trim();});
@@ -7532,17 +7532,17 @@ function adjustPurchaseOrderCommitment(payload) {
     if(Object.keys(newById).length!==Object.keys(oldById).length)return{status:"error",code:"PURCHASE_ORDER_ADJUSTMENT_ITEMS_MISMATCH"};
     var deltas=Object.create(null),oldTotal=0,newTotal=0;
     Object.keys(oldByPart).forEach(function(part){var before=oldByPart[part],after=newByPart[part]||0;if(after>before)throw new Error("PURCHASE_ORDER_ADJUSTMENT_MUST_ONLY_REDUCE_QUANTITY");deltas[part]=before-after;oldTotal+=before;newTotal+=after;});
-    if(newTotal>=oldTotal||newTotal<=0)return{status:"error",code:"PURCHASE_ORDER_ADJUSTMENT_NOT_A_REDUCTION"};
-    if(Math.round(Number(order[map.MontoTotal]||0)*100)!==oldTotal)return{status:"error",code:"PURCHASE_ORDER_AMOUNT_MISMATCH"};
     var payloadHash=migrationHash_(migrationStableJson_({ordenCompraId:orderId,detalleItems:newItems,justificacion:reason}));
     var auditSchema=ensureBudgetCommitmentAdjustmentSchema_(ss),am=auditSchema.map,auditRows=auditSchema.sheet.getDataRange().getValues();
-    var changesByPart=Object.keys(deltas).filter(function(part){return deltas[part]>0;}).sort();
-    var retries=auditRows.slice(1).filter(function(row){return String(row[am.IdempotencyKey]||"").indexOf(key+":")===0;});
+    var retries=auditRows.slice(1).filter(function(row){return String(row[am.IdempotencyKey]||"")===key;});
     if(retries.length){
-      if(retries.length!==changesByPart.length||retries.some(function(row){return String(row[am.PayloadHash]||"")!==payloadHash;}))
+      if(retries.length!==1||String(retries[0][am.PayloadHash]||"")!==payloadHash)
         return{status:"error",code:"BUDGET_COMMITMENT_ADJUSTMENT_IDEMPOTENCY_CONFLICT"};
-      return{status:"success",idempotente:true,ordenCompraId:orderId,montoAnterior:oldTotal/100,montoNuevo:newTotal/100};
+      return{status:"success",idempotente:true,ordenCompraId:orderId,montoAnterior:Number(retries[0][am.MontoAnterior]||0),montoNuevo:Number(retries[0][am.MontoAnterior]||0)-Number(retries[0][am.MontoLiberado]||0)};
     }
+    if(newTotal>=oldTotal||newTotal<=0)return{status:"error",code:"PURCHASE_ORDER_ADJUSTMENT_NOT_A_REDUCTION"};
+    if(Math.round(Number(order[map.MontoTotal]||0)*100)!==oldTotal)return{status:"error",code:"PURCHASE_ORDER_AMOUNT_MISMATCH"};
+    var changesByPart=Object.keys(deltas).filter(function(part){return deltas[part]>0;}).sort();
     if(!changesByPart.length)return{status:"error",code:"PURCHASE_ORDER_ADJUSTMENT_NOT_A_REDUCTION"};
     var budgetSchema=ensureBudgetSchema_(ss),commitmentSchema=ensureBudgetCommitmentSchema_(ss),bm=budgetSchema.map,lm=commitmentSchema.map;
     var budgetRows=budgetSchema.sheet.getDataRange().getValues(),ledgerRows=commitmentSchema.sheet.getDataRange().getValues(),plan=[];
@@ -7588,17 +7588,16 @@ function adjustPurchaseOrderCommitment(payload) {
     orderUpdated[map.EstadoCompromisoPresupuestario]=activeRemaining>0.005?"Comprometido":"Liberado";
     if(map.VersionDocumental!==undefined)orderUpdated[map.VersionDocumental]=String(Number(orderUpdated[map.VersionDocumental]||0)+1);
     schema.sheet.getRange(match.index,1,1,schema.headers.length).setValues([orderUpdated]);
-    plan.forEach(function(entry){
-      var row=new Array(auditSchema.headers.length).fill(""),commitment=entry.updatedCommitment;
-      row[am.AjusteID]="AJU-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"");row[am.OrdenCompraID]=orderId;
-      row[am.PresupuestoID]=String(commitment[lm.PresupuestoID]||"");row[am.CompromisoID]=String(commitment[lm.CompromisoID]||"");
-      row[am.PartidaCodigo]=entry.part;row[am.MontoAnterior]=entry.beforeAmount;row[am.MontoLiberado]=entry.delta/100;
-      row[am.MontoRestante]=Number(commitment[lm.Monto]||0);row[am.DetalleAnteriorHash]=migrationHash_(migrationStableJson_(oldItems));
-      row[am.DetalleNuevoHash]=migrationHash_(migrationStableJson_(newItems));row[am.IdempotencyKey]=key+":"+String(commitment[lm.PresupuestoID]||"");
-      row[am.PayloadHash]=payloadHash;row[am.Justificacion]=reason;row[am.AutorizadoPor]=String(access.actor.userId||"");
-      row[am.RolAutorizador]=String(access.actor.role||"");row[am.FechaAjuste]=new Date();
-      var before=auditSchema.sheet.getLastRow();try{auditSchema.sheet.appendRow(row);}catch(appendError){if(auditSchema.sheet.getLastRow()>before)rollback.auditWritten++;throw appendError;}rollback.auditWritten++;
-    });
+    var auditRow=new Array(auditSchema.headers.length).fill(""),auditDetails=plan.map(function(entry){return{presupuestoId:String(entry.updatedCommitment[lm.PresupuestoID]||""),compromisoId:String(entry.updatedCommitment[lm.CompromisoID]||""),partidaCodigo:entry.part,montoAnterior:entry.beforeAmount,montoLiberado:entry.delta/100,montoRestante:Number(entry.updatedCommitment[lm.Monto]||0)};});
+    auditRow[am.AjusteID]="AJU-"+String(Utilities.getUuid()).replace(/[^A-Za-z0-9]/g,"");auditRow[am.OrdenCompraID]=orderId;
+    auditRow[am.PresupuestoID]=auditDetails.length===1?auditDetails[0].presupuestoId:"MULTIPLE";auditRow[am.CompromisoID]=auditDetails.length===1?auditDetails[0].compromisoId:"MULTIPLE";
+    auditRow[am.PartidaCodigo]=auditDetails.length===1?auditDetails[0].partidaCodigo:"MULTIPLE";auditRow[am.MontoAnterior]=oldTotal/100;
+    auditRow[am.MontoLiberado]=(oldTotal-newTotal)/100;auditRow[am.MontoRestante]=activeRemaining;
+    auditRow[am.DetalleAnteriorHash]=migrationHash_(migrationStableJson_(oldItems));auditRow[am.DetalleNuevoHash]=migrationHash_(migrationStableJson_(newItems));
+    auditRow[am.IdempotencyKey]=key;auditRow[am.PayloadHash]=payloadHash;auditRow[am.Justificacion]=reason;
+    auditRow[am.AutorizadoPor]=String(access.actor.userId||"");auditRow[am.RolAutorizador]=String(access.actor.role||"");
+    auditRow[am.FechaAjuste]=new Date();auditRow[am.DetalleAjusteJSON]=JSON.stringify(auditDetails);
+    var auditBefore=auditSchema.sheet.getLastRow();try{auditSchema.sheet.appendRow(auditRow);}catch(appendError){if(auditSchema.sheet.getLastRow()>auditBefore)rollback.auditWritten++;throw appendError;}rollback.auditWritten++;
     budgetLogEvent_("adjustPurchaseOrderCommitment","WARNING","BUDGET_COMMITMENT_ADJUSTED","Importe de orden reducido y compromiso no ejecutado liberado",{ordenCompraId:orderId,montoAnterior:oldTotal/100,montoNuevo:newTotal/100,montoLiberado:(oldTotal-newTotal)/100,justificacion:reason},access.actor.userId);
     return{status:"success",ordenCompraId:orderId,montoAnterior:oldTotal/100,montoNuevo:newTotal/100,montoLiberado:(oldTotal-newTotal)/100,justificacion:reason};
   }catch(error){
