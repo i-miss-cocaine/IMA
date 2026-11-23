@@ -78,6 +78,13 @@ function makeHarness(options={}){
   vm.createContext(context);
   vm.runInContext('const PURCHASE_ORDER_PDF_COLUMNS_=["CorrelativoPDF","DriveFileIdPDF","SHA256PDF","FechaGeneracionPDF","GeneradoPorPDF","FechaAprobacion","JustificacionAprobacion","AprobadorRol","AlertaPresupuestariaJSON","FechaValidacionPresupuestaria","CompromisosPresupuestariosJSON","FechaCompromisoPresupuestario","EstadoCompromisoPresupuestario","CanceladaPor","FechaCancelacion","JustificacionCancelacion"];',context);
   ["normalizePurchaseAwardRole_","ensurePurchaseOrderPdfSchema_","getOrCreatePrivatePurchaseOrderFolder_","rollbackPrivatePurchaseOrderFile_","purchaseOrderPdfEscape_","approvePurchaseOrder","cancelPurchaseOrder","generatePurchaseOrderPDF","getPurchaseOrderPDFFile"].forEach(name=>vm.runInContext(extract(name),context));
+  context.reservePurchaseOrderBudgetCommitmentsLocked_=(ss,orderId,year,center,totals,checks,actorId)=>{
+    reservationCalls++;
+    return options.reservationFailure?{status:"error",code:"BUDGET_COMMITMENT_RESERVATION_FAILED"}:
+      {status:"success",reservations:[{compromisoId:"CMP-1",presupuestoId:"PRE-1",partidaCodigo:"5101",monto:100,idempotente:false}]};
+  };
+  assert.equal(typeof context.reservePurchaseOrderBudgetCommitmentsLocked_,"function","approval harness must stub the atomic reservation boundary");
+
   return {context,sheets,files,folder,budgetChecks,stats:()=>({created,trashed,lockCalls,lockReleases,reservationCalls,releaseCalls,restoreCalls})};
 }
 async function main(){
