@@ -232,8 +232,16 @@ function renderKardexView(container) {
             </div>
           </div>
           <div>
-            <label class="block font-bold text-gray-600 mb-1">Ubicación / Responsable</label>
-            <input type="text" id="kdx-ubicacion" value="Bodega General" class="w-full p-2 border border-gray-300 rounded-xl">
+            <label class="block font-bold text-gray-600 mb-1">Almacén / Sede *</label>
+            <select id="kdx-sede" required class="w-full p-2 border border-gray-300 rounded-xl"><option value="">Seleccione almacén</option></select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-600 mb-1">Ubicación física *</label>
+            <select id="kdx-ubicacion" required class="w-full p-2 border border-gray-300 rounded-xl"><option value="">Seleccione ubicación</option></select>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="block font-bold text-gray-600 mb-1">Lote (si aplica)</label><input type="text" id="kdx-lote" class="w-full p-2 border border-gray-300 rounded-xl"></div>
+            <div><label class="block font-bold text-gray-600 mb-1">Serie (si aplica)</label><input type="text" id="kdx-serie" class="w-full p-2 border border-gray-300 rounded-xl"></div>
           </div>
           <div>
             <label class="block font-bold text-gray-600 mb-1">Observaciones</label>
@@ -250,6 +258,15 @@ function renderKardexView(container) {
           <h5 class="font-black text-xs uppercase text-gray-800"><i class="fas fa-list text-blue-600"></i> Historial Kardex de Existencias</h5>
           <button onclick="loadKardexData()" class="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200"><i class="fas fa-sync"></i> Actualizar</button>
         </div>
+        <div class="mb-3 grid grid-cols-1 gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2 lg:grid-cols-3">
+          <label class="text-[11px] font-bold text-gray-700">Almacén<select id="kdx-filter-sede" class="mt-1 w-full rounded-lg border p-2"><option value="">Todos</option></select></label>
+          <label class="text-[11px] font-bold text-gray-700">Ubicación<select id="kdx-filter-ubicacion" class="mt-1 w-full rounded-lg border p-2"><option value="">Todas</option></select></label>
+          <label class="text-[11px] font-bold text-gray-700">Artículo<input id="kdx-filter-item" type="search" class="mt-1 w-full rounded-lg border p-2" placeholder="Código o artículo"></label>
+          <label class="text-[11px] font-bold text-gray-700">Categoría<input id="kdx-filter-category" type="search" class="mt-1 w-full rounded-lg border p-2" placeholder="Categoría"></label>
+          <label class="text-[11px] font-bold text-gray-700">Desde<input id="kdx-filter-from" type="date" data-ui-help-key="fechas.calendario" class="mt-1 w-full rounded-lg border p-2"></label>
+          <label class="text-[11px] font-bold text-gray-700">Hasta<input id="kdx-filter-to" type="date" data-ui-help-key="fechas.calendario" class="mt-1 w-full rounded-lg border p-2"></label>
+          <div class="flex items-end gap-2"><button type="button" onclick="loadKardexData()" class="rounded-lg bg-blue-700 px-3 py-2 text-[11px] font-bold text-white">Aplicar filtros</button><button type="button" onclick="clearKardexFilters()" class="rounded-lg border px-3 py-2 text-[11px] font-bold">Limpiar</button></div>
+        </div>
         <div id="kardex-table-container" class="overflow-x-auto text-xs">
           <div class="text-center py-6 text-gray-400 font-bold uppercase">Cargando movimientos...</div>
         </div>
@@ -257,18 +274,45 @@ function renderKardexView(container) {
     </div>
   `;
   loadCatalogSelectOptions("kdx-codigo","kdx-unidad");
+  loadKardexLocationSelects();
   loadKardexData();
 }
 
 window.loadCatalogSelectOptions=function(itemId,unitId){const item=document.getElementById(itemId),unit=document.getElementById(unitId);if(item)populateCatalogSelect(item,"",unit);};
 
 // [TASK-019] [F19-Task01] - Carga y renderizado de existencias multialmacén e historial de Kardex
+window.loadKardexLocationSelects = function () {
+  const movementWarehouse=document.getElementById("kdx-sede"),movementLocation=document.getElementById("kdx-ubicacion");
+  const filterWarehouse=document.getElementById("kdx-filter-sede"),filterLocation=document.getElementById("kdx-filter-ubicacion");
+  if(!movementWarehouse||!movementLocation)return;
+  fetchApi("ACCOUNTING","getWarehouseLocations",{}).then(function(result){
+    const locations=Array.isArray(result&&result.ubicaciones)?result.ubicaciones:[];
+    const fill=function(select,placeholder){if(!select)return;select.innerHTML="";const option=document.createElement("option");option.value="";option.textContent=placeholder;select.appendChild(option);};
+    fill(movementWarehouse,"Seleccione almacén");fill(movementLocation,"Seleccione ubicación");fill(filterWarehouse,"Todos");fill(filterLocation,"Todas");
+    const warehouses=Array.from(new Set(locations.map(x=>String(x.sedeCod||"")))).filter(Boolean).sort();
+    warehouses.forEach(function(code){const option=document.createElement("option");option.value=code;option.textContent=code;movementWarehouse.appendChild(option);const filterOption=document.createElement("option");filterOption.value=code;filterOption.textContent=code;filterWarehouse&&filterWarehouse.appendChild(filterOption);});
+    locations.forEach(function(location){
+      const label=String(location.sedeCod)+" — "+String(location.nombreUbicacion);
+      const option=document.createElement("option");option.value=location.ubicacionId;option.textContent=label;option.dataset.sedeCod=String(location.sedeCod);option.dataset.name=String(location.nombreUbicacion);movementLocation.appendChild(option);
+      const filterOption=document.createElement("option");filterOption.value=location.ubicacionId;filterOption.textContent=label;filterOption.dataset.sedeCod=String(location.sedeCod);filterLocation&&filterLocation.appendChild(filterOption);
+    });
+  }).catch(function(error){console.error("No se pudieron cargar las ubicaciones del Kardex:",error);});
+};
+window.clearKardexFilters = function () {
+  ["kdx-filter-sede","kdx-filter-ubicacion","kdx-filter-item","kdx-filter-category","kdx-filter-from","kdx-filter-to"].forEach(function(id){const el=document.getElementById(id);if(el)el.value="";});
+  window.loadKardexData();
+};
 window.loadKardexData = function (filtroUbicacion) {
   const container = document.getElementById('kardex-table-container');
   if (!container) return;
 
+  const value=function(id){const el=document.getElementById(id);return el?String(el.value||"").trim():"";};
   const payload = {};
   if (filtroUbicacion) payload.ubicacionResponsable = filtroUbicacion;
+  const warehouse=value("kdx-filter-sede"),location=value("kdx-filter-ubicacion"),item=value("kdx-filter-item"),category=value("kdx-filter-category"),from=value("kdx-filter-from"),to=value("kdx-filter-to");
+  if(warehouse)payload.sedeCod=warehouse;
+  if(location){payload.ubicacionId=location;const selected=document.getElementById("kdx-filter-ubicacion").selectedOptions[0];if(selected&&selected.dataset.sedeCod)payload.sedeCod=selected.dataset.sedeCod;}
+  if(item)payload.itemCodigo=item;if(category)payload.categoriaTipo=category;if(from)payload.fechaInicio=from;if(to)payload.fechaFin=to;
 
   fetchApi('ACCOUNTING', 'getInventoryKardex', payload)
     .then(res => {
@@ -430,10 +474,15 @@ window.handleMovimientoKardex = function (e) {
     tipoMovimiento: document.getElementById('kdx-tipo').value,
     cantidad: document.getElementById('kdx-cantidad').value,
     stockMinimo: document.getElementById('kdx-minimo').value,
-    ubicacionResponsable: document.getElementById('kdx-ubicacion').value,
+    sedeCod: document.getElementById('kdx-sede').value,
+    ubicacionId: document.getElementById('kdx-ubicacion').value,
+    ubicacionResponsable: document.getElementById('kdx-ubicacion').selectedOptions[0]?.dataset.name || "",
+    numeroLote: document.getElementById('kdx-lote').value,
+    numeroSerie: document.getElementById('kdx-serie').value,
     observaciones: document.getElementById('kdx-obs').value
   };
 
+  if(!payload.sedeCod||!payload.ubicacionId){alert("Seleccione una sede y una ubicación física registrada.");return;}
   fetchApi('ACCOUNTING', 'recordInventoryMovement', payload)
     .then(res => {
       alert(res.message || "Movimiento registrado con éxito.");

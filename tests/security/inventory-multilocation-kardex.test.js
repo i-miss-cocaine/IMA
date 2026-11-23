@@ -40,6 +40,7 @@ function main(){
  assert.equal(move("SPS-01",loc1.ubicacionId,5,"Entrada","L-2").stockNuevoUbicacion,5);
  assert.equal(move("SPS-01",loc1.ubicacionId,4,"Salida","L-1").stockNuevoUbicacion,6);
  const countBefore=h.sheets.InventariosKardex.rows.length;
+ h.setLockBusy(true);assert.throws(()=>ctx.recordInventoryMovement({itemCodigo:"ITM-1",cantidad:1,cantidadBase:true,tipoMovimiento:"Entrada",sedeCod:"SPS-01",ubicacionId:loc1.ubicacionId}),/LOCK_BUSY/);h.setLockBusy(false);assert.equal(h.sheets.InventariosKardex.rows.length,countBefore);
  assert.throws(()=>move("SPS-01",loc1.ubicacionId,7,"Salida","L-1"),/INSUFFICIENT_LOCAL_STOCK/);
  assert.throws(()=>move("SPS-01",loc1.ubicacionId,1,"MODO_DESCONOCIDO","L-1"),/INVENTORY_MOVEMENT_TYPE_UNSUPPORTED/);
  assert.equal(h.sheets.InventariosKardex.rows.length,countBefore);
