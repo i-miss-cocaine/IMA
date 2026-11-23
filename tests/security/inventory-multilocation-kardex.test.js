@@ -50,6 +50,7 @@ function main(){
  assert.equal(sps1.stockFisico,11);assert.equal(sps1.stockReservado,2);assert.equal(sps1.stockDisponible,9);
  assert.equal(kardex.resumenExistencias[0].totalInstitucional,31);
  assert.equal(kardex.kardex.filter(x=>x.sedeCod==="SPS-01").length,3);
+ const blockedTransfer=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:5,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1",requiereConfirmacionFisica:true});assert.equal(blockedTransfer.code,"INSUFFICIENT_AVAILABLE_STOCK");
  const transfer=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:3,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-1",requiereConfirmacionFisica:true});
  assert.equal(transfer.status,"success",JSON.stringify(transfer));
  kardex=ctx.getInventoryKardex({});
@@ -65,6 +66,8 @@ function main(){
  const transfer2=ctx.transferInventoryStock({itemCodigo:"ITM-1",cantidad:1,ubicacionOrigen:"Bodega Norte",ubicacionDestino:"Bodega Norte",sedeCodOrigen:"SPS-01",sedeCodDestino:"SPS-02",ubicacionIdOrigen:loc1.ubicacionId,ubicacionIdDestino:loc2.ubicacionId,numeroLote:"L-2",requiereConfirmacionFisica:true});
  const rejected=ctx.confirmTransferReceipt({transferBatchId:transfer2.transferBatchId,cantidadRecibida:0,justificacionDiscrepancia:"Destino rechazó la entrega"});
  assert.equal(rejected.estadoTransferencia,"Rechazada");
+ const legacyRows=[["KardexID","Fecha","ItemCodigo","ItemNombre","CategoriaTipo","TipoMovimiento","Cantidad","StockAnterior","StockNuevo","StockMinimo","UbicacionResponsable","Observaciones","CatalogoItemID","CantidadBase","UnidadMedidaOriginal","FactorConversion"],["KDX-OLD",new Date(),"ITM-1","Equipo de prueba","Equipo","Entrada",4,0,4,5,"","[LOTE:LOT-OLD] [SERIE:SER-OLD]", "ITM-1",4,"Unidad",1]];
+ const legacyHarness=makeHarness();legacyHarness.sheets.InventariosKardex=sheet(legacyRows);legacyHarness.context.catalogEnsureKardexSchema_(legacyHarness.ss);assert.equal(legacyHarness.sheets.InventariosKardex.rows[1][20],"LEGACY");assert.match(legacyHarness.sheets.InventariosKardex.rows[1][21],/UBI-LEGACY-BODEGA-GENERAL/);assert.equal(legacyHarness.sheets.InventariosKardex.rows[1][22],"LOT-OLD");assert.equal(legacyHarness.sheets.InventariosKardex.rows[1][23],"SER-OLD");
  const legacy=move("", "",4,"Entrada","","");
  assert.equal(legacy.sedeCod,"LEGACY");assert.match(legacy.ubicacionId,/UBI-LEGACY-BODEGA-GENERAL/);
  const tamper=h.sheets.InventariosKardex.rows[1];tamper[8]=999;
