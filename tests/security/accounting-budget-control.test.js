@@ -22,7 +22,7 @@ function extract(name){
   throw new Error("unbalanced "+name);
 }
 const budgetHeaders=["PresupuestoID","AnoID","CentroCosto","PartidaCodigo","MontoAprobado","MontoComprometido","MontoEjecutado","Estado","UmbralAlertaPct","FechaActualizacion","ActualizadoPor","Version"];
-const commitmentHeaders=["CompromisoID","PresupuestoID","OrdenCompraID","AnoID","CentroCosto","PartidaCodigo","Monto","Estado","IdempotencyKey","PayloadHash","FechaCreacion","CreadoPor","FechaLiberacion","MotivoLiberacion","ActualizadoPor","Version"];
+const commitmentHeaders=["CompromisoID","PresupuestoID","OrdenCompraID","AnoID","CentroCosto","PartidaCodigo","Monto","Estado","IdempotencyKey","PayloadHash","FechaCreacion","CreadoPor","FechaLiberacion","MotivoLiberacion","ActualizadoPor","Version","SobregiroAutorizadoPor","FechaAutorizacionSobregiro","JustificacionSobregiro"];
 const executionHeaders=["EjecucionID","PresupuestoID","OrdenCompraID","ObligacionID","FacturaHash","PartidaCodigo","Monto","DetalleItemsJSON","IdempotencyKey","PayloadHash","FechaRegistro","RegistradoPor"];
 function makeSheet(rows,options={}){
   const sheet={rows:rows.map(r=>r.slice()),failAppend:options.failAppend===true,failSetValues:options.failSetValues===true,
@@ -229,6 +229,22 @@ function main(){
   assert.equal(executionRollbackHarness.sheets.PresupuestosInstitucionales.rows[1][6],0);
   assert.equal(executionRollbackHarness.sheets.CompromisosPresupuestarios.rows[1][6],500);
   assert.equal(executionRollbackHarness.sheets.EjecucionesPresupuestarias.rows.length,1);
+
+  const overrunHarness=makeHarness();
+  const overrunBudget=overrunHarness.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:100});
+  const blockedOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-1",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-1:PRE"},"U-1");
+  assert.equal(blockedOverrun.code,"BUDGET_OVERRUN_BLOCKED");
+  const wrongRoleOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-2",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-2:PRE",autorizarSobregiroPresupuestaria:true,actorRole:"Contador",justificacionSobregiro:"Excepción documentada"},"U-1");
+  assert.equal(wrongRoleOverrun.code,"BUDGET_OVERRUN_ROLE_REQUIRED");
+  const missingReasonOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-3",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-3:PRE",autorizarSobregiroPresupuestaria:true,actorRole:"Director",justificacionSobregiro:""},"U-1");
+  assert.equal(missingReasonOverrun.code,"BUDGET_OVERRUN_REASON_REQUIRED");
+  const authorizedOverrun=overrunHarness.api.reserve(overrunHarness.ss,{presupuestoId:overrunBudget.presupuestoId,ordenCompraId:"OC-OVR-4",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",monto:150,idempotencyKey:"OC-OVR-4:PRE",autorizarSobregiroPresupuestaria:true,actorRole:"Director",justificacionSobregiro:"Excepción extraordinaria autorizada"},"U-1");
+  assert.equal(authorizedOverrun.status,"success",JSON.stringify(authorizedOverrun));
+  assert.equal(overrunHarness.sheets.PresupuestosInstitucionales.rows[1][5],150);
+  assert.equal(overrunHarness.sheets.CompromisosPresupuestarios.rows[1][16],"U-1");
+  assert.ok(overrunHarness.sheets.CompromisosPresupuestarios.rows[1][17] instanceof Date);
+  assert.equal(overrunHarness.sheets.CompromisosPresupuestarios.rows[1][18],"Excepción extraordinaria autorizada");
+  assert.ok(overrunHarness.logs.some(entry=>entry.code==="BUDGET_OVERRUN_ALERT"));
 
   const releaseRollback=makeHarness();
   const releaseRollbackBudget=releaseRollback.api.save({sessionToken:"S",anoId:"2026",centroCosto:"D1",partidaCodigo:"5101",montoAprobado:100});
