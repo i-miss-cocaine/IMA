@@ -1,3 +1,4 @@
+// Expanded inventory contract: serial isolation, over-receipt rejection and transfer rollback.
 const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
 const root=path.resolve(__dirname,"../.."),source=fs.readFileSync(path.join(root,"backend/accounting-service/Code.gs"),"utf8");
 function extract(name){const start=source.indexOf("function "+name+"(");assert.ok(start>=0,"missing "+name);let depth=0,quote="",escaped=false;for(let i=source.indexOf("{",start);i<source.length;i++){const ch=source[i];if(quote){if(escaped){escaped=false;continue;}if(ch==="\\"){escaped=true;continue;}if(ch===quote)quote="";continue;}if(ch==="'"||ch==='"'||ch.charCodeAt(0)===96){quote=ch;continue;}if(ch==="{")depth++;else if(ch==="}"&&--depth===0)return source.slice(start,i+1);}throw new Error("unbalanced "+name);}
