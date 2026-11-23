@@ -305,12 +305,15 @@ window.loadKardexLocationSelects = function () {
   }).catch(function(error){console.error("No se pudieron cargar las ubicaciones del Kardex:",error);});
 };
 window.inventoryPhysicalCountsCache = [];
+window.inventoryPhysicalCountRequest = 0;
 window.loadPhysicalInventoryCountsUI = function(preferredCountId) {
+  const requestId=++window.inventoryPhysicalCountRequest;
   const warehouse=document.getElementById("kdx-count-sede"),location=document.getElementById("kdx-count-ubicacion"),select=document.getElementById("kdx-count-id"),detail=document.getElementById("kdx-count-detail");
   if(!warehouse||!location||!select||!detail)return;
   const payload={};if(warehouse.value)payload.sedeCod=warehouse.value;if(location.value)payload.ubicacionId=location.value;
   if(!payload.sedeCod||!payload.ubicacionId){select.innerHTML='<option value="">Seleccione almacén y ubicación</option>';window.inventoryPhysicalCountsCache=[];detail.textContent="Seleccione almacén y ubicación.";return;}
   fetchApi("ACCOUNTING","getPhysicalInventoryCounts",payload).then(function(result){
+    if(requestId!==window.inventoryPhysicalCountRequest)return;
     window.inventoryPhysicalCountsCache=Array.isArray(result&&result.conteos)?result.conteos:[];
     const selected=preferredCountId||select.value;select.innerHTML="";
     const placeholder=document.createElement("option");placeholder.value="";placeholder.textContent="Seleccione un conteo";select.appendChild(placeholder);
@@ -318,7 +321,7 @@ window.loadPhysicalInventoryCountsUI = function(preferredCountId) {
     if(selected&&window.inventoryPhysicalCountsCache.some(function(count){return count.conteoId===selected;}))select.value=selected;
     else if(window.inventoryPhysicalCountsCache.length)select.value=window.inventoryPhysicalCountsCache[0].conteoId;
     window.renderPhysicalInventoryCountUI();
-  }).catch(function(error){detail.textContent="No se pudieron cargar los conteos: "+(error.message||error);});
+  }).catch(function(error){if(requestId===window.inventoryPhysicalCountRequest)detail.textContent="No se pudieron cargar los conteos: "+(error.message||error);});
 };
 window.renderPhysicalInventoryCountUI = function() {
   const select=document.getElementById("kdx-count-id"),detail=document.getElementById("kdx-count-detail");if(!select||!detail)return;
