@@ -423,3 +423,45 @@
 - Siguiente acción concreta: ejecutar tests/security/inventory-multilocation-kardex.test.js y node --check sobre el HEAD 278b8feb76eefd729b558ad7b8f2661a2881ffc3; corregir cualquier fallo y después cerrar TASK-019 con evidencia verificable.
 
 ===============================================================================
+
+===============================================================================
+### C1.956 — IMA-EXEC-20261123-TASK019-PHYSICAL-COUNT-AND-ROLLBACK-HARDENING
+===============================================================================
+
+### Continuidad y Git
+- Sesión: continuación directa de C1.955.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- HEAD de entrada: 6013c87fada528c93185789f3c57632c8351ea0a (checkpoint C1.955); se detectaron commits posteriores válidos en la misma rama.
+- HEAD al cerrar esta iteración: 3b2a98a37c643a26150e6818512516e6432362e4.
+- Rama base: NG_beta_0.0.0.1, HEAD verificado 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
+
+### Cambios verificados en la rama desde C1.955
+- a9b886e04938e90d780dda6dab6c525fcc10a6a8: cobertura de aislamiento por serie y rollback de transferencia.
+- 01fbdeb7b73090df10a2ce40f4de3e4f64a261a1: implementación backend de conteo físico por sede/ubicación, lectura y conciliación transaccional.
+- 497bb5e22c9150bae8cf112bae548b88890ad937: acciones API y permisos RBAC para crear, consultar y conciliar conteos.
+- 6d4d9fed1145494ea701fcc11947979250449525: rechazo de saldos teóricos negativos y precisión de diferencias de conteo.
+- 10a1f5bb71738cf622c52eacefc3e8ea9f9c955e: filtro de consultas por ConteoID.
+- 488a582f2f2b5b8ac6c2c872236b3c3cb1d18b2c: prueba de rollback ajustada para comparar contra el saldo real previo a la operación, no un valor absoluto obsoleto.
+- 3b2a98a37c643a26150e6818512516e6432362e4: pruebas de aislamiento de conteos físicos entre dos almacenes y filtro por identificador de conteo.
+
+### Revisión técnica
+- Conteo físico se crea con sede/ubicación persistida; lectura filtra por sede, ubicación, estado y ConteoID.
+- La conciliación recupera la ubicación desde el registro del conteo, valida buckets de lote/serie completos, exige desglose cuando hay múltiples buckets, aplica solo diferencias reales y utiliza ScriptLock.
+- La conciliación mantiene idempotencia por hash/clave, registra auditoría y revierte Kardex/valoración/registro del conteo si falla la actualización.
+- El test cubre fallo de escritura de conteo, contención de lock, replay idempotente, cambio de payload, desgloses multi-lote y aislamiento entre dos almacenes.
+- La UI js/accounting.js aún no expone acciones de crear/consultar/conciliar conteos físicos; las acciones existen en backend/API. El contrato tests/ui/inventory-warehouse-ui.test.js no valida ese flujo. Este es el siguiente alcance técnico pendiente dentro de TASK-019.
+
+### Pruebas y hallazgos
+- GitHub Actions para HEAD 10a1f5bb71738cf622c52eacefc3e8ea9f9c955e: seis workflows SUCCESS; Department Scope Contract FAIL al ejecutar tests/security/inventory-multilocation-kardex.test.js en la aserción del saldo de lote después de una devolución por rechazo. Log: esperado 4, real 5; el test usaba un valor fijo que no representaba el saldo inmediatamente anterior a la transferencia fallida.
+- La aserción se cambió a una comparación con originLotBeforeFailure, capturado antes de inyectar el fallo; además se añadió una prueba de conteos físicos aislados entre SPS-01 y SPS-02.
+- No existe ejecución Actions asociada al HEAD final 3b2a98a37c643a26150e6818512516e6432362e4 en la consulta actual. El conector no ofrece dispatch y los commits vía API no han generado un run nuevo.
+- Intento de checkout local: BLOCKED por DNS (Could not resolve host: github.com). Por tanto el contrato actualizado no ha sido ejecutado localmente; Node.js/CLI y el syntax-check completo del HEAD final siguen NOT RUN.
+- La ejecución previa de node tests/security/inventory-multilocation-kardex.test.js en SHA 10a1f5bb71738cf622c52eacefc3e8ea9f9c955e llegó a la aserción del rollback, lo que demuestra que el parser del test y vm.Script del Apps Script pasaron en ese SHA; no constituye PASS del contrato.
+- Pruebas beta Apps Script/Sheets/Drive y permisos efectivos: Pendiente beta; no bloquean el cierre de implementación según NDASC.
+
+### Estado y siguiente acción
+- TASK-019 permanece En ejecución; no se declara completada por falta de ejecución local del contrato final y por falta de UI para el flujo de conteo físico.
+- BETA-FUNC-130 incluye validación multialmacén y conciliación física en entorno desplegado.
+- Siguiente acción: integrar controles de conteo físico en la vista Kardex de js/accounting.js, ampliar tests/ui/inventory-warehouse-ui.test.js, ejecutar contrato Node.js y syntax-check sobre HEAD actualizado cuando exista runner local/Actions con ejecución habilitada; corregir hallazgos y después evaluar cierre de TASK-019.
+
+===============================================================================

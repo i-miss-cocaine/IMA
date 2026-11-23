@@ -1060,7 +1060,7 @@
   - Los conteos físicos y conciliaciones operan bajo el nuevo modelo por almacén.
   - Los reportes muestran correctamente los saldos individuales por ubicación y el consolidado institucional.
 - **Estado:** En ejecución
-- **Seguimiento C1.955:** núcleo multialmacén, reservas, disponibilidad, tránsito, filtros, migración legacy, detección de inconsistencias y transferencias implementados en la rama. El contrato extendido añade serie, sobre-recepción y rollback, pero aún no fue ejecutado en Node.js/CI sobre el HEAD actual. No se cierra hasta verificar ese contrato y aclarar la integración con el flujo de conteo físico F19-TASK14, que no existe en el código de C1.954 ni en el HEAD revisado.
+- **Seguimiento C1.956:** backend de conteo físico y conciliación por sede/ubicación implementado; RBAC/API y validaciones de lote/serie, saldos negativos, precisión, idempotencia, rollback y filtro por ConteoID incorporados. Se añadieron pruebas de aislamiento entre dos almacenes y rollback relativo al saldo previo. El flujo de conteo aún no está expuesto en la UI de Kardex (js/accounting.js), y el contrato final no se ejecutó: CI previo falló por una expectativa absoluta obsoleta (4 esperado, 5 real); la prueba fue corregida, pero no hay run nuevo para HEAD final y el checkout local está bloqueado por DNS. TASK-019 sigue En ejecución.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1461-1501; clave TASK-020; asignación única: Contabilidad -->
 
