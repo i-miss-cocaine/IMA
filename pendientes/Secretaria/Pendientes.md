@@ -1628,7 +1628,7 @@
   - [ ] Comprobar que un reenvío conserva el historial del intento previo sin destruirlo.
   - [ ] Modificar una copia posterior del documento y verificar que el acuse original permanece vinculado a la versión efectivamente recibida.
 - **Dependencias:** F34-Task04 (integridad criptográfica), F34-Task06 (notificaciones de envío y entrega), historial institucional.
-- **Estado:** [ ] En ejecución — subalcance USER completado en código/CI; pendientes IP confiable, integración contable, push, adjuntos múltiples y validación beta.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5723-5755; clave TASK-130; asignación única: Secretaria -->
 
@@ -1668,7 +1668,7 @@
   - [ ] Los mensajes de error de validación aparecen junto al campo correspondiente y no sustituyen la ayuda descriptiva.
   - [ ] Una operación crítica cancelada por el usuario no altera ningún dato en la plataforma.
 - **Dependencias:** F38-Task01, F38-Task02.
-- **Estado:** [ ] En ejecución — ayudas permanentes y confirmaciones independientes ampliadas; cobertura integral de formularios y ejecución Node/CI pendientes.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5788-5825; clave TASK-132; asignación única: Secretaria -->
 
@@ -3300,7 +3300,7 @@
   - [ ] Comprobar que un reenvío conserva el historial del intento previo sin destruirlo.
   - [ ] Modificar una copia posterior del documento y verificar que el acuse original permanece vinculado a la versión efectivamente recibida.
 - **Dependencias:** F34-Task04 (integridad criptográfica), F34-Task06 (notificaciones de envío y entrega), historial institucional.
-- **Estado:** [ ] En ejecución — subalcance USER completado en código/CI; pendientes IP confiable, integración contable, push, adjuntos múltiples y validación beta.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5723-5755; clave TASK-130; asignación única: Secretaria -->
 
@@ -3340,7 +3340,7 @@
   - [ ] Los mensajes de error de validación aparecen junto al campo correspondiente y no sustituyen la ayuda descriptiva.
   - [ ] Una operación crítica cancelada por el usuario no altera ningún dato en la plataforma.
 - **Dependencias:** F38-Task01, F38-Task02.
-- **Estado:** [ ] En ejecución — ayudas permanentes y confirmaciones independientes ampliadas; cobertura integral de formularios y ejecución Node/CI pendientes.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5788-5825; clave TASK-132; asignación única: Secretaria -->
 
@@ -3401,7 +3401,7 @@
   - [ ] Los departamentos consultan su propio inventario sin acceder a información restringida de otras áreas.
   - [ ] Dirección puede consultar el inventario consolidado de toda la institución.
 - **Dependencias:** Estructura de departamentos, roles, permisos y almacenamiento institucional.
-- **Estado:** [ ] En ejecución — API USER y contratos automatizados implementados; interfaz de inventario y beta real pendientes.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5826-5863; clave TASK-133; asignación única: Secretaria -->
 
@@ -3450,7 +3450,7 @@
   - [ ] Los registros válidos no se pierden por errores aislados de otras filas.
   - [ ] Los errores nunca se transforman silenciosamente en valores predeterminados.
 - **Dependencias:** F39-Task01.
-- **Estado:** [ ] En ejecución — validadores binarios/OpenXML, PDF, Excel y preflight semántico avanzados; UI de mapeo y beta real pendientes.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5864-5896; clave TASK-134; asignación única: Secretaria -->
 
@@ -3523,7 +3523,7 @@
   - [ ] Un archivo modificado produce un hash diferente y se clasifica como nueva versión o documento independiente.
   - [ ] La verificación de integridad detecta si un archivo en Drive fue alterado o sustituido con posterioridad.
 - **Dependencias:** F39-Task01 (inventario documental institucional); TASK-134 implementa F39-Task02 y es prerrequisito de F39-Task03.
-- **Estado:** [ ] En ejecución — deduplicación SHA-256 implementada en Academic/User; falta integración ACCOUNTING, Node CLI/Actions y beta real.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 - **Resolución C1.768:** se corrigió el Plan Maestro: TASK-134 depende del inventario F39-Task01, implementa F39-Task02 (SHA-256) y habilita F39-Task03 (custodia protegida). Se conserva F39-Task03 como dependiente de F39-Task02; el ciclo queda eliminado.
 
@@ -3828,7 +3828,7 @@
   - [ ] Reutilizar un token vencido, revocado o asociado a otra versión: el servidor rechaza la solicitud.
   - [ ] Ningún proceso de carga privado vuelve a establecer `ANYONE_WITH_LINK`.
 - **Dependencias:** F40-Task01, F40-Task03.
-- **Estado:** [ ] En ejecución (parcial; Academic PREVIEW/DOWNLOAD con RBAC, token efímero, proxy y UI diferenciadas; flujo binario ACCOUNTING y beta real pendientes)
+- **Estado:** Pendiente (reinicio del ciclo).
 - **Avance C1.780 (2026-11-16):** Academic ya separa PREVIEW y DOWNLOAD con permisos RBAC, tokens HMAC de un solo uso vinculados a operación/documento/versión/usuario y auditoría diferenciada; la UI muestra botones Ver y Descargar. Accounting getEmployeeDocuments deja de devolver archivoUrl y solo informa tieneArchivo, con verificación de privacidad Drive. No se localizaron uploadEmployeeDocument ni uploadPaymentVoucher ni un proxy binario Accounting en el servicio actual; no se inventó una ruta. La carga/entrega laboral autenticada y beta real permanecen pendientes.
 - **Verificación C1.780:** Accounting Import Preflight run 43788968649 SUCCESS (Node 24.22.2); Department Reference Consumers run 43789068286 SUCCESS. Department Scope run 43789068303 conserva FAIL independiente porque falta resolveEmployeeDepartmentId_ en ACCOUNTING. BETA-FUNC-110 describe la validación aislada pendiente.
 
@@ -5123,7 +5123,7 @@
 - **Pruebas:** tests/security/accounting-transport-route-optimization.test.js PASS en Node.js 24.22.2; cubre orden optimizado, ventanas, coordenadas inválidas, propuesta sin mutación, aprobación, rechazo, idempotencia de decisión, conflicto por ruta obsoleta, RBAC y lock. Syntax-check Apps Script PASS.
 - **CI final:** Department Scope Contract 43615291620 SUCCESS; Identity Mapping 43615291629 SUCCESS; Department Reference Consumers 43615291613 SUCCESS. El primer run 43615033670 detectó una variable const reasignada; se corrigió y el run final aprobó.
 - **Limitaciones:** no se integró geocodificación externa; cada parada debe recibir lat/lng válidos mediante la gestión de rutas. La velocidad promedio se proporciona en la solicitud, sin asumir una velocidad predeterminada. Apps Script/Sheets real NOT RUN. BETA-FUNC-093 pendiente.
-- **Estado:** [x] Completada en código, revisión y CI; pendiente validación beta y carga de coordenadas reales.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8477-8514; clave TASK-212; asignación única: Secretaria -->
 
@@ -5717,7 +5717,7 @@
   - [ ] Los scripts o macros dentro de archivos importados son desarmados sin interrumpir el sistema.
   - [ ] Los documentos privados no se pueden descargar mediante enlaces públicos ni manipulación de identificadores.
   - [ ] Todos los accesos a documentos sensibles quedan registrados en la bitácora de seguridad.
-- **Estado:** [ ] En ejecución (parcial; renderizado seguro del catálogo y equivalencias, allowlist de enlaces Drive y validación binaria contractual; antimalware/cuarentena, ACL heredadas y beta real pendientes)
+- **Estado:** Pendiente (reinicio del ciclo).
 - **Avance C1.783 (2026-11-16):** se corrigió XSS almacenado en el panel de migración curricular: equivalencias, mensajes y resultados ahora se insertan con textContent mediante helper DOM; se amplió reusable-resource-xss-url-contract.test.js con payloads hostiles ejecutados como texto inerte. Accounting Import Preflight run 43791459608 SUCCESS (40/40, Node 24.22.2).
 - **Avance C1.784 (2026-11-16):** todos los campos de texto que manageReusableResource guarda en RecursosEducativosReutilizables y ProyectosInterdisciplinarios pasan por sanitizeReusableResourceSheetCell_, que neutraliza prefijos de fórmula (=, +, @, -). El contrato prueba HYPERLINK/SUM y campos de texto adversariales; Accounting Import Preflight run 43791680550 SUCCESS (40/40, Node 24.22.2).
 - **Límites:** no se declara antivirus ni cuarentena real; F31-Task09 continúa pendiente y la validación de ACL/Drive heredadas requiere pruebas beta.
