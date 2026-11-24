@@ -1,3 +1,4 @@
+const SERVICE_CONTRACT_VERSION = "v8.4.0";
 // NOTA: Las URLs de los microservicios solo se deben actualizar en el frontend (js/config.js), no en este archivo.
 // [REQ-EXP-004] [Requerimientos de Expansión y Desarrollo] - Consolidación del módulo de tareas, entregas, evaluaciones y penalización por entrega tardía.
 // --- MICROSERVICIO DE TAREAS ---
@@ -524,6 +525,8 @@ function doPost(e) {
     }
     const request = JSON.parse(e.postData.contents);
     const { action, payload } = request;
+    const requestedContractVersion = String(payload && payload.contractVersion || "").trim();
+    if (requestedContractVersion && requestedContractVersion !== SERVICE_CONTRACT_VERSION) return ContentService.createTextOutput(JSON.stringify({ status: "error", code: "SERVICE_CONTRACT_VERSION_MISMATCH", expectedVersion: SERVICE_CONTRACT_VERSION, receivedVersion: requestedContractVersion })).setMimeType(ContentService.MimeType.JSON);
     clearRequestAuthorizationContext_(payload);
     const authCheck = validateRolePermission(action, payload);
     if (!authCheck.authorized) {

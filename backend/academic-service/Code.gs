@@ -1,3 +1,4 @@
+const SERVICE_CONTRACT_VERSION = "v8.4.0";
 // ============================================================================
 // MICROSERVICIO ACADÉMICO (VERSIÓN MODULAR EXTENDIDA FASE 4 v8.4.0)
 // ============================================================================
@@ -1608,6 +1609,8 @@ function doPost(e) {
     if (request && request.sourceService === "USER") return respond(handleTrustedAbsenceJustificationEnvelope_(request));
     if (request && request.sourceService) return respond(handleTrustedMigrationEnvelope_(request));
     const { action, payload } = request;
+    const requestedContractVersion = String(payload && payload.contractVersion || "").trim();
+    if (requestedContractVersion && requestedContractVersion !== SERVICE_CONTRACT_VERSION) return respond({ status: "error", code: "SERVICE_CONTRACT_VERSION_MISMATCH", expectedVersion: SERVICE_CONTRACT_VERSION, receivedVersion: requestedContractVersion });
     clearRequestAuthorizationContext_(payload);
     if (payload && payload.skipLock && !payload.isInternalCall) {
       delete payload.skipLock;

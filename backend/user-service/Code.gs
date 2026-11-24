@@ -1,3 +1,4 @@
+const SERVICE_CONTRACT_VERSION = "v8.4.0";
 // NOTA: Las URLs de los microservicios solo se deben actualizar en el frontend (js/config.js), no en este archivo.
 // ============================================================================
 // MICROSERVICIO DE USUARIOS (VERSIÓN MODULAR RESTAURADA v8.2.0 - FASE 2)
@@ -2805,6 +2806,8 @@ function doPost(e) {
     if (request && request.sourceService && request.action === "authorizeDepartmentReferenceRead") return textResponse(handleTrustedDepartmentReferenceEnvelope_(request));
     if (request && request.sourceService) return textResponse(handleTrustedMigrationEnvelope_(request));
     const { action, payload } = request;
+    const requestedContractVersion = String(payload && payload.contractVersion || "").trim();
+    if (requestedContractVersion && requestedContractVersion !== SERVICE_CONTRACT_VERSION) return textResponse({ status: "error", code: "SERVICE_CONTRACT_VERSION_MISMATCH", expectedVersion: SERVICE_CONTRACT_VERSION, receivedVersion: requestedContractVersion });
     const authCheck = validateRolePermission(action, payload);
     if (!authCheck.authorized) {
       const auditPayload = action === "configureAdvancedSignatureProvider" ? { proveedorId: payload && payload.proveedorId || null, apiKeyProvided: !!(payload && typeof payload.apiKey === "string" && payload.apiKey.length), hmacSecretProvided: !!(payload && typeof payload.hmacSecret === "string" && payload.hmacSecret.length), apiKeyRemovalRequested: !!(payload && payload.eliminarApiKey === true), hmacSecretRemovalRequested: !!(payload && payload.eliminarHmacSecret === true) } : payload;

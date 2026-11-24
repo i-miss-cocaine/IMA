@@ -1,3 +1,4 @@
+const SERVICE_CONTRACT_VERSION = "v8.4.0";
 /**
  * Preflight semántico de migraciones documentales.
  * La identidad, el tenant y el destino se obtienen del contexto verificado;
@@ -9774,6 +9775,8 @@ function doPost(e) {
       return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
     var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
+    const requestedContractVersion = String(actionPayload.contractVersion || "").trim();
+    if (requestedContractVersion && requestedContractVersion !== SERVICE_CONTRACT_VERSION) return respond({ status: "error", code: "SERVICE_CONTRACT_VERSION_MISMATCH", expectedVersion: SERVICE_CONTRACT_VERSION, receivedVersion: requestedContractVersion });
     var pinSensitiveActions = ["configureFamilyCreditPin","configureFamilyCreditAuthorization","processFamilyCreditPurchase"];
     var safePayloadMeta = typeof sanitizePayloadForLog === "function" ? sanitizePayloadForLog(actionPayload) : "[Payload metadata unavailable]";
     var safeRequestMeta = pinSensitiveActions.indexOf(request.action) !== -1

@@ -1,3 +1,4 @@
+const SERVICE_CONTRACT_VERSION = "v8.4.0";
 // NOTA: Las URLs de los microservicios solo se deben actualizar en el frontend (js/config.js), no en este archivo.
 // ============================================================================
 // MICROSERVICIO DE EXÁMENES (VERSIÓN GAS CORRECTA)
@@ -671,6 +672,8 @@ function doPost(e) {
       request.action === "getSaceGradebookSnapshot" || request.action === "getSaceGradebookSnapshots"
     ));
     const { action, payload } = request;
+    const requestedContractVersion = String(payload && payload.contractVersion || "").trim();
+    if (requestedContractVersion && requestedContractVersion !== SERVICE_CONTRACT_VERSION) return textResponse({ status: "error", code: "SERVICE_CONTRACT_VERSION_MISMATCH", expectedVersion: SERVICE_CONTRACT_VERSION, receivedVersion: requestedContractVersion });
     clearRequestAuthorizationContext_(payload);
     const authCheck = validateRolePermission(action, payload);
     if (!authCheck.authorized) {
