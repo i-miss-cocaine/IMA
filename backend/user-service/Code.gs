@@ -11310,7 +11310,7 @@ function getWorkflowHistory(payload) {
     }) : [];
     return { status: "success", historialDecisiones: history, firmas: signatures,
       integridadAuditoria: { cadenaValida: integrity.cadenaValida, totalDecisionesAuditadas: integrity.totalDecisionesAuditadas,
-        inconsistencias: integrity.inconsistencias } };
+        inconsistencias: integrity.inconsistencias, advertencias: integrity.advertencias || [] } };
   } finally { lock.releaseLock(); }
 }// [TASK-039] [F22-Task02] - Registro de firma electrónica y conformidad institucional con vinculación criptográfica SHA-256
 function ensureDocumentSignatureSchema_(sheet) {
@@ -12381,6 +12381,7 @@ function getSpreadsheetCatalog(payload) {
 
 
 // [TASK-049] [F23-Task06] [P0] Auditoría Criptográfica: Verificación de Cadena de Decisiones y Registro de Correcciones
+// Internal tamper-evident anchor for the workflow ledger; not an interservice credential.
 const WORKFLOW_DECISION_AUDIT_GENESIS_HASH_ = "GENESIS_DECISION_HASH_0000000000000000000000000000000000000000";
 const WORKFLOW_DECISION_AUDIT_CHECKPOINT_KEY_ = "WORKFLOW_DECISION_AUDIT_CHECKPOINT_V2";
 
