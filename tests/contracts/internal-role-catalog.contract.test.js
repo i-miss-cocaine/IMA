@@ -418,3 +418,92 @@ test("getInternalRoleAssignments aplica vigencia temporal a la consulta de asign
   assert.equal(result.status, "success");
   assert.deepEqual(result.data.map(item => item.asignacionId), [created.assignmentId]);
 });
+
+test("actualizar parcialmente una responsabilidad conserva todos los campos omitidos", () => {
+  const roles = sheet([roleHeaders, roleRow("ROL-1", "Coordinador de Matemáticas", "COORD-MAT")]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
+  const before = roles.rows[1].slice();
+  const result = context.manageInternalRoleCatalog({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    rolInternoId: "ROL-1", nombreResponsabilidad: "Coordinador Académico",
+    motivo: "Actualización parcial autorizada."
+  });
+  assert.equal(result.status, "success");
+  assert.equal(roles.rows[1][2], "Coordinador Académico");
+  for (const index of [1,3,4,5,6,7,8,9,10,11,13]) {
+    assert.equal(roles.rows[1][index], before[index], "Debe conservar la columna " + index);
+  }
+});
+
+test("los identificadores de catálogo colisionados se rechazan sin duplicar filas", () => {
+  const collisionId = "ROL-INT-" + "A".repeat(20);
+  const roles = sheet([roleHeaders, roleRow(collisionId, "Responsabilidad existente", "EXISTENTE")]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
+  context.Utilities.getUuid = () => "A".repeat(32) + "-0000-0000-0000";
+  const result = context.manageInternalRoleCatalog({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    nombreResponsabilidad: "Responsabilidad nueva", tipoResponsabilidad: "Académica",
+    vigenciaMeses: 12, motivo: "Alta autorizada para probar colisión."
+  });
+  assert.equal(result.status, "error");
+  assert.equal(result.code, "INTERNAL_ROLE_ID_CONFLICT");
+  assert.equal(roles.rows.length, 2);
+});
+
+test("parseInternalRoleAssignmentDate_ valida ISO calendárico y fin inclusivo de celdas Date", () => {
+  const context = makeContext();
+  const invalidIso = context.parseInternalRoleAssignmentDate_("2026-02-30T00:00:00Z", false);
+  assert.equal(invalidIso.valid, false);
+  const ambiguous = context.parseInternalRoleAssignmentDate_("02/03/2026", false);
+  assert.equal(ambiguous.valid, false);
+  const dateObject = vm.runInNewContext("new Date(2026, 0, 31)", context);
+  const inclusive = context.parseInternalRoleAssignmentDate_(dateObject, true);
+  assert.equal(inclusive.valid, true);
+  assert.equal(inclusive.date.getFullYear(), 2026);
+  assert.equal(inclusive.date.getMonth(), 0);
+  assert.equal(inclusive.date.getDate(), 31);
+  assert.equal(inclusive.date.getHours(), 23);
+  assert.equal(inclusive.date.getMinutes(), 59);
+  assert.equal(inclusive.date.getMilliseconds(), 999);
+});
+
+test("getUserContextScope aplica FK activa y compatibilidad legacy sin membresía RBAC", () => {
+  const { context, assignments, roles } = assignmentContext();
+  const created = assign(context, "EMP-1", "ROL-1");
+  assert.equal(created.status, "success");
+  assignments.rows[1][13] = "";
+  const payload = {
+    _verifiedUserId: "EMP-1", _verifiedRole: "Docente",
+    _verifiedClaims: { userId: "EMP-1", role: "Docente", membershipId: "", institutionId: "" }
+  };
+  const result = context.getUserContextScope(payload);
+  assert.equal(result.status, "success");
+  assert.equal(result.scopes.length, 1);
+  assert.equal(result.scopes[0].responsibilityId, "ROL-1");
+  roles.rows[1][9] = "Inactivo";
+  const inactive = context.getUserContextScope(payload);
+  assert.equal(inactive.status, "error");
+  assert.equal(inactive.code, "DEPARTMENT_SCOPE_NOT_ASSIGNED");
+});
+
+test("getUserContextScope trata FechaFin Date de medianoche como día inclusivo", () => {
+  const { context, assignments } = assignmentContext();
+  const yesterday = new Date(Date.now() - 86400000);
+  const start = yesterday.getFullYear() + "-" + String(yesterday.getMonth()+1).padStart(2,"0") + "-" + String(yesterday.getDate()).padStart(2,"0");
+  const created = assign(context, "EMP-1", "ROL-1", { fechaInicio: start, fechaFin: "2026-12-31" });
+  assert.equal(created.status, "success");
+  const today = new Date();
+  const midnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  assignments.rows[1][9] = vm.runInNewContext("new Date(" + midnight + ")", context);
+  const result = context.getUserContextScope({
+    _verifiedUserId: "EMP-1", _verifiedRole: "Docente",
+    _verifiedClaims: { userId: "EMP-1", role: "Docente", membershipId: "MEM-1", institutionId: "INST-1" }
+  });
+  assert.equal(result.status, "success");
+  assert.equal(result.scopes.length, 1);
+});
+
+test("la consola HR ignora respuestas antiguas cuando hay cargas concurrentes", () => {
+  assert.match(dashboard, /loadGeneration=0/);
+  assert.match(dashboard, /if\(generation!==loadGeneration\)return/);
+});

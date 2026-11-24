@@ -14554,17 +14554,39 @@ function resolveActiveInternalResponsibility_(ss, responsibilityId, includeInact
 
 function parseInternalRoleAssignmentDate_(value, inclusiveEnd) {
   if (value === "" || value === null || value === undefined) return { valid: true, date: null };
-  var date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
-  if (isNaN(date.getTime())) return { valid: false, date: null };
-  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    var parts = value.split("-").map(Number);
-    date = new Date(parts[0], parts[1] - 1, parts[2]);
-    if (isNaN(date.getTime()) || date.getFullYear() !== parts[0] || date.getMonth() !== parts[1] - 1 || date.getDate() !== parts[2]) return { valid: false, date: null };
-    if (inclusiveEnd) date.setHours(23, 59, 59, 999);
+  var date = null;
+  var isDateObject = value instanceof Date;
+  if (isDateObject) {
+    date = new Date(value.getTime());
+    if (inclusiveEnd && date.getHours() === 0 && date.getMinutes() === 0 &&
+        date.getSeconds() === 0 && date.getMilliseconds() === 0) {
+      date.setHours(23, 59, 59, 999);
+    }
+  } else if (typeof value === "string") {
+    var normalized = value.trim();
+    var dateOnly = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(normalized);
+    var dateTime = /^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2})(?::(\\d{2})(?:\\.(\\d{1,3}))?)?(?:Z|[+-]\\d{2}:\\d{2})?$/.exec(normalized);
+    if (!dateOnly && !dateTime) return { valid: false, date: null };
+    var year = Number((dateOnly || dateTime)[1]);
+    var month = Number((dateOnly || dateTime)[2]);
+    var day = Number((dateOnly || dateTime)[3]);
+    var calendarDate = new Date(year, month - 1, day);
+    if (calendarDate.getFullYear() !== year || calendarDate.getMonth() !== month - 1 || calendarDate.getDate() !== day) {
+      return { valid: false, date: null };
+    }
+    if (dateOnly) {
+      date = calendarDate;
+      if (inclusiveEnd) date.setHours(23, 59, 59, 999);
+    } else {
+      date = new Date(normalized);
+      if (isNaN(date.getTime())) return { valid: false, date: null };
+    }
+  } else {
+    return { valid: false, date: null };
   }
+  if (!date || isNaN(date.getTime())) return { valid: false, date: null };
   return { valid: true, date: date };
 }
-
 function formatInternalRoleAssignmentDate_(date) {
   if (!(date instanceof Date) || isNaN(date.getTime())) return "";
   var year = String(date.getFullYear());
@@ -14730,8 +14752,14 @@ function assignRoleScope(payload) {
       assignmentId = String(existing[0] || "").trim();
       if (!assignmentId) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_ID_INVALID" };
     } else {
-      assignmentId = "AMB-" + Utilities.getUuid().replace(/-/g, "").toUpperCase();
-      if (data.slice(1).some(function(row) { return String(row[0] || "").trim() === assignmentId; })) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_ID_CONFLICT" };
+      for (var assignmentIdAttempt = 0; assignmentIdAttempt < 5; assignmentIdAttempt++) {
+        var candidateAssignmentId = "AMB-" + Utilities.getUuid().replace(/-/g, "").toUpperCase();
+        if (!data.slice(1).some(function(row) { return String(row[0] || "").trim() === candidateAssignmentId; })) {
+          assignmentId = candidateAssignmentId;
+          break;
+        }
+      }
+      if (!assignmentId) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_ID_CONFLICT" };
     }
     if (isSubstitute) {
       var substituteMembershipState = getUserRoleMembershipState_(substituteFor, institutionId);
@@ -14859,11 +14887,8 @@ function getUserContextScope(payload) {
       } catch (e) {}
       return raw.split(",").map(function(v){ return String(v).trim(); }).filter(Boolean);
     };
-    var parseDate = function(value) {
-      if (value === "" || value === null || value === undefined) return { valid: true, date: null };
-      var date = value instanceof Date ? value : new Date(value);
-      if (isNaN(date.getTime())) return { valid: false, date: null };
-      return { valid: true, date: date };
+    var parseDate = function(value, inclusiveEnd) {
+      return parseInternalRoleAssignmentDate_(value, inclusiveEnd === true);
     };
     var assignmentIdCounts = {};
     data.slice(1).forEach(function(row) { var id = String((row || [])[0] || "").trim(); if (id) assignmentIdCounts[id] = (assignmentIdCounts[id] || 0) + 1; });
@@ -14881,17 +14906,31 @@ function getUserContextScope(payload) {
       var rowMembershipId = scopeSchema === "legacy" ? "" : String(row[13] || "").trim();
       var rowResponsibilityId = scopeSchema === "current" ? String(row[14] || "").trim() : "";
       var responsibility = null;
-      if (membershipId) {
-        if (scopeSchema !== "current" || rowInstitutionId !== institutionId || rowMembershipId !== membershipId || !rowResponsibilityId) continue;
+      if (scopeSchema === "current") {
+        if (rowInstitutionId !== institutionId || !rowResponsibilityId) continue;
         responsibility = resolveActiveInternalResponsibility_(ss, rowResponsibilityId);
         if (!responsibility) continue;
-      } else if (rowInstitutionId || rowMembershipId) {
+        if (membershipId) {
+          if (rowMembershipId !== membershipId) continue;
+        } else {
+          if (rowMembershipId) continue;
+          var legacyUserSheet = ss.getSheetByName("Usuarios");
+          if (!legacyUserSheet) continue;
+          var legacyUserMatches = legacyUserSheet.getDataRange().getValues().slice(1).filter(function(item) {
+            return String(item[0] || "").trim() === userId;
+          });
+          if (legacyUserMatches.length !== 1) continue;
+          var legacyUser = legacyUserMatches[0];
+          if (String(legacyUser[6] || "").trim() !== rowRoleId ||
+              ["ACTIVA", "ACTIVO", "ACTIVE"].indexOf(String(legacyUser[10] || "Activa").trim().toUpperCase()) === -1) continue;
+        }
+      } else if (membershipId || rowInstitutionId || rowMembershipId) {
         continue;
       }
       var state = String(row[5] || "").trim().toUpperCase();
       if (["ACTIVO", "ACTIVA", "ACTIVE"].indexOf(state) === -1) continue;
-      var start = parseDate(row[8]);
-      var end = parseDate(row[9]);
+      var start = parseDate(row[8], false);
+      var end = parseDate(row[9], true);
       if (!start.valid || !end.valid) continue;
       if (start.date && start.date.getTime() > now.getTime()) continue;
       if (end.date && end.date.getTime() < now.getTime()) continue;
@@ -16836,22 +16875,37 @@ function manageInternalRoleCatalog(payload) {
       return { status: "success", rolInternoId: id, estado: nextState };
     }
     if (action !== "guardar") return { status: "error", code: "INTERNAL_ROLE_ACTION_INVALID" };
-    var name = String(p.nombreResponsabilidad || "").trim();
-    if (!name || name.length > 120) return { status: "error", code: "INTERNAL_ROLE_NAME_INVALID" };
     if (id && idMatches.length !== 1) return { status: "error", code: "INTERNAL_ROLE_NOT_FOUND" };
-    var code = String(p.codigoInterno || (id ? data[idMatches[0]][1] : "") || "").trim().toUpperCase();
-    if (!code) code = "ROL-INT-" + Utilities.getUuid().replace(/-/g, "").substring(0, 16).toUpperCase();
+    var oldRow = idMatches.length ? data[idMatches[0]].slice() : null;
+    var name = String(p.nombreResponsabilidad === undefined ? (oldRow ? oldRow[2] : "") : p.nombreResponsabilidad).trim();
+    if (!name || name.length > 120) return { status: "error", code: "INTERNAL_ROLE_NAME_INVALID" };
+    var requestedCode = p.codigoInterno === undefined || String(p.codigoInterno || "").trim() === "" ?
+      (oldRow ? oldRow[1] : "") : p.codigoInterno;
+    var code = String(requestedCode || "").trim().toUpperCase();
+    if (!code) {
+      for (var codeAttempt = 0; codeAttempt < 5; codeAttempt++) {
+        var candidateCode = "ROL-INT-" + Utilities.getUuid().replace(/-/g, "").substring(0, 16).toUpperCase();
+        var candidateCodeKey = normalizeString(candidateCode).replace(/\\s+/g, " ");
+        if (!data.slice(1).some(function(row) { return normalizeString(row[1]).replace(/\\s+/g, " ") === candidateCodeKey; })) {
+          code = candidateCode;
+          break;
+        }
+      }
+      if (!code) return { status: "error", code: "INTERNAL_ROLE_CODE_CONFLICT" };
+    }
     if (!/^[A-Z0-9][A-Z0-9_-]{1,39}$/.test(code)) return { status: "error", code: "INTERNAL_ROLE_CODE_INVALID" };
-    var type = String(p.tipoResponsabilidad || "Administrativa").trim();
+    var type = String(p.tipoResponsabilidad === undefined ? (oldRow ? oldRow[6] : "Administrativa") : p.tipoResponsabilidad).trim();
     var allowedTypes = ["ADMINISTRATIVA","ACADEMICA","OPERATIVA","SUPERVISION"];
     var typeKey = normalizeString(type).toUpperCase();
     if (allowedTypes.indexOf(typeKey) === -1) return { status: "error", code: "INTERNAL_ROLE_TYPE_INVALID" };
-    var months = Number(p.vigenciaMeses === undefined || p.vigenciaMeses === "" ? 12 : p.vigenciaMeses);
+    var monthsInput = p.vigenciaMeses === undefined ? (oldRow ? oldRow[7] : 12) : p.vigenciaMeses;
+    var months = Number(monthsInput);
     if (!Number.isInteger(months) || months < 1 || months > 120) return { status: "error", code: "INTERNAL_ROLE_VALIDITY_INVALID" };
-    var state = String(p.estado || "Activo").trim();
+    var state = String(p.estado === undefined ? (oldRow ? oldRow[9] : "Activo") : p.estado).trim();
     if (["Activo","Inactivo"].indexOf(state) === -1) return { status: "error", code: "INTERNAL_ROLE_STATE_INVALID" };
-    var allowSubstitute = p.permiteSuplencia === true || ["true","sí","si"].indexOf(String(p.permiteSuplencia || "").trim().toLowerCase()) !== -1;
-    var linkedId = String(p.responsibilityId || (id ? data[idMatches[0]][13] || "" : "")).trim();
+    var substituteInput = p.permiteSuplencia === undefined ? (oldRow ? oldRow[8] : false) : p.permiteSuplencia;
+    var allowSubstitute = substituteInput === true || ["true","sí","si","1"].indexOf(String(substituteInput || "").trim().toLowerCase()) !== -1;
+    var linkedId = String(p.responsibilityId === undefined ? (oldRow ? oldRow[13] || "" : "") : p.responsibilityId || "").trim();
     if (linkedId && !getInstitutionalResponsibilityRecord_(ss, linkedId)) {
       return { status: "error", code: "ROLE_INSTITUTIONAL_RESPONSIBILITY_NOT_ACTIVE" };
     }
@@ -16862,11 +16916,22 @@ function manageInternalRoleCatalog(payload) {
       if (normalizeString(data[r][1]).replace(/\s+/g, " ") === codeKey) return { status: "error", code: "INTERNAL_ROLE_CODE_DUPLICATE" };
     }
     var now = new Date().toISOString();
-    if (!id) id = "ROL-INT-" + Utilities.getUuid().replace(/-/g, "").substring(0, 20).toUpperCase();
-    var oldRow = idMatches.length ? data[idMatches[0]].slice() : null;
+    if (!id) {
+      for (var roleIdAttempt = 0; roleIdAttempt < 5; roleIdAttempt++) {
+        var candidateRoleId = "ROL-INT-" + Utilities.getUuid().replace(/-/g, "").substring(0, 20).toUpperCase();
+        if (!data.slice(1).some(function(row) { return String(row[0] || "").trim() === candidateRoleId; })) {
+          id = candidateRoleId;
+          break;
+        }
+      }
+      if (!id) return { status: "error", code: "INTERNAL_ROLE_ID_CONFLICT" };
+    }
     var row = [
-      id, code, name, String(p.descripcion || "").trim(), String(p.departamento || "").trim(),
-      String(p.areaAcademica || "").trim(), type, months, allowSubstitute ? "Sí" : "No", state,
+      id, code, name,
+      String(p.descripcion === undefined ? (oldRow ? oldRow[3] : "") : p.descripcion).trim(),
+      String(p.departamento === undefined ? (oldRow ? oldRow[4] : "") : p.departamento).trim(),
+      String(p.areaAcademica === undefined ? (oldRow ? oldRow[5] : "") : p.areaAcademica).trim(),
+      type, months, allowSubstitute ? "Sí" : "No", state,
       oldRow ? oldRow[10] || actor : actor, oldRow ? oldRow[11] || now : now, now, linkedId
     ];
     if (oldRow) {

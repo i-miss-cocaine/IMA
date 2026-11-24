@@ -3117,7 +3117,7 @@
         if(['Administrador','Director','RecursosHumanos'].indexOf(currentRole)===-1){panel.classList.add('hidden');return;}
         const $=id=>document.getElementById(id), status=$('rrhh-internal-role-status'), roleBody=$('rrhh-internal-role-tbody'), assignmentBody=$('rrhh-internal-assignment-tbody');
         const roleForm=$('rrhh-internal-role-form'), assignmentForm=$('rrhh-internal-assignment-form'), history=$('rrhh-internal-assignment-history');
-        let roles=[],assignments=[],employees=[];
+        let roles=[],assignments=[],employees=[],loadGeneration=0;
         const msg=(value,error)=>{status.textContent=value;status.className='mb-4 text-xs '+(error?'text-rose-700':'text-slate-500');};
         const fill=(select,items,placeholder,value,label)=>{select.replaceChildren();const empty=document.createElement('option');empty.value='';empty.textContent=placeholder;select.appendChild(empty);items.forEach(item=>{const o=document.createElement('option');o.value=String(value(item)||'');o.textContent=String(label(item)||o.value);select.appendChild(o);});};
         const cell=(tr,value)=>{const td=document.createElement('td');td.className='p-2 border-b align-top';td.textContent=String(value==null||value===''?'—':value);tr.appendChild(td);};
@@ -3160,8 +3160,13 @@
           if(!assignmentBody.children.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.className='p-4 text-center text-slate-400';td.textContent='No hay asignaciones para mostrar.';tr.appendChild(td);assignmentBody.appendChild(tr);}
         }
         async function load(){
+          const generation=++loadGeneration;
           msg('Consultando catálogos y asignaciones…',false);
-          const result=await Promise.all([fetchApi('USER','getInternalRoleCatalog',{soloActivos:false}),fetchApi('USER','getInternalRoleAssignments',{soloVigentes:!history.checked}),fetchApi('ACCOUNTING','getEmployeeRecords',{}),fetchApi('USER','manageDepartmentPositions',{subAction:'GET_DEPARTMENT_HIERARCHY'})]);
+          let result;
+          try{
+            result=await Promise.all([fetchApi('USER','getInternalRoleCatalog',{soloActivos:false}),fetchApi('USER','getInternalRoleAssignments',{soloVigentes:!history.checked}),fetchApi('ACCOUNTING','getEmployeeRecords',{}),fetchApi('USER','manageDepartmentPositions',{subAction:'GET_DEPARTMENT_HIERARCHY'})]);
+          }catch(error){if(generation!==loadGeneration)return;throw error;}
+          if(generation!==loadGeneration)return;
           const catalog=result[0],assign=result[1],employeeResult=result[2],deptResult=result[3];
           if(!catalog||catalog.status!=='success'||!Array.isArray(catalog.data))throw Error(catalog&&(catalog.message||catalog.code)||'No se pudo cargar el catálogo.');
           if(!assign||assign.status!=='success'||!Array.isArray(assign.data))throw Error(assign&&(assign.message||assign.code)||'No se pudieron cargar las asignaciones.');
