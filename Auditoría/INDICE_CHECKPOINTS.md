@@ -439,3 +439,5 @@ Los checkpoints posteriores se registran aquí.
 | C1.966 | IMA-EXEC-20261123-CYCLE2-DOCS-CI-PASS | Academic Wellbeing Contract run 45317426906 SUCCESS; diff guard, Node 24 syntax checks y contrato PASS; run 45317208341 FAIL histórico preservado | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.966 | C1.965 | Iniciar TASK-047 en PM-00A |
 
 | C1.967 | IMA-EXEC-20261123-CI-WHITESPACE-FIX | Run 45317652052 FAIL en git diff --check por línea vacía al EOF del Plan; corregida; Node.js/contrato NOT RUN | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.967 | C1.966 | Reejecutar Academic Wellbeing Contract |
+
+| C1.970 | IMA-EXEC-20261124-TASK047-ROLE-BOUNDARY-02 | Consola técnica requiere sesión login + rol Desarrollador; contrato Node.js de acceso UI añadido; CI pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.970 | C1.969 | Confirmar Developer Service Registry Contract y ejecutar siguiente alcance de TASK-047 |

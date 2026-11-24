@@ -6,7 +6,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', function () {
-    // 1. Verificación de permisos y autenticación (Solo Desarrollador o Administrador)
+    // 1. La consola técnica requiere la sesión creada en el login y el rol Desarrollador.
     let currentUser = null;
     try {
         const rawUser = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
@@ -17,9 +17,9 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('[DeveloperConsole] Error al leer usuario:', e);
     }
 
-    // Permitir acceso en entorno local o a usuarios con rol Desarrollador / Administrador
+    // No se admite acceso local anónimo ni se heredan privilegios de Administrador o Dirección.
     const userRole = currentUser ? String(currentUser.rol || currentUser.role || '').trim() : '';
-    const isAllowed = !!currentUser && userRole === 'Desarrollador';
+    const isAllowed = !!currentUser && !!currentUser.sessionToken && userRole === 'Desarrollador';
 
     if (!isAllowed) {
         alert('Acceso denegado: Se requieren privilegios de Desarrollador.');

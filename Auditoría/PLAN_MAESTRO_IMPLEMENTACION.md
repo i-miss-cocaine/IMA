@@ -6497,3 +6497,14 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Dependencias: CatalogoServicios y CatalogoSpreadsheets existentes. F23-TASK03/F23-TASK04 siguen en el plan como relacionadas; no se encontró dependencia runtime directa para UI/registro, por lo que no bloquean este alcance.
 - Límite: no se implementa todavía la invocación interservicio desde el servicio maestro ni se verifica el acceso de Workspace en deployments reales. No se eliminó la validación silenciosa del token en DEVELOPER; la UI reutiliza la sesión iniciada, sin prompts adicionales. AUD-NG-082/083/084 se conservan y requieren reconciliación con los requisitos nuevos sin introducir endpoints públicos ni secretos.
 - Pruebas: Developer Service Registry Contract y Academic Wellbeing Contract se ejecutarán en CI; pruebas reales entre cuentas quedan pendientes en beta.
+## 10.90 Refuerzo del límite de acceso a la consola técnica — C1.970
+
+- Sesión: IMA-EXEC-20261124-TASK047-ROLE-BOUNDARY-02.
+- Se detectó que la consola técnica permitía el acceso UI sin usuario autenticado y aceptaba roles Administrador y Director, aunque el backend DEVELOPER ya restringía el plano de control al rol Desarrollador.
+- Se corrigió la condición de acceso: requiere objeto de usuario, sessionToken creado en login y rol Desarrollador. No se agrega un login secundario ni una autorización interactiva.
+- Se añadió una prueba Node.js dinámica para acceso anónimo, Administrador, Dirección, Coordinador, Docente, Estudiante, Padre y Desarrollador sin sesión.
+- El workflow Developer Service Registry Contract ahora ejecuta sintaxis de js/developer.js y el nuevo contrato UI.
+- La verificación de token firmado en el punto de entrada del backend se mantiene; no es un segundo login ni una solicitud interactiva. Suprimir esa verificación sin un mecanismo alternativo compatible con revocación/atribución dejaría la API del plano técnico sin identidad confiable. No se modifica el contrato de backend en esta corrección.
+- HEAD de entrada: 327a8bd3b4d5d4a0eb39aa5569fb7f15b66ff499.
+- Resultado de workflows en HEAD de entrada: Developer Service Registry run 45319443700 SUCCESS; Regional Formatting 45319443779, Department Scope 45319443690, Hierarchical Configuration 45319443698, Accounting Import Preflight 45319443694 y Academic Wellbeing 45319443782 SUCCESS.
+- Las nuevas pruebas de consola y la CI de este cambio quedan pendientes hasta su ejecución.

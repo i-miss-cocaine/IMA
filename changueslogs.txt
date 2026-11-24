@@ -4621,3 +4621,12 @@ C1.969 — IMA-EXEC-20261123-TASK047-REGISTRY-01
 - Se añade BETA-FUNC-141; pruebas CI pendientes.
 - La validación silenciosa del token en DEVELOPER se conserva; no hay prompts interactivos adicionales. La eliminación de validación por función y la comunicación interservicio sin secretos quedan pendientes de una arquitectura compatible con AUD-NG-082/083/084.
 ===============================================================================
+
+===============================================================================
+C1.970 — IMA-EXEC-20261124-TASK047-ROLE-BOUNDARY-02
+===============================================================================
+- La consola técnica requiere sesión de login presente y rol Desarrollador.
+- Administrador, Dirección y demás roles no heredan acceso al plano técnico.
+- Se añade prueba Node.js dinámica y se amplía el workflow Developer Service Registry Contract.
+- CI pendiente de ejecutar en el commit de esta unidad.
+===============================================================================

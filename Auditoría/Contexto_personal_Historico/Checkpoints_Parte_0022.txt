@@ -133,3 +133,21 @@ Verificar la nueva ejecución de GitHub Actions en el HEAD posterior a esta corr
 - Nueva ejecución requerida; no declarar PASS anticipado.
 
 ===============================================================================
+
+===============================================================================
+### C1.970 — IMA-EXEC-20261124-TASK047-ROLE-BOUNDARY-02
+===============================================================================
+
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD de entrada: 327a8bd3b4d5d4a0eb39aa5569fb7f15b66ff499.
+- Tarea: TASK-047, PM-00A.
+- Hallazgo: la UI de consola técnica tenía una ruta anónima/local y aceptaba Administrador y Director; el backend ya separaba Administrador del rol técnico Desarrollador.
+- Cambio: la UI requiere sesión de login presente y rol Desarrollador; Administrador, Director, Coordinador, Docente, Estudiante y Padre no entran. No se añade login secundario.
+- Prueba nueva: tests/security/developer-console-role-boundary.test.js; verifica anónimo, roles no técnicos y Desarrollador sin sesión.
+- Workflow actualizado para validar sintaxis de developer.js y ejecutar el contrato UI junto con el contrato del registro.
+- No se modificó el backend de autenticación ni la lógica de sesión en esta unidad.
+- Evidencia anterior: Developer Service Registry run 45319443700 SUCCESS; cinco workflows adicionales de contratos también SUCCESS.
+- Estado de las nuevas pruebas: pendientes de CI en el HEAD de salida.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
+- TASK-047 sigue En ejecución; quedan orquestación interservicio, historial completo de recursos/propietarios y compatibilidad real entre cuentas Apps Script.
+===============================================================================

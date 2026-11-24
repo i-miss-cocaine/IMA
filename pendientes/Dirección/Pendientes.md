@@ -3586,7 +3586,9 @@
 - **Implementación C1.969:** se prepara registro UI desde la consola de Desarrollador, metadatos v2 para roles/puestos/modalidad/proyecto/Drive/acceso de dominio y migración append-only desde el encabezado v1; verificación automatizada pendiente.
 - **Pendiente:** el servicio maestro aún no ejecuta llamadas autenticadas a los endpoints registrados ni se ha probado comunicación real entre cuentas/deployments. El campo `INSTITUTIONAL_DOMAIN` es metadato declarado; la restricción real del deployment requiere verificación en Google Workspace.
 - **Compatibilidad de sesión:** no se agregan prompts interactivos ni se solicita un segundo login; el backend conserva la verificación silenciosa del token firmado y los permisos de acción en el punto de entrada. No se elimina esa verificación en esta iteración porque forma parte de AUD-NG-082 y del contrato de acciones protegidas.
-- **Estado:** En ejecución (C1.969; interfaz y metadatos del registro de servicios).
+- **Verificación C1.969:** Developer Service Registry Contract run 45319443700 — SUCCESS; Node.js 24, sintaxis Apps Script/contrato y pruebas de registro PASS. Regional Formatting, Department Scope, Hierarchical Configuration, Accounting Import Preflight y Academic Wellbeing Contract también reportaron SUCCESS en el mismo HEAD.
+- **Corrección C1.970:** la consola se restringe a usuarios con rol Desarrollador y sesión de login presente; Administrador, Dirección, otros roles y acceso anónimo no heredan acceso al plano técnico. Se añade contrato Node.js de la barrera UI.
+- **Estado:** En ejecución (C1.970; queda pendiente orquestación interservicio, historial de cambios de propietario/recursos y conciliación de despliegue Apps Script entre cuentas).
 
 ### [AUD-NG-082] Exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-082 (TASK-047 / F23-Task04)
