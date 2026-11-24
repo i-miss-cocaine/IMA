@@ -22,3 +22,17 @@
 - No se ejecutaron pruebas de Node.js/CLI ni GitHub Actions porque los artefactos y workflows anteriores fueron retirados por instrucción expresa.
 - Próximo trabajo elegible: PM-00A / TASK-047.
 ===============================================================================
+
+===============================================================================
+# IMA — Checkpoint C3.003
+- Sesión: IMA-ITER-20261124-001.
+- Tipo: cierre de preparación documental y handoff de implementación; no es un nuevo reinicio.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD de partida documentado: 5ba407df1679e2d44d634407e84eaaf8fa47db88.
+- Objetivo: dejar la próxima iteración lista para comenzar directamente con la primera tarea PM-00A / TASK-047.
+- Registros operativos: Contexto_personal.txt e INDICE_CHECKPOINTS.md actualizados para indicar que C3.001/C3.002 son antecedentes históricos cerrados y que no debe repetirse la limpieza.
+- Normativa: Normas_Desarollo.md §17.8 amplía el modelo de sesión única, despliegues Apps Script fáciles, servicios individuales/compartidos, registro maestro por URL y ausencia de secretos/propiedades de comandos personalizados.
+- Requisitos de rol: se conserva la visibilidad académica por ámbito; login único no elimina los permisos funcionales ni habilita acceso a datos de otros estudiantes.
+- Pruebas: no se ejecutaron pruebas de código; esta unidad es documental. Verificación posterior de commit y árbol pendiente de publicación.
+- Siguiente acción concreta: iniciar PM-00A / TASK-047, inspeccionar su alcance y dependencias, implementar y crear/ejecutar pruebas locales nuevas pertinentes.
+===============================================================================
