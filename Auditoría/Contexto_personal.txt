@@ -1,31 +1,27 @@
 IMA — CONTEXTO ACTIVO DEL CICLO 3
 ================================
 
-Rama autorizada: NG_beta_0.0.0.1_work
-Sesión operativa: IMA-ITER-20261124-001
-Último checkpoint: C3.003
-Próxima tarea: PM-00A / TASK-047 (primera tarea de implementación de esta iteración)
+Rama exclusiva: NG_beta_0.0.0.1_work
+Rama base de solo lectura: NG_beta_0.0.0.1
+Sesión: IMA-ITER-20261124-012
+Checkpoint: C3.014
+HEAD de código auditado: 8c49d5e9dfc2ed6d8973424c6fabe1aaa0190db4
+Tarea actual: PM-00A / TASK-004 (En ejecución)
 
 CONTINUIDAD
-- El reinicio extraordinario C3.001/C3.002 es un antecedente histórico concluido, no una fase pendiente ni una instrucción para repetir la limpieza.
-- Continuar directamente con PM-00A / TASK-047; no reiniciar estados, borrar registros ni repetir tareas ya preparadas.
-- Trabajar exclusivamente en la rama autorizada.
-- Leer y aplicar Normas_Desarollo.md antes de implementar.
-- Mantener como máximo diez checkpoints recientes en el índice y árbol de trabajo.
-- Crear y ejecutar pruebas locales pertinentes por tarea; no considerar ejecutadas las pruebas antiguas que fueron retiradas.
-- Preservar requisitos, criterios, dependencias e IDs de todas las tareas.
-- Desarrollador es un rol distinto de Administrador.
+- TASK-047 quedó completada en alcance local/contractual en C3.013; su validación real multi-cuenta sigue Pendiente beta.
+- TASK-004 / F16-TASK01 ya tiene catálogo, asignaciones múltiples, suplencias, vigencias, revocación histórica, justificación de auditoría, compatibilidad con roles heredados y panel de RR. HH. No reconstruir ni repetir lo existente.
+- GitHub Actions run 45387732320: SUCCESS; 68/68 pruebas Node.js PASS; ocho node --check PASS; git diff --check PASS.
+- Verificación local: NOT RUN. Node.js v22.16.0 está disponible, pero no hay checkout local; git clone falló por DNS al resolver github.com. No registrar PASS local.
+- TASK-004 permanece En ejecución hasta ejecutar localmente las pruebas pertinentes y revisar el diff final. La normativa operativa es exclusivamente Normas_Desarollo.md.
+- La integración real del panel con USER Apps Script y Sheets queda Pendiente beta en beta_test.txt.
+- Al completar TASK-004, recuperar el bloque original íntegro de TASK-505 antes de determinar su elegibilidad.
+- Trabajar exclusivamente en la rama autorizada; preservar el historial y no modificar la rama base.
 
-ARQUITECTURA TRANSVERSAL
-Aplicar IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01 a todas las tareas. La especificación operativa detallada de despliegue y sesión está en Normas_Desarollo.md §17.8.
-- El login es el único flujo interactivo de autenticación; el contexto de sesión se reutiliza para funciones posteriores según rol/puesto. No solicitar revalidaciones de sesión ni credenciales en cada servicio/función.
-- Mantener los límites funcionales de visibilidad académica por rol y ámbito, sin controles redundantes ni bloqueos artificiales entre servicios.
-- Por defecto, cada profesor, coordinador de área, secretaria y contador tendrá servicio Apps Script, cuenta Google institucional, Spreadsheet y carpeta Drive propios.
-- Padres/estudiantes podrán compartir cuenta, proyecto/despliegue, Spreadsheet y carpeta Drive. Tienda/cafetería/transporte podrán compartir los mismos recursos entre sus encargados.
-- Registrar cada URL en el servicio maestro y permitir que el portal la use según el rol, sin exigir que el maestro sea dueño de la cuenta que despliega.
-- Los despliegues deben ser sencillos, institucionales y no públicos. No introducir Script Properties, propiedades de comandos, claves secretas, tokens personalizados ni pasos especiales para comunicación interservicio.
-- El panel Desarrollador debe permitir crear puestos según roles definidos y registrar proyecto, URL, modalidad y recursos. Desarrollador y Administrador son roles distintos.
+INTEGRIDAD DEL ÁRBOL
+- Se detectó un árbol temporal incompleto durante una operación de reparación; se restauró mediante el commit 8c49d5e9dfc2ed6d8973424c6fabe1aaa0190db4.
+- Comparación del padre íntegro b99bf8f con 8c49d5e: solo backend/user-service/Code.gs y tests/contracts/internal-role-catalog.contract.test.js aparecen modificados; no hay eliminaciones ajenas a la tarea. El árbol contiene nuevamente los 58 elementos de nivel raíz.
+- La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
 
-ESTADO DE CONTINUIDAD
-La preparación documental del ciclo está cerrada. No hay una tarea de reinicio pendiente. El Plan Maestro v1.5 y los siete backlogs conservan sus requisitos y muestran estados vigentes sin etiquetas de reinicio/reapertura. C3.003 deja el entorno documental listo para implementar PM-00A / TASK-047.
-HEAD de partida de esta actualización: 5ba407df1679e2d44d634407e84eaaf8fa47db88
+CHECKPOINT
+C3.014 conserva el estado intermedio. TASK-004 no se declara completada ni se certifican pruebas locales o beta.

@@ -7,11 +7,11 @@
 **Fecha:** 2026-11-24
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
-**Estado:** Implementación continua; siguiente tarea elegible: PM-00A / TASK-004.
+**Estado:** Implementación continua; tarea en ejecución: PM-00A / TASK-004.
 **Línea base operativa Ciclo 3:** todas las tareas conservadas en los siete backlogs y en el Plan Maestro inician en `Pendiente`; no se elimina, resume ni sustituye ningún requisito técnico, criterio, dependencia ni identificador de tarea.  
 **Checkpoint de origen:** C3.001 (base histórica del ciclo 3).  
-**Checkpoint de planificación:** C3.013.
-**Ciclo operativo vigente:** 3 — implementación continua; TASK-047 cerrada en implementación local (C3.013), validación multi-cuenta reservada a beta; siguiente tarea PM-00A / TASK-004. El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
+**Checkpoint de planificación:** C3.014.
+**Ciclo operativo vigente:** 3 — implementación continua; TASK-047 cerrada en alcance local/contractual (C3.013); TASK-004 en ejecución (C3.014), con verificación local pendiente. La validación real de TASK-047 permanece Pendiente beta. TASK-505 requiere recuperar su bloque original completo antes de seleccionarse. El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
 
 ---
 
@@ -197,6 +197,8 @@ Las pruebas de seguridad, unidad y contrato no se posponen hasta PM-08: se ejecu
 **Orden recomendado:** TASK-047 → TASK-004 → TASK-505. F16-TASK01 conserva trazabilidad y no constituye una segunda implementación. Verificar dependencias reales antes de cada tarea.
 
 **Avance C3.013:** TASK-047 completada en alcance local/contractual; el escenario real multi-cuenta queda registrado en beta_test.txt. La siguiente tarea elegible es TASK-004. TASK-505 permanece después de TASK-004 y sujeto a la recuperación de su bloque original completo.
+
+**Avance C3.014:** TASK-004 / F16-TASK01 tiene catálogo, asignación multiempleado, vigencias, suplencias, revocación histórica, motivo de auditoría y compatibilidad con usuarios de rol heredado. La corrección de vigencia de fin de mes y las pruebas de contención/liberación de LockService y compensación de auditoría están incluidas. GitHub Actions run 45387732320 — SUCCESS; 68/68 pruebas Node.js PASS, ocho `node --check` y `git diff --check` PASS. Las pruebas locales no se ejecutaron porque el entorno carece de checkout y la clonación falló por DNS; TASK-004 permanece En ejecución hasta obtener PASS local. La integración real USER Apps Script/Sheets está registrada como Pendiente beta.
 
 **Puerta de salida:** el portal inicia sesión una sola vez; el contexto se reutiliza sin prompts redundantes; Desarrollador y Administrador están separados; el panel permite registrar puestos/servicios; las modalidades y restricciones de privacidad están verificadas localmente. Despliegues reales se validan en beta.
 
@@ -6570,3 +6572,14 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Límite beta: faltan dos cuentas Google institucionales autorizadas y proyectos Apps Script desplegados para verificar conectividad privada real, propiedad efectiva, restricciones de dominio y acceso real a Spreadsheet/Drive. Escenarios registrados en beta_test.txt; estado Pendiente beta, no bloqueante para la implementación local.
 - Estado: TASK-047 Completada en alcance local/contractual; beta pendiente.
 - Siguiente tarea elegible: TASK-004 (PM-00A), catálogo de responsabilidades internas y asignaciones con separación estricta de RBAC.
+
+## C3.014 — seguimiento de TASK-004 (PM-00A)
+
+- Sesión: IMA-ITER-20261124-012.
+- HEAD de código auditado: 8c49d5e9dfc2ed6d8973424c6fabe1aaa0190db4.
+- Estado: En ejecución; no se declara cierre sin verificación local.
+- CI: run 45387732320 SUCCESS; 68/68 pruebas Node.js PASS; ocho comprobaciones `node --check` PASS; `git diff --check` PASS.
+- Verificación local: NOT RUN por ausencia de checkout local y fallo DNS al clonar; no se registra como aprobada.
+- Revisión de integridad del árbol: tras detectar un árbol temporal incompleto en commits de reparación, el commit 8c49d5e restauró el árbol completo. Comparación con el padre íntegro b99bf8f confirma que solo cambiaron `backend/user-service/Code.gs` y `tests/contracts/internal-role-catalog.contract.test.js`; no hay eliminaciones de archivos ajenos a la tarea. La rama base no se modificó.
+- Pendiente beta: prueba del panel RR. HH. contra USER Apps Script y persistencia real en Sheets; ver `beta_test.txt`.
+- Siguiente acción: ejecutar localmente el contrato de TASK-004 y regresiones; solo después cerrar y recuperar el bloque original completo de TASK-505.

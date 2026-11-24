@@ -24,12 +24,14 @@
 - **Dependencias/riesgos:** identidad de empleados, catálogo de departamentos/cargos, fechas de vigencia y autorización; riesgo de elevación accidental de privilegios o asignaciones huérfanas.
 - **Alcance:** catálogo y ciclo de vida de responsabilidades internas; no sustituir `ROLE_PERMISSIONS` ni la matriz ABAC.
 - **Criterios de aceptación:** roles configurables desde UI; asignaciones a empleados existentes con inicio/fin; responsabilidades múltiples; revocación conserva historial; ninguna asignación funcional cambia privilegios RBAC.
-- **Prioridad:** P0. **Estado:** Pendiente.
+- **Prioridad:** P0. **Estado:** En ejecución.
 - **Reconciliación:** C1.82 vincula esta causa con AUD-NG-225/TASK-505; TASK-004 figura históricamente completada, pero su prueba solo comprobó presencia de símbolos. Mantener F16-Task01 como trazabilidad de origen y ampliar/verificar TASK-505; no implementar en paralelo.
-- **Evidencia de cierre:** pendiente; no se declara ejecución ni verificación.
+- **Evidencia de cierre:** GitHub Actions run 45387732320 SUCCESS (68/68 pruebas Node.js, ocho node --check y git diff --check PASS). Verificación local NOT RUN por ausencia de checkout y fallo DNS al clonar; no se declara cierre. Seguimiento C3.014.
 
 ---
 
+
+**Seguimiento C3.014:** la implementación ya está en la rama; se añadieron pruebas de contención/liberación de LockService, RBAC sin mutación, compensación ante fallo de auditoría y vigencia de fin de mes. Cierre pendiente de verificación local. La integración USER Apps Script/Sheets queda Pendiente beta.
 <!-- ID: F17-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK01] Dinamizar el salario base desde los contratos laborales vigentes
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.

@@ -6,7 +6,6 @@ Estado operativo: ciclo 3 en implementación continua. La regla de cierre por ta
 
 | Checkpoint | Sesión | Objetivo | Estado | Archivo |
 |---|---|---|---|---|
-| C3.004 | IMA-ITER-20261124-002 | Norma obligatoria: completar tareas parciales, checkpoint/commit por tarea y continuidad inmediata | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.005 | IMA-ITER-20261124-003 | AUD-NG-082: sesión firmada y RBAC sin suplantación de authRole | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.006 | IMA-ITER-20261124-004 | AUD-NG-083: resolución por contradicción con NDASC §17.8 | Cerrado por supersesión normativa | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.007 | IMA-ITER-20261124-005 | AUD-NG-084: resolución por contradicción con NDASC §17.8 | Cerrado por supersesión normativa | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
@@ -16,3 +15,4 @@ Estado operativo: ciclo 3 en implementación continua. La regla de cierre por ta
 | C3.011 | IMA-ITER-20261124-009 | AUD-NG-088: hash canónico v2 de todos los campos probatorios | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.012 | IMA-ITER-20261124-010 | AUD-NG-089: correcciones autorizadas, inmutables y serializadas | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.013 | IMA-ITER-20261124-011 | PM-00A / TASK-047: registro y enrutamiento de servicios por rol; beta multi-cuenta pendiente | Cerrado local / beta pendiente | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
+| C3.014 | IMA-ITER-20261124-012 | PM-00A / TASK-004: revisión y continuidad; CI aprobada, verificación local pendiente | En ejecución | Contexto_personal_Historico/Checkpoints_Parte_0002.txt |

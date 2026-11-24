@@ -14,3 +14,21 @@
   7. Confirmar que los permisos de almacenamiento no se confunden con privilegios institucionales de la plataforma.
 - Evidencia requerida: resultados de cada escenario, identificadores de despliegue redactados, estado de acceso y fecha de prueba; nunca copiar tokens, secretos ni URLs sensibles al repositorio.
 - No bloqueante para implementación local: los contratos, fixtures y pruebas locales del registro/enrutamiento ya pasan. La prueba beta no se declara aprobada ni ejecutada.
+
+## TASK-004 / F16-TASK01 — integración desplegada del catálogo de responsabilidades de RR. HH.
+
+- Estado: Pendiente beta.
+- Motivo: requiere el servicio USER Apps Script y una cuenta institucional de prueba con permisos de RR. HH.; las pruebas de contrato no validan persistencia real en Sheets ni la interacción del navegador con el deployment.
+- Precondiciones: deployment USER institucional disponible; usuario de prueba autorizado; empleados y departamentos sintéticos; Spreadsheet de prueba aislada. No usar datos productivos.
+- Pasos:
+  1. Abrir el panel de RR. HH. y consultar catálogo, empleados, departamentos y asignaciones.
+  2. Crear y editar una responsabilidad; confirmar persistencia, unicidad de nombre/código y estado.
+  3. Asignar dos responsabilidades distintas a un empleado activo y una responsabilidad a dos empleados; comprobar fechas y ámbito.
+  4. Registrar una suplencia dentro de la vigencia del titular y rechazar una suplencia con período solapado.
+  5. Revocar una asignación y comprobar que la fila y el historial de auditoría conservan actor y motivo.
+  6. Confirmar que la responsabilidad no modifica los permisos RBAC del rol de acceso ni permite acciones administrativas no concedidas.
+  7. Consultar historial tras desactivar una responsabilidad o revocar una membresía y comprobar que no se pierde la trazabilidad.
+  8. Comprobar que las fechas de fin de mes y años bisiestos se conservan al persistir y volver a consultar.
+- Resultado esperado: UI y servicio USER mantienen el catálogo y asignaciones coherentes; errores se muestran sin duplicar escrituras; historial íntegro; RBAC permanece separado.
+- Evidencia requerida: fecha, versión del deployment, resultados por escenario y registros de prueba redactados. No incluir tokens, datos personales reales ni URLs sensibles.
+- No bloqueante para implementación local: esta validación depende de Apps Script/Sheets desplegados y se ejecutará en beta.

@@ -4787,3 +4787,19 @@ C3.013 — IMA-ITER-20261124-011
 - Siguiente tarea: TASK-004 (PM-00A).
 - HEAD de entrada: 3ae320de74f4e44be510cd667ff5bbefea3ee2c0.
 ===============================================================================
+
+===============================================================================
+C3.014 — IMA-ITER-20261124-012
+===============================================================================
+- Tarea actual: TASK-004 / F16-TASK01, En ejecución; no se declara completada hasta ejecutar pruebas locales pertinentes.
+- Cambios revisados en la secuencia posterior a C3.013: catálogo RR. HH., asignación a varios empleados, vigencia predeterminada, suplencias, historial de revocación, motivos en auditoría, compatibilidad con roles heredados y formato de fechas sin desplazamiento UTC.
+- Corrección lógica: vigencia predeterminada ahora limita el día al último día del mes destino; prueba específica para 2028-01-31 → 2028-02-29.
+- Cobertura añadida: contención y liberación de LockService en catálogo/asignación, matriz ROLE_PERMISSIONS sin cambios y compensación de escritura ante fallo de auditoría.
+- CI final: GitHub Actions run 45387732320 — SUCCESS; 68/68 pruebas Node.js PASS; ocho node --check PASS; git diff --check PASS.
+- Ejecución local: NOT RUN. Node.js v22.16.0 disponible, checkout local ausente y clonación bloqueada por DNS. No se declara PASS local.
+- Incidencia de integridad: una creación de árbol incompleta produjo temporalmente un árbol de dos archivos; se detectó por inspección del árbol raíz y se restauró sin force-push. El commit 8c49d5e reconstruye el árbol completo (58 entradas raíz, 882 entradas recursivas); comparación contra b99bf8f muestra solo dos archivos funcionales modificados: backend/user-service/Code.gs y tests/contracts/internal-role-catalog.contract.test.js. No quedan eliminaciones ajenas a la tarea en el árbol final.
+- CI intermedio 45387545951 falló en git diff --check por espacios finales preexistentes del documento histórico reintroducido durante la restauración; Node/tests se omitieron. El commit de integración 8c49d5e usa como primer padre el árbol íntegro b99bf8f y la ejecución final 45387732320 pasó todos los pasos.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- Beta: integración real del panel con USER Apps Script y persistencia en Sheets registrada en beta_test.txt; Pendiente beta.
+- Siguiente acción: obtener checkout local, ejecutar node --test tests/contracts/internal-role-catalog.contract.test.js y regresiones pertinentes; después cerrar TASK-004 y recuperar el bloque original completo de TASK-505.
+===============================================================================
