@@ -11,3 +11,14 @@
 - Verificaciones: rama autorizada y árbol Git verificados; pruebas no ejecutadas después de la limpieza.
 - Siguiente tarea: PM-00A / TASK-047, reconciliar registro y ciclo de vida de servicios por rol con la arquitectura base del portal.
 - Política: máximo diez checkpoints recientes en el índice y árbol de trabajo.
+
+===============================================================================
+# IMA — Checkpoint C3.002
+- Sesión: IMA-RESET-20261124-001
+- Objetivo: consolidar la reapertura de estados del Plan Maestro y los siete backlogs.
+- HEAD al finalizar la reapertura de estados: 19114638d3c0edeac13c46d58b658dd909491dbf.
+- Resultado: 69 estados reabiertos en los backlogs y 245 estados normalizados en el Plan Maestro; los estados técnicos bloqueados permanecen identificados como bloqueados.
+- Requisitos originales, IDs, criterios y dependencias conservados.
+- No se ejecutaron pruebas de Node.js/CLI ni GitHub Actions porque los artefactos y workflows anteriores fueron retirados por instrucción expresa.
+- Próximo trabajo elegible: PM-00A / TASK-047.
+===============================================================================
