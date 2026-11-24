@@ -2344,7 +2344,7 @@ function generateConsolidatedAttendanceAndCoexistenceReport(payload) {
   if (caseData.length > 1) for (var k = 1; k < caseData.length; k++) {
     var caseRow = caseData[k];
     if (isConfidentialWelfareCase_(caseRow)) {
-      var caseAccess = getWelfareCaseAccess_(p, caseRow[0], ss, true);
+      var caseAccess = getWelfareCaseAccess_(p, caseRow[0], ss, true, caseData);
       if (!caseAccess.authorized) continue;
     }
     totalCases++;
@@ -14487,11 +14487,17 @@ function isConfidentialWelfarePayload_(payload) {
     .map(function(value) { return String(value || ""); }).join(" ");
   if (/consejer[ií]a|orientaci[oó]n|bienestar/i.test(metadata)) return true;
   var actions = p.acciones;
-  if (!Array.isArray(actions)) return false;
+  if (typeof actions === "string") {
+    if (!actions.trim()) return false;
+    try { actions = JSON.parse(actions); } catch (_) { return true; }
+  }
+  if (actions === null || actions === undefined || actions === "") return false;
+  if (!Array.isArray(actions)) return true;
   return actions.some(function(item) {
     if (!item || typeof item !== "object") return false;
     return /consejer[ií]a|orientaci[oó]n|bienestar/i.test(String(item.tipo || item.type || "")) ||
-      Object.prototype.hasOwnProperty.call(item, "notasConfidenciales");
+      Object.prototype.hasOwnProperty.call(item, "notasConfidenciales") ||
+      Object.prototype.hasOwnProperty.call(item, "derivacionId");
   });
 }
 
@@ -14513,14 +14519,14 @@ function getWelfareStudentAccess_(payload, studentId) {
   }
 }
 
-function getWelfareCaseAccess_(payload, caseId, spreadsheet, forceSensitive) {
+function getWelfareCaseAccess_(payload, caseId, spreadsheet, forceSensitive, caseDataCache) {
   var identity = getVerifiedAcademicIdentity_(payload);
   if (!identity || identity.authorized !== true) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
   var role = normalizeWelfareRole_(identity.role);
   var ss = spreadsheet || SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss && ss.getSheetByName("CasosSeguimiento");
   if (!sheet) return { authorized: false, code: "WELFARE_CASE_SOURCE_UNAVAILABLE" };
-  var data = sheet.getDataRange().getValues();
+  var data = Array.isArray(caseDataCache) ? caseDataCache : sheet.getDataRange().getValues();
   var target = String(caseId || "").trim(), matches = [];
   for (var i = 1; i < data.length; i++) if (String(data[i][0] || "").trim() === target) matches.push({ row: data[i], rowIndex: i + 1 });
   if (!target || matches.length !== 1) return { authorized: false, code: matches.length > 1 ? "WELFARE_CASE_AMBIGUOUS" : "WELFARE_CASE_NOT_FOUND" };
@@ -14626,12 +14632,13 @@ function getAttendanceFollowupCases(payload) {
     if (casoId && String(row[0] || "").trim() !== String(casoId).trim()) return;
     if (userId && String(row[1] || "").trim() !== String(userId).trim()) return;
     if (isConfidentialWelfareCase_(row)) {
-      var access = getWelfareCaseAccess_(p, row[0], ss, true);
+      var access = getWelfareCaseAccess_(p, row[0], ss, true, data);
       if (!access.authorized) { blocked = true; return; }
     }
     var actions = [];
     try { actions = row[5] ? (typeof row[5] === "string" ? JSON.parse(row[5]) : row[5]) : []; }
     catch (_) { blocked = true; return; }
+    if (!Array.isArray(actions)) { blocked = true; return; }
     visible.push({
       casoId: row[0], userId: row[1], motivoApertura: row[2], resumenAsistencia: row[3],
       responsableId: row[4], acciones: actions,
@@ -14660,11 +14667,18 @@ function saveAttendanceFollowupCaseUnsafe_(payload) {
     if (matches.length > 1) return { status: "error", code: "WELFARE_CASE_AMBIGUOUS", message: "No se pudo identificar un expediente único." };
     existing = matches.length === 1 ? matches[0] : null;
   }
-  var sensitive = isConfidentialWelfarePayload_(p) || isConfidentialWelfareCase_(existing);
   var safePayload = Object.assign({}, p);
+  if (typeof safePayload.acciones === "string") {
+    try { safePayload.acciones = JSON.parse(safePayload.acciones); }
+    catch (_) { return { status: "error", code: "WELFARE_ACTIONS_INVALID", message: "La estructura de acciones del expediente no es válida." }; }
+  }
+  if (safePayload.acciones !== undefined && safePayload.acciones !== null && !Array.isArray(safePayload.acciones)) {
+    return { status: "error", code: "WELFARE_ACTIONS_INVALID", message: "Las acciones del expediente deben ser una lista válida." };
+  }
+  var sensitive = isConfidentialWelfarePayload_(safePayload) || isConfidentialWelfareCase_(existing);
   if (sensitive) {
     var access = existing
-      ? getWelfareCaseAccess_(p, p.casoId, ss, true)
+      ? getWelfareCaseAccess_(p, p.casoId, ss, true, rows)
       : getWelfareStudentAccess_(p, p.userId);
     if (!access || access.authorized !== true) {
       try { logStructuredEvent("ACADEMIC", "saveAttendanceFollowupCase", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", "Escritura de expediente confidencial denegada.", { casoId: p.casoId || "", userId: p.userId }, identity.role); } catch (_) {}
@@ -14873,6 +14887,8 @@ function getGuidanceAppointments(payload) {
   var sheet = ss.getSheetByName("CitasOrientacion");
   if (!sheet) return { status: "success", totalCitas: 0, citas: [] };
   var data = sheet.getDataRange().getValues(), citas = [];
+  var caseSheet = welfareStaff ? ss.getSheetByName("CasosSeguimiento") : null;
+  var caseData = caseSheet ? caseSheet.getDataRange().getValues() : null;
   for (var i = 1; i < data.length; i++) {
     var row = data[i], cId = String(row[0] || ""), caseId = String(row[1] || "");
     var studentId = String(row[2] || ""), tutorId = String(row[3] || ""), counselorId = String(row[4] || "");
@@ -14891,7 +14907,7 @@ function getGuidanceAppointments(payload) {
     if (welfareStaff) {
       var privileged = ["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION"].indexOf(role) !== -1;
       if (!privileged && counselorId !== String(actor.userId).trim()) continue;
-      var access = getWelfareCaseAccess_(p, caseId, ss, true);
+      var access = getWelfareCaseAccess_(p, caseId, ss, true, caseData);
       if (!access.authorized || String(access.row && access.row[1] || "").trim() !== studentId) {
         try { logStructuredEvent("ACADEMIC", "getGuidanceAppointments", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", "Consulta de cita confidencial sin asignación o ámbito.", { citaOrientacionId: cId, casoId: caseId }, actor.role); } catch (_) {}
         continue;
