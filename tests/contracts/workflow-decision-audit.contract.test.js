@@ -188,3 +188,92 @@ test("el append compensa la fila si falla la escritura del checkpoint", () => {
  const checkpoint = h.getCheckpoint();
  assert.equal(checkpoint.totalEvents, 0);
 });
+
+function createWorkflowMockContext(options = {}) {
+ const original = makeRow("DEC-ORIGINAL", helpers.genesis);
+ original[1] = "SOL-1";
+ const decisionRows = options.decisionRows || [original];
+ const decisionSheet = {
+  rows: [Array(17).fill(""), ...decisionRows.map(row => row.slice())],
+  getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
+  getLastRow() { return this.rows.length; },
+  appendRow(row) { this.rows.push(row.slice()); },
+  deleteRow(number) { this.rows.splice(number - 1, 1); }
+ };
+ const requestRow = Array(11).fill("");
+ requestRow[0] = "SOL-1"; requestRow[1] = "REQUESTER-1"; requestRow[3] = "Solicitud"; requestRow[6] = "En Revisión"; requestRow[7] = "Dirección";
+ const requestSheet = {
+  rows: [Array(11).fill(""), requestRow],
+  getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; },
+  getRange(row, column, numRows, numColumns) {
+   const self = this;
+   return {
+    setValue(value) { if (options.failStateAt === column) throw new Error("STATE_WRITE_FAILED"); self.rows[row - 1][column - 1] = value; },
+    setValues(values) { self.rows.splice(row - 1, values.length, ...values.map(v => v.slice())); }
+   };
+  }
+ };
+ const lock = { tryLock: () => options.locked !== false, releaseLock() {} };
+ const context = {
+  SPREADSHEET_ID: "USER-DB",
+  LockService: { getScriptLock: () => lock },
+  SpreadsheetApp: { openById: () => ({}), flush() {} },
+  getOrCreateSheet: (ss, name) => name === "SolicitudesTramites" ? requestSheet : decisionSheet,
+  ensureWorkflowDecisionAuditSchema_: sheet => sheet,
+  verifyWorkflowDecisionAuditChain: () => ({ status: "success", cadenaValida: true }),
+  appendWorkflowDecisionAuditEvent_: (sheet, row, actorId) => {
+   row[9] = helpers.genesis; row[13] = "2"; row[10] = "a".repeat(64);
+   sheet.appendRow(row);
+   return { rowNumber: sheet.getLastRow(), hashActual: row[10], checkpointBefore: { updatedBy: actorId } };
+  },
+  verifyWorkflowDecisionAuditRows_: () => ({ totalEvents: 0, lastDecisionId: "", lastHash: helpers.genesis }),
+  saveWorkflowDecisionAuditCheckpoint_: () => ({}),
+  Utilities: { getUuid: () => "UUID-TEST" },
+  dispatchWorkflowStatusNotification_: () => ({ status: "success" }),
+  logStructuredEvent() {}
+ };
+ return { context, decisionSheet, requestSheet, original };
+}
+test("una corrección autorizada se agrega como evento nuevo y conserva intacto el original", () => {
+ const mock = createWorkflowMockContext();
+ const correctionFn = vm.runInNewContext("(" + extractFunction("recordWorkflowDecisionCorrection") + ")", mock.context);
+ const result = correctionFn({ decisionIdOriginal: "DEC-ORIGINAL", solicitudId: "SOL-1", motivoCorreccion: "Motivo verificable",
+  nuevaAccionDecision: "RECHAZADO", observaciones: "Corrección", _verifiedUserId: "USER-DIRECTOR", _verifiedRole: "Dirección", revisorId: "SPOOFED" });
+ assert.equal(result.status, "success");
+ const appended = mock.decisionSheet.rows[2];
+ assert.equal(appended[3], "USER-DIRECTOR");
+ assert.equal(appended[11], "DEC-ORIGINAL");
+ assert.equal(appended[12], "Motivo verificable");
+ assert.equal(mock.decisionSheet.rows[1][4], "APROBADO");
+});
+test("una corrección rechaza actor ausente, solicitud distinta y duplicado", () => {
+ const mock = createWorkflowMockContext();
+ const correctionFn = vm.runInNewContext("(" + extractFunction("recordWorkflowDecisionCorrection") + ")", mock.context);
+ const base = { decisionIdOriginal: "DEC-ORIGINAL", solicitudId: "SOL-1", motivoCorreccion: "Motivo", nuevaAccionDecision: "RECHAZADO", _verifiedRole: "Dirección" };
+ assert.throws(() => correctionFn(base), /WORKFLOW_VERIFIED_ACTOR_REQUIRED/);
+ assert.throws(() => correctionFn({ ...base, _verifiedUserId: "USER-1", solicitudId: "SOL-OTHER" }), /DECISION_ORIGINAL_REQUEST_MISMATCH/);
+ const duplicate = makeRow("DEC-CORR-OLD", mock.original[10], { stage: "Corrección-Revisión", originalId: "DEC-ORIGINAL", reason: "Ya corregida" });
+ const duplicateMock = createWorkflowMockContext({ decisionRows: [mock.original, duplicate] });
+ const duplicateFn = vm.runInNewContext("(" + extractFunction("recordWorkflowDecisionCorrection") + ")", duplicateMock.context);
+ assert.throws(() => duplicateFn({ ...base, _verifiedUserId: "USER-1" }), /DECISION_ALREADY_CORRECTED/);
+});
+test("la corrección respeta el bloqueo de concurrencia", () => {
+ const mock = createWorkflowMockContext({ locked: false });
+ const correctionFn = vm.runInNewContext("(" + extractFunction("recordWorkflowDecisionCorrection") + ")", mock.context);
+ assert.throws(() => correctionFn({ decisionIdOriginal: "DEC-ORIGINAL", solicitudId: "SOL-1", motivoCorreccion: "Motivo",
+  nuevaAccionDecision: "RECHAZADO", _verifiedUserId: "USER-1", _verifiedRole: "Dirección" }), /WORKFLOW_CONCURRENCY_LOCKED/);
+});
+test("la decisión usa el actor verificado y rechaza correlationId duplicado", () => {
+ const mock = createWorkflowMockContext();
+ const processFn = vm.runInNewContext("(" + extractFunction("processWorkflowDecision") + ")", mock.context);
+ const result = processFn({ solicitudId: "SOL-1", accionDecision: "APROBADO", revisorId: "SPOOFED",
+  correlationId: "CORR-UNIQUE", _verifiedUserId: "USER-VERIFIED", _verifiedRole: "Dirección" });
+ assert.equal(result.status, "success");
+ assert.equal(mock.decisionSheet.rows[1][3], "USER-VERIFIED");
+ assert.equal(mock.decisionSheet.rows[1][14], "Dirección");
+ const duplicateRow = makeRow("DEC-OLD", helpers.genesis, { correlationId: "CORR-DUP" });
+ const duplicateMock = createWorkflowMockContext({ decisionRows: [duplicateRow] });
+ const duplicateProcess = vm.runInNewContext("(" + extractFunction("processWorkflowDecision") + ")", duplicateMock.context);
+ assert.throws(() => duplicateProcess({ solicitudId: "SOL-1", accionDecision: "APROBADO", correlationId: "CORR-DUP",
+  _verifiedUserId: "USER-VERIFIED", _verifiedRole: "Dirección" }), /WORKFLOW_DECISION_DUPLICATE_CORRELATION/);
+});
