@@ -269,8 +269,8 @@ test("la decisión usa el actor verificado y rechaza correlationId duplicado", (
  const result = processFn({ solicitudId: "SOL-1", accionDecision: "APROBADO", revisorId: "SPOOFED",
   correlationId: "CORR-UNIQUE", _verifiedUserId: "USER-VERIFIED", _verifiedRole: "Dirección" });
  assert.equal(result.status, "success");
- assert.equal(mock.decisionSheet.rows[1][3], "USER-VERIFIED");
- assert.equal(mock.decisionSheet.rows[1][14], "Dirección");
+ assert.equal(mock.decisionSheet.rows[2][3], "USER-VERIFIED");
+ assert.equal(mock.decisionSheet.rows[2][14], "Dirección");
  const duplicateRow = makeRow("DEC-OLD", helpers.genesis, { correlationId: "CORR-DUP" });
  const duplicateMock = createWorkflowMockContext({ decisionRows: [duplicateRow] });
  const duplicateProcess = vm.runInNewContext("(" + extractFunction("processWorkflowDecision") + ")", duplicateMock.context);
