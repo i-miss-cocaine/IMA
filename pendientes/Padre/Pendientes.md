@@ -1,6 +1,6 @@
 # Backlog consolidado — Padre
 
-**Estado operativo del Plan Maestro (reinicio global):** todas las tareas de este backlog quedan en estado `Pendiente` al inicio de la ejecución. Ninguna tarea se considera `Completada`; marcas, etiquetas o declaraciones históricas de cierre son únicamente antecedentes y no acreditan estado vigente. Una tarea solo podrá cambiar de estado tras su implementación y verificación conforme al Plan Maestro.
+**Estado operativo del Plan Maestro (ciclo 3):** los estados vigentes son los consignados en cada tarea. Las tareas solo podrán cambiar de estado tras su implementación y verificación conforme al Plan Maestro; la evidencia histórica se conserva.
 
 **Fuentes integradas:** informes de auditoría de `AUDITORIAS/`, `Pendientes.md`, `completadas.md` y los archivos departamentales preexistentes. Los registros con el mismo identificador se reúnen en una sola tarea.
 
@@ -10,7 +10,7 @@
 
 <!-- ID: TASK-085 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
 
-> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
+> **Ciclo 3:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Los estados vigentes se actualizan conforme a la implementación y verificación; la evidencia histórica se conserva.
 ### [ ] [TASK-085] [P0] Acceso Seguro y Temporal a Documentos Institucionales Sensibles
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 3
@@ -372,7 +372,7 @@
 - **CI:** commit de implementación 48650223c8d315cd7b68115379f0554d762f46d6: Department Scope 43625477144 SUCCESS; Identity Mapping 43625477146 SUCCESS; Department Reference Consumers 43625477154 SUCCESS. Contrato ampliado en commit 5f8f5f2619789061e8c20fc4b162f540b32acced: Department Scope 43625761904 SUCCESS.
 - **Límites de verificación:** Node se ejecutó en GitHub Actions; no se ejecutó una segunda copia local independiente. No se encontró un comando/paquete CLI de proyecto para una prueba CLI específica. Apps Script/Sheets reales no se ejecutaron. No se verificó todavía un reporte consolidado de ventas que concilie exactamente pedidos, reversos y ledger.
 - **Revisión de alcance:** cambios de código limitados a backend/accounting-service/Code.gs, js/ui-common.js y el contrato familiar relacionado; no se eliminaron archivos ni se modificó la rama base.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** localizar los reportes de ventas y hacer que sus totales netos coincidan con movimientos aprobados menos reversos; ampliar contrato de conciliación antes de cerrar TASK-210.
 
 - **Implementación C1.735 — conciliación de ventas:** se añadió el endpoint de solo lectura getFamilyCreditSalesReconciliation y la vista Contabilidad → Informes. El reporte concilia pedidos familiares de tienda/cafetería con movimientos aprobados y reversos, calcula ventas brutas/devoluciones/netas, identifica pedidos pendientes y detecta débitos duplicados, movimientos huérfanos, pedidos aprobados sin movimiento, importes discordantes, responsables diferentes y reversos múltiples o inconsistentes. Acceso restringido a Contador, Director, Subdirector y Administrador; lectura serializada con ScriptLock.
@@ -380,7 +380,7 @@
 - **Pruebas C1.735:** contrato Node valida conciliación exacta tienda/cafetería, pedido pendiente, devolución, movimiento huérfano, discrepancia de responsable, denegación por rol y contención de lock; también comprueba la ruta API, RBAC y la vista UI.
 - **CI final:** código de reporte f425ceb2ea5ad350554beaf075906a7bb1952b7c: Department Scope 43626290445 SUCCESS; Identity Mapping 43626290452 SUCCESS; Department Reference Consumers 43626290390 SUCCESS. Corrección de validación 33b42763798b3e6aa1e154160ad4cd81faf6a94e: Department Scope 43626558232 SUCCESS; Identity Mapping 43626558231 SUCCESS; Department Reference Consumers 43626558236 SUCCESS. UI c5d6135a41a3d5e9bddec6b533e9c33fe47e6d0b: Department Scope 43626395382 SUCCESS. Contrato final e656660e7fb1c56fa3afe8fa1ee8d7b8b47c13cc: Department Scope 43626679591 SUCCESS. Node.js 24.22.2 y syntax-check Apps Script PASS.
 - **Cierre:** TASK-210 satisfecha en código, revisión y CI. La validación funcional contra una implementación beta real de Apps Script/Sheets queda como validación posterior al despliegue, no como bloqueo de código.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 9572-9642; clave TASK-245; asignación única: Contabilidad -->
@@ -420,7 +420,7 @@
 - **Pruebas:** tests/security/academic-extracurricular-enrollment.test.js valida configuración, preservación de actualizaciones parciales, JSON/fechas, ruta activa, permisos, capacidad, lista de espera, promoción, facturación deduplicada, pago, cancelación y acceso familiar. Node.js 24.22.2 PASS; sintaxis Apps Script y JavaScript PASS.
 - **GitHub Actions:** Department Scope Contract 43628920481 SUCCESS en HEAD final; Department Scope 43628902385 SUCCESS, Department Reference Consumers 43628902415 SUCCESS y Task-Service security 43628902373 SUCCESS para el cambio de permisos/backend.
 - **Cierre:** TASK-211 satisfecha en código, revisión y CI. Validación funcional con una implementación beta real de Apps Script/Sheets y prueba E2E en navegador quedan pendientes de despliegue.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8633-8681; clave TASK-216; asignación única: Docente -->
 
@@ -485,6 +485,6 @@
 - **Integridad:** ScriptLock serializa alta/edición/pausa con creación de pedidos de tienda y cafetería. La validación de disponibilidad se realiza dentro del lock; el cambio de año crea una versión nueva y conserva el registro histórico; se rechazan IDs inexistentes y duplicados por servicio/año.
 - **Seguridad:** acciones de escritura restringidas a Administrador/Director/Subdirector/Contador con identidad verificada; consulta familiar limitada al período actual; lectura histórica restringida a perfiles administrativos.
 - **Pruebas:** `tests/security/accounting-complementary-services.test.js` cubre compatibilidad heredada, alta/upsert, versionado por año, duplicados, estados por período, permisos y orden de exclusión mutua antes de consultar/modificar existencias. Node.js 24.22.2 y sintaxis Apps Script/JS PASS en GitHub Actions.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14173-14205; clave TASK-396; asignación única: Dirección -->
