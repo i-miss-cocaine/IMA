@@ -171,6 +171,8 @@ test("notes and session acts require assignment or verified scope", () => {
   });
   const denied = h.api.addCaseFollowUpNote({ sessionToken: "other", casoId: "CASE-1", nota: "intrusión" });
   assert.equal(denied.status, "error");
+  assert.ok(h.logs.some(entry => entry[3] === "UNAUTHORIZED_ACCESS_ATTEMPT"));
+  assert.equal(JSON.stringify(h.logs).includes("intrusión"), false);
   assert.equal(h.db.getSheetByName("CasosSeguimiento").rows[1][5], "[]");
   const note = h.api.addCaseFollowUpNote({ sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1", nota: "seguimiento" });
   assert.equal(note.status, "success");
@@ -208,6 +210,7 @@ test("appointment notes are visible only to the assigned counselor", () => {
   });
   assert.equal(h.api.getGuidanceAppointments({ sessionToken: "secretary", authRole: "Director" }).citas.length, 0);
   assert.equal(h.api.getGuidanceAppointments({ sessionToken: "other", authRole: "Director" }).citas.length, 0);
+  assert.ok(h.logs.some(entry => entry[3] === "WELFARE_APPOINTMENT_NOT_ASSIGNED"));
   const visible = h.api.getGuidanceAppointments({ sessionToken: "assigned", scopeAllowed: true }).citas;
   assert.equal(visible.length, 1);
   assert.equal(visible[0].notasConfidenciales, "Nota privada");
@@ -253,6 +256,7 @@ test("consolidated report ignores client role and does not expose excluded confi
   assert.equal(result.reporte.seguimiento.totalCasosVisibles, 1);
   assert.equal(result.reporte.seguimiento.totalCompromisos, 1);
   assert.equal(Object.prototype.hasOwnProperty.call(result.reporte.seguimiento, "casosExcluidosPorConfidencialidad"), false);
+  assert.ok(h.logs.some(entry => entry[3] === "UNAUTHORIZED_ACCESS_ATTEMPT"));
 });
 
 
@@ -266,6 +270,7 @@ test("write lock contention fails closed and does not mutate the case", () => {
   assert.equal(result.code, "WELFARE_WRITE_BUSY");
   assert.equal(h.db.getSheetByName("CasosSeguimiento").rows[1][5], "[]");
   assert.equal(h.lockState.acquired, 0);
+  assert.ok(h.logs.some(entry => entry[3] === "WELFARE_WRITE_CONTENTION"));
 });
 
 test("write lock is released after a successful mutation", () => {
