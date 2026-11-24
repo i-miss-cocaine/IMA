@@ -32,7 +32,7 @@ const source = fs.readFileSync("backend/academic-service/Code.gs", "utf8");
 const names = [
   "withWelfareCaseLock_", "createWelfareRecordId_", "normalizeWelfareRole_", "isWelfareStaffRole_", "isConfidentialWelfareCase_",
   "isConfidentialWelfarePayload_", "getWelfareStudentAccess_", "getWelfareCaseAccess_",
-  "persistAttendanceFollowupCase_", "saveAutomatedAttendanceFollowupCase_", "saveAutomatedAttendanceFollowupCaseUnsafe_",
+  "persistAttendanceFollowupCase_", "saveAutomatedAttendanceFollowupCase_", "saveAutomatedAttendanceFollowupCase_Unsafe_",
   "validateStudentWelfareAccess", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "saveAttendanceFollowupCaseUnsafe_",
   "addCaseFollowUpNote", "addCaseFollowUpNoteUnsafe_", "addCaseCommitment", "addCaseCommitmentUnsafe_", "updateCaseCommitmentStatus", "updateCaseCommitmentStatusUnsafe_",
   "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "updateGuidanceAppointmentStatusUnsafe_", "scheduleGuidanceAppointment",
