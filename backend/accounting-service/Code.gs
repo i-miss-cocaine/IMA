@@ -769,10 +769,34 @@ function getVerifiedAccountingDepartmentScope_(payload, ss, identityOverride) {
     var id = String((row || [])[0] || "").trim();
     if (id) counts[id] = (counts[id] || 0) + 1;
   });
-  function parseDate(value) {
+  function parseDate(value, inclusiveEnd) {
     if (value === "" || value === null || value === undefined) return { valid: true, date: null };
-    var date = value instanceof Date ? value : new Date(value);
-    return isNaN(date.getTime()) ? { valid: false, date: null } : { valid: true, date: date };
+    var date = null;
+    if (value instanceof Date) {
+      if (isNaN(value.getTime())) return { valid: false, date: null };
+      date = new Date(value.getTime());
+    } else {
+      var normalized = String(value).trim();
+      var dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
+      if (dateOnly) {
+        var year = Number(dateOnly[1]), month = Number(dateOnly[2]), day = Number(dateOnly[3]);
+        date = new Date(year, month - 1, day);
+        if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return { valid: false, date: null };
+      } else {
+        var dateTime = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?(?:Z|[+-]\d{2}:\d{2})?$/.exec(normalized);
+        if (!dateTime) return { valid: false, date: null };
+        var yearTime = Number(dateTime[1]), monthTime = Number(dateTime[2]), dayTime = Number(dateTime[3]);
+        var calendarDate = new Date(yearTime, monthTime - 1, dayTime);
+        if (calendarDate.getFullYear() !== yearTime || calendarDate.getMonth() !== monthTime - 1 || calendarDate.getDate() !== dayTime) return { valid: false, date: null };
+        if (Number(dateTime[4]) > 23 || Number(dateTime[5]) > 59 || Number(dateTime[6] || 0) > 59) return { valid: false, date: null };
+        var offset = /(?:Z|([+-])(\d{2}):(\d{2}))$/.exec(normalized);
+        if (offset && offset[2] !== undefined && (Number(offset[2]) > 23 || Number(offset[3]) > 59)) return { valid: false, date: null };
+        date = new Date(normalized);
+        if (isNaN(date.getTime())) return { valid: false, date: null };
+      }
+    }
+    if (inclusiveEnd === true && date.getHours() === 0 && date.getMinutes() === 0 && date.getSeconds() === 0 && date.getMilliseconds() === 0) date.setHours(23, 59, 59, 999);
+    return { valid: true, date: date };
   }
   function parseValues(value) {
     if (Array.isArray(value)) return value.map(function(item) { return String(item).trim(); }).filter(Boolean);
@@ -797,7 +821,7 @@ function getVerifiedAccountingDepartmentScope_(payload, ss, identityOverride) {
     var responsibilityId = String(row[14] || "").trim();
     var responsibility = resolveInternalResponsibilityForRoleScope_(ss, responsibilityId);
     if (!responsibility) continue;
-    var start = parseDate(row[8]), end = parseDate(row[9]);
+    var start = parseDate(row[8], false), end = parseDate(row[9], true);
     if (!start.valid || !end.valid || (start.date && start.date.getTime() > now.getTime()) ||
         (end.date && end.date.getTime() < now.getTime())) continue;
     var scopeType = String(row[3] || "").trim().toUpperCase(), scopeValues = parseValues(row[4]);

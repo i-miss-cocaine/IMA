@@ -363,10 +363,39 @@ function getVerifiedDepartmentScopeForSession_(payload, ss, actor) {
   var membershipHeaders=legacyHeaders.concat(["InstitutionID","MembershipID"]),currentHeaders=membershipHeaders.concat(["ResponsibilityID"]);
   var actual=data.length?data[0].map(String):[];
   var schema=JSON.stringify(actual)===JSON.stringify(currentHeaders)?"current":(JSON.stringify(actual)===JSON.stringify(membershipHeaders)?"membership":(JSON.stringify(actual)===JSON.stringify(legacyHeaders)?"legacy":"invalid"));
-  if(schema==="invalid"||(membershipId&&schema!=="current"))return {authorized:false,code:"ROLE_SCOPE_SCHEMA_MISMATCH"};
+  if(schema==="invalid")return {authorized:false,code:"ROLE_SCOPE_SCHEMA_MISMATCH"};
+  if(schema!=="current")return {authorized:false,code:"ROLE_SCOPE_RESPONSIBILITY_LINK_REQUIRED"};
   var norm=function(v){return String(v||"").trim().toUpperCase().replace(/^ROLE[_-]?/,"").replace(/[^A-Z0-9]/g,"");};
   var parseValues=function(v){if(Array.isArray(v))return v.map(function(x){return String(x).trim();}).filter(Boolean);var raw=String(v||"").trim();if(!raw)return [];try{var p=JSON.parse(raw);if(Array.isArray(p))return p.map(function(x){return String(x).trim();}).filter(Boolean);if(p!==null&&p!==undefined)return [String(p).trim()].filter(Boolean);}catch(_){}return raw.split(",").map(function(x){return String(x).trim();}).filter(Boolean);};
-  var parseDate=function(v){if(v===""||v===null||v===undefined)return {valid:true,date:null};var d=v instanceof Date?v:new Date(v);return isNaN(d.getTime())?{valid:false,date:null}:{valid:true,date:d};};
+  var parseDate=function(v,inclusiveEnd){
+    if(v===""||v===null||v===undefined)return {valid:true,date:null};
+    var date=null;
+    if(v instanceof Date){
+      if(isNaN(v.getTime()))return {valid:false,date:null};
+      date=new Date(v.getTime());
+    }else{
+      var normalized=String(v).trim();
+      var dateOnly=/^(\d{4})-(\d{2})-(\d{2})$/.exec(normalized);
+      if(dateOnly){
+        var year=Number(dateOnly[1]),month=Number(dateOnly[2]),day=Number(dateOnly[3]);
+        date=new Date(year,month-1,day);
+        if(date.getFullYear()!==year||date.getMonth()!==month-1||date.getDate()!==day)return {valid:false,date:null};
+      }else{
+        var dateTime=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?(?:Z|[+-]\d{2}:\d{2})?$/.exec(normalized);
+        if(!dateTime)return {valid:false,date:null};
+        var yearTime=Number(dateTime[1]),monthTime=Number(dateTime[2]),dayTime=Number(dateTime[3]);
+        var calendarDate=new Date(yearTime,monthTime-1,dayTime);
+        if(calendarDate.getFullYear()!==yearTime||calendarDate.getMonth()!==monthTime-1||calendarDate.getDate()!==dayTime)return {valid:false,date:null};
+        if(Number(dateTime[4])>23||Number(dateTime[5])>59||Number(dateTime[6]||0)>59)return {valid:false,date:null};
+        var offset=/(?:Z|([+-])(\d{2}):(\d{2}))$/.exec(normalized);
+        if(offset&&offset[2]!==undefined&&(Number(offset[2])>23||Number(offset[3])>59))return {valid:false,date:null};
+        date=new Date(normalized);
+        if(isNaN(date.getTime()))return {valid:false,date:null};
+      }
+    }
+    if(inclusiveEnd===true&&date.getHours()===0&&date.getMinutes()===0&&date.getSeconds()===0&&date.getMilliseconds()===0)date.setHours(23,59,59,999);
+    return {valid:true,date:date};
+  };
   var assignmentCounts={};data.slice(1).forEach(function(r){var id=String((r||[])[0]||"").trim();if(id)assignmentCounts[id]=(assignmentCounts[id]||0)+1;});
   var now=new Date(),scopes=[];
   for(var i=1;i<data.length;i++){
@@ -374,12 +403,27 @@ function getVerifiedDepartmentScopeForSession_(payload, ss, actor) {
     if(!assignmentId||assignmentCounts[assignmentId]!==1||String(row[1]||"").trim()!==String(actor.userId).trim())continue;
     var rowRole=String(row[2]||"").trim();
     if(!rowRole||(membershipId?rowRole!==String(claims.role).trim():norm(rowRole)!==norm(claims.role)))continue;
-    var rowInstitution=schema==="legacy"?"":String(row[12]||"").trim(),rowMembership=schema==="legacy"?"":String(row[13]||"").trim();
-    var rowResponsibility=schema==="current"?String(row[14]||"").trim():"",responsibility=null;
-    if(membershipId){if(rowInstitution!==institutionId||rowMembership!==membershipId||!rowResponsibility)continue;responsibility=resolveInternalResponsibilityForRoleScope_(ss,rowResponsibility);if(!responsibility)continue;}
-    else if(rowInstitution||rowMembership)continue;
+    var rowInstitution=String(row[12]||"").trim(),rowMembership=String(row[13]||"").trim();
+    var rowResponsibility=String(row[14]||"").trim(),responsibility=null;
+    if(rowInstitution!==institutionId||!rowResponsibility)continue;
+    responsibility=resolveInternalResponsibilityForRoleScope_(ss,rowResponsibility);
+    if(!responsibility)continue;
+    if(membershipId){
+      if(rowMembership!==membershipId)continue;
+    }else{
+      if(rowMembership)continue;
+      var legacyUserSheet=ss.getSheetByName("Usuarios");
+      if(!legacyUserSheet)continue;
+      var legacyUserRows=legacyUserSheet.getDataRange().getValues().slice(1).filter(function(item){
+        return String(item[0]||"").trim()===String(actor.userId).trim();
+      });
+      if(legacyUserRows.length!==1)continue;
+      var legacyUser=legacyUserRows[0];
+      if(String(legacyUser[6]||"").trim()!==rowRole||
+          ["ACTIVA","ACTIVO","ACTIVE"].indexOf(String(legacyUser[10]||"Activa").trim().toUpperCase())===-1)continue;
+    }
     if(["ACTIVO","ACTIVA","ACTIVE"].indexOf(String(row[5]||"").trim().toUpperCase())===-1)continue;
-    var start=parseDate(row[8]),end=parseDate(row[9]);if(!start.valid||!end.valid)continue;
+    var start=parseDate(row[8],false),end=parseDate(row[9],true);if(!start.valid||!end.valid)continue;
     if(start.date&&start.date.getTime()>now.getTime())continue;if(end.date&&end.date.getTime()<now.getTime())continue;
     var scopeType=String(row[3]||"").trim().toUpperCase(),scopeValues=parseValues(row[4]);if(!scopeType||!scopeValues.length)continue;
     scopes.push({assignmentId:assignmentId,roleId:rowRole,institutionId:rowInstitution||null,membershipId:rowMembership||null,responsibilityId:rowResponsibility||null,responsibility:responsibility,scopeType:scopeType,scopeValues:scopeValues});
