@@ -177,7 +177,7 @@ test("el resolver valida la versión de contrato y el estado del emisor", () => 
 });
 
 test("el cliente adjunta la versión de contrato resuelta y el emisor opcional", () => {
- assert.match(api, /contractVersion: options\.contractVersion \|\| resolution\.version/);
+ assert.match(api, /contractVersion: options\\.contractVersion \\|\\| \\(window\\.SERVICE_REGISTRY/);
  assert.match(api, /sourceServiceId: options\.sourceServiceId \|\| ""/);
 });
 
