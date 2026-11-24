@@ -1,6 +1,6 @@
 # Backlog consolidado — Estudiante
 
-**Estado operativo del Plan Maestro (reinicio global):** todas las tareas de este backlog quedan en estado `Pendiente` al inicio de la ejecución. Ninguna tarea se considera `Completada`; marcas, etiquetas o declaraciones históricas de cierre son únicamente antecedentes y no acreditan estado vigente. Una tarea solo podrá cambiar de estado tras su implementación y verificación conforme al Plan Maestro.
+**Estado operativo del Plan Maestro (ciclo 3):** los estados vigentes son los consignados en cada tarea. Las tareas solo podrán cambiar de estado tras su implementación y verificación conforme al Plan Maestro; la evidencia histórica se conserva.
 
 **Fuentes integradas:** informes de auditoría de `AUDITORIAS/`, `Pendientes.md`, `completadas.md` y los archivos departamentales preexistentes. Los registros con el mismo identificador se reúnen en una sola tarea.
 
@@ -10,7 +10,7 @@
 
 <!-- ID: TASK-193 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
 
-> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
+> **Ciclo 3:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Los estados vigentes se actualizan conforme a la implementación y verificación; la evidencia histórica se conserva.
 ### [ ] [TASK-193] Portal OPAC de consulta y autoservicio para estudiantes y docentes
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección C (2.10) y Plan de Trabajo P1
@@ -205,7 +205,7 @@
 - **Dependencias:** AUD-NG-001 (token), AUD-NG-202/TASK-429 (vistas guardadas), TASK-430 (sistema visual).
 - **Alcance:** preferencias personales, herencia institucional, controles por rol, persistencia y reset; no incluye vistas guardadas de tablas.
 - **Criterios:** preferencias sobreviven nuevo inicio/cambio de dispositivo; personales prevalecen sin alterar defaults institucionales; reset restaura defaults; cada control visible persiste o se identifica como no configurable; matriz de roles segura; identidad deriva del token; pruebas de persistencia/herencia/reset/roles.
-- **Prioridad:** P2. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P2. **Estado:** Pendiente.
 - **Evidencia:** pendiente; no se probaron sesiones reales ni persistencia en Sheets.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
