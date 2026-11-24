@@ -62,7 +62,7 @@ function fixture(spec, options = {}) {
   const payload = { _claims: claims, sessionToken: "test-session" };
   const fn = context[spec.functionName];
   const result = spec.invoke(fn,payload,ss,actor);
-  return { result, assignments, context, now };
+  return { result, assignments, context, now, fn };
 }
 function allowed(result) { return result && (result.authorized === true || (result.valid === true && result.authorized === true)); }
 
