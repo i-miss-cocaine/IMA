@@ -39,4 +39,4 @@ jobs:
       - run: node --check < backend/developer-service/Code.gs
       - run: node --check < js/api.js
       - run: node --check < js/developer.js
-      - run: node --test tests/contracts/developer-service-registry.contract.test.js
+      - run: node --test tests/contracts/*.test.js
