@@ -14293,7 +14293,7 @@ function reviewAttendanceJustification(payload) {
   });
 }
 
-function addCaseFollowUpNote(payload) {
+function addCaseFollowUpNoteUnsafe_(payload) {
   var p = payload || {};
   if (!p.casoId || !p.nota) throw new Error("casoId y nota son requeridos.");
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -14428,6 +14428,29 @@ function updateAttendanceIncidentStatus(payload) {
 
 // [F11-Task01] [P0] - Fortalecer la seguridad, privacidad y aislamiento de expedientes de bienestar estudiantil
 
+
+function withWelfareCaseLock_(operation) {
+  var lock;
+  try { lock = LockService.getScriptLock(); }
+  catch (_) { return { status: "error", code: "WELFARE_LOCK_UNAVAILABLE", message: "No fue posible adquirir el bloqueo de escritura." }; }
+  var acquired = false;
+  try { acquired = lock.tryLock(10000); } catch (_) { acquired = false; }
+  if (!acquired) return { status: "error", code: "WELFARE_WRITE_BUSY", message: "El expediente está siendo actualizado; intente nuevamente." };
+  try { return operation(); }
+  finally { try { lock.releaseLock(); } catch (_) {} }
+}
+
+function createWelfareRecordId_(prefix) {
+  var unique = "";
+  try {
+    if (typeof Utilities !== "undefined" && Utilities && typeof Utilities.getUuid === "function") {
+      unique = String(Utilities.getUuid()).replace(/-/g, "");
+    }
+  } catch (_) {}
+  if (!unique) unique = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  return String(prefix || "WELFARE-") + Date.now() + "-" + unique;
+}
+
 function normalizeWelfareRole_(role) {
   return String(role || "").trim().toUpperCase()
     .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E")
@@ -14544,7 +14567,7 @@ function persistAttendanceFollowupCase_(payload) {
     sheet.appendRow(["CasoID", "UserId", "MotivoApertura", "ResumenAsistencia", "ResponsableID", "AccionesJSON", "Estado", "FechaApertura", "FechaCierre"]);
   }
   var data = sheet.getDataRange().getValues();
-  var cid = p.casoId || ("CASO-AST-" + Date.now());
+  var cid = p.casoId || createWelfareRecordId_("CASO-AST-");
   var now = new Date();
   var idx = data.findIndex(function(row) { return String(row[0]).trim() === String(cid).trim(); });
   if (idx !== -1) {
@@ -14564,7 +14587,7 @@ function persistAttendanceFollowupCase_(payload) {
   return { status: "success", message: "Caso de seguimiento guardado exitosamente.", data: { casoId: cid } };
 }
 
-function saveAutomatedAttendanceFollowupCase_(payload) {
+function saveAutomatedAttendanceFollowupCase_Unsafe_(payload) {
   var result = persistAttendanceFollowupCase_(Object.assign({}, payload || {}, { responsableId: "Orientacion" }));
   try {
     logStructuredEvent("ACADEMIC", "saveAutomatedAttendanceFollowupCase", "INFO", "AUTOMATED_WELFARE_CASE_CREATED",
@@ -14599,9 +14622,20 @@ function getAttendanceFollowupCases(payload) {
   var userId = p.userId, casoId = p.casoId;
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss.getSheetByName("CasosSeguimiento");
-  if (!sheet) return { status: "success", data: [], nivelVisibilidad: "RESTRINGIDO_ROL" };
+  var nivelVisibilidad = "RESTRINGIDO_ROL";
+  try {
+    var configSheet = ss.getSheetByName("ConfiguracionAcademica");
+    if (configSheet) {
+      var configData = configSheet.getDataRange().getValues();
+      var visibilityRow = configData.slice(1).find(function(row) { return String(row[0] || "").trim() === "NIVEL_VISIBILIDAD_CONSEJERIA"; });
+      if (visibilityRow && visibilityRow[1]) nivelVisibilidad = String(visibilityRow[1]).trim().toUpperCase();
+    }
+  } catch (error) {
+    try { logDebug("Error leyendo NIVEL_VISIBILIDAD_CONSEJERIA", error.message); } catch (_) {}
+  }
+  if (!sheet) return { status: "success", data: [], nivelVisibilidad: nivelVisibilidad };
   var data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return { status: "success", data: [], nivelVisibilidad: "RESTRINGIDO_ROL" };
+  if (data.length <= 1) return { status: "success", data: [], nivelVisibilidad: nivelVisibilidad };
   var appointmentsSheet = ss.getSheetByName("CitasOrientacion");
   var appointmentRows = appointmentsSheet ? appointmentsSheet.getDataRange().getValues() : [];
   var visible = [], blocked = false;
@@ -14626,10 +14660,10 @@ function getAttendanceFollowupCases(payload) {
     try { logStructuredEvent("ACADEMIC", "getAttendanceFollowupCases", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT",
       "Se omitieron casos confidenciales sin asignación, ámbito o estructura válida.", { casoId: casoId || "", userId: userId || "" }, identity.role); } catch (_) {}
   }
-  return { status: "success", data: visible, nivelVisibilidad: "RESTRINGIDO_ROL" };
+  return { status: "success", data: visible, nivelVisibilidad: nivelVisibilidad };
 }
 
-function saveAttendanceFollowupCase(payload) {
+function saveAttendanceFollowupCaseUnsafe_(payload) {
   var p = payload || {};
   var identity = getVerifiedAcademicIdentity_(p);
   if (!identity || identity.authorized !== true) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una sesión firmada." };
@@ -14655,6 +14689,12 @@ function saveAttendanceFollowupCase(payload) {
     }
     safePayload.responsableId = existing ? existing[4] : identity.userId;
     if (existing) safePayload.userId = existing[1];
+    var summary = String(safePayload.resumenAsistencia || (existing && existing[3]) || "");
+    if (!/consejer[ií]a|orientaci[oó]n|bienestar/i.test(summary)) {
+      var requestedCategory = String(p.categoriaCaso || "");
+      var categoryMarker = /consejer[ií]a|orientaci[oó]n|bienestar/i.test(requestedCategory) ? requestedCategory : "Bienestar";
+      safePayload.resumenAsistencia = "Categoría: " + categoryMarker + (summary ? " | " + summary : "");
+    }
   }
   var result = persistAttendanceFollowupCase_(safePayload);
   try { logStructuredEvent("ACADEMIC", "saveAttendanceFollowupCase", "INFO", "CASE_SAVED", "Caso de seguimiento guardado.", { casoId: result.data && result.data.casoId }, identity.role); } catch (_) {}
@@ -14662,7 +14702,7 @@ function saveAttendanceFollowupCase(payload) {
 }
 
 // [F10-Task08] [P1] - Estructurar el seguimiento de compromisos, intervenciones y evidencias
-function addCaseCommitment(payload) {
+function addCaseCommitmentUnsafe_(payload) {
   var p = payload || {};
   if (!p.casoId || !p.compromiso) throw new Error("casoId y compromiso son requeridos.");
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -14680,7 +14720,7 @@ function addCaseCommitment(payload) {
   return { status: "success", message: "Compromiso/Intervención estructurada registrada exitosamente.", data: commitment };
 }
 
-function updateCaseCommitmentStatus(payload) {
+function updateCaseCommitmentStatusUnsafe_(payload) {
   var p = payload || {};
   if (!p.casoId || !p.compromisoId || !p.nuevoEstado) throw new Error("casoId, compromisoId y nuevoEstado son requeridos.");
   var validStates = ["Pendiente", "EnProceso", "Cumplido", "Incumplido", "Reprogramado"];
@@ -14714,17 +14754,17 @@ function scheduleCounselingAppointment(payload) {
     responsableId: actor.userId, estado: "Abierto", categoriaCaso: "Consejería"
   }));
   if (!caseResult || caseResult.status !== "success") return caseResult || { status: "error", code: "WELFARE_CASE_CREATE_FAILED" };
-  return { status: "success", citaId: "CITA-CNS-" + Date.now(), userId: p.userId, casoId: caseResult.data.casoId, message: "Cita de consejería escolar agendada exitosamente." };
+  return { status: "success", citaId: createWelfareRecordId_("CITA-CNS-"), userId: p.userId, casoId: caseResult.data.casoId, message: "Cita de consejería escolar agendada exitosamente." };
 }
 
-function recordCounselingSessionAct(payload) {
+function recordCounselingSessionActUnsafe_(payload) {
   var p = payload || {};
   if (!p.casoId || !p.resumenSesion) throw new Error("casoId y resumenSesion son requeridos para registrar acta de consejería.");
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = getWelfareCaseAccess_(p, p.casoId, ss, true);
   if (!access.authorized) return { status: "error", code: access.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso autorizado al expediente de consejería." };
   var actions = access.row[5] ? (typeof access.row[5] === "string" ? JSON.parse(access.row[5]) : access.row[5]) : [];
-  var actaId = "ACTA-CNS-" + Date.now();
+  var actaId = createWelfareRecordId_("ACTA-CNS-");
   actions.push({
     actaId: actaId, tipo: "ActaConsejería", resumenSesion: String(p.resumenSesion).trim(),
     notasConfidenciales: p.notasConfidenciales ? String(p.notasConfidenciales).trim() : "",
@@ -14736,14 +14776,14 @@ function recordCounselingSessionAct(payload) {
   return { status: "success", actaId: actaId, casoId: p.casoId, message: "Acta de sesión de consejería registrada." };
 }
 
-function referCounselingCase(payload) {
+function referCounselingCaseUnsafe_(payload) {
   var p = payload || {};
   if (!p.casoId || !p.destinoDerivacion || !p.motivoDerivacion) throw new Error("casoId, destinoDerivacion y motivoDerivacion son requeridos para derivar el caso de consejería.");
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var access = getWelfareCaseAccess_(p, p.casoId, ss, true);
   if (!access.authorized) return { status: "error", code: access.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso autorizado al expediente de consejería." };
   var actions = access.row[5] ? (typeof access.row[5] === "string" ? JSON.parse(access.row[5]) : access.row[5]) : [];
-  var derivationId = "DERIV-CNS-" + Date.now();
+  var derivationId = createWelfareRecordId_("DERIV-CNS-");
   actions.push({
     derivacionId: derivationId, tipo: "DerivaciónProfesional",
     destinoDerivacion: String(p.destinoDerivacion).trim(), motivoDerivacion: String(p.motivoDerivacion).trim(),
@@ -14762,7 +14802,7 @@ function saveGuidanceFollowupPlan(payload) {
   var actor = getVerifiedAcademicIdentity_(p);
   if (!actor || actor.authorized !== true || !isWelfareStaffRole_(actor.role)) return { status: "error", code: "WELFARE_ROLE_REQUIRED", message: "Se requiere personal autorizado de orientación." };
   if (!p.userId || !p.metasAprendizaje) throw new Error("userId y metasAprendizaje son requeridos para el plan de orientación académica.");
-  var planId = "PLAN-ORI-" + Date.now();
+  var planId = createWelfareRecordId_("PLAN-ORI-");
   var caseResult = saveAttendanceFollowupCase(Object.assign({}, p, {
     userId: p.userId,
     motivoApertura: "Plan de Orientación Académica: " + String(p.metasAprendizaje).substring(0, 100),
@@ -14780,7 +14820,7 @@ function saveVocationalRecommendation(payload) {
   var actor = getVerifiedAcademicIdentity_(p);
   if (!actor || actor.authorized !== true || !isWelfareStaffRole_(actor.role)) return { status: "error", code: "WELFARE_ROLE_REQUIRED", message: "Se requiere personal autorizado de orientación." };
   if (!p.userId || !p.perfilVocacional) throw new Error("userId y perfilVocacional son requeridos para registrar recomendaciones vocacionales.");
-  var recId = "REC-VOC-" + Date.now();
+  var recId = createWelfareRecordId_("REC-VOC-");
   var caseResult = saveAttendanceFollowupCase(Object.assign({}, p, {
     userId: p.userId,
     motivoApertura: "Informe de Orientación Vocacional: " + p.perfilVocacional,
@@ -14802,13 +14842,10 @@ function scheduleGuidanceAppointment(payload) {
       return { status: "error", code: "WELFARE_ROLE_REQUIRED", message: "Solo personal autorizado de bienestar puede agendar citas." };
     }
     var studentId = String(p.userId || "").trim();
+    if (!studentId || !p.fechaHora) return { status: "error", code: "VALIDATION_ERROR", message: "userId y fechaHora son requeridos." };
       var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var targetCaseId = String(p.casoId || "").trim();
-    if (targetCaseId) {
-      var caseAccess = getWelfareCaseAccess_(p, targetCaseId, ss, true);
-      if (!caseAccess.authorized) return { status: "error", code: caseAccess.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso al expediente indicado." };
-      if (String(caseAccess.row[1] || "").trim() !== studentId) return { status: "error", code: "WELFARE_APPOINTMENT_CASE_MISMATCH", message: "El estudiante no coincide con el expediente indicado." };
-    } else {
+    if (!targetCaseId) {
       var caseResult = saveAttendanceFollowupCase(Object.assign({}, p, {
         userId: studentId,
         motivoApertura: "Acompañamiento y Orientación Estudiantil (" + (p.tipoCita || "Entrevista") + ")",
@@ -14819,14 +14856,21 @@ function scheduleGuidanceAppointment(payload) {
       targetCaseId = caseResult.data.casoId;
     }
     var sheet = getOrCreateSheet(ss, "CitasOrientacion");
-    var now = new Date(), nowISO = now.toISOString();
-    var citaId = "CITA-ORI-" + now.getFullYear() + "-" + Math.floor(100000 + Math.random() * 900000);
-    sheet.appendRow([citaId, targetCaseId, studentId, p.tutorUserId ? String(p.tutorUserId).trim() : "",
-      actor.userId, String(p.fechaHora), p.modalidad || "Presencial", "Programada",
-      p.tipoCita || "Acompañamiento", p.motivoPublico || "Cita de Acompañamiento Institucional",
-      p.notasConfidenciales || "", p.derivacionRef || "", nowISO]);
-    try { logStructuredEvent("ACADEMIC", "scheduleGuidanceAppointment", "INFO", "GUIDANCE_APPOINTMENT_SCHEDULED", "Cita de orientación agendada.", { citaId: citaId, casoId: targetCaseId }, actor.role); } catch (_) {}
-    return { status: "success", citaOrientacionId: citaId, casoId: targetCaseId, userId: studentId, fechaHora: p.fechaHora, estado: "Programada" };
+    var appointmentWrite = withWelfareCaseLock_(function() {
+      var latestAccess = getWelfareCaseAccess_(p, targetCaseId, ss, true);
+      if (!latestAccess.authorized) return { status: "error", code: latestAccess.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso al expediente indicado." };
+      if (String(latestAccess.row[1] || "").trim() !== studentId) return { status: "error", code: "WELFARE_APPOINTMENT_CASE_MISMATCH", message: "El estudiante no coincide con el expediente indicado." };
+      var now = new Date(), nowISO = now.toISOString();
+      var citaId = createWelfareRecordId_("CITA-ORI-");
+      sheet.appendRow([citaId, targetCaseId, studentId, p.tutorUserId ? String(p.tutorUserId).trim() : "",
+        actor.userId, String(p.fechaHora), p.modalidad || "Presencial", "Programada",
+        p.tipoCita || "Acompañamiento", p.motivoPublico || "Cita de Acompañamiento Institucional",
+        p.notasConfidenciales || "", p.derivacionRef || "", nowISO]);
+      return { status: "success", citaOrientacionId: citaId, casoId: targetCaseId, userId: studentId, fechaHora: p.fechaHora, estado: "Programada" };
+    });
+    if (!appointmentWrite || appointmentWrite.status !== "success") return Object.assign({ casoId: targetCaseId }, appointmentWrite || { status: "error", code: "GUIDANCE_APPOINTMENT_WRITE_FAILED" });
+    try { logStructuredEvent("ACADEMIC", "scheduleGuidanceAppointment", "INFO", "GUIDANCE_APPOINTMENT_SCHEDULED", "Cita de orientación agendada.", { citaId: appointmentWrite.citaOrientacionId, casoId: targetCaseId }, actor.role); } catch (_) {}
+    return appointmentWrite;
   } catch (error) {
     try { logStructuredEvent("ACADEMIC", "scheduleGuidanceAppointment", "ERROR", "GUIDANCE_APPOINTMENT_FAILED", String(error.message || error), {}, "SYSTEM"); } catch (_) {}
     return { status: "error", code: "GUIDANCE_APPOINTMENT_FAILED", message: String(error.message || error) };
@@ -14836,7 +14880,12 @@ function scheduleGuidanceAppointment(payload) {
 function getGuidanceAppointments(payload) {
   var p = payload || {};
   var actor = getVerifiedAcademicIdentity_(p);
-  if (!actor || actor.authorized !== true || !isWelfareStaffRole_(actor.role)) return { status: "error", code: "WELFARE_ROLE_REQUIRED", totalCitas: 0, citas: [] };
+  if (!actor || actor.authorized !== true) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", totalCitas: 0, citas: [] };
+  var role = normalizeWelfareRole_(actor.role);
+  var welfareStaff = isWelfareStaffRole_(role);
+  var studentRole = role === "ESTUDIANTE" || role === "ALUMNO";
+  var guardianRole = ["PADRE", "MADRE", "TUTOR", "RESPONSABLE", "RESPONSABLEFAMILIAR"].indexOf(role) !== -1;
+  if (!welfareStaff && !studentRole && !guardianRole) return { status: "error", code: "WELFARE_ROLE_REQUIRED", totalCitas: 0, citas: [] };
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   var sheet = ss.getSheetByName("CitasOrientacion");
   if (!sheet) return { status: "success", totalCitas: 0, citas: [] };
@@ -14849,28 +14898,32 @@ function getGuidanceAppointments(payload) {
     if (p.casoId && String(p.casoId).trim() !== caseId) continue;
     if (p.userId && String(p.userId).trim() !== studentId) continue;
     if (p.estado && p.estado !== "Todas" && status !== p.estado) continue;
-    var role = normalizeWelfareRole_(actor.role);
-    var privileged = ["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION"].indexOf(role) !== -1;
-    if (!privileged && counselorId !== String(actor.userId).trim()) continue;
-    var access = getWelfareCaseAccess_(p, caseId, ss, true, data);
-    if (String(access.row && access.row[1] || "").trim() !== studentId) continue;
-    if (!access.authorized) {
-      try { logStructuredEvent("ACADEMIC", "getGuidanceAppointments", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", "Consulta de cita confidencial sin asignación o ámbito.", { citaOrientacionId: cId, casoId: caseId }, actor.role); } catch (_) {}
-      continue;
+    var notes = "***CONFIDENCIAL***";
+    if (studentRole && studentId !== String(actor.userId).trim()) continue;
+    if (guardianRole && tutorId !== String(actor.userId).trim()) continue;
+    if (welfareStaff) {
+      var privileged = ["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION"].indexOf(role) !== -1;
+      if (!privileged && counselorId !== String(actor.userId).trim()) continue;
+      var access = getWelfareCaseAccess_(p, caseId, ss, true, data);
+      if (!access.authorized || String(access.row && access.row[1] || "").trim() !== studentId) {
+        try { logStructuredEvent("ACADEMIC", "getGuidanceAppointments", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", "Consulta de cita confidencial sin asignación o ámbito.", { citaOrientacionId: cId, casoId: caseId }, actor.role); } catch (_) {}
+        continue;
+      }
+      notes = String(row[10] || "");
     }
     citas.push({
       citaOrientacionId: cId, casoId: caseId, userId: studentId, tutorUserId: tutorId,
       orientadorUserId: counselorId, fechaHora: row[5] ? new Date(row[5]).toISOString() : "",
       modalidad: String(row[6] || "Presencial"), estado: status, tipoCita: String(row[8] || "Acompañamiento"),
-      notasPublicas: String(row[9] || ""), notasConfidenciales: String(row[10] || ""),
-      derivacionRef: String(row[11] || ""), fechaCreacion: row[12] ? new Date(row[12]).toISOString() : ""
+      notasPublicas: String(row[9] || ""), notasConfidenciales: notes,
+      derivacionRef: welfareStaff ? String(row[11] || "") : "", fechaCreacion: row[12] ? new Date(row[12]).toISOString() : ""
     });
   }
   citas.reverse();
   return { status: "success", totalCitas: citas.length, citas: citas };
 }
 
-function updateGuidanceAppointmentStatus(payload) {
+function updateGuidanceAppointmentStatusUnsafe_(payload) {
   var p = payload || {};
   var actor = getVerifiedAcademicIdentity_(p);
   if (!actor || actor.authorized !== true || !isWelfareStaffRole_(actor.role)) {
@@ -20782,3 +20835,21 @@ function uploadStudentDocument(payload) {
   }catch(err){if(createdFile&&!persisted){let found=false;try{if(sheet&&docId)found=sheet.getDataRange().getValues().slice(1).some(r=>String(r[0]||"")===docId&&String(r[5]||"")===String(createdFile.getId()));}catch(_){}if(found)return {status:"success",documentoId:docId,versionDocumento:version,mimeType,sizeBytes:bytes.length,tieneArchivo:true,persistenciaRecuperada:true};rollbackPrivateStudentDocumentFile_(createdFile,err);}throw err;}
   finally{if(hasLock){try{lock.releaseLock();}catch(_){}}}
 }
+
+
+/* Lock-protected entry points for welfare record mutations. */
+function saveAttendanceFollowupCase(payload) { return withWelfareCaseLock_(function() { return saveAttendanceFollowupCaseUnsafe_(payload); }); }
+
+function saveAutomatedAttendanceFollowupCase_(payload) { return withWelfareCaseLock_(function() { return saveAutomatedAttendanceFollowupCase_Unsafe_(payload); }); }
+
+function addCaseFollowUpNote(payload) { return withWelfareCaseLock_(function() { return addCaseFollowUpNoteUnsafe_(payload); }); }
+
+function addCaseCommitment(payload) { return withWelfareCaseLock_(function() { return addCaseCommitmentUnsafe_(payload); }); }
+
+function updateCaseCommitmentStatus(payload) { return withWelfareCaseLock_(function() { return updateCaseCommitmentStatusUnsafe_(payload); }); }
+
+function updateGuidanceAppointmentStatus(payload) { return withWelfareCaseLock_(function() { return updateGuidanceAppointmentStatusUnsafe_(payload); }); }
+
+function recordCounselingSessionAct(payload) { return withWelfareCaseLock_(function() { return recordCounselingSessionActUnsafe_(payload); }); }
+
+function referCounselingCase(payload) { return withWelfareCaseLock_(function() { return referCounselingCaseUnsafe_(payload); }); }

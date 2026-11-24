@@ -30,13 +30,13 @@ function extractFunction(source, name) {
 
 const source = fs.readFileSync("backend/academic-service/Code.gs", "utf8");
 const names = [
-  "normalizeWelfareRole_", "isWelfareStaffRole_", "isConfidentialWelfareCase_",
+  "withWelfareCaseLock_", "createWelfareRecordId_", "normalizeWelfareRole_", "isWelfareStaffRole_", "isConfidentialWelfareCase_",
   "isConfidentialWelfarePayload_", "getWelfareStudentAccess_", "getWelfareCaseAccess_",
-  "persistAttendanceFollowupCase_", "saveAutomatedAttendanceFollowupCase_",
-  "validateStudentWelfareAccess", "getAttendanceFollowupCases", "saveAttendanceFollowupCase",
-  "addCaseFollowUpNote", "addCaseCommitment", "updateCaseCommitmentStatus",
-  "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "scheduleGuidanceAppointment",
-  "scheduleCounselingAppointment", "recordCounselingSessionAct", "referCounselingCase",
+  "persistAttendanceFollowupCase_", "saveAutomatedAttendanceFollowupCase_", "saveAutomatedAttendanceFollowupCaseUnsafe_",
+  "validateStudentWelfareAccess", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "saveAttendanceFollowupCaseUnsafe_",
+  "addCaseFollowUpNote", "addCaseFollowUpNoteUnsafe_", "addCaseCommitment", "addCaseCommitmentUnsafe_", "updateCaseCommitmentStatus", "updateCaseCommitmentStatusUnsafe_",
+  "getGuidanceAppointments", "updateGuidanceAppointmentStatus", "updateGuidanceAppointmentStatusUnsafe_", "scheduleGuidanceAppointment",
+  "scheduleCounselingAppointment", "recordCounselingSessionAct", "recordCounselingSessionActUnsafe_", "referCounselingCase", "referCounselingCaseUnsafe_",
   "saveGuidanceFollowupPlan", "saveVocationalRecommendation",
   "generateConsolidatedAttendanceAndCoexistenceReport"
 ];
@@ -64,15 +64,19 @@ const caseHeaders = ["CasoID", "UserId", "MotivoApertura", "ResumenAsistencia", 
 const appointmentHeaders = ["CitaOrientacionID", "CasoID", "UserId", "TutorUserId", "OrientadorUserId", "FechaHora", "Modalidad", "Estado", "TipoCita", "NotasPublicas", "NotasConfidenciales", "DerivacionRef", "FechaCreacion"];
 const caseRow = (id, student, summary, owner, actions = "[]") => [id, student, "Seguimiento", summary, owner, actions, "Abierto", "", ""];
 
-function harness({ cases = [], appointments = [], identities = {}, extraSheets = {} } = {}) {
+function harness({ cases = [], appointments = [], identities = {}, extraSheets = {}, lockAvailable = true } = {}) {
   const db = new FakeSpreadsheet();
   db.add("CasosSeguimiento", [caseHeaders, ...cases]);
   db.add("CitasOrientacion", [appointmentHeaders, ...appointments]);
   for (const [name, rows] of Object.entries(extraSheets)) db.add(name, rows);
   const logs = [];
+  const lockState = { available: lockAvailable, acquired: 0, released: 0 };
+  let uuidCounter = 0;
   const context = {
     SPREADSHEET_ID: "test",
     SpreadsheetApp: { openById: () => db },
+    LockService: { getScriptLock: () => ({ tryLock: () => { if (!lockState.available) return false; lockState.acquired++; return true; }, releaseLock: () => { lockState.released++; } }) },
+    Utilities: { getUuid: () => "uuid-" + (++uuidCounter) },
     getOrCreateSheet: (ss, name) => ss.getSheetByName(name) || ss.add(name, [[]]),
     getVerifiedAcademicIdentity_: payload => identities[payload && payload.sessionToken] || { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" },
     validateAcademicResponsibilityAndScopeAccess: payload => ({ authorized: payload && payload.scopeAllowed === true, code: "TEST_SCOPE_DENIED" }),
@@ -82,7 +86,7 @@ function harness({ cases = [], appointments = [], identities = {}, extraSheets =
   };
   vm.createContext(context);
   vm.runInNewContext(program, context, { timeout: 2000 });
-  return { api: context, db, logs };
+  return { api: context, db, logs, lockState };
 }
 
 test("client-supplied authRole cannot grant confidential case access", () => {
@@ -143,6 +147,7 @@ test("confidential case creation requires verified staff and student scope", () 
   });
   assert.equal(allowed.status, "success");
   assert.equal(h.db.getSheetByName("CasosSeguimiento").rows[1][4], "counselor-1");
+  assert.match(h.db.getSheetByName("CasosSeguimiento").rows[1][3], /Categoría: Consejería/);
 });
 
 test("notes and session acts require assignment or verified scope", () => {
@@ -237,6 +242,83 @@ test("consolidated report ignores client role and does not expose excluded confi
   assert.equal(result.reporte.seguimiento.totalCasosVisibles, 1);
   assert.equal(result.reporte.seguimiento.totalCompromisos, 1);
   assert.equal(Object.prototype.hasOwnProperty.call(result.reporte.seguimiento, "casosExcluidosPorConfidencialidad"), false);
+});
+
+
+test("write lock contention fails closed and does not mutate the case", () => {
+  const h = harness({
+    cases: [caseRow("CASE-1", "STU-1", "Categoría: Consejería", "counselor-1")],
+    identities: { assigned: { authorized: true, userId: "counselor-1", role: "Consejeros" } },
+    lockAvailable: false
+  });
+  const result = h.api.addCaseFollowUpNote({ sessionToken: "assigned", casoId: "CASE-1", nota: "concurrent write" });
+  assert.equal(result.code, "WELFARE_WRITE_BUSY");
+  assert.equal(h.db.getSheetByName("CasosSeguimiento").rows[1][5], "[]");
+  assert.equal(h.lockState.acquired, 0);
+});
+
+test("write lock is released after a successful mutation", () => {
+  const h = harness({
+    cases: [caseRow("CASE-1", "STU-1", "Categoría: Consejería", "counselor-1")],
+    identities: { assigned: { authorized: true, userId: "counselor-1", role: "Consejeros" } }
+  });
+  const result = h.api.addCaseFollowUpNote({ sessionToken: "assigned", casoId: "CASE-1", nota: "ok" });
+  assert.equal(result.status, "success");
+  assert.equal(h.lockState.acquired, 1);
+  assert.equal(h.lockState.released, 1);
+});
+
+test("generated welfare record identifiers remain unique within the same timestamp", () => {
+  const h = harness();
+  const first = h.api.createWelfareRecordId_("CASE-");
+  const second = h.api.createWelfareRecordId_("CASE-");
+  assert.notEqual(first, second);
+});
+
+test("confidential classification marker cannot be removed by a generic update", () => {
+  const h = harness({
+    cases: [caseRow("CASE-1", "STU-1", "Categoría: Consejería | inicial", "counselor-1")],
+    identities: { assigned: { authorized: true, userId: "counselor-1", role: "Consejeros" } }
+  });
+  const result = h.api.saveAttendanceFollowupCase({
+    sessionToken: "assigned", casoId: "CASE-1", userId: "STU-1",
+    motivoApertura: "Actualización", resumenAsistencia: "Resumen general", estado: "Abierto"
+  });
+  assert.equal(result.status, "success");
+  assert.match(h.db.getSheetByName("CasosSeguimiento").rows[1][3], /Categoría: Bienestar/);
+  assert.equal(h.api.getAttendanceFollowupCases({ sessionToken: "assigned", casoId: "CASE-1" }).data.length, 1);
+});
+
+
+test("students and guardians retain own appointment summaries with confidential notes redacted", () => {
+  const h = harness({
+    cases: [caseRow("CASE-1", "STU-1", "Categoría: Orientación", "counselor-1")],
+    appointments: [
+      ["CITA-1", "CASE-1", "STU-1", "TUTOR-1", "counselor-1", "2026-11-20", "Presencial", "Programada", "Entrevista", "Pública", "Nota privada", "", "2026-11-20"],
+      ["CITA-2", "CASE-2", "STU-2", "TUTOR-2", "counselor-2", "2026-11-20", "Presencial", "Programada", "Entrevista", "Pública", "Otra nota", "", "2026-11-20"]
+    ],
+    identities: {
+      student: { authorized: true, userId: "STU-1", role: "Estudiante" },
+      guardian: { authorized: true, userId: "TUTOR-1", role: "Tutor" }
+    }
+  });
+  const studentAppointments = h.api.getGuidanceAppointments({ sessionToken: "student" }).citas;
+  assert.equal(studentAppointments.length, 1);
+  assert.equal(studentAppointments[0].notasConfidenciales, "***CONFIDENCIAL***");
+  const guardianAppointments = h.api.getGuidanceAppointments({ sessionToken: "guardian" }).citas;
+  assert.equal(guardianAppointments.length, 1);
+  assert.equal(guardianAppointments[0].notasConfidenciales, "***CONFIDENCIAL***");
+});
+
+test("COMPARTIDO_DOCENTE configuration does not bypass confidential case authorization", () => {
+  const h = harness({
+    cases: [caseRow("CASE-1", "STU-1", "Categoría: Consejería", "counselor-1")],
+    identities: { teacher: { authorized: true, userId: "teacher-1", role: "Docente" } },
+    extraSheets: { ConfiguracionAcademica: [["Parametro", "Valor"], ["NIVEL_VISIBILIDAD_CONSEJERIA", "COMPARTIDO_DOCENTE"]] }
+  });
+  const result = h.api.getAttendanceFollowupCases({ sessionToken: "teacher", authRole: "Director", casoId: "CASE-1" });
+  assert.equal(result.data.length, 0);
+  assert.equal(result.nivelVisibilidad, "COMPARTIDO_DOCENTE");
 });
 
 test("missing signed identity is denied even when the payload claims a privileged role", () => {
