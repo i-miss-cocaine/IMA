@@ -5,6 +5,7 @@ on:
     paths:
       - 'backend/exam-service/Code.gs'
       - 'backend/academic-service/Code.gs'
+      - 'tests/security/academic-wellbeing-confidentiality.test.js'
       - 'js/exam.js'
       - 'js/teacher.js'
       - 'js/results.js'
@@ -55,6 +56,7 @@ on:
     paths:
       - 'backend/exam-service/Code.gs'
       - 'backend/academic-service/Code.gs'
+      - 'tests/security/academic-wellbeing-confidentiality.test.js'
       - 'tests/security/exam-service-attachment-submission-contract.test.js'
       - 'tests/security/exam-service-*.test.js'
       - 'tests/security/exam-service-security-contract.test.js'
