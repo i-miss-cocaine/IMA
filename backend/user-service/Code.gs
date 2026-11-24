@@ -2203,8 +2203,8 @@ function validateRolePermission(action, payload) {
   if (["saveSystemConfiguration","resetSystemConfigurationOverride"].indexOf(action)!==-1) {
     var requestedScope=action==="resetSystemConfigurationOverride"?"DEPARTAMENTAL":String((payload&&payload.ambito)||"GLOBAL").trim().toUpperCase();
     if(requestedScope==="PERSONAL")return {authorized:!!(payload&&payload._verifiedUserId),role:userRole,userId:payload&&payload._verifiedUserId};
-    if(requestedScope==="DEPARTAMENTAL")return {authorized:["Administrador","Director","Desarrollador"].indexOf(userRole)!==-1||getDynamicPermissionsForRole(userRole,"manageDepartmentalConfiguration")===true,role:userRole,userId:payload&&payload._verifiedUserId};
-    return {authorized:["Administrador","Director","Desarrollador"].indexOf(userRole)!==-1,role:userRole,userId:payload&&payload._verifiedUserId};
+    if(requestedScope==="DEPARTAMENTAL")return {authorized:["Administrador","Director"].indexOf(userRole)!==-1||getDynamicPermissionsForRole(userRole,"manageDepartmentalConfiguration")===true,role:userRole,userId:payload&&payload._verifiedUserId};
+    return {authorized:["Administrador","Director"].indexOf(userRole)!==-1,role:userRole,userId:payload&&payload._verifiedUserId};
   }
   if (["getUserHelpPreferences", "saveUserHelpPreferences"].indexOf(action) !== -1) {
     return { authorized: !!(payload && payload._verifiedUserId), role: userRole, userId: payload && payload._verifiedUserId };
@@ -12830,11 +12830,11 @@ function saveUserSettings(payload) {
 const CONFIGURATION_SYSTEM_EXTRA_HEADERS_ = ["InstitutionID","UserID","PoliticaAlcance","AmbitosPermitidosJSON","PermiteHerencia","PermiteSobrescritura","RolesAutorizadosJSON","DependenciasJSON","EsSensible"];
 const CONFIGURATION_DEPARTMENT_HEADERS_ = ["OverrideID","ConfigID","Clave","InstitutionID","DepartmentID","ValueJSON","ValueType","Version","Status","CreatedAt","CreatedBy","UpdatedAt","UpdatedBy","Reason"];
 const CONFIGURATION_POLICY_RULES_ = {
-  GLOBAL_OBLIGATORIO: { allowedScopes:["GLOBAL"], inheritance:false, override:false, roles:["Administrador","Director","Desarrollador"] },
+  GLOBAL_OBLIGATORIO: { allowedScopes:["GLOBAL"], inheritance:false, override:false, roles:["Administrador","Director"] },
   INSTITUCIONAL: { allowedScopes:["GLOBAL","INSTITUCIONAL"], inheritance:true, override:false, roles:["Administrador","Director"] },
   HEREDABLE: { allowedScopes:["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL"], inheritance:true, override:true, roles:["Administrador","Director"] },
   PERSONALIZABLE: { allowedScopes:["GLOBAL","INSTITUCIONAL","DEPARTAMENTAL","PERSONAL"], inheritance:true, override:true, roles:["Administrador","Director"] },
-  RESTRINGIDO: { allowedScopes:["GLOBAL"], inheritance:false, override:false, roles:["Administrador","Desarrollador"] }
+  RESTRINGIDO: { allowedScopes:["GLOBAL"], inheritance:false, override:false, roles:["Administrador"] }
 };
 function configurationHeaderMap_(headers) {
   var map={}; (headers||[]).forEach(function(value,index){var key=String(value||"").trim();if(key)map[key]=index;}); return map;
@@ -12940,7 +12940,7 @@ function configurationValidateDependencies_(rows,index,currentKey,dependencies) 
 }
 function getSystemConfigurations(payload) {
   var role=getUserVerifiedRole(payload);
-  if(["Administrador","Director","Desarrollador"].indexOf(role)===-1)throw new Error("AUTH_PERMISSION_DENIED");
+  if(["Administrador","Director"].indexOf(role)===-1)throw new Error("AUTH_PERMISSION_DENIED");
   var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"ConfiguracionSistema"),data=sheet.getDataRange().getValues();
   var configs=data.slice(1).map(function(row){return {configId:row[0],clave:row[1],valor:row[2],tipo:row[3],categoria:row[4],descripcion:row[5],ambito:row[6],editablePor:row[7],estado:row[8],version:row[9],updatedAt:row[10],updatedBy:row[11]};});
   var dashSheet=getOrCreateSheet(ss,"ConfiguracionDashboard"),dashData=dashSheet.getDataRange().getValues();
@@ -12958,8 +12958,8 @@ function getHierarchicalConfigurationCatalog(payload) {
     var key=String(row[ix.Clave]||"").trim(),scope=String(row[ix.Ambito]||"GLOBAL").trim().toUpperCase();
     if(!key||scope!=="GLOBAL")return;if(seen[key])throw new Error("CONFIGURATION_SCOPE_CONFLICT");seen[key]=true;
     var policy=configurationPolicyFromRow_(row,ix);
-    if(policy.sensitive&&["Administrador","Director","Desarrollador"].indexOf(role)===-1)return;
-    if(["Administrador","Director","Desarrollador"].indexOf(role)===-1&&
+    if(policy.sensitive&&["Administrador","Director"].indexOf(role)===-1)return;
+    if(["Administrador","Director"].indexOf(role)===-1&&
       policy.allowedScopes.indexOf("DEPARTAMENTAL")===-1&&policy.allowedScopes.indexOf("PERSONAL")===-1)return;
     catalog.push({configId:row[ix.ConfigID],clave:key,tipo:row[ix.Tipo]||"TEXTO",categoria:row[ix.Categoria]||"GENERAL",
       descripcion:row[ix.Descripcion]||"",politicaAlcance:policy.policy,ambitosPermitidos:policy.allowedScopes,
@@ -13001,7 +13001,7 @@ function resolveHierarchicalConfiguration(payload) {
     return {status:"error",code:"CONFIGURATION_DEPARTMENT_REQUIRED"};
   }
   var targetUser=String((payload&&payload.userId)||actor).trim();
-  if(targetUser!==actor&&["Administrador","Director","Desarrollador"].indexOf(role)===-1)return {status:"error",code:"CONFIGURATION_PERSONAL_SCOPE_DENIED"};
+  if(targetUser!==actor&&["Administrador","Director"].indexOf(role)===-1)return {status:"error",code:"CONFIGURATION_PERSONAL_SCOPE_DENIED"};
   if(policy.inheritance&&policy.override&&institutionId&&allowed.indexOf("PERSONAL")!==-1&&targetUser){
     personalRow=configurationFindUnique_(candidates,function(row){return String(row[ix.Ambito]||"").toUpperCase()==="PERSONAL"&&String(row[ix.InstitutionID]||"").trim()===institutionId&&String(row[ix.UserID]||"").trim()===targetUser;},"CONFIGURATION_PERSONAL_CONFLICT");
     if(personalRow&&String(personalRow[ix.Estado]||"ACTIVO").toUpperCase()==="ACTIVO"){effective=personalRow;sourceScope="PERSONAL";}
@@ -13046,7 +13046,7 @@ function saveSystemConfiguration(payload) {
     var requestedPolicy=String(payload.politicaAlcance||"").trim().toUpperCase();
     var policyChange=!!(base&&requestedPolicy&&requestedPolicy!==existingPolicy);
     if(policyChange&&payload.actualizarPolitica!==true)throw new Error("CONFIGURATION_POLICY_CHANGE_REQUIRES_AUTHORIZED_UPDATE");
-    if(policyChange&&(scope!=="GLOBAL"||["Administrador","Desarrollador"].indexOf(role)===-1))throw new Error("CONFIGURATION_POLICY_CHANGE_FORBIDDEN");
+    if(policyChange&&(scope!=="GLOBAL"||role!=="Administrador"))throw new Error("CONFIGURATION_POLICY_CHANGE_FORBIDDEN");
     var policyName=policyChange?requestedPolicy:(base?existingPolicy:(requestedPolicy||"RESTRINGIDO"));
     var rule=CONFIGURATION_POLICY_RULES_[policyName];if(!rule)throw new Error("CONFIGURATION_POLICY_INVALID");
     if(!base&&scope!=="GLOBAL")throw new Error("CONFIGURATION_BASE_REQUIRED");
@@ -13055,7 +13055,7 @@ function saveSystemConfiguration(payload) {
     if(!policy.allowedScopes.length)policy.allowedScopes=rule.allowedScopes.slice();
     if(policy.allowedScopes.indexOf(scope)===-1)throw new Error("CONFIGURATION_SCOPE_NOT_ALLOWED");
     if(scope==="GLOBAL"||scope==="INSTITUCIONAL"){
-      if(["Administrador","Director","Desarrollador"].indexOf(role)===-1)throw new Error("AUTH_PERMISSION_DENIED");
+      if(["Administrador","Director"].indexOf(role)===-1)throw new Error("AUTH_PERMISSION_DENIED");
     }else if(scope==="DEPARTAMENTAL"){
       if(!departmentId)throw new Error("CONFIGURATION_DEPARTMENT_REQUIRED");
       configurationDepartmentContext_(payload,departmentId);
@@ -13132,7 +13132,7 @@ function resetSystemConfigurationOverride(payload) {
 
 function getProviderIntegrations(payload) {
   const verifiedRole = getUserVerifiedRole(payload);
-  if (verifiedRole !== "Administrador" && verifiedRole !== "Director" && verifiedRole !== "Desarrollador" && verifiedRole !== "Subdirector") {
+  if (verifiedRole !== "Administrador" && verifiedRole !== "Director" && verifiedRole !== "Subdirector") {
     throw new Error("Acceso denegado: Solo la Dirección o Administración Técnica pueden consultar las integraciones de proveedores.");
   }
 
@@ -13174,7 +13174,7 @@ function getProviderIntegrations(payload) {
 function configureProviderIntegration(payload) {
   const { integrationId, providerType, providerName, enabled, environment, configuration } = payload || {};
   const verifiedRole = getUserVerifiedRole(payload);
-  if (verifiedRole !== "Administrador" && verifiedRole !== "Director" && verifiedRole !== "Desarrollador" && verifiedRole !== "Subdirector") {
+  if (verifiedRole !== "Administrador" && verifiedRole !== "Director" && verifiedRole !== "Subdirector") {
     throw new Error("Acceso denegado: Solo la Dirección o Administración Técnica pueden administrar proveedores externos o pasarelas de pago.");
   }
   if (!providerType) throw new Error("providerType es requerido.");
@@ -13258,7 +13258,7 @@ function delegateToTaskService(action, payload) {
 function purgeStructuredLogs(payload) {
   try {
     const verifiedRole = getUserVerifiedRole(payload);
-    if (verifiedRole !== "Administrador" && verifiedRole !== "Desarrollador") {
+    if (verifiedRole !== "Administrador") {
       logStructuredEvent("USER", "purgeStructuredLogs", "WARN", "UNAUTHORIZED_PURGE_ATTEMPT", "Intento no autorizado de eliminar registros de auditoría.", payload, verifiedRole);
       return { status: "error", errorCode: "UNAUTHORIZED", message: "Acceso denegado. Solo administradores pueden gestionar la purga de auditoría." };
     }
