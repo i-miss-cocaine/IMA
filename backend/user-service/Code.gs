@@ -3600,7 +3600,7 @@ function getSecurityDelegations(payload) {
     }
 
     let matches = true;
-    if (callerRole !== "Administrador" && callerRole !== "Desarrollador") {
+    if (callerRole !== "Administrador" && callerRole !== "Director") {
       if (delegante !== callerId && delegado !== callerId) matches = false;
     }
     if (deleganteUserId && String(deleganteUserId).trim() !== delegante) matches = false;
@@ -3870,7 +3870,7 @@ function getPrivacyRightsRequests(payload) {
     const st = String(row[5] || "Enviada");
 
     let matches = true;
-    if (callerRole !== "Administrador" && callerRole !== "Desarrollador") {
+    if (callerRole !== "Administrador" && callerRole !== "Director") {
       if (uId !== callerId) matches = false;
     }
     if (userId && String(userId).trim() !== uId) matches = false;
@@ -3902,7 +3902,7 @@ function updatePrivacyRightsRequestStatus(payload) {
   const callerId = payload._verifiedUserId;
   const { solicitudId, nuevoEstado, respuestaAdmin } = payload || {};
 
-  if (callerRole !== "Administrador" && callerRole !== "Desarrollador") {
+  if (callerRole !== "Administrador" && callerRole !== "Director") {
     throw new Error("Acceso denegado: Únicamente los administradores pueden tramitar solicitudes de derechos de privacidad.");
   }
   if (!solicitudId || !nuevoEstado) {
@@ -4115,7 +4115,7 @@ function revokeSecurityDelegation(payload) {
     if (matches.length !== 1) throw new Error(matches.length ? "Identificador de delegación ambiguo." : "Delegación no encontrada.");
     const targetIndex = matches[0], previousRow = data[targetIndex].slice();
     const delegadoId = String(previousRow[2] || "").trim();
-    if (callerRole !== "Administrador" && callerRole !== "Desarrollador" && String(previousRow[1] || "").trim() !== callerId) {
+    if (callerRole !== "Administrador" && callerRole !== "Director" && String(previousRow[1] || "").trim() !== callerId) {
       throw new Error("Acceso denegado: Únicamente el delegante titular o un administrador pueden revocar la delegación.");
     }
     if (String(previousRow[7] || "").trim() === "Revocada") return { status: "success", delegacionId: delegacionId, idempotent: true, message: "La delegación ya estaba revocada." };
@@ -4648,7 +4648,7 @@ function getEntityAuditHistory(payload) {
 
   if (!entityId) throw new Error("entityId es requerido.");
 
-  if (callerRole !== "Administrador" && callerRole !== "Desarrollador" && callerRole !== "Secretaría" && callerRole !== "Secretaria" && callerRole !== "Director") {
+  if (callerRole !== "Administrador" && callerRole !== "Secretaría" && callerRole !== "Secretaria" && callerRole !== "Director") {
     if (String(entityId).trim() !== String(callerId).trim()) {
       throw new Error("Acceso denegado: Únicamente personal autorizado de Administración, Dirección o Secretaría puede consultar la trazabilidad de otras entidades.");
     }
@@ -5233,7 +5233,7 @@ function mergeGuestData(payload) {
 function getNews(payload) {
   const verifiedRole = getUserVerifiedRole(payload);
   const isAuthenticated = verifiedRole !== "NO_ACCESS";
-  const privilegedRoles = ["Administrador", "Desarrollador", "Director", "Subdirector"];
+  const privilegedRoles = ["Administrador", "Director", "Subdirector"];
   const isPrivileged = privilegedRoles.indexOf(verifiedRole) !== -1;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const data = getOrCreateSheet(ss, "NoticiasPortal").getDataRange().getValues().slice(1);
@@ -6730,7 +6730,7 @@ function getInstitutionalAnnouncements(payload) {
   const verifiedRole = getUserVerifiedRole(payload);
   const isAuthenticated = verifiedRole !== "NO_ACCESS";
   const userAud = isAuthenticated ? normalizeString(verifiedRole) : "";
-  const privilegedRoles = ["Administrador", "Desarrollador", "Director", "Subdirector"];
+  const privilegedRoles = ["Administrador", "Director", "Subdirector"];
   const isPrivileged = privilegedRoles.indexOf(verifiedRole) !== -1;
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = getOrCreateSheet(ss, "ComunicadosInstitucionales");
@@ -9281,7 +9281,7 @@ function reviewAbsenceJustification(payload) {
   const actorId = String(p._verifiedUserId || "").trim();
   const solicitudId = String(p.solicitudId || "").trim();
   if (!actorId || actorRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
-  if (["Secretaría", "Director", "Subdirector", "Administrador", "Desarrollador"].indexOf(actorRole) === -1) return { status: "error", code: "AUTH_PERMISSION_DENIED", httpStatus: 403 };
+  if (["Secretaría", "Director", "Subdirector", "Administrador"].indexOf(actorRole) === -1) return { status: "error", code: "AUTH_PERMISSION_DENIED", httpStatus: 403 };
   if (!solicitudId || !p.nuevoEstado) return { status: "error", code: "INVALID_PAYLOAD" };
   const reviewLock = LockService.getScriptLock();
   try { reviewLock.waitLock(10000); } catch (_) { return { status: "error", code: "ABSENCE_REVIEW_LOCK_TIMEOUT", retryable: true }; }
@@ -9300,7 +9300,7 @@ function reviewAbsenceJustification(payload) {
   var studentUserId = String(row[map.EstudianteID] || row[2] || "").trim();
   var studentResource = resolveAbsenceReviewExpedienteId_(ss, studentUserId);
   if (!studentResource || studentResource.status !== "success") return { status: "error", code: studentResource && studentResource.code || "RESOURCE_OWNERSHIP_UNVERIFIED" };
-  if (actorRole === "Administrador" || actorRole === "Desarrollador") {
+  if (actorRole === "Administrador") {
     var institutionScope = null;
     try { institutionScope = getInstitutionalDepartmentScope_(p, actorRole); } catch (_) {}
     if (!institutionScope || institutionScope.status !== "success" || institutionScope.institutionWide !== true) {
@@ -10224,7 +10224,7 @@ function getInstitutionalAnnouncements(payload) {
 function createInstitutionalAnnouncement(payload) {
   try {
     const verifiedRole = (typeof getUserVerifiedRole === "function" ? getUserVerifiedRole(payload) : null) || (payload && (payload._verifiedRole || payload.authRole)) || "NO_ACCESS";
-    const isAuthorized = ["Administrador", "Desarrollador", "Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Profesor", "RecursosHumanos"].indexOf(verifiedRole) !== -1;
+    const isAuthorized = ["Administrador", "Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Profesor", "RecursosHumanos"].indexOf(verifiedRole) !== -1;
     if (!isAuthorized) {
       return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "No cuenta con autorización para publicar o gestionar comunicados e información institucional." };
     }
@@ -10477,7 +10477,7 @@ function getAuthorizationRequests(payload) {
   try {
     const verifiedRole = (typeof getUserVerifiedRole === "function" ? getUserVerifiedRole(payload) : null) || (payload && (payload._verifiedRole || payload.authRole)) || "NO_ACCESS";
     const callerId = (payload && payload._verifiedUserId) || "";
-    const isStaff = ["Administrador", "Desarrollador", "Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Profesor"].indexOf(verifiedRole) !== -1;
+    const isStaff = ["Administrador", "Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Profesor"].indexOf(verifiedRole) !== -1;
 
     const { tutorUserId, estudianteId, estado, solicitudAutorizacionId } = payload || {};
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -10602,7 +10602,7 @@ function respondToAuthorizationRequest(payload) {
       return { status: "error", code: "EXPIRED_REQUEST", message: "La fecha límite de autorización ha expirado y no se permiten respuestas extemporáneas." };
     }
 
-    const isStaff = ["Administrador", "Desarrollador", "Director", "Subdirector"].indexOf(verifiedRole) !== -1;
+    const isStaff = ["Administrador", "Director", "Subdirector"].indexOf(verifiedRole) !== -1;
     if (!isStaff && currentTutorId !== "TODOS" && currentTutorId !== callerId) {
       return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "No tiene autorización para responder a esta solicitud en representación de otro tutor." };
     }
@@ -10776,7 +10776,7 @@ function saveInstitutionalCalendarEvent(payload) {
   try {
     const verifiedRole = (typeof getUserVerifiedRole === "function" ? getUserVerifiedRole(payload) : null) || (payload && (payload._verifiedRole || payload.authRole)) || "NO_ACCESS";
     const callerId = (payload && payload._verifiedUserId) || "Sistema";
-    const isAuthorized = ["Administrador", "Desarrollador", "Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Profesor"].indexOf(verifiedRole) !== -1;
+    const isAuthorized = ["Administrador", "Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Profesor"].indexOf(verifiedRole) !== -1;
     if (!isAuthorized) {
       return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "No tiene autorización para registrar o modificar eventos en el calendario institucional." };
     }
@@ -11056,7 +11056,7 @@ function getNotificationAuditLogs(payload) {
     if (!verifiedRole || !verifiedUserId || verifiedRole === "NO_ACCESS") {
       return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
     }
-    const hasGlobalAuditPermission = ["Administrador", "Desarrollador"].indexOf(verifiedRole) !== -1 ||
+    const hasGlobalAuditPermission = verifiedRole === "Administrador" ||
       getDynamicPermissionsForRole(verifiedRole, "getNotificationAuditLogs") === true;
     if (!hasGlobalAuditPermission) {
       return { status: "error", code: "AUDIT_PERMISSION_DENIED" };
@@ -13294,7 +13294,7 @@ function searchGlobalOmnibox(payload) {
     const { filterAnoLectivo, filterGrado, filterSeccion, filterEstado } = payload || {};
 
     if (["Administrador", "Desarrollador", "Director", "Subdirector", "Secretaría", "Profesor", "Coordinador", "Consejeros", "Contador", "RecursosHumanos"].indexOf(verifiedRole) !== -1) {
-      const isPrivileged = ["Administrador", "Director", "Secretaría", "Secretaria", "Subdirector", "Desarrollador"].indexOf(verifiedRole) !== -1;
+      const isPrivileged = ["Administrador", "Director", "Secretaría", "Secretaria", "Subdirector"].indexOf(verifiedRole) !== -1;
 
       const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
       const matSheet = ss.getSheetByName("Matriculas");
@@ -13776,7 +13776,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["anoLectivo", "grado", "seccion", "periodo"],
         indicators: ["IND-ACAD-02", "IND-ACAD-05"],
-        rolesPermitidos: ["Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Profesor", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Profesor", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13789,7 +13789,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["anoLectivo", "grado", "seccion"],
         indicators: ["IND-ACAD-05"],
-        rolesPermitidos: ["Director", "Subdirector", "Coordinador", "Consejeros", "Profesor", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Subdirector", "Coordinador", "Consejeros", "Profesor", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13802,7 +13802,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["anoLectivo", "grado", "seccion", "fechaInicio", "fechaFin"],
         indicators: ["IND-ACAD-03"],
-        rolesPermitidos: ["Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Consejeros", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Consejeros", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13815,7 +13815,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["anoLectivo", "grado"],
         indicators: ["IND-ACAD-04"],
-        rolesPermitidos: ["Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Subdirector", "Secretaría", "Secretaria", "Coordinador", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13828,7 +13828,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["anoLectivo", "grado", "estado"],
         indicators: ["IND-ACAD-01"],
-        rolesPermitidos: ["Director", "Subdirector", "Secretaría", "Secretaria", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Subdirector", "Secretaría", "Secretaria", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13841,7 +13841,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["fechaInicio", "fechaFin", "estado"],
         indicators: ["IND-ADM-03"],
-        rolesPermitidos: ["Director", "Subdirector", "Secretaría", "Secretaria", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Subdirector", "Secretaría", "Secretaria", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13854,7 +13854,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["anoLectivo", "fechaInicio", "fechaFin"],
         indicators: ["IND-FIN-01", "IND-FIN-03"],
-        rolesPermitidos: ["Director", "Contador", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Contador", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13867,7 +13867,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["anoLectivo", "grado"],
         indicators: ["IND-FIN-04"],
-        rolesPermitidos: ["Director", "Contador", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Contador", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13880,7 +13880,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["fechaInicio", "fechaFin"],
         indicators: ["IND-FIN-01"],
-        rolesPermitidos: ["Director", "Contador", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Contador", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13893,7 +13893,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["anoLectivoInicio", "anoLectivoFin"],
         indicators: ["IND-FIN-01", "IND-FIN-02", "IND-FIN-03"],
-        rolesPermitidos: ["Director", "Contador", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Contador", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13906,7 +13906,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["anoLectivo", "fechaInicio", "fechaFin"],
         indicators: ["IND-ADM-01", "IND-FIN-02"],
-        rolesPermitidos: ["Director", "Contador", "RecursosHumanos", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Contador", "RecursosHumanos", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13919,7 +13919,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["fechaInicio", "fechaFin"],
         indicators: ["IND-FIN-01"],
-        rolesPermitidos: ["Director", "Contador", "EncargadoTienda", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Contador", "EncargadoTienda", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13932,7 +13932,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["fechaInicio", "fechaFin"],
         indicators: ["IND-FIN-01"],
-        rolesPermitidos: ["Director", "Contador", "EncargadoCafeteria", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Contador", "EncargadoCafeteria", "Administrador"],
         estado: "Activo"
       },
       {
@@ -13945,7 +13945,7 @@ function getInstitutionalReportCatalog(payload) {
         supportedFormats: ["PDF", "EXCEL", "PANTALLA"],
         filters: ["fechaInicio", "fechaFin"],
         indicators: ["IND-ADM-03"],
-        rolesPermitidos: ["Director", "Desarrollador", "Administrador"],
+        rolesPermitidos: ["Director", "Administrador"],
         estado: "Activo"
       }
     ];
