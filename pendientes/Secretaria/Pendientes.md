@@ -202,7 +202,7 @@
 <!-- ID: F34-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
 ### [ ] [F34-TASK01] Unificar ciclo de vida de justificaciones y sincronización con asistencia
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Hallazgo de origen:** F34-12, F34-07 y PT-F34-04; dualidad entre user-service y academic-service.
 - **Severidad:** Crítica / P0. **Objetivo:** garantizar que toda justificación aprobada actualice el registro oficial de asistencia sin importar el canal de presentación.
 - **Acción ejecutable:** unificar el flujo de presentación/revisión o crear una operación interservicio canónica; al aprobar, actualizar `RegistrosAsistencia` con `Justificada=true`, conservar la justificación y el evento de decisión; hacer la operación idempotente y reconciliable.
@@ -1510,7 +1510,7 @@
 <!-- ID: TASK-106 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
 ### [ ] [TASK-106] [P0] Integridad criptográfica, versionado y protección contra sustitución de evidencias documentales
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Prioridad:** P0 (Crítica)
 - **Orden de Ejecución:** 2 (Garantía de inmutabilidad previa a aprobaciones y firmas)
 - **Componentes Afectados:**
@@ -1881,7 +1881,7 @@
 <!-- ID: F34-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
 ### [ ] [F34-TASK01] Unificar ciclo de vida de justificaciones y sincronización con asistencia
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Hallazgo de origen:** F34-12, F34-07 y PT-F34-04; dualidad entre user-service y academic-service.
 - **Severidad:** Crítica / P0. **Objetivo:** garantizar que toda justificación aprobada actualice el registro oficial de asistencia sin importar el canal de presentación.
 - **Acción ejecutable:** unificar el flujo de presentación/revisión o crear una operación interservicio canónica; al aprobar, actualizar `RegistrosAsistencia` con `Justificada=true`, conservar la justificación y el evento de decisión; hacer la operación idempotente y reconciliable.
@@ -3182,7 +3182,7 @@
 <!-- ID: TASK-106 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
 ### [ ] [TASK-106] [P0] Integridad criptográfica, versionado y protección contra sustitución de evidencias documentales
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Prioridad:** P0 (Crítica)
 - **Orden de Ejecución:** 2 (Garantía de inmutabilidad previa a aprobaciones y firmas)
 - **Componentes Afectados:**
@@ -4646,7 +4646,7 @@
 <!-- ID: F34-TASK06 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
 ### [ ] [F34-TASK06] Enviar notificaciones multicanal reactivas por cambio de estado
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Hallazgo de origen:** F34-08 y CAR-F34-08.
 - **Severidad:** Alta / P1. **Objetivo:** informar al solicitante cuando el trámite requiere corrección, se aprueba o se rechaza.
 - **Acción ejecutable:** conectar transiciones autorizadas del workflow con `sendMultiChannelNotification`; incluir estado, acción requerida, fecha límite y enlace seguro; agrupar notificaciones y deduplicar por solicitud/versión/estado/destinatario.
@@ -5097,7 +5097,7 @@
 <!-- ID: TASK-209 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
 ### [ ] [TASK-209] Optimización de rutas, orden de paradas y planificación de recorridos
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (1.4) y Plan de Implementación TAREA 21
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Reducción de tiempos de viaje, ahorro de combustible y ordenamiento lógico de paradas)
