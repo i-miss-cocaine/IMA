@@ -3635,6 +3635,9 @@
 - **Evidencia local/CI:** contratos Node.js en GitHub Actions Node 24.22.2; Accounting Import Preflight run 44099188130 SUCCESS 44/44; Identity Mapping run 44098993823 SUCCESS; Developer Service Registry run 44099042479 SUCCESS. Pruebas cubren clave antigua/nueva durante solapamiento, revocación selectiva, rechazo de firma inválida sin consumir requestId y replay.
 - **Pendiente para cierre:** automatizar/procedimentar el alta y rotación coordinada de propiedades por despliegue, registrar auditoría de uso de credenciales sin exponer secretos y obtener evidencia autorizada de las Script Properties y deployments reales. No se afirma que los secretos estén provisionados en entornos desplegados.
 
+- **Resolución normativa C3.007:** La provisión, rotación y revocación de secretos HMAC por par de servicios queda supersedida por Normas_Desarollo.md §17.8. No crear propiedades de secretos interservicio ni automatizar copias de claves entre proyectos. No eliminar ni modificar AUTH_TOKEN_SECRET destinado a firmar/verificar la sesión de usuario; ese secreto pertenece al login, no al canal interservicio. La evidencia de propiedades/deployments reales no se afirma ni se necesita para esta resolución normativa.
+- **Estado:** Supersedida por norma vigente (NDASC §17.8); no implementar gestión de secretos HMAC personalizados.
+
 ### [AUD-NG-085] Corregir el orden y la atomicidad de la protección anti-replay
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-085 (TASK-048 / F23-Task05)
 - **Severidad/Clasificación:** Alto

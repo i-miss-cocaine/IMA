@@ -12,3 +12,4 @@ Estado operativo: ciclo 3 en implementación continua. La regla de cierre por ta
 | C3.004 | IMA-ITER-20261124-002 | Norma obligatoria: completar tareas parciales, checkpoint/commit por tarea y continuidad inmediata | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.005 | IMA-ITER-20261124-003 | AUD-NG-082: sesión firmada y RBAC sin suplantación de authRole | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.006 | IMA-ITER-20261124-004 | AUD-NG-083: resolución por contradicción con NDASC §17.8 | Cerrado por supersesión normativa | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
+| C3.007 | IMA-ITER-20261124-005 | AUD-NG-084: resolución por contradicción con NDASC §17.8 | Cerrado por supersesión normativa | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |

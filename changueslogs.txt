@@ -4726,3 +4726,11 @@ C3.006 — IMA-ITER-20261124-004
 - Los requisitos originales se conservan como antecedentes; no se declara aprobada ninguna prueba HMAC ni se afirman propiedades/deployments reales.
 - Rama: NG_beta_0.0.0.1_work. HEAD de entrada: f166162387914d3b62aa9eafeedc3bab15cf12b3.
 ===============================================================================
+
+===============================================================================
+C3.007 — IMA-ITER-20261124-005
+===============================================================================
+- AUD-NG-084 resuelta por supersesión normativa: no se implementarán secretos HMAC personalizados ni rotación interservicio, por incompatibilidad con Normas_Desarollo.md §17.8.
+- Los requisitos originales se conservan como antecedentes; no se declara aprobada ninguna prueba HMAC ni se afirman propiedades/deployments reales.
+- Rama: NG_beta_0.0.0.1_work. HEAD de entrada: 605c543f596acedb50d45def98ac9c968ab5845f.
+===============================================================================
