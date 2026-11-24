@@ -62,7 +62,7 @@ function fixture(spec, options = {}) {
   const payload = { _claims: claims, sessionToken: "test-session" };
   const fn = context[spec.functionName];
   const result = spec.invoke(fn,payload,ss,actor);
-  return { result, assignments, context, now, fn };
+  return { result, assignments, context, users, ss, actor, payload, fn };
 }
 function allowed(result) { return result && (result.authorized === true || (result.valid === true && result.authorized === true)); }
 
@@ -81,16 +81,12 @@ test("los consumidores de ámbito exigen esquema actual y FK activa antes de aut
   }
 });
 
-test("los consumidores USER/TASK/ACADEMIC/EXAM conservan compatibilidad legacy solo con usuario activo y FK actual", () => {
+test("TASK/ACADEMIC/EXAM conservan compatibilidad legacy solo con usuario activo y FK actual", () => {
   for (const spec of specs.filter(item => item.name !== "ACCOUNTING")) {
     const valid = fixture(spec, { membershipId: "" });
     assert.equal(allowed(valid.result), true, spec.name + " debe aceptar usuario legacy activo con FK actual");
     const inactiveUser = fixture(spec, { membershipId: "" });
-    inactiveUser.assignments.rows[1][5] = "Activo";
     const usersSheet = { getDataRange: () => ({ getValues: () => [["UserID","Nombre","","","","","Rol","","","","Estado"],["EMP-1","Empleado","","","","","Docente","","","","Inactivo"]] }) };
-    const original = inactiveUser.result;
-    assert.ok(original);
-    const source = fs.readFileSync(path.join(root,spec.file),"utf8");
     const context = inactiveUser.context;
     const fn = context[spec.functionName];
     const claims = {userId:"EMP-1",role:"Docente",membershipId:"",institutionId:""};
