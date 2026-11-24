@@ -168,3 +168,8 @@ test("el resolver valida la versión de contrato y el estado del emisor", () => 
  source[7] = "suspendido";
  assert.equal(resolverFor([target, source], [relation])({ serviceId: "SVC-1", sourceServiceId: "SRC-1", action: "readRecord" }).code, "SERVICE_SOURCE_NOT_ACTIVE");
 });
+
+test("el cliente adjunta la versión de contrato resuelta y el emisor opcional", () => {
+ assert.match(api, /contractVersion: options\.contractVersion \|\| resolution\.version/);
+ assert.match(api, /sourceServiceId: options\.sourceServiceId \|\| ""/);
+});
