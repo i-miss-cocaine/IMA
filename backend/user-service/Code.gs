@@ -14566,7 +14566,7 @@ function parseInternalRoleAssignmentDate_(value, inclusiveEnd) {
 }
 
 function assignRoleScope(payload) {
-  var lock = null, lockAcquired = false;
+  var lock = null, lockAcquired = false, assignmentSheet = null, writeApplied = false, writeIndex = -1, previousRow = null, wasAppend = false;
   try {
     var p = payload || {};
     var verifiedRole = String(p._verifiedRole || "").trim() || "NO_ACCESS";
@@ -14625,7 +14625,7 @@ function assignRoleScope(payload) {
     var responsibility = resolveActiveInternalResponsibility_(ss, responsibilityId);
     if (!responsibility) return { status: "error", code: "ROLE_RESPONSIBILITY_NOT_ACTIVE" };
     if (isSubstitute && !responsibility.permiteSuplencia) return { status: "error", code: "ROLE_SUBSTITUTION_NOT_ALLOWED" };
-    var sheet = getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
+    var sheet = assignmentSheet = getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
     var legacyHeaders = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
     var membershipHeaders = legacyHeaders.concat(["InstitutionID","MembershipID"]);
     var currentHeaders = membershipHeaders.concat(["ResponsibilityID"]);
@@ -14718,6 +14718,9 @@ function assignRoleScope(payload) {
       if (overlappingSubstitute) return { status: "error", code: "ROLE_SCOPE_SUBSTITUTE_OVERLAP" };
     }
     var now = new Date().toISOString();
+    writeIndex = foundIndex !== -1 ? foundIndex : data.length;
+    previousRow = foundIndex !== -1 ? data[foundIndex].slice() : null;
+    wasAppend = foundIndex === -1;
     var before = foundIndex !== -1 ? {
       userId: data[foundIndex][1], roleId: data[foundIndex][2], scopeType: data[foundIndex][3],
       scopeValues: data[foundIndex][4], estado: data[foundIndex][5], fechaInicio: data[foundIndex][8],
@@ -14735,6 +14738,7 @@ function assignRoleScope(payload) {
     ];
     if (foundIndex !== -1) sheet.getRange(foundIndex + 1, 1, 1, currentHeaders.length).setValues([rowOut]);
     else sheet.appendRow(rowOut);
+    writeApplied = true;
     recordEntityChangeLog("AsignacionAmbitoRol", assignmentId, before, {
       userId: userId, roleId: roleId, institutionId: institutionId, membershipId: membershipId || null,
       responsibilityId: responsibilityId, scopeType: scopeType, scopeValues: normalizedScopeValues,
@@ -14750,7 +14754,15 @@ function assignRoleScope(payload) {
       scopeType: scopeType, scopeValues: normalizedScopeValues, estado: state
     };
   } catch (error) {
-    logStructuredEvent("USER", "assignRoleScope", "ERROR", "SCOPE_ASSIGN_FAILED", error.message, {}, payload && payload._verifiedRole);
+    if (writeApplied && assignmentSheet) {
+      try {
+        if (wasAppend) assignmentSheet.deleteRow(writeIndex + 1);
+        else if (previousRow) assignmentSheet.getRange(writeIndex + 1, 1, 1, previousRow.length).setValues([previousRow]);
+      } catch (rollbackError) {
+        return { status: "error", code: "ROLE_SCOPE_AUDIT_COMPENSATION_REQUIRED", message: error.message };
+      }
+    }
+    try { logStructuredEvent("USER", "assignRoleScope", "ERROR", "SCOPE_ASSIGN_FAILED", error.message, {}, payload && payload._verifiedRole); } catch (_) {}
     return { status: "error", code: error.message || "ROLE_SCOPE_ASSIGN_FAILED", message: error.message };
   } finally {
     if (lockAcquired) { try { lock.releaseLock(); } catch (_) {} }
