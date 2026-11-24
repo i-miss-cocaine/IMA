@@ -16,7 +16,11 @@ function extractFunction(source, name) {
   const next = /\nfunction [A-Za-z0-9_$]+\s*\(/g;
   next.lastIndex = start + 10;
   const match = next.exec(source);
-  return source.slice(start, match ? match.index : source.length);
+  const assignmentBoundary = name === "getDynamicDashboardModuleRoute" ?
+    source.indexOf("\nwindow.loadDynamicDashboard", start) : -1;
+  const end = assignmentBoundary >= 0 && (!match || assignmentBoundary < match.index) ?
+    assignmentBoundary : (match ? match.index : source.length);
+  return source.slice(start, end);
 }
 
 function makeNode(tagName) {
