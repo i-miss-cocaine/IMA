@@ -68,7 +68,7 @@ function makeContext(options = {}) {
     audit: [],
     events: []
   };
-  for (const name of ["normalizeString","resolveActiveInternalResponsibility_","parseInternalRoleAssignmentDate_","manageInternalRoleCatalog","getInternalRoleCatalog","assignRoleScope","getInternalRoleAssignments","getConfiguredRbacRoleIds_"]) {
+  for (const name of ["normalizeString","resolveActiveInternalResponsibility_","parseInternalRoleAssignmentDate_","formatInternalRoleAssignmentDate_","manageInternalRoleCatalog","getInternalRoleCatalog","assignRoleScope","getInternalRoleAssignments","getConfiguredRbacRoleIds_"]) {
     const source = extractFunction(name);
     vm.runInNewContext(source, context);
   }
