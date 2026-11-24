@@ -14548,7 +14548,7 @@ function getWelfareStudentAccess_(payload, studentId) {
   try {
     var scopedPayload = Object.assign({}, payload || {}, { estudianteId: target });
     var scope = validateAcademicResponsibilityAndScopeAccess(scopedPayload);
-    if (!scope || scope.authorized !== true) return { authorized: false, code: String(scope && scope.code || "WELFARE_SCOPE_DENIED") };
+    if (!scope || scope.authorized !== true) return { authorized: false, code: "WELFARE_SCOPE_DENIED" };
     return { authorized: true, identity: identity, scope: scope };
   } catch (_) {
     return { authorized: false, code: "WELFARE_SCOPE_VALIDATION_FAILED" };
