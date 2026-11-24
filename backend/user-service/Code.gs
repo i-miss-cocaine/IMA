@@ -11224,7 +11224,7 @@ function processWorkflowDecision(payload) {
     var estadoActual = String(solRow[6] || "").trim(), asignadoAActual = String(solRow[7] || "").trim();
     if (["Aprobada", "Rechazada", "Cancelada"].indexOf(estadoActual) !== -1) throw new Error("WORKFLOW_INVALID_STATE");
     var decSheet = ensureWorkflowDecisionAuditSchema_(getOrCreateSheet(ss, "RevisionesDecisionesTramite"));
-    var integrity = verifyWorkflowDecisionAuditChain({ _verifiedUserId: callerId });
+    var integrity = verifyWorkflowDecisionAuditChain({ _verifiedUserId: callerId }, true);
     if (!integrity.cadenaValida) throw new Error("WORKFLOW_AUDIT_CHAIN_BROKEN");
     var decData = decSheet.getDataRange().getValues();
     var targetEtapa = etapaNombre || asignadoAActual || "Revisión General";
@@ -11239,8 +11239,10 @@ function processWorkflowDecision(payload) {
     else if (accionDecision === "DEVUELTO_CORRECCION") { estadoFinalCalculado = "Requiere Corrección"; siguienteAsignadoCalculado = solRow[1] || "Solicitante"; }
     else if (accionDecision === "DERIVADO") { estadoFinalCalculado = "Derivada"; siguienteAsignadoCalculado = "Dirección/Comité"; }
     var decisionId = "DEC-" + Utilities.getUuid(), now = new Date(), nowISO = now.toISOString();
+    var correlationId = String(payload.correlationId || "").trim() || "SERVER-" + Utilities.getUuid();
+    if (decData.slice(1).some(function(row) { return String(row[15] || "").trim() === correlationId; })) throw new Error("WORKFLOW_DECISION_DUPLICATE_CORRELATION");
     var auditRow = [decisionId, solicitudId, targetEtapa, callerId, accionDecision, observacionesInternas,
-      observacionesPublicas, nowISO, "APPS_SCRIPT", "", "", "", "", "2", callerRole, String(payload.correlationId || "SERVER-" + Utilities.getUuid())];
+      observacionesPublicas, nowISO, "APPS_SCRIPT", "", "", "", "", "2", callerRole, correlationId];
     var appended = appendWorkflowDecisionAuditEvent_(decSheet, auditRow, callerId);
     var requestRowNumber = idx + 1;
     try {
@@ -11282,31 +11284,35 @@ function processWorkflowDecision(payload) {
   return workflowResponse;
 }
 function getWorkflowHistory(payload) {
-  var solicitudId = String(payload && payload.solicitudId || "").trim();
-  if (!solicitudId) throw new Error("solicitudId es requerido.");
-  var integrity = verifyWorkflowDecisionAuditChain({ solicitudId: solicitudId, _verifiedUserId: payload && payload._verifiedUserId });
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var decSheet = ensureWorkflowDecisionAuditSchema_(getOrCreateSheet(ss, "RevisionesDecisionesTramite"));
-  var decData = decSheet.getDataRange().getValues();
-  var history = decData.length > 1 ? decData.slice(1).filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).map(function(row) {
-    return { decisionId: row[0], solicitudId: row[1], etapaNombre: row[2], revisorId: row[3],
-      accionDecision: row[4], observacionesInternas: row[5], observacionesPublicas: row[6],
-      fechaDecision: row[7] ? normalizeWorkflowDecisionAuditDate_(row[7]) : null,
-      hashPrevio: row[9] || "", hashActual: row[10] || "", decisionIdOriginal: row[11] || "",
-      motivoCorreccion: row[12] || "", hashSchemaVersion: row[13] || "legacy", actorRole: row[14] || "", correlationId: row[15] || "" };
-  }) : [];
-  var firmSheet = getOrCreateSheet(ss, "FirmasConformidades"), firmData = firmSheet.getDataRange().getValues();
-  var signatures = firmData.length > 1 ? firmData.slice(1).filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).map(function(row) {
-    return { firmaId: row[0], solicitudId: row[1], documentoId: row[2], firmanteId: row[3], rolFirmante: row[4],
-      tipoFirma: row[5], tokenVerificacion: row[6], fechaFirma: row[7] ? new Date(row[7]).toISOString() : null,
-      ipOrigen: row[8] || "", documentoHash: row[9] || "", signatureHash: row[10] || "",
-      versionDocumento: row[11] || "", metodoAutenticacion: row[12] || "", transaccionId: row[13] || "" };
-  }) : [];
-  return { status: "success", historialDecisiones: history, firmas: signatures,
-    integridadAuditoria: { cadenaValida: integrity.cadenaValida, totalDecisionesAuditadas: integrity.totalDecisionesAuditadas,
-      inconsistencias: integrity.inconsistencias } };
-}
-// [TASK-039] [F22-Task02] - Registro de firma electrónica y conformidad institucional con vinculación criptográfica SHA-256
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error("WORKFLOW_AUDIT_LOCKED");
+  try {
+    var solicitudId = String(payload && payload.solicitudId || "").trim();
+    if (!solicitudId) throw new Error("solicitudId es requerido.");
+    var integrity = verifyWorkflowDecisionAuditChain({ solicitudId: solicitudId, _verifiedUserId: payload && payload._verifiedUserId }, true);
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var decSheet = ensureWorkflowDecisionAuditSchema_(getOrCreateSheet(ss, "RevisionesDecisionesTramite"));
+    var decData = decSheet.getDataRange().getValues();
+    var history = decData.length > 1 ? decData.slice(1).filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).map(function(row) {
+      return { decisionId: row[0], solicitudId: row[1], etapaNombre: row[2], revisorId: row[3],
+        accionDecision: row[4], observacionesInternas: row[5], observacionesPublicas: row[6],
+        fechaDecision: row[7] ? normalizeWorkflowDecisionAuditDate_(row[7]) : null,
+        hashPrevio: row[9] || "", hashActual: row[10] || "", decisionIdOriginal: row[11] || "",
+        motivoCorreccion: row[12] || "", hashSchemaVersion: row[13] || "legacy",
+        actorRole: row[14] || "", correlationId: row[15] || "" };
+    }) : [];
+    var firmSheet = getOrCreateSheet(ss, "FirmasConformidades"), firmData = firmSheet.getDataRange().getValues();
+    var signatures = firmData.length > 1 ? firmData.slice(1).filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).map(function(row) {
+      return { firmaId: row[0], solicitudId: row[1], documentoId: row[2], firmanteId: row[3], rolFirmante: row[4],
+        tipoFirma: row[5], tokenVerificacion: row[6], fechaFirma: row[7] ? new Date(row[7]).toISOString() : null,
+        ipOrigen: row[8] || "", documentoHash: row[9] || "", signatureHash: row[10] || "",
+        versionDocumento: row[11] || "", metodoAutenticacion: row[12] || "", transaccionId: row[13] || "" };
+    }) : [];
+    return { status: "success", historialDecisiones: history, firmas: signatures,
+      integridadAuditoria: { cadenaValida: integrity.cadenaValida, totalDecisionesAuditadas: integrity.totalDecisionesAuditadas,
+        inconsistencias: integrity.inconsistencias } };
+  } finally { lock.releaseLock(); }
+}// [TASK-039] [F22-Task02] - Registro de firma electrónica y conformidad institucional con vinculación criptográfica SHA-256
 function ensureDocumentSignatureSchema_(sheet) {
   const headers = ["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion",
     "FechaFirma","IpMetadata","DocumentoHash","SignatureHash","VersionDocumento","MetodoAutenticacion","TransaccionID"];
@@ -12420,6 +12426,14 @@ function verifyWorkflowDecisionAuditRows_(rows) {
     var schemaVersion = String(row[13] || "").trim();
     function add(code, message) { inconsistencias.push({ rowNumber: rowNumber, decisionId: decisionId, solicitudId: solicitudId, tipoError: code, mensaje: message }); }
     if (!decisionId || !solicitudId) add("WORKFLOW_AUDIT_REQUIRED_FIELDS_MISSING", "La decisión carece de ID o solicitud.");
+    if (schemaVersion === "2" && (!String(row[3] || "").trim() || !String(row[4] || "").trim() ||
+        !String(row[14] || "").trim() || !String(row[15] || "").trim())) {
+      add("WORKFLOW_AUDIT_V2_FIELDS_MISSING", "El evento v2 requiere actor, acción, rol verificado y correlationId.");
+    }
+    if (schemaVersion === "2" && String(row[2] || "").indexOf("Corrección-") === 0 &&
+        (!String(row[11] || "").trim() || !String(row[12] || "").trim())) {
+      add("WORKFLOW_AUDIT_CORRECTION_LINK_MISSING", "El evento de corrección requiere ID original y motivo.");
+    }
     if (decisionId && seen[decisionId]) add("WORKFLOW_AUDIT_DUPLICATE_DECISION_ID", "El ID de decisión aparece más de una vez.");
     if (decisionId) seen[decisionId] = true;
     if (!hashPrevious) add("WORKFLOW_AUDIT_PREVIOUS_HASH_MISSING", "La decisión no contiene hashPrevio.");
@@ -12497,38 +12511,45 @@ function appendWorkflowDecisionAuditEvent_(sheet, row, actorId) {
   }
 }
 
-function verifyWorkflowDecisionAuditChain(payload) {
-  var solicitudId = String(payload && payload.solicitudId || "").trim();
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var decSheet = ensureWorkflowDecisionAuditSchema_(getOrCreateSheet(ss, "RevisionesDecisionesTramite"));
-  var rows = decSheet.getDataRange().getValues().slice(1).filter(function(row) {
-    return String(row[0] || "").trim() || String(row[1] || "").trim();
-  });
-  var audit = verifyWorkflowDecisionAuditRows_(rows), inconsistencias = audit.inconsistencias.slice(), checkpointInitialized = false;
-  var checkpoint = null;
-  try {
-    checkpoint = getWorkflowDecisionAuditCheckpoint_();
-    if (!checkpoint && audit.valid) {
-      checkpoint = saveWorkflowDecisionAuditCheckpoint_(audit, payload && payload._verifiedUserId || "SYSTEM_BASELINE");
-      checkpointInitialized = true;
-    } else if (!checkpoint) {
-      inconsistencias.push({ tipoError: "WORKFLOW_AUDIT_CHECKPOINT_NOT_INITIALIZED", mensaje: "No se pudo establecer el checkpoint inicial porque la cadena ya contiene inconsistencias." });
-    } else {
-      var check = compareWorkflowDecisionAuditCheckpoint_(audit, checkpoint);
-      if (!check.valid) inconsistencias.push(check.inconsistencia);
-    }
-  } catch (checkpointError) {
-    inconsistencias.push({ tipoError: "WORKFLOW_AUDIT_CHECKPOINT_ERROR", mensaje: String(checkpointError && checkpointError.message || checkpointError) });
+function verifyWorkflowDecisionAuditChain(payload, lockAlreadyHeld) {
+  var lock = null, acquired = false;
+  if (!lockAlreadyHeld) {
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) return { status: "error", code: "WORKFLOW_AUDIT_LOCKED", cadenaValida: false, inconsistencias: [] };
+    acquired = true;
   }
-  var scopedCount = solicitudId ? rows.filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).length : rows.length;
-  var valid = inconsistencias.length === 0;
-  return { status: "success", cadenaValida: valid, totalDecisionesAuditadas: rows.length,
-    totalDecisionesSolicitud: scopedCount, inconsistencias: inconsistencias, solicitudId: solicitudId || "TODAS",
-    checkpointInicializado: checkpointInitialized, checkpointVersion: checkpoint && checkpoint.version || null,
-    message: valid ? "Cadena global de decisiones y checkpoint confiable verificados."
-      : "Alerta de integridad: la cadena global o su checkpoint confiable presentan inconsistencias." };
-}
-function recordWorkflowDecisionCorrection(payload) {
+  try {
+    var solicitudId = String(payload && payload.solicitudId || "").trim();
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var decSheet = ensureWorkflowDecisionAuditSchema_(getOrCreateSheet(ss, "RevisionesDecisionesTramite"));
+    var rows = decSheet.getDataRange().getValues().slice(1).filter(function(row) {
+      return String(row[0] || "").trim() || String(row[1] || "").trim();
+    });
+    var audit = verifyWorkflowDecisionAuditRows_(rows), inconsistencias = audit.inconsistencias.slice(), checkpointInitialized = false;
+    var checkpoint = null;
+    try {
+      checkpoint = getWorkflowDecisionAuditCheckpoint_();
+      if (!checkpoint && audit.valid) {
+        checkpoint = saveWorkflowDecisionAuditCheckpoint_(audit, payload && payload._verifiedUserId || "SYSTEM_BASELINE");
+        checkpointInitialized = true;
+      } else if (!checkpoint) {
+        inconsistencias.push({ tipoError: "WORKFLOW_AUDIT_CHECKPOINT_NOT_INITIALIZED", mensaje: "No se pudo establecer el checkpoint inicial porque la cadena ya contiene inconsistencias." });
+      } else {
+        var check = compareWorkflowDecisionAuditCheckpoint_(audit, checkpoint);
+        if (!check.valid) inconsistencias.push(check.inconsistencia);
+      }
+    } catch (checkpointError) {
+      inconsistencias.push({ tipoError: "WORKFLOW_AUDIT_CHECKPOINT_ERROR", mensaje: String(checkpointError && checkpointError.message || checkpointError) });
+    }
+    var scopedCount = solicitudId ? rows.filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).length : rows.length;
+    var valid = inconsistencias.length === 0;
+    return { status: "success", cadenaValida: valid, totalDecisionesAuditadas: rows.length,
+      totalDecisionesSolicitud: scopedCount, inconsistencias: inconsistencias, solicitudId: solicitudId || "TODAS",
+      checkpointInicializado: checkpointInitialized, checkpointVersion: checkpoint && checkpoint.version || null,
+      message: valid ? "Cadena global de decisiones y checkpoint confiable verificados."
+        : "Alerta de integridad: la cadena global o su checkpoint confiable presentan inconsistencias." };
+  } finally { if (acquired && lock) lock.releaseLock(); }
+}function recordWorkflowDecisionCorrection(payload) {
   payload = payload || {};
   var decisionIdOriginal = String(payload.decisionIdOriginal || "").trim();
   var solicitudId = String(payload.solicitudId || "").trim();
@@ -12557,10 +12578,12 @@ function recordWorkflowDecisionCorrection(payload) {
     });
     if (alreadyCorrected) throw new Error("DECISION_ALREADY_CORRECTED");
     var correctionId = "DEC-CORR-" + Utilities.getUuid(), now = new Date(), nowISO = now.toISOString();
+    var correlationId = String(payload.correlationId || "").trim() || "SERVER-" + Utilities.getUuid();
+    if (rows.some(function(row) { return String(row[15] || "").trim() === correlationId; })) throw new Error("WORKFLOW_CORRECTION_DUPLICATE_CORRELATION");
     var observation = String(payload.observaciones || "").slice(0, 2000);
     var auditRow = [correctionId, solicitudId, "Corrección-" + String(originalRow[2] || ""), callerId,
       nuevaAccionDecision, observation, motivoCorreccion, nowISO, "APPS_SCRIPT", "", "",
-      decisionIdOriginal, motivoCorreccion, "2", callerRole, String(payload.correlationId || "SERVER-" + Utilities.getUuid())];
+      decisionIdOriginal, motivoCorreccion, "2", callerRole, correlationId];
     var appended = appendWorkflowDecisionAuditEvent_(decSheet, auditRow, callerId);
     return { status: "success", decisionIdCorreccion: correctionId, decisionIdOriginal: decisionIdOriginal,
       solicitudId: solicitudId, nuevaAccion: nuevaAccionDecision, hashActual: appended.hashActual,
