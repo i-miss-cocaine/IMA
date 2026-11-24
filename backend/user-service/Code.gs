@@ -981,13 +981,13 @@ const ROLE_PERMISSIONS = {
     "createLinkInvitation", "acceptLinkInvitation", "getGuardianStudents", "registerLegalCustodyRestriction", "getStudentGuardianConsolidatedList", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "getDepartmentalOutbox", "registerDepartmentalDocumentDelivery", "retryDepartmentalDocumentDelivery", "revokeDepartmentalDocumentDeliveryLink", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "createUserNotification", "sendMultiChannelNotification", "dispatchScheduleChangeNotifications", "getScheduleChangeNotificationLogs", "getAdmissionNotificationLogs", "getStudentProcedureNotificationLogs", "getNotificationPreferences", "getAdministrativeRequests", "verifyDocumentEvidenceIntegrity", "getAdministrativeRequestsHistory", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "bookAppointment", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders",
     "getUserSettings", "saveUserSettings", "getSystemConfigurations", "saveSystemConfiguration", "getProviderIntegrations", "configureProviderIntegration",
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "verifyWorkflowDecisionAuditChain", "recordWorkflowDecisionCorrection",
-    "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "updateTicketStatus", "saveVisualPaletteProposal", "approveVisualPaletteProposal", "registerAndDispatchEvent", "retryFailedEventsQueue", "recordTraceabilityLog", "getTraceabilityCorrelationLogs", "getOperationalCapacityMetrics", "runInterdepartmentalIntegrationTestSuite", "getSharedConfigurationsCatalog", "manageInstitutionalDataCache", "purgeSecurityCaches", "dispatchSecurityEvent", "processSecurityEventQueue", "getSecurityEventsQueue", "getSecurityAndComplianceDashboardData", "generatePrivilegeAndAccountAuditReport", "getPaginatedAuditLogReport", "auditAndReconcileIdentityInconsistencies", "saveEvidenceIntegrityPolicy"
+    "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "assignRoleScope", "updateTicketStatus", "saveVisualPaletteProposal", "approveVisualPaletteProposal", "registerAndDispatchEvent", "retryFailedEventsQueue", "recordTraceabilityLog", "getTraceabilityCorrelationLogs", "getOperationalCapacityMetrics", "runInterdepartmentalIntegrationTestSuite", "getSharedConfigurationsCatalog", "manageInstitutionalDataCache", "purgeSecurityCaches", "dispatchSecurityEvent", "processSecurityEventQueue", "getSecurityEventsQueue", "getSecurityAndComplianceDashboardData", "generatePrivilegeAndAccountAuditReport", "getPaginatedAuditLogReport", "auditAndReconcileIdentityInconsistencies", "saveEvidenceIntegrityPolicy"
   ],
   "Subdirector": [
     "registerLegacyDocumentInventory", "getLegacyDocumentInventory", "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "saveGameResult", "getGameStats", "getGlobalTop", "recordAnalytics", "getLearningProfile", "mergeGuestData", "updateUserProfile", "findPersonMatches", "generateInstitutionalId",
     "getInstitutionalCriteria", "saveInstitutionalCriterion", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans", "saveSupportPlan",
     "registerSpreadsheetSource", "resolveSpreadsheetSource", "getSpreadsheetCatalog", "verifyWorkflowDecisionAuditChain", "recordWorkflowDecisionCorrection",
-    "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "createLinkInvitation", "getGuardianStudents", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "getDepartmentalOutbox", "registerDepartmentalDocumentDelivery", "retryDepartmentalDocumentDelivery", "revokeDepartmentalDocumentDeliveryLink", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "sendMultiChannelNotification", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders"
+    "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "assignRoleScope", "createLinkInvitation", "getGuardianStudents", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "getDepartmentalOutbox", "registerDepartmentalDocumentDelivery", "retryDepartmentalDocumentDelivery", "revokeDepartmentalDocumentDeliveryLink", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "sendMultiChannelNotification", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders"
   ],
   "Secretaría": [
     "registerLegacyDocumentInventory", "getLegacyDocumentInventory", "createNews", "uploadNewsImage", "getNews", "updateNewsStatus", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "updateUserProfile", "findPersonMatches", "createPerson", "linkPersonAccount", "manageAccountState", "generateInstitutionalId",
@@ -996,7 +996,7 @@ const ROLE_PERMISSIONS = {
     "createLinkInvitation", "acceptLinkInvitation", "getGuardianStudents", "registerLegalCustodyRestriction", "getStudentGuardianConsolidatedList", "getInstitutionalAnnouncements", "createInstitutionalAnnouncement", "submitAnnouncementReceiptConfirmation", "getAnnouncementReadReport", "getDepartmentalWorkInbox", "getDepartmentalOutbox", "registerDepartmentalDocumentDelivery", "retryDepartmentalDocumentDelivery", "revokeDepartmentalDocumentDeliveryLink", "closeConversationThread", "getInternalConversations", "getInternalMessages", "sendInternalMessage", "sendInstitutionalMessage", "getInstitutionalConversations", "getConversationMessages", "archiveInstitutionalConversation", "getUserNotifications", "getUnifiedNotifications", "markNotificationAsRead", "createUserNotification", "sendMultiChannelNotification", "getAdmissionNotificationLogs", "getNotificationPreferences", "getAdministrativeRequests", "getAdministrativeRequestsHistory", "submitAdministrativeRequest", "submitStudentAbsenceJustification", "getStudentAbsenceJustifications", "reviewAbsenceJustification", "updateRequestStatus", "saveInstitutionalForm", "getInstitutionalForms", "submitInstitutionalFormRequest", "saveApprovalWorkflow", "getApprovalWorkflows", "processWorkflowDecision", "getWorkflowHistory", "registerDocumentSignature", "generateSignatureAuditCertificate", "configureAdvancedSignatureProvider", "getAdvancedSignatureProviderConfig", "createAdvancedSignatureRequest", "checkAdvancedSignatureStatus", "configureNotificationChannel", "getNotificationChannelConfigs", "sendChannelNotificationTest", "getAppointmentBookings", "bookAppointment", "updateAppointmentStatus", "getInstitutionalCalendarEvents", "saveInstitutionalCalendarEvent", "checkCalendarEventOverlap", "getPendingReminders"
   ],
   "Contador": ["registerLegacyDocumentInventory", "getLegacyDocumentInventory", "getStudents", "getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest"],
-  "RecursosHumanos": ["registerLegacyDocumentInventory", "getLegacyDocumentInventory", "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "getStudents", "getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "createNews", "getInternalMessages", "sendInternalMessage"],
+  "RecursosHumanos": ["registerLegacyDocumentInventory", "getLegacyDocumentInventory", "manageInternalRoleCatalog", "getInternalRoleCatalog", "getInternalRoleAssignments", "assignRoleScope", "getStudents", "getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "createNews", "getInternalMessages", "sendInternalMessage"],
   "Empleado": ["getUserInfo", "getNews", "getInstitutionalAnnouncements", "getUserNotifications", "markNotificationAsRead", "getAdministrativeRequests", "submitAdministrativeRequest", "getInternalMessages", "sendInternalMessage"],
   "Coordinador": ["registerLegacyDocumentInventory", "getLegacyDocumentInventory", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "getLearningProfile", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "getSupportPlans", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "markNotificationAsRead", "getAppointmentBookings", "updateAppointmentStatus", "getCoordinatorOverview", "assignTeacherToSection", "designateGuideTeacher", "saveClassSchedules", "generateAutoSchedules"],
   "Consejeros": ["registerLegacyDocumentInventory", "getLegacyDocumentInventory", "getStudents", "getStudentsByGradoSeccion", "getUserInfo", "getLearningProfile", "getNews", "getInstitutionalCriteria", "getFormativeEvaluations", "saveFormativeEvaluation", "getSupportPlans", "saveSupportPlan", "getInstitutionalAnnouncements", "getInternalMessages", "sendInternalMessage", "getUserNotifications", "markNotificationAsRead", "getAppointmentBookings", "updateAppointmentStatus"],
@@ -14518,99 +14518,224 @@ function getInstitutionalResponsibilityRecord_(ss, responsibilityId) {
   return {responsibilityId:id,name:String(r[1]||""),description:String(r[2]||""),modules:modules,capabilities:capabilities};
 }
 
-function resolveActiveInternalResponsibility_(ss, responsibilityId) {
-  var id=String(responsibilityId||"").trim();if(!id||!ss)return null;
-  var sheet=ss.getSheetByName("CatalogoRolesInternos");if(!sheet)return null;
-  var data=sheet.getDataRange().getValues(),base=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"];
-  if(!data.length)return null;
-  var h=data[0].map(String),legacy=JSON.stringify(h)===JSON.stringify(base),linked=JSON.stringify(h)===JSON.stringify(base.concat(["ResponsibilityID"]));
-  if(!legacy&&!linked)return null;
-  var rows=data.slice(1).filter(function(r){return String(r[0]||"").trim()===id;});
-  if(rows.length!==1||String(rows[0][9]||"").trim().toUpperCase()!=="ACTIVO")return null;
-  var r=rows[0],institutionalId=linked?String(r[13]||"").trim():"",institutional=institutionalId?getInstitutionalResponsibilityRecord_(ss,institutionalId):null;
-  if(institutionalId&&!institutional)return null;
-  return {responsibilityId:id,name:String(r[2]||""),department:String(r[4]||""),academicArea:String(r[5]||""),responsibilityType:String(r[6]||""),institutionalResponsibilityId:institutionalId||null,institutionalResponsibility:institutional};
+function resolveActiveInternalResponsibility_(ss, responsibilityId, includeInactive) {
+  var id = String(responsibilityId || "").trim();
+  if (!id || !ss) return null;
+  var sheet = ss.getSheetByName("CatalogoRolesInternos");
+  if (!sheet) return null;
+  var data = sheet.getDataRange().getValues();
+  var base = ["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"];
+  if (!data.length) return null;
+  var headers = data[0].map(String);
+  var legacy = JSON.stringify(headers) === JSON.stringify(base);
+  var linked = JSON.stringify(headers) === JSON.stringify(base.concat(["ResponsibilityID"]));
+  if (!legacy && !linked) return null;
+  var rows = data.slice(1).filter(function(row) { return String(row[0] || "").trim() === id; });
+  if (rows.length !== 1) return null;
+  var row = rows[0], state = String(row[9] || "").trim().toUpperCase();
+  if (!includeInactive && state !== "ACTIVO") return null;
+  var institutionalId = linked ? String(row[13] || "").trim() : "";
+  var institutional = institutionalId ? getInstitutionalResponsibilityRecord_(ss, institutionalId) : null;
+  if (institutionalId && !institutional && !includeInactive) return null;
+  return {
+    responsibilityId: id,
+    code: String(row[1] || ""),
+    name: String(row[2] || ""),
+    department: String(row[4] || ""),
+    academicArea: String(row[5] || ""),
+    responsibilityType: String(row[6] || ""),
+    validityMonths: parseInt(row[7], 10) || 12,
+    permiteSuplencia: row[8] === true || ["SI","SÍ","TRUE"].indexOf(String(row[8] || "").trim().toUpperCase()) !== -1,
+    estado: String(row[9] || ""),
+    institutionalResponsibilityId: institutionalId || null,
+    institutionalResponsibility: institutional
+  };
 }
-// [TAREA-AD-03] [Anexo Tareas: Dashboards Dinámicos - Ámbito de Actuación] - Gestión y validación contextual de ámbitos de actuación por rol y usuario
+
+function parseInternalRoleAssignmentDate_(value, inclusiveEnd) {
+  if (value === "" || value === null || value === undefined) return { valid: true, date: null };
+  var date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  if (isNaN(date.getTime())) return { valid: false, date: null };
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    var parts = value.split("-").map(Number);
+    date = new Date(parts[0], parts[1] - 1, parts[2]);
+    if (isNaN(date.getTime()) || date.getFullYear() !== parts[0] || date.getMonth() !== parts[1] - 1 || date.getDate() !== parts[2]) return { valid: false, date: null };
+    if (inclusiveEnd) date.setHours(23, 59, 59, 999);
+  }
+  return { valid: true, date: date };
+}
+
 function assignRoleScope(payload) {
-  var writeLock=null,writeLockAcquired=false;
+  var lock = null, lockAcquired = false;
   try {
-    var verifiedRole=String((payload&&payload._verifiedRole)||"").trim()||"NO_ACCESS";
-    var actorUserId=String((payload&&payload._verifiedUserId)||"").trim();
-    if(verifiedRole==="NO_ACCESS"||!actorUserId)return {status:"error",code:"VERIFIED_IDENTITY_REQUIRED",message:"Se requiere identidad verificada para asignar ámbitos."};
-    if(["Administrador","Director","RecursosHumanos"].indexOf(verifiedRole)===-1)return {status:"error",code:"AUTH_PERMISSION_DENIED",message:"Solo personal administrativo o de Recursos Humanos puede asignar ámbitos de actuación a responsabilidades."};
-    writeLock=LockService.getScriptLock();writeLock.waitLock(10000);writeLockAcquired=true;
-    var userId=String(payload.userId||"").trim(),roleId=String(payload.roleId||payload.rolId||"").trim();
-    var responsibilityId=String(payload.responsibilityId||payload.rolInternoId||"").trim();
-    var requestedAssignmentId=String(payload.assignmentId||payload.asignacionId||"").trim();
-    if(!roleId)return {status:"error",code:"ROLE_SCOPE_ROLE_REQUIRED",message:"Debe especificarse el rol RBAC objetivo del ámbito."};
-    var scopeType=String(payload.scopeType||payload.tipoAmbito||"").trim().toUpperCase();
-    var scopeValues=Array.isArray(payload.scopeValues)?payload.scopeValues:(Array.isArray(payload.valoresAmbito)?payload.valoresAmbito:(payload.scopeValues||payload.valoresAmbito?[payload.scopeValues||payload.valoresAmbito]:[]));
-    var estado=payload.estado||"Activo";
-    if(!userId||!scopeType)return {status:"error",code:"ROLE_SCOPE_TARGET_REQUIRED",message:"userId y scopeType son requeridos para asignar ámbito de actuación."};
-    var institutionId=String(getIdentityInstitutionId_()||"").trim();
-    if(!institutionId)return {status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED",message:"No existe institución configurada para asignar el ámbito."};
-    var membershipState=getUserRoleMembershipState_(userId,institutionId),targetMembership=null;
-    if(membershipState.hasRecords){
-      targetMembership=resolveUserRoleMembership_(userId,roleId,institutionId);
-      if(!targetMembership)return {status:"error",code:"ROLE_MEMBERSHIP_NOT_ACTIVE",message:"El usuario no tiene una membresía activa y única para el rol y la institución solicitados."};
+    var p = payload || {};
+    var verifiedRole = String(p._verifiedRole || "").trim() || "NO_ACCESS";
+    var actorUserId = String(p._verifiedUserId || "").trim();
+    if (verifiedRole === "NO_ACCESS" || !actorUserId) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+    if (["Administrador","Director","RecursosHumanos"].indexOf(verifiedRole) === -1) return { status: "error", code: "AUTH_PERMISSION_DENIED" };
+    lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    lockAcquired = true;
+    var userId = String(p.userId || "").trim(), roleId = String(p.roleId || p.rolId || "").trim();
+    var responsibilityId = String(p.responsibilityId || p.rolInternoId || "").trim();
+    var requestedAssignmentId = String(p.assignmentId || p.asignacionId || "").trim();
+    var scopeType = String(p.scopeType || p.tipoAmbito || "").trim().toUpperCase();
+    if (!userId || !roleId || !responsibilityId || !scopeType) return { status: "error", code: "ROLE_SCOPE_TARGET_REQUIRED" };
+    if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(scopeType)) return { status: "error", code: "ROLE_SCOPE_TYPE_INVALID" };
+    var scopeValues = Array.isArray(p.scopeValues) ? p.scopeValues : (Array.isArray(p.valoresAmbito) ? p.valoresAmbito : (p.scopeValues || p.valoresAmbito ? [p.scopeValues || p.valoresAmbito] : []));
+    var normalizedScopeValues = [], scopeSeen = {};
+    for (var sv = 0; sv < scopeValues.length; sv++) {
+      if (typeof scopeValues[sv] !== "string") return { status: "error", code: "ROLE_SCOPE_VALUES_INVALID" };
+      var scopeValue = scopeValues[sv].trim(), scopeKey = "$" + scopeValue;
+      if (!scopeValue || scopeSeen[scopeKey]) return { status: "error", code: "ROLE_SCOPE_VALUES_INVALID" };
+      scopeSeen[scopeKey] = true;
+      normalizedScopeValues.push(scopeValue);
     }
-    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"AsignacionesAmbitosRoles");
-    var legacyHeaders=["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
-    var scopeHeaders=legacyHeaders.concat(["InstitutionID","MembershipID","ResponsibilityID"]);
-    if(sheet.getLastRow()===0)sheet.appendRow(scopeHeaders);
-    else {
-      var headerRow=sheet.getDataRange().getValues()[0]||[],actualHeaders=headerRow.map(String);
-      var legacySchema=JSON.stringify(actualHeaders)===JSON.stringify(legacyHeaders);
-      var membershipSchema=JSON.stringify(actualHeaders)===JSON.stringify(legacyHeaders.concat(["InstitutionID","MembershipID"]));
-      var currentSchema=JSON.stringify(actualHeaders)===JSON.stringify(scopeHeaders);
-      if(!legacySchema&&!membershipSchema&&!currentSchema)return {status:"error",code:"ROLE_SCOPE_SCHEMA_MISMATCH",message:"El esquema de asignaciones de ámbito no coincide con el contrato esperado."};
-      if(legacySchema)sheet.getRange(1,13,1,3).setValues([scopeHeaders.slice(12)]);
-      else if(membershipSchema)sheet.getRange(1,15).setValue("ResponsibilityID");
+    if (!normalizedScopeValues.length) return { status: "error", code: "ROLE_SCOPE_VALUES_REQUIRED" };
+    var state = String(p.estado || "Activo").trim();
+    if (["Activo","Inactivo","Revocado"].indexOf(state) === -1) return { status: "error", code: "ROLE_SCOPE_STATE_INVALID" };
+    var start = parseInternalRoleAssignmentDate_(p.fechaInicio || new Date().toISOString(), false);
+    var end = parseInternalRoleAssignmentDate_(p.fechaFin || "", true);
+    if (!start.valid || !end.valid || (start.date && end.date && end.date.getTime() < start.date.getTime())) return { status: "error", code: "ROLE_SCOPE_DATES_INVALID" };
+    var isSubstitute = p.esSuplente === true || String(p.esSuplente || "").toLowerCase() === "true" || String(p.esSuplente || "").toLowerCase() === "sí";
+    var substituteFor = String(p.suplenteDeUserId || "").trim();
+    if (isSubstitute && (!substituteFor || substituteFor === userId || !end.date)) return { status: "error", code: "ROLE_SCOPE_SUBSTITUTE_DATES_REQUIRED" };
+    if (!isSubstitute && substituteFor) return { status: "error", code: "ROLE_SCOPE_SUBSTITUTE_TARGET_INVALID" };
+    var institutionId = String(getIdentityInstitutionId_() || "").trim();
+    if (!institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" };
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    if (!isConfiguredRbacRole_(ss, roleId)) return { status: "error", code: "RBAC_ROLE_NOT_CONFIGURED" };
+    var userSheet = ss.getSheetByName("Usuarios");
+    if (!userSheet) return { status: "error", code: "ROLE_SCOPE_TARGET_USER_NOT_FOUND" };
+    var userMatches = userSheet.getDataRange().getValues().slice(1).filter(function(row) { return String(row[0] || "").trim() === userId; });
+    if (userMatches.length !== 1) return { status: "error", code: userMatches.length ? "ROLE_SCOPE_TARGET_USER_AMBIGUOUS" : "ROLE_SCOPE_TARGET_USER_NOT_FOUND" };
+    var targetUser = userMatches[0], targetState = String(targetUser[10] || "Activa").trim().toUpperCase();
+    if (["ACTIVA","ACTIVO","ACTIVE"].indexOf(targetState) === -1) return { status: "error", code: "ROLE_SCOPE_TARGET_USER_INACTIVE" };
+    var membershipState = getUserRoleMembershipState_(userId, institutionId), targetMembership = null;
+    if (membershipState.hasRecords) {
+      targetMembership = resolveUserRoleMembership_(userId, roleId, institutionId);
+      if (!targetMembership) return { status: "error", code: "ROLE_MEMBERSHIP_NOT_ACTIVE" };
+    } else if (String(targetUser[6] || "").trim() !== roleId) {
+      return { status: "error", code: "ROLE_MEMBERSHIP_NOT_ACTIVE" };
     }
-    var membershipId=targetMembership?String(targetMembership.membershipId||"").trim():"";
-    if(targetMembership&&(!membershipId||String(targetMembership.institutionId||"").trim()!==institutionId||String(targetMembership.roleId||"").trim()!==roleId))
-      return {status:"error",code:"ROLE_MEMBERSHIP_BINDING_INVALID",message:"La membresía objetivo no coincide con el rol y la institución solicitados."};
-    if(targetMembership&&!responsibilityId)return {status:"error",code:"ROLE_RESPONSIBILITY_REQUIRED",message:"Toda asignación vinculada a una membresía RBAC requiere una responsabilidad organizativa activa."};
-    if(responsibilityId&&!resolveActiveInternalResponsibility_(ss,responsibilityId))
-      return {status:"error",code:"ROLE_RESPONSIBILITY_NOT_ACTIVE",message:"La responsabilidad organizativa no existe de forma única o no está activa."};
-    var data=sheet.getDataRange().getValues(),matches=[],assignmentId="",foundIdx=-1;
-    for(var i=1;i<data.length;i++){
-      var row=data[i]||[];
-      if(requestedAssignmentId){
-        if(String(row[0]||"").trim()===requestedAssignmentId)matches.push(i);
-      } else if(String(row[1]||"").trim()===userId&&String(row[2]||"").trim()===roleId&&
-        String(row[3]||"").trim().toUpperCase()===scopeType&&String(row[12]||"").trim()===institutionId&&
-        String(row[13]||"").trim()===membershipId)matches.push(i);
+    var membershipId = targetMembership ? String(targetMembership.membershipId || "").trim() : "";
+    if (targetMembership && (!membershipId || String(targetMembership.institutionId || "").trim() !== institutionId || String(targetMembership.roleId || "").trim() !== roleId)) {
+      return { status: "error", code: "ROLE_MEMBERSHIP_BINDING_INVALID" };
     }
-    if(matches.length>1)return {status:"error",code:"ROLE_SCOPE_ASSIGNMENT_DUPLICATE",message:"Se detectaron asignaciones duplicadas; no se modificó ningún registro."};
-    if(requestedAssignmentId&&matches.length===0)return {status:"error",code:"ROLE_SCOPE_ASSIGNMENT_NOT_FOUND",message:"La asignación indicada no existe en la institución activa."};
-    if(matches.length===1){
-      foundIdx=matches[0];var existing=data[foundIdx];
-      if(String(existing[1]||"").trim()!==userId||String(existing[2]||"").trim()!==roleId||
-        String(existing[3]||"").trim().toUpperCase()!==scopeType||String(existing[12]||"").trim()!==institutionId)
-        return {status:"error",code:"ROLE_SCOPE_ASSIGNMENT_OWNERSHIP_MISMATCH",message:"La asignación no pertenece al usuario, rol, ámbito e institución solicitados."};
-      if(!requestedAssignmentId&&String(existing[13]||"").trim()!==membershipId)
-        return {status:"error",code:"ROLE_SCOPE_ASSIGNMENT_OWNERSHIP_MISMATCH",message:"La membresía no coincide con la asignación existente."};
-      assignmentId=String(existing[0]||"").trim();
-      if(!assignmentId)return {status:"error",code:"ROLE_SCOPE_ASSIGNMENT_ID_INVALID",message:"La asignación existente no tiene un identificador válido."};
-    } else assignmentId="AMB-"+Utilities.getUuid().substring(0,8).toUpperCase();
-    var now=new Date().toISOString(),fechaInicio=payload.fechaInicio||now,fechaFin=payload.fechaFin||"";
-    var esSuplente=payload.esSuplente?"Sí":"No",suplenteDeUserId=payload.suplenteDeUserId||"";
-    var before=foundIdx!==-1?{scopeValues:data[foundIdx][4],estado:data[foundIdx][5],institutionId:data[foundIdx][12]||"",membershipId:data[foundIdx][13]||"",responsibilityId:data[foundIdx][14]||""}:{};
-    var updatedRow=[assignmentId,userId,roleId,scopeType,JSON.stringify(scopeValues),estado,foundIdx!==-1?(data[foundIdx][6]||actorUserId):actorUserId,foundIdx!==-1?(data[foundIdx][7]||now):now,fechaInicio,fechaFin,esSuplente,suplenteDeUserId,institutionId,membershipId,responsibilityId];
-    if(foundIdx!==-1)sheet.getRange(foundIdx+1,1,1,scopeHeaders.length).setValues([updatedRow]);
-    else sheet.appendRow(updatedRow);
-    recordEntityChangeLog("AsignacionAmbitoRol",assignmentId,before,{userId:userId,roleId:roleId,institutionId:institutionId,membershipId:membershipId||null,responsibilityId:responsibilityId||null,scopeType:scopeType,scopeValues:scopeValues,estado:estado},"SCOPE_ASSIGNED",actorUserId);
-    logStructuredEvent("USER","assignRoleScope","INFO","SCOPE_ASSIGNED","Ámbito "+scopeType+" asignado al usuario "+userId+".",{userId:userId,roleId:roleId,institutionId:institutionId,membershipId:membershipId||null,responsibilityId:responsibilityId||null,scopeType:scopeType,scopeValues:scopeValues},verifiedRole);
-    return {status:"success",assignmentId:assignmentId,userId:userId,roleId:roleId,institutionId:institutionId,membershipId:membershipId||null,responsibilityId:responsibilityId||null,scopeType:scopeType,scopeValues:scopeValues,message:"Ámbito de actuación '"+scopeType+"' asignado correctamente al usuario "+userId+"."};
-  } catch(error) {
-    logStructuredEvent("USER","assignRoleScope","ERROR","SCOPE_ASSIGN_FAILED",error.message,payload,payload&&payload._verifiedRole);
-    return {status:"error",code:error.message||"ROLE_SCOPE_ASSIGN_FAILED",message:error.message};
+    var responsibility = resolveActiveInternalResponsibility_(ss, responsibilityId);
+    if (!responsibility) return { status: "error", code: "ROLE_RESPONSIBILITY_NOT_ACTIVE" };
+    if (isSubstitute && !responsibility.permiteSuplencia) return { status: "error", code: "ROLE_SUBSTITUTION_NOT_ALLOWED" };
+    var sheet = getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
+    var legacyHeaders = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
+    var membershipHeaders = legacyHeaders.concat(["InstitutionID","MembershipID"]);
+    var currentHeaders = membershipHeaders.concat(["ResponsibilityID"]);
+    var data = sheet.getDataRange().getValues();
+    if (!data.length) {
+      sheet.appendRow(currentHeaders);
+      data = [currentHeaders];
+    }
+    var headers = data[0].map(String);
+    var legacySchema = JSON.stringify(headers) === JSON.stringify(legacyHeaders);
+    var membershipSchema = JSON.stringify(headers) === JSON.stringify(membershipHeaders);
+    var currentSchema = JSON.stringify(headers) === JSON.stringify(currentHeaders);
+    if (!legacySchema && !membershipSchema && !currentSchema) return { status: "error", code: "ROLE_SCOPE_SCHEMA_MISMATCH" };
+    if (legacySchema) {
+      sheet.getRange(1, 13, 1, 3).setValues([currentHeaders.slice(12)]);
+      data = sheet.getDataRange().getValues();
+      headers = data[0].map(String);
+      currentSchema = true;
+    } else if (membershipSchema) {
+      sheet.getRange(1, 15).setValue("ResponsibilityID");
+      data = sheet.getDataRange().getValues();
+      headers = data[0].map(String);
+      currentSchema = true;
+    }
+    var matches = [], assignmentId = "", foundIndex = -1;
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i] || [];
+      if (requestedAssignmentId) {
+        if (String(row[0] || "").trim() === requestedAssignmentId) matches.push(i);
+      } else if (
+        String(row[1] || "").trim() === userId &&
+        String(row[2] || "").trim() === roleId &&
+        String(row[3] || "").trim().toUpperCase() === scopeType &&
+        String(row[12] || "").trim() === institutionId &&
+        String(row[13] || "").trim() === membershipId &&
+        String(row[14] || "").trim() === responsibilityId
+      ) matches.push(i);
+    }
+    if (matches.length > 1) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_DUPLICATE" };
+    if (requestedAssignmentId && matches.length !== 1) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_NOT_FOUND" };
+    if (matches.length === 1) {
+      foundIndex = matches[0];
+      var existing = data[foundIndex];
+      if (String(existing[1] || "").trim() !== userId || String(existing[2] || "").trim() !== roleId ||
+          String(existing[3] || "").trim().toUpperCase() !== scopeType ||
+          String(existing[12] || "").trim() !== institutionId ||
+          String(existing[13] || "").trim() !== membershipId ||
+          String(existing[14] || "").trim() !== responsibilityId) {
+        return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_OWNERSHIP_MISMATCH" };
+      }
+      assignmentId = String(existing[0] || "").trim();
+      if (!assignmentId) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_ID_INVALID" };
+    } else {
+      assignmentId = "AMB-" + Utilities.getUuid().replace(/-/g, "").toUpperCase();
+      if (data.slice(1).some(function(row) { return String(row[0] || "").trim() === assignmentId; })) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_ID_CONFLICT" };
+    }
+    if (isSubstitute) {
+      var targetAssignments = data.slice(1).filter(function(row) {
+        return String(row[1] || "").trim() === substituteFor &&
+          String(row[2] || "").trim() === roleId &&
+          String(row[12] || "").trim() === institutionId &&
+          String(row[14] || "").trim() === responsibilityId &&
+          ["ACTIVO","ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) !== -1;
+      });
+      if (targetAssignments.length !== 1) return { status: "error", code: targetAssignments.length ? "ROLE_SCOPE_SUBSTITUTE_TARGET_AMBIGUOUS" : "ROLE_SCOPE_SUBSTITUTE_TARGET_NOT_FOUND" };
+      var targetStart = parseInternalRoleAssignmentDate_(targetAssignments[0][8], false);
+      var targetEnd = parseInternalRoleAssignmentDate_(targetAssignments[0][9], true);
+      if (!targetStart.valid || !targetEnd.valid || (targetStart.date && start.date && start.date.getTime() < targetStart.date.getTime()) ||
+          (targetEnd.date && end.date && end.date.getTime() > targetEnd.date.getTime())) return { status: "error", code: "ROLE_SCOPE_SUBSTITUTE_PERIOD_INVALID" };
+    }
+    var now = new Date().toISOString();
+    var before = foundIndex !== -1 ? {
+      userId: data[foundIndex][1], roleId: data[foundIndex][2], scopeType: data[foundIndex][3],
+      scopeValues: data[foundIndex][4], estado: data[foundIndex][5], fechaInicio: data[foundIndex][8],
+      fechaFin: data[foundIndex][9], esSuplente: data[foundIndex][10], suplenteDeUserId: data[foundIndex][11],
+      responsibilityId: data[foundIndex][14]
+    } : {};
+    var rowOut = [
+      assignmentId, userId, roleId, scopeType, JSON.stringify(normalizedScopeValues), state,
+      foundIndex !== -1 ? (data[foundIndex][6] || actorUserId) : actorUserId,
+      foundIndex !== -1 ? (data[foundIndex][7] || now) : now,
+      start.date ? start.date.toISOString() : now,
+      end.date ? end.date.toISOString() : "",
+      isSubstitute ? "Sí" : "No", isSubstitute ? substituteFor : "",
+      institutionId, membershipId, responsibilityId
+    ];
+    if (foundIndex !== -1) sheet.getRange(foundIndex + 1, 1, 1, currentHeaders.length).setValues([rowOut]);
+    else sheet.appendRow(rowOut);
+    recordEntityChangeLog("AsignacionAmbitoRol", assignmentId, before, {
+      userId: userId, roleId: roleId, institutionId: institutionId, membershipId: membershipId || null,
+      responsibilityId: responsibilityId, scopeType: scopeType, scopeValues: normalizedScopeValues,
+      estado: state, fechaInicio: rowOut[8], fechaFin: rowOut[9], esSuplente: isSubstitute,
+      suplenteDeUserId: isSubstitute ? substituteFor : null
+    }, state === "Revocado" ? "SCOPE_REVOKED" : (foundIndex !== -1 ? "SCOPE_UPDATED" : "SCOPE_ASSIGNED"), actorUserId);
+    logStructuredEvent("USER", "assignRoleScope", "INFO", state === "Revocado" ? "SCOPE_REVOKED" : "SCOPE_ASSIGNED", "Responsabilidad y ámbito organizativo actualizados.", {
+      assignmentId: assignmentId, userId: userId, roleId: roleId, responsibilityId: responsibilityId, institutionId: institutionId
+    }, verifiedRole);
+    return {
+      status: "success", assignmentId: assignmentId, userId: userId, roleId: roleId,
+      institutionId: institutionId, membershipId: membershipId || null, responsibilityId: responsibilityId,
+      scopeType: scopeType, scopeValues: normalizedScopeValues, estado: state
+    };
+  } catch (error) {
+    logStructuredEvent("USER", "assignRoleScope", "ERROR", "SCOPE_ASSIGN_FAILED", error.message, {}, payload && payload._verifiedRole);
+    return { status: "error", code: error.message || "ROLE_SCOPE_ASSIGN_FAILED", message: error.message };
   } finally {
-    if(writeLockAcquired){try{writeLock.releaseLock();}catch(_){}}
+    if (lockAcquired) { try { lock.releaseLock(); } catch (_) {} }
   }
 }
+
 function getUserContextScope(payload) {
   try {
     var verifiedRole = getUserVerifiedRole(payload);
@@ -16574,79 +16699,263 @@ function getInstitutionalFunctionalSpaceCatalog(payload) {
 // ===========================================================================
 
 function manageInternalRoleCatalog(payload) {
-  var writeLock = null;
-  var writeLockAcquired = false;
+  var lock = null, lockAcquired = false, sheet = null, writeApplied = false, writeIndex = -1, previousRow = null, wasAppend = false;
   try {
-    var verifiedRole=getUserVerifiedRole(payload);
-    if(["Administrador","Director","RecursosHumanos"].indexOf(verifiedRole)===-1||!payload._verifiedUserId)return {status:"error",code:"AUTH_PERMISSION_DENIED",message:"Se requiere una sesión verificada de personal autorizado."};
-    writeLock = LockService.getScriptLock();
-    writeLock.waitLock(10000);
-    writeLockAcquired = true;
-    var p=payload||{},rolInternoId=p.rolInternoId,codigoInterno=p.codigoInterno,nombreResponsabilidad=p.nombreResponsabilidad,descripcion=p.descripcion||"",departamento=p.departamento||"",areaAcademica=p.areaAcademica||"",tipoResponsabilidad=p.tipoResponsabilidad||"Administrativa",vigenciaMeses=p.vigenciaMeses||12,permiteSuplencia=p.permiteSuplencia!==false,estado=p.estado||"Activo",accion=p.accion||"guardar";
-    if(!nombreResponsabilidad&&accion==="guardar")return {status:"error",code:"VALIDATION_ERROR",message:"El nombre de la responsabilidad organizativa es obligatorio."};
-    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=getOrCreateSheet(ss,"CatalogoRolesInternos"),data=sheet.getDataRange().getValues();
-    var base=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"],headers=base.concat(["ResponsibilityID"]),actual=data.length?data[0].map(String):[];
-    if(JSON.stringify(actual)!==JSON.stringify(base)&&JSON.stringify(actual)!==JSON.stringify(headers))return {status:"error",code:"INTERNAL_ROLE_SCHEMA_MISMATCH"};
-    if(actual.length===13){sheet.getRange(1,14).setValue("ResponsibilityID");data[0]=headers;}
-    var linkedId=String(p.responsibilityId||"").trim();
-    if(linkedId&&!getInstitutionalResponsibilityRecord_(ss,linkedId))return {status:"error",code:"ROLE_INSTITUTIONAL_RESPONSIBILITY_NOT_ACTIVE",message:"La responsabilidad institucional vinculada no existe de forma única o no está activa."};
-    var norm=normalizeString(nombreResponsabilidad),idx=-1;
-    if(rolInternoId)idx=data.findIndex(function(r,n){return n>0&&String(r[0]||"").trim()===String(rolInternoId).trim();});
-    else if(nombreResponsabilidad)idx=data.findIndex(function(r,n){return n>0&&normalizeString(r[2])===norm&&String(r[9]||"").trim()!=="Eliminado";});
-    if(accion==="activar"||accion==="desactivar"){if(idx<0)return {status:"error",code:"INTERNAL_ROLE_NOT_FOUND"};var state=accion==="activar"?"Activo":"Inactivo";sheet.getRange(idx+1,10).setValue(state);sheet.getRange(idx+1,13).setValue(new Date().toISOString());return {status:"success",rolInternoId:data[idx][0],estado:state};}
-    if(["Activo","Inactivo"].indexOf(estado)===-1)return {status:"error",code:"INTERNAL_ROLE_STATE_INVALID"};
-    var id=idx>=0?data[idx][0]:(rolInternoId||"ROL-INT-"+Utilities.getUuid().replace(/-/g,"").substring(0,16).toUpperCase()),code=codigoInterno||(idx>=0?data[idx][1]:"ROL-"+norm.substring(0,4).toUpperCase()+"-"+Math.floor(100+Math.random()*900)),existingLink=idx>=0?String(data[idx][13]||"").trim():"",finalLink=linkedId||existingLink;
-    var row=[id,code,nombreResponsabilidad,descripcion,departamento,areaAcademica,tipoResponsabilidad,parseInt(vigenciaMeses)||12,permiteSuplencia?"Sí":"No",estado,payload._verifiedUserId,idx>=0?data[idx][11]:new Date().toISOString(),new Date().toISOString(),finalLink];
-    if(idx>=0)sheet.getRange(idx+1,1,1,headers.length).setValues([row]);else sheet.appendRow(row);
-    logStructuredEvent("USER","manageInternalRoleCatalog","INFO","INTERNAL_ROLE_SAVED","Rol interno guardado.",{rolInternoId:id,responsibilityId:finalLink||null,estado:estado},verifiedRole);
-    return {status:"success",rolInternoId:id,responsibilityId:finalLink||null,codigoInterno:code,nombreResponsabilidad:nombreResponsabilidad,estado:estado};
-  }catch(error){logStructuredEvent("USER","manageInternalRoleCatalog","ERROR","INTERNAL_ROLE_SAVE_FAILED",error.message,{},payload&&payload._verifiedRole);return {status:"error",code:error.message||"INTERNAL_ROLE_SAVE_FAILED",message:error.message};}
-
-  finally {
-    if (writeLockAcquired) { try { writeLock.releaseLock(); } catch (_) {} }
+    var p = payload || {}, verifiedRole = getUserVerifiedRole(p), actor = String(p._verifiedUserId || "").trim();
+    if (["Administrador","Director","RecursosHumanos"].indexOf(verifiedRole) === -1 || !actor) {
+      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Se requiere una sesión verificada de personal autorizado." };
+    }
+    lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    lockAcquired = true;
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    sheet = getOrCreateSheet(ss, "CatalogoRolesInternos");
+    var base = ["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"];
+    var headers = base.concat(["ResponsibilityID"]);
+    var data = sheet.getDataRange().getValues();
+    if (!data.length) {
+      sheet.appendRow(headers);
+      data = [headers];
+    }
+    var actual = data[0].map(String);
+    if (JSON.stringify(actual) !== JSON.stringify(base) && JSON.stringify(actual) !== JSON.stringify(headers)) {
+      return { status: "error", code: "INTERNAL_ROLE_SCHEMA_MISMATCH" };
+    }
+    if (actual.length === base.length) {
+      sheet.getRange(1, 14).setValue("ResponsibilityID");
+      data[0] = headers;
+      data = sheet.getDataRange().getValues();
+    }
+    var id = String(p.rolInternoId || "").trim(), action = String(p.accion || "guardar").trim().toLowerCase();
+    var idMatches = [];
+    for (var i = 1; i < data.length; i++) if (id && String(data[i][0] || "").trim() === id) idMatches.push(i);
+    if (idMatches.length > 1) return { status: "error", code: "INTERNAL_ROLE_ID_NOT_UNIQUE" };
+    if (action === "activar" || action === "desactivar") {
+      if (!id || idMatches.length !== 1) return { status: "error", code: "INTERNAL_ROLE_NOT_FOUND" };
+      writeIndex = idMatches[0];
+      previousRow = data[writeIndex].slice();
+      var nextState = action === "activar" ? "Activo" : "Inactivo";
+      sheet.getRange(writeIndex + 1, 10).setValue(nextState);
+      sheet.getRange(writeIndex + 1, 13).setValue(new Date().toISOString());
+      writeApplied = true;
+      var beforeState = { estado: previousRow[9] };
+      var afterState = { estado: nextState };
+      recordEntityChangeLog("RolInterno", id, beforeState, afterState, "INTERNAL_ROLE_STATE_CHANGED", actor);
+      logStructuredEvent("USER", "manageInternalRoleCatalog", "INFO", "INTERNAL_ROLE_STATE_CHANGED", "Estado de responsabilidad actualizado.", { rolInternoId: id, estado: nextState }, verifiedRole);
+      return { status: "success", rolInternoId: id, estado: nextState };
+    }
+    if (action !== "guardar") return { status: "error", code: "INTERNAL_ROLE_ACTION_INVALID" };
+    var name = String(p.nombreResponsabilidad || "").trim();
+    if (!name || name.length > 120) return { status: "error", code: "INTERNAL_ROLE_NAME_INVALID" };
+    if (id && idMatches.length !== 1) return { status: "error", code: "INTERNAL_ROLE_NOT_FOUND" };
+    var code = String(p.codigoInterno || (id ? data[idMatches[0]][1] : "") || "").trim().toUpperCase();
+    if (!code) code = "ROL-INT-" + Utilities.getUuid().replace(/-/g, "").substring(0, 16).toUpperCase();
+    if (!/^[A-Z0-9][A-Z0-9_-]{1,39}$/.test(code)) return { status: "error", code: "INTERNAL_ROLE_CODE_INVALID" };
+    var type = String(p.tipoResponsabilidad || "Administrativa").trim();
+    var allowedTypes = ["ADMINISTRATIVA","ACADEMICA","OPERATIVA","SUPERVISION"];
+    var typeKey = normalizeString(type).toUpperCase();
+    if (allowedTypes.indexOf(typeKey) === -1) return { status: "error", code: "INTERNAL_ROLE_TYPE_INVALID" };
+    var months = Number(p.vigenciaMeses === undefined || p.vigenciaMeses === "" ? 12 : p.vigenciaMeses);
+    if (!Number.isInteger(months) || months < 1 || months > 120) return { status: "error", code: "INTERNAL_ROLE_VALIDITY_INVALID" };
+    var state = String(p.estado || "Activo").trim();
+    if (["Activo","Inactivo"].indexOf(state) === -1) return { status: "error", code: "INTERNAL_ROLE_STATE_INVALID" };
+    var allowSubstitute = p.permiteSuplencia === true || String(p.permiteSuplencia || "").toLowerCase() === "true";
+    var linkedId = String(p.responsibilityId || (id ? data[idMatches[0]][13] || "" : "")).trim();
+    if (linkedId && !getInstitutionalResponsibilityRecord_(ss, linkedId)) {
+      return { status: "error", code: "ROLE_INSTITUTIONAL_RESPONSIBILITY_NOT_ACTIVE" };
+    }
+    var nameKey = normalizeString(name), codeKey = normalizeString(code);
+    for (var r = 1; r < data.length; r++) {
+      if (id && r === idMatches[0]) continue;
+      if (normalizeString(data[r][2]) === nameKey) return { status: "error", code: "INTERNAL_ROLE_NAME_DUPLICATE" };
+      if (normalizeString(data[r][1]) === codeKey) return { status: "error", code: "INTERNAL_ROLE_CODE_DUPLICATE" };
+    }
+    var now = new Date().toISOString();
+    if (!id) id = "ROL-INT-" + Utilities.getUuid().replace(/-/g, "").substring(0, 20).toUpperCase();
+    var oldRow = idMatches.length ? data[idMatches[0]].slice() : null;
+    var row = [
+      id, code, name, String(p.descripcion || "").trim(), String(p.departamento || "").trim(),
+      String(p.areaAcademica || "").trim(), type, months, allowSubstitute ? "Sí" : "No", state,
+      oldRow ? oldRow[10] || actor : actor, oldRow ? oldRow[11] || now : now, now, linkedId
+    ];
+    if (oldRow) {
+      writeIndex = idMatches[0];
+      previousRow = oldRow;
+      sheet.getRange(writeIndex + 1, 1, 1, headers.length).setValues([row]);
+    } else {
+      writeIndex = data.length;
+      wasAppend = true;
+      sheet.appendRow(row);
+    }
+    writeApplied = true;
+    recordEntityChangeLog("RolInterno", id, oldRow || {}, {
+      codigoInterno: code, nombreResponsabilidad: name, descripcion: row[3], departamento: row[4],
+      areaAcademica: row[5], tipoResponsabilidad: type, vigenciaMeses: months,
+      permiteSuplencia: allowSubstitute, estado: state, responsibilityId: linkedId || null
+    }, oldRow ? "INTERNAL_ROLE_UPDATED" : "INTERNAL_ROLE_CREATED", actor);
+    logStructuredEvent("USER", "manageInternalRoleCatalog", "INFO", oldRow ? "INTERNAL_ROLE_UPDATED" : "INTERNAL_ROLE_CREATED", "Responsabilidad organizativa guardada.", { rolInternoId: id, codigoInterno: code, estado: state }, verifiedRole);
+    return { status: "success", rolInternoId: id, responsibilityId: linkedId || null, codigoInterno: code, nombreResponsabilidad: name, estado: state };
+  } catch (error) {
+    if (writeApplied && sheet) {
+      try {
+        if (wasAppend) sheet.deleteRow(writeIndex + 1);
+        else if (previousRow) sheet.getRange(writeIndex + 1, 1, 1, previousRow.length).setValues([previousRow]);
+      } catch (rollbackError) {
+        return { status: "error", code: "INTERNAL_ROLE_AUDIT_COMPENSATION_REQUIRED", message: error.message };
+      }
+    }
+    logStructuredEvent("USER", "manageInternalRoleCatalog", "ERROR", "INTERNAL_ROLE_SAVE_FAILED", error.message, { rolInternoId: payload && payload.rolInternoId }, payload && payload._verifiedRole);
+    return { status: "error", code: error.message || "INTERNAL_ROLE_SAVE_FAILED", message: error.message };
+  } finally {
+    if (lockAcquired) { try { lock.releaseLock(); } catch (_) {} }
   }
+}
+
+function getConfiguredRbacRoleIds_(ss) {
+  var roles = {};
+  if (typeof ROLE_PERMISSIONS !== "undefined" && ROLE_PERMISSIONS) {
+    Object.keys(ROLE_PERMISSIONS).forEach(function(role) {
+      if (String(role || "").trim()) roles[String(role).trim()] = true;
+    });
+  }
+  try {
+    var institutionId = String(getIdentityInstitutionId_() || "").trim();
+    var matrix = ss && ss.getSheetByName("MatrizPermisosRoles");
+    if (matrix && matrix.getLastRow() > 1) {
+      var values = matrix.getDataRange().getValues();
+      var headers = (values[0] || []).map(function(value) { return String(value || "").trim().toLowerCase(); });
+      var roleIndex = headers.indexOf("rol"), scopeIndex = headers.indexOf("ambito");
+      if (roleIndex < 0 || scopeIndex < 0) return Object.keys(roles).sort();
+      values.slice(1).forEach(function(row) {
+        var role = String(row[roleIndex] || "").trim();
+        var scope = String(row[scopeIndex] || "").trim();
+        if (role && (scope === institutionId || scope === "Global")) roles[role] = true;
+      });
+    }
+  } catch (_) {}
+  return Object.keys(roles).sort();
 }
 
 function getInternalRoleCatalog(payload) {
   try {
-    var ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName("CatalogoRolesInternos");if(!sheet)return {status:"success",data:[]};
-    var data=sheet.getDataRange().getValues(),base=["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"],h=data.length?data[0].map(String):[];
-    if(JSON.stringify(h)!==JSON.stringify(base)&&JSON.stringify(h)!==JSON.stringify(base.concat(["ResponsibilityID"])))return {status:"error",code:"INTERNAL_ROLE_SCHEMA_MISMATCH"};
-    var roleIdCounts={};data.slice(1).forEach(function(row){var id=String((row||[])[0]||"").trim();if(id)roleIdCounts[id]=(roleIdCounts[id]||0)+1;});
-    var f=payload||{},list=data.slice(1).filter(function(r){var roleId=String(r[0]||"").trim();if(!roleId||roleIdCounts[roleId]!==1)return false;var st=String(r[9]||"").trim();if(f.soloActivos!==false&&st!=="Activo")return false;if(f.estado&&f.estado!=="Todos"&&st!==f.estado)return false;if(f.departamento&&normalizeString(r[4])!==normalizeString(f.departamento))return false;if(f.areaAcademica&&normalizeString(r[5])!==normalizeString(f.areaAcademica))return false;if(f.tipoResponsabilidad&&normalizeString(r[6])!==normalizeString(f.tipoResponsabilidad))return false;return true;}).map(function(r){var id=h.length===14?String(r[13]||"").trim():"",record=id?getInstitutionalResponsibilityRecord_(ss,id):null;return {rolInternoId:r[0],codigoInterno:r[1],nombreResponsabilidad:r[2],descripcion:r[3],departamento:r[4],areaAcademica:r[5],tipoResponsabilidad:r[6],vigenciaMeses:parseInt(r[7]||12),permiteSuplencia:String(r[8]).toLowerCase()==="sí"||String(r[8]).toLowerCase()==="true",estado:r[9],creadoPor:r[10],fechaCreacion:r[11],fechaActualizacion:r[12],responsibilityId:id||null,institutionalResponsibility:record};}).filter(function(x){return !x.responsibilityId||!!x.institutionalResponsibility;});
-    return {status:"success",data:list};
-  }catch(error){return {status:"error",message:error.message};}
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("CatalogoRolesInternos");
+    var data = sheet ? sheet.getDataRange().getValues() : [];
+    var base = ["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion"];
+    var current = base.concat(["ResponsibilityID"]);
+    if (data.length && JSON.stringify(data[0].map(String)) !== JSON.stringify(base) && JSON.stringify(data[0].map(String)) !== JSON.stringify(current)) {
+      return { status: "error", code: "INTERNAL_ROLE_SCHEMA_MISMATCH" };
+    }
+    var roleIds = {}, nameKeys = {}, codeKeys = {}, list = [];
+    data.slice(1).forEach(function(row) {
+      var id = String(row[0] || "").trim();
+      if (!id) return;
+      roleIds[id] = (roleIds[id] || 0) + 1;
+      var nameKey = normalizeString(row[2]), codeKey = normalizeString(row[1]);
+      if (nameKey) nameKeys[nameKey] = (nameKeys[nameKey] || 0) + 1;
+      if (codeKey) codeKeys[codeKey] = (codeKeys[codeKey] || 0) + 1;
+    });
+    if (Object.keys(roleIds).some(function(id) { return roleIds[id] > 1; }) ||
+        Object.keys(nameKeys).some(function(key) { return nameKeys[key] > 1; }) ||
+        Object.keys(codeKeys).some(function(key) { return codeKeys[key] > 1; })) {
+      return { status: "error", code: "INTERNAL_ROLE_CATALOG_DUPLICATE" };
+    }
+    var f = payload || {};
+    data.slice(1).forEach(function(row) {
+      var id = String(row[0] || "").trim(), state = String(row[9] || "").trim();
+      if (!id) return;
+      if (f.soloActivos !== false && state !== "Activo") return;
+      if (f.estado && f.estado !== "Todos" && state !== f.estado) return;
+      if (f.departamento && normalizeString(row[4]) !== normalizeString(f.departamento)) return;
+      if (f.areaAcademica && normalizeString(row[5]) !== normalizeString(f.areaAcademica)) return;
+      if (f.tipoResponsabilidad && normalizeString(row[6]) !== normalizeString(f.tipoResponsabilidad)) return;
+      var linkedId = data[0].length === 14 ? String(row[13] || "").trim() : "";
+      var institutional = linkedId ? getInstitutionalResponsibilityRecord_(ss, linkedId) : null;
+      if (linkedId && !institutional) return;
+      list.push({
+        rolInternoId: id, codigoInterno: String(row[1] || ""), nombreResponsabilidad: String(row[2] || ""),
+        descripcion: String(row[3] || ""), departamento: String(row[4] || ""), areaAcademica: String(row[5] || ""),
+        tipoResponsabilidad: String(row[6] || ""), vigenciaMeses: parseInt(row[7], 10) || 12,
+        permiteSuplencia: row[8] === true || ["SI","SÍ","TRUE"].indexOf(String(row[8] || "").trim().toUpperCase()) !== -1,
+        estado: state, creadoPor: String(row[10] || ""), fechaCreacion: row[11] || "",
+        fechaActualizacion: row[12] || "", responsibilityId: linkedId || null, institutionalResponsibility: institutional
+      });
+    });
+    return { status: "success", data: list, rolesDisponibles: getConfiguredRbacRoleIds_(ss) };
+  } catch (error) {
+    return { status: "error", code: error.message || "INTERNAL_ROLE_CATALOG_READ_FAILED", message: error.message };
+  }
 }
 
 function getInternalRoleAssignments(payload) {
   try {
-    var f=payload||{},ss=SpreadsheetApp.openById(SPREADSHEET_ID),sheet=ss.getSheetByName?ss.getSheetByName("AsignacionesAmbitosRoles"):getOrCreateSheet(ss,"AsignacionesAmbitosRoles");if(!sheet)return {status:"success",data:[]};
-    var data=sheet.getDataRange().getValues(),legacy=["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"],membership=legacy.concat(["InstitutionID","MembershipID"]),current=membership.concat(["ResponsibilityID"]),h=data.length?data[0].map(String):[];
-    var schema=JSON.stringify(h)===JSON.stringify(current)?"current":(JSON.stringify(h)===JSON.stringify(membership)?"membership":(JSON.stringify(h)===JSON.stringify(legacy)?"legacy":"invalid"));
-    if(schema==="invalid")return {status:"error",code:"ROLE_SCOPE_SCHEMA_MISMATCH"};
-    var institutionId=schema==="legacy"?"":String(getIdentityInstitutionId_()||"").trim();if(schema!=="legacy"&&!institutionId)return {status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED"};
-    var now=new Date(),out=[],membershipCache={},assignmentIdCounts={};
-    data.slice(1).forEach(function(row){var id=String((row||[])[0]||"").trim();if(id)assignmentIdCounts[id]=(assignmentIdCounts[id]||0)+1;});
-    // El esquema intermedio no contiene ResponsibilityID: sus filas no pueden ser ámbitos efectivos.
-    if(schema==="membership")return {status:"success",data:[]};
-    for(var i=1;i<data.length;i++){var r=data[i]||[],assignmentId=String(r[0]||"").trim(),u=String(r[1]||"").trim(),role=String(r[2]||"").trim(),m=schema==="legacy"?"":String(r[13]||"").trim(),inst=schema==="legacy"?"":String(r[12]||"").trim(),internal=schema==="current"?String(r[14]||"").trim():(schema==="legacy"?role:"");
-      if(!assignmentId||assignmentIdCounts[assignmentId]!==1)continue;
-      if(f.userId&&u!==String(f.userId).trim())continue;if(f.roleId&&role!==String(f.roleId).trim())continue;if(f.membershipId&&m!==String(f.membershipId).trim())continue;if(f.responsibilityId&&internal!==String(f.responsibilityId).trim())continue;if(f.rolInternoId&&internal!==String(f.rolInternoId).trim())continue;
-      if(schema!=="legacy"&&inst!==institutionId)continue;if(schema==="membership"&&m==="")continue;if(schema==="current"&&(!m||!internal))continue;
-      if(schema!=="legacy"){
-        var membershipKey=u+"|"+institutionId;
-        if(!Object.prototype.hasOwnProperty.call(membershipCache,membershipKey)){
-          var membershipState=getUserRoleMembershipState_(u,institutionId);
-          membershipCache[membershipKey]=membershipState&&Array.isArray(membershipState.memberships)?membershipState.memberships:[];
+    var f = payload || {}, ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("AsignacionesAmbitosRoles") || getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
+    if (!sheet) return { status: "success", data: [] };
+    var data = sheet.getDataRange().getValues();
+    var legacy = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
+    var membership = legacy.concat(["InstitutionID","MembershipID"]);
+    var current = membership.concat(["ResponsibilityID"]);
+    var headers = data.length ? data[0].map(String) : [];
+    var schema = JSON.stringify(headers) === JSON.stringify(current) ? "current" :
+      (JSON.stringify(headers) === JSON.stringify(membership) ? "membership" :
+      (JSON.stringify(headers) === JSON.stringify(legacy) ? "legacy" : "invalid"));
+    if (schema === "invalid") return { status: "error", code: "ROLE_SCOPE_SCHEMA_MISMATCH" };
+    var institutionId = schema === "legacy" ? "" : String(getIdentityInstitutionId_() || "").trim();
+    if (schema !== "legacy" && !institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" };
+    if (schema === "membership") return { status: "success", data: [] };
+    var now = new Date(), out = [], membershipCache = {}, idCounts = {};
+    data.slice(1).forEach(function(row) {
+      var id = String((row || [])[0] || "").trim();
+      if (id) idCounts[id] = (idCounts[id] || 0) + 1;
+    });
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i] || [], assignmentId = String(row[0] || "").trim();
+      var userId = String(row[1] || "").trim(), roleId = String(row[2] || "").trim();
+      var membershipId = schema === "legacy" ? "" : String(row[13] || "").trim();
+      var rowInstitution = schema === "legacy" ? "" : String(row[12] || "").trim();
+      var responsibilityId = schema === "current" ? String(row[14] || "").trim() : (schema === "legacy" ? roleId : "");
+      if (!assignmentId || idCounts[assignmentId] !== 1) continue;
+      if (f.userId && userId !== String(f.userId).trim()) continue;
+      if (f.roleId && roleId !== String(f.roleId).trim()) continue;
+      if (f.membershipId && membershipId !== String(f.membershipId).trim()) continue;
+      if (f.responsibilityId && responsibilityId !== String(f.responsibilityId).trim()) continue;
+      if (f.rolInternoId && responsibilityId !== String(f.rolInternoId).trim()) continue;
+      if (schema !== "legacy" && rowInstitution !== institutionId) continue;
+      if (schema === "current" && (!membershipId || !responsibilityId)) continue;
+      if (schema !== "legacy") {
+        var membershipKey = userId + "|" + institutionId;
+        if (!Object.prototype.hasOwnProperty.call(membershipCache, membershipKey)) {
+          var membershipState = getUserRoleMembershipState_(userId, institutionId);
+          membershipCache[membershipKey] = membershipState && Array.isArray(membershipState.memberships) ? membershipState.memberships : [];
         }
-        var activeMembership=membershipCache[membershipKey].some(function(item){return item.membershipId===m&&item.roleId===role&&item.institutionId===institutionId;});
-        if(!activeMembership)continue;
+        if (!membershipCache[membershipKey].some(function(item) {
+          return item.membershipId === membershipId && item.roleId === roleId && item.institutionId === institutionId;
+        })) continue;
       }
-      var state=String(r[5]||"").trim().toUpperCase();if(["ACTIVO","ACTIVA","ACTIVE"].indexOf(state)===-1)continue;
-      var hasStart=r[8]!==""&&r[8]!==null&&r[8]!==undefined,hasEnd=r[9]!==""&&r[9]!==null&&r[9]!==undefined;var start=hasStart?new Date(r[8]):null,end=hasEnd?new Date(r[9]):null;if((start&&isNaN(start.getTime()))||(end&&isNaN(end.getTime())))continue;if(f.soloVigentes!==false&&((start&&start.getTime()>now.getTime())||(end&&end.getTime()<now.getTime())))continue;
-      var responsibility=internal&&schema!=="legacy"?resolveActiveInternalResponsibility_(ss,internal):null;if(schema==="current"&&(!responsibility||!responsibility.institutionalResponsibility))continue;if(f.departamento&&(!responsibility||normalizeString(responsibility.department)!==normalizeString(f.departamento)))continue;
-      out.push({asignacionId:r[0],userId:u,roleId:schema==="legacy"?null:role,rolInternoId:internal||null,responsibilityId:internal||null,responsibility:responsibility,institutionId:inst||null,membershipId:m||null,scopeType:r[3],scopeValues:r[4],estado:r[5],creadoPor:r[6],fechaCreacion:r[7],fechaInicio:r[8]||null,fechaFin:r[9]||null,esSuplente:String(r[10]).toLowerCase()==="sí"||String(r[10]).toLowerCase()==="true",suplenteDeUserId:r[11]||null});
+      var state = String(row[5] || "").trim(), stateKey = state.toUpperCase();
+      if (f.soloVigentes !== false) {
+        if (["ACTIVO","ACTIVA","ACTIVE"].indexOf(stateKey) === -1) continue;
+      } else if (f.estado && f.estado !== "Todos" && stateKey !== String(f.estado).trim().toUpperCase()) continue;
+      var start = parseInternalRoleAssignmentDate_(row[8], false), end = parseInternalRoleAssignmentDate_(row[9], true);
+      if (!start.valid || !end.valid) continue;
+      if (f.soloVigentes !== false && ((start.date && start.date.getTime() > now.getTime()) || (end.date && end.date.getTime() < now.getTime()))) continue;
+      var responsibility = responsibilityId && schema !== "legacy" ?
+        resolveActiveInternalResponsibility_(ss, responsibilityId, f.soloVigentes === false) : null;
+      if (schema === "current" && !responsibility) continue;
+      if (f.departamento && (!responsibility || normalizeString(responsibility.department) !== normalizeString(f.departamento))) continue;
+      out.push({
+        asignacionId: assignmentId, userId: userId, roleId: roleId, rolInternoId: responsibilityId || null,
+        responsibilityId: responsibilityId || null, responsibility: responsibility,
+        institutionId: rowInstitution || null, membershipId: membershipId || null,
+        scopeType: row[3], scopeValues: row[4], estado: state, creadoPor: row[6], fechaCreacion: row[7],
+        fechaInicio: row[8] || null, fechaFin: row[9] || null,
+        esSuplente: String(row[10] || "").toLowerCase() === "sí" || String(row[10] || "").toLowerCase() === "true",
+        suplenteDeUserId: row[11] || null
+      });
     }
-    return {status:"success",data:out};
-  }catch(error){return {status:"error",code:error.message||"INTERNAL_ROLE_ASSIGNMENTS_FAILED",message:error.message};}
+    return { status: "success", data: out };
+  } catch (error) {
+    return { status: "error", code: error.message || "INTERNAL_ROLE_ASSIGNMENTS_FAILED", message: error.message };
+  }
 }
