@@ -82,7 +82,7 @@
 - **Dependencias/riesgos:** F25-Task02, identificadores canónicos y políticas de merge; riesgo de fusionar personas distintas o duplicar expedientes.
 - **Alcance:** detección y decisión previa; no fusionar registros automáticamente solo por nombre.
 - **Criterios de aceptación:** DNI/correo normalizados y comparados; duplicados se muestran antes de escribir; referencias foráneas existen/están activas; política de conflicto seleccionada y auditada; importación repetida es idempotente; errores no dejan escritura parcial.
-- **Prioridad:** P0. **Estado:** [x] Completada en código y verificaciones locales; beta pendiente sin bloqueo de implementación.
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Implementación:** comparación normalizada de DNI/correo y claves naturales; coincidencias exactas/posibles; revisión manual de nombres; referencias de grado/sección, departamento y expediente; políticas RECHAZAR/ACTUALIZAR/VINCULAR con vínculo solo cuando el ID canónico coincide; auditoría de política; unicidad revalidada dentro de LockService en USER/ACADEMIC/ACCOUNTING.
 - **Evidencia de cierre:** Accounting Import Preflight Contract PASS (run 44010695701); USER migration writer/identity contract PASS (run 44010128015); academic/accounting migration writer contracts PASS (runs 44009939154 y 44009952334); USER/ACADEMIC snapshot y referencias PASS (run 44010452335); UI Accessibility PASS (run 44010601192). BETA-FUNC-114 pendiente para validación desplegada.
 
@@ -99,7 +99,7 @@
 - **Dependencias/riesgos:** jerarquía institucional y departamental canónica, RBAC/ABAC y contratos entre servicios; riesgo de fuga de configuración entre departamentos o escalamiento de privilegios.
 - **Alcance:** resolución y persistencia de ámbitos; no permitir que el cliente determine su rol, institución o departamento mediante valores arbitrarios del payload.
 - **Criterios de aceptación:** las cuatro capas se resuelven con precedencia documentada; claves admiten ámbitos explícitos; cada override registra actor/ámbito/versión; acceso se verifica server-side; conflictos se rechazan o resuelven con política determinista; pruebas cubren herencia, ausencia de valor, conflicto, aislamiento entre departamentos y usuario no autorizado.
-- **Prioridad:** P0. **Estado:** Completada en código y verificaciones locales; beta desplegada pendiente.
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** commits de implementación y corrección en la rama autorizada, con HEAD de código/pruebas `5d53e4d69212898fc7b201cafc92e5889aab188f`. Hierarchical Configuration Contract PASS, GitHub Actions run `44019419989` (Node.js 24.22.2); sintaxis USER/DEVELOPER/contrato PASS y ejecución del contrato PASS. Verificaciones locales aisladas sobre funciones recuperadas del código: 8/8 PASS.
 - **Cierre técnico:** precedencia GLOBAL → INSTITUCIONAL → DEPARTAMENTAL → PERSONAL; políticas y ámbitos permitidos; contexto institucional/departmental validado server-side; valores departamentales decodificados con su esquema; lectura sensible autorizada por ámbito efectivo y capas no autorizadas redactadas; políticas inválidas y conflictos rechazados; tipo de override consistente con la clave base; versiones monotónicas por ámbito, reset versionado y reactivación sin duplicar filas; migración de esquema legacy preservadora e idempotente; bloqueo de escrituras concurrentes y verificación real de acceso Spreadsheet/Drive en el contrato DEVELOPER.
 - **CI transversal:** Department Scope Contract conserva un fallo ajeno en `Run Phase 22 document management suite contract` (run `44019171555`); los pasos previos del workflow pasan. El mismo paso fallaba antes de esta implementación (run `44012050276`); no se modificó Phase 22.
@@ -133,7 +133,7 @@
 - **Dependencias/riesgos:** TASK-221/TASK-318 (bandejas), TASK-227 (eventos workflow), TASK-316 (canales); riesgo de afirmar lectura por simple apertura de enlace o exponer documentos a destinatarios equivocados.
 - **Alcance:** bandeja de salida y acuses; no confundir entrega técnica con lectura humana ni con aceptación legal.
 - **Criterios de aceptación:** estados diferenciados; destinatario/actor verificados; acuse con timestamp y hash del documento exacto; reintentos idempotentes; revocación/expiración de enlaces; filtros por departamento y documento; pruebas de entrega fallida, apertura, destinatario incorrecto y duplicados.
-- **Prioridad:** P0. **Estado:** Backend especializado completado en código/revisión/CI; beta e integración transversal pendientes.
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** commits 0bfb106, 00e924f y 5a72049; contrato Node y sintaxis Apps Script/JS PASS en Department Scope run 43729081735; Task-Service Security 43729081760 e Identity Mapping 43729081762 SUCCESS. BETA-FUNC-101 pendiente de Drive/Sheets desplegados.
 - **Cierre técnico:** EntregasDocumentales y getDepartmentalOutbox con scope institucional/departamental, hash/version del documento emitido, destinatario contrastado, notificación de plataforma, apertura autenticada, acuse explícito, reintento idempotente y revocación/expiración. La notificación aceptada por la plataforma no se presenta como lectura ni recepción.
 - **Límites/dependencias:** canal actual PLATAFORMA; correo queda para TASK-316. Integración con bandejas unificadas/eventos/UI pendiente de TASK-221/TASK-318, TASK-227 y F34-Task08. FechaApertura registra apertura autenticada del flujo, no prueba lectura humana del PDF.
@@ -5230,7 +5230,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - **Opiniones:** señales cualitativas de navegación lenta, clics excesivos, sincronización SIS/LMS frágil, discrepancias de notas, carga documental de primera infancia, mensajes fuera de horario, rutas inviables y costos de migración; estrategias/fuentes en el subplan.
 - **Dependencias/riesgos:** TASK-694; PM-01/TASK-153; TASK-060/F26-TASK01; TASK-506/TASK-171/TASK-668; AUD-NG-164/TASK-005; FASE2-T04; F29-TASK17. Riesgo de duplicación o de generalizar opiniones aisladas; mitigación mediante matriz y validación institucional.
 - **Alcance/exclusiones:** diseño y reconciliación documental; no modificar código, datos, esquemas, permisos, configuración, integraciones ni despliegue; no afirmar paridad con proveedores ni cumplimiento legal universal.
-- **Prioridad:** P0. **Estado:** completada como entregable documental; UNI-U01…U24 sin iniciar.
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia:** subplan, Plan Maestro §10.78, mapa de dependencias y checkpoint C1.405. Sin pruebas de producto.
 
 ---
