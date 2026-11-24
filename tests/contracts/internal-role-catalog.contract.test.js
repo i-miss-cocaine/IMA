@@ -399,7 +399,7 @@ test("getUserScopeConfig excluye asignaciones futuras y vencidas", () => {
     _verifiedClaims: { userId: "EMP-1", role: "Docente", membershipId: "MEM-1", institutionId: "INST-1" }
   });
   assert.equal(result.status, "success");
-  assert.deepEqual(result.ambitos.map(item => item.assignmentId), [created.assignmentId]);
+  assert.deepEqual(Array.from(result.ambitos, item => item.assignmentId), [created.assignmentId]);
 });
 
 test("getInternalRoleAssignments aplica vigencia temporal a la consulta de asignaciones", () => {
@@ -416,7 +416,7 @@ test("getInternalRoleAssignments aplica vigencia temporal a la consulta de asign
   assignments.rows.push(expired, future);
   const result = context.getInternalRoleAssignments({ userId: "EMP-1", soloVigentes: true });
   assert.equal(result.status, "success");
-  assert.deepEqual(result.data.map(item => item.asignacionId), [created.assignmentId]);
+  assert.deepEqual(Array.from(result.data, item => item.asignacionId), [created.assignmentId]);
 });
 
 test("actualizar parcialmente una responsabilidad conserva todos los campos omitidos", () => {
@@ -506,4 +506,10 @@ test("getUserContextScope trata FechaFin Date de medianoche como día inclusivo"
 test("la consola HR ignora respuestas antiguas cuando hay cargas concurrentes", () => {
   assert.match(dashboard, /loadGeneration=0/);
   assert.match(dashboard, /if\(generation!==loadGeneration\)return/);
+});
+test("parseInternalRoleAssignmentDate_ acepta timestamps ISO con milisegundos", () => {
+  const context = makeContext();
+  const parsed = context.parseInternalRoleAssignmentDate_("2026-02-28T10:15:30.123Z", false);
+  assert.equal(parsed.valid, true);
+  assert.equal(parsed.date.toISOString(), "2026-02-28T10:15:30.123Z");
 });
