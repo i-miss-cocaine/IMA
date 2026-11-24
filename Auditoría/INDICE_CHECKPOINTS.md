@@ -5,3 +5,4 @@ Política: conservar como máximo los diez checkpoints más recientes en este í
 | Checkpoint | Sesión | Objetivo | Estado | Archivo |
 |---|---|---|---|---|
 | C3.001 | IMA-RESET-20261124-001 | Reinicio extraordinario del ciclo y nueva línea base | Registrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
+| C3.002 | IMA-RESET-20261124-001 | Reapertura de estados en Plan Maestro y siete backlogs | Registrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
