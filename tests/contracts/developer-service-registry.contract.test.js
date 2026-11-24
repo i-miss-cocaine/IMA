@@ -116,8 +116,9 @@ function postHandler() {
  const context = {
   developerNormalizeRequestEnvelope_: normalizer,
   ROLE_PERMISSIONS: { Desarrollador: ["getCentralServiceRegistry"], Docente: [], Administrador: [] },
-  verifySessionToken: token => token === "valid-session" ? { role: "Desarrollador", userId: "USER-1" } :
-    token === "docente-session" ? { role: "Docente", userId: "USER-2" } : null,
+  verifySessionToken: (token, options) => token === "valid-session" ? { role: "Desarrollador", userId: "USER-1" } :
+    token === "docente-session" ? { role: "Docente", userId: "USER-2" } :
+    token === "membership-session" && options && options.allowMembership ? { role: "Docente", userId: "USER-3", membershipId: "MEM-1", institutionId: "INST-1" } : null,
   textResponse: value => value,
   doGet: () => ({ status: "success" }),
   getCentralServiceRegistry: payload => ({ status: "success", actor: payload._verifiedUserId })
@@ -149,12 +150,12 @@ test("el resolver de solo lectura está disponible a cualquier rol con sesión v
  const post = vm.runInNewContext("(" + match[0] + ")", {
   developerNormalizeRequestEnvelope_: normalize,
   ROLE_PERMISSIONS: { Docente: [] },
-  verifySessionToken: () => ({ role: "Docente", userId: "DOC-1" }),
+  verifySessionToken: (token, options) => token === "membership-session" && options && options.allowMembership ? { role: "Docente", userId: "DOC-1", membershipId: "MEM-1", institutionId: "INST-1" } : null,
   textResponse: value => value,
   resolveServiceEndpoint: payload => ({ status: "success", serviceId: payload.serviceId }),
   doGet: () => ({ status: "success" })
  });
- const response = post({ postData: { contents: JSON.stringify({ action: "resolveServiceEndpoint", payload: { serviceId: "SVC-1", action: "readRecord", sessionToken: "signed" } }) } });
+ const response = post({ postData: { contents: JSON.stringify({ action: "resolveServiceEndpoint", payload: { serviceId: "SVC-1", action: "readRecord", sessionToken: "membership-session" } }) } });
  assert.equal(response.status, "success");
  assert.equal(response.serviceId, "SVC-1");
 });
@@ -174,4 +175,29 @@ test("el resolver valida la versión de contrato y el estado del emisor", () => 
 test("el cliente adjunta la versión de contrato resuelta y el emisor opcional", () => {
  assert.match(api, /contractVersion: options\.contractVersion \|\| resolution\.version/);
  assert.match(api, /sourceServiceId: options\.sourceServiceId \|\| ""/);
+});
+
+test("las sesiones de membresía se reutilizan solo para resolver rutas, no para acciones de control", () => {
+ const match = backend.match(/function doPost\(e\) \{[\s\S]*?\n\}/);
+ const normalizerMatch = backend.match(/function developerNormalizeRequestEnvelope_\(rawEnvelope\) \{[\s\S]*?\n\}/);
+ const normalize = vm.runInNewContext("(" + normalizerMatch[0] + ")");
+ const calls = [];
+ const context = {
+  developerNormalizeRequestEnvelope_: normalize,
+  ROLE_PERMISSIONS: { Docente: [], Desarrollador: ["getCentralServiceRegistry"] },
+  verifySessionToken: (token, options) => {
+   calls.push(options && options.allowMembership);
+   return token === "membership-session" && options && options.allowMembership ? { role: "Docente", userId: "DOC-1", membershipId: "MEM-1", institutionId: "INST-1" } : null;
+  },
+  textResponse: value => value,
+  resolveServiceEndpoint: payload => ({ status: "success", serviceId: payload.serviceId }),
+  getCentralServiceRegistry: () => ({ status: "success" }),
+  doGet: () => ({ status: "success" })
+ };
+ const post = vm.runInNewContext("(" + match[0] + ")", context);
+ const route = post({ postData: { contents: JSON.stringify({ action: "resolveServiceEndpoint", payload: { serviceId: "SVC-1", action: "readRecord", sessionToken: "membership-session" } }) } });
+ assert.equal(route.status, "success");
+ const admin = post({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", payload: { sessionToken: "membership-session" } }) } });
+ assert.equal(admin.code, "INVALID_SESSION_TOKEN");
+ assert.deepEqual(calls, [true, false]);
 });

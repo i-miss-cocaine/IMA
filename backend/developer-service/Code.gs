@@ -565,7 +565,8 @@ function verifyInterServiceEnvelope(envelope, expectedTargetService, credentialT
   return { valid: true, sourceService, targetService, action, correlationId, requestId, payload: payload || {} };
 }
 
-function verifySessionToken(tokenString) {
+function verifySessionToken(tokenString, options) {
+  var allowMembershipSession = !!(options && options.allowMembership === true);
   if (!tokenString || typeof tokenString !== "string" || tokenString.indexOf(".") === -1) {
     return null;
   }
@@ -594,9 +595,11 @@ function verifySessionToken(tokenString) {
     if (typeof claims.sessionId !== "string" || !claims.sessionId.trim()) return null;
     if (!Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp)) return null;
     if (claims.iat > now + 60 || claims.exp <= now || claims.exp <= claims.iat || claims.exp - claims.iat > 86400) return null;
-    // The developer control plane uses a separate spreadsheet and has no shared RBAC membership source.
-    // Reject application membership tokens rather than treating an unverified active role as control-plane authority.
-    if (claims.membershipId || claims.institutionId) return null;
+    // The resolver is read-only: it may reuse a valid portal membership session to locate a service.
+    // All privileged control-plane actions still require the dedicated developer session.
+    if (claims.membershipId || claims.institutionId) {
+      if (!allowMembershipSession || !claims.membershipId || !claims.institutionId) return null;
+    }
     return claims;
   } catch (e) {
     return null;
@@ -629,7 +632,7 @@ function doPost(e) {
     }
 
     let claims = null;
-    try { claims = verifySessionToken(token); } catch (_) { claims = null; }
+    try { claims = verifySessionToken(token, { allowMembership: action === "resolveServiceEndpoint" }); } catch (_) { claims = null; }
     if (!claims) {
       return textResponse({ status: "error", code: "INVALID_SESSION_TOKEN", message: "La sesión no es válida o ha expirado." });
     }
