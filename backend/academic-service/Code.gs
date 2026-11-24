@@ -2311,108 +2311,58 @@ function getAdmissionRequests(payload) {
   return {status:"success",requests:mapped,pagination:{currentPage:pageNum,pageSize:limit,totalRecords,totalPages}};
 }
 function generateConsolidatedAttendanceAndCoexistenceReport(payload) {
-  const { grado, seccion, fechaInicio, fechaFin, rolSolicitante } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // 1. Asistencia
-  const regSheet = getOrCreateSheet(ss, "RegistrosAsistencia");
-  const regData = regSheet.getDataRange().getValues();
-
-  let totalRegistros = 0;
-  let totalPresentes = 0;
-  let totalAusentes = 0;
-  let totalTardanzas = 0;
-  let totalJustificadas = 0;
-
-  if (regData.length > 1) {
-    for (let i = 1; i < regData.length; i++) {
-      const r = regData[i];
-      const fechaRegStr = r[8] ? new Date(r[8]).toISOString().split('T')[0] : null;
-      if (fechaInicio && fechaRegStr && fechaRegStr < fechaInicio) continue;
-      if (fechaFin && fechaRegStr && fechaRegStr > fechaFin) continue;
-
-      totalRegistros++;
-      const st = String(r[3] || "").toLowerCase();
-      if (st === "presente") totalPresentes++;
-      else if (st === "ausente") totalAusentes++;
-      else if (st === "tardanza") totalTardanzas++;
-
-      if (r[6] === true || String(r[6]).toLowerCase() === "true") totalJustificadas++;
-    }
+  var p = payload || {};
+  var identity = getVerifiedAcademicIdentity_(p);
+  if (!identity || identity.authorized !== true) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var regSheet = ss.getSheetByName("RegistrosAsistencia");
+  var regData = regSheet ? regSheet.getDataRange().getValues() : [];
+  var totalRegistros = 0, totalPresentes = 0, totalAusentes = 0, totalTardanzas = 0, totalJustificadas = 0;
+  if (regData.length > 1) for (var i = 1; i < regData.length; i++) {
+    var r = regData[i], date = r[8] ? new Date(r[8]).toISOString().split("T")[0] : null;
+    if (p.fechaInicio && date && date < p.fechaInicio) continue;
+    if (p.fechaFin && date && date > p.fechaFin) continue;
+    totalRegistros++;
+    var status = String(r[3] || "").toLowerCase();
+    if (status === "presente") totalPresentes++;
+    else if (status === "ausente") totalAusentes++;
+    else if (status === "tardanza") totalTardanzas++;
+    if (r[6] === true || String(r[6]).toLowerCase() === "true") totalJustificadas++;
   }
-
-  // 2. Incidencias de Convivencia
-  const incSheet = getOrCreateSheet(ss, "IncidenciasAsistencia");
-  const incData = incSheet.getDataRange().getValues();
-  const resumenIncidencias = {
-    total: 0,
-    porEstado: { Reportada: 0, PendienteRevision: 0, EnInvestigacion: 0, Confirmada: 0, Cerrada: 0, Reabierta: 0 }
-  };
-
-  if (incData.length > 1) {
-    for (let i = 1; i < incData.length; i++) {
-      const row = incData[i];
-      const estado = String(row[8] || "Reportada").trim();
-      resumenIncidencias.total++;
-      if (resumenIncidencias.porEstado[estado] !== undefined) {
-        resumenIncidencias.porEstado[estado]++;
-      } else {
-        resumenIncidencias.porEstado[estado] = 1;
-      }
-    }
+  var incSheet = ss.getSheetByName("IncidenciasAsistencia");
+  var incData = incSheet ? incSheet.getDataRange().getValues() : [];
+  var incidents = { total: 0, porEstado: { Reportada: 0, PendienteRevision: 0, EnInvestigacion: 0, Confirmada: 0, Cerrada: 0, Reabierta: 0 } };
+  if (incData.length > 1) for (var j = 1; j < incData.length; j++) {
+    var state = String(incData[j][8] || "Reportada").trim();
+    incidents.total++;
+    if (incidents.porEstado[state] !== undefined) incidents.porEstado[state]++;
+    else incidents.porEstado[state] = 1;
   }
-
-  // 3. Casos de Seguimiento y Compromisos (Excluyendo confidenciales de Consejería u Orientación si no está autorizado)
-  const isCounselingAuthorized = ["Consejeros", "Orientación", "Orientacion", "Dirección", "Direccion", "Administrador", "Director"].includes(String(rolSolicitante || "").trim());
-
-  const caseSheet = getOrCreateSheet(ss, "CasosSeguimiento");
-  const caseData = caseSheet.getDataRange().getValues();
-
-  let totalCasos = 0;
-  let casosExcluidosPorConfidencialidad = 0;
-  let totalCompromisos = 0;
-
-  if (caseData.length > 1) {
-    for (let i = 1; i < caseData.length; i++) {
-      const row = caseData[i];
-      const categoria = String(row[4] || "").trim();
-
-      if ((categoria === "Consejería" || categoria === "Orientación") && !isCounselingAuthorized) {
-        casosExcluidosPorConfidencialidad++;
-        continue;
-      }
-
-      totalCasos++;
-      try {
-        const compromisosJSON = row[9];
-        if (compromisosJSON && typeof compromisosJSON === "string" && compromisosJSON.trim().startsWith("[")) {
-          const arr = JSON.parse(compromisosJSON);
-          if (Array.isArray(arr)) totalCompromisos += arr.length;
-        }
-      } catch (e) {}
+  var caseSheet = ss.getSheetByName("CasosSeguimiento");
+  var caseData = caseSheet ? caseSheet.getDataRange().getValues() : [];
+  var totalCases = 0, totalCommitments = 0;
+  var appointmentsSheet = ss.getSheetByName("CitasOrientacion");
+  var appointmentsRows = appointmentsSheet ? appointmentsSheet.getDataRange().getValues() : [];
+  if (caseData.length > 1) for (var k = 1; k < caseData.length; k++) {
+    var caseRow = caseData[k];
+    if (isConfidentialWelfareCase_(caseRow)) {
+      var caseAccess = getWelfareCaseAccess_(p, caseRow[0], ss, true, appointmentsRows);
+      if (!caseAccess.authorized) continue;
     }
+    totalCases++;
+    try {
+      var actions = caseRow[5] ? (typeof caseRow[5] === "string" ? JSON.parse(caseRow[5]) : caseRow[5]) : [];
+      if (Array.isArray(actions)) totalCommitments += actions.filter(function(item) { return item && String(item.tipo || "").toUpperCase() === "COMPROMISO"; }).length;
+    } catch (_) {}
   }
-
-  const porcentajeAsistenciaGlobal = totalRegistros > 0 ? (((totalPresentes + totalTardanzas) / totalRegistros) * 100).toFixed(1) : "100.0";
-
+  var attendancePercent = totalRegistros > 0 ? (((totalPresentes + totalTardanzas) / totalRegistros) * 100).toFixed(1) : "100.0";
   return {
     status: "success",
     reporte: {
-      filtros: { grado: grado || "TODOS", seccion: seccion || "TODAS", fechaInicio: fechaInicio || null, fechaFin: fechaFin || null },
-      asistencia: {
-        totalRegistros,
-        presentes: totalPresentes,
-        ausentes: totalAusentes,
-        tardanzas: totalTardanzas,
-        justificadas: totalJustificadas,
-        porcentajeGlobal: parseFloat(porcentajeAsistenciaGlobal)
-      },
-      convivencia: resumenIncidencias,
-      seguimiento: {
-        totalCasosVisibles: totalCasos,
-        casosExcluidosPorConfidencialidad,
-        totalCompromisos
-      }
+      filtros: { grado: p.grado || "TODOS", seccion: p.seccion || "TODAS", fechaInicio: p.fechaInicio || null, fechaFin: p.fechaFin || null },
+      asistencia: { totalRegistros: totalRegistros, presentes: totalPresentes, ausentes: totalAusentes, tardanzas: totalTardanzas, justificadas: totalJustificadas, porcentajeGlobal: parseFloat(attendancePercent) },
+      convivencia: incidents,
+      seguimiento: { totalCasosVisibles: totalCases, totalCompromisos: totalCommitments }
     },
     message: "Informe consolidado de asistencia, convivencia y seguimiento generado correctamente."
   };
@@ -14344,23 +14294,15 @@ function reviewAttendanceJustification(payload) {
 }
 
 function addCaseFollowUpNote(payload) {
-  const { casoId, nota, autorId } = payload || {};
-  if (!casoId || !nota) throw new Error("casoId y nota son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CasosSeguimiento");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(casoId).trim());
-  if (idx === -1) throw new Error("Caso de seguimiento no encontrado.");
-
-  const currentAcciones = data[idx][5] ? (typeof data[idx][5] === 'string' ? JSON.parse(data[idx][5]) : data[idx][5]) : [];
-  currentAcciones.push({
-    fecha: new Date().toISOString(),
-    autor: autorId || "Orientación",
-    nota: nota
-  });
-
-  sheet.getRange(idx + 1, 6).setValue(JSON.stringify(currentAcciones));
+  var p = payload || {};
+  if (!p.casoId || !p.nota) throw new Error("casoId y nota son requeridos.");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = getWelfareCaseAccess_(p, p.casoId, ss, false);
+  if (!access.authorized) return { status: "error", code: access.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso autorizado a este expediente." };
+  var data = access.sheet.getDataRange().getValues();
+  var currentAcciones = access.row[5] ? (typeof access.row[5] === "string" ? JSON.parse(access.row[5]) : access.row[5]) : [];
+  currentAcciones.push({ fecha: new Date().toISOString(), autor: access.identity.userId, nota: p.nota });
+  access.sheet.getRange(access.rowIndex, 6).setValue(JSON.stringify(currentAcciones));
   return { status: "success", message: "Nota de seguimiento agregada al expediente." };
 }
 
@@ -14485,112 +14427,126 @@ function updateAttendanceIncidentStatus(payload) {
 }
 
 // [F11-Task01] [P0] - Fortalecer la seguridad, privacidad y aislamiento de expedientes de bienestar estudiantil
-function validateStudentWelfareAccess(payload) {
-  const { userId, casoId, estudianteId } = payload || {};
-  const roleUpper = String((payload && payload._verifiedRole) || (payload && payload.authRole) || "").toUpperCase();
-  const isAuthorizedRole = ["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION", "CONSEJEROS", "CONSEJERO", "ORIENTACION", "ORIENTADOR"].indexOf(roleUpper) >= 0;
 
-  if (!isAuthorizedRole) {
-    logStructuredEvent("ACADEMIC", "validateStudentWelfareAccess", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", `Intento de acceso no autorizado a expediente de bienestar por rol '${roleUpper}'.`, { userId, estudianteId, casoId }, roleUpper);
-    return {
-      status: "success",
-      authorized: false,
-      reason: "El rol del usuario no dispone de permisos para consultar expedientes confidenciales de bienestar u orientación.",
-      message: "Acceso denegado a expediente confidencial de bienestar."
-    };
-  }
-
-  return {
-    status: "success",
-    authorized: true,
-    role: roleUpper,
-    message: "Acceso autorizado a expediente de bienestar estudiantil."
-  };
+function normalizeWelfareRole_(role) {
+  return String(role || "").trim().toUpperCase()
+    .replace(/[ÁÀÄ]/g, "A").replace(/[ÉÈË]/g, "E")
+    .replace(/[ÍÌÏ]/g, "I").replace(/[ÓÒÖ]/g, "O")
+    .replace(/[ÚÙÜ]/g, "U").replace(/Ñ/g, "N")
+    .replace(/[^A-Z0-9]/g, "");
 }
 
-// [F10-Task01] [F11-Task01] [P0] - Fortalecer la confidencialidad y el control de acceso a expedientes sensibles
-function getAttendanceFollowupCases(payload) {
-  const { userId, authRole, casoId, categoriaCaso } = payload || {};
-  const roleUpper = String(authRole || (payload && payload._verifiedRole) || "").toUpperCase();
+function isWelfareStaffRole_(role) {
+  return ["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION", "CONSEJEROS", "CONSEJERO", "ORIENTACION", "ORIENTADOR"]
+    .indexOf(normalizeWelfareRole_(role)) !== -1;
+}
 
-  if (categoriaCaso === "Consejería" || categoriaCaso === "Orientación") {
-    const welfareCheck = validateStudentWelfareAccess(payload);
-    if (!welfareCheck.authorized) {
-      return { status: "success", data: [], message: welfareCheck.message };
-    }
-  }
+function isConfidentialWelfareCase_(row) {
+  if (!row) return false;
+  var metadata = [row[2], row[3], row[4]].map(function(value) { return String(value || ""); }).join(" ");
+  if (/consejer[ií]a|orientaci[oó]n|bienestar/i.test(metadata)) return true;
+  var raw = row[5];
+  if (raw === "" || raw === null || raw === undefined) return false;
+  var actions;
+  try { actions = typeof raw === "string" ? JSON.parse(raw) : raw; }
+  catch (_) { return true; }
+  if (!Array.isArray(actions)) return true;
+  return actions.some(function(item) {
+    if (!item || typeof item !== "object") return false;
+    var kind = String(item.tipo || item.type || "");
+    return /consejer[ií]a|orientaci[oó]n|bienestar/i.test(kind) ||
+      Object.prototype.hasOwnProperty.call(item, "notasConfidenciales") ||
+      Object.prototype.hasOwnProperty.call(item, "derivacionId");
+  });
+}
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+function isConfidentialWelfarePayload_(payload) {
+  var p = payload || {};
+  var metadata = [p.categoriaCaso, p.motivoApertura, p.resumenAsistencia, p.responsableId]
+    .map(function(value) { return String(value || ""); }).join(" ");
+  if (/consejer[ií]a|orientaci[oó]n|bienestar/i.test(metadata)) return true;
+  var actions = p.acciones;
+  if (!Array.isArray(actions)) return false;
+  return actions.some(function(item) {
+    if (!item || typeof item !== "object") return false;
+    return /consejer[ií]a|orientaci[oó]n|bienestar/i.test(String(item.tipo || item.type || "")) ||
+      Object.prototype.hasOwnProperty.call(item, "notasConfidenciales");
+  });
+}
 
-  let nivelVisibilidad = "RESTRINGIDO_ROL";
+function getWelfareStudentAccess_(payload, studentId) {
+  var identity = getVerifiedAcademicIdentity_(payload);
+  if (!identity || identity.authorized !== true) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  var role = normalizeWelfareRole_(identity.role);
+  if (!isWelfareStaffRole_(role)) return { authorized: false, code: "WELFARE_ROLE_REQUIRED" };
+  if (role === "ADMINISTRADOR" || role === "ADMIN") return { authorized: true, identity: identity };
+  var target = String(studentId || "").trim();
+  if (!target) return { authorized: false, code: "WELFARE_STUDENT_REQUIRED" };
   try {
-    const configSheet = ss.getSheetByName("ConfiguracionAcademica");
-    if (configSheet) {
-      const configData = configSheet.getDataRange().getValues();
-      const rowVis = configData.slice(1).find(r => String(r[0]).trim() === "NIVEL_VISIBILIDAD_CONSEJERIA");
-      if (rowVis && rowVis[1]) nivelVisibilidad = String(rowVis[1]).trim().toUpperCase();
-    }
-  } catch (e) {
-    logDebug("Error leyendo NIVEL_VISIBILIDAD_CONSEJERIA", e.message);
+    var scopedPayload = Object.assign({}, payload || {}, { estudianteId: target });
+    var scope = validateAcademicResponsibilityAndScopeAccess(scopedPayload);
+    if (!scope || scope.authorized !== true) return { authorized: false, code: String(scope && scope.code || "WELFARE_SCOPE_DENIED") };
+    return { authorized: true, identity: identity, scope: scope };
+  } catch (_) {
+    return { authorized: false, code: "WELFARE_SCOPE_VALIDATION_FAILED" };
   }
-
-  const sheet = getOrCreateSheet(ss, "CasosSeguimiento");
-  const data = sheet.getDataRange().getValues();
-  if (data.length <= 1) return { status: "success", data: [] };
-
-  const isFullAccessRole = ["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION", "CONSEJEROS", "CONSEJERO", "ORIENTACION", "ORIENTADOR"].indexOf(roleUpper) >= 0;
-
-  let fueBloqueadoAcceso = false;
-
-  const cases = data.slice(1).filter(r => {
-    if (casoId && String(r[0]).trim() !== String(casoId).trim()) return false;
-    if (userId && String(r[1]).trim() !== String(userId).trim()) return false;
-
-    const resumen = String(r[3] || "");
-    const responsable = String(r[4] || "");
-    const esCasoConfidencial = resumen.indexOf("Categoría: Consejería") >= 0 || resumen.indexOf("Categoría: Orientación") >= 0 || responsable.indexOf("Consejer") >= 0 || responsable.indexOf("Orientac") >= 0;
-
-    if (esCasoConfidencial && !isFullAccessRole && nivelVisibilidad !== "COMPARTIDO_DOCENTE") {
-      fueBloqueadoAcceso = true;
-      return false;
-    }
-
-    return true;
-  }).map(r => ({
-    casoId: r[0],
-    userId: r[1],
-    motivoApertura: r[2],
-    resumenAsistencia: r[3],
-    responsableId: r[4],
-    acciones: r[5] ? (typeof r[5] === 'string' ? JSON.parse(r[5]) : r[5]) : [],
-    estado: r[6] || "Abierto",
-    fechaApertura: r[7] ? new Date(r[7]).toISOString() : null,
-    fechaCierre: r[8] ? new Date(r[8]).toISOString() : null
-  }));
-
-  if (fueBloqueadoAcceso && !isFullAccessRole) {
-    logStructuredEvent("ACADEMIC", "getAttendanceFollowupCases", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", `Acceso no autorizado o restringido a casos confidenciales para rol '${roleUpper}'.`, { userId, casoId }, roleUpper);
-  }
-
-  return { status: "success", data: cases, nivelVisibilidad };
 }
 
-function saveAttendanceFollowupCase(payload) {
-  const { casoId, userId, motivoApertura, resumenAsistencia, responsableId, acciones, estado, categoriaCaso } = payload || {};
-  if (!userId || !motivoApertura) throw new Error("userId y motivoApertura son requeridos.");
+function getWelfareCaseAccess_(payload, caseId, spreadsheet, forceSensitive, appointmentRowsCache) {
+  var identity = getVerifiedAcademicIdentity_(payload);
+  if (!identity || identity.authorized !== true) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
+  var role = normalizeWelfareRole_(identity.role);
+  var ss = spreadsheet || SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss && ss.getSheetByName("CasosSeguimiento");
+  if (!sheet) return { authorized: false, code: "WELFARE_CASE_SOURCE_UNAVAILABLE" };
+  var data = sheet.getDataRange().getValues();
+  var target = String(caseId || "").trim(), matches = [];
+  for (var i = 1; i < data.length; i++) if (String(data[i][0] || "").trim() === target) matches.push({ row: data[i], rowIndex: i + 1 });
+  if (!target || matches.length !== 1) return { authorized: false, code: matches.length > 1 ? "WELFARE_CASE_AMBIGUOUS" : "WELFARE_CASE_NOT_FOUND" };
+  var match = matches[0], row = match.row;
+  var sensitive = forceSensitive === true || isConfidentialWelfareCase_(row);
+  if (!sensitive) return { authorized: true, identity: identity, row: row, rowIndex: match.rowIndex, sheet: sheet, spreadsheet: ss };
+  if (!isWelfareStaffRole_(role)) return { authorized: false, code: "WELFARE_ROLE_REQUIRED" };
+  if (role === "ADMINISTRADOR" || role === "ADMIN") return { authorized: true, identity: identity, row: row, rowIndex: match.rowIndex, sheet: sheet, spreadsheet: ss };
+  var actorId = String(identity.userId || "").trim();
+  var responsibleMatch = !!actorId && String(row[4] || "").trim() === actorId;
+  var appointmentRows = Array.isArray(appointmentRowsCache) ? appointmentRowsCache : null;
+  if (!appointmentRows) {
+    try {
+      var appointments = ss.getSheetByName("CitasOrientacion");
+      appointmentRows = appointments ? appointments.getDataRange().getValues() : [];
+    } catch (_) { appointmentRows = []; }
+  }
+  var appointmentMatch = appointmentRows.slice(1).some(function(appointment) {
+    return String(appointment[1] || "").trim() === target && String(appointment[4] || "").trim() === actorId;
+  });
+  var assigned = responsibleMatch || appointmentMatch;
+  var scopeAllowed = false, studentId = String(row[1] || "").trim();
+  if (!assigned && studentId) {
+    try {
+      var scope = validateAcademicResponsibilityAndScopeAccess(Object.assign({}, payload || {}, { estudianteId: studentId }));
+      scopeAllowed = !!(scope && scope.authorized === true);
+    } catch (_) { scopeAllowed = false; }
+  }
+  if (!assigned && !scopeAllowed) return { authorized: false, code: "WELFARE_CASE_ASSIGNMENT_OR_SCOPE_REQUIRED" };
+  return { authorized: true, identity: identity, row: row, rowIndex: match.rowIndex, sheet: sheet, spreadsheet: ss };
+}
 
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CasosSeguimiento");
+function persistAttendanceFollowupCase_(payload) {
+  var p = payload || {};
+  var userId = p.userId, motivoApertura = p.motivoApertura;
+  var resumenAsistencia = p.resumenAsistencia, responsableId = p.responsableId;
+  var acciones = p.acciones, estado = p.estado, categoriaCaso = p.categoriaCaso;
+  if (!userId || !motivoApertura) throw new Error("userId y motivoApertura son requeridos.");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = getOrCreateSheet(ss, "CasosSeguimiento");
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(["CasoID", "UserId", "MotivoApertura", "ResumenAsistencia", "ResponsableID", "AccionesJSON", "Estado", "FechaApertura", "FechaCierre"]);
   }
-
-  const data = sheet.getDataRange().getValues();
-  const cid = casoId || ("CASO-AST-" + Date.now());
-  const now = new Date();
-
-  const idx = data.findIndex(r => String(r[0]).trim() === String(cid).trim());
-
+  var data = sheet.getDataRange().getValues();
+  var cid = p.casoId || ("CASO-AST-" + Date.now());
+  var now = new Date();
+  var idx = data.findIndex(function(row) { return String(row[0]).trim() === String(cid).trim(); });
   if (idx !== -1) {
     sheet.getRange(idx + 1, 3).setValue(motivoApertura);
     if (resumenAsistencia) sheet.getRange(idx + 1, 4).setValue(resumenAsistencia);
@@ -14601,481 +14557,351 @@ function saveAttendanceFollowupCase(payload) {
       if (estado === "Cerrado") sheet.getRange(idx + 1, 9).setValue(now);
     }
   } else {
-    sheet.appendRow([
-      cid,
-      userId,
-      motivoApertura,
-      resumenAsistencia || (categoriaCaso ? `Categoría: ${categoriaCaso}` : "Acompañamiento e intervención institucional"),
-      responsableId || "Orientacion",
-      JSON.stringify(acciones || []),
-      estado || "Abierto",
-      now,
-      ""
-    ]);
+    sheet.appendRow([cid, userId, motivoApertura,
+      resumenAsistencia || (categoriaCaso ? "Categoría: " + categoriaCaso : "Acompañamiento e intervención institucional"),
+      responsableId || "Orientacion", JSON.stringify(acciones || []), estado || "Abierto", now, ""]);
   }
-
-  logStructuredEvent("ACADEMIC", "saveAttendanceFollowupCase", "INFO", "CASE_SAVED", `Caso de seguimiento ${cid} guardado para ${userId}`, { cid, estado: estado || "Abierto" }, payload && payload.authRole);
-
   return { status: "success", message: "Caso de seguimiento guardado exitosamente.", data: { casoId: cid } };
+}
+
+function saveAutomatedAttendanceFollowupCase_(payload) {
+  var result = persistAttendanceFollowupCase_(Object.assign({}, payload || {}, { responsableId: "Orientacion" }));
+  try {
+    logStructuredEvent("ACADEMIC", "saveAutomatedAttendanceFollowupCase", "INFO", "AUTOMATED_WELFARE_CASE_CREATED",
+      "Caso preventivo generado por automatización; pendiente de asignación de personal autorizado.",
+      { casoId: result.data && result.data.casoId }, "SYSTEM");
+  } catch (_) {}
+  return result;
+}
+
+function validateStudentWelfareAccess(payload) {
+  var p = payload || {};
+  var identity = getVerifiedAcademicIdentity_(p);
+  if (!identity || identity.authorized !== true || !isWelfareStaffRole_(identity.role)) {
+    try { logStructuredEvent("ACADEMIC", "validateStudentWelfareAccess", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", "Intento de acceso a bienestar sin identidad/rol autorizado.", {}, identity && identity.role); } catch (_) {}
+    return { status: "success", authorized: false, code: "WELFARE_ROLE_REQUIRED", message: "Acceso denegado a expediente confidencial de bienestar." };
+  }
+  var access;
+  if (p.casoId) access = getWelfareCaseAccess_(p, p.casoId, null, true);
+  else if (p.estudianteId || p.userId) access = getWelfareStudentAccess_(p, p.estudianteId || p.userId);
+  else access = { authorized: false, code: "WELFARE_RESOURCE_REQUIRED" };
+  if (!access.authorized) {
+    try { logStructuredEvent("ACADEMIC", "validateStudentWelfareAccess", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", "Acceso a bienestar denegado por falta de asignación o ámbito.", { casoId: p.casoId || "", estudianteId: p.estudianteId || "" }, identity.role); } catch (_) {}
+  }
+  return { status: "success", authorized: !!access.authorized, code: access.code || "", message: access.authorized ? "Acceso autorizado a expediente de bienestar estudiantil." : "Acceso denegado a expediente confidencial de bienestar." };
+}
+
+// [F10-Task01] [F11-Task01] [P0] - Fortalecer la confidencialidad y el control de acceso a expedientes sensibles
+function getAttendanceFollowupCases(payload) {
+  var p = payload || {};
+  var identity = getVerifiedAcademicIdentity_(p);
+  if (!identity || identity.authorized !== true) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", data: [] };
+  var userId = p.userId, casoId = p.casoId;
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("CasosSeguimiento");
+  if (!sheet) return { status: "success", data: [], nivelVisibilidad: "RESTRINGIDO_ROL" };
+  var data = sheet.getDataRange().getValues();
+  if (data.length <= 1) return { status: "success", data: [], nivelVisibilidad: "RESTRINGIDO_ROL" };
+  var appointmentsSheet = ss.getSheetByName("CitasOrientacion");
+  var appointmentRows = appointmentsSheet ? appointmentsSheet.getDataRange().getValues() : [];
+  var visible = [], blocked = false;
+  data.slice(1).forEach(function(row) {
+    if (casoId && String(row[0] || "").trim() !== String(casoId).trim()) return;
+    if (userId && String(row[1] || "").trim() !== String(userId).trim()) return;
+    if (isConfidentialWelfareCase_(row)) {
+      var access = getWelfareCaseAccess_(p, row[0], ss, true, appointmentRows);
+      if (!access.authorized) { blocked = true; return; }
+    }
+    var actions = [];
+    try { actions = row[5] ? (typeof row[5] === "string" ? JSON.parse(row[5]) : row[5]) : []; }
+    catch (_) { blocked = true; return; }
+    visible.push({
+      casoId: row[0], userId: row[1], motivoApertura: row[2], resumenAsistencia: row[3],
+      responsableId: row[4], acciones: actions,
+      estado: row[6] || "Abierto", fechaApertura: row[7] ? new Date(row[7]).toISOString() : null,
+      fechaCierre: row[8] ? new Date(row[8]).toISOString() : null
+    });
+  });
+  if (blocked) {
+    try { logStructuredEvent("ACADEMIC", "getAttendanceFollowupCases", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT",
+      "Se omitieron casos confidenciales sin asignación, ámbito o estructura válida.", { casoId: casoId || "", userId: userId || "" }, identity.role); } catch (_) {}
+  }
+  return { status: "success", data: visible, nivelVisibilidad: "RESTRINGIDO_ROL" };
+}
+
+function saveAttendanceFollowupCase(payload) {
+  var p = payload || {};
+  var identity = getVerifiedAcademicIdentity_(p);
+  if (!identity || identity.authorized !== true) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una sesión firmada." };
+  if (!p.userId || !p.motivoApertura) throw new Error("userId y motivoApertura son requeridos.");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("CasosSeguimiento");
+  var existing = null;
+  if (p.casoId && sheet) {
+    var rows = sheet.getDataRange().getValues();
+    var matches = rows.slice(1).filter(function(row) { return String(row[0] || "").trim() === String(p.casoId).trim(); });
+    if (matches.length > 1) return { status: "error", code: "WELFARE_CASE_AMBIGUOUS", message: "No se pudo identificar un expediente único." };
+    existing = matches.length === 1 ? matches[0] : null;
+  }
+  var sensitive = isConfidentialWelfarePayload_(p) || isConfidentialWelfareCase_(existing);
+  var safePayload = Object.assign({}, p);
+  if (sensitive) {
+    var access = existing
+      ? getWelfareCaseAccess_(p, p.casoId, ss, true)
+      : getWelfareStudentAccess_(p, p.userId);
+    if (!access || access.authorized !== true) {
+      try { logStructuredEvent("ACADEMIC", "saveAttendanceFollowupCase", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", "Escritura de expediente confidencial denegada.", { casoId: p.casoId || "", userId: p.userId }, identity.role); } catch (_) {}
+      return { status: "error", code: access && access.code || "WELFARE_ACCESS_DENIED", message: "No tiene asignación o ámbito autorizado para modificar el expediente confidencial." };
+    }
+    safePayload.responsableId = existing ? existing[4] : identity.userId;
+    if (existing) safePayload.userId = existing[1];
+  }
+  var result = persistAttendanceFollowupCase_(safePayload);
+  try { logStructuredEvent("ACADEMIC", "saveAttendanceFollowupCase", "INFO", "CASE_SAVED", "Caso de seguimiento guardado.", { casoId: result.data && result.data.casoId }, identity.role); } catch (_) {}
+  return result;
 }
 
 // [F10-Task08] [P1] - Estructurar el seguimiento de compromisos, intervenciones y evidencias
 function addCaseCommitment(payload) {
-  const { casoId, compromiso, fechaLimite, responsable, evidenciaUrl, autorId, authRole } = payload || {};
-  if (!casoId || !compromiso) throw new Error("casoId y compromiso son requeridos.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CasosSeguimiento");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(casoId).trim());
-  if (idx === -1) throw new Error("Caso de seguimiento no encontrado.");
-
-  const currentAcciones = data[idx][5] ? (typeof data[idx][5] === 'string' ? JSON.parse(data[idx][5]) : data[idx][5]) : [];
-  const compromisoId = "COM-AST-" + Date.now();
-  const nowStr = new Date().toISOString();
-
-  const newCommitment = {
-    compromisoId,
-    tipo: "Compromiso",
-    compromiso: String(compromiso).trim(),
-    fechaCreacion: nowStr,
-    fechaLimite: fechaLimite || null,
-    responsable: responsable || "Estudiante/Tutor",
-    estadoCumplimiento: "Pendiente",
-    evidenciaUrl: evidenciaUrl || "",
-    autor: autorId || "Orientación/Consejería"
+  var p = payload || {};
+  if (!p.casoId || !p.compromiso) throw new Error("casoId y compromiso son requeridos.");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = getWelfareCaseAccess_(p, p.casoId, ss, false);
+  if (!access.authorized) return { status: "error", code: access.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso autorizado a este expediente." };
+  var currentAcciones = access.row[5] ? (typeof access.row[5] === "string" ? JSON.parse(access.row[5]) : access.row[5]) : [];
+  var commitment = {
+    compromisoId: "COM-AST-" + Date.now(), tipo: "Compromiso", compromiso: String(p.compromiso).trim(),
+    fechaCreacion: new Date().toISOString(), fechaLimite: p.fechaLimite || null,
+    responsable: p.responsable || "Estudiante/Tutor", estadoCumplimiento: "Pendiente",
+    evidenciaUrl: p.evidenciaUrl || "", autor: access.identity.userId
   };
-
-  currentAcciones.push(newCommitment);
-  sheet.getRange(idx + 1, 6).setValue(JSON.stringify(currentAcciones));
-
-  logStructuredEvent("ACADEMIC", "addCaseCommitment", "INFO", "CASE_COMMITMENT_ADDED", `Compromiso ${compromisoId} registrado en caso ${casoId}`, { casoId, compromisoId }, authRole || "Consejería");
-
-  return {
-    status: "success",
-    message: "Compromiso/Intervención estructurada registrada exitosamente.",
-    data: newCommitment
-  };
+  currentAcciones.push(commitment);
+  access.sheet.getRange(access.rowIndex, 6).setValue(JSON.stringify(currentAcciones));
+  return { status: "success", message: "Compromiso/Intervención estructurada registrada exitosamente.", data: commitment };
 }
 
 function updateCaseCommitmentStatus(payload) {
-  const { casoId, compromisoId, nuevoEstado, observaciones, evidenciaUrl, autorId, authRole } = payload || {};
-  if (!casoId || !compromisoId || !nuevoEstado) throw new Error("casoId, compromisoId y nuevoEstado son requeridos.");
-
-  const validStates = ["Pendiente", "EnProceso", "Cumplido", "Incumplido", "Reprogramado"];
-  const cleanState = String(nuevoEstado).trim();
-  if (validStates.indexOf(cleanState) === -1) {
-    throw new Error(`Estado de compromiso '${nuevoEstado}' no válido. Estados válidos: ${validStates.join(", ")}`);
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CasosSeguimiento");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(casoId).trim());
-  if (idx === -1) throw new Error("Caso de seguimiento no encontrado.");
-
-  const currentAcciones = data[idx][5] ? (typeof data[idx][5] === 'string' ? JSON.parse(data[idx][5]) : data[idx][5]) : [];
-  const targetItem = currentAcciones.find(item => item && String(item.compromisoId).trim() === String(compromisoId).trim());
-
-  if (!targetItem) throw new Error("Compromiso no encontrado dentro de las acciones del caso.");
-
-  const estadoAnterior = targetItem.estadoCumplimiento || "Pendiente";
-  targetItem.estadoCumplimiento = cleanState;
-  targetItem.fechaActualizacion = new Date().toISOString();
-  if (observaciones) targetItem.observaciones = observaciones;
-  if (evidenciaUrl) targetItem.evidenciaUrl = evidenciaUrl;
-
-  sheet.getRange(idx + 1, 6).setValue(JSON.stringify(currentAcciones));
-
-  logStructuredEvent("ACADEMIC", "updateCaseCommitmentStatus", "INFO", "CASE_COMMITMENT_STATUS_UPDATED", `Estado de compromiso ${compromisoId} modificado a '${cleanState}'`, { casoId, compromisoId, estadoAnterior, nuevoEstado: cleanState }, authRole || "Consejería");
-
-  return {
-    status: "success",
-    casoId,
-    compromisoId,
-    estadoAnterior,
-    nuevoEstado: cleanState,
-    message: `Estado del compromiso actualizado exitosamente a '${cleanState}'.`
-  };
+  var p = payload || {};
+  if (!p.casoId || !p.compromisoId || !p.nuevoEstado) throw new Error("casoId, compromisoId y nuevoEstado son requeridos.");
+  var validStates = ["Pendiente", "EnProceso", "Cumplido", "Incumplido", "Reprogramado"];
+  var state = String(p.nuevoEstado).trim();
+  if (validStates.indexOf(state) === -1) throw new Error("Estado de compromiso no válido.");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = getWelfareCaseAccess_(p, p.casoId, ss, false);
+  if (!access.authorized) return { status: "error", code: access.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso autorizado a este expediente." };
+  var currentAcciones = access.row[5] ? (typeof access.row[5] === "string" ? JSON.parse(access.row[5]) : access.row[5]) : [];
+  var item = currentAcciones.find(function(value) { return value && String(value.compromisoId || "").trim() === String(p.compromisoId).trim(); });
+  if (!item) throw new Error("Compromiso no encontrado dentro de las acciones del caso.");
+  var previous = item.estadoCumplimiento || "Pendiente";
+  item.estadoCumplimiento = state;
+  item.fechaActualizacion = new Date().toISOString();
+  if (p.observaciones) item.observaciones = p.observaciones;
+  if (p.evidenciaUrl) item.evidenciaUrl = p.evidenciaUrl;
+  access.sheet.getRange(access.rowIndex, 6).setValue(JSON.stringify(currentAcciones));
+  return { status: "success", casoId: p.casoId, compromisoId: p.compromisoId, estadoAnterior: previous, nuevoEstado: state };
 }
 
 // [F10-Task09] [P1] - Completar el modelo funcional de consejería escolar
 function scheduleCounselingAppointment(payload) {
-  const { userId, consejeroUserId, fechaHora, motivo, modalidad, observaciones, authRole } = payload || {};
-  if (!userId || !fechaHora || !motivo) throw new Error("userId, fechaHora y motivo son requeridos para agendar cita de consejería.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const citaId = "CITA-CNS-" + Date.now();
-  const now = new Date();
-
-  // Save/Update in CasosSeguimiento as a Counseling Appointment Activity
-  const caseRes = saveAttendanceFollowupCase({
-    userId,
-    motivoApertura: `Cita de Consejería Escolar: ${motivo}`,
-    resumenAsistencia: `Categoría: Consejería | Modalidad: ${modalidad || 'Presencial'} | Fecha: ${fechaHora}`,
-    responsableId: consejeroUserId || "Consejería",
-    estado: "Abierto",
-    categoriaCaso: "Consejería"
-  });
-
-  logStructuredEvent("ACADEMIC", "scheduleCounselingAppointment", "INFO", "COUNSELING_APPOINTMENT_SCHEDULED", `Cita de consejería ${citaId} agendada para ${userId}`, { citaId, userId, fechaHora, motivo }, authRole || "Consejería");
-
-  return {
-    status: "success",
-    citaId,
-    userId,
-    casoId: caseRes.data ? caseRes.data.casoId : null,
-    message: "Cita de consejería escolar agendada exitosamente."
-  };
+  var p = payload || {};
+  var actor = getVerifiedAcademicIdentity_(p);
+  if (!actor || actor.authorized !== true || !isWelfareStaffRole_(actor.role)) return { status: "error", code: "WELFARE_ROLE_REQUIRED", message: "Se requiere personal autorizado de bienestar." };
+  if (!p.userId || !p.fechaHora || !p.motivo) throw new Error("userId, fechaHora y motivo son requeridos para agendar cita de consejería.");
+  var caseResult = saveAttendanceFollowupCase(Object.assign({}, p, {
+    userId: p.userId,
+    motivoApertura: "Cita de Consejería Escolar: " + p.motivo,
+    resumenAsistencia: "Categoría: Consejería | Modalidad: " + (p.modalidad || "Presencial") + " | Fecha: " + p.fechaHora,
+    responsableId: actor.userId, estado: "Abierto", categoriaCaso: "Consejería"
+  }));
+  if (!caseResult || caseResult.status !== "success") return caseResult || { status: "error", code: "WELFARE_CASE_CREATE_FAILED" };
+  return { status: "success", citaId: "CITA-CNS-" + Date.now(), userId: p.userId, casoId: caseResult.data.casoId, message: "Cita de consejería escolar agendada exitosamente." };
 }
 
 function recordCounselingSessionAct(payload) {
-  const { casoId, userId, resumenSesion, notasConfidenciales, acuerdos, proximaCita, consejeroUserId, authRole } = payload || {};
-  if (!casoId || !resumenSesion) throw new Error("casoId y resumenSesion son requeridos para registrar acta de consejería.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CasosSeguimiento");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(casoId).trim());
-  if (idx === -1) throw new Error("Caso de seguimiento/consejería no encontrado.");
-
-  const currentAcciones = data[idx][5] ? (typeof data[idx][5] === 'string' ? JSON.parse(data[idx][5]) : data[idx][5]) : [];
-  const actaId = "ACTA-CNS-" + Date.now();
-  const nowStr = new Date().toISOString();
-
-  const newActa = {
-    actaId,
-    tipo: "ActaConsejería",
-    resumenSesion: String(resumenSesion).trim(),
-    notasConfidenciales: notasConfidenciales ? String(notasConfidenciales).trim() : "",
-    acuerdos: acuerdos || [],
-    proximaCita: proximaCita || null,
-    fechaRegistro: nowStr,
-    consejeroUserId: consejeroUserId || "Consejería"
-  };
-
-  currentAcciones.push(newActa);
-  sheet.getRange(idx + 1, 6).setValue(JSON.stringify(currentAcciones));
-
-  logStructuredEvent("ACADEMIC", "recordCounselingSessionAct", "INFO", "COUNSELING_ACT_RECORDED", `Acta de consejería ${actaId} registrada en caso ${casoId}`, { casoId, actaId }, authRole || "Consejería");
-
-  return {
-    status: "success",
-    actaId,
-    casoId,
-    message: "Acta de sesión de consejería registrada de forma inmutable."
-  };
+  var p = payload || {};
+  if (!p.casoId || !p.resumenSesion) throw new Error("casoId y resumenSesion son requeridos para registrar acta de consejería.");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = getWelfareCaseAccess_(p, p.casoId, ss, true);
+  if (!access.authorized) return { status: "error", code: access.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso autorizado al expediente de consejería." };
+  var actions = access.row[5] ? (typeof access.row[5] === "string" ? JSON.parse(access.row[5]) : access.row[5]) : [];
+  var actaId = "ACTA-CNS-" + Date.now();
+  actions.push({
+    actaId: actaId, tipo: "ActaConsejería", resumenSesion: String(p.resumenSesion).trim(),
+    notasConfidenciales: p.notasConfidenciales ? String(p.notasConfidenciales).trim() : "",
+    acuerdos: p.acuerdos || [], proximaCita: p.proximaCita || null,
+    fechaRegistro: new Date().toISOString(), consejeroUserId: access.identity.userId
+  });
+  access.sheet.getRange(access.rowIndex, 6).setValue(JSON.stringify(actions));
+  try { logStructuredEvent("ACADEMIC", "recordCounselingSessionAct", "INFO", "COUNSELING_ACT_RECORDED", "Acta de consejería registrada.", { casoId: p.casoId, actaId: actaId }, access.identity.role); } catch (_) {}
+  return { status: "success", actaId: actaId, casoId: p.casoId, message: "Acta de sesión de consejería registrada." };
 }
 
 function referCounselingCase(payload) {
-  const { casoId, destinoDerivacion, motivoDerivacion, profesionalExterno, derivadoPor, authRole } = payload || {};
-  if (!casoId || !destinoDerivacion || !motivoDerivacion) {
-    throw new Error("casoId, destinoDerivacion y motivoDerivacion son requeridos para derivar el caso de consejería.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const sheet = getOrCreateSheet(ss, "CasosSeguimiento");
-  const data = sheet.getDataRange().getValues();
-  const idx = data.findIndex(r => String(r[0]).trim() === String(casoId).trim());
-  if (idx === -1) throw new Error("Caso de consejería no encontrado.");
-
-  const currentAcciones = data[idx][5] ? (typeof data[idx][5] === 'string' ? JSON.parse(data[idx][5]) : data[idx][5]) : [];
-  const derivacionId = "DERIV-CNS-" + Date.now();
-  const nowStr = new Date().toISOString();
-
-  const newDerivation = {
-    derivacionId,
-    tipo: "DerivaciónProfesional",
-    destinoDerivacion: String(destinoDerivacion).trim(),
-    motivoDerivacion: String(motivoDerivacion).trim(),
-    profesionalExterno: profesionalExterno || "Especialista Externo / Psicología / Salud",
-    derivadoPor: derivadoPor || "Consejería Escolar",
-    fechaDerivacion: nowStr,
-    estadoDerivacion: "Derivado"
-  };
-
-  currentAcciones.push(newDerivation);
-  sheet.getRange(idx + 1, 6).setValue(JSON.stringify(currentAcciones));
-  sheet.getRange(idx + 1, 7).setValue("Derivado"); // Estado del caso
-
-  logStructuredEvent("ACADEMIC", "referCounselingCase", "INFO", "COUNSELING_CASE_REFERRED", `Caso ${casoId} derivado a ${destinoDerivacion}`, { casoId, derivacionId, destinoDerivacion }, authRole || "Consejería");
-
-  return {
-    status: "success",
-    derivacionId,
-    casoId,
-    destinoDerivacion,
-    message: `Caso de consejería derivado exitosamente a '${destinoDerivacion}'.`
-  };
+  var p = payload || {};
+  if (!p.casoId || !p.destinoDerivacion || !p.motivoDerivacion) throw new Error("casoId, destinoDerivacion y motivoDerivacion son requeridos para derivar el caso de consejería.");
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var access = getWelfareCaseAccess_(p, p.casoId, ss, true);
+  if (!access.authorized) return { status: "error", code: access.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso autorizado al expediente de consejería." };
+  var actions = access.row[5] ? (typeof access.row[5] === "string" ? JSON.parse(access.row[5]) : access.row[5]) : [];
+  var derivationId = "DERIV-CNS-" + Date.now();
+  actions.push({
+    derivacionId: derivationId, tipo: "DerivaciónProfesional",
+    destinoDerivacion: String(p.destinoDerivacion).trim(), motivoDerivacion: String(p.motivoDerivacion).trim(),
+    profesionalExterno: p.profesionalExterno || "Especialista Externo / Psicología / Salud",
+    derivadoPor: access.identity.userId, fechaDerivacion: new Date().toISOString(), estadoDerivacion: "Derivado"
+  });
+  access.sheet.getRange(access.rowIndex, 6).setValue(JSON.stringify(actions));
+  access.sheet.getRange(access.rowIndex, 7).setValue("Derivado");
+  try { logStructuredEvent("ACADEMIC", "referCounselingCase", "INFO", "COUNSELING_CASE_REFERRED", "Caso de consejería derivado.", { casoId: p.casoId, derivacionId: derivationId }, access.identity.role); } catch (_) {}
+  return { status: "success", derivacionId: derivationId, casoId: p.casoId, destinoDerivacion: p.destinoDerivacion };
 }
 
 // [F10-Task10] [P1] - Completar el modelo funcional de orientación académica y vocacional
 function saveGuidanceFollowupPlan(payload) {
-  const { userId, metasAprendizaje, intervencionesPedagogicas, observaciones, fechaRevision, orientadorUserId, authRole } = payload || {};
-  if (!userId || !metasAprendizaje) throw new Error("userId y metasAprendizaje son requeridos para el plan de orientación académica.");
-
-  const planId = "PLAN-ORI-" + Date.now();
-  const caseRes = saveAttendanceFollowupCase({
-    userId,
-    motivoApertura: `Plan de Orientación Académica: ${String(metasAprendizaje).substring(0, 100)}`,
-    resumenAsistencia: `Categoría: Orientación | Plan de Seguimiento Pedagógico | Creado por: ${orientadorUserId || 'Orientación'}`,
-    responsableId: orientadorUserId || "Orientacion",
-    acciones: Array.isArray(intervencionesPedagogicas) ? intervencionesPedagogicas : [{ meta: metasAprendizaje, observaciones: observaciones || "" }],
-    estado: "Abierto",
-    categoriaCaso: "Orientación"
-  });
-
-  logStructuredEvent("ACADEMIC", "saveGuidanceFollowupPlan", "INFO", "GUIDANCE_PLAN_SAVED", `Plan de orientación ${planId} guardado para ${userId}`, { planId, userId }, authRole || "Orientación");
-
-  return {
-    status: "success",
-    planId,
-    userId,
-    casoId: caseRes.data ? caseRes.data.casoId : null,
-    message: "Plan de seguimiento académico de orientación guardado exitosamente sin alterar notas ni matrículas."
-  };
+  var p = payload || {};
+  var actor = getVerifiedAcademicIdentity_(p);
+  if (!actor || actor.authorized !== true || !isWelfareStaffRole_(actor.role)) return { status: "error", code: "WELFARE_ROLE_REQUIRED", message: "Se requiere personal autorizado de orientación." };
+  if (!p.userId || !p.metasAprendizaje) throw new Error("userId y metasAprendizaje son requeridos para el plan de orientación académica.");
+  var planId = "PLAN-ORI-" + Date.now();
+  var caseResult = saveAttendanceFollowupCase(Object.assign({}, p, {
+    userId: p.userId,
+    motivoApertura: "Plan de Orientación Académica: " + String(p.metasAprendizaje).substring(0, 100),
+    resumenAsistencia: "Categoría: Orientación | Plan de Seguimiento Pedagógico",
+    responsableId: actor.userId,
+    acciones: Array.isArray(p.intervencionesPedagogicas) ? p.intervencionesPedagogicas : [{ meta: p.metasAprendizaje, observaciones: p.observaciones || "" }],
+    estado: "Abierto", categoriaCaso: "Orientación"
+  }));
+  if (!caseResult || caseResult.status !== "success") return caseResult || { status: "error", code: "WELFARE_CASE_CREATE_FAILED" };
+  return { status: "success", planId: planId, userId: p.userId, casoId: caseResult.data.casoId, message: "Plan de seguimiento académico de orientación guardado." };
 }
 
 function saveVocationalRecommendation(payload) {
-  const { userId, perfilVocacional, carrerasSugeridas, recomendaciones, orientadorUserId, authRole } = payload || {};
-  if (!userId || !perfilVocacional) throw new Error("userId y perfilVocacional son requeridos para registrar recomendaciones vocacionales.");
-
-  const recId = "REC-VOC-" + Date.now();
-  const caseRes = saveAttendanceFollowupCase({
-    userId,
-    motivoApertura: `Informe de Orientación Vocacional: ${perfilVocacional}`,
-    resumenAsistencia: `Categoría: Orientación Vocacional | Carreras: ${Array.isArray(carrerasSugeridas) ? carrerasSugeridas.join(", ") : carrerasSugeridas || "N/A"}`,
-    responsableId: orientadorUserId || "Orientacion",
-    acciones: [{ tipo: "OrientacionVocacional", perfilVocacional, carrerasSugeridas, recomendaciones: recomendaciones || "" }],
-    estado: "Abierto",
-    categoriaCaso: "Orientación"
-  });
-
-  logStructuredEvent("ACADEMIC", "saveVocationalRecommendation", "INFO", "VOCATIONAL_RECOMMENDATION_SAVED", `Recomendación vocacional ${recId} guardada para ${userId}`, { recId, userId, perfilVocacional }, authRole || "Orientación");
-
-  return {
-    status: "success",
-    recId,
-    userId,
-    casoId: caseRes.data ? caseRes.data.casoId : null,
-    message: "Informe y recomendación vocacional registrado exitosamente."
-  };
+  var p = payload || {};
+  var actor = getVerifiedAcademicIdentity_(p);
+  if (!actor || actor.authorized !== true || !isWelfareStaffRole_(actor.role)) return { status: "error", code: "WELFARE_ROLE_REQUIRED", message: "Se requiere personal autorizado de orientación." };
+  if (!p.userId || !p.perfilVocacional) throw new Error("userId y perfilVocacional son requeridos para registrar recomendaciones vocacionales.");
+  var recId = "REC-VOC-" + Date.now();
+  var caseResult = saveAttendanceFollowupCase(Object.assign({}, p, {
+    userId: p.userId,
+    motivoApertura: "Informe de Orientación Vocacional: " + p.perfilVocacional,
+    resumenAsistencia: "Categoría: Orientación Vocacional | Carreras: " + (Array.isArray(p.carrerasSugeridas) ? p.carrerasSugeridas.join(", ") : p.carrerasSugeridas || "N/A"),
+    responsableId: actor.userId,
+    acciones: [{ tipo: "OrientacionVocacional", perfilVocacional: p.perfilVocacional, carrerasSugeridas: p.carrerasSugeridas, recomendaciones: p.recomendaciones || "" }],
+    estado: "Abierto", categoriaCaso: "Orientación"
+  }));
+  if (!caseResult || caseResult.status !== "success") return caseResult || { status: "error", code: "WELFARE_CASE_CREATE_FAILED" };
+  return { status: "success", recId: recId, userId: p.userId, casoId: caseResult.data.casoId, message: "Informe y recomendación vocacional registrados." };
 }
 
 // [F11-Task07] [P1] - Fortalecer la gestión de citas de orientación y acompañamiento estudiantil
 function scheduleGuidanceAppointment(payload) {
+  var p = payload || {};
   try {
-    const verifiedRole = (payload && (payload._verifiedRole || payload.authRole)) || "NO_ACCESS";
-    const callerId = (payload && payload._verifiedUserId) || "Orientación";
-    const isAuthorized = ["Administrador", "Director", "Orientacion", "Consejeros"].indexOf(verifiedRole) !== -1;
-    if (!isAuthorized) {
-      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Solo personal de Orientación, Consejería o Dirección puede agendar citas de orientación estudiantil." };
+    var actor = getVerifiedAcademicIdentity_(p);
+    if (!actor || actor.authorized !== true || !isWelfareStaffRole_(actor.role)) {
+      return { status: "error", code: "WELFARE_ROLE_REQUIRED", message: "Solo personal autorizado de bienestar puede agendar citas." };
     }
-
-    const {
-      casoId,
-      userId,
-      tutorUserId,
-      fechaHora,
-      modalidad,
-      tipoCita,
-      motivoPublico,
-      notasConfidenciales,
-      derivacionRef
-    } = payload || {};
-
-    if (!userId || !fechaHora) {
-      return { status: "error", code: "VALIDATION_ERROR", message: "userId y fechaHora son requeridos para agendar una cita de orientación." };
+    var studentId = String(p.userId || "").trim();
+      var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var targetCaseId = String(p.casoId || "").trim();
+    if (targetCaseId) {
+      var caseAccess = getWelfareCaseAccess_(p, targetCaseId, ss, true);
+      if (!caseAccess.authorized) return { status: "error", code: caseAccess.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso al expediente indicado." };
+      if (String(caseAccess.row[1] || "").trim() !== studentId) return { status: "error", code: "WELFARE_APPOINTMENT_CASE_MISMATCH", message: "El estudiante no coincide con el expediente indicado." };
+    } else {
+      var caseResult = saveAttendanceFollowupCase(Object.assign({}, p, {
+        userId: studentId,
+        motivoApertura: "Acompañamiento y Orientación Estudiantil (" + (p.tipoCita || "Entrevista") + ")",
+        resumenAsistencia: "Categoría: Orientación | Modalidad: " + (p.modalidad || "Presencial") + " | Fecha: " + p.fechaHora,
+        responsableId: actor.userId, estado: "Abierto", categoriaCaso: "Orientación"
+      }));
+      if (!caseResult || caseResult.status !== "success") return caseResult || { status: "error", code: "WELFARE_CASE_CREATE_FAILED" };
+      targetCaseId = caseResult.data.casoId;
     }
-
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "CitasOrientacion");
-
-    const now = new Date();
-    const nowISO = now.toISOString();
-    const citaId = "CITA-ORI-" + now.getFullYear() + "-" + Math.floor(100000 + Math.random() * 900000);
-
-    // Si no se proporcionó casoId, se vincula o abre automáticamente un caso preventivo en CasosSeguimiento
-    let targetCasoId = casoId;
-    if (!targetCasoId) {
-      const caseRes = saveAttendanceFollowupCase({
-        userId,
-        motivoApertura: `Acompañamiento y Orientación Estudiantil (${tipoCita || 'Entrevista'})`,
-        resumenAsistencia: `Categoría: Orientación | Modalidad: ${modalidad || 'Presencial'} | Fecha: ${fechaHora}`,
-        responsableId: callerId,
-        estado: "Abierto",
-        categoriaCaso: "Orientación"
-      });
-      targetCasoId = caseRes && caseRes.data ? caseRes.data.casoId : ("CASO-" + Date.now());
-    }
-
-    // Persistir la cita en CitasOrientacion
-    // Columnas: CitaOrientacionID, CasoID, UserId, TutorUserId, OrientadorUserId, FechaHora, Modalidad, Estado, TipoCita, NotasPublicas, NotasConfidenciales, DerivacionRef, FechaCreacion
-    sheet.appendRow([
-      citaId,
-      String(targetCasoId).trim(),
-      String(userId).trim(),
-      tutorUserId ? String(tutorUserId).trim() : "",
-      callerId,
-      String(fechaHora),
-      modalidad || "Presencial",
-      "Programada",
-      tipoCita || "Acompañamiento",
-      motivoPublico || "Cita de Acompañamiento Institucional",
-      notasConfidenciales || "",
-      derivacionRef || "",
-      nowISO
-    ]);
-
-    logStructuredEvent("ACADEMIC", "scheduleGuidanceAppointment", "INFO", "GUIDANCE_APPOINTMENT_SCHEDULED", `Cita de orientación ${citaId} agendada para ${userId} ligada al caso ${targetCasoId}`, { citaId, userId, targetCasoId }, verifiedRole);
-
-    return {
-      status: "success",
-      citaOrientacionId: citaId,
-      casoId: targetCasoId,
-      userId: userId,
-      fechaHora: fechaHora,
-      estado: "Programada",
-      message: "Cita de orientación y acompañamiento estudiantil agendada correctamente ligada al caso de seguimiento."
-    };
+    var sheet = getOrCreateSheet(ss, "CitasOrientacion");
+    var now = new Date(), nowISO = now.toISOString();
+    var citaId = "CITA-ORI-" + now.getFullYear() + "-" + Math.floor(100000 + Math.random() * 900000);
+    sheet.appendRow([citaId, targetCaseId, studentId, p.tutorUserId ? String(p.tutorUserId).trim() : "",
+      actor.userId, String(p.fechaHora), p.modalidad || "Presencial", "Programada",
+      p.tipoCita || "Acompañamiento", p.motivoPublico || "Cita de Acompañamiento Institucional",
+      p.notasConfidenciales || "", p.derivacionRef || "", nowISO]);
+    try { logStructuredEvent("ACADEMIC", "scheduleGuidanceAppointment", "INFO", "GUIDANCE_APPOINTMENT_SCHEDULED", "Cita de orientación agendada.", { citaId: citaId, casoId: targetCaseId }, actor.role); } catch (_) {}
+    return { status: "success", citaOrientacionId: citaId, casoId: targetCaseId, userId: studentId, fechaHora: p.fechaHora, estado: "Programada" };
   } catch (error) {
-    logStructuredEvent("ACADEMIC", "scheduleGuidanceAppointment", "ERROR", "GUIDANCE_APPOINTMENT_FAILED", error.message, payload, payload && payload.authRole);
-    return { status: "error", message: error.message };
+    try { logStructuredEvent("ACADEMIC", "scheduleGuidanceAppointment", "ERROR", "GUIDANCE_APPOINTMENT_FAILED", String(error.message || error), {}, "SYSTEM"); } catch (_) {}
+    return { status: "error", code: "GUIDANCE_APPOINTMENT_FAILED", message: String(error.message || error) };
   }
 }
 
 function getGuidanceAppointments(payload) {
-  try {
-    const verifiedRole = (payload && (payload._verifiedRole || payload.authRole)) || "NO_ACCESS";
-    const callerId = (payload && payload._verifiedUserId) || "";
-    const isWelfareStaff = ["Administrador", "Director", "Orientacion", "Consejeros"].indexOf(verifiedRole) !== -1;
-
-    const { casoId, userId, estado, citaOrientacionId } = payload || {};
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "CitasOrientacion");
-    const data = sheet.getDataRange().getValues();
-
-    if (data.length <= 1) return { status: "success", totalCitas: 0, citas: [] };
-
-    const citas = [];
-
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const cId = String(row[0] || "");
-      const cCasoId = String(row[1] || "");
-      const cUserId = String(row[2] || "");
-      const cTutorId = String(row[3] || "");
-      const cOrientadorId = String(row[4] || "");
-      const fHora = row[5] ? new Date(row[5]).toISOString() : "";
-      const mod = String(row[6] || "Presencial");
-      const st = String(row[7] || "Programada");
-      const tipo = String(row[8] || "Acompañamiento");
-      const notasPub = String(row[9] || "");
-      const notasConf = String(row[10] || "");
-      const derivRef = String(row[11] || "");
-      const fCrea = row[12] ? new Date(row[12]).toISOString() : "";
-
-      if (citaOrientacionId && String(citaOrientacionId).trim() !== cId) continue;
-      if (casoId && String(casoId).trim() !== cCasoId) continue;
-      if (userId && String(userId).trim() !== cUserId) continue;
-      if (estado && estado !== "Todas" && st !== estado) continue;
-
-      // Restricción de aislamiento para roles no pertenecientes a orientación/bienestar
-      if (!isWelfareStaff) {
-        if (verifiedRole === "Estudiante" && cUserId !== callerId) continue;
-        if ((verifiedRole === "Padre" || verifiedRole === "Tutor") && cTutorId !== callerId) continue;
-      }
-
-      citas.push({
-        citaOrientacionId: cId,
-        casoId: cCasoId,
-        userId: cUserId,
-        tutorUserId: cTutorId,
-        orientadorUserId: cOrientadorId,
-        fechaHora: fHora,
-        modalidad: mod,
-        estado: st,
-        tipoCita: tipo,
-        notasPublicas: notasPub,
-        notasConfidenciales: isWelfareStaff ? notasConf : "***CONFIDENCIAL***",
-        derivacionRef: derivRef,
-        fechaCreacion: fCrea
-      });
+  var p = payload || {};
+  var actor = getVerifiedAcademicIdentity_(p);
+  if (!actor || actor.authorized !== true || !isWelfareStaffRole_(actor.role)) return { status: "error", code: "WELFARE_ROLE_REQUIRED", totalCitas: 0, citas: [] };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("CitasOrientacion");
+  if (!sheet) return { status: "success", totalCitas: 0, citas: [] };
+  var data = sheet.getDataRange().getValues(), citas = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i], cId = String(row[0] || ""), caseId = String(row[1] || "");
+    var studentId = String(row[2] || ""), tutorId = String(row[3] || ""), counselorId = String(row[4] || "");
+    var status = String(row[7] || "Programada");
+    if (p.citaOrientacionId && String(p.citaOrientacionId).trim() !== cId) continue;
+    if (p.casoId && String(p.casoId).trim() !== caseId) continue;
+    if (p.userId && String(p.userId).trim() !== studentId) continue;
+    if (p.estado && p.estado !== "Todas" && status !== p.estado) continue;
+    var role = normalizeWelfareRole_(actor.role);
+    var privileged = ["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION"].indexOf(role) !== -1;
+    if (!privileged && counselorId !== String(actor.userId).trim()) continue;
+    var access = getWelfareCaseAccess_(p, caseId, ss, true, data);
+    if (String(access.row && access.row[1] || "").trim() !== studentId) continue;
+    if (!access.authorized) {
+      try { logStructuredEvent("ACADEMIC", "getGuidanceAppointments", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", "Consulta de cita confidencial sin asignación o ámbito.", { citaOrientacionId: cId, casoId: caseId }, actor.role); } catch (_) {}
+      continue;
     }
-
-    citas.reverse();
-    return { status: "success", totalCitas: citas.length, citas: citas };
-  } catch (error) {
-    logStructuredEvent("ACADEMIC", "getGuidanceAppointments", "ERROR", "GET_GUIDANCE_APPOINTMENTS_FAILED", error.message, payload, payload && payload.authRole);
-    return { status: "error", message: error.message };
+    citas.push({
+      citaOrientacionId: cId, casoId: caseId, userId: studentId, tutorUserId: tutorId,
+      orientadorUserId: counselorId, fechaHora: row[5] ? new Date(row[5]).toISOString() : "",
+      modalidad: String(row[6] || "Presencial"), estado: status, tipoCita: String(row[8] || "Acompañamiento"),
+      notasPublicas: String(row[9] || ""), notasConfidenciales: String(row[10] || ""),
+      derivacionRef: String(row[11] || ""), fechaCreacion: row[12] ? new Date(row[12]).toISOString() : ""
+    });
   }
+  citas.reverse();
+  return { status: "success", totalCitas: citas.length, citas: citas };
 }
 
 function updateGuidanceAppointmentStatus(payload) {
-  try {
-    const verifiedRole = (payload && (payload._verifiedRole || payload.authRole)) || "NO_ACCESS";
-    const callerId = (payload && payload._verifiedUserId) || "Orientación";
-    const isAuthorized = ["Administrador", "Director", "Orientacion", "Consejeros"].indexOf(verifiedRole) !== -1;
-    if (!isAuthorized) {
-      return { status: "error", code: "AUTH_PERMISSION_DENIED", message: "Solo personal de Orientación o Dirección puede actualizar el estado de citas de orientación." };
-    }
-
-    const { citaOrientacionId, nuevoEstado, notasSeguimiento, reincidenciaDetalles, derivacionRef } = payload || {};
-    if (!citaOrientacionId || !nuevoEstado) {
-      return { status: "error", code: "VALIDATION_ERROR", message: "citaOrientacionId y nuevoEstado son requeridos." };
-    }
-
-    const validStates = ["Programada", "Realizada", "Reincidencia", "Cancelada"];
-    if (validStates.indexOf(nuevoEstado) === -1) {
-      return { status: "error", code: "VALIDATION_ERROR", message: `nuevoEstado inválido. Debe ser uno de: ${validStates.join(", ")}` };
-    }
-
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    const sheet = getOrCreateSheet(ss, "CitasOrientacion");
-    const data = sheet.getDataRange().getValues();
-
-    let foundIdx = -1;
-    let appointmentRow = null;
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim() === String(citaOrientacionId).trim()) {
-        foundIdx = i;
-        appointmentRow = data[i];
-        break;
-      }
-    }
-
-    if (foundIdx === -1) {
-      return { status: "error", code: "NOT_FOUND", message: "Cita de orientación no encontrada." };
-    }
-
-    // Actualizar estado en columna 8 (índice 7)
-    sheet.getRange(foundIdx + 1, 8).setValue(nuevoEstado);
-
-    // Si hay notas adicionales o reincidencia, actualizar notas confidenciales
-    if (notasSeguimiento || reincidenciaDetalles) {
-      const prevNotes = String(appointmentRow[10] || "");
-      const appended = `${prevNotes} [${nuevoEstado} - ${new Date().toISOString()}]: ${notasSeguimiento || reincidenciaDetalles}`.trim();
-      sheet.getRange(foundIdx + 1, 11).setValue(appended);
-    }
-
-    // Si se especificó derivación inmutable, registrarla en columna 12
-    if (derivacionRef) {
-      sheet.getRange(foundIdx + 1, 12).setValue(String(derivacionRef).trim());
-    }
-
-    logStructuredEvent("ACADEMIC", "updateGuidanceAppointmentStatus", "INFO", "GUIDANCE_APPOINTMENT_UPDATED", `Cita de orientación ${citaOrientacionId} actualizada a ${nuevoEstado}`, { citaOrientacionId, nuevoEstado }, verifiedRole);
-
-    return {
-      status: "success",
-      citaOrientacionId: citaOrientacionId,
-      estadoAnterior: appointmentRow[7],
-      nuevoEstado: nuevoEstado,
-      message: `Cita de orientación actualizada exitosamente a '${nuevoEstado}'.`
-    };
-  } catch (error) {
-    logStructuredEvent("ACADEMIC", "updateGuidanceAppointmentStatus", "ERROR", "UPDATE_GUIDANCE_APPOINTMENT_FAILED", error.message, payload, payload && payload.authRole);
-    return { status: "error", message: error.message };
+  var p = payload || {};
+  var actor = getVerifiedAcademicIdentity_(p);
+  if (!actor || actor.authorized !== true || !isWelfareStaffRole_(actor.role)) {
+    return { status: "error", code: "WELFARE_ROLE_REQUIRED", message: "Se requiere personal autorizado de bienestar." };
   }
+  if (!p.citaOrientacionId || !p.nuevoEstado) return { status: "error", code: "VALIDATION_ERROR", message: "citaOrientacionId y nuevoEstado son requeridos." };
+  var validStates = ["Programada", "Realizada", "Reincidencia", "Cancelada"];
+  if (validStates.indexOf(p.nuevoEstado) === -1) return { status: "error", code: "VALIDATION_ERROR", message: "nuevoEstado inválido." };
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = ss.getSheetByName("CitasOrientacion");
+  if (!sheet) return { status: "error", code: "NOT_FOUND", message: "Cita de orientación no encontrada." };
+  var data = sheet.getDataRange().getValues(), idx = -1, row = null;
+  for (var i = 1; i < data.length; i++) if (String(data[i][0] || "").trim() === String(p.citaOrientacionId).trim()) { idx = i; row = data[i]; break; }
+  if (idx === -1 || !row) return { status: "error", code: "NOT_FOUND", message: "Cita de orientación no encontrada." };
+  var role = normalizeWelfareRole_(actor.role);
+  var privileged = ["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION"].indexOf(role) !== -1;
+  if (!privileged && String(row[4] || "").trim() !== String(actor.userId).trim()) {
+    return { status: "error", code: "WELFARE_APPOINTMENT_NOT_ASSIGNED", message: "La cita no está asignada al usuario autenticado." };
+  }
+  var access = getWelfareCaseAccess_(p, row[1], ss, true, data);
+  if (String(access.row && access.row[1] || "").trim() !== String(row[2] || "").trim()) return { status: "error", code: "WELFARE_APPOINTMENT_CASE_MISMATCH", message: "La cita no coincide con el expediente asociado." };
+  if (!access.authorized) return { status: "error", code: access.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso autorizado al expediente asociado." };
+  sheet.getRange(idx + 1, 8).setValue(p.nuevoEstado);
+  if (p.notasSeguimiento || p.reincidenciaDetalles) {
+    var previousNotes = String(row[10] || "");
+    var appended = (previousNotes + " [" + p.nuevoEstado + " - " + new Date().toISOString() + "]: " + (p.notasSeguimiento || p.reincidenciaDetalles)).trim();
+    sheet.getRange(idx + 1, 11).setValue(appended);
+  }
+  if (p.derivacionRef) sheet.getRange(idx + 1, 12).setValue(String(p.derivacionRef).trim());
+  try { logStructuredEvent("ACADEMIC", "updateGuidanceAppointmentStatus", "INFO", "GUIDANCE_APPOINTMENT_UPDATED", "Cita de orientación actualizada.", { citaOrientacionId: p.citaOrientacionId, nuevoEstado: p.nuevoEstado }, actor.role); } catch (_) {}
+  return { status: "success", citaOrientacionId: p.citaOrientacionId, estadoAnterior: row[7], nuevoEstado: p.nuevoEstado };
 }
 
 // [F11-Task08] [P1] - Sistema de alertas tempranas de rendimiento académico y deserción escolar
@@ -15321,8 +15147,7 @@ function evaluateAndDispatchEarlyWarningAlerts(payload) {
           // Disparar o crear caso preventivo en CasosSeguimiento si el riesgo es Alto o Crítico
           if (nivelRiesgo === "Alto" || nivelRiesgo === "Crítico") {
             try {
-              saveAttendanceFollowupCase({
-                userId: uId,
+              saveAutomatedAttendanceFollowupCase_({ userId: uId,
                 motivoApertura: `[ALERTA TEMPRANA] Riesgo ${nivelRiesgo}: ${riskFactors.join("; ")}`,
                 categoriaCaso: "Orientación"
               });
@@ -15604,8 +15429,7 @@ function checkAndDispatchAttendanceAlerts(payload) {
 
       // Automated case opening in CasosSeguimiento for preventive tracking
       try {
-        saveAttendanceFollowupCase({
-          userId: uId,
+        saveAutomatedAttendanceFollowupCase_({ userId: uId,
           motivoApertura: `Alerta preventiva de asistencia: ${alertReasons.join("; ")}`,
           resumenAsistencia: `Sesiones: ${total}, Asistencia: ${pct.toFixed(1)}%, Tardanzas: ${tardanzas}, Ausencias Consecutivas: ${maxConsecutiveObserved}`,
           responsableId: "Orientacion",
