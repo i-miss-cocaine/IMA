@@ -1,17 +1,18 @@
-# IMA — Checkpoint C3.014
+# IMA — Checkpoint C3.015
 - Sesión: IMA-ITER-20261124-012.
-- Tipo: checkpoint de continuidad y estado intermedio; no es cierre de TASK-004.
-- Rama exclusiva: NG_beta_0.0.0.1_work. Rama base de solo lectura: NG_beta_0.0.0.1.
-- Checkpoint anterior: C3.013 (TASK-047).
-- HEAD de código auditado: 8c49d5e9dfc2ed6d8973424c6fabe1aaa0190db4.
-- Tarea actual: PM-00A / TASK-004 / F16-TASK01, En ejecución.
-- Alcance presente: catálogo configurable, asignaciones múltiples, fechas de vigencia, suplencias, revocación con conservación de fila/historial, motivos auditables, compatibilidad con roles heredados y panel de RR. HH.
-- Corrección lógica: vigencia mensual predeterminada con ajuste al último día del mes destino; cubre 2028-01-31 → 2028-02-29.
-- Pruebas de contrato añadidas: LockService ocupado/liberación, ROLE_PERMISSIONS inalterado, compensación ante fallo de auditoría y cálculo de fin de mes.
-- CI final: GitHub Actions run 45387732320 — SUCCESS; 68/68 pruebas Node.js PASS; ocho node --check PASS; git diff --check PASS.
-- Verificación local: NOT RUN. Node.js v22.16.0 disponible, pero el entorno carece de checkout local; el intento de git clone falló por DNS. No se declara PASS local.
-- Integridad del árbol: se detectó y corrigió una publicación temporal de árbol incompleto. El commit 8c49d5e restauró los archivos; el árbol final tiene 58 elementos raíz y 882 entradas recursivas. Compare b99bf8f → 8c49d5e muestra únicamente dos archivos modificados: backend/user-service/Code.gs y tests/contracts/internal-role-catalog.contract.test.js. No quedan eliminaciones ajenas a la tarea.
-- CI intermedio 45387545951: falló únicamente en git diff --check por espacios finales preexistentes en un documento histórico reintroducido durante la restauración; las pruebas Node y sintaxis se omitieron en esa ejecución. La ejecución final 45387732320 pasó.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- Rama base de solo lectura: NG_beta_0.0.0.1.
+- HEAD funcional verificado: 5fc3862a9335cde031dfafd037275b2a58600f68.
+- Checkpoint anterior: C3.014.
+- TASK-004 / PM-00A: Completada en alcance de implementación/código.
+- F16-TASK01: cerrada como trazabilidad del origen de TASK-004; no se duplica implementación.
+- Cobertura: catálogo configurable; asignaciones múltiples; vigencias; suplencias; historial/revocación; motivos auditables; compatibilidad con roles heredados; panel RR. HH.; separación RBAC.
+- Corrección de fin de mes: 2028-01-31 con vigencia de un mes produce 2028-02-29.
+- Pruebas adicionales: LockService se libera tras alta exitosa; fallo de auditoría revierte el alta y libera el lock.
+- CI: GitHub Actions run 45389871296 — SUCCESS; 70/70 pruebas Node.js PASS; ocho node --check PASS; git diff --check PASS. Incluye las 21 pruebas del contrato de catálogo/asignaciones.
+- Ejecución: runner GitHub Actions aislado con checkout del commit 5fc3862a; la ejecución en máquina local no fue posible por fallo DNS al clonar. El resultado se registra como runner/CI, no como local de máquina.
+- Revisión del diff: commit 5fc3862a añadió solo 49 líneas de pruebas en tests/contracts/internal-role-catalog.contract.test.js; los cambios de código funcional permanecen limitados a USER Code.gs (cinco inserciones/una eliminación respecto de la base íntegra). Sin eliminaciones de archivos.
+- Beta: integración real USER Apps Script/Sheets pendiente en beta_test.txt; no bloquea el cierre de código.
+- Siguiente tarea: TASK-505 / AUD-NG-225, recuperada desde Auditoría/legacy/Pendientes.md. Estado En ejecución. Alcance: integridad referencial, no-destructividad, vigencias y consultas, suplencias, historial, unicidad bajo concurrencia, consola HR, rol de dashboard y navegación de tarjetas, sin elevación RBAC.
+- Normativa actualizada en §17.6: no detenerse ante errores de herramientas; resolver en la misma iteración con métodos equivalentes y pruebas completas.
 - Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
-- Beta: integración real USER Apps Script/Sheets registrada en beta_test.txt como Pendiente beta; no ejecutada.
-- Siguiente acción concreta: obtener checkout local de la rama autorizada; ejecutar node --test tests/contracts/internal-role-catalog.contract.test.js y regresiones pertinentes; revisar el diff. Solo con PASS local cerrar TASK-004. Después recuperar el bloque original íntegro de TASK-505 antes de seleccionarlo.

@@ -7,11 +7,11 @@
 **Fecha:** 2026-11-24
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
-**Estado:** Implementación continua; tarea en ejecución: PM-00A / TASK-004.
+**Estado:** Implementación continua; tarea en ejecución: PM-00A / TASK-505.
 **Línea base operativa Ciclo 3:** todas las tareas conservadas en los siete backlogs y en el Plan Maestro inician en `Pendiente`; no se elimina, resume ni sustituye ningún requisito técnico, criterio, dependencia ni identificador de tarea.  
 **Checkpoint de origen:** C3.001 (base histórica del ciclo 3).  
-**Checkpoint de planificación:** C3.014.
-**Ciclo operativo vigente:** 3 — implementación continua; TASK-047 cerrada en alcance local/contractual (C3.013); TASK-004 en ejecución (C3.014), con verificación local pendiente. La validación real de TASK-047 permanece Pendiente beta. TASK-505 requiere recuperar su bloque original completo antes de seleccionarse. El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
+**Checkpoint de planificación:** C3.015.
+**Ciclo operativo vigente:** 3 — implementación continua; TASK-047 cerrada en alcance local/contractual (C3.013); TASK-004 cerrada en C3.015 con verificación de código aprobada en runner aislado; integración USER Apps Script/Sheets Pendiente beta. TASK-505 seleccionada como siguiente tarea elegible en C3.015, tras recuperar su bloque original íntegro de AUD-NG-225/TAREA-F4-P1-07. F16-TASK01 conserva trazabilidad de origen y no se ejecuta en paralelo. El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
 
 ---
 
@@ -200,7 +200,9 @@ Las pruebas de seguridad, unidad y contrato no se posponen hasta PM-08: se ejecu
 
 **Avance C3.014:** TASK-004 / F16-TASK01 tiene catálogo, asignación multiempleado, vigencias, suplencias, revocación histórica, motivo de auditoría y compatibilidad con usuarios de rol heredado. La corrección de vigencia de fin de mes y las pruebas de contención/liberación de LockService y compensación de auditoría están incluidas. GitHub Actions run 45387732320 — SUCCESS; 68/68 pruebas Node.js PASS, ocho `node --check` y `git diff --check` PASS. Las pruebas locales no se ejecutaron porque el entorno carece de checkout y la clonación falló por DNS; TASK-004 permanece En ejecución hasta obtener PASS local. La integración real USER Apps Script/Sheets está registrada como Pendiente beta.
 
-**Puerta de salida:** el portal inicia sesión una sola vez; el contexto se reutiliza sin prompts redundantes; Desarrollador y Administrador están separados; el panel permite registrar puestos/servicios; las modalidades y restricciones de privacidad están verificadas localmente. Despliegues reales se validan en beta.
+**Avance C3.015 — cierre TASK-004 y selección TASK-505:** TASK-004 queda Completada en alcance local/código. GitHub Actions run 45389871296 — SUCCESS; suite completa 70/70 Node.js PASS (incluye 21 pruebas del contrato de catálogo/asignaciones), ocho node --check PASS y git diff --check PASS. Se añadieron pruebas de liberación de LockService tras alta exitosa y de rollback del catálogo cuando falla auditoría. El runner aislado ejecutó el código fuente del commit; el intento de checkout local en este entorno sigue sin ser posible por DNS y se registra con precisión, sin etiquetarlo como ejecución en máquina local. La prueba de integración desplegada USER Apps Script/Sheets sigue Pendiente beta y no bloquea el cierre local. Se recuperó de Auditoría/legacy/Pendientes.md el bloque original íntegro de TASK-505 y AUD-NG-225; TASK-505 es la siguiente tarea elegible, con alcance de integridad referencial, no-destructividad, vigencias, historial, UI y dashboard dinámico. F16-TASK01 queda como trazabilidad de origen, sin implementación paralela.
+
+**Puerta de salida:** el portal inicia sesión una sola vez; el contexto se reutiliza sin prompts redundantes; Desarrollador y Administrador están separados; el panel permite registrar puestos/servicios; las modalidades y restricciones de privacidad están verificadas localmente. Despliegues reales se validan en beta. TASK-004 cerrada localmente en C3.015; TASK-505 es la siguiente tarea en ejecución.
 
 ### PM-00T — Inventario, triage y resolución de dependencias
 

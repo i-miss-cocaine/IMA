@@ -4,24 +4,27 @@ IMA — CONTEXTO ACTIVO DEL CICLO 3
 Rama exclusiva: NG_beta_0.0.0.1_work
 Rama base de solo lectura: NG_beta_0.0.0.1
 Sesión: IMA-ITER-20261124-012
-Checkpoint: C3.014
-HEAD de código auditado: 8c49d5e9dfc2ed6d8973424c6fabe1aaa0190db4
-Tarea actual: PM-00A / TASK-004 (En ejecución)
+Checkpoint: C3.015
+HEAD de código de cierre TASK-004: 5fc3862a9335cde031dfafd037275b2a58600f68
+HEAD de cierre documental C3.015: pendiente de publicación en esta misma iteración.
+Tarea cerrada: PM-00A / TASK-004.
+Tarea siguiente: TASK-505 / AUD-NG-225, En ejecución.
 
-CONTINUIDAD
-- TASK-047 quedó completada en alcance local/contractual en C3.013; su validación real multi-cuenta sigue Pendiente beta.
-- TASK-004 / F16-TASK01 ya tiene catálogo, asignaciones múltiples, suplencias, vigencias, revocación histórica, justificación de auditoría, compatibilidad con roles heredados y panel de RR. HH. No reconstruir ni repetir lo existente.
-- GitHub Actions run 45387732320: SUCCESS; 68/68 pruebas Node.js PASS; ocho node --check PASS; git diff --check PASS.
-- Verificación local: NOT RUN. Node.js v22.16.0 está disponible, pero no hay checkout local; git clone falló por DNS al resolver github.com. No registrar PASS local.
-- TASK-004 permanece En ejecución hasta ejecutar localmente las pruebas pertinentes y revisar el diff final. La normativa operativa es exclusivamente Normas_Desarollo.md.
-- La integración real del panel con USER Apps Script y Sheets queda Pendiente beta en beta_test.txt.
-- Al completar TASK-004, recuperar el bloque original íntegro de TASK-505 antes de determinar su elegibilidad.
-- Trabajar exclusivamente en la rama autorizada; preservar el historial y no modificar la rama base.
+TASK-004 — EVIDENCIA
+- Catálogo configurable, asignaciones múltiples, vigencias, suplencias, revocación histórica, motivos auditables, compatibilidad de roles heredados y UI de RR. HH.
+- Corrección de vigencia fin de mes; LockService; rollback ante fallo de auditoría; separación RBAC.
+- GitHub Actions run 45389871296 SUCCESS: 70/70 pruebas Node.js PASS, ocho node --check PASS, git diff --check PASS.
+- Runner aislado ejecutó el código fuente. El checkout de la máquina local no se obtuvo por fallo DNS; no se etiqueta como ejecución local.
+- Integración desplegada USER Apps Script/Sheets permanece Pendiente beta, no bloquea el cierre de código.
 
-INTEGRIDAD DEL ÁRBOL
-- Se detectó un árbol temporal incompleto durante una operación de reparación; se restauró mediante el commit 8c49d5e9dfc2ed6d8973424c6fabe1aaa0190db4.
-- Comparación del padre íntegro b99bf8f con 8c49d5e: solo backend/user-service/Code.gs y tests/contracts/internal-role-catalog.contract.test.js aparecen modificados; no hay eliminaciones ajenas a la tarea. El árbol contiene nuevamente los 58 elementos de nivel raíz.
-- La rama base permanece en 44d9891132332e692dbe2ba8602b41f50a508a59.
+TASK-505 — RECUPERACIÓN ORIGINAL
+- Recuperado el bloque original íntegro desde Auditoría/legacy/Pendientes.md, tarea TAREA-F4-P1-07, y AUD-NG-225.
+- Alcance: FK de asignaciones a responsabilidades activas; unicidad; actualización no destructiva; validación temporal y consultas uniformes; suplencias; historial; IDs/códigos bajo concurrencia; consola HR; rol correcto en getUserDynamicDashboardConfig y tarjetas con rutas reales; no elevación RBAC.
+- No duplicar la implementación ya cerrada de TASK-004. Auditar los criterios de TASK-505 y completar únicamente faltantes.
+
+NORMATIVA
+- Normas_Desarollo.md §17.6: continuidad obligatoria hasta el cierre, resolver fallos de herramientas en la misma iteración y usar alternativas equivalentes sin debilitar pruebas.
+- Rama base verificada sin modificaciones.
 
 CHECKPOINT
-C3.014 conserva el estado intermedio. TASK-004 no se declara completada ni se certifican pruebas locales o beta.
+C3.015 cierra TASK-004 en alcance local de código y selecciona TASK-505 como siguiente tarea elegible. La prueba beta de despliegue USER/Sheets sigue pendiente.

@@ -4803,3 +4803,17 @@ C3.014 — IMA-ITER-20261124-012
 - Beta: integración real del panel con USER Apps Script y persistencia en Sheets registrada en beta_test.txt; Pendiente beta.
 - Siguiente acción: obtener checkout local, ejecutar node --test tests/contracts/internal-role-catalog.contract.test.js y regresiones pertinentes; después cerrar TASK-004 y recuperar el bloque original completo de TASK-505.
 ===============================================================================
+
+===============================================================================
+C3.015 — IMA-ITER-20261124-012 — CIERRE TASK-004 / INICIO TASK-505
+===============================================================================
+- Normativa reforzada: Normas_Desarollo.md §17.6 incorpora continuidad obligatoria hasta cierre y recuperación de fallos de herramientas en la misma iteración, sin debilitar pruebas.
+- TASK-004 cerrada en alcance local/código; F16-TASK01 queda cerrada como trazabilidad de origen, no como implementación paralela.
+- Pruebas adicionales: alta de responsabilidad libera LockService; fallo de auditoría revierte el alta y libera LockService.
+- GitHub Actions run 45389871296 — SUCCESS: 70/70 pruebas Node.js PASS, ocho node --check PASS, git diff --check PASS.
+- Ejecución: runner aislado con checkout del commit 5fc3862a; el entorno de trabajo no pudo clonar desde máquina local por DNS; no se afirma ejecución local en esa máquina.
+- Revisión: no se debilitaron aserciones ni se eliminaron escenarios; las nuevas pruebas verifican rollback y liberación del lock.
+- TASK-004 mantiene la integración real USER Apps Script/Sheets como Pendiente beta, separada del cierre de código.
+- TASK-505 recuperada desde Auditoría/legacy/Pendientes.md: TAREA-F4-P1-07; AUD-NG-225 recuperado íntegro. Estado En ejecución; siguiente trabajo es auditar criterios y completar faltantes, sin duplicar TASK-004.
+- Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59.
+===============================================================================

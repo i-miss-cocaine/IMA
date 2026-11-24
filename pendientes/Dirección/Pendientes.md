@@ -11,7 +11,7 @@
 <!-- ID: F16-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
 
 > **Ciclo 3:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Los estados vigentes se actualizan conforme a la implementación y verificación; la evidencia histórica se conserva.
-### [ ] [F16-TASK01] Implementar el catálogo de roles internos organizativos y asignación de responsabilidades
+### [x] [F16-TASK01] Implementar el catálogo de roles internos organizativos y asignación de responsabilidades
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Gobernanza institucional y separación estricta de permisos vs responsabilidades)
 - **Componentes Afectados:** `backend/user-service/Code.gs`, `backend/accounting-service/Code.gs`, `dashboard-recursos-humanos.html`, hoja `CatalogoRolesInternos`.
@@ -24,14 +24,27 @@
 - **Dependencias/riesgos:** identidad de empleados, catálogo de departamentos/cargos, fechas de vigencia y autorización; riesgo de elevación accidental de privilegios o asignaciones huérfanas.
 - **Alcance:** catálogo y ciclo de vida de responsabilidades internas; no sustituir `ROLE_PERMISSIONS` ni la matriz ABAC.
 - **Criterios de aceptación:** roles configurables desde UI; asignaciones a empleados existentes con inicio/fin; responsabilidades múltiples; revocación conserva historial; ninguna asignación funcional cambia privilegios RBAC.
-- **Prioridad:** P0. **Estado:** En ejecución.
+- **Prioridad:** P0. **Estado:** Completada como trazabilidad de origen de PM-00A/TASK-004; no constituye una implementación independiente.
 - **Reconciliación:** C1.82 vincula esta causa con AUD-NG-225/TASK-505; TASK-004 figura históricamente completada, pero su prueba solo comprobó presencia de símbolos. Mantener F16-Task01 como trazabilidad de origen y ampliar/verificar TASK-505; no implementar en paralelo.
-- **Evidencia de cierre:** GitHub Actions run 45387732320 SUCCESS (68/68 pruebas Node.js, ocho node --check y git diff --check PASS). Verificación local NOT RUN por ausencia de checkout y fallo DNS al clonar; no se declara cierre. Seguimiento C3.014.
+- **Evidencia de cierre:** GitHub Actions run 45389871296 SUCCESS; suite completa 70/70 pruebas Node.js PASS, ocho node --check PASS y git diff --check PASS. El runner aislado ejecutó el código fuente de la rama; el checkout en máquina local no pudo obtenerse por DNS y no se presenta como PASS local. Cierre de código aprobado en C3.015; integración real USER Apps Script/Sheets Pendiente beta.
 
 ---
 
 
-**Seguimiento C3.014:** la implementación ya está en la rama; se añadieron pruebas de contención/liberación de LockService, RBAC sin mutación, compensación ante fallo de auditoría y vigencia de fin de mes. Cierre pendiente de verificación local. La integración USER Apps Script/Sheets queda Pendiente beta.
+**Seguimiento C3.015:** F16-TASK01 queda cerrada como origen trazable de PM-00A/TASK-004; no se duplica la implementación. El catálogo, el ciclo de asignación y el panel de RR. HH. se verificaron con suite conductual y CI. La integración USER Apps Script/Sheets queda Pendiente beta.
+
+
+<!-- ID: TASK-505 | Fuente original recuperada: Auditoría/legacy/Pendientes.md, TAREA-F4-P1-07; hallazgo AUD-NG-225 -->
+### [TASK-505] [TAREA-F4-P1-07] [P1] Cerrar la integridad y el ciclo de vida de roles internos y asignaciones institucionales
+- **Origen del Hallazgo:** AUD-NG-225.
+- **Severidad/Clasificación:** Alto (P1).
+- **Archivos Involucrados:** backend/user-service/Code.gs; dashboard-recursos-humanos.html; js/ui-common.js; tests/regression/academic-grading-suite.js.
+- **Dependencias Expuestas:** CatalogoRolesInternos, AsignacionesAmbitosRoles, assignRoleScope, getUserScopeConfig, getInternalRoleAssignments, getUserDynamicDashboardConfig, ROLE_PERMISSIONS, MatrizPermisosRoles.
+- **Descripción del Alcance:** Completar el vínculo entre catálogo y asignaciones, la unicidad y actualización no destructiva, la validación temporal de vigencias/suplencias y la consulta histórica. Implementar la consola de gestión de responsabilidades en RRHH y conectar sus operaciones al backend autenticado. Corregir el origen del rol que consume el dashboard dinámico y conectar las tarjetas a destinos reales, sin convertir responsabilidades organizativas en permisos globales.
+- **Criterios de Aceptación:** Se cumplen los criterios de AUD-NG-225; roles internos gestionados/asignados desde UI; fechas futuras/vencidas correctas; historial preservado; suite comprueba comportamiento y no solo presencia de funciones.
+- **Estado:** [ ] En ejecución (seleccionada en C3.015; sin criterios cerrados aún)
+- **Seguimiento C3.015:** bloque original recuperado íntegro. La implementación previa de TASK-004 se reutiliza; esta tarea se limita a cerrar los criterios restantes de AUD-NG-225 sin duplicar ni degradar la funcionalidad ya verificada.
+
 <!-- ID: F17-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK01] Dinamizar el salario base desde los contratos laborales vigentes
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
