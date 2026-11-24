@@ -28,11 +28,14 @@
 - Sesión: IMA-ITER-20261124-001.
 - Tipo: cierre de preparación documental y handoff de implementación; no es un nuevo reinicio.
 - Rama autorizada: NG_beta_0.0.0.1_work.
-- HEAD de partida documentado: 5ba407df1679e2d44d634407e84eaaf8fa47db88.
+- HEAD de partida de esta actualización: 5ba407df1679e2d44d634407e84eaaf8fa47db88.
 - Objetivo: dejar la próxima iteración lista para comenzar directamente con la primera tarea PM-00A / TASK-047.
-- Registros operativos: Contexto_personal.txt e INDICE_CHECKPOINTS.md actualizados para indicar que C3.001/C3.002 son antecedentes históricos cerrados y que no debe repetirse la limpieza.
-- Normativa: Normas_Desarollo.md §17.8 amplía el modelo de sesión única, despliegues Apps Script fáciles, servicios individuales/compartidos, registro maestro por URL y ausencia de secretos/propiedades de comandos personalizados.
-- Requisitos de rol: se conserva la visibilidad académica por ámbito; login único no elimina los permisos funcionales ni habilita acceso a datos de otros estudiantes.
-- Pruebas: no se ejecutaron pruebas de código; esta unidad es documental. Verificación posterior de commit y árbol pendiente de publicación.
+- Normativa: Normas_Desarollo.md §17.8 define el despliegue sencillo de Apps Script, servicios individuales por empleado/puesto y excepciones compartidas para padres/estudiantes y utilidades.
+- Servicios: alta desde el panel Desarrollador; registro maestro por URL; cuentas Google institucionales separadas según puesto; Spreadsheet/carpeta Drive propias; despliegues compartidos solo para padres/estudiantes y utilidades indicadas.
+- Sesión: login único y reutilización del contexto para las funciones; no pedir revalidación ni credenciales en cada función/servicio. Se mantienen los límites de visibilidad académica por rol y ámbito.
+- Mantenibilidad: no añadir Script Properties, propiedades de comandos, claves secretas ni tokens personalizados para comunicar servicios. Despliegues institucionales, no públicos y con pasos ordinarios de Apps Script.
+- Registros activos: contexto e índice actualizados; los siete backlogs pasan a ciclo 3 y se eliminan de los estados vigentes las etiquetas de reinicio/reapertura. Los reinicios C3.001/C3.002 permanecen solo como antecedentes históricos.
+- Archivos actualizados: Normas_Desarollo.md; Contexto_personal.txt; INDICE_CHECKPOINTS.md; este expediente; changueslogs.txt; los siete archivos Pendientes.md.
+- Verificación documental: se revisaron los registros de continuidad y los siete backlogs. Las pruebas de código no se ejecutaron porque esta unidad no modifica código.
 - Siguiente acción concreta: iniciar PM-00A / TASK-047, inspeccionar su alcance y dependencias, implementar y crear/ejecutar pruebas locales nuevas pertinentes.
 ===============================================================================
