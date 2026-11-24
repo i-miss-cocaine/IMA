@@ -74,7 +74,7 @@
 <!-- ID: F25-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md -->
 ### [ ] [F25-TASK03] Detectar duplicados avanzados y validar integridad referencial antes de importar
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Hallazgo de origen:** F25-004, sección F y G.3.
 - **Severidad:** Crítica. **Objetivo:** evitar duplicados de personas y relaciones huérfanas en importaciones masivas.
 - **Acción ejecutable:** ampliar `importDataWithColumnMapping` con búsqueda previa de DNI, correo y claves naturales según entidad; clasificar coincidencias exactas/posibles; validar referencias a grado, sección, departamento y expediente; ofrecer política explícita rechazar/actualizar/vincular.
@@ -91,7 +91,7 @@
 <!-- ID: F26-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_26_CONFIGURACION_INSTITUCIONAL_PERSONALIZACION.md -->
 ### [ ] [F26-TASK01] Implementar motor central de precedencia y configuración jerárquica
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Hallazgo de origen:** F26-002 y F26-010; secciones C.2/C.9, F.1 y G.1.
 - **Severidad:** Alta / P0. **Objetivo:** resolver configuraciones de manera determinista respetando la precedencia Global → Institucional → Departamental → Personal.
 - **Acción ejecutable:** definir un contrato único de configuración por clave, ámbito, institución, departamento y usuario; implementar resolución por capas, herencia, overrides permitidos y detección de conflictos; validar actor y ámbito en servidor; impedir que una configuración de menor alcance sobrescriba una de mayor alcance; proporcionar valores predeterminados seguros y explicar el origen efectivo de cada valor.
@@ -125,7 +125,7 @@
 <!-- ID: F34-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
 ### [ ] [F34-TASK02] Crear bandeja de salida departamental y acuses de entrega/lectura
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Hallazgo de origen:** F34-02 y CAR-F34-02; PT-F34-05 no aprobado.
 - **Severidad:** Crítica / P0. **Objetivo:** rastrear documentos enviados por Secretaría/Dirección y distinguir solicitud de envío, entrega, apertura y recepción formal.
 - **Acción ejecutable:** crear `EntregasDocumentales` y `getDepartmentalOutbox` con documento, destinatario, emisor, departamento, canal, fecha, estado, acuse, hash y correlación; registrar entrega/apertura solo con evidencia verificable.
@@ -332,7 +332,7 @@
 <!-- ID: TASK-068 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-068] [P0] Sistema Centralizado de Correspondencia de Identificadores y Resolución de Identidades
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Orden de Ejecución:** 1
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -3265,7 +3265,7 @@
 <!-- ID: AUD-NG-129 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-129] Unificar matrícula y rematrícula con cargos financieros por periodo
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-129 (REQ-EXP-009).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `js/secretary.js`.
@@ -3287,7 +3287,7 @@
 <!-- ID: AUD-NG-132 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-132] Corregir el motor de cargos mensuales y su deduplicación por periodo
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-132 (REQ-EXP-010).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`; pruebas de generación de cargos.
@@ -3301,7 +3301,7 @@
 <!-- ID: AUD-NG-140 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-140] Vincular autoservicio, asistencia y recibos de nómina a la identidad verificada
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-140 (REQ-EXP-014).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
@@ -5201,7 +5201,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 <!-- ID: TASK-694 | Origen: Solicitud de producto 2026-11-10; investigación en Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md -->
 ### [ ] [TASK-694] [P0] Especificar la arquitectura universal multiinstitucional y el modelo educativo P-20W
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Objetivo:** definir arquitectura configurable para primera infancia, prebásica, básica, media, técnica, superior y formación continua, sin bifurcar código.
 - **Alcance:** investigación SIS/LMS/primera infancia/superior y estándares; modelo tenant/institución/organización; separación de estructuras administrativa, académica, enseñanza y física; trayectoria longitudinal; seguridad/propiedad; configuración; perfiles; interoperabilidad; localización; privacidad; accesibilidad; subplan UNI-S01…UNI-S10.
 - **Entregables:** Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md; subplan en Plan Maestro; relaciones en MapaDependencias.
@@ -5218,7 +5218,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 <!-- ID: TASK-695 | Fuentes: solicitud de producto 2026-11-10; TASK-694; PLAN-IMA-001 -->
 ### [ ] [TASK-695] [P0] Descomponer la arquitectura universal en 24 unidades funcionales con requisitos y criterios de aceptación
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Tipo:** diseño/planificación documental PM-02; no equivale a implementación.
 - **Objetivo:** convertir la arquitectura universal multiinstitucional P-20W en un plan ejecutable desde primera infancia hasta educación superior, con servicios administrativos y operativos.
 - **Entregable:** Auditoría/PLAN-IMA-001_UNIDADES_FUNCIONALES.md y vínculo en Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md.
