@@ -1,0 +1,202 @@
+"use strict";
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
+
+const backend = fs.readFileSync(path.join(__dirname, "../../backend/user-service/Code.gs"), "utf8");
+const dashboard = fs.readFileSync(path.join(__dirname, "../../dashboard-recursos-humanos.html"), "utf8");
+
+function extractFunction(name) {
+  const start = backend.indexOf("function " + name + "(");
+  assert.notEqual(start, -1, "Falta " + name);
+  const next = /\nfunction [A-Za-z0-9_$]+\s*\(/g;
+  next.lastIndex = start + 10;
+  const match = next.exec(backend);
+  return backend.slice(start, match ? match.index : backend.length);
+}
+function sheet(initial) {
+  const rows = initial.map(row => row.slice());
+  return {
+    rows,
+    getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; },
+    getLastRow() { return rows.length; },
+    appendRow(row) { rows.push(row.slice()); },
+    deleteRow(index) { rows.splice(index - 1, 1); },
+    getRange(row, col, rowCount, colCount) {
+      return {
+        setValue(value) { if (!rows[row - 1]) rows[row - 1] = []; rows[row - 1][col - 1] = value; },
+        setValues(values) {
+          for (let r = 0; r < values.length; r++) {
+            const target = row - 1 + r;
+            if (!rows[target]) rows[target] = [];
+            for (let c = 0; c < values[r].length; c++) rows[target][col - 1 + c] = values[r][c];
+          }
+        }
+      };
+    }
+  };
+}
+const roleHeaders = ["RolInternoID","CodigoInterno","NombreResponsabilidad","Descripcion","Departamento","AreaAcademica","TipoResponsabilidad","VigenciaMeses","PermiteSuplencia","Estado","CreadoPor","FechaCreacion","FechaActualizacion","ResponsibilityID"];
+const assignmentHeaders = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID","InstitutionID","MembershipID","ResponsibilityID"];
+const membershipHeaders = ["MembershipID","UserID","RoleID","InstitutionID","Estado"];
+
+function makeContext(options = {}) {
+  const sheets = options.sheets || {};
+  let uuid = 0;
+  const lock = { waitLock() {}, releaseLock() {} };
+  const context = {
+    SPREADSHEET_ID: "TEST",
+    ROLE_PERMISSIONS: { Docente: [], Director: [], RecursosHumanos: [] },
+    SpreadsheetApp: { openById: () => ({ getSheetByName: name => sheets[name] || null }) },
+    LockService: { getScriptLock: () => lock },
+    Utilities: { getUuid: () => "00000000-0000-0000-0000-" + String(++uuid).padStart(12, "0") },
+    normalizeString: value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(),
+    getOrCreateSheet: (ss, name) => sheets[name],
+    getIdentityInstitutionId_: () => "INST-1",
+    getUserVerifiedRole: payload => payload && payload._verifiedRole || "NO_ACCESS",
+    isConfiguredRbacRole_: () => true,
+    getUserRoleMembershipState_: userId => {
+      const suffix = String(userId).slice(-1);
+      return { hasRecords: true, memberships: [{ membershipId: "MEM-" + suffix, userId, roleId: "Docente", institutionId: "INST-1", status: "ACTIVE" }] };
+    },
+    resolveUserRoleMembership_: userId => ({ membershipId: "MEM-" + String(userId).slice(-1), userId, roleId: "Docente", institutionId: "INST-1" }),
+    getInstitutionalResponsibilityRecord_: () => null,
+    recordEntityChangeLog: (...args) => { context.audit.push(args); },
+    logStructuredEvent: (...args) => { context.events.push(args); },
+    audit: [],
+    events: []
+  };
+  for (const name of ["normalizeString","resolveActiveInternalResponsibility_","parseInternalRoleAssignmentDate_","manageInternalRoleCatalog","getInternalRoleCatalog","assignRoleScope","getInternalRoleAssignments","getConfiguredRbacRoleIds_"]) {
+    const source = extractFunction(name);
+    vm.runInNewContext(source, context);
+  }
+  return context;
+}
+function roleRow(id, name, code, state = "Activo", allowSubstitute = "Sí") {
+  return [id,code,name,"Descripción","DEP-1","MAT","Académica",12,allowSubstitute,state,"HR-1","2026-01-01","2026-01-01",""];
+}
+function userRow(id, role = "Docente") {
+  return [id,"Empleado","","","","",role,"","","","Activa"];
+}
+function assignmentContext() {
+  const roles = sheet([roleHeaders, roleRow("ROL-1","Coordinador de Matemáticas","COORD-MAT"), roleRow("ROL-2","Encargado de Laboratorio","LAB-01")]);
+  const users = sheet([["UserID"], userRow("EMP-1"), userRow("EMP-2"), userRow("EMP-3")]);
+  const assignments = sheet([assignmentHeaders]);
+  const memberships = sheet([membershipHeaders,
+    ["MEM-1","EMP-1","Docente","INST-1","ACTIVE"],
+    ["MEM-2","EMP-2","Docente","INST-1","ACTIVE"],
+    ["MEM-3","EMP-3","Docente","INST-1","ACTIVE"]
+  ]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles, Usuarios: users, AsignacionesAmbitosRoles: assignments, MembresiasRolesRBAC: memberships } });
+  return { context, roles, users, assignments, memberships };
+}
+function assign(context, userId, responsibilityId, extra = {}) {
+  return context.assignRoleScope(Object.assign({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    userId, roleId: "Docente", responsibilityId,
+    scopeType: "DEPARTAMENTO", scopeValues: ["DEP-1"],
+    fechaInicio: "2026-01-01", fechaFin: "2026-12-31",
+    estado: "Activo"
+  }, extra));
+}
+
+test("el catálogo rechaza nombres duplicados por mayúsculas, acentos y espacios normalizados", () => {
+  const roles = sheet([roleHeaders]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
+  const created = context.manageInternalRoleCatalog({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    nombreResponsabilidad: "Coordinador  de Matemáticas", tipoResponsabilidad: "Académica", vigenciaMeses: 12
+  });
+  assert.equal(created.status, "success");
+  const duplicate = context.manageInternalRoleCatalog({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    nombreResponsabilidad: "coordinador de matematicas", tipoResponsabilidad: "Académica", vigenciaMeses: 12
+  });
+  assert.equal(duplicate.code, "INTERNAL_ROLE_NAME_DUPLICATE");
+  assert.equal(roles.rows.length, 2);
+  assert.equal(context.audit.length, 1);
+});
+
+test("desactivar y reactivar una responsabilidad conserva la fila y registra cada cambio", () => {
+  const roles = sheet([roleHeaders, roleRow("ROL-1","Coordinador","COORD-1")]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
+  const disabled = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "Director", accion: "desactivar", rolInternoId: "ROL-1" });
+  assert.equal(disabled.status, "success");
+  assert.equal(roles.rows.length, 2);
+  assert.equal(roles.rows[1][9], "Inactivo");
+  const enabled = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "Director", accion: "activar", rolInternoId: "ROL-1" });
+  assert.equal(enabled.status, "success");
+  assert.equal(roles.rows.length, 2);
+  assert.equal(roles.rows[1][9], "Activo");
+  assert.equal(context.audit.length, 2);
+});
+
+test("un empleado puede tener varias responsabilidades y una responsabilidad varios empleados", () => {
+  const { context, assignments } = assignmentContext();
+  const first = assign(context, "EMP-1", "ROL-1");
+  const second = assign(context, "EMP-1", "ROL-2");
+  const third = assign(context, "EMP-2", "ROL-1");
+  assert.equal(first.status, "success");
+  assert.equal(second.status, "success");
+  assert.equal(third.status, "success");
+  assert.equal(assignments.rows.length, 4);
+  assert.notEqual(first.assignmentId, second.assignmentId);
+  assert.notEqual(first.assignmentId, third.assignmentId);
+});
+
+test("repetir la misma asignación actualiza el registro existente sin duplicarlo", () => {
+  const { context, assignments } = assignmentContext();
+  const first = assign(context, "EMP-1", "ROL-1");
+  const repeated = assign(context, "EMP-1", "ROL-1", { scopeValues: ["DEP-1","DEP-2"] });
+  assert.equal(first.assignmentId, repeated.assignmentId);
+  assert.equal(assignments.rows.length, 2);
+  assert.equal(JSON.parse(assignments.rows[1][4]).length, 2);
+});
+
+test("las fechas inválidas y suplencias sin destino o sin vigencia final se rechazan", () => {
+  const { context, assignments } = assignmentContext();
+  assert.equal(assign(context, "EMP-1", "ROL-1", { fechaInicio: "fecha-invalida" }).code, "ROLE_SCOPE_DATES_INVALID");
+  assert.equal(assign(context, "EMP-2", "ROL-1", { esSuplente: true, suplenteDeUserId: "", fechaFin: "" }).code, "ROLE_SCOPE_SUBSTITUTE_DATES_REQUIRED");
+  assert.equal(assignments.rows.length, 1);
+});
+
+test("una suplencia requiere titular vigente y no admite ventanas simultáneas", () => {
+  const { context, assignments } = assignmentContext();
+  const titular = assign(context, "EMP-1", "ROL-1");
+  assert.equal(titular.status, "success");
+  const substitute = assign(context, "EMP-2", "ROL-1", {
+    esSuplente: true, suplenteDeUserId: "EMP-1", fechaInicio: "2026-05-01", fechaFin: "2026-06-01"
+  });
+  assert.equal(substitute.status, "success");
+  const overlap = assign(context, "EMP-3", "ROL-1", {
+    esSuplente: true, suplenteDeUserId: "EMP-1", fechaInicio: "2026-05-15", fechaFin: "2026-06-15"
+  });
+  assert.equal(overlap.code, "ROLE_SCOPE_SUBSTITUTE_OVERLAP");
+  assert.equal(assignments.rows.length, 3);
+});
+
+test("la consulta histórica conserva asignaciones aunque la membresía RBAC se haya revocado", () => {
+  const roles = sheet([roleHeaders, roleRow("ROL-1","Coordinador","COORD-1","Inactivo")]);
+  const users = sheet([["UserID"], userRow("EMP-1")]);
+  const assignments = sheet([assignmentHeaders, ["AMB-1","EMP-1","Docente","DEPARTAMENTO",'["DEP-1"]',"Activo","HR-1","2026-01-01","2026-01-01","2026-12-31","No","","INST-1","MEM-1","ROL-1"]]);
+  const memberships = sheet([membershipHeaders, ["MEM-1","EMP-1","Docente","INST-1","REVOKED"]]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles, Usuarios: users, AsignacionesAmbitosRoles: assignments, MembresiasRolesRBAC: memberships } });
+  const result = context.getInternalRoleAssignments({ soloVigentes: false });
+  assert.equal(result.status, "success");
+  assert.equal(result.data.length, 1);
+  assert.equal(result.data[0].membershipStatus, "REVOKED");
+  assert.equal(result.data[0].responsibility.estado, "Inactivo");
+});
+
+test("la interfaz de RRHH separa rol RBAC, responsabilidad, asignación y suplencia", () => {
+  for (const id of ["rrhh-internal-role-form","rrhh-internal-assignment-form","rrhh-internal-assignment-history","rrhh-internal-assignment-substitute","rrhh-internal-assignment-role","rrhh-internal-assignment-responsibility"]) {
+    assert.ok(dashboard.includes('id="' + id + '"'), "Falta control UI " + id);
+  }
+  assert.match(dashboard, /fetchApi\('USER','manageInternalRoleCatalog'/);
+  assert.match(dashboard, /fetchApi\('USER','assignRoleScope'/);
+  assert.match(dashboard, /textContent/);
+  assert.doesNotMatch(dashboard, /innerHTML\s*=/);
+  assert.match(backend, /"assignRoleScope"/);
+});
