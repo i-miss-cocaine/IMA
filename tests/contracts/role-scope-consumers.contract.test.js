@@ -26,7 +26,7 @@ function extractFunction(source, name) {
 }
 function makeSheet(rows) {
   const copy = rows.map(row => row.slice());
-  return { rows: copy, getDataRange() { return { getValues: () => copy.map(row => row.slice()) }; } };
+  return { rows: copy, reads: 0, getDataRange() { this.reads++; return { getValues: () => copy.map(row => row.slice()) }; } };
 }
 function dateString(date) {
   return date.getFullYear() + "-" + String(date.getMonth()+1).padStart(2,"0") + "-" + String(date.getDate()).padStart(2,"0");
@@ -98,6 +98,25 @@ test("los consumidores USER/TASK/ACADEMIC/EXAM conservan compatibilidad legacy s
     const actor={authorized:true,userId:"EMP-1",role:"Docente",roleId:"Docente"};
     const result=spec.invoke(fn,{_claims:claims,sessionToken:"test-session"},ss,actor);
     assert.equal(allowed(result),false,spec.name+" debe rechazar usuario legacy inactivo");
+  }
+});
+
+test("TASK/ACADEMIC/EXAM leen Usuarios una sola vez aunque existan varias asignaciones", () => {
+  for (const spec of specs.filter(item => item.name !== "ACCOUNTING")) {
+    const base = fixture(spec, { membershipId: "" });
+    const first = base.assignments.rows[1].slice();
+    const second = first.slice();
+    second[0] = "AMB-2";
+    second[4] = '["DEP-2"]';
+    const assignments = makeSheet([currentHeaders, first, second]);
+    const users = makeSheet([["UserID","Nombre","","","","","Rol","","","","Estado"],["EMP-1","Empleado","","","","","Docente","","","","Activa"]]);
+    const ss = { getSheetByName: name => name === "AsignacionesAmbitosRoles" ? assignments : (name === "Usuarios" ? users : null) };
+    const payload = { _claims: { userId: "EMP-1", role: "Docente", membershipId: "", institutionId: "" }, sessionToken: "test-session" };
+    const actor = { authorized: true, userId: "EMP-1", role: "Docente", roleId: "Docente" };
+    const result = spec.invoke(base.fn,payload,ss,actor);
+    assert.equal(allowed(result), true, spec.name + " debe autorizar ambas asignaciones válidas");
+    assert.equal(result.scopes.length, 2);
+    assert.equal(users.reads, 1, spec.name + " debe leer Usuarios una sola vez por consulta");
   }
 });
 

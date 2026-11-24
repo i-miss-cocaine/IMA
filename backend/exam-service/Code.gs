@@ -396,6 +396,13 @@ function getVerifiedDepartmentScopeForSession_(payload, ss, actor) {
     if(inclusiveEnd===true&&date.getHours()===0&&date.getMinutes()===0&&date.getSeconds()===0&&date.getMilliseconds()===0)date.setHours(23,59,59,999);
     return {valid:true,date:date};
   };
+  var legacyUserMatches=[];
+  if(!membershipId){
+    var legacyUserSheet=ss.getSheetByName("Usuarios");
+    if(legacyUserSheet)legacyUserMatches=legacyUserSheet.getDataRange().getValues().slice(1).filter(function(item){
+      return String(item[0]||"").trim()===String(actor.userId).trim();
+    });
+  }
   var assignmentCounts={};data.slice(1).forEach(function(r){var id=String((r||[])[0]||"").trim();if(id)assignmentCounts[id]=(assignmentCounts[id]||0)+1;});
   var now=new Date(),scopes=[];
   for(var i=1;i<data.length;i++){
@@ -412,13 +419,8 @@ function getVerifiedDepartmentScopeForSession_(payload, ss, actor) {
       if(rowMembership!==membershipId)continue;
     }else{
       if(rowMembership)continue;
-      var legacyUserSheet=ss.getSheetByName("Usuarios");
-      if(!legacyUserSheet)continue;
-      var legacyUserRows=legacyUserSheet.getDataRange().getValues().slice(1).filter(function(item){
-        return String(item[0]||"").trim()===String(actor.userId).trim();
-      });
-      if(legacyUserRows.length!==1)continue;
-      var legacyUser=legacyUserRows[0];
+      if(legacyUserMatches.length!==1)continue;
+      var legacyUser=legacyUserMatches[0];
       if(String(legacyUser[6]||"").trim()!==rowRole||
           ["ACTIVA","ACTIVO","ACTIVE"].indexOf(String(legacyUser[10]||"Activa").trim().toUpperCase())===-1)continue;
     }
