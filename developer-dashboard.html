@@ -17,7 +17,7 @@
             </div>
             <div>
                 <h1 class="font-black text-lg text-white tracking-tight flex items-center gap-2">
-                    Developer Console <span class="text-[10px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full font-mono uppercase tracking-widest">Root Access</span>
+                    Consola de Desarrollador <span class="text-[10px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full font-mono uppercase tracking-widest">Plano técnico</span>
                 </h1>
                 <p class="text-xs text-slate-400">New Generation Bilingual School and Institute</p>
             </div>
@@ -48,7 +48,7 @@
             <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 mb-3">
-                        <i class="fas fa-shield-alt"></i> Control Maestro de Desarrollador & SuperAdmin
+                        <i class="fas fa-shield-alt"></i> Control técnico de Desarrollador
                     </div>
                     <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Centro de Diagnóstico & Gestión Central</h2>
                     <p class="text-sm text-slate-300 mt-2 max-w-2xl leading-relaxed">
@@ -65,6 +65,37 @@
                 </div>
             </div>
         </div>
+
+
+        <!-- Registro maestro de servicios por rol -->
+        <section id="service-registry-section" class="space-y-4 bg-slate-800/70 border border-slate-700 rounded-3xl p-5 sm:p-6 shadow-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div><h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fas fa-diagram-project text-indigo-300"></i> Registro maestro de servicios por rol</h3>
+                <p class="text-xs text-slate-400 mt-1">Alta de puestos/servicios con cuenta Google, Apps Script, Spreadsheet y Drive propios o compartidos.</p></div>
+                <button id="btn-refresh-service-registry" type="button" class="px-4 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-100 text-xs font-bold border border-slate-600">Actualizar catálogo</button>
+            </div>
+            <p class="text-xs text-slate-400 bg-slate-900/70 border border-slate-700 rounded-xl p-3">El portal reutiliza la sesión del login. Registre únicamente despliegues institucionales ya creados y restringidos al dominio de la institución. No agregue propiedades de comandos ni claves secretas. Este formulario registra el despliegue; no cambia la cuenta propietaria ni publica el servicio.</p>
+            <form id="service-registry-form" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label class="text-xs text-slate-300 space-y-1">ID del servicio<input id="service-registry-id" required maxlength="64" pattern="[A-Za-z0-9_-]+" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="DOCENTE-SPS-001"></label>
+                    <label class="text-xs text-slate-300 space-y-1">Nombre del puesto/servicio<input id="service-registry-name" required maxlength="120" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="Profesor de Matemáticas"></label>
+                    <label class="text-xs text-slate-300 space-y-1">ID del puesto o grupo<input id="service-registry-position" required maxlength="64" pattern="[A-Za-z0-9_-]+" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="PUESTO-DOCENTE-001"></label>
+                    <label class="text-xs text-slate-300 space-y-1">Roles existentes (selección múltiple)<select id="service-registry-roles" required multiple size="4" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white"></select></label>
+                    <label class="text-xs text-slate-300 space-y-1">Modalidad del servicio<select id="service-registry-mode" disabled class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white disabled:opacity-80"><option value="">Seleccione roles primero</option><option value="INDIVIDUAL">Individual</option><option value="SHARED_PARENT_STUDENT">Compartido: Padres/Estudiantes</option><option value="SHARED_UTILITY">Compartido: Utilidades</option></select></label>
+                    <label class="text-xs text-slate-300 space-y-1">Departamento/área<input id="service-registry-department" maxlength="100" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="Área académica"></label>
+                    <label class="text-xs text-slate-300 space-y-1">Cuenta Google propietaria<input id="service-registry-owner" type="email" required class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="empleado@institucion.edu"></label>
+                    <label class="text-xs text-slate-300 space-y-1">ID del proyecto Apps Script<input id="service-registry-project" required class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="ID del proyecto"></label>
+                    <label class="text-xs text-slate-300 space-y-1">URL del despliegue<input id="service-registry-endpoint" type="url" required class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="https://script.google.com/macros/s/.../exec"></label>
+                    <label class="text-xs text-slate-300 space-y-1">ID de Spreadsheet<input id="service-registry-spreadsheet" required class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="ID de la hoja de cálculo"></label>
+                    <label class="text-xs text-slate-300 space-y-1">ID de carpeta Drive<input id="service-registry-drive" required class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="ID de la carpeta"></label>
+                    <label class="text-xs text-slate-300 space-y-1">Dominio de datos<input id="service-registry-domain" required maxlength="80" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white" placeholder="ACADEMIC"></label>
+                    <label class="text-xs text-slate-300 space-y-1">Versión<input id="service-registry-version" value="v1.0.0" required maxlength="32" class="w-full rounded-lg bg-slate-950 border border-slate-700 px-3 py-2 text-sm text-white"></label>
+                </div>
+                <input id="service-registry-access-mode" type="hidden" value="INSTITUTIONAL_DOMAIN">
+                <div class="flex flex-wrap items-center gap-3"><button id="btn-register-service" type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg">Registrar servicio</button><span id="service-registry-status" role="status" aria-live="polite" class="text-xs text-slate-400">Cargando catálogo de roles y servicios…</span></div>
+            </form>
+            <div class="overflow-x-auto border border-slate-700 rounded-xl"><table class="min-w-full text-left text-xs"><thead class="bg-slate-950 text-slate-300"><tr><th class="p-3">Servicio / puesto</th><th class="p-3">Roles</th><th class="p-3">Modalidad</th><th class="p-3">Cuenta propietaria</th><th class="p-3">Spreadsheet / Drive</th><th class="p-3">Estado</th></tr></thead><tbody id="service-registry-rows" class="divide-y divide-slate-700 bg-slate-900/60"><tr><td colspan="6" class="p-4 text-slate-500">Cargando catálogo…</td></tr></tbody></table></div>
+        </section>
 
         <!-- Section 1: Microservices Health Check Monitor -->
         <section class="space-y-4">

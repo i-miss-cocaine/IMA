@@ -3582,7 +3582,11 @@
 7. Secretaría, Dirección, Coordinación y Administrador acceden conforme a sus facultades; docentes solo a sus clases/grados/secciones; estudiantes solo a sus notas, métricas y tareas; padres solo a estudiantes vinculados.
 8. Notas, calificaciones, resultados de exámenes, jornalizaciones, sílabos, planes de clase, guías y exámenes deben respetar esos ámbitos.
 9. Los requisitos originales de TASK-047/F23 sobre HMAC, sesión y credenciales se conservan como evidencia; su contradicción con el modelo nuevo debe resolverse técnicamente sin añadir secretos no autorizados ni publicar endpoints.
-- **Estado:** Pendiente
+- **Reevaluación de dependencias C1.969:** `CatalogoServicios` y `CatalogoSpreadsheets` están presentes. F23-TASK03 y F23-TASK04 se conservan como referencias relacionadas; no se encontró acoplamiento runtime directo desde las funciones actuales del registro de servicios, por lo que no bloquean la UI ni el registro de metadatos. Deben revisarse antes de integrar flujos de asignación/orquestación.
+- **Implementación C1.969:** se prepara registro UI desde la consola de Desarrollador, metadatos v2 para roles/puestos/modalidad/proyecto/Drive/acceso de dominio y migración append-only desde el encabezado v1; verificación automatizada pendiente.
+- **Pendiente:** el servicio maestro aún no ejecuta llamadas autenticadas a los endpoints registrados ni se ha probado comunicación real entre cuentas/deployments. El campo `INSTITUTIONAL_DOMAIN` es metadato declarado; la restricción real del deployment requiere verificación en Google Workspace.
+- **Compatibilidad de sesión:** no se agregan prompts interactivos ni se solicita un segundo login; el backend conserva la verificación silenciosa del token firmado y los permisos de acción en el punto de entrada. No se elimina esa verificación en esta iteración porque forma parte de AUD-NG-082 y del contrato de acciones protegidas.
+- **Estado:** En ejecución (C1.969; interfaz y metadatos del registro de servicios).
 
 ### [AUD-NG-082] Exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-082 (TASK-047 / F23-Task04)

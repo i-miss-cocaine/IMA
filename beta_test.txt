@@ -2677,3 +2677,10 @@ Precondiciones: versión beta aislada, cuentas institucionales sintéticas, recu
 Pasos: Probar login y paneles con roles Desarrollador, Administrador, Dirección y usuario sin privilegios; intentar abrir el registro de servicios y expedientes institucionales.
 Resultado esperado: Desarrollador administra el plano técnico sin heredar permisos administrativos de datos; Administrador no se convierte en Desarrollador automáticamente; cada rol conserva su alcance configurado.
 Estado: Pendiente. Evidencia requerida: requests/respuestas saneadas, IDs sintéticos, configuración de despliegue sin secretos y registros de acceso.
+
+### BETA-FUNC-141 — Registro maestro de servicios por rol y migración de catálogo v1→v2
+Área/roles: Desarrollador; roles de servicios individuales y compartidos. Requisito: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; TASK-047.
+Objetivo: validar alta y consulta de servicios por puesto/rol, modalidades individual/compartida, metadatos de Apps Script/Spreadsheet/Drive y preservación del catálogo anterior.
+Pasos: probar registros sintéticos individuales (Docente, Coordinador, Secretaria, Contador), compartido Padres/Estudiantes y compartido Tienda/Cafetería/Transporte; probar rechazo de URL ajena a Apps Script, modo PUBLIC, rol/modalidad incompatible y PositionID duplicado; migrar encabezado v1 conservando filas; verificar que Administrador no hereda permisos de Desarrollador.
+Resultado esperado: metadatos v2 consistentes, historial preservado, roles/modos validados, endpoint declarado INSTITUTIONAL_DOMAIN, UI visible solo a Desarrollador.
+Estado: Pendiente. Evidencia requerida: resultado Node.js/CI, capturas saneadas, filas sintéticas y pruebas de despliegue restringido en cuentas institucionales. No usar datos personales reales.

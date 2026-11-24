@@ -4612,3 +4612,12 @@ C1.967 — IMA-EXEC-20261123-CI-WHITESPACE-FIX
 - Se elimina la línea vacía final; no se modifican tests ni código.
 - Node.js/contrato quedaron NOT RUN; nueva ejecución requerida.
 ===============================================================================
+===============================================================================
+C1.969 — IMA-EXEC-20261123-TASK047-REGISTRY-01
+===============================================================================
+- TASK-047 pasa a En ejecución en PM-00A.
+- Se prepara registro maestro UI de servicios por rol y extensión v2 del catálogo con roles, puesto, modalidad, proyecto Apps Script, carpeta Drive y acceso institucional.
+- Se mantiene migración append-only v1→v2 y se restringe el servicio DEVELOPER para que Administrador no herede wildcard.
+- Se añade BETA-FUNC-141; pruebas CI pendientes.
+- La validación silenciosa del token en DEVELOPER se conserva; no hay prompts interactivos adicionales. La eliminación de validación por función y la comunicación interservicio sin secretos quedan pendientes de una arquitectura compatible con AUD-NG-082/083/084.
+===============================================================================

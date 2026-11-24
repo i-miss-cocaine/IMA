@@ -21,7 +21,8 @@ function extractFunction(source, name) {
   throw new Error("unbalanced " + name);
 }
 
-const registryHeaders = ["ServiceID","Name","Department","OwnerAccount","EndpointURL","SpreadsheetID","DataDomain","State","Version","PermissionsJSON","RegisteredAt"];
+const registryHeaders = ["ServiceID","Name","Department","OwnerAccount","EndpointURL","SpreadsheetID","DataDomain","State","Version","PermissionsJSON","RegisteredAt","RolesJSON","PositionID","ServiceMode","ScriptProjectID","DriveFolderID","AccessMode"];
+const legacyHeaders = ["ServiceID","Name","Department","OwnerAccount","EndpointURL","SpreadsheetID","DataDomain","State","Version","PermissionsJSON","RegisteredAt"];
 const historyHeaders = ["HistoryID","ServiceID","PreviousState","NewState","Reason","UpdatedBy","UpdatedAt"];
 function sheet(rows) {
   return {
@@ -73,13 +74,14 @@ function harness(initial, options) {
     },
     Utilities: { getUuid() { uuidCounter++; return "UUID-" + uuidCounter; } },
     ROLE_PERMISSIONS: {
-      Administrador: ["*"],
+      Administrador: [],
       Desarrollador: ["registerServiceInstance", "updateServiceStatus", "auditInterServiceCalls"],
       Director: ["getCentralServiceRegistry"]
     },
     verifySessionToken(token) {
       if (token === "valid") return { userId: "verified-user", role: "Desarrollador" };
       if (token === "director") return { userId: "director-user", role: "Director" };
+      if (token === "administrator") return { userId: "admin-user", role: "Administrador" };
       if (token === "missing-claims") return { role: "Desarrollador" };
       return null;
     },
@@ -105,11 +107,18 @@ function harness(initial, options) {
   const api = new Function("context", "with(context){" + code + ";return {getCentralServiceRegistry,registerServiceInstance_,updateServiceStatus_,registerServiceInstance,updateServiceStatus,auditInterServiceCalls,doPost};}")(context);
   return { ...api, sheets, logs, context, lockState };
 }
-function registerService(h, payload) {
-  return h.registerServiceInstance_(payload, "actor-1");
+function validServicePayload(overrides) {
+  const supplied = overrides || {}, serviceId = supplied.serviceId || "SVC-TEST";
+  return Object.assign({ serviceId, name: "Test service", cuentaPropietaria: "owner@example.invalid",
+    endpointUrl: "https://script.google.com/macros/s/DEPLOYMENT/exec", spreadsheetAsociado: "SHEET-" + serviceId,
+    dominioDatos: "ACADEMIC", version: "1.0.0", permisosConcedidos: [], roles: ["Docente"],
+    positionId: "POS-" + serviceId, serviceMode: "INDIVIDUAL", scriptProjectId: "SCRIPT-" + serviceId,
+    driveFolderId: "DRIVE-" + serviceId, accessMode: "INSTITUTIONAL_DOMAIN" }, supplied);
 }
+function registerService(h, payload) { return h.registerServiceInstance_(validServicePayload(payload), "actor-1"); }
 function row(id, name, permissions) {
-  return [id,name,"Academic","owner@example.invalid","https://example.invalid/exec","SHEET-1","ACADEMIC","Activo","1.0.0",permissions === undefined ? "[]" : permissions,"2026-11-17T00:00:00.000Z"];
+  return [id,name,"Academic","owner@example.invalid","https://script.google.com/macros/s/DEPLOYMENT/exec","SHEET-1","ACADEMIC","Activo","1.0.0",
+    permissions === undefined ? "[]" : permissions,"2026-11-17T00:00:00.000Z",JSON.stringify(["Docente"]),"POS-"+id,"INDIVIDUAL","SCRIPT-"+id,"DRIVE-"+id,"INSTITUTIONAL_DOMAIN"];
 }
 
 let h = harness();
@@ -136,6 +145,17 @@ assert.equal(result.status, "success");
 assert.equal(result.totalServicios, 1);
 assert.equal(result.registry[0].serviceId, "SVC-LEGACY");
 assert.deepEqual(result.registry[0].permisosConcedidos, []);
+
+h = harness({ CatalogoServicios: sheet([legacyHeaders, row("SVC-V1","Legacy v1").slice(0,11)]) });
+result = h.getCentralServiceRegistry({});
+assert.equal(result.status, "success");
+assert.equal(result.registry[0].metadataState, "LEGACY_METADATA_PENDING");
+assert.deepEqual(h.sheets.CatalogoServicios.rows[0], legacyHeaders, "read must not mutate v1");
+result = registerService(h, { serviceId: "SVC-MIGRATED", name: "Migrated service" });
+assert.equal(result.status, "success");
+assert.deepEqual(h.sheets.CatalogoServicios.rows[0], registryHeaders);
+assert.deepEqual(h.sheets.CatalogoServicios.rows[1].slice(0,11), row("SVC-V1","Legacy v1").slice(0,11));
+assert.equal(h.sheets.CatalogoServicios.rows[2][12], "POS-SVC-MIGRATED");
 
 h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-1","Real service",'["read","health"]')]) });
 result = h.getCentralServiceRegistry({});
@@ -226,7 +246,7 @@ h = harness();
 assert.throws(() => registerService(h,{ serviceId: "SVC-WILDCARD", name: "Wildcard permissions", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-WILDCARD", permisosConcedidos: ["read", "*"] }), /INVALID_SERVICE_PERMISSIONS/);
 assert.equal(Object.keys(h.sheets).length, 0, "wildcard permissions must not create or mutate the registry");
 h = harness();
-assert.throws(() => registerService(h,{ serviceId: "SVC-NO-OWNER", name: "No owner" }), /SERVICE_OWNER_AND_SPREADSHEET_REQUIRED/);
+assert.throws(() => registerService(h,{ serviceId: "SVC-NO-OWNER", name: "No owner", cuentaPropietaria: "", spreadsheetAsociado: "" }), /SERVICE_OWNER_AND_SPREADSHEET_REQUIRED/);
 assert.equal(Object.keys(h.sheets).length, 0, "missing owner/spreadsheet must not create a fictitious registry entry");
 h = harness();
 assert.throws(() => registerService(h,{ serviceId: "SVC-FAKE", name: "Fake", cuentaPropietaria: "sistema@institucional.edu", spreadsheetAsociado: "TEST" }), /SERVICE_OWNER_AND_SPREADSHEET_REQUIRED/);
@@ -310,7 +330,7 @@ result = h.doPost({ postData: { contents: "null" } });
 assert.equal(result.status, "success", "non-object control-plane payload must normalize to the ping response");
 
 h = harness();
-result = h.doPost({ postData: { contents: JSON.stringify({ action: "registerServiceInstance", serviceId: "SVC-POST", name: "Posted service", cuentaPropietaria: "owner@example.invalid", spreadsheetAsociado: "SHEET-POST", sessionToken: "valid", _verifiedUserId: "forged-user" }) } });
+result = h.doPost({ postData: { contents: JSON.stringify(Object.assign(validServicePayload({ serviceId: "SVC-POST", name: "Posted service", spreadsheetAsociado: "SHEET-POST" }), { action: "registerServiceInstance", sessionToken: "valid", _verifiedUserId: "forged-user" })) } });
 assert.equal(result.status, "success");
 assert.equal(h.sheets.HistorialServiciosDistribuidos.rows[1][5], "verified-user", "initial registration must attribute the verified session actor");
 
@@ -377,5 +397,41 @@ result = h.doPost({ postData: { contents: JSON.stringify({ action: "auditInterSe
 assert.equal(result.status, "success");
 assert.equal(result.auditLogs.length, 1, "authenticated developer action exposes the filtered usage record");
 assert.equal(result.auditLogs[0].correlationId, "CORR-1");
+
+h = harness();
+result = registerService(h, { serviceId: "SVC-FAMILY", roles: ["Padre", "Estudiante"], serviceMode: "SHARED_PARENT_STUDENT" });
+assert.equal(result.status, "success");
+assert.deepEqual(h.getCentralServiceRegistry({}).registry[0].roles, ["Padre", "Estudiante"]);
+h = harness();
+result = registerService(h, { serviceId: "SVC-UTILITY", roles: ["Encargado de tienda", "Encargado de cafetería", "Encargado de transporte"], serviceMode: "SHARED_UTILITY" });
+assert.equal(result.status, "success");
+assert.equal(h.getCentralServiceRegistry({}).registry[0].serviceMode, "SHARED_UTILITY");
+h = harness();
+assert.throws(() => registerService(h, { serviceId: "SVC-BAD-ROLE-MODE", roles: ["Padre"], serviceMode: "SHARED_PARENT_STUDENT" }), /SERVICE_ROLE_MODE_MISMATCH/);
+assert.equal(Object.keys(h.sheets).length, 0);
+h = harness();
+assert.throws(() => registerService(h, { serviceId: "SVC-PUBLIC", accessMode: "PUBLIC" }), /SERVICE_DEPLOYMENT_METADATA_REQUIRED/);
+assert.equal(Object.keys(h.sheets).length, 0);
+h = harness();
+assert.throws(() => registerService(h, { serviceId: "SVC-BAD-URL", endpointUrl: "https://example.invalid/exec" }), /SERVICE_ENDPOINT_URL_INVALID/);
+assert.equal(Object.keys(h.sheets).length, 0);
+h = harness();
+registerService(h, { serviceId: "SVC-POS-1" });
+assert.throws(() => registerService(h, { serviceId: "SVC-POS-2", positionId: "POS-SVC-POS-1" }), /DUPLICATE_POSITION_REGISTRATION/);
+assert.equal(h.sheets.CatalogoServicios.rows.length, 2);
+h = harness();
+result = h.doPost({ postData: { contents: JSON.stringify(Object.assign(validServicePayload({ serviceId: "SVC-ADMIN" }), { action: "registerServiceInstance", sessionToken: "administrator" })) } });
+assert.equal(result.code, "PERMISSION_DENIED");
+assert.equal(Object.keys(h.sheets).length, 0);
+const developerDashboard = fs.readFileSync("developer-dashboard.html", "utf8");
+const developerScript = fs.readFileSync("js/developer.js", "utf8");
+const developerSource = fs.readFileSync("backend/developer-service/Code.gs", "utf8");
+assert.match(developerDashboard, /id="service-registry-form"/);
+assert.match(developerDashboard, /id="service-registry-roles"/);
+assert.doesNotMatch(developerDashboard, /Root Access|SuperAdmin/);
+assert.match(developerScript, /userRole === 'Desarrollador'/);
+assert.doesNotMatch(developerScript, /userRole === 'Administrador' \|\| userRole === 'Desarrollador'/);
+assert.match(developerScript, /fetchApi\('DEVELOPER', 'registerServiceInstance'/);
+assert.match(developerSource, /"Administrador": \[\]/);
 
 console.log("Developer service registry contract PASS.");

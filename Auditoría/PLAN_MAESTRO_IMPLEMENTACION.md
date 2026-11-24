@@ -6485,3 +6485,15 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Se elimina únicamente la línea vacía final añadida en C1.966; se conserva el contenido del plan.
 - No se cambia el contrato, las pruebas, la lógica de autorización ni el código productivo.
 - Se requiere una nueva ejecución para confirmar el guard y las pruebas Node.js.
+
+## 10.89 Implementación inicial de TASK-047 — registro de servicios por rol
+
+- Sesión: IMA-EXEC-20261123-TASK047-REGISTRY-01.
+- Rama: NG_beta_0.0.0.1_work; HEAD de entrada: 22741dbeffcaa9ea775291f153bd42b10dbcf4ad.
+- Estado: En ejecución; no marcar como completada.
+- Cambios preparados: catálogo de servicios v2 con roles múltiples, ID de puesto, modalidad individual/compartida, proyecto Apps Script, carpeta Drive y modo de acceso institucional; migración append-only desde el encabezado v1 sin reescribir filas antiguas; UI de alta/consulta en consola de Desarrollador; rol Administrador deja de heredar wildcard en el servicio DEVELOPER.
+- Modalidades admitidas: individual (docente/profesor, coordinador, secretaria, contador); compartida Padres/Estudiantes; compartida de utilidades (Tienda/Cafetería/Transporte).
+- Se conserva el historial y se rechazan endpoint no Apps Script, modo PUBLIC, roles incompatibles y duplicación de PositionID.
+- Dependencias: CatalogoServicios y CatalogoSpreadsheets existentes. F23-TASK03/F23-TASK04 siguen en el plan como relacionadas; no se encontró dependencia runtime directa para UI/registro, por lo que no bloquean este alcance.
+- Límite: no se implementa todavía la invocación interservicio desde el servicio maestro ni se verifica el acceso de Workspace en deployments reales. No se eliminó la validación silenciosa del token en DEVELOPER; la UI reutiliza la sesión iniciada, sin prompts adicionales. AUD-NG-082/083/084 se conservan y requieren reconciliación con los requisitos nuevos sin introducir endpoints públicos ni secretos.
+- Pruebas: Developer Service Registry Contract y Academic Wellbeing Contract se ejecutarán en CI; pruebas reales entre cuentas quedan pendientes en beta.

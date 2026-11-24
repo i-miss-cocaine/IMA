@@ -25,7 +25,7 @@ function textResponse(obj) {
 }
 
 const ROLE_PERMISSIONS = {
-  "Administrador": ["*"],
+  "Administrador": [],
   "Desarrollador": ["getCentralServiceRegistry", "registerServiceInstance", "updateServiceStatus", "auditInterServiceCalls", "manageUserMultiRolePermissions", "getCentralizedLogs", "executeOperationalCommand", "getServiceVersionChangelog", "executeServiceVersionRollback", "getCentralConfigAndContractCatalog", "validateServiceConfigDependencies", "runFullArchitectureIntegrationAndPerformanceSuite", "runModularAndDynamicDashboardsRegressionSuite", "runAcademicGradingRegressionSuite", "runPhase10AttendanceAndCoexistenceRegressionSuite", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "getPhase10FunctionalDocumentation", "validateStagedMigrationProgress", "validateModularFolderStructure", "validateMonolithDecompositionContracts", "getArchitectureAndDependencyMapReport", "getRoleFunctionalSpaceConfig", "auditRoleIndependenceAndMasterDataIntegrity", "validateStableIdentifiersAndControlColumns", "ensureStandardObservabilitySheets", "validateObservabilitySheetsIntegrity", "getCentralSpreadsheetConfigRegistry", "recordProvisioningHistory", "provisionRoleSpreadsheet", "migrateSpreadsheetSchema", "auditServiceBackendIsolationAndDriveSecurity", "batchSpreadsheetReadOperations", "getServiceHealthDiagnostics", "getCentralCapabilitiesCatalog", "getInstitutionalIndicatorsDictionary"],
   "Director": ["getInstitutionalIndicatorsDictionary", "getCentralConfigAndContractCatalog"],
   "Coordinador": ["getInstitutionalIndicatorsDictionary"],
@@ -2952,6 +2952,11 @@ function executeOperationalCommand(payload) {
 
 const DEVELOPER_SERVICE_REGISTRY_HEADERS_ = [
   "ServiceID", "Name", "Department", "OwnerAccount", "EndpointURL",
+  "SpreadsheetID", "DataDomain", "State", "Version", "PermissionsJSON", "RegisteredAt",
+  "RolesJSON", "PositionID", "ServiceMode", "ScriptProjectID", "DriveFolderID", "AccessMode"
+];
+const DEVELOPER_SERVICE_REGISTRY_LEGACY_HEADERS_ = [
+  "ServiceID", "Name", "Department", "OwnerAccount", "EndpointURL",
   "SpreadsheetID", "DataDomain", "State", "Version", "PermissionsJSON", "RegisteredAt"
 ];
 const DEVELOPER_SERVICE_HISTORY_HEADERS_ = [
@@ -2982,12 +2987,14 @@ function developerEnsureServiceTable_(ss, name, headers, legacyRowValidator) {
     return { sheet: sheet, headers: headers.slice(), rows: [] };
   }
   var first = (data[0] || []).map(function(value) { return String(value || "").trim(); });
-  if (JSON.stringify(first) === JSON.stringify(headers)) {
+  if (JSON.stringify(first) === JSON.stringify(headers)) return { sheet: sheet, headers: headers.slice(), rows: data.slice(1) };
+  if (name === "CatalogoServicios" && JSON.stringify(first) === JSON.stringify(DEVELOPER_SERVICE_REGISTRY_LEGACY_HEADERS_)) {
+    // Append-only v1 -> v2 header migration. Existing service rows are not rewritten or deleted.
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers.slice()]);
+    if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush();
     return { sheet: sheet, headers: headers.slice(), rows: data.slice(1) };
   }
-  if (["ServiceID", "serviceId", "service_id"].indexOf(first[0]) !== -1) {
-    throw new Error("SERVICE_REGISTRY_SCHEMA_MISMATCH:" + name);
-  }
+  if (["ServiceID", "serviceId", "service_id"].indexOf(first[0]) !== -1) throw new Error("SERVICE_REGISTRY_SCHEMA_MISMATCH:" + name);
   if (legacyRowValidator && data.every(legacyRowValidator)) {
     if (typeof sheet.insertRowBefore !== "function") throw new Error("SERVICE_REGISTRY_LEGACY_MIGRATION_UNAVAILABLE");
     sheet.insertRowBefore(1);
@@ -3021,60 +3028,49 @@ function developerCreateServiceHistoryId_() {
 
 function developerParseServiceRegistryRows_(data) {
   if (!Array.isArray(data)) throw new Error("SERVICE_REGISTRY_DATA_INVALID");
-  if (!data.length || !data.some(function(row) { return (row || []).some(function(value) { return value !== "" && value !== null && value !== undefined; }); })) {
-    return { state: "EMPTY", rows: [] };
-  }
+  if (!data.length || !data.some(function(row) { return (row || []).some(function(value) { return value !== "" && value !== null && value !== undefined; }); })) return { state: "EMPTY", rows: [] };
   var first = (data[0] || []).map(function(value) { return String(value || "").trim(); });
   var headerLike = ["ServiceID", "serviceId", "service_id"].indexOf(first[0]) !== -1;
   if (headerLike) {
-    if (JSON.stringify(first) !== JSON.stringify(DEVELOPER_SERVICE_REGISTRY_HEADERS_)) {
-      throw new Error("SERVICE_REGISTRY_SCHEMA_MISMATCH:CatalogoServicios");
-    }
-    return { state: data.length > 1 ? "READY" : "EMPTY", rows: data.slice(1) };
+    if (JSON.stringify(first) === JSON.stringify(DEVELOPER_SERVICE_REGISTRY_HEADERS_)) return { state: data.length > 1 ? "READY" : "EMPTY", schemaVersion: "V2", rows: data.slice(1) };
+    if (JSON.stringify(first) === JSON.stringify(DEVELOPER_SERVICE_REGISTRY_LEGACY_HEADERS_)) return { state: data.length > 1 ? "READY" : "EMPTY", schemaVersion: "V1_LEGACY", rows: data.slice(1) };
+    throw new Error("SERVICE_REGISTRY_SCHEMA_MISMATCH:CatalogoServicios");
   }
-  return { state: "READY", rows: data };
+  return { state: "READY", schemaVersion: "LEGACY_ROWS", rows: data };
 }
 
 function developerMapServiceRegistryRow_(row) {
-  if (!Array.isArray(row) || row.length < DEVELOPER_SERVICE_REGISTRY_HEADERS_.length) {
-    throw new Error("SERVICE_REGISTRY_ROW_INVALID");
-  }
+  if (!Array.isArray(row) || row.length < 11) throw new Error("SERVICE_REGISTRY_ROW_INVALID");
   var serviceId = String(row[0] || "").trim(), name = String(row[1] || "").trim();
-  var ownerAccount = String(row[3] || "").trim();
-  var associatedSpreadsheetId = String(row[5] || "").trim();
+  var ownerAccount = String(row[3] || "").trim(), associatedSpreadsheetId = String(row[5] || "").trim();
   if (!serviceId || !name) throw new Error("SERVICE_REGISTRY_ROW_INVALID");
-  if (!ownerAccount || !associatedSpreadsheetId ||
-      ownerAccount.toLowerCase() === "sistema@institucional.edu" || /@domain\.edu$/i.test(ownerAccount) ||
-      associatedSpreadsheetId === String(SPREADSHEET_ID || "")) {
+  if (!ownerAccount || !associatedSpreadsheetId || ownerAccount.toLowerCase() === "sistema@institucional.edu" ||
+      /@domain\.edu$/i.test(ownerAccount) || associatedSpreadsheetId === String(SPREADSHEET_ID || "")) {
     throw new Error("SERVICE_REGISTRY_PLACEHOLDER_METADATA");
   }
   var permissions = [];
   if (row[9] !== "" && row[9] !== null && row[9] !== undefined) {
-    try { permissions = typeof row[9] === "string" ? JSON.parse(row[9]) : row[9]; }
-    catch (error) { throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID"); }
-    if (!Array.isArray(permissions) || permissions.some(function(value) { return typeof value !== "string" || !value.trim() || value.indexOf("*") !== -1; })) {
-      throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID");
-    }
+    try { permissions = typeof row[9] === "string" ? JSON.parse(row[9]) : row[9]; } catch (error) { throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID"); }
+    if (!Array.isArray(permissions) || permissions.some(function(value) { return typeof value !== "string" || !value.trim() || value.indexOf("*") !== -1; })) throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID");
     var seen = {};
-    permissions = permissions.map(function(value) {
-      var normalized = value.trim(), key = "$" + normalized;
-      if (seen[key]) throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID");
-      seen[key] = true;
-      return normalized;
-    });
+    permissions = permissions.map(function(value) { var normalized = value.trim(), key = "$" + normalized; if (seen[key]) throw new Error("SERVICE_REGISTRY_PERMISSIONS_INVALID"); seen[key] = true; return normalized; });
   }
+  var roles = [];
+  if (row[11] !== "" && row[11] !== null && row[11] !== undefined) {
+    try { roles = typeof row[11] === "string" ? JSON.parse(row[11]) : row[11]; } catch (error) { throw new Error("SERVICE_REGISTRY_ROLES_INVALID"); }
+    if (!Array.isArray(roles) || roles.some(function(value) { return typeof value !== "string" || !value.trim(); })) throw new Error("SERVICE_REGISTRY_ROLES_INVALID");
+    var seenRoles = {};
+    roles = roles.map(function(value) { var normalized = value.trim(), key = "$" + normalized.toLowerCase(); if (seenRoles[key]) throw new Error("SERVICE_REGISTRY_ROLES_INVALID"); seenRoles[key] = true; return normalized; });
+  }
+  var positionId = String(row[12] || "").trim(), serviceMode = String(row[13] || "").trim();
+  var scriptProjectId = String(row[14] || "").trim(), driveFolderId = String(row[15] || "").trim(), accessMode = String(row[16] || "").trim();
+  var metadataComplete = !!(roles.length && positionId && serviceMode && scriptProjectId && driveFolderId && accessMode === "INSTITUTIONAL_DOMAIN");
   return {
-    serviceId: serviceId,
-    name: name,
-    departamento: String(row[2] || ""),
-    cuentaPropietaria: ownerAccount,
-    endpointUrl: String(row[4] || ""),
-    spreadsheetAsociado: associatedSpreadsheetId,
-    dominioDatos: String(row[6] || ""),
-    state: String(row[7] || ""),
-    version: String(row[8] || ""),
-    permisosConcedidos: permissions,
-    registeredAt: row[10] || ""
+    serviceId: serviceId, name: name, departamento: String(row[2] || ""), cuentaPropietaria: ownerAccount,
+    endpointUrl: String(row[4] || ""), spreadsheetAsociado: associatedSpreadsheetId, dominioDatos: String(row[6] || ""),
+    state: String(row[7] || ""), version: String(row[8] || ""), permisosConcedidos: permissions, registeredAt: row[10] || "",
+    roles: roles, positionId: positionId, serviceMode: serviceMode, scriptProjectId: scriptProjectId,
+    driveFolderId: driveFolderId, accessMode: accessMode, metadataState: metadataComplete ? "READY" : "LEGACY_METADATA_PENDING"
   };
 }
 
@@ -3110,36 +3106,40 @@ function getCentralServiceRegistry(payload) {
 
 // [TASK-047] [F23-Task04] [P0] Registro de instancias y cuentas de servicio distribuidos con prevención de duplicados
 function registerServiceInstance_(payload, verifiedActorId) {
-  const {
-    serviceId, name, type, departamento, cuentaPropietaria, endpointUrl,
-    spreadsheetAsociado, dominioDatos, version, permisosConcedidos
-  } = payload || {};
+  const { serviceId, name, type, departamento, cuentaPropietaria, endpointUrl, spreadsheetAsociado,
+    dominioDatos, version, permisosConcedidos, roles, positionId, serviceMode, scriptProjectId, driveFolderId, accessMode } = payload || {};
   var actorId = String(verifiedActorId || "").trim();
   if (!actorId) throw new Error("SERVICE_ACTOR_NOT_VERIFIED");
   if (!serviceId || !name) throw new Error("serviceId y name son requeridos.");
-
-  const sId = String(serviceId).trim();
-  const sName = String(name).trim();
-  const ownerAccount = String(cuentaPropietaria || "").trim();
-  const associatedSpreadsheetId = String(spreadsheetAsociado || "").trim();
-  if (!ownerAccount || !associatedSpreadsheetId ||
-      ownerAccount.toLowerCase() === "sistema@institucional.edu" || /@domain\.edu$/i.test(ownerAccount) ||
-      associatedSpreadsheetId === String(SPREADSHEET_ID || "")) {
-    throw new Error("SERVICE_OWNER_AND_SPREADSHEET_REQUIRED");
-  }
+  const sId = String(serviceId).trim(), sName = String(name).trim();
+  const ownerAccount = String(cuentaPropietaria || "").trim(), associatedSpreadsheetId = String(spreadsheetAsociado || "").trim();
+  const endpoint = String(endpointUrl || "").trim(), position = String(positionId || "").trim();
+  const projectId = String(scriptProjectId || "").trim(), driveId = String(driveFolderId || "").trim();
+  const mode = String(serviceMode || "").trim().toUpperCase(), access = String(accessMode || "").trim().toUpperCase();
+  if (!ownerAccount || !associatedSpreadsheetId || ownerAccount.toLowerCase() === "sistema@institucional.edu" ||
+      /@domain\.edu$/i.test(ownerAccount) || associatedSpreadsheetId === String(SPREADSHEET_ID || "")) throw new Error("SERVICE_OWNER_AND_SPREADSHEET_REQUIRED");
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) throw new Error("SERVICE_ENDPOINT_URL_INVALID");
+  if (!position || !projectId || !driveId || access !== "INSTITUTIONAL_DOMAIN") throw new Error("SERVICE_DEPLOYMENT_METADATA_REQUIRED");
+  if (!Array.isArray(roles) || !roles.length || roles.some(function(role) { return typeof role !== "string" || !role.trim(); })) throw new Error("SERVICE_ROLES_REQUIRED");
+  var normalizedRoles = [], seenRoles = {};
+  roles.forEach(function(role) { var normalized = role.trim(), key = "$" + normalized.toLowerCase(); if (seenRoles[key]) throw new Error("SERVICE_ROLES_INVALID"); seenRoles[key] = true; normalizedRoles.push(normalized); });
+  var roleTokens = normalizedRoles.map(function(role) { return role.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); });
+  var parentRole = roleTokens.some(function(role) { return /padre|madre/.test(role); });
+  var studentRole = roleTokens.some(function(role) { return /estudiante|alumno/.test(role); });
+  var utilityRoles = roleTokens.filter(function(role) { return /tienda|cafeteria|transporte/.test(role); });
+  if (mode === "INDIVIDUAL") {
+    if (normalizedRoles.length !== 1 || !/(docente|profesor|coordinador|secretaria|contador)/.test(roleTokens[0])) throw new Error("SERVICE_ROLE_MODE_MISMATCH");
+  } else if (mode === "SHARED_PARENT_STUDENT") {
+    if (normalizedRoles.length !== 2 || !parentRole || !studentRole) throw new Error("SERVICE_ROLE_MODE_MISMATCH");
+  } else if (mode === "SHARED_UTILITY") {
+    if (normalizedRoles.length < 2 || normalizedRoles.length > 3 || utilityRoles.length !== normalizedRoles.length) throw new Error("SERVICE_ROLE_MODE_MISMATCH");
+  } else throw new Error("SERVICE_MODE_INVALID");
   var normalizedPermissions = [];
   if (permisosConcedidos !== undefined) {
     if (!Array.isArray(permisosConcedidos)) throw new Error("INVALID_SERVICE_PERMISSIONS");
     var seenPermissions = {};
-    permisosConcedidos.forEach(function(value) {
-      if (typeof value !== "string" || !value.trim() || value.indexOf("*") !== -1) throw new Error("INVALID_SERVICE_PERMISSIONS");
-      var normalized = value.trim(), permissionKey = "$" + normalized;
-      if (seenPermissions[permissionKey]) throw new Error("INVALID_SERVICE_PERMISSIONS");
-      seenPermissions[permissionKey] = true;
-      normalizedPermissions.push(normalized);
-    });
+    permisosConcedidos.forEach(function(value) { if (typeof value !== "string" || !value.trim() || value.indexOf("*") !== -1) throw new Error("INVALID_SERVICE_PERMISSIONS"); var normalized = value.trim(), key = "$" + normalized; if (seenPermissions[key]) throw new Error("INVALID_SERVICE_PERMISSIONS"); seenPermissions[key] = true; normalizedPermissions.push(normalized); });
   }
-
   var lock = LockService.getScriptLock();
   if (!lock || !lock.tryLock(30000)) throw new Error("SERVICE_REGISTRY_LOCK_TIMEOUT");
   try {
@@ -3148,26 +3148,18 @@ function registerServiceInstance_(payload, verifiedActorId) {
       return Array.isArray(row) && row.length >= 11 && String(row[0] || "").trim() !== "" && String(row[1] || "").trim() !== "";
     });
     var sheet = table.sheet;
-    var exists = table.rows.some(function(row) { return String(row[0] || "").trim().toUpperCase() === sId.toUpperCase(); });
-    if (exists) throw new Error("DUPLICATE_SERVICE_REGISTRATION");
-
+    if (table.rows.some(function(row) { return String(row[0] || "").trim().toUpperCase() === sId.toUpperCase(); })) throw new Error("DUPLICATE_SERVICE_REGISTRATION");
+    if (table.rows.some(function(row) { return String(row[12] || "").trim().toUpperCase() === position.toUpperCase(); })) throw new Error("DUPLICATE_POSITION_REGISTRATION");
     var history = developerEnsureServiceTable_(ss, "HistorialServiciosDistribuidos", DEVELOPER_SERVICE_HISTORY_HEADERS_, function(row) {
       return Array.isArray(row) && row.length >= 7 && String(row[0] || "").indexOf("HIST-SVC-") === 0;
     });
-    var histSheet = history.sheet;
-    var now = new Date();
-    var timestamp = now.toISOString();
-    var historyId = developerCreateServiceHistoryId_();
-    var serviceRow = [
-      sId, sName, departamento || type || "General", ownerAccount, endpointUrl || "",
-      associatedSpreadsheetId, dominioDatos || type || "Institucional", "Activo",
-      version || "v1.0.0", JSON.stringify(normalizedPermissions), timestamp
-    ];
+    var histSheet = history.sheet, timestamp = new Date().toISOString(), historyId = developerCreateServiceHistoryId_();
+    var serviceRow = [sId, sName, departamento || type || "General", ownerAccount, endpoint, associatedSpreadsheetId,
+      dominioDatos || type || "Institucional", "Activo", version || "v1.0.0", JSON.stringify(normalizedPermissions), timestamp,
+      JSON.stringify(normalizedRoles), position, mode, projectId, driveId, access];
     var historyRow = [historyId, sId, "", "Activo", "Registro inicial", actorId, timestamp];
-
     try {
-      sheet.appendRow(serviceRow);
-      histSheet.appendRow(historyRow);
+      sheet.appendRow(serviceRow); histSheet.appendRow(historyRow);
       if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush();
     } catch (writeError) {
       var compensationFailed = false;
@@ -3177,20 +3169,11 @@ function registerServiceInstance_(payload, verifiedActorId) {
       if (compensationFailed) throw new Error("SERVICE_REGISTRY_COMPENSATION_REQUIRED");
       throw new Error("SERVICE_REGISTRY_WRITE_FAILED");
     }
-
-    return {
-      status: "success",
-      serviceId: sId,
-      name: sName,
-      cuentaPropietaria: ownerAccount,
-      estado: "Activo",
-      registeredAt: timestamp,
-      registeredBy: actorId,
-      message: "Microservicio " + sId + " - " + sName + " registrado exitosamente en el catálogo distribuido."
-    };
-  } finally {
-    lock.releaseLock();
-  }
+    return { status: "success", serviceId: sId, name: sName, cuentaPropietaria: ownerAccount, roles: normalizedRoles,
+      positionId: position, serviceMode: mode, scriptProjectId: projectId, driveFolderId: driveId, accessMode: access,
+      estado: "Activo", registeredAt: timestamp, registeredBy: actorId,
+      message: "Microservicio " + sId + " - " + sName + " registrado exitosamente en el catálogo distribuido." };
+  } finally { lock.releaseLock(); }
 }
 
 function registerServiceInstance(payload) {

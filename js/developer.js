@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Permitir acceso en entorno local o a usuarios con rol Desarrollador / Administrador
-    const userRole = currentUser ? (currentUser.rol || '') : 'Desarrollador';
-    const isAllowed = !currentUser || userRole === 'Desarrollador' || userRole === 'Administrador' || userRole === 'Director';
+    const userRole = currentUser ? String(currentUser.rol || currentUser.role || '').trim() : '';
+    const isAllowed = !!currentUser && userRole === 'Desarrollador';
 
     if (!isAllowed) {
         alert('Acceso denegado: Se requieren privilegios de Desarrollador.');
@@ -586,6 +586,114 @@ document.addEventListener('DOMContentLoaded', function () {
             loadPermissionMatrix();
         }
     }
+
+
+    // Registro maestro de servicios por rol. Reutiliza la sesión del login.
+    const serviceRegistryForm = document.getElementById('service-registry-form');
+    const serviceRegistryStatus = document.getElementById('service-registry-status');
+    const serviceRegistryRows = document.getElementById('service-registry-rows');
+    const serviceRegistryRoleSelect = document.getElementById('service-registry-roles');
+    const serviceRegistryMode = document.getElementById('service-registry-mode');
+    const serviceRegistryRefresh = document.getElementById('btn-refresh-service-registry');
+    const serviceRegistrySubmit = document.getElementById('btn-register-service');
+    function serviceRegistryMessage(message, isError) {
+        if (!serviceRegistryStatus) return;
+        serviceRegistryStatus.textContent = String(message || '');
+        serviceRegistryStatus.className = 'text-xs ' + (isError ? 'text-rose-300' : 'text-slate-400');
+    }
+    function normalizeServiceRole(role) {
+        return String(role || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+    function inferServiceMode(roles) {
+        const normalized = roles.map(normalizeServiceRole);
+        const hasParent = normalized.some(role => /padre|madre/.test(role));
+        const hasStudent = normalized.some(role => /estudiante|alumno/.test(role));
+        const utilities = normalized.filter(role => /tienda|cafeteria|transporte/.test(role));
+        if (roles.length === 1 && /(docente|profesor|coordinador|secretaria|contador)/.test(normalized[0])) return 'INDIVIDUAL';
+        if (roles.length === 2 && hasParent && hasStudent) return 'SHARED_PARENT_STUDENT';
+        if (roles.length >= 2 && roles.length <= 3 && utilities.length === roles.length) return 'SHARED_UTILITY';
+        return '';
+    }
+    function selectedServiceRoles() {
+        return serviceRegistryRoleSelect ? Array.from(serviceRegistryRoleSelect.selectedOptions).map(option => option.value) : [];
+    }
+    function renderServiceRegistry(registry) {
+        if (!serviceRegistryRows) return;
+        serviceRegistryRows.replaceChildren();
+        if (!Array.isArray(registry) || !registry.length) {
+            const tr = document.createElement('tr'), td = document.createElement('td');
+            td.colSpan = 6; td.className = 'p-4 text-slate-500'; td.textContent = 'No hay servicios registrados.';
+            tr.appendChild(td); serviceRegistryRows.appendChild(tr); return;
+        }
+        registry.forEach(service => {
+            const tr = document.createElement('tr');
+            const values = [
+                String(service.name || '') + ' · ' + String(service.serviceId || '') + ' · ' + String(service.positionId || 'sin puesto'),
+                Array.isArray(service.roles) ? service.roles.join(', ') : 'Metadatos pendientes',
+                String(service.serviceMode || 'LEGACY'),
+                String(service.cuentaPropietaria || ''),
+                String(service.spreadsheetAsociado || '') + ' / ' + String(service.driveFolderId || 'sin carpeta'),
+                String(service.state || '') + (service.metadataState === 'LEGACY_METADATA_PENDING' ? ' · completar metadatos' : '')
+            ];
+            values.forEach(value => { const td = document.createElement('td'); td.className = 'p-3 text-slate-300 break-all'; td.textContent = value; tr.appendChild(td); });
+            serviceRegistryRows.appendChild(tr);
+        });
+    }
+    async function loadServiceRegistry() {
+        if (!serviceRegistryForm) return;
+        if (serviceRegistryRefresh) serviceRegistryRefresh.disabled = true;
+        try {
+            const results = await Promise.all([
+                window.fetchApi('DEVELOPER', 'getCentralServiceRegistry', {}),
+                window.fetchApi('USER', 'getPermissionMatrix', {})
+            ]);
+            const registryResponse = results[0], roleResponse = results[1];
+            if (!registryResponse || registryResponse.status !== 'success') throw new Error(registryResponse && (registryResponse.code || registryResponse.message) || 'No se pudo cargar el registro maestro.');
+            if (!roleResponse || roleResponse.status !== 'success' || !Array.isArray(roleResponse.roles)) throw new Error(roleResponse && (roleResponse.code || roleResponse.message) || 'No se pudo cargar el catálogo de roles existente.');
+            const roleOptions = roleResponse.roles.filter(role => /(docente|profesor|coordinador|secretaria|contador|padre|madre|estudiante|alumno|tienda|cafeteria|transporte)/.test(normalizeServiceRole(role)));
+            serviceRegistryRoleSelect.replaceChildren();
+            roleOptions.forEach(role => { const option = document.createElement('option'); option.value = role; option.textContent = role; serviceRegistryRoleSelect.appendChild(option); });
+            renderServiceRegistry(registryResponse.registry || []);
+            serviceRegistryMessage('Catálogo cargado: ' + String(registryResponse.totalServicios || 0) + ' servicios; roles disponibles: ' + roleOptions.length + '.', false);
+        } catch (error) {
+            serviceRegistryMessage(error.message || 'No fue posible cargar el registro maestro.', true);
+            renderServiceRegistry([]);
+        } finally {
+            if (serviceRegistryRefresh) serviceRegistryRefresh.disabled = false;
+        }
+    }
+    if (serviceRegistryRoleSelect) serviceRegistryRoleSelect.addEventListener('change', () => {
+        const mode = inferServiceMode(selectedServiceRoles());
+        serviceRegistryMode.value = mode;
+        serviceRegistryMessage(mode ? 'Modalidad calculada según los roles seleccionados: ' + mode + '.' : 'La combinación de roles no corresponde a una modalidad admitida.', !mode);
+    });
+    if (serviceRegistryRefresh) serviceRegistryRefresh.addEventListener('click', loadServiceRegistry);
+    if (serviceRegistryForm) serviceRegistryForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        const roles = selectedServiceRoles(), mode = inferServiceMode(roles);
+        if (!mode) { serviceRegistryMessage('Seleccione roles válidos para una modalidad individual o compartida.', true); return; }
+        const value = id => String((document.getElementById(id) || {}).value || '').trim();
+        const payload = {
+            serviceId: value('service-registry-id').toUpperCase(), name: value('service-registry-name'),
+            positionId: value('service-registry-position').toUpperCase(), roles, serviceMode: mode,
+            departamento: value('service-registry-department'), cuentaPropietaria: value('service-registry-owner'),
+            scriptProjectId: value('service-registry-project'), endpointUrl: value('service-registry-endpoint'),
+            spreadsheetAsociado: value('service-registry-spreadsheet'), driveFolderId: value('service-registry-drive'),
+            dominioDatos: value('service-registry-domain'), version: value('service-registry-version') || 'v1.0.0',
+            accessMode: 'INSTITUTIONAL_DOMAIN', permisosConcedidos: []
+        };
+        if (serviceRegistrySubmit) serviceRegistrySubmit.disabled = true;
+        try {
+            const response = await window.fetchApi('DEVELOPER', 'registerServiceInstance', payload);
+            if (!response || response.status !== 'success') throw new Error(response && (response.code || response.message) || 'No se pudo registrar el servicio.');
+            serviceRegistryMessage('Servicio ' + payload.serviceId + ' registrado. La sesión del portal se reutilizó.', false);
+            serviceRegistryForm.reset(); serviceRegistryMode.value = '';
+            await loadServiceRegistry();
+        } catch (error) {
+            serviceRegistryMessage(error.message || 'No fue posible registrar el servicio.', true);
+        } finally { if (serviceRegistrySubmit) serviceRegistrySubmit.disabled = false; }
+    });
+    if (serviceRegistryForm) loadServiceRegistry();
 
     window.DeveloperConsole = {
         executeHealthChecks: executeDevHealthChecks,
