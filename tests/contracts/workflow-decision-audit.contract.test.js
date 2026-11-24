@@ -15,15 +15,30 @@ function extractFunction(name) {
 }
 const helperSource = [
  'const WORKFLOW_DECISION_AUDIT_GENESIS_HASH_ = "GENESIS_DECISION_HASH_0000000000000000000000000000000000000000";',
+ 'const WORKFLOW_DECISION_AUDIT_CHECKPOINT_KEY_ = "WORKFLOW_DECISION_AUDIT_CHECKPOINT_V2";',
  extractFunction("normalizeWorkflowDecisionAuditDate_"),
  extractFunction("computeWorkflowDecisionHashV2_"),
  extractFunction("verifyWorkflowDecisionAuditRows_"),
  extractFunction("compareWorkflowDecisionAuditCheckpoint_"),
- '({ genesis: WORKFLOW_DECISION_AUDIT_GENESIS_HASH_, hashV2: computeWorkflowDecisionHashV2_, verify: verifyWorkflowDecisionAuditRows_, compare: compareWorkflowDecisionAuditCheckpoint_ })'
+ extractFunction("getWorkflowDecisionAuditCheckpoint_"),
+ extractFunction("saveWorkflowDecisionAuditCheckpoint_"),
+ extractFunction("appendWorkflowDecisionAuditEvent_"),
+ '({ genesis: WORKFLOW_DECISION_AUDIT_GENESIS_HASH_, hashV2: computeWorkflowDecisionHashV2_, verify: verifyWorkflowDecisionAuditRows_, compare: compareWorkflowDecisionAuditCheckpoint_, append: appendWorkflowDecisionAuditEvent_, getCheckpoint: getWorkflowDecisionAuditCheckpoint_, saveCheckpoint: saveWorkflowDecisionAuditCheckpoint_ })'
 ].join("\n");
-const helpers = vm.runInNewContext(helperSource, {
- computeDocumentSHA256: value => crypto.createHash("sha256").update(String(value), "utf8").digest("hex")
-});
+function makePropertiesStore(options = {}) {
+ const values = new Map(); let setCount = 0;
+ return { getScriptProperties: () => ({
+  getProperty: key => values.has(key) ? values.get(key) : null,
+  setProperty: (key, value) => { setCount++; if (options.failSetAt === setCount) throw new Error("PROPERTY_WRITE_FAILED"); values.set(key, value); }
+ }), values, get setCount() { return setCount; } };
+}
+function createHelpers(properties = makePropertiesStore()) {
+ return vm.runInNewContext(helperSource, {
+  computeDocumentSHA256: value => crypto.createHash("sha256").update(String(value), "utf8").digest("hex"),
+  PropertiesService: properties
+ });
+}
+const helpers = createHelpers();
 function makeRow(id, previousHash, overrides = {}) {
  const row = Array(17).fill("");
  row[0] = id; row[1] = "SOL-1"; row[2] = overrides.stage || "Revisión General";
@@ -122,4 +137,54 @@ test("la verificación y las escrituras serializan el acceso con LockService", (
  assert.match(backend, /lock\.tryLock\(10000\)/);
  assert.match(backend, /lock\.tryLock\(15000\)/);
  assert.match(backend, /WORKFLOW_DECISION_DUPLICATE_CORRELATION/);
+});
+
+function makeMemorySheet() {
+ const rows = [Array(17).fill("")];
+ return {
+  rows,
+  getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }),
+  getLastRow: () => rows.length,
+  appendRow: row => rows.push(row.slice()),
+  deleteRow: number => rows.splice(number - 1, 1)
+ };
+}
+function newAuditEvent(id) {
+ const row = Array(17).fill("");
+ row[0] = id; row[1] = "SOL-1"; row[2] = "Etapa"; row[3] = "USER-1"; row[4] = "APROBADO";
+ row[5] = "Nota interna"; row[6] = "Nota pública"; row[7] = "2026-11-24T04:00:00.000Z";
+ row[8] = ""; row[11] = ""; row[12] = ""; row[13] = "2"; row[14] = "Dirección";
+ row[15] = "CORR-" + id; row[16] = "APPS_SCRIPT";
+ return row;
+}
+test("el append serializado crea hash, enlaza el evento y actualiza el checkpoint", () => {
+ const properties = makePropertiesStore(), h = createHelpers(properties), sheet = makeMemorySheet();
+ const result = h.append(sheet, newAuditEvent("DEC-1"), "USER-1");
+ const rows = sheet.getDataRange().getValues().slice(1);
+ const checkpoint = h.getCheckpoint();
+ assert.equal(result.rowNumber, 2); assert.equal(rows.length, 1);
+ assert.equal(rows[0][9], h.genesis); assert.match(rows[0][10], /^[a-f0-9]{64}$/);
+ assert.equal(checkpoint.totalEvents, 1); assert.equal(checkpoint.lastDecisionId, "DEC-1");
+});
+test("el append bloquea una cadena alterada antes de aceptar un nuevo evento", () => {
+ const h = createHelpers(), sheet = makeMemorySheet();
+ h.append(sheet, newAuditEvent("DEC-1"), "USER-1");
+ sheet.rows[1][5] = "Observación manipulada";
+ assert.throws(() => h.append(sheet, newAuditEvent("DEC-2"), "USER-1"), /WORKFLOW_AUDIT_CHAIN_BROKEN_BEFORE_APPEND/);
+ assert.equal(sheet.getLastRow(), 2);
+});
+test("el append detecta truncamiento de cola contra el checkpoint persistido", () => {
+ const h = createHelpers(), sheet = makeMemorySheet();
+ h.append(sheet, newAuditEvent("DEC-1"), "USER-1");
+ h.append(sheet, newAuditEvent("DEC-2"), "USER-1");
+ sheet.deleteRow(3);
+ assert.throws(() => h.append(sheet, newAuditEvent("DEC-3"), "USER-1"), /WORKFLOW_AUDIT_TRUSTED_CHECKPOINT_MISMATCH/);
+ assert.equal(sheet.getLastRow(), 2);
+});
+test("el append compensa la fila si falla la escritura del checkpoint", () => {
+ const properties = makePropertiesStore({ failSetAt: 2 }), h = createHelpers(properties), sheet = makeMemorySheet();
+ assert.throws(() => h.append(sheet, newAuditEvent("DEC-1"), "USER-1"), /PROPERTY_WRITE_FAILED/);
+ assert.equal(sheet.getLastRow(), 1);
+ const checkpoint = h.getCheckpoint();
+ assert.equal(checkpoint.totalEvents, 0);
 });
