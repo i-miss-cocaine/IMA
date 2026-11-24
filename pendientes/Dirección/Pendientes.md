@@ -3618,6 +3618,9 @@
 - **Ampliación C1.29 / FASE2-01:** En USER, ACCOUNTING, ACADEMIC y DEVELOPER, `createInterServiceEnvelope` y `verifyInterServiceEnvelope` solo aparecen como definiciones, sin consumidores. Los doPost de USER, ACCOUNTING, ACADEMIC, TASK, EXAM y DEVELOPER no llaman a `verifyInterServiceEnvelope` antes del despacho. La única salida server-to-server observada, `delegateToTaskService`, envía `{action,payload}` JSON plano por UrlFetchApp.fetch, sin sobre firmado.
 - **Criterios adicionales:** Migrar la ruta USER→TASK y todas las llamadas interservicio a un helper común; exigir sobre válido en el receptor antes del despacho; comprobar con dos deployments/proyectos reales que una llamada sin firma, con firma alterada o destino incorrecto se rechaza.
 
+- **Resolución normativa C3.006:** El criterio de exigir sobres HMAC y firma interservicio queda supersedido por Normas_Desarollo.md §17.8, que prohíbe introducir secretos, tokens compartidos o mecanismos personalizados de autenticación entre servicios. No implementar HMAC interservicio ni añadir propiedades secretas. Se conserva la sesión autenticada establecida en login, la resolución central de endpoints y los permisos explícitos por acción. La prueba real multi-cuenta sigue siendo pendiente de TASK-047 y no se considera aprobada.
+- **Estado:** Supersedida por norma vigente (NDASC §17.8); no implementar el protocolo HMAC personalizado.
+
 ### [AUD-NG-084] Implementar gestión segura de secretos por servicio con rotación y revocación
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-084 (TASK-048 / F23-Task05)
 - **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs; PropertiesService/gestor de secretos

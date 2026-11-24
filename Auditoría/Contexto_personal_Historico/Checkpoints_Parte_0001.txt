@@ -64,3 +64,15 @@ C3.005 — IMA-ITER-20261124-003
 - Estado: AUD-NG-082 completada. TASK-047 permanece Pendiente por verificación autorizada multi-cuenta/deployments reales.
 - Siguiente acción: resolver formalmente los hallazgos HMAC heredados contra Normas_Desarollo.md §17.8 y continuar los requisitos que no contradigan la norma vigente.
 ===============================================================================
+
+===============================================================================
+C3.006 — IMA-ITER-20261124-004
+===============================================================================
+- Objetivo: Resolver AUD-NG-083: sobres HMAC interservicio incompatibles con NDASC §17.8.
+- Resolución: El criterio de exigir sobres HMAC y firma interservicio queda supersedido por Normas_Desarollo.md §17.8, que prohíbe introducir secretos, tokens compartidos o mecanismos personalizados de autenticación entre servicios. No implementar HMAC interservicio ni añadir propiedades secretas. Se conserva la sesión autenticada establecida en login, la resolución central de endpoints y los permisos explícitos por acción. La prueba real multi-cuenta sigue siendo pendiente de TASK-047 y no se considera aprobada.
+- Decisión: preservar el requisito original como evidencia histórica, pero no implementarlo ni tratarlo como bloqueo porque contradice la norma operativa única vigente.
+- Verificación: lectura de Normas_Desarollo.md §17.8 y del alcance original AUD-NG-083; no se modificó código ni se ejecutaron pruebas de producto en esta unidad documental.
+- Estado: resuelto por supersesión normativa; no se declara una prueba de HMAC aprobada.
+- HEAD de entrada: f166162387914d3b62aa9eafeedc3bab15cf12b3.
+- Siguiente acción: continuar con requisitos compatibles de TASK-047/TASK-048 y mantener pendiente la prueba autorizada multi-cuenta de TASK-047.
+===============================================================================

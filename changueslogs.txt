@@ -4718,3 +4718,11 @@ C3.005 — IMA-ITER-20261124-003
 - TASK-047 sigue Pendiente: falta prueba autorizada entre dos cuentas Google y deployments Apps Script reales. No se declara satisfecha por pruebas locales/mocks.
 - Rama: NG_beta_0.0.0.1_work. HEAD de evidencia: 948410f71759986842169a7380d4c5be781f83f4.
 ===============================================================================
+
+===============================================================================
+C3.006 — IMA-ITER-20261124-004
+===============================================================================
+- AUD-NG-083 resuelta por supersesión normativa: no se implementarán sobres HMAC, secretos personalizados ni anti-replay HMAC interservicio, por incompatibilidad con Normas_Desarollo.md §17.8.
+- Los requisitos originales se conservan como antecedentes; no se declara aprobada ninguna prueba HMAC ni se afirman propiedades/deployments reales.
+- Rama: NG_beta_0.0.0.1_work. HEAD de entrada: f166162387914d3b62aa9eafeedc3bab15cf12b3.
+===============================================================================
