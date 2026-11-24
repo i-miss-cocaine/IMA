@@ -4639,3 +4639,12 @@ C1.971 — IMA-EXEC-20261124-CI-ALLOWLIST-ROLE-TEST
 - Academic Wellbeing falló únicamente en diff guard por allowlist sin el nuevo test; Node.js/contrato académico no se ejecutaron.
 - Se amplió path filter/allowlist sin debilitar aserciones; nueva ejecución pendiente.
 ===============================================================================
+
+===============================================================================
+C1.972 — IMA-EXEC-20261124-CI-ROLE-BOUNDARY-PASS
+===============================================================================
+- Developer Service Registry Contract run 45320034556 SUCCESS, incluidos los contratos UI y de registro.
+- Academic Wellbeing run 45320213291 SUCCESS tras corregir allowlist; el fallo anterior 45320034509 queda como histórico.
+- Regional Formatting run 45320034406 y Department Scope run 45320034461 SUCCESS.
+- Rama base intacta. TASK-047 sigue En ejecución.
+===============================================================================

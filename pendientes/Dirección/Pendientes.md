@@ -3588,7 +3588,8 @@
 - **Compatibilidad de sesión:** no se agregan prompts interactivos ni se solicita un segundo login; el backend conserva la verificación silenciosa del token firmado y los permisos de acción en el punto de entrada. No se elimina esa verificación en esta iteración porque forma parte de AUD-NG-082 y del contrato de acciones protegidas.
 - **Verificación C1.969:** Developer Service Registry Contract run 45319443700 — SUCCESS; Node.js 24, sintaxis Apps Script/contrato y pruebas de registro PASS. Regional Formatting, Department Scope, Hierarchical Configuration, Accounting Import Preflight y Academic Wellbeing Contract también reportaron SUCCESS en el mismo HEAD.
 - **Corrección C1.970:** la consola se restringe a usuarios con rol Desarrollador y sesión de login presente; Administrador, Dirección, otros roles y acceso anónimo no heredan acceso al plano técnico. Se añade contrato Node.js de la barrera UI.
-- **Estado:** En ejecución (C1.970; queda pendiente orquestación interservicio, historial de cambios de propietario/recursos y conciliación de despliegue Apps Script entre cuentas).
+- **Verificación C1.972:** Developer Service Registry Contract 45320034556, Academic Wellbeing 45320213291, Regional Formatting 45320034406 y Department Scope 45320034461 — SUCCESS. Se corrigió la allowlist del test de límite UI; el fallo 45320034509 queda registrado como histórico.
+- **Estado:** En ejecución (C1.972; queda pendiente edición/auditoría de metadatos de servicios, orquestación interservicio y conciliación real de despliegues Apps Script entre cuentas).
 
 ### [AUD-NG-082] Exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-082 (TASK-047 / F23-Task04)

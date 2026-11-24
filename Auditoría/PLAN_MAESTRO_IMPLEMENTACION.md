@@ -6517,3 +6517,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Se actualizó únicamente el path filter y la allowlist para reconocer ese archivo de prueba ya incorporado en la rama. No se debilitaron las aserciones del workflow.
 - Se requiere una nueva ejecución del workflow académico para confirmar la corrección.
 - HEAD de entrada: 65c40185741f2f25e87a98351887df050eecf684; rama base sin cambios.
+## 10.92 CI de límite de consola y guardia académica aprobadas — C1.972
+
+- Developer Service Registry Contract run 45320034556: SUCCESS. Incluyó Node.js 24, sintaxis de backend DEVELOPER, sintaxis de js/developer.js, sintaxis del contrato UI, contrato de registro y contrato de acceso por rol.
+- Academic Wellbeing Confidentiality Contract run 45320213291: SUCCESS. Guard de diff, Node.js 24, sintaxis del servicio académico, sintaxis del contrato y ejecución del contrato PASS.
+- Regional Formatting Contract run 45320034406: SUCCESS.
+- Department Scope Contract run 45320034461: SUCCESS.
+- El run 45320034509 permanece como fallo histórico por allowlist incompleta; su causa fue corregida en 1bfec59 y el run 45320213291 confirma la corrección.
+- HEAD de entrada: 1bfec59b8d80669d30104f1b60b74eb6f5b803d1; rama base verificada sin cambios.
+- TASK-047 continúa En ejecución: la UI/registro y separación de roles están implementados y verificados localmente; faltan operaciones de actualización del propietario/recursos, orquestación entre servicios y validación real entre cuentas/deployments.

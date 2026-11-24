@@ -443,3 +443,5 @@ Los checkpoints posteriores se registran aquí.
 | C1.970 | IMA-EXEC-20261124-TASK047-ROLE-BOUNDARY-02 | Consola técnica requiere sesión login + rol Desarrollador; contrato Node.js de acceso UI añadido; CI pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.970 | C1.969 | Confirmar Developer Service Registry Contract y ejecutar siguiente alcance de TASK-047 |
 
 | C1.971 | IMA-EXEC-20261124-CI-ALLOWLIST-ROLE-TEST | Developer Registry/UI tests PASS; Academic Wellbeing diff guard detectó nuevo test no permitido; allowlist alineada, nueva ejecución pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.971 | C1.970 | Reejecutar Academic Wellbeing Contract y continuar TASK-047 |
+
+| C1.972 | IMA-EXEC-20261124-CI-ROLE-BOUNDARY-PASS | Developer Registry/UI y Academic Wellbeing PASS; Regional Formatting y Department Scope PASS; TASK-047 sigue En ejecución | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.972 | C1.971 | Implementar edición/auditoría de metadatos de servicios y continuar TASK-047 |

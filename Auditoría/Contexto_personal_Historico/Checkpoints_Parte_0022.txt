@@ -165,3 +165,18 @@ Verificar la nueva ejecución de GitHub Actions en el HEAD posterior a esta corr
 - Corrección: agregar el test a path filter y allowlist; no se cambia la lógica ni se reducen verificaciones.
 - Reejecutar workflow académico y verificar PASS antes de continuar.
 ===============================================================================
+
+===============================================================================
+### C1.972 — IMA-EXEC-20261124-CI-ROLE-BOUNDARY-PASS
+===============================================================================
+
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD de entrada: 1bfec59b8d80669d30104f1b60b74eb6f5b803d1.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, intacta.
+- Developer Service Registry Contract run 45320034556: SUCCESS; Node.js 24, sintaxis Apps Script, sintaxis developer.js, sintaxis del test de consola, contrato de registro y contrato de rol PASS.
+- Academic Wellbeing Confidentiality Contract run 45320213291: SUCCESS; diff guard, Node.js 24, sintaxis academic-service, sintaxis del test y contrato PASS.
+- Regional Formatting Contract run 45320034406: SUCCESS.
+- Department Scope Contract run 45320034461: SUCCESS.
+- Run histórico 45320034509 FAIL por no incluir el nuevo test en la allowlist; corregido en commit 1bfec59 y reejecutado con SUCCESS.
+- TASK-047 sigue En ejecución; la UI de registro y el límite de rol Desarrollador están implementados. Quedan edición/auditoría de metadatos, orquestación interservicio y verificación real de despliegues entre cuentas.
+===============================================================================
