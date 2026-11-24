@@ -14637,7 +14637,11 @@ function assignRoleScope(payload) {
     if (isSubstitute && !responsibility.permiteSuplencia) return { status: "error", code: "ROLE_SUBSTITUTION_NOT_ALLOWED" };
     if (!end.date && !isSubstitute) {
       var defaultEnd = new Date(start.date);
+      var startDay = defaultEnd.getDate();
+      defaultEnd.setDate(1);
       defaultEnd.setMonth(defaultEnd.getMonth() + (responsibility.validityMonths || 12));
+      var lastDayOfTargetMonth = new Date(defaultEnd.getFullYear(), defaultEnd.getMonth() + 1, 0).getDate();
+      defaultEnd.setDate(Math.min(startDay, lastDayOfTargetMonth));
       defaultEnd.setHours(23, 59, 59, 999);
       end = { valid: true, date: defaultEnd };
     }

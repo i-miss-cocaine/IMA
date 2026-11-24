@@ -311,3 +311,11 @@ test("manageInternalRoleCatalog no modifica el catálogo si LockService está oc
   assert.equal(roles.rows.length, 1);
   assert.equal(releases, 0);
 });
+
+test("la vigencia predeterminada limita el día al último día del mes destino", () => {
+  const { context, assignments, roles } = assignmentContext();
+  roles.rows[1][7] = 1;
+  const result = assign(context, "EMP-1", "ROL-1", { fechaInicio: "2028-01-31", fechaFin: "" });
+  assert.equal(result.status, "success");
+  assert.match(String(assignments.rows[1][9]), /^2028-02-29/);
+});
