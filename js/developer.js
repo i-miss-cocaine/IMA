@@ -608,7 +608,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const normalized = roles.map(normalizeServiceRole);
         const hasParent = normalized.some(role => /padre|madre/.test(role));
         const hasStudent = normalized.some(role => /estudiante|alumno/.test(role));
-        const utilities = normalized.filter(role => /tienda|cafeteria|transporte/.test(role));
+        const utilities = normalized.filter(role => /tienda|cafeteria|transport/.test(role));
         if (roles.length === 1 && /(docente|profesor|coordinador|secretaria|contador)/.test(normalized[0])) return 'INDIVIDUAL';
         if (roles.length === 2 && hasParent && hasStudent) return 'SHARED_PARENT_STUDENT';
         if (roles.length >= 2 && roles.length <= 3 && utilities.length === roles.length) return 'SHARED_UTILITY';
@@ -622,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function () {
         serviceRegistryRows.replaceChildren();
         if (!Array.isArray(registry) || !registry.length) {
             const tr = document.createElement('tr'), td = document.createElement('td');
-            td.colSpan = 6; td.className = 'p-4 text-slate-500'; td.textContent = 'No hay servicios registrados.';
+            td.colSpan = 7; td.className = 'p-4 text-slate-500'; td.textContent = 'No hay servicios registrados.';
             tr.appendChild(td); serviceRegistryRows.appendChild(tr); return;
         }
         registry.forEach(service => {
@@ -632,6 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 Array.isArray(service.roles) ? service.roles.join(', ') : 'Metadatos pendientes',
                 String(service.serviceMode || 'LEGACY'),
                 String(service.cuentaPropietaria || ''),
+                String(service.endpointUrl || '') + ' / ' + String(service.scriptProjectId || 'sin proyecto'),
                 String(service.spreadsheetAsociado || '') + ' / ' + String(service.driveFolderId || 'sin carpeta'),
                 String(service.state || '') + (service.metadataState === 'LEGACY_METADATA_PENDING' ? ' · completar metadatos' : '')
             ];
@@ -650,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const registryResponse = results[0], roleResponse = results[1];
             if (!registryResponse || registryResponse.status !== 'success') throw new Error(registryResponse && (registryResponse.code || registryResponse.message) || 'No se pudo cargar el registro maestro.');
             if (!roleResponse || roleResponse.status !== 'success' || !Array.isArray(roleResponse.roles)) throw new Error(roleResponse && (roleResponse.code || roleResponse.message) || 'No se pudo cargar el catálogo de roles existente.');
-            const roleOptions = roleResponse.roles.filter(role => /(docente|profesor|coordinador|secretaria|contador|padre|madre|estudiante|alumno|tienda|cafeteria|transporte)/.test(normalizeServiceRole(role)));
+            const roleOptions = roleResponse.roles.filter(role => /(docente|profesor|coordinador|secretaria|contador|padre|madre|estudiante|alumno|tienda|cafeteria|transport)/.test(normalizeServiceRole(role)));
             serviceRegistryRoleSelect.replaceChildren();
             roleOptions.forEach(role => { const option = document.createElement('option'); option.value = role; option.textContent = role; serviceRegistryRoleSelect.appendChild(option); });
             renderServiceRegistry(registryResponse.registry || []);

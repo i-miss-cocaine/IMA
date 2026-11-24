@@ -403,7 +403,7 @@ result = registerService(h, { serviceId: "SVC-FAMILY", roles: ["Padre", "Estudia
 assert.equal(result.status, "success");
 assert.deepEqual(h.getCentralServiceRegistry({}).registry[0].roles, ["Padre", "Estudiante"]);
 h = harness();
-result = registerService(h, { serviceId: "SVC-UTILITY", roles: ["Encargado de tienda", "Encargado de cafetería", "Encargado de transporte"], serviceMode: "SHARED_UTILITY" });
+result = registerService(h, { serviceId: "SVC-UTILITY", roles: ["Encargado de tienda", "Encargado de cafetería", "Transportista"], serviceMode: "SHARED_UTILITY" });
 assert.equal(result.status, "success");
 assert.equal(h.getCentralServiceRegistry({}).registry[0].serviceMode, "SHARED_UTILITY");
 h = harness();
@@ -421,6 +421,9 @@ assert.throws(() => registerService(h, { serviceId: "SVC-POS-2", positionId: "PO
 assert.equal(h.sheets.CatalogoServicios.rows.length, 2);
 h = harness();
 result = h.doPost({ postData: { contents: JSON.stringify(Object.assign(validServicePayload({ serviceId: "SVC-ADMIN" }), { action: "registerServiceInstance", sessionToken: "administrator" })) } });
+h = harness();
+result = h.doPost({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", sessionToken: "director" }) } });
+assert.equal(result.code, "PERMISSION_DENIED", "Director must not inherit Developer service registry access");
 assert.equal(result.code, "PERMISSION_DENIED");
 assert.equal(Object.keys(h.sheets).length, 0);
 const developerDashboard = fs.readFileSync("developer-dashboard.html", "utf8");

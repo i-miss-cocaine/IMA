@@ -3126,7 +3126,7 @@ function registerServiceInstance_(payload, verifiedActorId) {
   var roleTokens = normalizedRoles.map(function(role) { return role.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); });
   var parentRole = roleTokens.some(function(role) { return /padre|madre/.test(role); });
   var studentRole = roleTokens.some(function(role) { return /estudiante|alumno/.test(role); });
-  var utilityRoles = roleTokens.filter(function(role) { return /tienda|cafeteria|transporte/.test(role); });
+  var utilityRoles = roleTokens.filter(function(role) { return /tienda|cafeteria|transport/.test(role); });
   if (mode === "INDIVIDUAL") {
     if (normalizedRoles.length !== 1 || !/(docente|profesor|coordinador|secretaria|contador)/.test(roleTokens[0])) throw new Error("SERVICE_ROLE_MODE_MISMATCH");
   } else if (mode === "SHARED_PARENT_STUDENT") {
