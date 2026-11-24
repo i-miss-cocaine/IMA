@@ -2573,3 +2573,29 @@ BETA-F18-007 — F18-TASK07: ciclo de compromisos presupuestarios de órdenes de
 - **Evidencia requerida:** SHA del despliegue, IDs sintéticos, snapshots antes/después de Kardex/valoración/reservas/transferencias, correlación de cada TRF, pruebas allow/deny por rol/ámbito, intercalación concurrente, evidencia de rollback y logs saneados.
 - **Tarea vinculada:** TASK-021 / C1.960.
 ===============================================================================
+
+===============================================================================
+## BETA-FUNC-133 — ACADEMIC: aislamiento de expedientes de bienestar y citas confidenciales
+- **Módulo/roles:** ACADEMIC; Secretaría, Docente, Orientación/Consejería, Dirección, Administración, Estudiante y Tutor/Responsable, siempre con sesión real y permisos/ámbito efectivos.
+- **Tarea/requisito:** F11-TASK01 / AUD-NG-383 — aislamiento por identidad, rol, ámbito, asignación y relación académica.
+- **Objetivo:** comprobar en Apps Script/Sheets desplegados que las rutas de expedientes y citas no exponen ni modifican notas privadas fuera del ámbito autorizado.
+- **Prioridad:** P0.
+- **Precondiciones:** despliegue controlado con el código de F11-TASK01; hojas reales CasosSeguimiento, CitasOrientacion, AsignacionesAmbitosRoles, RelacionesFamiliares y ExpedientesEstudiantes; estudiantes, tutores, docentes y orientadores sintéticos; ámbitos separados; sesiones de prueba emitidas por el sistema. No usar personas ni expedientes reales.
+- **Pasos:**
+  1. Crear un caso sintético de Consejería en CasosSeguimiento con acciones/actas privadas y una cita en CitasOrientacion con NotasConfidenciales.
+  2. Como Secretaría, intentar leer/actualizar el caso y manipular authRole/rolSolicitante a Director/Admin; verificar denegación y ausencia de escrituras.
+  3. Como orientador sin ámbito del estudiante, intentar lectura, nota, acta, derivación y cambio de compromiso; verificar denegación. Repetir con ámbito válido y comprobar solo los casos dentro del ámbito.
+  4. Cambiar ResponsableID al ID del actor sin crear asignación ni ámbito; verificar que no concede acceso.
+  5. Consultar citas como orientador asignado y no asignado; solo el asignado con ámbito debe ver notas confidenciales. Probar Dirección dentro/fuera de ámbito y Administración.
+  6. Como estudiante, consultar citas propias y ajenas; como tutor, probar relación vigente con permiso académico y relación inexistente/revocada. Los usuarios válidos solo reciben sus citas y notasConfidenciales debe mostrarse como ***CONFIDENCIAL***.
+  7. Activar NIVEL_VISIBILIDAD_CONSEJERIA=COMPARTIDO_DOCENTE e intentar leer como Docente; el valor de configuración no debe ampliar acceso.
+  8. Enviar acciones como JSON válido, JSON string, objeto no permitido y JSON malformado; verificar normalización o rechazo fail-closed sin persistencia parcial.
+  9. Ejecutar escrituras concurrentes sobre el mismo caso, reintentos y IDs repetidos; verificar ScriptLock, ausencia de pérdida de notas, IDs únicos y respuesta WELFARE_WRITE_BUSY cuando proceda.
+  10. Ejecutar el informe consolidado con casos confidenciales dentro/fuera de ámbito; no debe devolver conteos de casos excluidos.
+  11. Revisar LogsSistema: deben existir eventos de denegación/contención, sin notas, actas, derivaciones, tokens ni payload confidencial.
+- **Resultado esperado:** todos los casos allow/deny coinciden con identidad, rol, ámbito y relación real; no hay lecturas/escrituras cruzadas; las notas privadas nunca aparecen a estudiantes/tutores ni a roles no autorizados; no hay pérdida por concurrencia; la auditoría no contiene contenido confidencial.
+- **Estado:** PENDIENTE DE BETA.
+- **Implementación/contratos locales:** completados en C1.962; Node.js 24 específico 26/26 PASS, suite Node.js completa 26/26 PASS, sintaxis y workflows CI SUCCESS. No se ha ejecutado contra Apps Script/Sheets reales.
+- **Evidencia requerida:** SHA exacto del despliegue, IDs sintéticos, snapshots antes/después de CasosSeguimiento/CitasOrientacion/RelacionesFamiliares, matriz allow/deny por rol/ámbito, intercalación concurrente, logs saneados y verificación de que no contienen notas privadas.
+- **Tarea vinculada:** F11-TASK01 / AUD-NG-383 / C1.962.
+===============================================================================

@@ -1111,3 +1111,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - TASK-502 y TASK-506 siguen En ejecución.
 - Siguiente: inventario action/resource de ACADEMIC y handlers restantes de ACCOUNTING/TASK/EXAM.
 ===============================================================================
+
+
+## Resolución C1.962 — AUD-NG-383 / F11-TASK01
+- Estado de implementación: RESUELTO en código/CI; la tarea F11-TASK01 existente se marca completada en su backlog.
+- Evidencia: HEAD de implementación 0aa33574d9112acb0757c18b4f78ca8595d84aeb; 26/26 pruebas específicas, 26/26 suite Node.js completa, sintaxis Apps Script/JS, diff guard y workflows de seguridad PASS.
+- Controles: identidad firmada, rol verificado, ámbito académico por estudiante, no confiar en ResponsableID, relación estudiante/tutor verificada, notas confidenciales redactadas, JSON fail-closed, ScriptLock, UUID y auditoría sin contenido confidencial.
+- Esquema: RegistrosOrientacion no existe; fuentes reales CasosSeguimiento y CitasOrientacion. No se creó esquema duplicado.
+- Pendiente: BETA-FUNC-133 para despliegue real con datos sintéticos; no bloquea el cierre de código/CI.

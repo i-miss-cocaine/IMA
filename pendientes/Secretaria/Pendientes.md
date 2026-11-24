@@ -35,37 +35,41 @@
 ---
 
 <!-- ID: F11-TASK01 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
-### [ ] [F11-TASK01] Garantizar el aislamiento y la confidencialidad de los expedientes de bienestar
+### [x] [F11-TASK01] Garantizar el aislamiento y la confidencialidad de los expedientes de bienestar
 
 **Otros títulos originales:**
 - Fortalecer la seguridad, privacidad y aislamiento de expedientes de bienestar estudiantil
 - **Hallazgo de origen:** sección 2.C.3 (seguridad/confidencialidad de observaciones de Consejería y Orientación) y sección 5.8-9 (riesgo P0 de privacidad).
 - **Severidad:** Crítica. **Objetivo:** impedir que docentes generales u otros roles no autorizados accedan a notas, expedientes y seguimientos de bienestar.
 - **Acción ejecutable:** verificar y completar controles de autorización por rol, alcance y relación institucional en cada lectura/escritura; aislar observaciones confidenciales; registrar intentos no autorizados y probar accesos positivos y negativos.
-- **Archivos/módulos:** `backend/academic-service/Code.gs`, `CasosSeguimiento`, `RegistrosOrientacion`, endpoints y vistas consumidoras.
+- **Archivos/módulos:** `backend/academic-service/Code.gs`, `CasosSeguimiento`, `CitasOrientacion`, endpoints y vistas consumidoras.
 - **Dependencias/riesgos:** modelo de roles y permisos, identidad autenticada y auditoría de accesos; exposición de datos sensibles si una ruta omite el control.
 - **Alcance:** expedientes y observaciones de bienestar/orientación; no ampliar permisos generales por conveniencia.
 - **Criterios de aceptación:** roles no autorizados no pueden consultar ni modificar datos confidenciales por ninguna ruta; los accesos autorizados conservan la funcionalidad; cada rechazo queda trazado sin revelar el contenido protegido.
-- **Prioridad:** P0. **Estado:** Pendiente (estado original del backlog).
-- **Evidencia de cierre:** pendiente. **Discrepancia:** sección 2.C.3 declara seguridad completa y verificada y la vincula con F10-Task01, mientras la conclusión consolidada mantiene el riesgo P0. Se requiere reconciliar la evidencia antes de cambiar el estado.
+- **Prioridad:** P0. **Estado:** Completada en código/CI (C1.962); pendiente de validación beta real.
+- **Evidencia de cierre:** commit de implementación 0aa33574d9112acb0757c18b4f78ca8595d84aeb; contrato Node.js 24: 26/26 PASS; suite Node.js de repositorio: 26/26 PASS; sintaxis Apps Script/JS y git diff --check PASS; Department Scope, Exam-Service security, Academic-Service auth, SACE, Task-Service, Hierarchical Configuration, Department Reference Consumers y Accounting Import Preflight SUCCESS. **Discrepancia:** reconciliada. RegistrosOrientacion no existe en el backend; las fuentes reales protegidas son CasosSeguimiento (acciones/actas) y CitasOrientacion (notas confidenciales). No se creó una hoja ficticia.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área II (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Privacidad y protección de datos sensibles de menores)
 - **Archivos Involucrados:**
   - `backend/academic-service/Code.gs`
   - `backend/user-service/Code.gs`
-- **Dependencias Expuestas:** CasosSeguimiento, RegistrosOrientacion, AsignacionesAmbitosRoles
+- **Dependencias Expuestas:** CasosSeguimiento, CitasOrientacion, AsignacionesAmbitosRoles
 - **Descripción del Alcance:**
   Garantizar el aislamiento estricto de notas confidenciales de orientación y casos de bienestar respecto a docentes generales, bloqueando accesos por identificador manipulado y registrando auditoría `UNAUTHORIZED_ACCESS_ATTEMPT`.
 - **Criterios de Aceptación:**
   - Un docente sin rol autorizado no puede consultar notas privadas de orientación de un estudiante.
-- **Estado:** Pendiente
+- **Estado:** Completada en código/CI (C1.962); BETA-FUNC-133 pendiente de ejecución contra Apps Script/Sheets reales.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 83-98; clave F11-Task03; asignación única: Secretaria -->
 
 ---
 
 <!-- ID: F19-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md -->
+- **Cierre técnico C1.962:** identidad firmada y rol verificado en cada handler; autorización por ámbito académico efectivo; ResponsableID no se acepta como prueba de asignación; citas verifican orientador asignado y ámbito; estudiante/tutor solo ve sus citas propias/vinculadas tras validar relación y permiso académico, con notas confidenciales redactadas.
+- **Protecciones adicionales:** payload de acciones JSON validado y fail-closed; ScriptLock en mutaciones; IDs UUID; auditoría de denegaciones sin notas privadas; reportes agregados sin conteos de casos excluidos; snapshots de casos reutilizados en lecturas por lotes.
+- **Pendiente no bloqueante:** BETA-FUNC-133 requiere entorno desplegado y datos sintéticos; no se desplegó ni se consultaron hojas reales.
+
 ### [ ] [F19-TASK02] Implementar devolución y recepción formal de activos bajo custodia
 - **Hallazgo de origen:** secciones B, C.2.6, D, E/F19-06 y registro posterior TASK-020.
 - **Severidad:** Crítica. **Objetivo:** cerrar correctamente la custodia y liberar o enviar a mantenimiento el activo devuelto.

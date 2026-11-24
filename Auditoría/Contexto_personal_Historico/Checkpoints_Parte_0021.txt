@@ -681,3 +681,38 @@
 - No se inicia trabajo de corte financiero ni de protección de notas históricas mientras las dependencias no estén resueltas.
 - Siguiente acción: seleccionar el próximo P0 realmente elegible del Plan Maestro, evitando duplicar tareas ya cubiertas por TASK-068 y sin saltar dependencias.
 ===============================================================================
+
+
+C1.962 — IMA-EXEC-20261123-F11-TASK01-WELFARE-CONFIDENTIALITY-CLOSE
+===============================================================================
+
+### Continuidad y selección
+- Se verificó el checkpoint anterior C1.961. TASK-072 y F29-TASK02/03 permanecen bloqueadas por dependencias/solapamiento. F11-TASK01 era un P0 pendiente con dependencia declarada — y un hallazgo crítico AUD-NG-383 sin evidencia de cierre en el HEAD previo.
+- Se seleccionó F11-TASK01; no se duplicó la tarea ni se creó un requisito administrativo/institucional.
+
+### Implementación
+- Identidad firmada y rol verificado en cada handler; el rol enviado por cliente (authRole, rolSolicitante) no concede privilegios.
+- Los expedientes confidenciales requieren ámbito académico validado para el estudiante. ResponsableID no se considera prueba de autorización; las citas requieren OrientadorUserId coincidente y ámbito.
+- Estudiantes y tutores solo consultan citas propias/vinculadas tras validar titularidad/relación y permiso académico; las notas confidenciales se sustituyen por ***CONFIDENCIAL***.
+- Payloads de acciones JSON se validan como listas y fallan cerrados ante contenido malformado; mutaciones serializadas con ScriptLock; IDs únicos con UUID.
+- Denegaciones y contención registradas sin notas privadas; informes agregados no revelan conteos de casos excluidos; lecturas masivas reutilizan snapshots.
+- Esquema reconciliado: RegistrosOrientacion no existe; los datos reales están en CasosSeguimiento y CitasOrientacion. No se creó hoja paralela.
+
+### Archivos y evidencia
+- Código: backend/academic-service/Code.gs.
+- Contratos: tests/security/academic-wellbeing-confidentiality.test.js.
+- CI: .github/workflows/academic-wellbeing-confidentiality.yml y ajuste de disparadores en .github/workflows/exam-service-security-contract.yml.
+- Contrato Node.js 24: 26/26 PASS. Suite Node.js del repositorio: 26/26 PASS. Sintaxis Apps Script/JS PASS. git diff --check y guardia de archivos permitidos PASS.
+- GitHub Actions en HEAD 0aa33574d9112acb0757c18b4f78ca8595d84aeb: Academic Wellbeing 45297719527 SUCCESS; Exam-Service security 45297719507 SUCCESS; Department Scope 45297719510 SUCCESS; Academic-Service auth 45297719505 SUCCESS; SACE 45297719500 SUCCESS; Task-Service 45297719498 SUCCESS; Hierarchical Configuration 45297719514 SUCCESS; Department Reference Consumers 45297719595 SUCCESS; Accounting Import Preflight 45297719620 SUCCESS.
+- Hubo ejecuciones intermedias fallidas por discrepancias del harness/normalización de códigos; fueron corregidas y no se cuentan como PASS. La evidencia de cierre corresponde solo a la ejecución final sobre el HEAD indicado.
+- No se desplegó Apps Script ni se ejecutaron pruebas con Sheets/Drive reales.
+
+### Estado
+- F11-TASK01: COMPLETADA en código/CI.
+- AUD-NG-383: RESUELTO en código/CI.
+- BETA-FUNC-133: PENDIENTE DE BETA; validación real con datos sintéticos.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- HEAD de implementación verificado: 0aa33574d9112acb0757c18b4f78ca8595d84aeb.
+- Rama base NG_beta_0.0.0.1 no modificada.
+- Siguiente P0 a revisar: TASK-030, aislamiento de datos de transporte; verificar primero su alcance y dependencias.
+===============================================================================

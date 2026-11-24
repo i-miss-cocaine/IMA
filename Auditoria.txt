@@ -3321,3 +3321,13 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 
 
 [2026-11-22 | F18-TASK01 / C1.948] Se cierra la tarea técnica P0 de recepciones parciales, ya implementada en C1.944 y verificada de nuevo: acumulación por partida, saldo pendiente, estado parcial/total, rechazo de sobre-recepción, idempotencia y rollback de Kardex/valoración/recepción/orden. Department Scope 44985649501 SUCCESS (139 pasos). La nota de siguiente tarea de C1.947 se corrige: F18-TASK01 y F18-TASK05 seguían sin cierre en Pendientes; completar ambas antes de F18-TASK06.
+
+
+## Resolución C1.962 — AUD-NG-383 / F11-TASK01
+
+- **Estado:** RESUELTO EN CÓDIGO/CI; BETA-FUNC-133 pendiente.
+- **HEAD de implementación:** 0aa33574d9112acb0757c18b4f78ca8595d84aeb, rama NG_beta_0.0.0.1_work.
+- **Resultado:** identidad/rol verificados; ámbito académico por estudiante; ResponsableID no concede acceso; citas asignadas por OrientadorUserId y ámbito; titularidad/relación de estudiante/tutor validada; notas confidenciales redactadas; JSON fail-closed; ScriptLock y UUID; auditoría sin contenido privado; reportes sin conteos excluidos.
+- **Esquema:** RegistrosOrientacion no existe. Se protegieron las fuentes reales CasosSeguimiento y CitasOrientacion; no se creó una hoja duplicada.
+- **Pruebas:** Node.js 24 específico 26/26 PASS; suite Node.js completa 26/26 PASS; sintaxis, diff check y guardia de archivos PASS. Actions: 45297719527, 45297719507, 45297719510, 45297719505, 45297719500, 45297719498, 45297719514, 45297719595 y 45297719620 SUCCESS.
+- **Límite:** no hubo despliegue ni pruebas contra Apps Script/Sheets/Drive reales; BETA-FUNC-133 conserva la verificación pendiente.
