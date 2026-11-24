@@ -180,3 +180,27 @@ Verificar la nueva ejecución de GitHub Actions en el HEAD posterior a esta corr
 - Run histórico 45320034509 FAIL por no incluir el nuevo test en la allowlist; corregido en commit 1bfec59 y reejecutado con SUCCESS.
 - TASK-047 sigue En ejecución; la UI de registro y el límite de rol Desarrollador están implementados. Quedan edición/auditoría de metadatos, orquestación interservicio y verificación real de despliegues entre cuentas.
 ===============================================================================
+
+===============================================================================
+### C1.968 — IMA-EXEC-20261123-CI-WHITESPACE-RECHECK-PASS (backfill)
+===============================================================================
+
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD verificado en el cierre de la corrección C1.967: 22741dbeffcaa9ea775291f153bd42b10dbcf4ad.
+- Academic Wellbeing Contract run 45317870853 — SUCCESS.
+- git diff --check, Node.js 24, sintaxis del servicio académico y contrato PASS.
+- Se registra tardíamente para cerrar el salto numérico del índice; no se alteran ni eliminan checkpoints anteriores.
+
+===============================================================================
+### C1.969 — IMA-EXEC-20261123-TASK047-REGISTRY-01 (backfill)
+===============================================================================
+
+- Rama: NG_beta_0.0.0.1_work.
+- Commits de implementación: d97d9f9f3075bc04ff531c100f1848940f22522d; 3df1910192f48d897c528cc087caef53e0787519; 327a8bd3b4d5d4a0eb39aa5569fb7f15b66ff499; 21b6280ea0460f944fb84ad759dfd0a5e6c4da43.
+- Se implementó la interfaz de registro/listado de servicios por rol, metadatos v2 de puesto/roles/modalidad/proyecto Apps Script/Spreadsheet/Drive y migración append-only del encabezado v1.
+- Developer Service Registry Contract run 45319976509 — SUCCESS.
+- Se rechazó wildcard de Administrador en el servicio DEVELOPER; la consola se separó del rol Administrador.
+- Pendiente: orquestación interservicio, cambios de propietario/recursos/estado y pruebas reales entre cuentas. TASK-047 continúa En ejecución.
+- Backfill del checkpoint omitido; no se reescriben los registros C1.970–C1.972.
+
+===============================================================================

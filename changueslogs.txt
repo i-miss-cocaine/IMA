@@ -4648,3 +4648,13 @@ C1.972 — IMA-EXEC-20261124-CI-ROLE-BOUNDARY-PASS
 - Regional Formatting run 45320034406 y Department Scope run 45320034461 SUCCESS.
 - Rama base intacta. TASK-047 sigue En ejecución.
 ===============================================================================
+===============================================================================
+C1.968 — IMA-EXEC-20261123-CI-WHITESPACE-RECHECK-PASS (backfill)
+===============================================================================
+- Academic Wellbeing run 45317870853 SUCCESS; diff-check y contrato PASS tras corrección EOF C1.967.
+===============================================================================
+C1.969 — IMA-EXEC-20261123-TASK047-REGISTRY-01 (backfill)
+===============================================================================
+- Registro de servicios por rol, metadatos v2 y migración append-only del catálogo v1; Developer Service Registry run 45319976509 SUCCESS.
+- TASK-047 sigue En ejecución; orquestación interservicio y pruebas multi-cuenta pendientes.
+===============================================================================

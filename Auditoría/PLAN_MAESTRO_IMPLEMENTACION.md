@@ -6525,4 +6525,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Department Scope Contract run 45320034461: SUCCESS.
 - El run 45320034509 permanece como fallo histórico por allowlist incompleta; su causa fue corregida en 1bfec59 y el run 45320213291 confirma la corrección.
 - HEAD de entrada: 1bfec59b8d80669d30104f1b60b74eb6f5b803d1; rama base verificada sin cambios.
-- TASK-047 continúa En ejecución: la UI/registro y separación de roles están implementados y verificados localmente; faltan operaciones de actualización del propietario/recursos, orquestación entre servicios y validación real entre cuentas/deployments.
+- TASK-047 continúa En ejecución: la UI/registro y separación de roles están implementados y verificados en CI; faltan operaciones de actualización del propietario/recursos, orquestación entre servicios y validación real entre cuentas/deployments.
+
+## 10.93 Backfill de checkpoints omitidos C1.968–C1.969
+
+- Se detectó que el índice saltaba de C1.967 a C1.970, aunque los hitos C1.968 (re-ejecución CI tras whitespace) y C1.969 (implementación inicial TASK-047) tenían evidencia en GitHub Actions y commits.
+- Se incorporan como backfill en el índice y en el registro de checkpoints, conservando el contenido histórico y sin borrar ni renumerar C1.970–C1.972.
+- C1.968: run 45317870853 SUCCESS.
+- C1.969: Developer Service Registry Contract run 45319976509 SUCCESS; TASK-047 sigue En ejecución por alcance interservicio y despliegues multi-cuenta pendientes.
