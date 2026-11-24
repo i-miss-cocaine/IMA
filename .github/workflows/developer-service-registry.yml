@@ -15,7 +15,6 @@ on:
       - "js/developer.js"
       - "tests/contracts/**"
       - ".github/workflows/developer-service-registry.yml"
-      - ".github/workflows/ima-local-verification-export.yml"
   pull_request:
     branches: [NG_beta_0.0.0.1_work]
     paths:
@@ -49,10 +48,3 @@ jobs:
       - run: node --check < js/ui-common.js
       - run: node --check < js/developer.js
       - run: node --test tests/contracts/*.test.js
-      - name: Export exact repository snapshot for local verification
-        run: tar --exclude=.git --exclude=node_modules -czf /tmp/ima-source-snapshot.tar.gz .
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ima-local-verification-${{ github.sha }}
-          path: /tmp/ima-source-snapshot.tar.gz
-          retention-days: 1
