@@ -84,11 +84,13 @@ test("el dispatcher limita resolución y edición al rol Desarrollador", () => {
 
 test("el resolver exige relación activa cuando se identifica un servicio emisor", () => {
  const relation = ["REL-1", "SRC-1", "SVC-1", "readRecord", "ACTIVE"];
- const resolveAllowed = resolverFor([serviceRow("activo")], [relation]);
+ const source = serviceRow("activo"); source[0] = "SRC-1";
+ const serviceRows = [serviceRow("activo"), source];
+ const resolveAllowed = resolverFor(serviceRows, [relation]);
  assert.equal(resolveAllowed({ serviceId: "SVC-1", sourceServiceId: "SRC-1", action: "readRecord" }).status, "success");
- assert.equal(resolverFor([serviceRow("activo")], [])({ serviceId: "SVC-1", sourceServiceId: "SRC-1", action: "readRecord" }).code, "SERVICE_RELATION_NOT_GRANTED");
+ assert.equal(resolverFor(serviceRows, [])({ serviceId: "SVC-1", sourceServiceId: "SRC-1", action: "readRecord" }).code, "SERVICE_RELATION_NOT_GRANTED");
  relation[4] = "REVOKED";
- assert.equal(resolverFor([serviceRow("activo")], [relation])({ serviceId: "SVC-1", sourceServiceId: "SRC-1", action: "readRecord" }).code, "SERVICE_RELATION_NOT_GRANTED");
+ assert.equal(resolverFor(serviceRows, [relation])({ serviceId: "SVC-1", sourceServiceId: "SRC-1", action: "readRecord" }).code, "SERVICE_RELATION_NOT_GRANTED");
 });
 test("la consola puede habilitar y revocar relaciones de comunicación auditadas", () => {
  assert.match(backend, /function setServiceCommunicationPermission_\(payload, verifiedActorId\)/);
