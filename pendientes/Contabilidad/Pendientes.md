@@ -3195,7 +3195,7 @@
 - **Evidencia de cierre:** inventario `docs/architecture/repository-inventory.md`, blob SHA `41f8e122eb7171c9f59a0552c9ad13ac4c90f9b0`; Git tree `b0042a7edd424ebf8efab7bcd1aace3641f08b23`; 999 rutas únicas con tamaño y SHA.
 - **Pruebas:** 999/999 rutas; unicidad; tamaño/SHA; clasificación; punto de entrada `index.html` sin cambios.
 - **Seguimiento C1.283 / AUD-NG-347:** la reauditoría posterior detectó dos informes creados en el commit anterior que no estaban en el snapshot de 999. Se amplía la cobertura a 1.002 rutas, incluyendo el informe de seguimiento C1.283.
-- **Estado operativo tras el reinicio global:** Pendiente; la reauditoría histórica se conserva como antecedente y no acredita cierre del Plan Maestro.
+- **Estado operativo:** Pendiente; la evidencia histórica se conserva como antecedente y no acredita cierre del Plan Maestro.
 - **Evidencia adicional:** tree C1.282 `e052e8781270a0a23aedd2d90177b601d8df063a`; informe `Auditoría/AUDITORIA_TASK-637_C1.283.md` blob `af96fa04c573dbacdb6c3637aeed35dea9462cad`.
 - **Seguimiento C1.287 / AUD-NG-348:** el tree de partida `bdce474c52cfc4d85614dcdf6960189748f85ccc` contiene 1.010 blobs (no truncado); la tabla anterior tenía 1.001 filas, omitía 9 rutas y 12 metadatos estaban desactualizados. Se amplía TASK-637 sin duplicar el ID.
 - **Evidencia de implementación:** inventario actualizado a 1.011 rutas únicas, incluyendo el informe C1.287 creado en la misma iteración; tamaños y SHA contrastados con Git tree/blob, autorreferencia SELF con tamaño exacto. `index.html` conserva SHA `cd742047cdc4948259dd721119429b04f78330ca`.
