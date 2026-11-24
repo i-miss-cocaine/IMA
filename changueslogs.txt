@@ -4658,3 +4658,11 @@ C1.969 — IMA-EXEC-20261123-TASK047-REGISTRY-01 (backfill)
 - Registro de servicios por rol, metadatos v2 y migración append-only del catálogo v1; Developer Service Registry run 45319976509 SUCCESS.
 - TASK-047 sigue En ejecución; orquestación interservicio y pruebas multi-cuenta pendientes.
 ===============================================================================
+===============================================================================
+C1.973 — IMA-EXEC-20261124-TASK047-SERVICE-LIFECYCLE-UI
+===============================================================================
+- Consola de Desarrollador: selector para registrado/activo/degradado/desconectado/suspendido/retirado.
+- updateServiceStatus reutiliza el backend con historial de actor/motivo y compensación.
+- Developer Service Registry 45321021206, Regional Formatting 45321021158 y Department Scope 45321021104 SUCCESS.
+- Router central y bloqueo real de endpoints suspendidos/retirados siguen pendientes; BETA-FUNC-142 añadida.
+===============================================================================

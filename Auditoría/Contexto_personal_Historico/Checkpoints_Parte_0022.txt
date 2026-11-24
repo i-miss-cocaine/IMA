@@ -204,3 +204,21 @@ Verificar la nueva ejecución de GitHub Actions en el HEAD posterior a esta corr
 - Backfill del checkpoint omitido; no se reescriben los registros C1.970–C1.972.
 
 ===============================================================================
+===============================================================================
+### C1.973 — IMA-EXEC-20261124-TASK047-SERVICE-LIFECYCLE-UI
+===============================================================================
+
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD de entrada: e45688063045170bbbf6cc2a9a1db04d72c7aaed.
+- Commit de implementación: e45688063045170bbbf6cc2a9a1db04d72c7aaed — feat(developer): manage registered service lifecycle states.
+- La consola de Desarrollador permite cambiar el estado del servicio: registrado, activo, degradado, desconectado, suspendido y retirado.
+- La acción updateServiceStatus reutiliza el backend existente, registra actor/motivo en HistorialServiciosDistribuidos y conserva compensación si falla la escritura.
+- El contrato Node.js recorre los seis estados y rechaza estados inválidos.
+- Developer Service Registry Contract run 45321021206 — SUCCESS.
+- Regional Formatting Contract run 45321021158 — SUCCESS.
+- Department Scope Contract run 45321021104 — SUCCESS.
+- No se implementó todavía el router central que impide llamadas reales a servicios suspendidos/retirados; tampoco se ejecutaron CLI ni despliegues multi-cuenta.
+- TASK-047 sigue En ejecución.
+- Siguiente alcance: resolver endpoints desde el servicio maestro, bloquear estados no enrutable y administrar cambios de propietario/recursos con historial.
+
+===============================================================================

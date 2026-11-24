@@ -6533,3 +6533,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Se incorporan como backfill en el índice y en el registro de checkpoints, conservando el contenido histórico y sin borrar ni renumerar C1.970–C1.972.
 - C1.968: run 45317870853 SUCCESS.
 - C1.969: Developer Service Registry Contract run 45319976509 SUCCESS; TASK-047 sigue En ejecución por alcance interservicio y despliegues multi-cuenta pendientes.
+
+## 10.94 Gestión de ciclo de vida del servicio desde la consola — C1.973
+
+- Se añadió a cada servicio un selector de estado y acción Guardar estado en la consola de Desarrollador.
+- Estados disponibles: registrado, activo, degradado, desconectado, suspendido y retirado. La consola utiliza la acción existente `updateServiceStatus`; cada cambio se registra en `HistorialServiciosDistribuidos` con actor autenticado y motivo.
+- El backend ya aplica LockService, evita duplicidad, conserva el estado anterior y compensa la escritura si falla el historial. Se amplió el contrato Node.js para recorrer los seis estados y rechazar estados inválidos.
+- Developer Service Registry Contract run 45321021206 PASS; Regional Formatting Contract 45321021158 PASS; Department Scope Contract 45321021104 PASS.
+- Límite pendiente: el servicio maestro todavía no enruta solicitudes ni bloquea llamadas reales a endpoints suspendidos/retirados. El cambio de estado está registrado y auditado, pero el bloqueo efectivo depende de implementar el resolver/router central.
+- No se ejecutó CLI ni despliegue real entre cuentas. TASK-047 permanece En ejecución.

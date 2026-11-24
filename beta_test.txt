@@ -2684,3 +2684,10 @@ Objetivo: validar alta y consulta de servicios por puesto/rol, modalidades indiv
 Pasos: probar registros sintéticos individuales (Docente, Coordinador, Secretaria, Contador), compartido Padres/Estudiantes y compartido Tienda/Cafetería/Transporte; probar rechazo de URL ajena a Apps Script, modo PUBLIC, rol/modalidad incompatible y PositionID duplicado; migrar encabezado v1 conservando filas; verificar que Administrador no hereda permisos de Desarrollador.
 Resultado esperado: metadatos v2 consistentes, historial preservado, roles/modos validados, endpoint declarado INSTITUTIONAL_DOMAIN, UI visible solo a Desarrollador.
 Estado: Pendiente. Evidencia requerida: resultado Node.js/CI, capturas saneadas, filas sintéticas y pruebas de despliegue restringido en cuentas institucionales. No usar datos personales reales.
+
+### BETA-FUNC-142 — Ciclo de vida y revocación de servicios registrados
+Área/roles: Desarrollador; servicios por rol. Requisito: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; TASK-047.
+Objetivo: comprobar el ciclo de vida de un servicio y la conservación de auditoría.
+Pasos: cambiar un servicio sintético por registrado, activo, degradado, desconectado, suspendido y retirado; verificar actor/motivo en HistorialServiciosDistribuidos; comprobar que el router central rechaza suspendidos/retirados; reactivar un servicio y verificar su ruta.
+Resultado esperado: cambios auditados, estados consistentes y bloqueo de llamadas no permitidas sin eliminar historial.
+Estado: Pendiente. La interfaz y la actualización de estado ya están verificadas por Node.js; el router y la prueba real de endpoints aún no están implementados.

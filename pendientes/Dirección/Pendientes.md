@@ -3589,7 +3589,10 @@
 - **Verificación C1.969:** Developer Service Registry Contract run 45319443700 — SUCCESS; Node.js 24, sintaxis Apps Script/contrato y pruebas de registro PASS. Regional Formatting, Department Scope, Hierarchical Configuration, Accounting Import Preflight y Academic Wellbeing Contract también reportaron SUCCESS en el mismo HEAD.
 - **Corrección C1.970:** la consola se restringe a usuarios con rol Desarrollador y sesión de login presente; Administrador, Dirección, otros roles y acceso anónimo no heredan acceso al plano técnico. Se añade contrato Node.js de la barrera UI.
 - **Verificación C1.972:** Developer Service Registry Contract 45320034556, Academic Wellbeing 45320213291, Regional Formatting 45320034406 y Department Scope 45320034461 — SUCCESS. Se corrigió la allowlist del test de límite UI; el fallo 45320034509 queda registrado como histórico.
-- **Estado:** En ejecución (C1.972; queda pendiente edición/auditoría de metadatos de servicios, orquestación interservicio y conciliación real de despliegues Apps Script entre cuentas).
+- **Implementación C1.973:** la consola permite cambiar estado a registrado, activo, degradado, desconectado, suspendido o retirado; cada cambio utiliza `updateServiceStatus` y registra actor/motivo en `HistorialServiciosDistribuidos`.
+- **Verificación C1.973:** Developer Service Registry 45321021206, Regional Formatting 45321021158 y Department Scope 45321021104 — SUCCESS. Contrato Node.js recorre los seis estados y rechaza valores inválidos.
+- **Pendiente de ciclo de vida:** el servicio maestro todavía no enruta llamadas ni bloquea solicitudes reales a endpoints suspendidos/retirados; falta implementar resolver/router central y cambios auditados de propietario/recursos.
+- **Estado:** En ejecución (C1.973; queda pendiente edición/auditoría de metadatos de servicios, orquestación interservicio y conciliación real de despliegues Apps Script entre cuentas).
 
 ### [AUD-NG-082] Exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-082 (TASK-047 / F23-Task04)
