@@ -10,3 +10,4 @@ Estado operativo: ciclo 3 en implementación continua. La regla de cierre por ta
 | C3.002 | IMA-RESET-20261124-001 | Reapertura y reconciliación de estados de Plan Maestro y siete backlogs | Cerrado / histórico | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.003 | IMA-ITER-20261124-001 | Cierre de preparación documental; requisitos Apps Script/sesión aclarados; normalización del ciclo activo | Listo para implementación | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.004 | IMA-ITER-20261124-002 | Norma obligatoria: completar tareas parciales, checkpoint/commit por tarea y continuidad inmediata | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
+| C3.005 | IMA-ITER-20261124-003 | AUD-NG-082: sesión firmada y RBAC sin suplantación de authRole | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |

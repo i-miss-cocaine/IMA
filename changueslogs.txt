@@ -4709,3 +4709,12 @@ C3.004 — IMA-ITER-20261124-002
 - No se alteró código de producto ni se ejecutaron pruebas de código; cambio exclusivamente normativo.
 - Rama: NG_beta_0.0.0.1_work. Commit normativo: 48c716d0dffff0c5c1282d0163b1d5ac649db981.
 ===============================================================================
+
+===============================================================================
+C3.005 — IMA-ITER-20261124-003
+===============================================================================
+- AUD-NG-082 completada: el plano de control normaliza el sobre del cliente, exige token de sesión firmado, deriva rol/actor de claims verificados y rechaza authRole falsificado.
+- Evidencia CI: Developer Service Registry Contract run 45325449960 SUCCESS; Node.js 24.22.3; 15/15 pruebas PASS y comprobaciones de sintaxis de Code.gs/js/api.js/js/developer.js.
+- TASK-047 sigue Pendiente: falta prueba autorizada entre dos cuentas Google y deployments Apps Script reales. No se declara satisfecha por pruebas locales/mocks.
+- Rama: NG_beta_0.0.0.1_work. HEAD de evidencia: 948410f71759986842169a7380d4c5be781f83f4.
+===============================================================================

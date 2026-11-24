@@ -3592,6 +3592,9 @@
 - **Implementación C1.973:** la consola permite cambiar estado a registrado, activo, degradado, desconectado, suspendido o retirado; cada cambio utiliza `updateServiceStatus` y registra actor/motivo en `HistorialServiciosDistribuidos`.
 - **Verificación C1.973:** Developer Service Registry 45321021206, Regional Formatting 45321021158 y Department Scope 45321021104 — SUCCESS. Contrato Node.js recorre los seis estados y rechaza valores inválidos.
 - **Pendiente de ciclo de vida:** el servicio maestro todavía no enruta llamadas ni bloquea solicitudes reales a endpoints suspendidos/retirados; falta implementar resolver/router central y cambios auditados de propietario/recursos.
+- **Avance C3.005 (parcial de TASK-047):** se normaliza el sobre {action,payload,correlationId}, se extrae el token del payload anidado y doPost deriva actor/rol exclusivamente de claims firmados; se rechazan solicitudes sin token, tokens inválidos/expirados y suplantación mediante authRole. Se implementa además el resolver central por ServiceID, bloqueo por estado y permiso de acción, actualización auditada de propietario/recursos/permisos, relaciones habilitables/revocables y auditoría de registros/relaciones huérfanas. El cliente dispone de fetchRegisteredServiceApi para resolución central.
+- **Verificación C3.005:** GitHub Actions Developer Service Registry Contract, run 45325449960 — SUCCESS; Node.js 24.22.3; node --check en Code.gs, js/api.js y js/developer.js; 15/15 pruebas Node.js PASS, incluidos RBAC negativo/positivo, token ausente/inválido/expirado, spoofing de rol, permisos por acción, estados suspendidos/retirados/desconectados, relaciones activas/revocadas y detección de duplicados/huérfanos.
+- **Pendiente real de TASK-047:** prueba autorizada entre dos cuentas Google y deployments Apps Script reales; verificación de restricciones de dominio y operación de la ruta en el entorno institucional. No se declara superada por pruebas mock/locales.
 - **Estado:** Pendiente.
 
 ### [AUD-NG-082] Exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente
@@ -3602,8 +3605,10 @@
 - **Descripción del Alcance:** Eliminar el fallback que utiliza payload.authRole cuando no existe token. Resolver el rol exclusivamente a partir de una sesión firmada y vigente, y rechazar solicitudes sin credenciales verificables. Aplicar el mismo principio a todas las acciones del plano de control y registrar el actor autenticado.
 - **Criterios de Aceptación:** Un payload sin token se rechaza aunque declare Administrador; un token inválido/expirado se rechaza; el rol efectivo proviene de claims verificados; las acciones administrativas quedan cubiertas por pruebas RBAC negativas y positivas.
 - **Ampliación C1.293:** confirmado en DEVELOPER:145–180; si no llega token, doPost toma payload.authRole. ROLE_PERMISSIONS[Administrador] es ["*"], por lo que authRole=Administrador elude la sesión. No se verificó deployment activo.
-- **Estado:** [ ] Pendiente
+- **Estado:** [x] Completada (C3.005)
 
+- **Implementación C3.005:** developerNormalizeRequestEnvelope_ adapta el sobre HTTP anidado; doPost exige sesión firmada, toma identidad/rol de claims y elimina el fallback authRole. No se añadió login interactivo ni desafío adicional; se reutiliza el token de la sesión establecida.
+- **Evidencia:** pruebas Node.js de ausencia de token (incluido authRole=Administrador), token inválido/expirado, rol falsificado y claims válidos; GitHub Actions run 45325449960 SUCCESS, 15/15 pruebas PASS.
 ### [AUD-NG-083] Integrar la verificación HMAC en el tráfico real de todos los microservicios
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-083 (TASK-048 / F23-Task05)
 - **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs

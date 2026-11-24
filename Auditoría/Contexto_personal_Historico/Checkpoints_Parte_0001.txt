@@ -52,3 +52,15 @@ C3.004 — IMA-ITER-20261124-002
 - Commit normativo: 48c716d0dffff0c5c1282d0163b1d5ac649db981.
 - Estado: regla obligatoria publicada; siguiente trabajo: continuar PM-00A / TASK-047, completar el router/registro central y verificar todos los criterios pendientes.
 ===============================================================================
+
+===============================================================================
+C3.005 — IMA-ITER-20261124-003
+===============================================================================
+- Objetivo cerrado: AUD-NG-082 — exigir sesión firmada en el plano de control y rechazar roles declarados por el cliente.
+- Implementación: normalizador del sobre HTTP anidado; token extraído del payload; doPost rechaza token ausente/inválido y obtiene identidad/rol únicamente de claims firmados; se elimina el fallback authRole; actor verificado se propaga a las acciones administrativas.
+- Pruebas: GitHub Actions Developer Service Registry Contract run 45325449960 — SUCCESS. Node.js 24.22.3; node --check en backend/developer-service/Code.gs, js/api.js y js/developer.js; 15/15 pruebas PASS, incluidas pruebas positivas/negativas de autenticación y RBAC.
+- Archivos de la unidad: backend/developer-service/Code.gs; tests/contracts/developer-service-registry.contract.test.js; .github/workflows/developer-service-registry.yml. Los cambios adicionales de TASK-047 permanecen en ejecución.
+- HEAD inicial de esta unidad: c7185786d6c2b2f6847ab46658a0c63f26ca8319. HEAD de evidencia: 948410f71759986842169a7380d4c5be781f83f4.
+- Estado: AUD-NG-082 completada. TASK-047 permanece Pendiente por verificación autorizada multi-cuenta/deployments reales.
+- Siguiente acción: resolver formalmente los hallazgos HMAC heredados contra Normas_Desarollo.md §17.8 y continuar los requisitos que no contradigan la norma vigente.
+===============================================================================
