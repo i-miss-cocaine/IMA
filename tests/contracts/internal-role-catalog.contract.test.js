@@ -196,7 +196,7 @@ test("la interfaz de RRHH separa rol RBAC, responsabilidad, asignación y suplen
   }
   assert.match(dashboard, /fetchApi\('USER','manageInternalRoleCatalog'/);
   assert.match(dashboard, /fetchApi\('USER','assignRoleScope'/);
-  const panelStart = dashboard.indexOf("const panel = document.getElementById('rrhh-internal-roles-panel')");
+  const panelStart = dashboard.indexOf("const panel=document.getElementById('rrhh-internal-roles-panel')");
   const panelEnd = dashboard.indexOf("</script>", panelStart);
   assert.ok(panelStart >= 0 && panelEnd > panelStart, "El controlador del panel debe existir");
   assert.doesNotMatch(dashboard.slice(panelStart, panelEnd), /innerHTML\s*=/);

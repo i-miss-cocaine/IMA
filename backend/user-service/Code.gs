@@ -16800,8 +16800,8 @@ function manageInternalRoleCatalog(payload) {
     var nameKey = normalizeString(name).replace(/\s+/g, " "), codeKey = normalizeString(code).replace(/\s+/g, " ");
     for (var r = 1; r < data.length; r++) {
       if (id && r === idMatches[0]) continue;
-      if (normalizeString(data[r][2]) === nameKey) return { status: "error", code: "INTERNAL_ROLE_NAME_DUPLICATE" };
-      if (normalizeString(data[r][1]) === codeKey) return { status: "error", code: "INTERNAL_ROLE_CODE_DUPLICATE" };
+      if (normalizeString(data[r][2]).replace(/\s+/g, " ") === nameKey) return { status: "error", code: "INTERNAL_ROLE_NAME_DUPLICATE" };
+      if (normalizeString(data[r][1]).replace(/\s+/g, " ") === codeKey) return { status: "error", code: "INTERNAL_ROLE_CODE_DUPLICATE" };
     }
     var now = new Date().toISOString();
     if (!id) id = "ROL-INT-" + Utilities.getUuid().replace(/-/g, "").substring(0, 20).toUpperCase();
