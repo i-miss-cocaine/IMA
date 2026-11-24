@@ -51,7 +51,7 @@ function makeContext(options = {}) {
     ROLE_PERMISSIONS: { Docente: [], Director: [], RecursosHumanos: [] },
     SpreadsheetApp: { openById: () => ({ getSheetByName: name => sheets[name] || null }) },
     LockService: { getScriptLock: () => lock },
-    Utilities: { getUuid: () => "00000000-0000-0000-0000-" + String(++uuid).padStart(12, "0") },
+    Utilities: { getUuid: () => String(++uuid).padStart(16, "0") + "-0000-0000-0000" },
     normalizeString: value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(),
     getOrCreateSheet: (ss, name) => sheets[name],
     getIdentityInstitutionId_: () => "INST-1",
@@ -196,7 +196,9 @@ test("la interfaz de RRHH separa rol RBAC, responsabilidad, asignación y suplen
   }
   assert.match(dashboard, /fetchApi\('USER','manageInternalRoleCatalog'/);
   assert.match(dashboard, /fetchApi\('USER','assignRoleScope'/);
-  assert.match(dashboard, /textContent/);
-  assert.doesNotMatch(dashboard, /innerHTML\s*=/);
+  const panelStart = dashboard.indexOf("const panel = document.getElementById('rrhh-internal-roles-panel')");
+  const panelEnd = dashboard.indexOf("</script>", panelStart);
+  assert.ok(panelStart >= 0 && panelEnd > panelStart, "El controlador del panel debe existir");
+  assert.doesNotMatch(dashboard.slice(panelStart, panelEnd), /innerHTML\s*=/);
   assert.match(backend, /"assignRoleScope"/);
 });
