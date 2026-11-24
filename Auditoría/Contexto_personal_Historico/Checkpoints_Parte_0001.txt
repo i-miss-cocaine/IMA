@@ -1,0 +1,13 @@
+# IMA — Checkpoint C3.001
+- Sesión: IMA-RESET-20261124-001
+- Tipo: reinicio extraordinario del ciclo de implementación.
+- Rama autorizada: NG_beta_0.0.0.1_work
+- HEAD de partida: 0c093b4bcd413e7af76eefc678b07a0a257d300a
+- Estado: base de reinicio registrada.
+- Limpieza: 243 registros de auditoría, 23 archivos/índices de checkpoints, 255 archivos de pruebas/beta y 17 workflows GitHub Actions retirados del árbol de trabajo.
+- Tareas: se conservan los siete backlogs y sus requisitos; los estados completados/en ejecución se reabrieron como Pendiente.
+- Requisitos: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01 aplicable a todas las tareas; Desarrollador y Administrador son roles distintos.
+- Código funcional: sin cambios en esta operación.
+- Verificaciones: rama autorizada y árbol Git verificados; pruebas no ejecutadas después de la limpieza.
+- Siguiente tarea: PM-00A / TASK-047, reconciliar registro y ciclo de vida de servicios por rol con la arquitectura base del portal.
+- Política: máximo diez checkpoints recientes en el índice y árbol de trabajo.

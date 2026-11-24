@@ -4666,3 +4666,14 @@ C1.973 — IMA-EXEC-20261124-TASK047-SERVICE-LIFECYCLE-UI
 - Developer Service Registry 45321021206, Regional Formatting 45321021158 y Department Scope 45321021104 SUCCESS.
 - Router central y bloqueo real de endpoints suspendidos/retirados siguen pendientes; BETA-FUNC-142 añadida.
 ===============================================================================
+
+===============================================================================
+C3.001 — IMA-RESET-20261124-001
+===============================================================================
+- Reinicio extraordinario del ciclo 3 en NG_beta_0.0.0.1_work.
+- Retirados del árbol de trabajo: 243 registros de auditoría, 23 archivos/índices de checkpoints, 255 archivos de pruebas/beta y 17 workflows GitHub Actions.
+- Conservados los siete backlogs, sus tareas y requisitos técnicos, el Plan Maestro y el código funcional.
+- Reabiertos como Pendiente los estados de tareas completadas o en ejecución.
+- Actualizada la política normativa de checkpoints: máximo diez en el árbol de trabajo/índice operativo.
+- Próximo trabajo: PM-00A / TASK-047.
+===============================================================================
