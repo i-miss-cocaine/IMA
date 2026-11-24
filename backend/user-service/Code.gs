@@ -1898,23 +1898,32 @@ function verifySessionToken(tokenString) {
 
 // [FASE2-T01] [TAREA-F4-P0-01] [Fase 4 - Autorización e Interoperabilidad] - Exige token de sesión firmado sin fallbacks no autenticados.
 function getUserVerifiedRole(payload) {
-  if (!payload) return "NO_ACCESS";
-
+  if (!payload || typeof payload !== "object") return "NO_ACCESS";
+  // La identidad se valida una vez en el límite doPost; los handlers reutilizan el contexto inmutable del mismo request.
+  if (payload.__identityVerified === true && payload._verifiedUserId && payload._verifiedRole) return String(payload._verifiedRole);
   const token = payload.sessionToken || payload.authToken || payload.token;
-  if (!token) {
-    return "NO_ACCESS";
-  }
-
+  if (!token) return "NO_ACCESS";
   const claims = verifySessionToken(token);
-  if (!claims) {
+  if (!claims || !claims.userId || !claims.role) {
+    payload.__identityVerified = false;
+    delete payload._verifiedUserId; delete payload._verifiedRole; delete payload._verifiedClaims;
+    delete payload._verifiedMembershipId; delete payload._verifiedInstitutionId; delete payload._verifiedSessionId;
     return "NO_ACCESS";
   }
-
-  payload._verifiedUserId = claims.userId;
-  payload._verifiedRole = claims.role;
-  return claims.role || "Estudiante";
+  payload._verifiedUserId = String(claims.userId);
+  payload._verifiedRole = String(claims.role);
+  payload._verifiedMembershipId = String(claims.membershipId || "");
+  payload._verifiedInstitutionId = String(claims.institutionId || "");
+  payload._verifiedSessionId = String(claims.sessionId || "");
+  payload._verifiedClaims = {
+    userId: String(claims.userId), email: String(claims.email || ""), role: String(claims.role),
+    accountState: String(claims.accountState || ""), membershipId: String(claims.membershipId || ""),
+    institutionId: String(claims.institutionId || ""), sessionId: String(claims.sessionId || ""),
+    roleVersion: String(claims.roleVersion || "")
+  };
+  payload.__identityVerified = true;
+  return payload._verifiedRole;
 }
-
 function getUserRoleMemberships(payload) {
   try {
     var role = getUserVerifiedRole(payload);
@@ -1933,9 +1942,8 @@ function switchActiveRole(payload) {
     var currentRole = getUserVerifiedRole(payload);
     var userId = String((payload && payload._verifiedUserId) || "").trim();
     if (!userId || currentRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una sesión firmada y activa." };
-    var token = payload.sessionToken || payload.authToken || payload.token;
-    var currentClaims = verifySessionToken(token);
-    if (!currentClaims) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una sesión firmada y activa." };
+    var currentClaims = payload && payload._verifiedClaims || {};
+    if (String(currentClaims.userId || "").trim() !== userId || String(currentClaims.role || "").trim() !== currentRole) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere contexto de identidad verificado." };
     var roleId = String((payload && payload.activeRoleId) || "").trim();
     if (!roleId) return { status: "error", code: "ACTIVE_ROLE_REQUIRED", message: "Debe especificarse el rol activo solicitado." };
     var institutionId = String(getIdentityInstitutionId_()).trim();
@@ -2806,6 +2814,10 @@ function doPost(e) {
     if (request && request.sourceService && request.action === "authorizeDepartmentReferenceRead") return textResponse(handleTrustedDepartmentReferenceEnvelope_(request));
     if (request && request.sourceService) return textResponse(handleTrustedMigrationEnvelope_(request));
     const { action, payload } = request;
+    if (payload && typeof payload === "object") {
+      ["__identityVerified", "_verifiedUserId", "_verifiedRole", "_verifiedMembershipId", "_verifiedInstitutionId",
+        "_verifiedSessionId", "_verifiedClaims", "_delegatedFrom", "_delegationId", "_executorUserId"].forEach(function(key) { delete payload[key]; });
+    }
     const requestedContractVersion = String(payload && payload.contractVersion || "").trim();
     if (requestedContractVersion && requestedContractVersion !== SERVICE_CONTRACT_VERSION) return textResponse({ status: "error", code: "SERVICE_CONTRACT_VERSION_MISMATCH", expectedVersion: SERVICE_CONTRACT_VERSION, receivedVersion: requestedContractVersion });
     const authCheck = validateRolePermission(action, payload);
@@ -4318,9 +4330,9 @@ function registerUser(payload) {
 }
 
 function logoutUser(payload) {
-  var token = payload && (payload.sessionToken || payload.authToken || payload.token);
-  var claims = token ? verifySessionToken(token) : null;
-  if (!claims) {
+  var role = getUserVerifiedRole(payload);
+  var claims = payload && payload._verifiedClaims || null;
+  if (!claims || role === "NO_ACCESS" || !claims.sessionId) {
     return { status: "success", message: "Cierre de sesión registrado." };
   }
   var revocation = revokeUserSession({ sessionId: claims.sessionId });
@@ -13553,11 +13565,10 @@ function getLegalDocumentAcceptances(payload) {
 const USER_HELP_PREFERENCE_HEADERS_=["PreferenceID","UserID","InstitutionID","TourKey","StepIndex","Dismissed","TourVersion","Version","UpdatedAt"];
 const USER_HELP_TOUR_ROLES_={studentSubmission:["Estudiante"],teacherReview:["Profesor"],teacherTemplates:["Profesor"]};
 function getUserHelpPreferenceActor_(payload){
- var input=payload||{},token=String(input.sessionToken||"").trim(),claims=token&&typeof verifySessionToken==="function"?verifySessionToken(token):null;
- if(!claims||!claims.userId||!claims.role)return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
+ var input=payload||{},verifiedRole=getUserVerifiedRole(input),claims=input._verifiedClaims||null;
+ if(!claims||!claims.userId||!claims.role||!verifiedRole||verifiedRole==="NO_ACCESS")return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
  var institution="";try{institution=getIdentityInstitutionId_();}catch(e){return{error:{status:"error",code:"IDENTITY_CONFIGURATION_REQUIRED"}};}
- if(String(input._verifiedUserId||claims.userId)!==String(claims.userId))return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
- var verifiedRole=getUserVerifiedRole(input);if(!verifiedRole||verifiedRole==="NO_ACCESS")return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
+ if(String(input._verifiedUserId||"")!==String(claims.userId))return{error:{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"}};
  return{userId:String(claims.userId),institutionId:institution,role:String(verifiedRole)};
 }
 function ensureUserHelpPreferencesSheet_(ss,create){
@@ -14605,10 +14616,9 @@ function getUserContextScope(payload) {
     var verifiedRole = getUserVerifiedRole(payload);
     var userId = String((payload && payload._verifiedUserId) || "").trim();
     if (!userId || !verifiedRole || verifiedRole === "NO_ACCESS") return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "Se requiere una sesión firmada y activa." };
-    var token = payload.sessionToken || payload.authToken || payload.token;
-    var claims = verifySessionToken(token);
-    if (!claims || String(claims.userId || "").trim() !== userId || String(claims.role || "").trim() !== verifiedRole) {
-      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "No fue posible vincular el ámbito con la identidad firmada." };
+    var claims = payload && payload._verifiedClaims || {};
+    if (String(claims.userId || "").trim() !== userId || String(claims.role || "").trim() !== verifiedRole) {
+      return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED", message: "No fue posible vincular el ámbito con la identidad verificada en la entrada del servicio." };
     }
     var institutionId = String(getIdentityInstitutionId_() || "").trim();
     if (!institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED", message: "No existe institución configurada." };
