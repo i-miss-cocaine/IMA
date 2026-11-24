@@ -98,7 +98,7 @@ function assign(context, userId, responsibilityId, extra = {}) {
     userId, roleId: "Docente", responsibilityId,
     scopeType: "DEPARTAMENTO", scopeValues: ["DEP-1"],
     fechaInicio: "2026-01-01", fechaFin: "2026-12-31",
-    estado: "Activo"
+    estado: "Activo", motivo: "Asignación institucional autorizada."
   }, extra));
 }
 
@@ -107,12 +107,12 @@ test("el catálogo rechaza nombres duplicados por mayúsculas, acentos y espacio
   const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
   const created = context.manageInternalRoleCatalog({
     _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
-    nombreResponsabilidad: "Coordinador  de Matemáticas", tipoResponsabilidad: "Académica", vigenciaMeses: 12
+    nombreResponsabilidad: "Coordinador  de Matemáticas", tipoResponsabilidad: "Académica", vigenciaMeses: 12, motivo: "Creación autorizada del puesto."
   });
   assert.equal(created.status, "success");
   const duplicate = context.manageInternalRoleCatalog({
     _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
-    nombreResponsabilidad: "coordinador de matematicas", tipoResponsabilidad: "Académica", vigenciaMeses: 12
+    nombreResponsabilidad: "coordinador de matematicas", tipoResponsabilidad: "Académica", vigenciaMeses: 12, motivo: "Intento de duplicación de puesto."
   });
   assert.equal(duplicate.code, "INTERNAL_ROLE_NAME_DUPLICATE");
   assert.equal(roles.rows.length, 2);
@@ -122,11 +122,11 @@ test("el catálogo rechaza nombres duplicados por mayúsculas, acentos y espacio
 test("desactivar y reactivar una responsabilidad conserva la fila y registra cada cambio", () => {
   const roles = sheet([roleHeaders, roleRow("ROL-1","Coordinador","COORD-1")]);
   const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
-  const disabled = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "Director", accion: "desactivar", rolInternoId: "ROL-1" });
+  const disabled = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "Director", accion: "desactivar", rolInternoId: "ROL-1", motivo: "Cierre autorizado de la responsabilidad." });
   assert.equal(disabled.status, "success");
   assert.equal(roles.rows.length, 2);
   assert.equal(roles.rows[1][9], "Inactivo");
-  const enabled = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "Director", accion: "activar", rolInternoId: "ROL-1" });
+  const enabled = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "Director", accion: "activar", rolInternoId: "ROL-1", motivo: "Reactivación autorizada de la responsabilidad." });
   assert.equal(enabled.status, "success");
   assert.equal(roles.rows.length, 2);
   assert.equal(roles.rows[1][9], "Activo");
@@ -206,9 +206,9 @@ test("la interfaz de RRHH separa rol RBAC, responsabilidad, asignación y suplen
 test("el código interno también es único y se compara sin diferencias de mayúsculas", () => {
   const roles = sheet([roleHeaders]);
   const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
-  const first = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos", codigoInterno: "COORD-01", nombreResponsabilidad: "Coordinador de Área", tipoResponsabilidad: "Académica" });
+  const first = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos", codigoInterno: "COORD-01", nombreResponsabilidad: "Coordinador de Área", tipoResponsabilidad: "Académica", motivo: "Creación autorizada del puesto." });
   assert.equal(first.status, "success");
-  const duplicate = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos", codigoInterno: "coord-01", nombreResponsabilidad: "Otro puesto", tipoResponsabilidad: "Académica" });
+  const duplicate = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos", codigoInterno: "coord-01", nombreResponsabilidad: "Otro puesto", tipoResponsabilidad: "Académica", motivo: "Validación de código duplicado." });
   assert.equal(duplicate.code, "INTERNAL_ROLE_CODE_DUPLICATE");
   assert.equal(roles.rows.length, 2);
 });
@@ -233,4 +233,16 @@ test("el controlador nuevo de RRHH tiene sintaxis JavaScript válida", () => {
   const end = dashboard.indexOf("</script>", panelStart);
   assert.ok(start >= 0 && panelStart > start && end > panelStart);
   assert.doesNotThrow(() => new vm.Script(dashboard.slice(start, end)));
+});
+
+test("las asignaciones nuevas mantienen compatibilidad con usuarios de rol heredado sin membresías RBAC", () => {
+  const { context, assignments } = assignmentContext();
+  context.getUserRoleMembershipState_ = () => ({ hasRecords: false, memberships: [] });
+  const result = assign(context, "EMP-1", "ROL-1");
+  assert.equal(result.status, "success");
+  assert.equal(assignments.rows[1][13], "");
+  const history = context.getInternalRoleAssignments({ soloVigentes: true });
+  assert.equal(history.status, "success");
+  assert.equal(history.data.length, 1);
+  assert.equal(history.data[0].membershipStatus, "LEGACY_ROLE");
 });

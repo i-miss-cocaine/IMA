@@ -14565,6 +14565,14 @@ function parseInternalRoleAssignmentDate_(value, inclusiveEnd) {
   return { valid: true, date: date };
 }
 
+function formatInternalRoleAssignmentDate_(date) {
+  if (!(date instanceof Date) || isNaN(date.getTime())) return "";
+  var year = String(date.getFullYear());
+  var month = String(date.getMonth() + 1).padStart(2, "0");
+  var day = String(date.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+
 function assignRoleScope(payload) {
   var lock = null, lockAcquired = false, assignmentSheet = null, writeApplied = false, writeIndex = -1, previousRow = null, wasAppend = false;
   try {
@@ -14572,6 +14580,8 @@ function assignRoleScope(payload) {
     var verifiedRole = String(p._verifiedRole || "").trim() || "NO_ACCESS";
     var actorUserId = String(p._verifiedUserId || "").trim();
     if (verifiedRole === "NO_ACCESS" || !actorUserId) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+    var reason = String(p.motivo || p.justificacion || "").trim();
+    if (reason.length < 5 || reason.length > 500) return { status: "error", code: "ROLE_SCOPE_REASON_REQUIRED" };
     if (["Administrador","Director","RecursosHumanos"].indexOf(verifiedRole) === -1) return { status: "error", code: "AUTH_PERMISSION_DENIED" };
     lock = LockService.getScriptLock();
     lock.waitLock(10000);
@@ -14737,8 +14747,8 @@ function assignRoleScope(payload) {
       assignmentId, userId, roleId, scopeType, JSON.stringify(normalizedScopeValues), state,
       foundIndex !== -1 ? (data[foundIndex][6] || actorUserId) : actorUserId,
       foundIndex !== -1 ? (data[foundIndex][7] || now) : now,
-      start.date ? start.date.toISOString() : now,
-      end.date ? end.date.toISOString() : "",
+      start.date ? formatInternalRoleAssignmentDate_(start.date) : now,
+      end.date ? formatInternalRoleAssignmentDate_(end.date) : "",
       isSubstitute ? "Sí" : "No", isSubstitute ? substituteFor : "",
       institutionId, membershipId, responsibilityId
     ];
@@ -14752,7 +14762,7 @@ function assignRoleScope(payload) {
       suplenteDeUserId: isSubstitute ? substituteFor : null
     }, state === "Revocado" ? "SCOPE_REVOKED" : (foundIndex !== -1 ? "SCOPE_UPDATED" : "SCOPE_ASSIGNED"), actorUserId);
     logStructuredEvent("USER", "assignRoleScope", "INFO", state === "Revocado" ? "SCOPE_REVOKED" : "SCOPE_ASSIGNED", "Responsabilidad y ámbito organizativo actualizados.", {
-      assignmentId: assignmentId, userId: userId, roleId: roleId, responsibilityId: responsibilityId, institutionId: institutionId
+      assignmentId: assignmentId, userId: userId, roleId: roleId, responsibilityId: responsibilityId, institutionId: institutionId, motivo: reason
     }, verifiedRole);
     return {
       status: "success", assignmentId: assignmentId, userId: userId, roleId: roleId,
@@ -16766,6 +16776,8 @@ function manageInternalRoleCatalog(payload) {
       data = sheet.getDataRange().getValues();
     }
     var id = String(p.rolInternoId || "").trim(), action = String(p.accion || "guardar").trim().toLowerCase();
+    var reason = String(p.motivo || p.justificacion || "").trim();
+    if (reason.length < 5 || reason.length > 500) return { status: "error", code: "INTERNAL_ROLE_REASON_REQUIRED" };
     var idMatches = [];
     for (var i = 1; i < data.length; i++) if (id && String(data[i][0] || "").trim() === id) idMatches.push(i);
     if (idMatches.length > 1) return { status: "error", code: "INTERNAL_ROLE_ID_NOT_UNIQUE" };
@@ -16778,9 +16790,9 @@ function manageInternalRoleCatalog(payload) {
       sheet.getRange(writeIndex + 1, 13).setValue(new Date().toISOString());
       writeApplied = true;
       var beforeState = { estado: previousRow[9] };
-      var afterState = { estado: nextState };
+      var afterState = { estado: nextState, motivo: reason };
       recordEntityChangeLog("RolInterno", id, beforeState, afterState, "INTERNAL_ROLE_STATE_CHANGED", actor);
-      logStructuredEvent("USER", "manageInternalRoleCatalog", "INFO", "INTERNAL_ROLE_STATE_CHANGED", "Estado de responsabilidad actualizado.", { rolInternoId: id, estado: nextState }, verifiedRole);
+      logStructuredEvent("USER", "manageInternalRoleCatalog", "INFO", "INTERNAL_ROLE_STATE_CHANGED", "Estado de responsabilidad actualizado.", { rolInternoId: id, estado: nextState, motivo: reason }, verifiedRole);
       return { status: "success", rolInternoId: id, estado: nextState };
     }
     if (action !== "guardar") return { status: "error", code: "INTERNAL_ROLE_ACTION_INVALID" };
@@ -16830,9 +16842,9 @@ function manageInternalRoleCatalog(payload) {
     recordEntityChangeLog("RolInterno", id, oldRow || {}, {
       codigoInterno: code, nombreResponsabilidad: name, descripcion: row[3], departamento: row[4],
       areaAcademica: row[5], tipoResponsabilidad: type, vigenciaMeses: months,
-      permiteSuplencia: allowSubstitute, estado: state, responsibilityId: linkedId || null
+      permiteSuplencia: allowSubstitute, estado: state, responsibilityId: linkedId || null, motivo: reason
     }, oldRow ? "INTERNAL_ROLE_UPDATED" : "INTERNAL_ROLE_CREATED", actor);
-    logStructuredEvent("USER", "manageInternalRoleCatalog", "INFO", oldRow ? "INTERNAL_ROLE_UPDATED" : "INTERNAL_ROLE_CREATED", "Responsabilidad organizativa guardada.", { rolInternoId: id, codigoInterno: code, estado: state }, verifiedRole);
+    logStructuredEvent("USER", "manageInternalRoleCatalog", "INFO", oldRow ? "INTERNAL_ROLE_UPDATED" : "INTERNAL_ROLE_CREATED", "Responsabilidad organizativa guardada.", { rolInternoId: id, codigoInterno: code, estado: state, motivo: reason }, verifiedRole);
     return { status: "success", rolInternoId: id, responsibilityId: linkedId || null, codigoInterno: code, nombreResponsabilidad: name, estado: state };
   } catch (error) {
     if (writeApplied && sheet) {
@@ -16961,9 +16973,18 @@ function getInternalRoleAssignments(payload) {
       if (f.responsibilityId && responsibilityId !== String(f.responsibilityId).trim()) continue;
       if (f.rolInternoId && responsibilityId !== String(f.rolInternoId).trim()) continue;
       if (schema !== "legacy" && rowInstitution !== institutionId) continue;
-      if (schema === "current" && (!membershipId || !responsibilityId)) continue;
+      if (schema === "current" && !responsibilityId) continue;
       var membershipStatus = "";
-      if (schema !== "legacy" && f.soloVigentes === false) {
+      if (schema === "current" && !membershipId) {
+        var legacyUserSheet = ss.getSheetByName("Usuarios");
+        if (!legacyUserSheet) continue;
+        var legacyUserRows = legacyUserSheet.getDataRange().getValues().slice(1).filter(function(item) { return String(item[0] || "").trim() === userId; });
+        if (legacyUserRows.length !== 1) continue;
+        var legacyUser = legacyUserRows[0];
+        if (f.soloVigentes !== false && (String(legacyUser[6] || "").trim() !== roleId ||
+            ["ACTIVA","ACTIVO","ACTIVE"].indexOf(String(legacyUser[10] || "Activa").trim().toUpperCase()) === -1)) continue;
+        membershipStatus = "LEGACY_ROLE";
+      } else if (schema !== "legacy" && f.soloVigentes === false) {
         var membershipSheet = ss.getSheetByName("MembresiasRolesRBAC");
         if (!membershipSheet) continue;
         var membershipRows = membershipSheet.getDataRange().getValues().slice(1).filter(function(item) {
@@ -16997,6 +17018,7 @@ function getInternalRoleAssignments(payload) {
         resolveActiveInternalResponsibility_(ss, responsibilityId, f.soloVigentes === false) : null;
       if (schema === "current" && !responsibility) continue;
       if (f.departamento && (!responsibility || normalizeString(responsibility.department) !== normalizeString(f.departamento))) continue;
+      if (f.areaAcademica && (!responsibility || normalizeString(responsibility.academicArea).indexOf(normalizeString(f.areaAcademica)) === -1)) continue;
       out.push({
         asignacionId: assignmentId, userId: userId, roleId: roleId, rolInternoId: responsibilityId || null,
         responsibilityId: responsibilityId || null, responsibility: responsibility,
