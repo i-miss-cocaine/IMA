@@ -625,6 +625,7 @@ function doPost(e) {
     const action = request.action;
     if (action === "ping") return doGet();
     delete payload._verifiedUserId;
+    delete payload._verifiedClaims;
     delete payload.authRole;
     const token = payload && (payload.sessionToken || payload.authToken || payload.token);
     if (!token) {
@@ -643,6 +644,7 @@ function doPost(e) {
       return textResponse({ status: "error", code: "INVALID_SESSION_CLAIMS", message: "La sesión no contiene una identidad y un rol válidos." });
     }
     payload._verifiedUserId = verifiedUserId;
+    payload._verifiedClaims = claims;
 
     const permitted = ROLE_PERMISSIONS[userRole] || [];
     // Resolver read-only: cualquier sesión válida puede descubrir un endpoint; el servicio destino aplica sus permisos de acción.
@@ -3119,10 +3121,21 @@ function getCentralServiceRegistry(payload) {
   }
 }
 
+function developerNormalizeServiceRouteRole_(value) {
+  var role = String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (["profesor", "docente"].indexOf(role) !== -1) return "docente";
+  if (["alumno", "estudiante"].indexOf(role) !== -1) return "estudiante";
+  if (["padre", "madre", "tutor", "padre/tutor", "madre/tutor"].indexOf(role) !== -1) return "padre";
+  return role;
+}
+
 function resolveServiceEndpoint(payload) {
   var serviceId = String(payload && payload.serviceId || "").trim();
+  var serviceKey = String(payload && payload.serviceKey || "").trim().toUpperCase();
   var requestedAction = String(payload && payload.action || "").trim();
-  if (!serviceId || !/^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/.test(serviceId)) return { status: "error", code: "SERVICE_ID_INVALID", endpointUrl: "" };
+  var claims = payload && payload._verifiedClaims || {};
+  if (!serviceId && !/^[A-Z][A-Z0-9_]{1,31}$/.test(serviceKey)) return { status: "error", code: "SERVICE_ROUTE_KEY_INVALID", endpointUrl: "" };
+  if (serviceId && !/^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/.test(serviceId)) return { status: "error", code: "SERVICE_ID_INVALID", endpointUrl: "" };
   if (!requestedAction || requestedAction.length > 128 || requestedAction.indexOf("*") !== -1) return { status: "error", code: "SERVICE_ACTION_INVALID", endpointUrl: "" };
   var lock = LockService.getScriptLock();
   if (!lock || !lock.tryLock(5000)) return { status: "error", code: "SERVICE_REGISTRY_BUSY", endpointUrl: "" };
@@ -3130,8 +3143,31 @@ function resolveServiceEndpoint(payload) {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = ss.getSheetByName("CatalogoServicios");
     if (!sheet) return { status: "error", code: "SERVICE_REGISTRY_UNINITIALIZED", endpointUrl: "" };
     var parsed = developerParseServiceRegistryRows_(sheet.getDataRange().getValues());
+    if (!serviceId) {
+      var role = developerNormalizeServiceRouteRole_(claims.role);
+      var email = String(claims.email || "").trim().toLowerCase();
+      var userId = String(claims.userId || "").trim().toUpperCase();
+      if (!role || (!email && !userId)) return { status: "error", code: "SERVICE_ROUTE_IDENTITY_MISSING", endpointUrl: "" };
+      var domainRows = parsed.rows.filter(function(row) { return String(row[6] || "").trim().toUpperCase() === serviceKey; });
+      if (!domainRows.length) return { status: "error", code: "SERVICE_NOT_FOUND", serviceKey: serviceKey, endpointUrl: "" };
+      var roleRows = domainRows.filter(function(row) {
+        var roles = [];
+        try { roles = typeof row[11] === "string" ? JSON.parse(row[11] || "[]") : row[11]; } catch (error) { return false; }
+        return Array.isArray(roles) && roles.some(function(item) { return developerNormalizeServiceRouteRole_(item) === role; });
+      });
+      if (!roleRows.length) return { status: "error", code: "SERVICE_ROLE_NOT_ASSIGNED", serviceKey: serviceKey, endpointUrl: "" };
+      var assignedRows = roleRows.filter(function(row) {
+        var mode = String(row[13] || "").trim().toUpperCase();
+        if (mode === "INDIVIDUAL") return (email && String(row[3] || "").trim().toLowerCase() === email) ||
+          (userId && String(row[12] || "").trim().toUpperCase() === userId);
+        return mode === "SHARED_PARENT_STUDENT" || mode === "SHARED_UTILITY";
+      });
+      if (!assignedRows.length) return { status: "error", code: "SERVICE_POSITION_NOT_ASSIGNED", serviceKey: serviceKey, endpointUrl: "" };
+      if (assignedRows.length !== 1) return { status: "error", code: "SERVICE_ROUTE_AMBIGUOUS", serviceKey: serviceKey, endpointUrl: "" };
+      serviceId = String(assignedRows[0][0] || "").trim();
+    }
     var matches = parsed.rows.filter(function(row) { return String(row[0] || "").trim().toUpperCase() === serviceId.toUpperCase(); });
-    if (!matches.length) return { status: "error", code: "SERVICE_NOT_FOUND", endpointUrl: "" };
+    if (!matches.length) return { status: "error", code: "SERVICE_NOT_FOUND", serviceId: serviceId, endpointUrl: "" };
     if (matches.length !== 1) return { status: "error", code: "SERVICE_REGISTRY_DUPLICATE_ID", endpointUrl: "" };
     var row = matches[0], state = String(row[7] || "").trim().toLowerCase();
     var endpointUrl = String(row[4] || "").trim(), version = String(row[8] || "").trim();
@@ -3144,9 +3180,7 @@ function resolveServiceEndpoint(payload) {
     var permissions = [];
     try { permissions = typeof row[9] === "string" ? JSON.parse(row[9] || "[]") : row[9]; }
     catch (permissionError) { return { status: "error", code: "SERVICE_PERMISSIONS_INVALID", serviceId: serviceId, endpointUrl: "" }; }
-    if (!Array.isArray(permissions) || permissions.some(function(value) { return typeof value !== "string" || !value.trim() || value.indexOf("*") !== -1; })) {
-      return { status: "error", code: "SERVICE_PERMISSIONS_INVALID", serviceId: serviceId, endpointUrl: "" };
-    }
+    if (!Array.isArray(permissions) || permissions.some(function(value) { return typeof value !== "string" || !value.trim() || value.indexOf("*") !== -1; })) return { status: "error", code: "SERVICE_PERMISSIONS_INVALID", serviceId: serviceId, endpointUrl: "" };
     if (permissions.indexOf(requestedAction) === -1) return { status: "error", code: "SERVICE_ACTION_NOT_GRANTED", serviceId: serviceId, action: requestedAction, endpointUrl: "" };
     var sourceServiceId = String(payload && payload.sourceServiceId || "").trim();
     if (sourceServiceId) {
@@ -3162,15 +3196,14 @@ function resolveServiceEndpoint(payload) {
           String(relation[2] || "").trim().toUpperCase() === serviceId.toUpperCase() &&
           String(relation[3] || "").trim() === requestedAction;
       });
-      if (relationMatches.length !== 1 || String(relationMatches[0][4] || "").trim().toUpperCase() !== "ACTIVE") {
-        return { status: "error", code: "SERVICE_RELATION_NOT_GRANTED", endpointUrl: "" };
-      }
+      if (relationMatches.length !== 1 || String(relationMatches[0][4] || "").trim().toUpperCase() !== "ACTIVE") return { status: "error", code: "SERVICE_RELATION_NOT_GRANTED", endpointUrl: "" };
     }
     if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpointUrl)) return { status: "error", code: "SERVICE_ENDPOINT_INVALID", serviceId: serviceId, endpointUrl: "" };
-    return { status: "success", serviceId: String(row[0]).trim(), endpointUrl: endpointUrl, state: state, version: version, degraded: state === "degradado" };
+    return { status: "success", serviceId: String(row[0]).trim(), serviceKey: serviceKey, endpointUrl: endpointUrl, state: state, version: version, degraded: state === "degradado" };
   } catch (error) { return { status: "error", code: "SERVICE_ENDPOINT_RESOLUTION_FAILED", endpointUrl: "" }; }
   finally { lock.releaseLock(); }
 }
+
 
 function updateServiceMetadata_(payload, verifiedActorId) {
   var actorId = String(verifiedActorId || "").trim(), serviceId = String(payload && payload.serviceId || "").trim();

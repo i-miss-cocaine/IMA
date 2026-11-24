@@ -172,11 +172,26 @@ function fetchApi(service, action, payload, retryCount, options) {
   var MAX_RETRIES = 2;
   retryCount = retryCount || 0;
   options = options || {};
-  if (options.serviceId && !options.resolvedEndpointUrl && service !== "DEVELOPER") {
-    var requestedServiceId = String(options.serviceId).trim();
-    return fetchApi("DEVELOPER", "resolveServiceEndpoint", { serviceId: requestedServiceId, action: action, sourceServiceId: options.sourceServiceId || "" }, 0, { silentAuthError: true })
+  var autoRouteKeys = ["ACADEMIC", "TASK", "EXAM", "ACCOUNTING"];
+  var routeByServiceKey = !options.skipCentralRouting && !options.resolvedEndpointUrl && service !== "DEVELOPER" &&
+    !options.serviceId && autoRouteKeys.indexOf(service) !== -1;
+  if (!options.resolvedEndpointUrl && service !== "DEVELOPER" && (options.serviceId || routeByServiceKey)) {
+    var routeRequest = {
+      serviceId: options.serviceId ? String(options.serviceId).trim() : "",
+      serviceKey: options.serviceId ? "" : service,
+      action: action,
+      sourceServiceId: options.sourceServiceId || "",
+      contractVersion: options.contractVersion || ""
+    };
+    return fetchApi("DEVELOPER", "resolveServiceEndpoint", routeRequest, 0, { silentAuthError: true })
       .then(function(resolution) {
-        if (!resolution || resolution.status !== "success" || !resolution.endpointUrl) return createApiClientError(resolution && resolution.code || "SERVICE_NOT_AVAILABLE", null, false, createApiClientCorrelationId());
+        if (!resolution || resolution.status !== "success" || !resolution.endpointUrl) {
+          var resolutionCode = resolution && resolution.code || "SERVICE_NOT_AVAILABLE";
+          if (!options.serviceId && routeByServiceKey && resolutionCode === "SERVICE_NOT_FOUND") {
+            return fetchApi(service, action, payload, 0, Object.assign({}, options, { skipCentralRouting: true }));
+          }
+          return createApiClientError(resolutionCode, null, false, createApiClientCorrelationId());
+        }
         var routedPayload = Object.assign({}, payload || {}, { contractVersion: options.contractVersion || resolution.version || "" });
         return fetchApi(service, action, routedPayload, 0, Object.assign({}, options, { resolvedEndpointUrl: resolution.endpointUrl }));
       });
