@@ -11242,7 +11242,7 @@ function processWorkflowDecision(payload) {
     var correlationId = String(payload.correlationId || "").trim() || "SERVER-" + Utilities.getUuid();
     if (decData.slice(1).some(function(row) { return String(row[15] || "").trim() === correlationId; })) throw new Error("WORKFLOW_DECISION_DUPLICATE_CORRELATION");
     var auditRow = [decisionId, solicitudId, targetEtapa, callerId, accionDecision, observacionesInternas,
-      observacionesPublicas, nowISO, "APPS_SCRIPT", "", "", "", "", "2", callerRole, correlationId];
+      observacionesPublicas, nowISO, "", "", "", "", "", "2", callerRole, correlationId, "APPS_SCRIPT"];
     var appended = appendWorkflowDecisionAuditEvent_(decSheet, auditRow, callerId);
     var requestRowNumber = idx + 1;
     try {
@@ -11299,7 +11299,7 @@ function getWorkflowHistory(payload) {
         fechaDecision: row[7] ? normalizeWorkflowDecisionAuditDate_(row[7]) : null,
         hashPrevio: row[9] || "", hashActual: row[10] || "", decisionIdOriginal: row[11] || "",
         motivoCorreccion: row[12] || "", hashSchemaVersion: row[13] || "legacy",
-        actorRole: row[14] || "", correlationId: row[15] || "" };
+        actorRole: row[14] || "", correlationId: row[15] || "", executionSource: row[16] || "" };
     }) : [];
     var firmSheet = getOrCreateSheet(ss, "FirmasConformidades"), firmData = firmSheet.getDataRange().getValues();
     var signatures = firmData.length > 1 ? firmData.slice(1).filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).map(function(row) {
@@ -12387,8 +12387,8 @@ const WORKFLOW_DECISION_AUDIT_CHECKPOINT_KEY_ = "WORKFLOW_DECISION_AUDIT_CHECKPO
 function ensureWorkflowDecisionAuditSchema_(sheet) {
   var currentWidth = Math.max(9, Number(sheet.getLastColumn()) || 9);
   var current = sheet.getRange(1, 1, 1, currentWidth).getValues()[0] || [];
-  var header = new Array(16).fill("");
-  for (var i = 0; i < Math.min(current.length, 16); i++) header[i] = current[i];
+  var header = new Array(17).fill("");
+  for (var i = 0; i < Math.min(current.length, 17); i++) header[i] = current[i];
   header[9] = "HashPrevio";
   header[10] = "HashActual";
   header[11] = "DecisionIdOriginal";
@@ -12396,7 +12396,8 @@ function ensureWorkflowDecisionAuditSchema_(sheet) {
   header[13] = "HashSchemaVersion";
   header[14] = "ActorRole";
   header[15] = "CorrelationId";
-  sheet.getRange(1, 1, 1, 16).setValues([header]);
+  header[16] = "FuenteEjecucion";
+  sheet.getRange(1, 1, 1, 17).setValues([header]);
   return sheet;
 }
 
@@ -12411,7 +12412,7 @@ function computeWorkflowDecisionHashV2_(row) {
     String(row[0] || "").trim(), String(row[1] || "").trim(), String(row[2] || "").trim(),
     String(row[3] || "").trim(), String(row[4] || "").trim(), String(row[5] || ""),
     String(row[6] || ""), normalizeWorkflowDecisionAuditDate_(row[7]), String(row[8] || ""),
-    String(row[9] || ""), String(row[11] || ""), String(row[12] || ""), String(row[13] || "2"), String(row[14] || ""), String(row[15] || "")
+    String(row[9] || ""), String(row[11] || ""), String(row[12] || ""), String(row[13] || "2"), String(row[14] || ""), String(row[15] || ""), String(row[16] || "")
   ];
   return computeDocumentSHA256(JSON.stringify(canonical));
 }
@@ -12427,7 +12428,7 @@ function verifyWorkflowDecisionAuditRows_(rows) {
     function add(code, message) { inconsistencias.push({ rowNumber: rowNumber, decisionId: decisionId, solicitudId: solicitudId, tipoError: code, mensaje: message }); }
     if (!decisionId || !solicitudId) add("WORKFLOW_AUDIT_REQUIRED_FIELDS_MISSING", "La decisión carece de ID o solicitud.");
     if (schemaVersion === "2" && (!String(row[3] || "").trim() || !String(row[4] || "").trim() ||
-        !String(row[14] || "").trim() || !String(row[15] || "").trim())) {
+        !String(row[14] || "").trim() || !String(row[15] || "").trim() || !String(row[16] || "").trim())) {
       add("WORKFLOW_AUDIT_V2_FIELDS_MISSING", "El evento v2 requiere actor, acción, rol verificado y correlationId.");
     }
     if (schemaVersion === "2" && String(row[2] || "").indexOf("Corrección-") === 0 &&
@@ -12582,8 +12583,8 @@ function verifyWorkflowDecisionAuditChain(payload, lockAlreadyHeld) {
     if (rows.some(function(row) { return String(row[15] || "").trim() === correlationId; })) throw new Error("WORKFLOW_CORRECTION_DUPLICATE_CORRELATION");
     var observation = String(payload.observaciones || "").slice(0, 2000);
     var auditRow = [correctionId, solicitudId, "Corrección-" + String(originalRow[2] || ""), callerId,
-      nuevaAccionDecision, observation, motivoCorreccion, nowISO, "APPS_SCRIPT", "", "",
-      decisionIdOriginal, motivoCorreccion, "2", callerRole, correlationId];
+      nuevaAccionDecision, observation, motivoCorreccion, nowISO, "", "", "",
+      decisionIdOriginal, motivoCorreccion, "2", callerRole, correlationId, "APPS_SCRIPT"];
     var appended = appendWorkflowDecisionAuditEvent_(decSheet, auditRow, callerId);
     return { status: "success", decisionIdCorreccion: correctionId, decisionIdOriginal: decisionIdOriginal,
       solicitudId: solicitudId, nuevaAccion: nuevaAccionDecision, hashActual: appended.hashActual,
