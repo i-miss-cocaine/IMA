@@ -14487,11 +14487,17 @@ function isConfidentialWelfarePayload_(payload) {
     .map(function(value) { return String(value || ""); }).join(" ");
   if (/consejer[ií]a|orientaci[oó]n|bienestar/i.test(metadata)) return true;
   var actions = p.acciones;
-  if (!Array.isArray(actions)) return false;
+  if (typeof actions === "string") {
+    if (!actions.trim()) return false;
+    try { actions = JSON.parse(actions); } catch (_) { return true; }
+  }
+  if (actions === null || actions === undefined || actions === "") return false;
+  if (!Array.isArray(actions)) return true;
   return actions.some(function(item) {
     if (!item || typeof item !== "object") return false;
     return /consejer[ií]a|orientaci[oó]n|bienestar/i.test(String(item.tipo || item.type || "")) ||
-      Object.prototype.hasOwnProperty.call(item, "notasConfidenciales");
+      Object.prototype.hasOwnProperty.call(item, "notasConfidenciales") ||
+      Object.prototype.hasOwnProperty.call(item, "derivacionId");
   });
 }
 
@@ -14632,6 +14638,7 @@ function getAttendanceFollowupCases(payload) {
     var actions = [];
     try { actions = row[5] ? (typeof row[5] === "string" ? JSON.parse(row[5]) : row[5]) : []; }
     catch (_) { blocked = true; return; }
+    if (!Array.isArray(actions)) { blocked = true; return; }
     visible.push({
       casoId: row[0], userId: row[1], motivoApertura: row[2], resumenAsistencia: row[3],
       responsableId: row[4], acciones: actions,
@@ -14660,8 +14667,15 @@ function saveAttendanceFollowupCaseUnsafe_(payload) {
     if (matches.length > 1) return { status: "error", code: "WELFARE_CASE_AMBIGUOUS", message: "No se pudo identificar un expediente único." };
     existing = matches.length === 1 ? matches[0] : null;
   }
-  var sensitive = isConfidentialWelfarePayload_(p) || isConfidentialWelfareCase_(existing);
   var safePayload = Object.assign({}, p);
+  if (typeof safePayload.acciones === "string") {
+    try { safePayload.acciones = JSON.parse(safePayload.acciones); }
+    catch (_) { return { status: "error", code: "WELFARE_ACTIONS_INVALID", message: "La estructura de acciones del expediente no es válida." }; }
+  }
+  if (safePayload.acciones !== undefined && safePayload.acciones !== null && !Array.isArray(safePayload.acciones)) {
+    return { status: "error", code: "WELFARE_ACTIONS_INVALID", message: "Las acciones del expediente deben ser una lista válida." };
+  }
+  var sensitive = isConfidentialWelfarePayload_(safePayload) || isConfidentialWelfareCase_(existing);
   if (sensitive) {
     var access = existing
       ? getWelfareCaseAccess_(p, p.casoId, ss, true)

@@ -377,6 +377,46 @@ test("counseling and guidance plan writers preserve actor ownership and confiden
   assert.ok(rows.every(row => /consejer[ií]a|orientaci[oó]n|bienestar/i.test(row[3])));
 });
 
+
+test("JSON-string actions containing confidential notes require welfare scope", () => {
+  const h = harness({
+    identities: { secretary: { authorized: true, userId: "secretary-1", role: "Secretaría" } }
+  });
+  const result = h.api.saveAttendanceFollowupCase({
+    sessionToken: "secretary", userId: "STU-1", motivoApertura: "Seguimiento",
+    resumenAsistencia: "Resumen general", categoriaCaso: "General",
+    responsableId: "secretary-1",
+    acciones: '[{"tipo":"Seguimiento","notasConfidenciales":"privado"}]'
+  });
+  assert.equal(result.status, "error");
+  assert.equal(h.db.getSheetByName("CasosSeguimiento").rows.length, 1);
+});
+
+test("malformed JSON-string actions are rejected without persistence", () => {
+  const h = harness({
+    identities: { secretary: { authorized: true, userId: "secretary-1", role: "Secretaría" } }
+  });
+  const result = h.api.saveAttendanceFollowupCase({
+    sessionToken: "secretary", userId: "STU-1", motivoApertura: "Seguimiento",
+    resumenAsistencia: "Resumen general", responsableId: "secretary-1", acciones: "{broken"
+  });
+  assert.equal(result.code, "WELFARE_ACTIONS_INVALID");
+  assert.equal(h.db.getSheetByName("CasosSeguimiento").rows.length, 1);
+});
+
+test("general follow-up accepts valid JSON-string actions without treating them as confidential", () => {
+  const h = harness({
+    identities: { secretary: { authorized: true, userId: "secretary-1", role: "Secretaría" } }
+  });
+  const result = h.api.saveAttendanceFollowupCase({
+    sessionToken: "secretary", userId: "STU-1", motivoApertura: "Seguimiento ordinario",
+    resumenAsistencia: "Seguimiento general", categoriaCaso: "General", responsableId: "secretary-1",
+    acciones: '[{"tipo":"Seguimiento","nota":"pública"}]'
+  });
+  assert.equal(result.status, "success");
+  assert.deepEqual(JSON.parse(h.db.getSheetByName("CasosSeguimiento").rows[1][5]), [{ tipo: "Seguimiento", nota: "pública" }]);
+});
+
 test("missing signed identity is denied even when the payload claims a privileged role", () => {
   const h = harness({ cases: [caseRow("CASE-1", "STU-1", "Categoría: Consejería", "counselor-1")] });
   const result = h.api.validateStudentWelfareAccess({ authRole: "Director", casoId: "CASE-1" });
