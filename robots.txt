@@ -1,6 +1,0 @@
-User-agent: *
-Disallow: /teacher-dashboard.html
-Disallow: /js/teacher.js
-Disallow: /backend/
-
-Sitemap: https://informatica0101.github.io/sitemap.xml
