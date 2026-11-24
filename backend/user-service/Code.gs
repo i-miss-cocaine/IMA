@@ -14761,7 +14761,7 @@ function assignRoleScope(payload) {
       }
       if (!assignmentId) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_ID_CONFLICT" };
     }
-    if (isSubstitute) {
+    if (isSubstitute && (state === "Activo" || !existingAssignmentRow)) {
       var substituteMembershipState = getUserRoleMembershipState_(substituteFor, institutionId);
       var substituteMemberships = (substituteMembershipState && substituteMembershipState.memberships || []).filter(function(item) { return item.roleId === roleId; });
       if (substituteMemberships.length !== 1) return { status: "error", code: "ROLE_SCOPE_SUBSTITUTE_MEMBERSHIP_INVALID" };

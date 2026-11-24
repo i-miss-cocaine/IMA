@@ -177,6 +177,31 @@ test("una suplencia requiere titular vigente y no admite ventanas simultáneas",
   assert.equal(assignments.rows.length, 3);
 });
 
+test("revocar una suplencia sigue permitido después de revocar al titular", () => {
+  const { context, assignments } = assignmentContext();
+  const titular = assign(context, "EMP-1", "ROL-1");
+  const substitute = assign(context, "EMP-2", "ROL-1", {
+    esSuplente: true, suplenteDeUserId: "EMP-1",
+    fechaInicio: "2026-05-01", fechaFin: "2026-06-01"
+  });
+  assert.equal(titular.status, "success");
+  assert.equal(substitute.status, "success");
+  const revokeTitular = context.assignRoleScope({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    assignmentId: titular.assignmentId, estado: "Revocado",
+    motivo: "Revocación del titular por cambio de funciones."
+  });
+  assert.equal(revokeTitular.status, "success");
+  const revokeSubstitute = context.assignRoleScope({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    assignmentId: substitute.assignmentId, estado: "Revocado",
+    motivo: "Cierre de suplencia por terminación de la cobertura."
+  });
+  assert.equal(revokeSubstitute.status, "success");
+  assert.equal(assignments.rows[1][5], "Revocado");
+  assert.equal(assignments.rows[2][5], "Revocado");
+});
+
 test("la consulta histórica conserva asignaciones aunque la membresía RBAC se haya revocado", () => {
   const roles = sheet([roleHeaders, roleRow("ROL-1","Coordinador","COORD-1","Inactivo")]);
   const users = sheet([["UserID"], userRow("EMP-1")]);
@@ -439,7 +464,7 @@ test("los identificadores de catálogo colisionados se rechazan sin duplicar fil
   const collisionId = "ROL-INT-" + "A".repeat(20);
   const roles = sheet([roleHeaders, roleRow(collisionId, "Responsabilidad existente", "EXISTENTE")]);
   const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
-  context.Utilities.getUuid = () => "A".repeat(32) + "-0000-0000-0000";
+  context.Utilities.getUuid = () => "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA";
   const result = context.manageInternalRoleCatalog({
     _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
     nombreResponsabilidad: "Responsabilidad nueva", tipoResponsabilidad: "Académica",
@@ -501,6 +526,10 @@ test("getUserContextScope trata FechaFin Date de medianoche como día inclusivo"
   });
   assert.equal(result.status, "success");
   assert.equal(result.scopes.length, 1);
+});
+
+test("la consola HR mantiene de solo lectura las asignaciones sin vínculo válido", () => {
+  assert.match(dashboard, /item\.responsibilityStatus!=='LEGACY_UNLINKED'&&responsibility/);
 });
 
 test("la consola HR ignora respuestas antiguas cuando hay cargas concurrentes", () => {
