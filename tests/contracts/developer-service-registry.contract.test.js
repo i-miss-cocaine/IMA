@@ -104,3 +104,32 @@ test("la auditoría identifica IDs duplicados, metadatos incompletos y relacione
  assert.match(developerUi, /auditServiceRegistryIntegrity/);
  assert.match(dashboard, /btn-audit-service-registry/);
 });
+
+function postHandler() {
+ const match = backend.match(/function doPost\(e\) \{[\s\S]*?\n\}/);
+ assert.ok(match, "Debe existir doPost");
+ const context = {
+  ROLE_PERMISSIONS: { Desarrollador: ["getCentralServiceRegistry"], Docente: [], Administrador: [] },
+  verifySessionToken: token => token === "valid-session" ? { role: "Desarrollador", userId: "USER-1" } :
+    token === "docente-session" ? { role: "Docente", userId: "USER-2" } : null,
+  textResponse: value => value,
+  doGet: () => ({ status: "success" }),
+  getCentralServiceRegistry: payload => ({ status: "success", actor: payload._verifiedUserId })
+ };
+ return vm.runInNewContext("(" + match[0] + ")", context);
+}
+test("doPost exige el token de sesión dentro del payload normalizado", () => {
+ const post = postHandler();
+ const missing = post({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", payload: {} }) } });
+ assert.equal(missing.code, "AUTHENTICATION_REQUIRED");
+ const invalid = post({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", payload: { sessionToken: "bad" } }) } });
+ assert.equal(invalid.code, "INVALID_SESSION_TOKEN");
+});
+test("doPost deriva identidad y rol de claims firmados, no de authRole del cliente", () => {
+ const post = postHandler();
+ const forged = post({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", payload: { sessionToken: "docente-session", authRole: "Desarrollador" } }) } });
+ assert.equal(forged.code, "PERMISSION_DENIED");
+ const valid = post({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", payload: { sessionToken: "valid-session" } }) } });
+ assert.equal(valid.status, "success");
+ assert.equal(valid.actor, "USER-1");
+});
