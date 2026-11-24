@@ -547,7 +547,7 @@ test("una asignación con responsabilidad inexistente o inactiva se rechaza", ()
 
 test("assignRoleScope no duplica IDs de asignación ante una colisión de UUID", () => {
   const { context, assignments } = assignmentContext();
-  const collisionId = "AMB-" + "A".repeat(32);
+  const collisionId = "AMB-" + "A".repeat(32) + "0".repeat(12);
   assignments.rows.push([collisionId,"EMP-3","Docente","OTRO",'["DEP-3"]',"Activo","HR-1","2026-01-01","2026-01-01","2026-12-31","No","","INST-1","MEM-3","ROL-2"]);
   context.Utilities.getUuid = () => "A".repeat(32) + "-0000-0000-0000";
   const result = assign(context, "EMP-1", "ROL-1");
@@ -555,4 +555,9 @@ test("assignRoleScope no duplica IDs de asignación ante una colisión de UUID",
   assert.equal(result.code, "ROLE_SCOPE_ASSIGNMENT_ID_CONFLICT");
   assert.equal(assignments.rows.length, 2);
   assert.equal(assignments.rows[1][0], collisionId);
+});
+test("la consola HR marca las asignaciones no vinculadas como historial y no ofrece revocarlas", () => {
+  assert.match(dashboard, /Sin vínculo a responsabilidad \(solo historial\)/);
+  assert.match(dashboard, /item\.responsibilityStatus!=='LEGACY_UNLINKED'/);
+  assert.match(dashboard, /responsibility&&String\(responsibility\.estado\|\|''\)\.toUpperCase\(\)==='ACTIVO'/);
 });

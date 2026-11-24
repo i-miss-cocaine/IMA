@@ -3147,12 +3147,12 @@
             const responsibility=item.responsibility||roles.find(x=>x.rolInternoId===item.responsibilityId);
             cell(tr,employee&&(employee.empleadoNombre||employee.nombreCompleto)||item.userId);
             cell(tr,item.roleId);
-            cell(tr,responsibility&&(responsibility.name||responsibility.nombreResponsabilidad)||item.responsibilityId);
+            cell(tr,responsibility&&(responsibility.name||responsibility.nombreResponsabilidad)||(item.responsibilityStatus==='LEGACY_UNLINKED'?'Sin vínculo a responsabilidad (solo historial)':item.responsibilityId));
             cell(tr,String(item.scopeType||'')+': '+String(item.scopeValues||''));
             cell(tr,String(item.fechaInicio||'')+(item.fechaFin?' → '+String(item.fechaFin):' → vigente'));
             cell(tr,item.estado+(item.membershipStatus&&String(item.membershipStatus).toUpperCase()!=='ACTIVE'?' · Membresía '+item.membershipStatus:''));
             const actions=document.createElement('td');actions.className='p-2 border-b';
-            if(['ACTIVO','ACTIVE','ACTIVA'].indexOf(String(item.estado||'').toUpperCase())!==-1&&(!item.membershipStatus||String(item.membershipStatus).toUpperCase()==='ACTIVE')){
+            if(['ACTIVO','ACTIVE','ACTIVA'].indexOf(String(item.estado||'').toUpperCase())!==-1&&item.responsibilityStatus!=='LEGACY_UNLINKED'&&responsibility&&String(responsibility.estado||'').toUpperCase()==='ACTIVO'&&(!item.membershipStatus||String(item.membershipStatus).toUpperCase()==='ACTIVE')){
               const button=document.createElement('button');button.type='button';button.dataset.assignmentId=item.asignacionId;button.textContent='Revocar';button.className='font-bold text-rose-700';actions.appendChild(button);
             }else actions.textContent='—';
             tr.appendChild(actions);assignmentBody.appendChild(tr);
