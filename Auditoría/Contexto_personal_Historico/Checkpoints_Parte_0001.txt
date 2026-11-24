@@ -39,3 +39,16 @@
 - Verificación documental: se revisaron los registros de continuidad y los siete backlogs. Las pruebas de código no se ejecutaron porque esta unidad no modifica código.
 - Siguiente acción concreta: iniciar PM-00A / TASK-047, inspeccionar su alcance y dependencias, implementar y crear/ejecutar pruebas locales nuevas pertinentes.
 ===============================================================================
+
+===============================================================================
+C3.004 — IMA-ITER-20261124-002
+===============================================================================
+- Objetivo: incorporar como norma obligatoria el cierre íntegro de tareas parcialmente implementadas, con checkpoint/commit por tarea y continuidad inmediata.
+- Norma actualizada: Normas_Desarollo.md versión 1.6, §2.1. La regla exige completar criterios pendientes sin repetir evidencia vigente, registrar evidencia real, consolidar cada tarea completa y continuar con la siguiente elegible.
+- Archivos funcionales modificados en esta unidad normativa: Normas_Desarollo.md. No se alteró código de producto.
+- Verificación: se revisó el diff normativo y se confirmó que la regla no autoriza commits ficticios, fragmentación de subpasos ni declarar tareas con criterios pendientes como completas.
+- Pruebas Node.js/CLI/GitHub Actions: no aplican a este cambio exclusivamente normativo.
+- HEAD inicial: 791490507da62464e24b44a04ca810f5d5eb2cb7.
+- Commit normativo: 48c716d0dffff0c5c1282d0163b1d5ac649db981.
+- Estado: regla obligatoria publicada; siguiente trabajo: continuar PM-00A / TASK-047, completar el router/registro central y verificar todos los criterios pendientes.
+===============================================================================

@@ -2,10 +2,11 @@
 
 Política: conservar como máximo los diez checkpoints más recientes en este índice y en el árbol de trabajo. Al registrar el undécimo, retirar el más antiguo. No reescribir el historial Git.
 
-Estado operativo: preparación del ciclo concluida; la próxima iteración comienza directamente con PM-00A / TASK-047. C3.001 y C3.002 son antecedentes históricos del reinicio extraordinario ya cerrado, no pasos pendientes.
+Estado operativo: ciclo 3 en implementación continua. La regla de cierre por tarea y continuidad inmediata quedó vigente en Normas_Desarollo.md §2.1. C3.001/C3.002 son antecedentes históricos cerrados.
 
 | Checkpoint | Sesión | Objetivo | Estado | Archivo |
 |---|---|---|---|---|
 | C3.001 | IMA-RESET-20261124-001 | Base histórica: reinicio extraordinario y limpieza autorizada del ciclo anterior | Cerrado / histórico | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.002 | IMA-RESET-20261124-001 | Reapertura y reconciliación de estados de Plan Maestro y siete backlogs | Cerrado / histórico | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.003 | IMA-ITER-20261124-001 | Cierre de preparación documental; requisitos Apps Script/sesión aclarados; normalización del ciclo activo | Listo para implementación | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
+| C3.004 | IMA-ITER-20261124-002 | Norma obligatoria: completar tareas parciales, checkpoint/commit por tarea y continuidad inmediata | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |

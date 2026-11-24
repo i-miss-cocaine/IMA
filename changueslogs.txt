@@ -4700,3 +4700,12 @@ C3.003 — IMA-ITER-20261124-001
 - No se modificó código ni se ejecutaron pruebas locales en esta unidad documental.
 - Rama: NG_beta_0.0.0.1_work. HEAD de partida documentado: 5ba407df1679e2d44d634407e84eaaf8fa47db88.
 ===============================================================================
+
+===============================================================================
+C3.004 — IMA-ITER-20261124-002
+===============================================================================
+- Normas_Desarollo.md actualizada a versión 1.6 (2026-11-24).
+- Se incorpora §2.1: toda tarea parcialmente implementada debe completarse sobre la evidencia vigente; al terminar, actualizar estado, checkpoint y commit; después continuar inmediatamente con la siguiente tarea elegible.
+- No se alteró código de producto ni se ejecutaron pruebas de código; cambio exclusivamente normativo.
+- Rama: NG_beta_0.0.0.1_work. Commit normativo: 48c716d0dffff0c5c1282d0163b1d5ac649db981.
+===============================================================================
