@@ -4760,3 +4760,11 @@ C3.010 — IMA-ITER-20261124-008
 - AUD-NG-090 continúa pendiente por la prueba real entre proyectos Apps Script aislados; los ensayos HMAC interservicio quedan supersedidos por NDASC §17.8.
 - Rama: NG_beta_0.0.0.1_work. HEAD de entrada: f87852dcb8938242e6a7be849be3e0fd4aba2976.
 ===============================================================================
+
+===============================================================================
+C3.011 — IMA-ITER-20261124-009
+===============================================================================
+- AUD-NG-088 completada: hash canónico v2 SHA-256 con actor/rol, observaciones, fuente, corrección y correlationId; limitación legacy documentada.
+- Evidencia CI: run 45327820272 SUCCESS; 43/43 pruebas Node.js PASS; siete node --check y git diff --check PASS.
+- Rama: NG_beta_0.0.0.1_work. HEAD de entrada: 4aaf6cd92ed92e0a985c1566f1f70fcbbd9505db.
+===============================================================================

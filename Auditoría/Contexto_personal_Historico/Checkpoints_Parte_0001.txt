@@ -126,3 +126,14 @@ C3.010 — IMA-ITER-20261124-008
 - Estado: AUD-NG-087 completada; AUD-NG-090 mantiene pendiente la validación real entre proyectos aislados.
 - Siguiente tarea: continuar inmediatamente con el siguiente requisito elegible del Plan Maestro.
 ===============================================================================
+
+===============================================================================
+C3.011 — IMA-ITER-20261124-009
+===============================================================================
+- Objetivo cerrado: AUD-NG-088 — hash canónico v2 de los campos probatorios.
+- Resultado: Los eventos nuevos v2 incluyen IDs, solicitud, etapa, actor verificado, acción, observaciones internas/públicas, fecha, fuente de ejecución, hash previo, vínculo/motivo de corrección, versión de esquema, rol y correlationId en JSON determinista SHA-256. No se inventa IP: IpMetadata queda vacío y FuenteEjecucion registra APPS_SCRIPT. Los registros legacy se verifican con su fórmula original y generan advertencia explícita porque no cubrían todos los campos v2; no se reescriben.
+- Verificaciones: GitHub Actions run 45327820272 SUCCESS; 43/43 pruebas Node.js PASS; siete node --check; git diff --check PASS.
+- Límite histórico: los eventos legacy conservan su fórmula original y se reporta su alcance limitado; no se reescriben registros históricos.
+- HEAD de entrada: 4aaf6cd92ed92e0a985c1566f1f70fcbbd9505db.
+- Estado: AUD-NG-088 completada. AUD-NG-090 sigue pendiente por prueba real entre proyectos aislados.
+===============================================================================

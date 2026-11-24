@@ -3680,6 +3680,10 @@
 - **Descripción del Alcance:** Definir un esquema canónico del evento que incluya identificadores, proceso, actor verificado, acción, fecha, IP/fuente confiable, observaciones, motivo, referencia a evento original y hash previo. Serializar de forma determinista y someter todos los campos probatorios a la función criptográfica.
 - **Criterios de Aceptación:** Modificar cualquier campo probatorio provoca fallo de integridad; una corrección queda vinculada estructuralmente al evento original; los hashes se recalculan sobre el mismo esquema canónico en escritura y verificación.
 
+- **Implementación C3.011:** Los eventos nuevos v2 incluyen IDs, solicitud, etapa, actor verificado, acción, observaciones internas/públicas, fecha, fuente de ejecución, hash previo, vínculo/motivo de corrección, versión de esquema, rol y correlationId en JSON determinista SHA-256. No se inventa IP: IpMetadata queda vacío y FuenteEjecucion registra APPS_SCRIPT. Los registros legacy se verifican con su fórmula original y generan advertencia explícita porque no cubrían todos los campos v2; no se reescriben.
+- **Evidencia CI:** GitHub Actions run 45327820272 — SUCCESS; Node.js 24.22; 43/43 pruebas PASS; node --check en siete archivos Apps Script/JS; git diff --check PASS.
+- **Estado:** [x] Completada (C3.011).
+
 ### [AUD-NG-089] Autorizar y serializar las correcciones de decisiones históricas
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-089 (TASK-049 / F23-Task06)
 - **Dependencias Expuestas:** recordWorkflowDecisionCorrection, validateRolePermission, _verifiedUserId, decisionIdOriginal, solicitudId, nuevaAccionDecision y LockService.
