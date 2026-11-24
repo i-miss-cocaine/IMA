@@ -246,3 +246,68 @@ test("las asignaciones nuevas mantienen compatibilidad con usuarios de rol hered
   assert.equal(history.data.length, 1);
   assert.equal(history.data[0].membershipStatus, "LEGACY_ROLE");
 });
+
+test("assignRoleScope no escribe si LockService está ocupado", () => {
+  const { context, assignments } = assignmentContext();
+  let releases = 0;
+  context.LockService = { getScriptLock: () => ({
+    waitLock() { throw new Error("LOCK_BUSY"); },
+    releaseLock() { releases++; }
+  }) };
+  const result = assign(context, "EMP-1", "ROL-1");
+  assert.equal(result.status, "error");
+  assert.equal(result.code, "LOCK_BUSY");
+  assert.equal(assignments.rows.length, 1);
+  assert.equal(releases, 0);
+});
+
+test("assignRoleScope libera LockService después de una asignación correcta", () => {
+  const { context, assignments } = assignmentContext();
+  let waits = 0, releases = 0;
+  context.LockService = { getScriptLock: () => ({
+    waitLock() { waits++; },
+    releaseLock() { releases++; }
+  }) };
+  const result = assign(context, "EMP-1", "ROL-1");
+  assert.equal(result.status, "success");
+  assert.equal(assignments.rows.length, 2);
+  assert.equal(waits, 1);
+  assert.equal(releases, 1);
+});
+
+test("una asignación interna no modifica la matriz de permisos RBAC", () => {
+  const { context } = assignmentContext();
+  const before = JSON.stringify(context.ROLE_PERMISSIONS);
+  const result = assign(context, "EMP-1", "ROL-1");
+  assert.equal(result.status, "success");
+  assert.equal(JSON.stringify(context.ROLE_PERMISSIONS), before);
+});
+
+test("un fallo de auditoría compensa la escritura de la asignación", () => {
+  const { context, assignments } = assignmentContext();
+  context.recordEntityChangeLog = () => { throw new Error("AUDIT_WRITE_FAILED"); };
+  const result = assign(context, "EMP-1", "ROL-1");
+  assert.equal(result.status, "error");
+  assert.equal(result.code, "AUDIT_WRITE_FAILED");
+  assert.equal(assignments.rows.length, 1);
+  assert.equal(context.events.length, 1);
+});
+
+test("manageInternalRoleCatalog no modifica el catálogo si LockService está ocupado", () => {
+  const roles = sheet([roleHeaders]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
+  let releases = 0;
+  context.LockService = { getScriptLock: () => ({
+    waitLock() { throw new Error("LOCK_BUSY"); },
+    releaseLock() { releases++; }
+  }) };
+  const result = context.manageInternalRoleCatalog({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    nombreResponsabilidad: "Coordinador de Matemáticas", tipoResponsabilidad: "Académica",
+    vigenciaMeses: 12, motivo: "Creación autorizada del puesto."
+  });
+  assert.equal(result.status, "error");
+  assert.equal(result.code, "LOCK_BUSY");
+  assert.equal(roles.rows.length, 1);
+  assert.equal(releases, 0);
+});
