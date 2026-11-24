@@ -2599,3 +2599,27 @@ BETA-F18-007 — F18-TASK07: ciclo de compromisos presupuestarios de órdenes de
 - **Evidencia requerida:** SHA exacto del despliegue, IDs sintéticos, snapshots antes/después de CasosSeguimiento/CitasOrientacion/RelacionesFamiliares, matriz allow/deny por rol/ámbito, intercalación concurrente, logs saneados y verificación de que no contienen notas privadas.
 - **Tarea vinculada:** F11-TASK01 / AUD-NG-383 / C1.962.
 ===============================================================================
+
+===============================================================================
+## BETA-FUNC-134 — ACCOUNTING: aislamiento de asignaciones y rutas de transporte
+- **Módulo/roles:** ACCOUNTING; Padre/Tutor, Estudiante, Conductor, Monitor, Dirección y Administración.
+- **Tarea/requisito:** TASK-030 / F21-Task02 — RBAC/ABAC de rutas, asignaciones y datos de movilidad de menores.
+- **Objetivo:** validar en Apps Script/Sheets desplegados que ninguna familia, estudiante o persona de transporte pueda consultar rutas, paradas, horarios o pasajeros fuera de su ámbito.
+- **Prioridad:** P0.
+- **Precondiciones:** despliegue controlado; datos sintéticos en Usuarios, RelacionesFamiliares, ExpedientesEstudiantes, ExpedientesLaborales, TransporteRutas, TransporteAsignaciones y TransporteViajes; sesiones reales de prueba; relaciones familiares vigentes, futuras, vencidas y revocadas; rutas y viajes separados.
+- **Pasos:**
+  1. Como Padre/Tutor, consultar asignaciones sin filtro y con estudiante ajeno; solo deben aparecer estudiantes vinculados mediante relación vigente y permisos aplicables.
+  2. Como Estudiante, consultar asignaciones propias y de otro estudiante; la segunda debe denegarse y auditarse.
+  3. Como Conductor/Monitor, consultar rutas, paradas y pasajeros de su viaje asignado; intentar ruta/viaje ajeno, inactivo o vencido y verificar denegación.
+  4. Cambiar o revocar la relación familiar, el rol o la asignación laboral; verificar que el acceso se revoca inmediatamente.
+  5. Como Dirección/Administración, comprobar acceso de gestión conforme al ámbito institucional autorizado, sin elevar permisos mediante authRole o IDs enviados por el cliente.
+  6. Probar consultas sin filtros, IDs manipulados, registros duplicados y esquemas incompletos; verificar aislamiento y fail-closed.
+  7. Confirmar que no existe ruta pública de GPS ni acceso por enlace sin sesión válida; cualquier futuro endpoint GPS deberá exigir token y scope.
+  8. Revisar LogsSistema: denegaciones UNAUTHORIZED_ACCESS_ATTEMPT auditadas sin tokens ni datos personales innecesarios.
+  9. Ejecutar escrituras concurrentes de asignación; verificar lock, ausencia de duplicados/sobrecupo y rollback ante fallo de facturación.
+- **Resultado esperado:** cada rol solo consulta el ámbito permitido; relaciones y asignaciones revocadas dejan de autorizar; consultas sin filtros no exponen datos institucionales; no hay acceso público GPS; denegaciones quedan auditadas; escrituras mantienen integridad.
+- **Estado:** PENDIENTE DE BETA.
+- **Implementación/contratos locales:** revalidados en C1.963; workflow 45298723761 SUCCESS, 12 scripts PASS. No se ha ejecutado contra Apps Script/Sheets reales.
+- **Evidencia requerida:** SHA del despliegue, IDs sintéticos, matriz allow/deny por rol, snapshots de RelacionesFamiliares/TransporteAsignaciones/TransporteViajes, logs saneados y pruebas de revocación/concurrencia.
+- **Tarea vinculada:** TASK-030 / F21-Task02 / C1.963.
+===============================================================================

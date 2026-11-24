@@ -11,6 +11,7 @@ on:
       - .github/workflows/exam-service-security-contract.yml
       - .github/workflows/accounting-transport-local-contract.yml
       - Auditoría/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md
+      - Auditoría/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md
       - Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
       - Auditoría/INDICE_CHECKPOINTS.md
       - Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt
@@ -41,7 +42,7 @@ jobs:
           while IFS= read -r file; do
             [ -z "$file" ] && continue
             case "$file" in
-              backend/academic-service/Code.gs|tests/security/academic-wellbeing-confidentiality.test.js|.github/workflows/academic-wellbeing-confidentiality.yml|.github/workflows/exam-service-security-contract.yml|.github/workflows/accounting-transport-local-contract.yml|Auditoría/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md|Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md|Auditoría/INDICE_CHECKPOINTS.md|Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt|pendientes/Secretaria/Pendientes.md|Auditoria.txt|beta_test.txt|changueslogs.txt|tareas_auditoria.txt) ;;
+              backend/academic-service/Code.gs|tests/security/academic-wellbeing-confidentiality.test.js|.github/workflows/academic-wellbeing-confidentiality.yml|.github/workflows/exam-service-security-contract.yml|.github/workflows/accounting-transport-local-contract.yml|Auditoría/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md|Auditoría/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md|Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md|Auditoría/INDICE_CHECKPOINTS.md|Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt|pendientes/Secretaria/Pendientes.md|Auditoria.txt|beta_test.txt|changueslogs.txt|tareas_auditoria.txt) ;;
               *) echo "Unexpected changed file: $file"; exit 1 ;;
             esac
           done <<< "$changed"

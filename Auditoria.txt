@@ -3331,3 +3331,11 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Esquema:** RegistrosOrientacion no existe. Se protegieron las fuentes reales CasosSeguimiento y CitasOrientacion; no se creó una hoja duplicada.
 - **Pruebas:** Node.js 24 específico 26/26 PASS; suite Node.js completa 26/26 PASS; sintaxis, diff check y guardia de archivos PASS. Actions: 45297719527, 45297719507, 45297719510, 45297719505, 45297719500, 45297719498, 45297719514, 45297719595 y 45297719620 SUCCESS.
 - **Límite:** no hubo despliegue ni pruebas contra Apps Script/Sheets/Drive reales; BETA-FUNC-133 conserva la verificación pendiente.
+
+
+## Resolución C1.963 — TASK-030 / F21-Task02
+
+- **Estado:** RESUELTO EN CÓDIGO/CI; BETA-FUNC-134 pendiente.
+- **Evidencia actual:** ACCOUNTING Transport Local Contracts run 45298723761 SUCCESS; 12 scripts Node.js 24 ejecutados sin fallos, incluidos TASK-030 transport-access-scope y guardian ABAC (24 aserciones). Academic Wellbeing run 45298723699 SUCCESS.
+- **Controles:** identidad de sesión, permisos por rol, scope ABAC para familias/estudiantes/conductores/monitores/gestión, auditoría de denegaciones; sin endpoint público GPS.
+- **Límite:** no se reejecutó la suite histórica Fase 21 de 207/207; no se afirma ese resultado. No hubo despliegue ni pruebas con hojas reales.

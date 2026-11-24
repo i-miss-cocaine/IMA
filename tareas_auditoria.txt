@@ -1119,3 +1119,11 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Controles: identidad firmada, rol verificado, ámbito académico por estudiante, no confiar en ResponsableID, relación estudiante/tutor verificada, notas confidenciales redactadas, JSON fail-closed, ScriptLock, UUID y auditoría sin contenido confidencial.
 - Esquema: RegistrosOrientacion no existe; fuentes reales CasosSeguimiento y CitasOrientacion. No se creó esquema duplicado.
 - Pendiente: BETA-FUNC-133 para despliegue real con datos sintéticos; no bloquea el cierre de código/CI.
+
+
+## Resolución C1.963 — TASK-030 / F21-Task02
+- Estado: RESUELTO en código/CI tras revalidar la implementación existente; no se duplicó código.
+- Evidencia: ACCOUNTING Transport Local Contracts run 45298723761 SUCCESS; 12 scripts Node.js 24 PASS; incluye TASK-030 transport-access-scope y 24 aserciones guardian ABAC.
+- Alcance: identidad verificada, permisos RBAC, relaciones familiares vigentes, titularidad de estudiante, ruta/viaje y expediente laboral para personal; auditoría de denegaciones; sin endpoint público GPS.
+- Límite: la suite histórica Fase 21 207/207 no se reejecutó; no hubo despliegue ni pruebas contra hojas reales.
+- Pendiente: BETA-FUNC-134 con usuarios y datos sintéticos.

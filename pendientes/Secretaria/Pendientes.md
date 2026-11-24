@@ -400,21 +400,21 @@
 ---
 
 <!-- ID: TASK-030 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
-### [ ] [TASK-030] Protección de datos de transporte y aislamiento de consultas por usuario (RBAC/ABAC)
+### [x] [TASK-030] Protección de datos de transporte y aislamiento de consultas por usuario (RBAC/ABAC)
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección E (PT-21-49), Sección G (Defecto 2) y Plan de Implementación TAREA 02
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Privacidad y protección de datos de menores, FERPA y prevención de fuga de geolocalización y paradas a terceros)
 - **Archivos Involucrados:**
-  - `backend/accounting-service/Code.gs` (`getTransportAssignments`, `getTransportRoutes`, `getTransportTripLiveLocation`)
+  - `backend/accounting-service/Code.gs` (`getTransportAssignments`, `getTransportRoutes`, `resolveTransportAccessScope_`, `transportManagementReadScope_`, `transportAuditDenied_`, `transportAssertStudentOwnershipForMutation_`)
   - `TransporteAsignaciones`
-  - `ExpedientesFamiliares`
+  - `RelacionesFamiliares` y `ExpedientesEstudiantes`
   - `ROLE_PERMISSIONS`
-- **Dependencias Expuestas:** `ROLE_PERMISSIONS`, `validateRolePermission`, `ExpedientesFamiliares`
+- **Dependencias Expuestas:** `ROLE_PERMISSIONS`, `validateRolePermission`, `RelacionesFamiliares`, `ExpedientesEstudiantes`, `ExpedientesLaborales`, `TransporteRutas`, `TransporteAsignaciones`, `TransporteViajes`
 - **Descripción del Alcance:**
   `getTransportAssignments` devuelve todas las asignaciones institucionales cuando se invoca sin el parámetro `estudianteUserId`, permitiendo a usuarios con rol `Padre` o `Estudiante` consultar rutas, horarios y paradas de otros menores ajenos a su núcleo familiar.
   Requerimientos Funcionales Detallados:
   1. Aislamiento estricto por rol e identidad verificada:
-     - Los padres y tutores únicamente podrán consultar estudiantes vinculados a sus relaciones familiares autorizadas en `ExpedientesFamiliares`.
+     - Los padres y tutores únicamente podrán consultar estudiantes vinculados a sus relaciones familiares autorizadas en `RelacionesFamiliares`, usando `ExpedientesEstudiantes` para resolver la titularidad.
      - Los estudiantes únicamente podrán consultar su propia información personal de transporte.
      - Los conductores y acompañantes únicamente podrán consultar las rutas, paradas y pasajeros que tengan asignados para sus recorridos vigentes.
      - Los administradores y directores podrán consultar información global según sus privilegios.
@@ -430,7 +430,13 @@
   - Una consulta sin filtros nunca devuelve todos los estudiantes de la institución a un rol no directivo.
   - Las coordenadas GPS no son accesibles mediante enlaces públicos sin autenticación.
   - Se auditan los intentos de acceso no autorizado.
-- **Estado:** Pendiente
+- **Estado:** Completada en código/CI (C1.963); BETA-FUNC-134 pendiente de validación real.
+
+
+- **Reconciliación de endpoint GPS:** getTransportTripLiveLocation no existe en el backend auditado; no hay endpoint público de GPS. Las rutas y asignaciones existentes exigen sesión, permiso y ámbito; no se creó un endpoint GPS ni un enlace público.
+- **Evidencia C1.963:** workflow ACCOUNTING Transport Local Contracts, run 45298723761, SUCCESS; Node.js 24 y syntax-check de accounting-service y contratos; 12 scripts de contrato ejecutados sin fallos, incluidos TASK-030 transport access scope, permisos de lectura, scope/ownership, asignación y concurrencia, rutas, métricas y 24 aserciones del contrato de relación familiar ABAC.
+- **Alcance de evidencia:** no se reejecutó la suite histórica completa de 207/207 escenarios Fase 21; ese resultado permanece como antecedente histórico y no se reclama como verificación actual. No hubo despliegue ni pruebas contra hojas reales.
+- **Pendiente no bloqueante:** BETA-FUNC-134 requiere validar el aislamiento en Apps Script/Sheets desplegados con usuarios y datos sintéticos.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1847-1878; clave TASK-031; asignación única: Secretaria -->
 

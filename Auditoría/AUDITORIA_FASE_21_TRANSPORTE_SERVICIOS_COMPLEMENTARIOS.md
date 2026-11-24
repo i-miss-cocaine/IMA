@@ -500,3 +500,13 @@ El diagnóstico técnico y el plan de resolución quedan plenamente establecidos
 - **F21-Task14:** TASK-037 la etiqueta F21-Task34 y reporta PT21-01..PT21-12, mientras el informe requiere 53 escenarios; se conserva la diferencia y la suite queda pendiente de ampliación.
 - **F21-Task06..F21-Task13:** salvo las extensiones descritas, no se encontró evidencia de cierre en los registros cotejados.
 - **Estado global:** F21-Task01..05 tienen implementación histórica reportada; F21-Task06..13 permanecen pendientes; F21-Task14 requiere ampliar cobertura; F21-Task15 requiere revalidar la migración. No se declara que esta iteración haya ejecutado pruebas ni modificado código.
+
+
+## Adenda C1.963 — Revalidación TASK-030 / F21-Task02
+
+- **Estado:** completada en código/CI; BETA-FUNC-134 pendiente.
+- **Reconciliación:** TASK-030 corresponde a F21-Task02. El código ya implementaba el aislamiento; esta iteración no modificó backend/accounting-service/Code.gs. Se revalidó el comportamiento y se mejoraron los disparadores CI para que los cambios en academic-service/user-service y el contrato de relación familiar también ejecuten la suite de transporte.
+- **Controles observados:** getTransportAssignments/getTransportRoutes exigen identidad de sesión verificada y validateRolePermission; resolveTransportAccessScope_ aplica relaciones familiares vigentes, titularidad de estudiante, expediente laboral y rutas/viajes asignados; transportManagementReadScope_ limita lectura de gestión; transportAuditDenied_ registra rechazos. Las consultas sin filtros quedan restringidas al ámbito del actor. No existe getTransportTripLiveLocation ni endpoint público de GPS en el backend revisado.
+- **Pruebas reejecutadas:** ACCOUNTING Transport Local Contracts, run 45298723761, SUCCESS. Node.js 24; syntax-check de accounting-service y contratos; 12 scripts PASS: cargos mensuales/prorrateo/rollback; ownership y concurrencia de asignaciones; optimización de rutas y scope institucional; permisos de lectura; métricas y esquema legado; lectura por scope/ownership; integridad de comprobantes; lecturas contables sensibles; regresión TASK-030 transport-access-scope; relación familiar guardian ABAC (24 aserciones); periodo de cargos y autorización de nómina.
+- **Límite de evidencia:** la suite histórica 207/207 escenarios de Fase 21 no se reejecutó. El resultado de esta sesión es el contrato local indicado, no 207/207. No se desplegó Apps Script ni se consultaron hojas reales.
+- **Resultado:** TASK-030/F21-Task02 RESUELTA en código/CI. BETA-FUNC-134 pendiente para validación real con datos sintéticos.

@@ -716,3 +716,33 @@ C1.962 — IMA-EXEC-20261123-F11-TASK01-WELFARE-CONFIDENTIALITY-CLOSE
 - Rama base NG_beta_0.0.0.1 no modificada.
 - Siguiente P0 a revisar: TASK-030, aislamiento de datos de transporte; verificar primero su alcance y dependencias.
 ===============================================================================
+
+
+C1.963 — IMA-EXEC-20261123-TASK030-TRANSPORT-PRIVACY-REVALIDATION
+===============================================================================
+
+### Continuidad y selección
+- Se continuó desde C1.962. TASK-030 es P0, dependencia de tarea declarada — y su antecedente F21-Task02 ya afirmaba implementación, pero la auditoría previa no había reejecutado el contrato. Se eligió revalidar evidencia existente en vez de duplicar código.
+- TASK-030 y F21-Task02 se reconciliaron como el mismo alcance.
+
+### Verificación de implementación
+- getTransportAssignments/getTransportRoutes usan identidad de sesión verificada y validación de ROLE_PERMISSIONS.
+- resolveTransportAccessScope_ limita padres/tutores por RelacionesFamiliares vigentes y estudiantes vinculados; estudiantes por titularidad; conductores/monitores por rutas/viajes y expediente laboral; roles de gestión por ámbito institucional.
+- transportManagementReadScope_ aplica el ámbito de gestión y transportAuditDenied_ registra denegaciones.
+- No existe getTransportTripLiveLocation ni endpoint público GPS en el backend revisado; no se creó uno.
+- No se modificó backend/accounting-service/Code.gs; se revalidó la implementación existente y se amplió el disparador del workflow para cambios de academic-service/user-service y el contrato guardian ABAC.
+
+### Pruebas
+- ACCOUNTING Transport Local Contracts, run 45298723761: SUCCESS.
+- Node.js 24; syntax-check de accounting-service y de todos los contratos configurados.
+- 12 scripts PASS: cargos/prorrateo/rollback; ownership y concurrencia de asignaciones; optimización de rutas; permisos de lectura; métricas; read scope/ownership; comprobantes; lecturas sensibles; TASK-030 transport-access-scope; guardian ABAC (24 aserciones); periodo de cargos; autorización de nómina.
+- Academic Wellbeing Confidentiality Contract run 45298723699: SUCCESS; guardia de diff y 26/26 pruebas.
+- No se reejecutó la suite histórica completa 207/207 de Fase 21; ese resultado permanece como evidencia histórica, no como resultado de esta sesión.
+- No se desplegó Apps Script ni se probaron hojas reales.
+
+### Estado
+- TASK-030 / F21-Task02: COMPLETADA en código/CI.
+- BETA-FUNC-134: PENDIENTE DE BETA.
+- Rama autorizada: NG_beta_0.0.0.1_work.
+- Siguiente P0 a revisar: TASK-032/F21-Task04; primero verificar la dependencia F21-Task03 y las pruebas reales existentes.
+===============================================================================
