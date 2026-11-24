@@ -4596,3 +4596,12 @@ C1.965 — IMA-EXEC-20261123-CI-DIFF-GUARD-FIX
 - Se amplió la allowlist/path filter del workflow para los archivos de backlogs y checkpoint incluidos en el reinicio C1.964; no se debilitaron aserciones.
 - Se corrigieron los espacios finales. Nueva ejecución pendiente de verificación.
 ===============================================================================
+
+===============================================================================
+C1.966 — IMA-EXEC-20261123-CYCLE2-DOCS-CI-PASS
+===============================================================================
+- Academic Wellbeing Confidentiality Contract run 45317426906 SUCCESS.
+- Diff guard, Node.js 24, syntax check Apps Script, syntax check contract y ejecución del contrato PASS.
+- El run 45317208341 fallido por espacios finales queda conservado como antecedente; sus pasos Node.js/contrato fueron NOT RUN.
+- Siguiente tarea: TASK-047, PM-00A.
+===============================================================================

@@ -6467,3 +6467,15 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Se corrigieron los espacios finales y se amplió la lista explícita de archivos permitidos/observados para este cambio documental. No se debilitaron las aserciones del contrato ni se modificó su código de prueba.
 - Estado de pruebas del run `45317208341`: diff guard FAIL; Node.js y contrato NOT RUN (omitidos por el fallo inicial). Se requiere nueva ejecución tras esta corrección.
 - No se declara aún PASS para Node.js ni para el contrato académico.
+
+
+## 10.87 Verificación CI del reinicio documental — C1.966
+
+- HEAD de entrada: 17e4015e726440c802479f6f0d051acbf670d04e; rama autorizada `NG_beta_0.0.0.1_work`; rama base sin cambios.
+- El primer run Academic Wellbeing Confidentiality Contract `45317208341` falló en `git diff --check` por espacios finales y dejó Node.js/contrato NOT RUN. La causa y corrección se conservan en C1.965.
+- La ejecución posterior `45317426906` terminó **SUCCESS**.
+- Pasos confirmados SUCCESS: guardia de integridad del diff; configuración Node.js 24; `node --check` de `backend/academic-service/Code.gs`; `node --check` de `tests/security/academic-wellbeing-confidentiality.test.js`; ejecución de `node tests/security/academic-wellbeing-confidentiality.test.js`.
+- No se modificó código productivo académico; el run valida que los cambios documentales no rompen el contrato y que la guardia acepta los archivos del ciclo 2.
+- No se ejecutaron suites CLI ni pruebas beta/despliegue; no aplicaban a este cambio documental.
+- Siguiente tarea elegible: TASK-047 en PM-00A, con verificación independiente de sus dependencias y contradicciones heredadas de HMAC/sesión.
+

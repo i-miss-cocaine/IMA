@@ -434,3 +434,6 @@ Los checkpoints posteriores se registran aquí.
 
 
 | C1.965 | IMA-EXEC-20261123-CI-DIFF-GUARD-FIX | Corrección de espacios finales y allowlist del workflow Academic Wellbeing para incluir los archivos del reinicio C1.964; run 45317208341 documentado FAIL antes de Node.js | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.965 | C1.964 | Reejecutar workflow y confirmar diff guard, sintaxis y contrato |
+
+
+| C1.966 | IMA-EXEC-20261123-CYCLE2-DOCS-CI-PASS | Academic Wellbeing Contract run 45317426906 SUCCESS; diff guard, Node 24 syntax checks y contrato PASS; run 45317208341 FAIL histórico preservado | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.966 | C1.965 | Iniciar TASK-047 en PM-00A |

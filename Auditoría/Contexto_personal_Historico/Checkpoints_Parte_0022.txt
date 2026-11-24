@@ -90,3 +90,32 @@ HEAD final: se confirmará después de publicar el commit consolidado de C1.964.
 ### Siguiente acción
 Verificar la nueva ejecución de GitHub Actions en el HEAD posterior a esta corrección y continuar TASK-047 en PM-00A solo después de registrar el resultado real.
 ===============================================================================
+
+===============================================================================
+### C1.966 — IMA-EXEC-20261123-CYCLE2-DOCS-CI-PASS
+===============================================================================
+
+### Continuidad y Git
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD de entrada: 17e4015e726440c802479f6f0d051acbf670d04e.
+- HEAD de la rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta.
+- C1.964 commit: ceb7a730cb02c2aa991266c3d58903243b8dd8ab.
+- C1.965 commit: 17e4015e726440c802479f6f0d051acbf670d04e.
+
+### Verificación
+- GitHub Actions: Academic Wellbeing Confidentiality Contract, run 45317426906 — SUCCESS.
+- Check task diff integrity: SUCCESS.
+- Node.js 24 setup: SUCCESS.
+- Syntax check Apps Script academic-service: SUCCESS.
+- Syntax check contract test: SUCCESS.
+- Execute confidentiality contract: SUCCESS.
+- El run anterior 45317208341 falló en diff-check por espacios finales; Node.js y contrato quedaron NOT RUN. La causa fue corregida y el fallo histórico permanece visible.
+- No se ejecutaron suites CLI ni beta/despliegue real; no se declara su ejecución.
+
+### Estado
+- Reinicio documental C1.964 y corrección CI C1.965 verificados.
+- No se modificó código productivo ni se alteraron pruebas existentes.
+- Rama base intacta.
+- Siguiente tarea elegible: TASK-047, PM-00A — registro de servicios por rol y consola de Desarrollador.
+
+===============================================================================
