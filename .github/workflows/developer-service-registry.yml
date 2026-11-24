@@ -1,0 +1,34 @@
+name: Developer Service Registry Contract
+on:
+  push:
+    branches: [NG_beta_0.0.0.1_work]
+    paths:
+      - "backend/developer-service/Code.gs"
+      - "js/api.js"
+      - "developer-dashboard.html"
+      - "js/developer.js"
+      - "tests/contracts/developer-service-registry.contract.test.js"
+      - ".github/workflows/developer-service-registry.yml"
+  pull_request:
+    branches: [NG_beta_0.0.0.1_work]
+    paths:
+      - "backend/developer-service/Code.gs"
+      - "js/api.js"
+      - "developer-dashboard.html"
+      - "js/developer.js"
+      - "tests/contracts/developer-service-registry.contract.test.js"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --check < backend/developer-service/Code.gs
+      - run: node --check < js/api.js
+      - run: node --check < js/developer.js
+      - run: node --test tests/contracts/developer-service-registry.contract.test.js

@@ -26,7 +26,7 @@ function textResponse(obj) {
 
 const ROLE_PERMISSIONS = {
   "Administrador": [],
-  "Desarrollador": ["getCentralServiceRegistry", "registerServiceInstance", "updateServiceStatus", "auditInterServiceCalls", "manageUserMultiRolePermissions", "getCentralizedLogs", "executeOperationalCommand", "getServiceVersionChangelog", "executeServiceVersionRollback", "getCentralConfigAndContractCatalog", "validateServiceConfigDependencies", "runFullArchitectureIntegrationAndPerformanceSuite", "runModularAndDynamicDashboardsRegressionSuite", "runAcademicGradingRegressionSuite", "runPhase10AttendanceAndCoexistenceRegressionSuite", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "getPhase10FunctionalDocumentation", "validateStagedMigrationProgress", "validateModularFolderStructure", "validateMonolithDecompositionContracts", "getArchitectureAndDependencyMapReport", "getRoleFunctionalSpaceConfig", "auditRoleIndependenceAndMasterDataIntegrity", "validateStableIdentifiersAndControlColumns", "ensureStandardObservabilitySheets", "validateObservabilitySheetsIntegrity", "getCentralSpreadsheetConfigRegistry", "recordProvisioningHistory", "provisionRoleSpreadsheet", "migrateSpreadsheetSchema", "auditServiceBackendIsolationAndDriveSecurity", "batchSpreadsheetReadOperations", "getServiceHealthDiagnostics", "getCentralCapabilitiesCatalog", "getInstitutionalIndicatorsDictionary"],
+  "Desarrollador": ["getCentralServiceRegistry", "resolveServiceEndpoint", "registerServiceInstance", "updateServiceStatus", "updateServiceMetadata", "auditInterServiceCalls", "manageUserMultiRolePermissions", "getCentralizedLogs", "executeOperationalCommand", "getServiceVersionChangelog", "executeServiceVersionRollback", "getCentralConfigAndContractCatalog", "validateServiceConfigDependencies", "runFullArchitectureIntegrationAndPerformanceSuite", "runModularAndDynamicDashboardsRegressionSuite", "runAcademicGradingRegressionSuite", "runPhase10AttendanceAndCoexistenceRegressionSuite", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "getPhase10FunctionalDocumentation", "validateStagedMigrationProgress", "validateModularFolderStructure", "validateMonolithDecompositionContracts", "getArchitectureAndDependencyMapReport", "getRoleFunctionalSpaceConfig", "auditRoleIndependenceAndMasterDataIntegrity", "validateStableIdentifiersAndControlColumns", "ensureStandardObservabilitySheets", "validateObservabilitySheetsIntegrity", "getCentralSpreadsheetConfigRegistry", "recordProvisioningHistory", "provisionRoleSpreadsheet", "migrateSpreadsheetSchema", "auditServiceBackendIsolationAndDriveSecurity", "batchSpreadsheetReadOperations", "getServiceHealthDiagnostics", "getCentralCapabilitiesCatalog", "getInstitutionalIndicatorsDictionary"],
   "Director": ["getInstitutionalIndicatorsDictionary", "getCentralConfigAndContractCatalog"],
   "Coordinador": ["getInstitutionalIndicatorsDictionary"],
   "Contador": ["getInstitutionalIndicatorsDictionary"]
@@ -603,17 +603,24 @@ function verifySessionToken(tokenString) {
   }
 }
 
+function developerNormalizeRequestEnvelope_(rawEnvelope) {
+  if (!rawEnvelope || typeof rawEnvelope !== "object" || Array.isArray(rawEnvelope)) throw new Error("INVALID_REQUEST_ENVELOPE");
+  var nestedPayload = rawEnvelope.payload;
+  var hasNestedPayload = nestedPayload && typeof nestedPayload === "object" && !Array.isArray(nestedPayload);
+  return { action: String(rawEnvelope.action || (hasNestedPayload && nestedPayload.action) || "ping"),
+    payload: hasNestedPayload ? nestedPayload : rawEnvelope, correlationId: String(rawEnvelope.correlationId || "").trim() };
+}
 function doPost(e) {
   try {
-    let payload = {};
+    var rawEnvelope = {};
     if (e && e.postData && e.postData.contents) {
-      try { payload = JSON.parse(e.postData.contents); } catch (_) {}
+      try { rawEnvelope = JSON.parse(e.postData.contents); }
+      catch (_) { return textResponse({ status: "error", code: "INVALID_JSON_REQUEST", message: "La solicitud no contiene JSON válido." }); }
     }
-
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) payload = {};
-    const action = payload.action || "ping";
+    var request = developerNormalizeRequestEnvelope_(rawEnvelope);
+    var payload = request.payload;
+    const action = request.action;
     if (action === "ping") return doGet();
-
     delete payload._verifiedUserId;
     delete payload.authRole;
     const token = payload && (payload.sessionToken || payload.authToken || payload.token);
@@ -642,8 +649,10 @@ function doPost(e) {
     let result;
     switch (action) {
       case "getCentralServiceRegistry": result = getCentralServiceRegistry(payload); break;
+      case "resolveServiceEndpoint": result = resolveServiceEndpoint(payload); break;
       case "registerServiceInstance": result = registerServiceInstance_(payload, payload._verifiedUserId); break;
       case "updateServiceStatus": result = updateServiceStatus_(payload, payload._verifiedUserId); break;
+      case "updateServiceMetadata": result = updateServiceMetadata_(payload, payload._verifiedUserId); break;
       case "auditInterServiceCalls": result = auditInterServiceCalls(payload); break;
       case "manageUserMultiRolePermissions": result = manageUserMultiRolePermissions(payload); break;
       case "getServiceHealthDiagnostics": result = getServiceHealthDiagnostics(payload); break;
@@ -3102,6 +3111,108 @@ function getCentralServiceRegistry(payload) {
     developerLogServiceRegistryIncident_(code);
     return { status: "error", code: code, service: "DEVELOPER", registry: [], totalServicios: 0, timestamp: new Date().toISOString() };
   }
+}
+
+function resolveServiceEndpoint(payload) {
+  var serviceId = String(payload && payload.serviceId || "").trim();
+  var requestedAction = String(payload && payload.action || "").trim();
+  if (!serviceId || !/^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/.test(serviceId)) return { status: "error", code: "SERVICE_ID_INVALID", endpointUrl: "" };
+  if (!requestedAction || requestedAction.length > 128 || requestedAction.indexOf("*") !== -1) return { status: "error", code: "SERVICE_ACTION_INVALID", endpointUrl: "" };
+  var lock = LockService.getScriptLock();
+  if (!lock || !lock.tryLock(5000)) return { status: "error", code: "SERVICE_REGISTRY_BUSY", endpointUrl: "" };
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sheet = ss.getSheetByName("CatalogoServicios");
+    if (!sheet) return { status: "error", code: "SERVICE_REGISTRY_UNINITIALIZED", endpointUrl: "" };
+    var parsed = developerParseServiceRegistryRows_(sheet.getDataRange().getValues());
+    var matches = parsed.rows.filter(function(row) { return String(row[0] || "").trim().toUpperCase() === serviceId.toUpperCase(); });
+    if (!matches.length) return { status: "error", code: "SERVICE_NOT_FOUND", endpointUrl: "" };
+    if (matches.length !== 1) return { status: "error", code: "SERVICE_REGISTRY_DUPLICATE_ID", endpointUrl: "" };
+    var row = matches[0], state = String(row[7] || "").trim().toLowerCase();
+    var endpointUrl = String(row[4] || "").trim(), version = String(row[8] || "").trim();
+    if (["activo", "degradado"].indexOf(state) === -1) {
+      var blockedCode = state === "suspendido" ? "SERVICE_SUSPENDED" : state === "retirado" || state === "inactivo" ? "SERVICE_RETIRED" : state === "desconectado" ? "SERVICE_DISCONNECTED" : "SERVICE_NOT_ACTIVE";
+      return { status: "error", code: blockedCode, serviceId: serviceId, state: state, endpointUrl: "" };
+    }
+    var permissions = [];
+    try { permissions = typeof row[9] === "string" ? JSON.parse(row[9] || "[]") : row[9]; }
+    catch (permissionError) { return { status: "error", code: "SERVICE_PERMISSIONS_INVALID", serviceId: serviceId, endpointUrl: "" }; }
+    if (!Array.isArray(permissions) || permissions.some(function(value) { return typeof value !== "string" || !value.trim() || value.indexOf("*") !== -1; })) {
+      return { status: "error", code: "SERVICE_PERMISSIONS_INVALID", serviceId: serviceId, endpointUrl: "" };
+    }
+    if (permissions.indexOf(requestedAction) === -1) return { status: "error", code: "SERVICE_ACTION_NOT_GRANTED", serviceId: serviceId, action: requestedAction, endpointUrl: "" };
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpointUrl)) return { status: "error", code: "SERVICE_ENDPOINT_INVALID", serviceId: serviceId, endpointUrl: "" };
+    return { status: "success", serviceId: String(row[0]).trim(), endpointUrl: endpointUrl, state: state, version: version, degraded: state === "degradado" };
+  } catch (error) { return { status: "error", code: "SERVICE_ENDPOINT_RESOLUTION_FAILED", endpointUrl: "" }; }
+  finally { lock.releaseLock(); }
+}
+
+function updateServiceMetadata_(payload, verifiedActorId) {
+  var actorId = String(verifiedActorId || "").trim(), serviceId = String(payload && payload.serviceId || "").trim();
+  var updates = payload && payload.updates && typeof payload.updates === "object" && !Array.isArray(payload.updates) ? payload.updates : {};
+  if (!actorId) throw new Error("SERVICE_ACTOR_NOT_VERIFIED");
+  if (!serviceId || !/^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/.test(serviceId)) throw new Error("SERVICE_ID_INVALID");
+  var allowed = ["cuentaPropietaria", "endpointUrl", "spreadsheetAsociado", "driveFolderId", "scriptProjectId", "permisosConcedidos"];
+  var keys = Object.keys(updates);
+  if (!keys.length || keys.some(function(key) { return allowed.indexOf(key) === -1; })) throw new Error("SERVICE_METADATA_FIELDS_INVALID");
+  var lock = LockService.getScriptLock();
+  if (!lock || !lock.tryLock(30000)) throw new Error("SERVICE_REGISTRY_LOCK_TIMEOUT");
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var table = developerEnsureServiceTable_(ss, "CatalogoServicios", DEVELOPER_SERVICE_REGISTRY_HEADERS_, function(row) {
+      return Array.isArray(row) && row.length >= 11 && String(row[0] || "").trim() !== "" && String(row[1] || "").trim() !== "";
+    });
+    var matches = [];
+    table.rows.forEach(function(row, index) { if (String(row[0] || "").trim().toUpperCase() === serviceId.toUpperCase()) matches.push(index + 2); });
+    if (!matches.length) throw new Error("SERVICE_NOT_FOUND");
+    if (matches.length !== 1) throw new Error("SERVICE_REGISTRY_DUPLICATE_ID");
+    var rowNumber = matches[0], before = table.rows[rowNumber - 2].slice(), after = before.slice();
+    while (after.length < DEVELOPER_SERVICE_REGISTRY_HEADERS_.length) after.push("");
+    while (before.length < DEVELOPER_SERVICE_REGISTRY_HEADERS_.length) before.push("");
+    var columnByField = { cuentaPropietaria: 3, endpointUrl: 4, spreadsheetAsociado: 5, permisosConcedidos: 9, scriptProjectId: 14, driveFolderId: 15 };
+    var changed = {};
+    keys.forEach(function(key) {
+      var value;
+      if (key === "permisosConcedidos") {
+        value = updates[key];
+        if (!Array.isArray(value) || value.some(function(item) { return typeof item !== "string" || !item.trim() || item.indexOf("*") !== -1; })) throw new Error("SERVICE_PERMISSIONS_INVALID");
+        var unique = Object.create(null);
+        value = value.map(function(item) { var normalized = item.trim(); if (unique[normalized]) throw new Error("SERVICE_PERMISSIONS_INVALID"); unique[normalized] = true; return normalized; });
+        value = JSON.stringify(value);
+      } else {
+        value = String(updates[key] === undefined || updates[key] === null ? "" : updates[key]).trim();
+        if (!value) throw new Error("SERVICE_METADATA_VALUE_REQUIRED:" + key);
+        if (key === "cuentaPropietaria" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) throw new Error("SERVICE_OWNER_EMAIL_INVALID");
+        if (key === "endpointUrl" && !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(value)) throw new Error("SERVICE_ENDPOINT_URL_INVALID");
+        if (key === "spreadsheetAsociado" && value === String(SPREADSHEET_ID || "")) throw new Error("SERVICE_SPREADSHEET_ID_INVALID");
+      }
+      var column = columnByField[key];
+      if (String(after[column] || "").trim() !== value) {
+        changed[key] = { previous: String(after[column] || ""), next: value };
+        after[column] = value;
+      }
+    });
+    if (!Object.keys(changed).length) return { status: "success", serviceId: serviceId, changed: false, updatedBy: actorId };
+    var history = developerEnsureServiceTable_(ss, "HistorialServiciosDistribuidos", DEVELOPER_SERVICE_HISTORY_HEADERS_, function(row) {
+      return Array.isArray(row) && row.length >= 7 && String(row[0] || "").indexOf("HIST-SVC-") === 0;
+    });
+    var historyId = developerCreateServiceHistoryId_(), timestamp = new Date().toISOString();
+    try {
+      table.sheet.getRange(rowNumber, 1, 1, after.length).setValues([after]);
+      history.sheet.appendRow([historyId, serviceId,
+        JSON.stringify(Object.keys(changed).reduce(function(out, key) { out[key] = changed[key].previous; return out; }, {})),
+        JSON.stringify(Object.keys(changed).reduce(function(out, key) { out[key] = changed[key].next; return out; }, {})),
+        "Actualización auditada de metadatos", actorId, timestamp]);
+      if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush();
+    } catch (writeError) {
+      var compensationFailed = false;
+      try { table.sheet.getRange(rowNumber, 1, 1, before.length).setValues([before]); } catch (restoreError) { compensationFailed = true; }
+      try { developerDeleteRowByKey_(history.sheet, 1, historyId); } catch (historyError) { compensationFailed = true; }
+      try { if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush(); } catch (flushError) { compensationFailed = true; }
+      if (compensationFailed) throw new Error("SERVICE_METADATA_COMPENSATION_REQUIRED");
+      throw new Error("SERVICE_METADATA_WRITE_FAILED");
+    }
+    return { status: "success", serviceId: serviceId, changed: true, fields: Object.keys(changed), updatedBy: actorId, updatedAt: timestamp };
+  } finally { lock.releaseLock(); }
 }
 
 // [TASK-047] [F23-Task04] [P0] Registro de instancias y cuentas de servicio distribuidos con prevención de duplicados

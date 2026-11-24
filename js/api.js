@@ -172,13 +172,22 @@ function fetchApi(service, action, payload, retryCount, options) {
   var MAX_RETRIES = 2;
   retryCount = retryCount || 0;
   options = options || {};
+  if (options.serviceId && !options.resolvedEndpointUrl && service !== "DEVELOPER") {
+    var requestedServiceId = String(options.serviceId).trim();
+    return fetchApi("DEVELOPER", "resolveServiceEndpoint", { serviceId: requestedServiceId, action: action }, 0, { silentAuthError: true })
+      .then(function(resolution) {
+        if (!resolution || resolution.status !== "success" || !resolution.endpointUrl) return createApiClientError(resolution && resolution.code || "SERVICE_NOT_AVAILABLE", null, false, createApiClientCorrelationId());
+        return fetchApi(service, action, payload, 0, Object.assign({}, options, { resolvedEndpointUrl: resolution.endpointUrl }));
+      });
+  }
   var correlationId = createApiClientCorrelationId();
   var urls = window.SERVICE_URLS || (typeof SERVICE_URLS !== "undefined" ? SERVICE_URLS : {});
-  if (!urls[service]) {
+  var selectedUrl = options.resolvedEndpointUrl || urls[service];
+  if (!selectedUrl) {
     console.error('URL para el servicio "' + service + '" no encontrada.');
     return Promise.resolve(createApiClientError("SERVICE_URL_MISSING", null, true, correlationId));
   }
-  var url = urls[service];
+  var url = selectedUrl;
 
   // Se conserva el timeout existente; su configuración y ciclo de vida pertenecen a AUD-NG-007.
   var controller = null;
@@ -298,6 +307,13 @@ function fetchApi(service, action, payload, retryCount, options) {
   });
 }
 
+
+// [TASK-047] Llamadas a servicios personales mediante resolución central por ServiceID.
+window.fetchRegisteredServiceApi = function(serviceId, action, payload, options) {
+  var normalizedId = String(serviceId || "").trim();
+  if (!normalizedId) return Promise.resolve(createApiClientError("SERVICE_ID_INVALID", null, true));
+  return fetchApi("REGISTERED", action, payload || {}, 0, Object.assign({}, options || {}, { serviceId: normalizedId }));
+};
 
 /**
  * REQ-EXP-017: Health Check Ping-Pong para Monitoreo de Microservicios

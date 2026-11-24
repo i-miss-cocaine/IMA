@@ -1,0 +1,79 @@
+"use strict";
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const vm = require("node:vm");
+const path = require("node:path");
+const backend = fs.readFileSync(path.join(__dirname, "../../backend/developer-service/Code.gs"), "utf8");
+const api = fs.readFileSync(path.join(__dirname, "../../js/api.js"), "utf8");
+const dashboard = fs.readFileSync(path.join(__dirname, "../../developer-dashboard.html"), "utf8");
+const developerUi = fs.readFileSync(path.join(__dirname, "../../js/developer.js"), "utf8");
+const normalizerMatch = backend.match(/function developerNormalizeRequestEnvelope_\(rawEnvelope\) \{[\s\S]*?\n\}/);
+assert.ok(normalizerMatch, "Debe existir el normalizador del sobre HTTP");
+const normalize = vm.runInNewContext("(" + normalizerMatch[0] + ")");
+test("normaliza el sobre del cliente y conserva el token dentro del payload", () => {
+ const token = "signed-session-token";
+ const result = normalize({ action: "registerServiceInstance", correlationId: "REQ-1", payload: { serviceId: "SVC-1", sessionToken: token } });
+ assert.equal(result.action, "registerServiceInstance"); assert.equal(result.payload.serviceId, "SVC-1");
+ assert.equal(result.payload.sessionToken, token); assert.equal(result.correlationId, "REQ-1");
+});
+test("mantiene compatibilidad con solicitudes planas heredadas", () => {
+ const result = normalize({ action: "getCentralServiceRegistry", sessionToken: "legacy-token" });
+ assert.equal(result.action, "getCentralServiceRegistry"); assert.equal(result.payload.sessionToken, "legacy-token");
+});
+test("rechaza sobres nulos, arrays y valores no objeto", () => {
+ for (const value of [null, [], "invalid", 4]) assert.throws(() => normalize(value), { message: "INVALID_REQUEST_ENVELOPE" });
+});
+function resolverFor(rows) {
+ const match = backend.match(/function resolveServiceEndpoint\(payload\) \{[\s\S]*?\n\}/);
+ assert.ok(match, "Debe existir el resolver central");
+ const lock = { tryLock: () => true, releaseLock: () => {} };
+ const context = {
+  SPREADSHEET_ID: "CONTROL",
+  LockService: { getScriptLock: () => lock },
+  SpreadsheetApp: { openById: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [["headers"], ...rows] }) }) }) },
+  developerParseServiceRegistryRows_: data => ({ rows: data.slice(1) })
+ };
+ return vm.runInNewContext("(" + match[0] + ")", context);
+}
+function serviceRow(state, permissions = ["readRecord"]) {
+ const row = Array(17).fill("");
+ row[0] = "SVC-1"; row[4] = "https://script.google.com/macros/s/AbCd_123/exec";
+ row[7] = state; row[8] = "v1"; row[9] = JSON.stringify(permissions);
+ return row;
+}
+test("el resolver permite solo acciones concedidas en servicios activos", () => {
+ const resolve = resolverFor([serviceRow("Activo")]);
+ const allowed = resolve({ serviceId: "SVC-1", action: "readRecord" });
+ assert.equal(allowed.status, "success"); assert.match(allowed.endpointUrl, /^https:\/\/script\.google\.com/);
+ assert.equal(resolve({ serviceId: "SVC-1", action: "deleteRecord" }).code, "SERVICE_ACTION_NOT_GRANTED");
+});
+test("el resolver bloquea servicios suspendidos, retirados y desconectados", () => {
+ for (const state of ["suspendido", "retirado", "desconectado"]) {
+  const result = resolverFor([serviceRow(state)])({ serviceId: "SVC-1", action: "readRecord" });
+  assert.notEqual(result.status, "success");
+  assert.equal(result.endpointUrl, "");
+ }
+});
+test("el resolver rechaza IDs duplicados y endpoints inseguros", () => {
+ assert.equal(resolverFor([serviceRow("activo"), serviceRow("activo")])({ serviceId: "SVC-1", action: "readRecord" }).code, "SERVICE_REGISTRY_DUPLICATE_ID");
+ const bad = serviceRow("activo"); bad[4] = "http://evil.example/exec";
+ assert.equal(resolverFor([bad])({ serviceId: "SVC-1", action: "readRecord" }).code, "SERVICE_ENDPOINT_INVALID");
+});
+test("las actualizaciones de recursos y permisos quedan auditadas", () => {
+ assert.match(backend, /function updateServiceMetadata_\(payload, verifiedActorId\)/);
+ assert.match(backend, /Actualización auditada de metadatos/);
+ assert.match(backend, /SERVICE_METADATA_COMPENSATION_REQUIRED/);
+ assert.match(developerUi, /updateServiceMetadata/);
+});
+test("el cliente usa resolución central y el formulario registra permisos explícitos", () => {
+ assert.match(api, /fetchApi\("DEVELOPER", "resolveServiceEndpoint"/);
+ assert.match(api, /window\.fetchRegisteredServiceApi/);
+ assert.match(dashboard, /id="service-registry-permissions"/);
+ assert.match(developerUi, /service-registry-permissions/);
+});
+test("el dispatcher limita resolución y edición al rol Desarrollador", () => {
+ assert.match(backend, /"Desarrollador": \[[^\]]*"resolveServiceEndpoint"[^\]]*"updateServiceMetadata"/);
+ assert.match(backend, /case "resolveServiceEndpoint": result = resolveServiceEndpoint\(payload\); break;/);
+ assert.match(backend, /case "updateServiceMetadata": result = updateServiceMetadata_\(payload, payload\._verifiedUserId\); break;/);
+});

@@ -674,6 +674,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 } finally { updateButton.disabled = false; }
             });
             controls.appendChild(select); controls.appendChild(updateButton);
+            const editMetadataButton = document.createElement('button');
+            editMetadataButton.type = 'button';
+            editMetadataButton.className = 'rounded-lg bg-slate-700 hover:bg-indigo-600 border border-slate-600 px-2 py-1 text-xs font-semibold text-white';
+            editMetadataButton.textContent = 'Editar recursos';
+            editMetadataButton.addEventListener('click', async () => {
+                const fields = [
+                    ['cuentaPropietaria', 'Cuenta Google propietaria', service.cuentaPropietaria || ''],
+                    ['endpointUrl', 'URL del despliegue', service.endpointUrl || ''],
+                    ['spreadsheetAsociado', 'ID de Spreadsheet', service.spreadsheetAsociado || ''],
+                    ['driveFolderId', 'ID de carpeta Drive', service.driveFolderId || ''],
+                    ['scriptProjectId', 'ID de proyecto Apps Script', service.scriptProjectId || '']
+                ];
+                const updates = {};
+                for (const [key, label, current] of fields) {
+                    const next = window.prompt(label + ' (valor actual como predeterminado):', current);
+                    if (next === null) return;
+                    if (next.trim() && next.trim() !== current) updates[key] = next.trim();
+                }
+                const currentPermissions = Array.isArray(service.permisosConcedidos) ? service.permisosConcedidos.join(', ') : '';
+                const nextPermissions = window.prompt('Acciones permitidas separadas por coma:', currentPermissions);
+                if (nextPermissions === null) return;
+                const permissions = nextPermissions.split(',').map(item => item.trim()).filter(Boolean);
+                if (JSON.stringify(permissions) !== JSON.stringify(service.permisosConcedidos || [])) updates.permisosConcedidos = permissions;
+                if (!Object.keys(updates).length) return;
+                editMetadataButton.disabled = true;
+                try {
+                    const response = await window.fetchApi('DEVELOPER', 'updateServiceMetadata', { serviceId: service.serviceId, updates });
+                    if (!response || response.status !== 'success') throw new Error(response && (response.code || response.message) || 'No se pudieron actualizar los metadatos.');
+                    serviceRegistryMessage('Metadatos de ' + service.serviceId + ' actualizados y auditados.', false);
+                    await loadServiceRegistry();
+                } catch (error) {
+                    serviceRegistryMessage(error.message || 'No fue posible actualizar los metadatos.', true);
+                } finally { editMetadataButton.disabled = false; }
+            });
+            controls.appendChild(editMetadataButton);
             if (service.metadataState === 'LEGACY_METADATA_PENDING') {
                 const note = document.createElement('span'); note.className = 'text-[10px] text-amber-300'; note.textContent = 'Completar metadatos'; controls.appendChild(note);
             }
@@ -723,7 +758,7 @@ document.addEventListener('DOMContentLoaded', function () {
             scriptProjectId: value('service-registry-project'), endpointUrl: value('service-registry-endpoint'),
             spreadsheetAsociado: value('service-registry-spreadsheet'), driveFolderId: value('service-registry-drive'),
             dominioDatos: value('service-registry-domain'), version: value('service-registry-version') || 'v1.0.0',
-            accessMode: 'INSTITUTIONAL_DOMAIN', permisosConcedidos: []
+            accessMode: 'INSTITUTIONAL_DOMAIN', permisosConcedidos: value('service-registry-permissions').split(',').map(item => item.trim()).filter(Boolean)
         };
         if (serviceRegistrySubmit) serviceRegistrySubmit.disabled = true;
         try {
