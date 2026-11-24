@@ -2,23 +2,30 @@ IMA — CONTEXTO ACTIVO DEL CICLO 3
 ================================
 
 Rama autorizada: NG_beta_0.0.0.1_work
-Checkpoint inicial: C3.001
-Sesión: IMA-RESET-20261124-001
+Sesión operativa: IMA-ITER-20261124-001
+Último checkpoint: C3.003
+Próxima tarea: PM-00A / TASK-047 (primera tarea de implementación de esta iteración)
 
 CONTINUIDAD
+- El reinicio extraordinario C3.001/C3.002 es un antecedente histórico concluido, no una fase pendiente ni una instrucción para repetir la limpieza.
+- Continuar directamente con la primera tarea PM-00A / TASK-047; no reiniciar estados, borrar registros ni repetir tareas ya preparadas.
 - Trabajar exclusivamente en la rama autorizada.
-- Leer Normas_Desarollo.md antes de implementar.
+- Leer y aplicar Normas_Desarollo.md antes de implementar.
 - Mantener como máximo diez checkpoints recientes en el índice y árbol de trabajo.
-- Crear pruebas nuevas pertinentes por tarea; no considerar ejecutadas las pruebas eliminadas.
+- Crear y ejecutar pruebas locales pertinentes por tarea; no considerar ejecutadas las pruebas antiguas que fueron retiradas.
 - Preservar requisitos, criterios, dependencias e IDs de todas las tareas.
 - Desarrollador es un rol distinto de Administrador.
 
 ARQUITECTURA TRANSVERSAL
-Aplicar IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01, descrito en §1.1 del Plan Maestro, a todas las tareas.
-El login es el único flujo interactivo de autenticación; reutilizar contexto de sesión, manteniendo autorización efectiva por rol y ámbito.
-Los servicios Apps Script se organizan por puesto/rol, cuenta Google, proyecto/despliegue, Spreadsheet y carpeta Drive conforme a las modalidades individuales o compartidas definidas en el requisito.
+Aplicar IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01 a todas las tareas. La especificación operativa detallada de despliegue y sesión está en Normas_Desarollo.md §17.8.
+- El login es el único flujo interactivo de autenticación; el contexto de sesión se reutiliza para funciones posteriores según rol/puesto. No solicitar revalidaciones de sesión ni credenciales en cada servicio/función.
+- Mantener los límites funcionales de visibilidad académica por rol y ámbito, sin controles redundantes ni bloqueos artificiales entre servicios.
+- Por defecto, cada profesor, coordinador de área, secretaria y contador tendrá servicio Apps Script, cuenta Google institucional, Spreadsheet y carpeta Drive propios.
+- Padres/estudiantes podrán compartir cuenta, proyecto/despliegue, Spreadsheet y carpeta Drive. Tienda/cafetería/transporte podrán compartir los mismos recursos entre sus encargados.
+- Registrar cada URL en el servicio maestro y permitir que el portal la use según el rol, sin exigir que el maestro sea dueño de la cuenta que despliega.
+- Los despliegues deben ser sencillos, institucionales y no públicos. No introducir Script Properties, propiedades de comandos, claves secretas, tokens personalizados ni pasos especiales para comunicación interservicio.
+- El panel Desarrollador debe permitir crear puestos según roles definidos y registrar proyecto, URL, modalidad y recursos. Desarrollador y Administrador son roles distintos.
 
-ESTADO
-El reinicio C3.001 limpia artefactos de auditoría, checkpoints y pruebas del ciclo anterior en el árbol de trabajo. Los siete backlogs y el Plan Maestro se conservan. Las tareas completadas o en ejecución se reabren como Pendiente; no se elimina ningún requisito técnico.
-Siguiente trabajo: PM-00A / TASK-047, base del portal y registro de servicios por rol.
-HEAD de partida: 0c093b4bcd413e7af76eefc678b07a0a257d300a
+ESTADO DE CONTINUIDAD
+La preparación documental del ciclo está cerrada. No hay una tarea de reinicio pendiente. Los siete backlogs, requisitos, criterios y dependencias se conservaron. C3.003 deja el entorno documental listo para implementar PM-00A / TASK-047.
+HEAD de partida documentado: 5ba407df1679e2d44d634407e84eaaf8fa47db88
