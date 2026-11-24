@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           git diff --check 2b147767573955113416e661867cb74e85f1e96d...HEAD
-          changed="$(git diff --name-only 2b147767573955113416e661867cb74e85f1e96d...HEAD)"
+          changed="$(git -c core.quotePath=false diff --name-only 2b147767573955113416e661867cb74e85f1e96d...HEAD)"
           printf '%s\n' "$changed"
           while IFS= read -r file; do
             [ -z "$file" ] && continue
