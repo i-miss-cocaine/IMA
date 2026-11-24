@@ -3,15 +3,15 @@
 > **Referencia normativa obligatoria:** antes de modificar este plan o cualquier archivo del repositorio, leer `Normas_Desarollo.md`. Este plan organiza tareas, dependencias y estados; no define una normativa operativa paralela. Las reglas de desarrollo y gobierno se consultan exclusivamente en el archivo maestro.
 
 
-**Versión:** 1.4 — reorganización del ciclo 2 y arquitectura del portal
+**Versión:** 1.5 — ciclo 3 y arquitectura de servicios por rol
 **Fecha:** 2026-11-23
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
-**Estado:** Pendiente (reinicio del ciclo).
+**Estado:** Preparado para implementación; próxima tarea: PM-00A / TASK-047.
 **Línea base operativa Ciclo 3:** todas las tareas conservadas en los siete backlogs y en el Plan Maestro inician en `Pendiente`; no se elimina, resume ni sustituye ningún requisito técnico, criterio, dependencia ni identificador de tarea.  
-**Checkpoint de origen:** C3.001 (reinicio del ciclo).  
-**Checkpoint de planificación:** C3.001.
-**Ciclo operativo vigente:** 3 — reinicio global del 2026-11-24; ver §10.95.
+**Checkpoint de origen:** C3.001 (base histórica del ciclo 3).  
+**Checkpoint de planificación:** C3.003.
+**Ciclo operativo vigente:** 3 — preparación documental cerrada; la próxima iteración comienza con PM-00A / TASK-047. El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
 
 ---
 
@@ -24,9 +24,9 @@ El plan **ordena la ejecución, pero no reemplaza los requisitos originales**. C
 La asignación de fase es una propuesta inicial basada en el contenido de cada registro, su familia de ID, componentes y dependencias disponibles. Antes de implementar se confirma únicamente el alcance y las dependencias que afecten al cambio. PM-00 es una fase de inventario y triage, no una puerta universal: las tareas independientes pueden implementarse mientras se resuelven clasificaciones pendientes.
 
 
-## 1.1 Requisitos transversales del ciclo 2 — IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01
+## 1.1 Requisitos transversales del ciclo 3 — IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01
 
-Estos requisitos se aplican a todas las tareas pendientes y reabiertas del Plan Maestro. Cada bloque presente en los siete backlogs referencia este apartado. No se eliminan ni sustituyen requisitos técnicos originales.
+Estos requisitos se aplican a todas las tareas del Plan Maestro. Cada bloque presente en los siete backlogs referencia este apartado. No se eliminan ni sustituyen requisitos técnicos originales.
 
 ### A. Login y continuidad de sesión
 - El login del portal es el único flujo de autenticación interactiva del usuario. Tras autenticarse, el portal reutiliza el contexto de sesión y rol para las funciones correspondientes.
@@ -39,21 +39,21 @@ Estos requisitos se aplican a todas las tareas pendientes y reabiertas del Plan 
 - Cada servicio individual tendrá proyecto/despliegue Apps Script, Spreadsheet y carpeta Drive propios, alojados en la cuenta Google institucional correspondiente.
 - Cada servicio se despliega desde su cuenta institucional. Su URL, cuenta propietaria, proyecto, Spreadsheet, carpeta Drive, dominio de datos, rol/puesto y estado se registran en el servicio maestro.
 - El servicio maestro podrá enrutar servicios en cuentas distintas sin exigir que su operador sea propietario de dichas cuentas.
-- No se agregan propiedades de comandos ni claves secretas dedicadas para comunicación interservicio. Los despliegues deben ser simples de crear, configurar, actualizar y mantener.
+- No se agregan Script Properties, propiedades de comandos, claves secretas, tokens personalizados ni credenciales compartidas para comunicación interservicio. Los despliegues deben ser simples de crear, configurar, actualizar y mantener mediante los pasos ordinarios de Apps Script.
 - No introducir prompts de autorización ni verificaciones de sesión repetidas. La compatibilidad entre cuentas, modo de ejecución y restricciones de acceso se verificará con la configuración real de Apps Script; no se convertirán endpoints en públicos ni se introducirán secretos no autorizados si las condiciones no coexisten.
 
 ### C. Modalidades de servicio
 - **Individual:** cada profesor, coordinador de área, secretaria y contador tendrá servicio, cuenta Google, proyecto/despliegue, Spreadsheet y carpeta Drive propios.
 - **Compartido Padres/Estudiantes:** ambos roles usarán la misma cuenta institucional, servicio, despliegue, Spreadsheet y carpeta Drive.
 - **Compartido utilitario:** Tienda, Cafetería y Transporte podrán compartir servicio/despliegue, cuenta, Spreadsheet y carpeta Drive.
-- El panel de Desarrollador permitirá registrar un puesto/servicio seleccionando un rol existente, modalidad, cuenta propietaria y recursos asociados; el alta no requerirá modificar código fuente.
+- El panel de Desarrollador permitirá crear puestos a partir de los roles existentes y registrar el servicio, URL, modalidad individual/compartida, cuenta institucional, Spreadsheet y carpeta Drive; el alta no requerirá modificar código fuente ni copiar secretos entre proyectos.
 
 ### D. Acceso por rol y privacidad académica
 - Secretaría, Dirección, Coordinación y Administrador podrán acceder a información de otros roles conforme a sus facultades y ámbitos configurados.
 - **Desarrollador no es Administrador.** Desarrollador administra el plano técnico y el registro de servicios; no recibe automáticamente permisos institucionales ni acceso irrestricto a expedientes.
 - Los docentes solo consultan notas, calificaciones y resultados de estudiantes de sus clases, grados/secciones, asignaturas y períodos asignados.
 - Los estudiantes solo consultan sus propias notas, calificaciones y métricas, y suben/consultan sus propias tareas; no ven datos de compañeros.
-- Padres/tutores solo consultan notas, calificaciones, métricas y tareas de estudiantes vinculados y autorizados.
+- Padres/tutores solo consultan calificaciones, métricas y notas de sus hijos o estudiantes encargados y autorizados; no acceden a información de otros estudiantes.
 - Notas, calificaciones, resultados de exámenes, jornalizaciones, sílabos, planes de clase, guías y exámenes respetan esos ámbitos.
 
 ### E. Aplicación a tareas y verificación
@@ -2399,7 +2399,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 - Se revalida TASK-068, PM-01, P0, orden local 1, requisito original `pendientes/Dirección/Pendientes.md` / `TASK-068`.
 - Se corrigió el retorno de éxito para correspondencias confirmadas incompletas en USER y ACCOUNTING y se incorporó la clasificación explícita `COINCIDENCIA_INSUFICIENTE`.
 - Se amplió la prueba local para ejecutar directamente el resolver ACCOUNTING contra el esquema compartido.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 - Siguiente acción: TASK-153, PM-01, P0, orden local 1; requisito en `pendientes/Dirección/Pendientes.md` / TASK-153 y fuente histórica `RECUPERACION/Pendientes_RECUPERADO.md` líneas 6506–6548.
 
 
@@ -2435,7 +2435,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10.70 TASK-153 — integración parcial de controles por ámbito — C1.386–C1.388
 
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Cambios:** Academic valida claims firmados, ámbito de asignatura, asignación docente y propiedad de expedientes/documentos; Accounting filtra DocumentosLaborales mediante ExpedientesLaborales.Departamento, aplica ámbito en validateRolePermission y crea archivos laborales privados.
 - **Evidencia CI:** identity mapping 42737873813 success; department scope 42737873883 success; task-service local contracts 42737665503 success.
 - **Brechas estructurales:** ExpedientesEstudiantes y DocumentosEstudiante no tienen DepartamentoID; ExpedientesInstitucionales y SolicitudesFirmas no están implementados/encontrados; CatalogoDepartamentos no existe con ese nombre (se dispone de DepartamentosAcademicos).
@@ -2445,7 +2445,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10.71 TASK-153 — control de comprobantes de pago — C1.390–C1.391
 
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - uploadPaymentVoucher valida sesión firmada y propiedad del usuario destino: estudiante propio, tutor con relación activa o personal con ámbito departamental/institucional. Nuevas cargas privadas.
 - getPaymentVouchers filtra por usuario/relación/ámbito; reviewPaymentVoucher comprueba identidad, rol y propiedad antes de mutar.
 - validateRolePermission exige contexto de ámbito para las acciones administrativas de comprobantes y documentos laborales; self-service pasa a validación de recurso en el endpoint.
@@ -2456,7 +2456,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10.72 TASK-153 — endpoint autenticado para comprobantes privados — C1.393
 
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Implementación:** ACCOUNTING expone getPaymentVoucherFile por doPost; la fila de ComprobantesPago es la única fuente del file ID. El cliente no puede seleccionar un archivo arbitrario.
 - **Autorización:** sesión firmada y assertPaymentVoucherOwnerAccess_ para estudiante propio, tutor vinculado con portal activo, personal de ámbito departamental y rol institucional explícito.
 - **Respuesta:** contenido Base64 con MIME, nombre y tamaño; rechaza archivo ausente/en papelera/vacío, mayor de 10 MiB o extensión/MIME no permitidos.
@@ -2468,7 +2468,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10.73 TASK-153 — vista estudiantil de comprobantes privados — C1.395
 
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Implementación cliente:** se habilita Matrícula y Finanzas en student-dashboard; consulta getPaymentVouchers y muestra fecha, referencia, importe, estado y disponibilidad del archivo.
 - **Lectura privada:** Ver comprobante solicita getPaymentVoucherFile usando comprobanteId. La UI convierte Base64 a Blob URL para PDF/imagen, ofrece descarga y revoca el objeto URL al cerrar; no abre comprobanteUrl de Drive.
 - **Seguridad de presentación:** datos del comprobante se insertan mediante textContent/nodos DOM; la autorización final permanece en ACCOUNTING.
@@ -2479,7 +2479,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 ## 10.74 TASK-153 — ocultación de enlaces legacy y no enumeración de comprobantes — C1.397–C1.398
 
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Respuesta de listado:** getPaymentVouchers no devuelve la URL de Drive; expone comprobanteUrl vacío y tieneComprobante booleano.
 - **Respuesta de lectura:** getPaymentVoucherFile normaliza recurso no existente y recurso no autorizado a RESOURCE_NOT_FOUND con mensaje genérico.
 - **UI:** el portal usa tieneComprobante y solicita el contenido por el endpoint autenticado; no consume la URL legacy.
@@ -2622,7 +2622,7 @@ Solo se registra y descompone el alcance funcional. No se modificó código, dat
 - **Ámbitos:** AsignacionesAmbitosRoles contiene valores de ámbito del actor, sin validar su existencia/estado contra una fuente canónica; no sustituye el propietario del recurso.
 - **Contraste:** AUD-NG-226/TASK-506 ya cubren integridad, estados y relación intercatálogo; TASK-506 permanece PM-02/P1 y su requisito canónico está en `pendientes/Dirección/Pendientes.md`. FASE2-T04 ya documenta la falta de inventario de autoridad. No se crea AUD-NG ni tarea duplicada ni se cambia el orden PM.
 - **Dictamen:** ninguna fuente institucional única ni relación aprobada se demuestra desde el código/documentos disponibles; no se tuvo acceso a filas productivas de Sheets. No inferir, fusionar ni migrar.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** obtener decisión institucional aprobada sobre catálogo autoritativo, relación/separación administrativo-académica, IDs, jerarquía, estados y propietario de cada recurso estudiantil; luego verificarla contra datos reales y emitir mapeo.
 - **Límites:** revisión estática manual; no se ejecutaron pruebas nuevas ni Apps Script/Sheets/Drive/HTTP/E2E/browser.
 
@@ -2655,7 +2655,7 @@ Solo se registra y descompone el alcance funcional. No se modificó código, dat
 
 Se reutilizan TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-NG-164, TASK-005, F8-TASK09, FASE2-T04 y F29-TASK17. No se duplican IDs ni se cambia su estado.
 
-**Estado:** Pendiente (reinicio del ciclo).
+**Estado:** Pendiente.
 
 
 ## 10.78 TASK-695 — PLAN-IMA-001: descomposición funcional universal de 24 unidades
@@ -2668,7 +2668,7 @@ Se reutilizan TASK-153, TASK-060, F26-TASK01, TASK-506, TASK-171, TASK-668, AUD-
 - **Dependencias:** TASK-694; TASK-153; TASK-060/F26-TASK01; TASK-506/TASK-171/TASK-668; AUD-NG-164/TASK-005; FASE2-T04; F29-TASK17 y tareas departamentales del subplan.
 - **Puertas:** TASK-153/T153-S01 no se omite; U01/U02/U23 preceden a multiinstitución/configuración; U05/U06 a admisión/matrícula; U22 a sincronización externa; U24 a migración/piloto.
 - **Límites:** sin cambios de código/datos/esquemas/permisos/configuración/despliegue; sin pruebas de producto.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ## 10.79 AUD-NG-384 / TASK-696 — auditoría técnica y brecha runtime UNI-U01
@@ -3010,7 +3010,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 
 **Límites vigentes:** la lógica de propiedad está replicada como adaptador en dos proyectos Apps Script independientes; su consolidación en una interfaz interservicio común no se considera resuelta. TASK/EXAM no están integrados. DEVELOPER conserva un plano de control y almacenamiento separados; su aplicabilidad debe auditarse antes de imponer ABAC departamental. Siguen pendientes ExpedientesInstitucionales, SolicitudesFirmas, filtros/importaciones, respuestas genéricas para todos los endpoints/listados, permisos por operación, referencias compartidas con allowlist de campos/operaciones, vigencia/revocación y E2E.
 
-**Estado:** Pendiente (reinicio del ciclo).
+**Estado:** Pendiente.
 
 
 **Seguimiento C1.429 — verificación CI:** el workflow Department Scope terminó correctamente (run 42839462181), incluyendo los contratos USER/ACADEMIC/ACCOUNTING y la comprobación sintáctica. Identity mapping and transport security también pasó (run 42839462098). Task-Service security local contracts falló (run 42839462129) en una aserción de prueba obsoleta: exigía que la lista administrativa apareciera como literal dentro de `getAutomationRules`, pero la implementación usa el allowlist centralizado `TICKET_ADMIN_ROLES_` y obtiene el rol mediante `getUserVerifiedRole(payload)`. El mismo fallo estaba presente en los HEAD anteriores 4be1e3db y c7dfa718; no lo introdujo C1.428. Se actualizó el contrato para comprobar el uso del allowlist central y la identidad verificada; el rerun queda pendiente.
@@ -3024,7 +3024,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - `getAllExams` y `getTeacherExamActivity` aplican identidad firmada, ámbito activo y propiedad única activa de tipo `EXAMEN`; el identificador de profesor del payload no concede acceso.
 - Contratos Node dedicados de autenticación y aislamiento/tenant pasan en GitHub Actions run 42863062888. La prueba local en entorno de desarrollo no se ejecutó; CI no se registra como prueba local.
 - **Límite:** el listado falla cerrado para recursos sin propiedad registrada. Aún no se implementa la creación/registro de ownership en `createExam`, ni la protección de preguntas, entregas, resultados y mutaciones. La compatibilidad del flujo completo requiere resolver ese ciclo antes de considerar integrada toda la superficie EXAM.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** proteger `getExamQuestions`, `submitExam`, `getExamResult`, `getStudentExams` y mutaciones; registrar propiedad al crear solo con departamento autorizado explícito; ampliar contratos locales y beta.
 
 ## 10.97 TASK-153 / AUD-NG-386 — lecturas EXAM de estudiante y tutor (C1.439)
@@ -3033,7 +3033,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - Padre/Tutor/Responsable requiere relación familiar vigente en `RelacionesFamiliares` (o fallback `RelacionesEstudianteTutor`) y se evalúa el ámbito del estudiante vinculado, no el payload.
 - El resultado del estudiante se devuelve solo si la entrega es propia y no está Pendiente; docente debe ser propietario del examen y superar el ámbito. Respuestas de acceso no disponible no revelan existencia ni datos.
 - Contrato local aislado con mocks/fixtures y parseo: PASS; GitHub Actions runs 42866518036 y 42866358902: PASS. Beta BETA-FUNC-022 sigue pendiente y no bloquea el código.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ## 10.98 TASK-153 / AUD-NG-386 — protección de submitExam (C1.440)
 
@@ -3041,7 +3041,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - Se exige examen único y activo, asignación grado/sección desde `Usuarios`, ámbito vigente del estudiante y ResourceOwnership único dentro de la institución/departamento.
 - Se validan respuestas como arreglo, IDs de pregunta pertenecientes al examen y ausencia de IDs duplicados. Se aplica `IntentosPermitidos` con default 1 y se bloquean reintentos agotados.
 - Parseo local y contrato aislado de envío: PASS. GitHub Actions run 42867761346 PASS en contratos EXAM. Beta BETA-FUNC-022 sigue Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ## 10.99 TASK-153 / AUD-NG-386 — protección de createExam (C1.441)
@@ -3050,7 +3050,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - La escritura exige esquema canónico de `ResourceOwnership`; registra ownership antes de examen/preguntas bajo ScriptLock y compensa las filas de las tres hojas ante errores capturables. Si falla el rollback devuelve error explícito.
 - Contratos locales aislados de creación, suplantación, ámbito no autorizado, esquema inválido y rollback: PASS. Parseo local: PASS. GitHub Actions run 42870106305, HEAD exacto b497635b5cb6ea742361bbd847571c75a961c1a3: PASS en ambos contratos EXAM.
 - Limitación: Sheets no ofrece transacción multihoja; una terminación abrupta entre escrituras no puede garantizarse solo con catch/rollback. No se desplegó ni se probaron servicios reales; BETA-FUNC-022 sigue Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ## 10.100 TASK-153 / AUD-NG-386 — corrección de overrides en mutaciones EXAM (C1.442)
 
@@ -3062,7 +3062,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** NOT RUN en esta sesión; no hay checkout/runtime local disponible y el acceso de red para obtenerlo falló. No se declara PASS.
 - **CI:** sin estado/check run visible para el commit final al consultar el conector; no se declara PASS. El workflow dedicado se activa por push en la rama autorizada.
 - **Beta:** BETA-FUNC-022 permanece Pendiente beta; no se desplegó Apps Script ni se accedió a Sheets/Drive reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** continuar con las superficies técnicas pendientes de TASK-153 y mantener separada la validación del entorno desplegado.
 
 ## 10.101 TASK-153 / AUD-NG-385/386 — aislamiento de listados y lecturas directas TASK; aplicabilidad DEVELOPER (C1.443)
@@ -3074,7 +3074,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Aplicabilidad DEVELOPER:** `backend/developer-service/Code.gs` es un plano de control global (registro/estado de servicios, provisionamiento y diagnósticos); no se identificó un modelo de recursos por institución/departamento ni `ResourceOwnership`, `InstitutionID` o `DepartmentID` en los recursos que administra. No se impone ABAC departamental a ese plano. El campo `departamento` del registro de servicios es metadata del servicio, no propiedad de un recurso institucional. El bypass `payload.authRole` sin token sí existe, pero ya está asignado a AUD-NG-082 / TASK-645 (AUD-NG-289), P0 Pendiente; no se crea ID duplicado ni se altera ese alcance aquí.
 - **Pruebas locales en este entorno:** NOT RUN; no se pudo obtener un checkout local por fallo de resolución de red. Los resultados anteriores son de GitHub Actions, no se presentan como ejecución local. No se desplegó Apps Script ni se accedió a Sheets/Drive reales.
 - **Beta:** BETA-FUNC-021 se amplía para cubrir listados, intersección de ámbitos y lectura de archivos; permanece Pendiente beta. BETA-FUNC-022 permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción elegible:** auditar `AulasVirtuales`, `PublicacionesAnuncios` y `MaterialesEducativos` en `getVirtualClassrooms`, `getPosts` y `getStudyMaterials`; determinar la propiedad departamental del aula y el alcance de publicaciones/materiales generales antes de modificar esos contratos. Después continuar referencias compartidas, filtros/importaciones y E2E.
 
 
@@ -3088,7 +3088,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Commits:** `aea722f2b516c683a83ebec6b758eac373bc7e9d`, `10d356c5fb74b33cfc4abb15a4dff039dcf28b8e`, `6de048068216cb2afbec3feb28fdbd5a94c8f7f9`, `0ca861b2c67717761a3ee09d1025a2e13b5db463`, `538d1dc5f732de3fc26faaeeabab907e51122740`, `1558e5c99b4fee58474a849bc8087d9c16914028`, `bf0c17fb261e59d8c5c68293c196ac6ef90a30c7`.
 - **Verificación:** GitHub Actions run `42874101082` **PASS** en los dos contratos Node: `task-service-security-contract.test.js` y `task-service-resource-ownership.test.js`. El run `42873964908` había fallado por una aserción obsoleta del preview; se alineó la prueba con el guard compartido en `bf0c17f` y el run posterior pasó. Las pruebas locales en este entorno siguen NOT RUN por falta de checkout/runtime local; CI no se presenta como ejecución local.
 - **Límites:** no se desplegó Apps Script ni se accedió a Sheets/Drive reales. La validación beta/despliegue queda para la fase correspondiente y no bloquea la continuación del desarrollo.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.102 TASK-153 — endurecimiento de accesos directos a entregas y archivos TASK (C1.444)
@@ -3099,7 +3099,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas:** se agregan escenarios sintéticos para estudiante/tutor y acceso directo, más aserciones sobre delegación de preview y rechazo de asociaciones ambiguas. Revisión estática de 10 condiciones de estructura/guardas: PASS.
 - **Ejecución:** el contrato dinámico Node no se ejecutó en runtime local durante esta sesión; no se declara PASS. GitHub combined status y workflow runs para el último commit consultado no reportaron checks. La validación beta/despliegue queda en la fase beta y no bloquea el desarrollo.
 - **Commits:** `538d1dc5f732de3fc26faaeeabab907e51122740` y `1558e5c99b4fee58474a849bc8087d9c16914028` (con los commits previos de C1.443 en la misma secuencia de trabajo).
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.103 TASK-153 / AUD-NG-385 — propiedad de aulas y aislamiento de archivos legacy en TASK (C1.445)
@@ -3113,7 +3113,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Beta:** BETA-FUNC-021 se amplía con escenarios de `readLegacyDocument` y `getMultiPartFolderFiles`; permanece Pendiente beta y se ejecutará en el entorno correspondiente. La validación beta/despliegue no bloquea el desarrollo.
 - **Archivos:** `backend/task-service/Code.gs`, `tests/security/task-service-security-contract.test.js`, `tests/security/task-service-resource-ownership.test.js`, `backend/academic-service/Code.gs`, `tests/security/departmental-resource-access.test.js`, `tests/security/academic-student-expediente-ownership.test.js`, `.github/workflows/department-scope-contract.yml`, `beta_test.txt`.
 - **Commits de código/pruebas/beta:** e7d036abad8ef6cecc19252057b2f4888a29dbd2; 6024d318162fe1f758f194ac00c1f23fea803076; 176c5b08974a8a44f1314ea8e65f3ca371541e77; 742fe9576062108c857cfb3e00fd0de59b5ef4a4; 2d5526565a8332cbbed8e80c92ab5427b2deb7cb; f71bebc496ffb6487cdefc3701d1f24043649bd3; dee57ca34414c591f4d8bb6342c2567a9bdb8a33; 87dbe7ecf4b3eaab69fc473d7a06df966f86b24c.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ## 10.104 TASK-153 / ACADEMIC — propiedad del expediente propio, tutores y relaciones de tutoría (C1.446)
@@ -3139,7 +3139,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pendiente siguiente:** `convertAdmissionToStudent` aún requiere validación y registro atómico de propiedad del expediente recién creado; revisar también evaluaciones/entrevistas de admisión y restantes endpoints de consulta.
 - **Archivos:** `backend/academic-service/Code.gs`, `tests/security/academic-student-expediente-ownership.test.js`, `beta_test.txt`.
 - **Commits:** 3d3d0015cbdd67a715a9fe60385fd82664e2f34d; b113a6f88b338c63f04ecc3531cd9efa85b8b257; 42ca04bad4209760bb883a20b0286a59b8054df9; 5874fa64f615f1dd1d691f60aea3e0b9ee9417b6; ea178e9ff2b70da97573a32a47bac650ef415fa0; 19a64b518ec4eee24b6f0c25b775f43e0058b90f; c77088ad8abd721453ebd3b3b92700ff9575cc86; df644f9a87838450a74f168e310ca423992b2be8; 9b7e619252f8c3489ea05980b58e570d1942148c; 1df0394c1953e19a7e67a8331aa4eebae8c795d2; 2ae88b8fca460911ed2e8f555b3cca9bf6a4a6ce; 589873ae6659c735c4a9ce8fd7ca61aba5224e77.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.106 TASK-153 / ACADEMIC — impedir reutilización cruzada de expedientes en conversión de admisiones
@@ -3150,7 +3150,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación ejecutada:** parseo/sintaxis del servicio y del archivo de prueba PASS; ejecución aislada de la función extraída desde el código fuente del HEAD con mocks PASS para el escenario de expediente ajeno. La suite Node completa no fue ejecutada desde checkout local; CI para el nuevo HEAD sin checks/workflow runs visibles. No se declara CI PASS.
 - **Beta:** BETA-FUNC-024 incorpora el caso de coincidencia de identificación entre departamentos; Pendiente beta.
 - **Commits:** `55e6c109f7870cb02358c8c20e2783140f42229e` (guard); `4a3df02770c3e96d140ae8b5c067d5ef23c3249a` (contrato); `e8e15cee160b584da43ecc22d38feff7596c72d5` (corrección del harness); `9100ba12deef98e3bc05be1a1e034f0fb85542e1` (beta).
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.107 TASK-153 / ACADEMIC — compensación de escrituras parciales en conversión de admisiones (C1.449)
@@ -3161,7 +3161,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Prueba local añadida:** contrato sintético que inyecta fallo al insertar MovimientosEstudiante después de crear expediente, ownership, matrícula y cargo. Comprueba que el estado de solicitud sigue Admitida, se restaura el vínculo de expediente y se eliminan expediente, ownership, matrícula y cargo.
 - **Verificación ejecutada:** parseo/sintaxis de Code.gs y del test PASS; ejecución dinámica aislada de las funciones extraídas del HEAD con mocks PASS: fallo inyectado reproducido y compensación verificada en todas las hojas observadas. Suite Node completa no ejecutada desde checkout; no se declara PASS de suite ni CI.
 - **Alcance:** no se amplía en esta iteración a idempotencia entre reintentos, migración de transacciones ni endpoints de evaluaciones/entrevistas. La compensación solo revierte mutaciones registradas por esta ejecución; si una operación externa o un append de Sheets falla después de persistir pero antes de devolver control, puede requerir conciliación manual. No hubo despliegue ni acceso a datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.108 TASK-153 / ACADEMIC — idempotencia de reintentos de conversión (C1.450)
@@ -3170,7 +3170,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** se incorporan validadores de reintento. La matrícula existente solo se reutiliza cuando usuario/año coinciden y la observación identifica exactamente la misma solicitud, además de coincidir grado y sección; múltiples coincidencias o matrícula de otro origen producen error cerrado. Los movimientos se buscan por expediente/año/tipo y marcador exacto de solicitud; se rechazan duplicados y cualquier vínculo a una matrícula distinta. Movimientos ordinarios/importados ya no se confunden con el movimiento de esta conversión.
 - **Pruebas:** contrato persistente añadido para reuso de matrícula propia, rechazo de matrícula ajena, rechazo de cambio de grado/sección, ambigüedad, ignorar movimiento ajeno, reuso del movimiento propio y rechazo de vínculo/duplicado. Parseo de Code.gs y test PASS; ejecución dinámica aislada de los validadores PASS.
 - **Límites:** suite Node completa y CI no ejecutados; no hay despliegue ni datos reales. La idempotencia cubre matrícula y movimiento de conversión; no representa una garantía transaccional global para integraciones externas o escrituras remotas que persistan y lancen.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.109 TASK-153 / ACADEMIC — validar artefactos en reintento de admisión ya convertida (C1.451)
@@ -3179,7 +3179,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** el retorno ya convertido ahora exige un único expediente con PersonaID, una cuenta activa única de estudiante para esa persona, una matrícula única del usuario/año con marcador exacto de solicitud y grado coincidente, y el movimiento exacto de ingreso vinculado a esa matrícula y con grado/sección coincidentes. Devuelve los identificadores verificados. Los artefactos faltantes o inconsistentes fallan cerradamente; no se reparan ni eliminan datos automáticamente.
 - **Pruebas locales ejecutadas:** sintaxis de Code.gs y del contrato PASS. Ejecución dinámica aislada del retorno completo PASS para conversión íntegra; fallos esperados PASS para matrícula ausente, movimiento ausente, movimiento vinculado a otra matrícula, sección discordante y expediente duplicado.
 - **Límites:** suite Node completa y CI no ejecutados en esta iteración. Sin despliegue ni datos reales. La conciliación verifica expediente/cuenta/matrícula/movimiento; no certifica cargos financieros, documentos ni vínculos familiares porque sus esquemas actuales no permiten atribuirlos inequívocamente a esta conversión. No se realiza reparación automática.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.110 TASK-153 / ACADEMIC — atribución e idempotencia del cargo de admisión (C1.452)
@@ -3190,7 +3190,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** sintaxis Code.gs/test PASS. Harness aislado PASS para creación de cargo marcado, reintento sin duplicar, rollback del cargo, compatibilidad de cargo ordinario de nueve columnas, exclusión de legado anulado, rechazo de cargo activo sin marca, importe cambiado, importe incompleto, referencia duplicada/propietario distinto y filtrado de metadatos internos en la acción pública. Conciliación completa aislada PASS con expediente/cuenta/matrícula/cargo/movimiento.
 - **Compatibilidad histórica:** los cargos anteriores no tienen referencia de origen. No se les asigna retrospectivamente una solicitud por coincidencia de concepto o importe. Los reintentos de conversiones históricas con cargo no marcado quedan en conflicto/incompletos y requieren conciliación manual sustentada antes de cualquier backfill.
 - **Límites:** suite Node completa y CI no ejecutados. Sin despliegue ni datos reales. No se afirma atomicidad ACID de Google Sheets ni conciliación automática de registros históricos.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.111 TASK-153 / ACADEMIC — evaluar trazabilidad de cargos históricos de admisión (C1.453)
@@ -3200,7 +3200,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Conclusión:** los eventos disponibles no proporcionan una relación verificable entre una matrícula de admisión y una fila histórica de cargo. Usuario, concepto, periodo, importe o proximidad temporal no demuestran procedencia. No ejecutar backfill ni modificar cargos históricos por coincidencias heurísticas.
 - **Criterio de conciliación futura:** solo considerar registros respaldados por una fuente contable original que identifique inequívocamente el CargoID y la solicitud/matrícula, con trazabilidad preservada; si esa evidencia no existe, mantener el cargo sin atribución.
 - **Hallazgo para la siguiente iteración:** la inspección estática de `convertAdmissionToStudent` detectó que se interpola `matriculaRealId` en `_chargeReference` antes de inicializar la constante con el resultado de `registerStudentEnrollmentInternal_`. La lectura cae en la zona temporal muerta y puede lanzar `ReferenceError`, impidiendo la conversión. Además, el retorno idempotente omite `cargoId` aunque el validador ya lo devuelve. Corregir y cubrir el flujo completo antes de continuar el alcance de admisiones.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.112 TASK-153 / ACADEMIC — corregir referencia de cargo en conversión y propagar CargoID (C1.454)
@@ -3210,7 +3210,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato:** `registerStudentEnrollment` elimina también `_chargeReferencePrefix` del payload público. La conversión exige `matriculaId` y `cargoId`, devuelve ambos en conversión nueva y en el retorno idempotente. El evento `ADMISSION_CONVERTED` incluye `cargoId` para trazabilidad de futuras conversiones.
 - **Regresión añadida:** el contrato ACADEMIC amplía el escenario con fallo inyectado y rollback para repetir luego la conversión con éxito; verifica CargoID devuelto, referencia `ADMISION|solicitud|matrícula`, reintento de cargo con CargoID estable y filtrado del prefijo interno en la API pública.
 - **Verificación:** revisión estática de cambios y contratos por lectura del diff PASS. Ejecución local Node/sintaxis: NOT RUN (no hay checkout local; el intento de clonar falló por resolución DNS de github.com). El estado de checks de GitHub no expone ejecuciones ni status para el HEAD consultado; no se declara PASS de CI ni de las pruebas dinámicas.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.113 TASK-153 / ACADEMIC — cierre de verificación local de conversión y contención concurrente (C1.455)
 
@@ -3219,7 +3219,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Ejecución local aislada:** GitHub Actions run `42889702855` — SUCCESS. Ejecutó en checkout Node 24: `department-scope-contract.test.js`, `departmental-resource-access.test.js`, `academic-student-expediente-ownership.test.js` (incluye conversión/rollback/cargo y lock contention), `academic-admission-ownership.test.js`, `accounting-departmental-resource-access.test.js`, `resource-ownership-abac.test.js`, `student-payment-voucher-client.test.js` y `node --check` para User, Academic, Accounting y `js/student.js`. Todos los pasos terminaron PASS.
 - **Corrección de prueba:** la primera ejecución del contrato ampliado falló por un escape de salto de línea en el fixture nuevo; se corrigió y la ejecución posterior completa terminó SUCCESS. No se oculta el intento fallido ni se considera defecto del código de producción.
 - **Límites:** no hubo despliegue, llamadas a servicios vivos ni acceso a hojas/datos reales. Las pruebas beta que requieran servicios desplegados siguen reservadas a la versión beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits de esta continuación:** `3bb1d3b7dfc9c4d0259d6a124f353d46b0f38a13` (fix de referencia ordinaria), `91c17ba2bddc7cf4e9d35316b877ae7034898907` (contrato de contención de lock) y `ad44dde863065b2a2dc54580ee5a393f43d4570e` (corrección del fixture).
 
 ### 10.114 TASK-153 / ACADEMIC — proteger entrevistas de admisión y serializar agenda (C1.456)
@@ -3229,7 +3229,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato local añadido:** `academic-admission-ownership.test.js` cubre solapamiento rechazado, intervalos adyacentes permitidos, contención del lock sin lecturas/escrituras, identidad antes de resolver el ID, ownership antes de leer detalles, denegación sin mutaciones y actualización autorizada de estado/observaciones.
 - **Ejecución local aislada:** GitHub Actions run `42890756763` — SUCCESS, Node 24. Los contratos de alcance departamental, ACADEMIC expediente/admisión/entrevistas, ACCOUNTING y ResourceOwnership ABAC pasaron; también pasaron los contratos de cliente voucher y `node --check` de User/Academic/Accounting Code.gs y `js/student.js`.
 - **Límites:** prueba de concurrencia mediante lock simulado y fixtures locales; no se afirma prueba de simultaneidad contra Google Sheets real. No hubo despliegue, servicio vivo ni datos institucionales reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** `eb0bc0f6d8dc44d07d9ba79778194fd3cf223ad2` (código), `0901d2b0e4d129123461a6219cdbb138cbc9e7a2` (contratos), `dc993865cbb07266e138d4702bd1c9c638c379e4` (contención del lock en test).
 
 ### 10.115 TASK-153 / ACADEMIC — serializar evaluaciones de admisión y fijar identidad de auditoría (C1.457)
@@ -3239,7 +3239,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato local:** prueba de escritura con lock adquirido, ID y evaluador derivados del contexto verificado, rol de auditoría inmune a `authRole` falsificado, liberación del lock y rechazo contencioso sin lecturas ni append.
 - **Ejecución local aislada:** GitHub Actions run `42891200883` — SUCCESS, Node 24. Contratos de alcance departamental, ACADEMIC expediente/admisión/entrevistas/evaluaciones, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Node de User/Academic/Accounting Code.gs y `js/student.js` PASS.
 - **Límites:** lock y persistencia probados con fixtures locales; no se afirma concurrencia real de Google Sheets ni se ejecutó despliegue/datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** `f198730c1d8a37cc35a44a30c531b26ca6a5caaf` (código) y `9b0a53bfec2f984ce665c5ea9d0d282b7f207700` (contrato).
 
 ### 10.116 TASK-153 / ACADEMIC — endurecer la resolución de duplicados de admisión (C1.458)
@@ -3250,7 +3250,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contratos locales:** se verifican las tres decisiones, repetición rechazada, expediente destino con ownership no autorizado, destino en otro departamento, rol no directivo, rol directivo acentuado válido (“Secretaría”), lock contencioso sin lecturas/escrituras, revalidación de solicitud dentro del lock, liberación del lock y fallo explícito de historial.
 - **Ejecución:** GitHub Actions run `42894133956` — SUCCESS, Node 24. Contratos Department Scope, ACADEMIC (expediente/admisión/entrevistas/evaluaciones/resolución de duplicados), ACCOUNTING, ResourceOwnership ABAC y cliente voucher PASS; `node --check` de servicios Apps Script y sintaxis del cliente PASS.
 - **Límites:** concurrencia y persistencia verificadas con lock/fixtures locales, no con Google Sheets real. Sin despliegue, URL beta ni datos institucionales reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits principales:** `cc60ed6e50cf411ac65490ef8cca6ca9542eafa0` (resolución), `89ca3edfc6cff41105c03fccc2d6a83188b2026c` (rol directivo explícito), `25bea9e9ed69460c1b2bf21ab2bf951f4a837ba5` (fixtures de escritura atómica), `07b22d3180461320052eda9958d677acf7355805` (normalización Unicode de roles) y `d2b818e2536f8fcad04317ba687b9e5392c44814` (regresión de rol “Secretaría”), `7648d34076df4b10545b3c6ce4e2cc4229fff5f3` (eliminación de marcas combinantes) y `94ec9a3294ff276bfce88941659a1c3f52a030e2` (aserción VM compatible con arrays de otro contexto).
 
 ### 10.117 TASK-153 / ACADEMIC — proteger la reapertura de solicitudes de admisión (C1.459)
@@ -3261,7 +3261,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato local:** reapertura autorizada, propiedad revalidada bajo lock, estado y canal preservados, historial canónico, rechazo de segunda reapertura, conversión previa, estado destino manipulado, rol no gestor, lock contencioso sin lecturas y fallo de esquema de historial.
 - **Ejecución:** GitHub Actions run `42894133956` — SUCCESS, Node 24. Contratos Department Scope, ACADEMIC expediente/admisión/conversión/entrevistas/evaluaciones/duplicados/reapertura, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; `node --check` de servicios Apps Script y sintaxis cliente PASS.
 - **Límites:** pruebas locales con mocks/fixtures y lock controlado; sin Google Sheets real, servicios vivos, despliegue ni datos institucionales reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** `dfab2d1486dd7599e9ccadb890ff71003632c669` (código); `5ae37e4a1aea2b779df2d14b42274719c9b2eccc` y `94ec9a3294ff276bfce88941659a1c3f52a030e2` (contratos/fixtures).
 
 ### 10.118 TASK-153 / ACADEMIC — serializar la incorporación a lista de espera (C1.460)
@@ -3272,7 +3272,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato local:** alta con puntaje/posición, reintento idempotente, lock contencioso sin lecturas, solicitud sin ownership, IDs de solicitud duplicados, duplicidad activa ambigua, criterio mal tipado, rollback de append tras fallo de estado y registro de fallo de compensación.
 - **Ejecución:** GitHub Actions run `42894855396` — SUCCESS, Node 24. Contratos Department Scope, ACADEMIC (expediente/admisión/conversión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera), ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script y cliente PASS.
 - **Límites:** fixtures y lock local; no se afirma concurrencia real de Google Sheets. Sin despliegue ni datos institucionales reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** `6009994e5df3fc45ddbadad9f782468dc65ba100` (código) y `314e07b4fa5cfeae005d69b1b417d66a44803851` (contrato).
 
 ### 10.119 TASK-153 / ACADEMIC — proteger la oferta de plazas de lista de espera (C1.461)
@@ -3283,7 +3283,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato local:** autorización antes de leer detalles, denegación de ownership, ID ambiguo, lock contencioso, oferta válida, reintento idempotente sin escritura, renovación vencida, estado inválido, expiración inválida y vigencia no positiva.
 - **Ejecución:** GitHub Actions run `42895517906` — SUCCESS, Node 24. Contratos Department Scope, ACADEMIC (incluidas incorporación/oferta de lista de espera), ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script y cliente PASS.
 - **Límites:** lock y datos simulados localmente; no se afirma concurrencia real de Sheets. Sin despliegue ni datos institucionales reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** `7f3153e036d17ec6d070a67325b447f9c034422d` (código) y `239e360700728569e4a000ca542e837be77b1c25` (contrato).
 
 ### 10.120 TASK-153 / USER — proteger creación de solicitudes de firma avanzada (C1.462)
@@ -3293,7 +3293,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato local:** creación autorizada y canonicalización de Drive ID, ownership de expediente/solicitud, denegación de cruce departamental y ownership ausente, solicitud discordante, rol/identidad inválidos, lock contencioso sin acceso a Sheets y duplicidad pendiente.
 - **Ejecución:** GitHub Actions run `42895590817` — SUCCESS, Node 24. El workflow ejecutó los contratos Department Scope, ACADEMIC expediente/admisión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera, nuevo contrato USER de firma, ACCOUNTING, ResourceOwnership ABAC, voucher client y sintaxis de servicios/cliente.
 - **Límites:** fixtures y lock local; no se afirma concurrencia real de Sheets. Sin despliegue, servicios vivos ni datos institucionales reales. Este subalcance cubre creación de la solicitud; quedan pendientes el callback/actualización de estado, registro de firma y certificado de auditoría.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** `bbd2d1389234233f9d75c8ddd0fb9697e8c5a434` (ownership y lock), `58d2a03f1d7f0c83e52e88c47f821c8d39256871` (RBAC en handler), `21fe586777cc6394effcdcbc639f8d5da1fa1374` (contrato) y `ce08eabc4821f7856c40be16b1bd7620891c75ac` (workflow).
 
 ### 10.121 TASK-153 / ACADEMIC — proteger y normalizar el reordenamiento de lista de espera (C1.462)
@@ -3304,7 +3304,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato local:** orden del grupo completo, fila de otro departamento nunca leída en detalle ni modificada, ownership denegado antes de detalles, lock ocupado, estado no elegible, posición no entera/fuera de rango y rollback de escritura parcial/fallo de rollback.
 - **Ejecución:** GitHub Actions run `42896093654` — SUCCESS, Node 24. Contratos Department Scope, ACADEMIC (expediente/admisión/conversión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera), USER signature ownership, ACCOUNTING, ResourceOwnership ABAC y voucher client PASS; sintaxis Apps Script/cliente PASS.
 - **Límites:** grupo y persistencia simulados localmente con mocks/fixtures y lock controlado; sin Google Sheets real, despliegue ni datos institucionales reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** `647c50e9a96c70d80809be56600716fac37b75f7` (código) y `be34332567dd0b93e101d260c7def03cbb95ea52` (contrato).
 
 ### 10.122 TASK-153 / USER — consultar estado de firma avanzada sin aceptar callbacks falsificados (C1.463)
@@ -3316,7 +3316,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Ejecución:** GitHub Actions run `42898171738` — SUCCESS, Node 24. Ejecutó Department Scope, ACADEMIC expediente/admisión/entrevistas/evaluaciones/duplicados/reapertura/lista de espera, USER signature ownership, ACCOUNTING, ResourceOwnership ABAC, voucher client y sintaxis de servicios/cliente.
 - **Corrección de fixture:** el primer run tras el cambio de semántica falló porque el test todavía esperaba `esFirmadoValido:true`; se actualizó el contrato para esperar `false` y verificación pendiente. La ejecución integral posterior terminó SUCCESS.
 - **Límites:** la autorización/lectura se probó con mocks y fixtures locales; no se ejecutó proveedor externo, validación X.509 real, despliegue, servicio vivo ni datos institucionales reales. La integración de callback autenticado y la verificación criptográfica siguen pendientes.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** `e7e8588402d2e462b7a4e70161309f52d46ae70b` y `dafdbbb0526ee550d7d4ca462340e0351ee6742a` (contrato de consulta/callback); `31cc21b9572c47e792d0b3188237aeaaccd480a6` (no equiparar estado completado con validez); `4aa2a9a251e53ec0044956f66e7a32263ca86a98` (expectativa de verificación criptográfica pendiente).
 ### 10.123 TASK-153 / USER — endurecer el registro de conformidad documental manual (C1.464)
 
@@ -3326,7 +3326,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato local añadido:** conformidad manual autorizada, canonicalización documental, identidad del firmante, auditoría con actor verificado, reintento exacto sin append, hash/tipo discordante, registros ambiguos, suplantación del firmante, tipo avanzado, ownership denegado y lock contencioso.
 - **Ejecución:** GitHub Actions run `42898684084` — SUCCESS, Node 24. El workflow completo de Department Scope, ACADEMIC, USER signature ownership, ACCOUNTING, ResourceOwnership ABAC, voucher client y sintaxis terminó PASS.
 - **Límites de semántica:** `documentoHash` sigue siendo un dato recibido por la API y no se recalcula contra bytes de Drive en este subalcance. `signatureHash` es una huella SHA-256 del registro/metadatos; no es una firma electrónica criptográfica ni acredita una identidad PSC. El endpoint conserva su denominación explícita de conformidad manual y prohíbe mecanismos avanzados.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commit de pruebas:** `05f8498cb50efcffe9b6cf05b51633309a40865a`.
 
 ### 10.124 TASK-153 / USER — integridad de archivo fuente y validación del destinatario de firma avanzada (C1.466–C1.469)
@@ -3335,7 +3335,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Identidad/ámbito del destinatario (C1.469):** `assertAdvancedSignatureSignerScope_` exige una cuenta `Usuarios` única y activa. El perfil de nombre/correo se toma del registro confiable, no del payload. Personal requiere asignación activa y vigente para el departamento propietario o alcance institucional de la institución configurada; estudiante requiere coincidencia PersonaID↔expediente; padre/madre/tutor/responsable requiere relación activa con el expediente y acceso al portal. La denegación ocurre antes de leer transacciones o acceder a bytes del archivo.
 - **Contrato local/CI:** identidad ausente/duplicada/inactiva; ámbito departamental ajeno, inexistente o vencido; alcance institucional válido; estudiante SELF; tutor GUARDIAN con relación activa; relación/portal inactivos; nombre/correo canónicos; hash del archivo real, hash cliente discordante/malformado, ownership, lock e idempotencia. Department Scope run 42902550008, Identity Mapping run 42902550038 y Task-Service security run 42902550046 — SUCCESS; syntax-check Apps Script — SUCCESS.
 - **Límites:** no se ejecutó PSC real, callback autenticado, validación criptográfica del proveedor, Drive/Apps Script real ni despliegue. La identidad del destinatario se comprueba contra los registros institucionales actuales; la validación criptográfica del firmante continúa pendiente de integración autenticada del proveedor.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** `78836e55b007feac17577d9d7888165e63af4724` (código y contratos C1.469); C1.466–C1.468 documentados en checkpoints anteriores.
 
 ### 10.125 TASK-153 / ACADEMIC — contrato conductual de conversión de admisión, ownership y compensación (C1.470)
@@ -3349,7 +3349,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** contrato conductual aislado ejecutado sobre el código de la rama — PASS, cinco escenarios. La prueba fue incorporada a `tests/security/academic-admission-ownership.test.js`.
 - **CI:** Department Scope Contract run `42903670806` — SUCCESS; el paso de ACADEMIC admission ownership y los contratos de los demás servicios/syntax-check terminaron SUCCESS.
 - **Límites:** no se modificó la función productiva ni se probó Apps Script/Sheets real. La persistencia real y los permisos/efectos externos siguen siendo beta; no bloquean este contrato local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** `88b3462e969ec427f5b31fbcb7894c1fbbc49dff` (contrato); `08813b2dbcddbf2df23e2ed1d008052f425c252b` (ajuste de aserción de reentrada).
 
 
@@ -3398,7 +3398,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Protección de salida y entrada:** las consultas devuelven solo máscaras/indicadores; el log RBAC de denegación no registra secretos; se rechazan claves sensibles en `configuracionJSON`, endpoints sin HTTPS o con credenciales/tokens incrustados y HMAC secrets débiles. Endpoints legacy con credenciales se redaccionan.
 - **No configuración ficticia:** `getAdvancedSignatureProviderConfig` es de solo lectura y devuelve lista vacía si no hay proveedor configurado; no crea hojas ni presenta un PSC por defecto no verificado.
 - **Contrato local:** 12 escenarios / 17 aserciones V8 PASS; parseo de servicio y test PASS. CI Department Scope `42910740964`, Task-Service `42910740844` e Identity Mapping `42910740991` — SUCCESS.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commit de código y pruebas:** `0053c0ecf8e99b0eaa60a594366eb91b3dc8d445`.
 - **Siguiente unidad registrada:** revisar `createAdvancedSignatureRequest` para exigir un proveedor configurado/activo explícito y eliminar el fallback `PSC-HN-DEFAULT`, sin atribuir integración o validez PSC.
 - **Addendum R1:** contrato de redacción del log RBAC para credenciales; 13 escenarios/26 aserciones locales PASS. El primer run 42911446883 falló por comparación de objetos entre contextos VM; corrección del test y repetición Department Scope run 42911571605 SUCCESS. Commit de test: `740b681f2b78f714b0b268d0717841232726ba3e`.
@@ -3409,7 +3409,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** submitExam adquiere ScriptLock con timeout de 5 segundos y ejecuta submitExamUnlocked_ bajo el lock. La revalidación de identidad, rol, examen, ownership, preguntas, respuestas y conteo queda dentro de la sección crítica, junto con appendRow. finally libera el lock.
 - **Pruebas locales:** parseo V8 PASS; departmental-access y security-contract PASS en harness V8 aislado con stubs. Se simuló reentrada durante appendRow y se verificó una sola entrega. No se ejecutó runner Node nativo.
 - **CI:** sin ejecución visible asociada al commit al consultar; no se declara PASS. **Beta:** BETA-EXAM-031 Pendiente beta para Apps Script/Sheets real.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** 6e410c7db8a135d7ffc7772167bd99998409f4f3; d9846a877facead35d4321955d3a0c408755271c; 843f6673a5eb12f732b70adc7162fdff266d9dc4; f118ce5e4f54dad255dc13f9621efb3e9e9e4261.
 
 ### 10.131 TASK-153 / AUD-NG-386 — serialización de updateExam, updateExamStatus y deleteExam (C1.478)
@@ -3418,7 +3418,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** wrapper withAuthorizedExamMutation_ adquiere ScriptLock (5 s), vuelve a resolver identidad, permiso, scope y ownership después de adquirirlo y mantiene el lock durante la actualización de Examenes/ResourceOwnership. Los tres handlers delegan en workers internos; deleteExam conserva la baja lógica cuando hay entregas y el rollback de ownership.
 - **Pruebas locales:** parseo V8 PASS; departmental-access y security-contract PASS en harness V8 aislado. Se simula la eliminación del examen objetivo justo antes de adquirir lock y se verifica que no se modifica la fila siguiente; timeout fail-closed PASS.
 - **Runner Node nativo/CI:** NOT RUN. **Beta:** BETA-EXAM-032 Pendiente beta para concurrencia real en Apps Script/Sheets.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** 07e32f50b8b104bbdbc94c52b726b7b23168774f; 9ac430c38f350ff2305dbd103d36e9fa80f3b3ac.
 - **Siguiente subalcance:** inspeccionar manageQuestionBank como superficie separada de escritura de preguntas.
 
@@ -3438,7 +3438,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo V8 PASS; question-bank-read-security, question-bank-security, security-contract y departmental-access PASS en harness V8 aislado. Cobertura de identidad, rol solo lectura, scope falsificado, ownership y IDs ambiguos, inactivos, filtros, timeout y relectura después de lock.
 - **CI/runner Node nativo:** NOT RUN (sin workflow/status visible asociado al commit consultado). **Beta:** BETA-EXAM-034 Pendiente beta.
 - **Limitación:** filas legacy sin ownership único/ID único no aparecen; claves requieren permiso de gestión. La granularidad futura de respuestas puede ajustarse por matriz RBAC institucional.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Commits:** a62a3dbd976093da997ffe08698be3811fc52d09; 6ddff072cff57d00787edcd3fbe67e5d33e37002; 67c7640d125c3facda2811f90791e64038055d17; 33b64970c7870a3129c7d8669cef9477a784aa42; 04916bf7ae74c7d6b21c5568813b37640479d10b; 37ffd27c404a8262b0dd620e2c2ddb2bacb9249e; 6346195479eaa434fdfa5392409d46be65733d5c.
 
 ### 10.134 TASK-153 / AUD-NG-386 — seguridad de lectura de getExamResult (C1.481)
@@ -3448,7 +3448,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Autorización:** estudiante solo accede a su entrega; tutor/padre/responsable requiere vínculo verificado; profesor solo accede a exámenes propios; personal autorizado requiere ownership y ámbito institucional/departamental. Estudiante/tutor no reciben el resultado si la entrega sigue Pendiente. La clave correcta se mantiene disponible para actores autorizados según la política existente.
 - **Pruebas locales:** parseo V8 de Code.gs y test PASS; nuevo exam-service-exam-result-security.test.js PASS en harness V8 aislado con stubs, con permiso, ownership, estado Pendiente, ID ajeno, lock timeout, entrega eliminada antes de lock y profesor ajeno. Runner Node nativo NOT RUN.
 - **CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-035 Pendiente beta para concurrencia real de lectura/calificación/baja y permisos por rol.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente subalcance:** auditar getStudentExams/getExamQuestions y otras lecturas EXAM restantes por snapshot/ownership/lock.
 
 ### 10.135 TASK-153 / AUD-NG-386 — RBAC y lectura consistente de getStudentExams/getExamQuestions (C1.482)
@@ -3458,7 +3458,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Integridad:** getStudentExams excluye IDs de examen duplicados y omite exámenes con entregas múltiples para el estudiante; mantiene calificación null cuando la entrega está Pendiente. getExamQuestions requiere examen único, limita estudiantes/tutores a asignación y entrega propia única cuando el examen no está activo, omite IDs de pregunta duplicados y no expone respuestaCorrecta.
 - **Pruebas locales:** parseo V8 PASS; read-endpoints-security, departmental-access, security-contract, exam-result-security, question-bank-read-security y question-bank-security PASS en harness V8 aislado con stubs. Runner Node nativo NOT RUN.
 - **CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-036 Pendiente beta para concurrencia real, RBAC dinámico y duplicados.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente subalcance:** auditar getAllExams/getTeacherExamActivity y lecturas restantes expuestas por dispatcher.
 
 ### 10.136 TASK-153 / AUD-NG-386 — seguridad y consistencia de getExamGradeDistributionAnalytics (C1.484)
@@ -3468,7 +3468,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Integridad:** entregas sin ID o con ID duplicado quedan excluidas; notas no finitas no contaminan promedios/estadísticas; entregas Pendiente sin nota mantienen su conteo. Se conserva el esquema y cálculo estadístico de respuesta.
 - **Pruebas locales:** parseo V8 y harness aislado de 8 escenarios PASS. El runner Node nativo, CI y Apps Script/Sheets real no se ejecutaron.
 - **Beta:** BETA-EXAM-038 Pendiente beta; no bloquea el cierre local del subalcance.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar individualmente simulateExamReschedule; no agruparlo con getGradingPerformanceAndPersistenceMetrics.
 
 ### 10.137 TASK-153 / AUD-NG-386 — seguridad y consistencia de checkExamSchedulingConflict (C1.485)
@@ -3478,7 +3478,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Validación de entradas:** fecha calendario YYYY-MM-DD (admite sufijo de hora ISO) y límite entero seguro entre 1 y 100; valor predeterminado 2. Fechas/filas inválidas e IDs ambiguos no participan.
 - **Pruebas locales:** parseo V8 y harness aislado de RBAC denegado, ownership, aislamiento docente, duplicados, estados, exclusión, umbral, fecha/límite inválidos y timeout/lock PASS.
 - **CI/runner Node nativo y Apps Script/Sheets real:** NOT RUN. **Beta:** BETA-EXAM-039 Pendiente beta; no bloquea cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar individualmente simulateExamReschedule; no agrupar con getGradingPerformanceAndPersistenceMetrics.
 
 ### 10.138 TASK-153 / AUD-NG-386 — seguridad y consistencia de simulateExamReschedule (C1.486)
@@ -3488,7 +3488,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Auditoría:** el rol del evento se deriva de actor verificado. Los IDs ambiguos y el acceso no autorizado fallan de forma cerrada.
 - **Pruebas locales:** parseo V8 y harness local de read-endpoints PASS (simulación, conflicto, RBAC, ownership, aislamiento docente, duplicados, fecha inválida, timeout, lock único e intercalación pre-lock). Contrato estático y sintaxis PASS.
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-040 Pendiente beta; no bloquea el cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar individualmente getGradingPerformanceAndPersistenceMetrics.
 
 ### 10.139 TASK-153 / AUD-NG-386 — seguridad de getGradingPerformanceAndPersistenceMetrics (C1.487)
@@ -3498,7 +3498,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Consistencia:** la muestra se obtiene después del ScriptLock compartido; timeout fail-closed; no realiza escrituras.
 - **Pruebas locales:** parseo V8 y harness local read-endpoints PASS (roles permitidos/denegados, RBAC, ámbito, timeout, intercalación post-lock, umbrales, hoja ausente y ausencia de valores de celdas). Contrato estático PASS.
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-041 Pendiente beta; no bloquea cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** identificar y auditar individualmente el siguiente endpoint de lectura EXAM no cubierto.
 
 ### 10.140 TASK-153 / AUD-NG-386 — seguridad de getGradebookData (C1.488)
@@ -3508,7 +3508,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Privacidad/integridad:** estudiantes con IDs vacíos o duplicados se excluyen; notas/recuperaciones solo se filtran por el roster validado. Categorías por defecto se producen en memoria y cierres ausentes se interpretan como Abierto; el endpoint no crea hojas ni escribe.
 - **Pruebas locales:** parseo V8 y harness aislado exam-service-gradebook-read-security PASS (acceso docente válido, suplantación, asignación ajena/conflictiva, filtros incompletos, roles, scope, RBAC, timeout, lectura post-lock, schema inválido, hoja faltante y exclusión de IDs ambiguos). Contrato estático PASS.
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-042 Pendiente beta; no bloquea cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar individualmente getCompetencyEvaluations como siguiente lectura no cubierta del servicio.
 
 ### 10.141 TASK-153 / AUD-NG-386 — seguridad de getCompetencyEvaluations (C1.489)
@@ -3518,7 +3518,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Integridad/privacidad:** lectura sin creación de hojas ni escrituras; esquema de diez columnas validado; IDs de evaluación vacíos/duplicados excluidos; perfiles de estudiante ambiguos denegados; fecha heredada inválida se devuelve como null. Se conserva status/total/data.
 - **Pruebas locales:** parseo V8 y harness aislado de las funciones reales PASS (16 escenarios: aislamiento e IDOR, asignación docente, conflicto, filtros, roles, scope, RBAC, timeout, lectura post-lock, hoja ausente sin mutación, perfil duplicado, fecha y esquema). La suite dedicada de 17 escenarios también se ejecutó mediante shim V8 aislado: PASS.
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-043 Pendiente beta; no bloquea cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** identificar y auditar individualmente la siguiente lectura EXAM no cubierta.
 
 ### 10.142 TASK-153 / AUD-NG-386 — aislamiento de getStudentRecoveries (C1.490)
@@ -3528,7 +3528,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Integridad/privacidad:** lectura no mutante; esquema de nueve columnas validado; IDs de recuperación vacíos/duplicados y evaluacionId vacío excluidos; notas vacías/no numéricas y fechas inválidas se devuelven como null.
 - **Pruebas locales:** parseo V8 y suite dedicada ejecutada en shim V8 aislado PASS (23 escenarios: aislamiento/IDOR, tutor/vínculo, roles/scope, ruta docente, RBAC, timeout/liberación, snapshot post-lock, hoja ausente, IDs ambiguos, esquema y datos inválidos).
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-044 Pendiente beta; no bloquea cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar individualmente getGradeRectificationHistory, lectura de trazabilidad de notas aún no cubierta.
 ### 10.143 TASK-153 / AUD-NG-386 — aislamiento de getGradeRectificationHistory (C1.491)
 
@@ -3537,7 +3537,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Integridad/privacidad:** lectura sin escrituras ni creación de hojas; esquema de nueve encabezados validado; IDs de rectificación vacíos/duplicados y EvaluacionID vacío excluidos; notas vacías/no numéricas y fechas inválidas se devuelven como null.
 - **Pruebas locales:** parseo V8 PASS; suite dedicada en shim V8 aislado PASS (26 escenarios de identidad/IDOR, tutor/vínculo, roles/scope, profesor, RBAC, lock, snapshot, hoja ausente, IDs, esquema y valores inválidos).
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-045 Pendiente beta; no bloquea cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar individualmente getStudentAcademicReport, lectura consolidada de expediente académico aún no cubierta.
 ### 10.144 TASK-153 / AUD-NG-386 — aislamiento de getStudentAcademicReport (C1.492)
 
@@ -3546,7 +3546,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Lectura/integridad:** ninguna hoja se crea o modifica. Categorías se leen directamente como conjunto opcional; esquemas conocidos de calificaciones, recuperaciones y categorías se validan; IDs de matrícula/calificación/recuperación duplicados se excluyen; borradores no publicados se ocultan; fechas inválidas se normalizan a null y los campos numéricos mantienen fallback 0 compatible.
 - **Pruebas locales:** parseo V8 PASS; suite dedicada ejecutada en shim V8 aislado PASS (27 escenarios: identidad/IDOR, tutor/vínculo, scope institucional, Profesor/RBAC, timeout/contención concurrente, identidad duplicada, hojas ausentes sin mutación, borradores, IDs duplicados, esquemas y datos/fechas inválidos).
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-046 Pendiente beta; no bloquea cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar la siguiente lectura EXAM identificada en el plan, sin ampliar el alcance de esta iteración.
 
 ### 10.145 TASK-153 / AUD-NG-386 — aislamiento de getEvaluationCategories (C1.493)
@@ -3556,7 +3556,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Lectura/integridad:** getSheetByName sustituye getOrCreateSheet; la hoja ausente/vacía/solo encabezados devuelve los defaults en memoria sin escrituras. Se valida el esquema de seis columnas cuando hay registros y se conserva el contrato status/data y el mapeo histórico.
 - **Pruebas locales:** parseo V8 PASS; suite dedicada ejecutada mediante shim V8 aislado PASS (12 escenarios: contrato, defaults sin persistencia, RBAC, identidad, rol, scope, timeout, concurrencia, esquema y allowlist pública).
 - **Node nativo/CI/Apps Script real:** NOT RUN. **Beta:** BETA-EXAM-047 Pendiente beta; no bloquea cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar con la siguiente lectura EXAM no cubierta en TASK-153, verificando su autorización y efectos laterales antes de modificarla.
 
 ### 10.146 TASK-153 / AUD-NG-386 — aislamiento de getRubrics (C1.494)
@@ -3567,7 +3567,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Límite explícito:** el esquema RubricasEvaluacion y saveRubric no contienen ownership institucional/departamental; el catálogo permanece compartido conforme al contrato legado. La segregación por institución requiere una tarea de evolución del modelo, no se simula con el scope del endpoint.
 - **Pruebas locales:** parseo V8 PASS; suite aislada 17 escenarios PASS; regresiones C1.493 12, C1.492 27, read-endpoints y security-contract PASS. Node nativo/CI/Apps Script real NOT RUN.
 - **Beta:** BETA-EXAM-048 Pendiente beta; no bloquea cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** identificar la siguiente lectura EXAM pendiente dentro de TASK-153 y auditar su autorización/efectos laterales en una iteración independiente.
 
 
@@ -3578,7 +3578,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Integridad:** esquema/IDs y porcentaje 0–100 validados; altas coordinan ResourceOwnership y CategoriasEvaluacion con rollback ante error. getEvaluationCategories filtra categorías con ownership por institución/departamento y excluye referencias ambiguas; registros legados sin ownership siguen compartidos para compatibilidad.
 - **Pruebas locales:** parseo V8 PASS; mutación 17 escenarios PASS (incluye concurrencia, denegación, ownership y rollback); lectura 17 escenarios PASS; read-endpoints y security-contract PASS. Node nativo/CI/Apps Script real NOT RUN. BETA-EXAM-049 Pendiente beta.
 - **Límite:** edición de categorías antiguas sin ownership requiere migración/atribución explícita; no se asigna propietario por inferencia.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** reparar en una iteración independiente los dos defectos del harness `exam-service-save-rubric-security.test.js` detectados al ejecutar la regresión (mock de lock y expectativa de rollback); después continuar con la siguiente operación EXAM pendiente.
 
 
@@ -3587,7 +3587,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** corregir exclusivamente `tests/security/exam-service-save-rubric-security.test.js`; no modificar lógica productiva.
 - **Correcciones:** instancia única del mock ScriptLock para probar reentrada; expectativa de rollback alineada con las tres filas iniciales de RubricasEvaluacion; separador VM corregido a salto de línea real. El workflow EXAM ejecuta esta regresión antes de otras suites y la incluye en push/pull_request.
 - **Verificación:** GitHub Actions run 42946376368 (Node 22.23.4): suite específica PASS, 17/17; exam-service-security-contract PASS. Workflow global FAIL en exam-service-departmental-access por `ReferenceError: withAuthorizedExamRead_ is not defined` (getAllExams); la misma falla aparece en run previo 42941521575, anterior a esta corrección. Suites posteriores skipped. Sin checkout local disponible; Apps Script/Sheets real y beta no ejecutados.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar individualmente `saveCompetencyEvaluation` en una iteración independiente, verificando requisito, consumidores, RBAC, identidad, scope, ownership, lock y persistencia antes de modificar.
 
 
@@ -3599,7 +3599,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo V8 PASS; mutación 21/21 PASS; lectura getCompetencyEvaluations 17/17 PASS; mutación de categorías 17/17 PASS. Node nativo local no disponible; harness V8 aislado ejecutado.
 - **CI:** run 42949284319 (Node 22.23.4): saveRubric 17/17 PASS, saveCompetencyEvaluation 21/21 PASS, security-contract PASS. Workflow global FAIL por ReferenceError: withAuthorizedExamRead_ is not defined en exam-service-departmental-access.test.js; falla preexistente también presente en runs 42941521575 y 42946376368. read-endpoints suite skipped por fail-fast.
 - **Beta:** BETA-EXAM-050 Pendiente beta; Apps Script/Sheets real no ejecutado.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar individualmente saveStudentRecovery, incluyendo autorización y persistencia.
 
  
@@ -3611,7 +3611,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo V8 Code.gs/teacher.js/test PASS; harness aislado 14/14 PASS.
 - **CI:** runs 42958437047 (12/12) y 42958671205 (14/14) para suite dedicada; security-contract PASS. Workflow global sigue FAIL por ReferenceError preexistente withAuthorizedExamRead_ en exam-service-departmental-access.test.js; no se modifica en esta tarea.
 - **Beta:** BETA-EXAM-051 Pendiente beta; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar individualmente closePeriodGradebook y sus efectos sobre CierresPeriodos/publicación de calificaciones.
 
  
@@ -3623,7 +3623,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo V8 Code.gs/teacher.js/test PASS; harness aislado 16/16 PASS, incluyendo reentrada concurrente y no-mutación de filas de notas.
 - **CI/beta:** no se obtuvo ejecución CI asociada al commit; CI NOT CONFIRMED. Apps Script/Sheets NOT RUN. BETA-EXAM-052 Pendiente beta.
 - **Limitación:** si una clase tiene varias asignaturas/períodos, el cierre falla cerrado por ausencia de esas dimensiones en CalificacionesEstudiantes; se requiere evolución separada del esquema y consumidores.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar reviewPeriodGradebook y su escritura/publicación como tarea independiente.
 
 
@@ -3635,7 +3635,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo V8 PASS; suite review 23/23 PASS; regresión closePeriodGradebook 16/16 PASS; security-contract PASS; incluye concurrencia, denegaciones, asignación y ausencia de publicación.
 - **CI/beta:** GitHub Actions NOT CONFIRMED; Apps Script/Sheets real NOT RUN. BETA-EXAM-053 Pendiente beta.
 - **Límite:** observaciones no se persisten porque CierresPeriodos carece de columna; se conserva solo el valor de respuesta legado. Publicación granular requiere evolución del esquema de calificaciones.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar y proteger submitGradebookForReview, que crea los registros PendienteRevision que consume esta revisión.
 
 
@@ -3647,7 +3647,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** harness aislado de la implementación 23/23 PASS; incluye RBAC/roles, identidad, scope departamental, contexto requerido, asignación ausente/conflictiva, esquema, duplicidad, reenvío Observado, hoja ausente, spoofing de profesor/año, timeout, liberación y reentrada concurrente.
 - **CI/beta:** workflow EXAM ampliado para ejecutar la suite dedicada; CI pendiente de ejecución/verificación tras publicar. Apps Script/Sheets real NOT RUN; BETA-EXAM-054 Pendiente beta.
 - **Límite:** ConfiguracionAcademica no contiene DepartmentID ni AnoID; la verificación puede exigir un scope departamental activo y asignación docente exacta, pero no correlacionar directamente cada asignación con un departamento ni derivar el año académico real. No se inventa esa relación ni se acepta el año del cliente.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar reopenPeriodGradebook y sus efectos sobre CierresPeriodos como unidad independiente.
 
 
@@ -3659,7 +3659,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** harness V8 aislado 22/22 PASS; cubre roles, RBAC, identidad, scope, contexto, ausencia/duplicidad/esquema/estado, hoja de auditoría ausente/vacía/inválida, UUID, repetición, timeout, liberación, reentrada y rollback ante fallo de auditoría. Parseo V8 de las funciones extraídas PASS. La suite completa sobre el checkout y regresiones anteriores no se ejecutaron en esta sesión.
 - **CI/beta:** run 43009948936: suite dedicada reopenPeriodGradebook PASS y security-contract PASS; workflow global FAIL en exam-service-departmental-access.test.js y read-endpoints queda skipped. Falla en suite preexistente documentada en C1.496; no atribuida a este cambio. Apps Script/Sheets real NOT RUN; BETA-EXAM-055 Pendiente beta.
 - **Límite:** CierresPeriodos no almacena InstitutionID/DepartmentID; la protección institucional se apoya en el spreadsheet institucional y scope institutionWide verificado. No se atribuye ownership inexistente.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** auditar rectifyStudentGrade, incluida autorización, propiedad de la calificación, integridad de nota y trazabilidad.
 
 
@@ -3668,7 +3668,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** ScriptLock; RBAC, identidad firmada, allowlist institucional y scope institutionWide; Profesor excluido y Director habilitado explícitamente. Se exige calificación única, fila y esquema válidos, alumno canónico único y nota decimal estricta 0–100 con hasta dos decimales.
 - **Trazabilidad/integridad:** motivo acotado 10–2.000; auditoría con UUID, evaluación/alumno canónicos, transición, actor autenticado y fecha. Se escribe auditoría antes de mutar; si falla la mutación se intenta restaurar la fila y retirar el evento parcial. Se ignoran autorizadoPor/_verifiedUserId del cliente.
 - **Pruebas:** GitHub Actions run 43011012718: contrato dedicado 27/27 PASS; parseo completo Code.gs PASS; security-contract PASS. Workflow global FAIL en exam-service-departmental-access.test.js por ReferenceError preexistente withAuthorizedExamRead_ is not defined (read-endpoints skipped). La misma suite falló en run 43009948936. El test dedicado ejecuta Node + vm + fixtures sin despliegue; Apps Script/Sheets real NOT RUN; beta BETA-EXAM-056 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar el inventario de endpoints mutadores EXAM de TASK-153 tras verificar contratos y dependencias.
 
 
@@ -3680,7 +3680,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo Code.gs PASS; harness V8 sobre funciones reales 5/5 PASS en versión final. CI run 43012781628: suite dedicada 23/23 PASS y security-contract PASS. Workflow global FAIL en departmental-access por ReferenceError preexistente withAuthorizedExamRead_; read-endpoints skipped.
 - **Beta:** BETA-EXAM-057 Pendiente beta; Apps Script/Sheets real NOT RUN.
 - **Limitación:** CalificacionesEstudiantes no almacena período/asignatura. Se conserva el contrato heredado de CAT-1..CAT-4 y no se simula separación histórica por período; antes de cualquier evolución de ese modelo debe ampliarse el esquema y sus consumidores.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Límite de ámbito:** ConfiguracionAcademica no contiene DepartmentID: se comprueban scope departamental activo y asignación exacta actor/grado/sección/asignatura/período, pero no es posible correlacionar esa asignación con un departamento concreto. El spreadsheet es institucionalmente aislado; el aislamiento departamental por fila requiere evolución de esquema.
 - **Siguiente:** auditar la siguiente mutación EXAM elegible; bulkApplyGradebookGrades permanece fuera de este alcance.
 
@@ -3690,7 +3690,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** reutiliza el contrato contextual del guardado del libro con permiso bulkApplyGradebookGrades, ScriptLock, identidad firmada, scope, asignación exacta, roster, esquema, período abierto, categoría/ownership y notas/lote validados. Se preserva el comportamiento de omitir notas positivas existentes salvo sobrescritura explícita; se rechazan IDs vacíos/duplicados, persistencia ambigua y lotes mayores de 500. Se conserva la respuesta histórica y el guardado en borrador/no publicado.
 - **Pruebas locales:** suite dedicada exam-service-gradebook-bulk-apply-security.test.js con 24/24 PASS en Actions run 43015764891; parseo completo Code.gs PASS y security-contract PASS. Ejecución directa en checkout local NOT RUN; Apps Script/Sheets real NOT RUN.
 - **CI/beta:** workflow run 43015764891 ejecutó la suite 24/24 PASS y security-contract PASS; workflow global FAIL por ReferenceError withAuthorizedExamRead_ no definido en departmental-access, con read-endpoints skipped. BETA-EXAM-058 Pendiente beta; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Límite:** se reutilizan las mismas limitaciones de modelo de saveGradebookGrades: CalificacionesEstudiantes no persiste asignatura/período por fila y ConfiguracionAcademica no contiene DepartmentID. No se infiere ownership departamental por registro.
 
 
@@ -3707,7 +3707,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** validación RBAC dinámica/delegada al inicio del endpoint, antes de abrir el spreadsheet o adquirir el lock. Se conserva la verificación de identidad firmada, scope, departamento autorizado, ownership y rollback existente.
 - **Pruebas locales:** contrato aislado 10/10 PASS (Node 22) sobre la función createExam: creación positiva, RBAC denegado antes de abrir Sheets, identidad/scope inválidos, departamento ajeno, lock, esquema ownership y fallos parciales de persistencia/rollback. Parseo completo del Code.gs no verificado localmente; estado del workflow de push no verificable con el resultado disponible.
 - **Beta:** BETA-EXAM-060 Pendiente beta; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.160 TASK-153 / AUD-NG-386 — autorización y revocación de sesiones en purgeSecurityCaches (C1.508)
 - **Hallazgo:** purgeSecurityCaches no validaba RBAC ni identidad dentro de la función y confiaba en doPost; además, SESSION_REVOKED eliminaba el marcador revoked_session_<id> que verifySessionToken consulta para rechazar sesiones revocadas.
@@ -3734,7 +3734,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** valida validateRolePermission("submitExam", payload) en la propia función antes de adquirir ScriptLock; la lógica existente de identidad, contexto del estudiante, propiedad del examen, límite de intentos y concurrencia se conserva.
 - **Pruebas locales:** harness focalizado de autorización/orden de ejecución, 6 aserciones PASS. Se amplía exam-service-departmental-access.test.js para probar rol Tutor denegado sin adquisición del lock; el flujo positivo Estudiante conserva las pruebas de entrega, identidad firmada, aislamiento y concurrencia. Ejecución Node de la suite completa/CI pendiente de observación.
 - **Beta:** BETA-EXAM-064 Pendiente beta; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar inventario de handlers mutadores/dispatcher EXAM y seleccionar la siguiente función que dependa exclusivamente de doPost para RBAC o identidad.
 
 
@@ -3744,7 +3744,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** solo tests/fixtures; no se modificó código de producción ni esquema persistente.
 - **Verificación local:** compilación sintáctica de ambos archivos Node mediante Function constructor PASS. La ejecución Node local completa no estuvo disponible en el entorno de edición.
 - **CI:** workflow 43029272236 PASS, commit de código de pruebas f06fbe6773321cf5e674b0f8ce3c8b9bc8c957cf; los tres contratos Node (security-contract, departmental-access, read-endpoints-security) completaron correctamente y el job finalizó success.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** retomar el inventario de handlers mutadores EXAM y seleccionar la siguiente brecha de autorización/identidad verificable.
 
 
@@ -3753,7 +3753,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Corrección:** se agregan ambos contratos a los filtros de rutas de `push` y `pull_request`, y como pasos explícitos del job Node 22. No se modifica la lógica de producción ni los contratos existentes.
 - **Verificación local:** validación estructural del YAML por anclas/rutas/steps y parseo sintáctico de ambos scripts Node; ejecución semántica local NOT RUN porque el entorno de edición no tiene checkout/FS del repositorio y no puede resolver GitHub para clonarlo. La ejecución efectiva de ambos contratos queda verificada por el workflow disparado por este commit.
 - **Beta:** no aplica; el cambio solo conecta contratos locales existentes y no modifica comportamiento desplegable.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar el inventario de handlers mutadores EXAM desde las rutas restantes y seleccionar la siguiente brecha demostrable de autorización, identidad o integridad.
 
 
@@ -3770,7 +3770,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo completo de Code.gs y del contrato actualizado PASS; seis escenarios deterministas del wrapper: denegación RBAC antes del lock, identidad inválida antes del lock, ruta autorizada, revalidación denegada bajo lock, liberación tras excepción de mutación y timeout de lock. Resultado de ejecución local registrado por separado.
 - **CI:** workflow GitHub Actions 43031994018 PASS; el step `Run exam submission deletion audit regression` y los demás contratos EXAM finalizaron success.
 - **Beta:** Apps Script/Sheets real NOT RUN; no aplica para aprobación local del wrapper aislado.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar inventario de mutadores EXAM no cubiertos, sin repetir los wrappers ya endurecidos.
 
 
@@ -3780,7 +3780,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo completo Code.gs y contrato Node PASS; harness focalizado del wrapper exacto 6/6 PASS (RBAC/identidad pre-lock, flujo autorizado/revalidación, rechazo contextual, liberación y timeout).
 - **CI:** GitHub Actions workflow 43032803048 PASS; el step `Run question bank mutation security regression` y todos los demás contratos del job `exam-security-contracts` finalizaron success.
 - **Beta:** Apps Script/Sheets real NOT RUN; no se necesita despliegue para la validación local del wrapper.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** verificar CI y continuar el inventario de handlers mutadores EXAM.
 
 
@@ -3791,7 +3791,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato completo local:** NOT RUN por ausencia de checkout/runtime local; el contrato está integrado en el workflow EXAM.
 - **CI:** workflow GitHub Actions 43035256222 PASS; job `exam-security-contracts` completado con éxito y el step `Run node tests/security/exam-service-security-contract.test.js` finalizó success.
 - **Beta:** Apps Script/Sheets real NOT RUN; no requerido para aprobación local del wrapper.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** verificar CI y continuar el inventario de rutas mutadoras EXAM restantes.
 
 
@@ -3802,7 +3802,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato Node completo local:** NOT RUN por ausencia de checkout/runtime local; integrado al workflow EXAM.
 - **CI:** workflow GitHub Actions 43035967966 PASS; job `exam-security-contracts` completado con éxito, incluido `Run node tests/security/exam-service-security-contract.test.js`.
 - **Beta:** Apps Script/Sheets real NOT RUN; sin cambios de esquema.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** verificar CI y continuar el inventario de mutaciones EXAM restantes.
 
 
@@ -3812,7 +3812,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** harness determinista sobre el wrapper productivo extraído, 7/7 escenarios PASS (RBAC/identidad pre-lock, ruta autorizada con revalidación, denegaciones contextuales, liberación tras excepción y timeout); contrato ampliado con aserciones estáticas y dinámicas. Parseo completo Code.gs y contrato Node: sintaxis PASS; suite dedicada ejecutada en V8 local compatible, 19/19 PASS. Node 22 local NOT RUN; GitHub Actions ejecutó los contratos con Node 22.
 - **CI:** GitHub Actions workflow 43037336799 PASS sobre HEAD de código/pruebas `178e901275b84b28a3d6faa887e34d5445f02ced`; job `exam-security-contracts` completado con éxito, incluida la prueba dedicada de rúbricas y los contratos generales EXAM (23 pasos de pruebas SUCCESS).
 - **Beta:** Apps Script/Sheets real NOT RUN; sin cambios de esquema.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar el inventario de wrappers mutadores restantes; el siguiente candidato es `withAuthorizedCompetencyEvaluationMutation_`.
 
 
@@ -3822,7 +3822,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** suite dedicada 24/24 PASS en V8 local compatible; parseo completo de Code.gs y contrato PASS. Incluye denegación pre-lock, identidad incompleta, revalidación contextual, timeout y llamada anidada.
 - **CI:** GitHub Actions workflow 43038212516 PASS sobre el commit de implementación `d27b86312ff6d0b0194101c5e35f070a17fa2a96`; job `exam-security-contracts` completado con éxito, incluida la suite dedicada de competency evaluation en Node 22 y los contratos EXAM.
 - **Beta:** BETA-EXAM-050 actualizado; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar inventario de wrappers mutadores restantes, sin repetir saveRubric ni saveCompetencyEvaluation.
 
 
@@ -3832,7 +3832,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** suite `exam-service-gradebook-save-security.test.js` 27/27 PASS y `exam-service-gradebook-bulk-apply-security.test.js` 28/28 PASS en V8 local compatible; parseo completo de Code.gs y ambas suites PASS. Incluyen orden pre-lock, denegación sin lock/Sheets, identidad inválida o incompleta y revalidación contextual.
 - **CI:** GitHub Actions workflow 43043521060 completed / success; job `exam-security-contracts` y steps de gradebook save y bulk apply SUCCESS en Node 22.
 - **Beta:** BETA-EXAM-057 y BETA-EXAM-058 ampliados; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador pendiente; no repetir el wrapper compartido de guardado de calificaciones.
 
 
@@ -3842,7 +3842,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** suite `exam-service-evaluation-setup-copy-security.test.js` ampliada a 27 escenarios; orden RBAC/identidad antes del lock, denegaciones sin lock/Sheets, revalidación dentro del lock, reentrada concurrente, rollback y controles previos; parseo completo de Code.gs y contrato.
 - **CI:** GitHub Actions workflow 43045163554 completed / success; job `exam-security-contracts` y step `Run evaluation setup copy security regression` SUCCESS en Node 22.
 - **Beta:** BETA-EXAM-059 ampliado; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador EXAM que adquiera ScriptLock antes de autorización; no repetir este wrapper.
 
 
@@ -3853,7 +3853,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** workflow GitHub Actions 43046863190 PASS; job exam-security-contracts completado con éxito; suite dedicada 19/19 PASS en Node 22 y parseo Code.gs PASS.
 - **Verificación local:** harness focalizado del wrapper 8/8 PASS.
 - **Beta:** BETA-EXAM-065 agregado; Apps Script/Sheets real NOT RUN y permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador pendiente que solicite ScriptLock antes de autorización, sin repetir closePeriodGradebook.
 
 
@@ -3863,7 +3863,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura de suite dedicada:** 25 escenarios (23 previos + 2 nuevos); orden RBAC/identidad antes del lock, denegación sin lock/Sheets, identidad inválida/incompleta/rol no admitido, doble validación bajo lock, envío positivo, timeout, asignación no verificada, duplicidad e invariantes existentes.
 - **Verificación local focalizada:** harness del wrapper 8/8 PASS; suite dedicada 25/25 PASS en GitHub Actions workflow 43048598007 (Node 22), incluido parseo completo de Code.gs.
 - **Beta:** BETA-EXAM-066 agregado; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador pendiente en el flujo de revisión del libro de notas, sin repetir submitGradebookForReview.
 
 
@@ -3872,7 +3872,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Política de autorización preservada:** allowlist existente de revisores: Administrador, Desarrollador, Dirección, Director y Secretaría; se exige identidad autorizada y `userId` no vacío. No se amplían roles.
 - **Corrección:** preflight RBAC/identidad/rol antes del lock; el contexto existente revalida permiso, identidad, rol, scope institutionWide, cierre único/pendiente y asignación docente dentro del lock.
 - **Pruebas:** suite dedicada ampliada a 27 escenarios; harness local focalizado del wrapper 12/12 PASS; workflow GitHub Actions 43051393921 SUCCESS; suite 27/27 PASS en Node 22. No se declara ejecución local de la suite completa (checkout no disponible). Apps Script/Sheets real NOT RUN; BETA-EXAM-053 actualizado.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador EXAM pendiente, una sola operación por iteración.
 
 
@@ -3881,7 +3881,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Política preservada:** allowlist contextual existente: Administrador, Desarrollador, Dirección, Director y Secretaría; identidad autorizada y `userId` no vacío. No se amplían roles ni scopes.
 - **Corrección:** preflight RBAC/identidad/rol antes del lock; el contexto existente vuelve a validar RBAC, identidad, rol y scope `institutionWide` bajo lock, junto con integridad del cierre y auditoría.
 - **Pruebas:** suite dedicada ampliada de 22 a 26 escenarios; harness local focalizado 10/10 PASS; workflow GitHub Actions 43052136181 SUCCESS y suite 26/26 PASS en Node 22. Apps Script/Sheets real NOT RUN; BETA-EXAM-055 actualizado.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** inspeccionar el siguiente wrapper mutador EXAM pendiente, una sola operación por iteración.
 
 
@@ -3892,7 +3892,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** harness del wrapper productivo extraído 7/7 PASS; suite dedicada 28/28 PASS en runner JavaScript aislado con shims compatibles; parseo Code.gs y suite PASS. Checkout/Node local no disponible por error DNS al clonar; no se declara suite local nativa Node.
 - **CI:** GitHub Actions workflow 43053113842 SUCCESS; job exam-security-contracts SUCCESS; suite dedicada 28/28 PASS en Node 22.
 - **Beta:** BETA-EXAM-067 agregado; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar inspección del siguiente wrapper mutador EXAM pendiente, una sola operación por iteración.
 
 
@@ -3902,7 +3902,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo de Code.gs y suite PASS; suite dedicada `exam-service-delete-submission-audit.test.js` 26/26 PASS en runner JavaScript aislado con shims. Incluye userId vacío en preflight (sin lock), identidad incompleta al revalidar contexto (con liberación del lock) y aserción de que el contexto valida userId antes de abrir Sheets. Checkout/Node local nativo no disponible por fallo DNS al clonar; no se declara ejecución Node nativa local.
 - **CI:** GitHub Actions workflow 43058558651 SUCCESS; job `exam-security-contracts` 130654537657 SUCCESS; suite dedicada 26/26 PASS en Node 22 y demás suites del job SUCCESS.
 - **Beta:** Apps Script/Sheets real NOT RUN; no se requiere despliegue para aprobar el control local de identidad.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar inventario de mutadores EXAM no cubiertos, una sola operación por iteración.
 
 
@@ -3913,7 +3913,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo completo de Code.gs PASS; harness focalizado del wrapper productivo 9/9 PASS (denegación pre-lock, identidad inválida/incompleta, rol no admitido, Profesor y Secretaría permitidos, revalidación contextual, liberación ante error y timeout). Suite dedicada `exam-service-student-recovery-mutation-security.test.js` 16/16 PASS en Node 22 dentro de CI.
 - **CI:** GitHub Actions workflow `43059932693` SUCCESS; job `exam-security-contracts` `130659396717` SUCCESS; step de recuperación de notas SUCCESS. Las demás suites del job también SUCCESS.
 - **Beta:** BETA-EXAM-068 agregado; Apps Script/Sheets real NOT RUN y permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar inventario de wrappers mutadores EXAM no cubiertos, una sola operación por iteración.
 
 
@@ -3924,7 +3924,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas:** suite dedicada `exam-service-submit-mutation-security.test.js` 9/9 PASS en Node 22; incluye RBAC denegado, identidad inválida/incompleta, rol no estudiante, flujo positivo para Estudiante y Alumno, timeout, liberación del lock y rechazo del contexto antes de Sheets. Parseo completo de Code.gs PASS.
 - **CI:** workflow `43061156667` SUCCESS; job `exam-security-contracts` `130663778064` SUCCESS; suite específica 9/9 PASS y todas las demás suites del job SUCCESS.
 - **Beta:** BETA-EXAM-069 agregado; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** continuar inventario de rutas mutadoras EXAM aún no cubiertas, una operación por iteración.
 
 ### 10.183 TASK-153 / AUD-NG-386 — identidad firmada completa antes de Sheets en createExam (C1.530)
@@ -3933,7 +3933,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** parseo completo Code.gs PASS; harness de función productiva extraída 12/12 PASS.
 - **Suite Node 22:** exam-service-create-exam-security 12/12 PASS; workflow 43062526177 SUCCESS, job 130668623026 SUCCESS.
 - **Beta:** BETA-EXAM-070 Pendiente beta; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.184 TASK-153 / AUD-NG-386 — identidad firmada completa en manageQuestionBank (C1.531)
 - **Hallazgo alto:** manageQuestionBank y su contexto de mutación comprobaban autorización de identidad, pero no exigían userId firmado no vacío. Una identidad incompleta podía alcanzar la mutación y registrar ownership sin atribución válida.
@@ -3941,7 +3941,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo Code.gs PASS; harness de wrappers productivos extraídos 4/4 PASS (userId ausente/blanco, identidad no autorizada y cambio de identidad entre preflight/contexto); suite question-bank ampliada con rechazo pre-lock/pre-Sheets y liberación del lock tras revalidación fallida.
 - **CI:** suite dedicada conectada al workflow existente; resultado Node 22 pendiente tras publicar el cambio.
 - **Beta:** BETA-EXAM-071 Pendiente beta; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.185 TASK-153 / AUD-NG-386 — identidad firmada completa en mutaciones generales EXAM (C1.532)
 - **Hallazgo alto:** el wrapper compartido withAuthorizedExamMutation_ no rechazaba userId ausente/blanco antes de ScriptLock; getAuthorizedExamMutationContext_ no exigía actor presente, autorización estricta ni userId antes de abrir Sheets.
@@ -3949,7 +3949,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura:** nueva suite tests/security/exam-service-exam-mutation-security.test.js; 12/12 PASS en ejecución aislada con shims; parseo Code.gs PASS; harness de wrappers 11/11 PASS. No se afirma Node 22 nativo.
 - **Workflow:** .github/workflows/exam-service-security-contract.yml incluye filtros push/pull_request y step dedicado. Estado de Actions NOT VERIFIED por ausencia de runs/checks accesibles.
 - **Beta:** BETA-EXAM-072 Pendiente beta; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.186 TASK-153 / AUD-NG-386 — identidad firmada completa durante la revalidación de closePeriodGradebook (C1.533)
 - **Hallazgo:** getAuthorizedPeriodGradebookClosureContext_ comprobaba !actor.userId, que acepta una cadena de espacios. Tras un preflight válido, un cambio de identidad durante la revalidación bajo lock podía abrir Sheets con userId incompleto y permitir que el cierre institucional registrara una atribución vacía después de trim.
@@ -3957,7 +3957,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Pruebas locales:** parseo Code.gs PASS; suite dedicada de cierre 20/20 PASS en runtime aislado con shims; el caso añadido cambia actor válido por userId de espacios entre preflight y contexto, verifica que Sheets no se abre y que el lock se libera. Wiring al workflow existente PASS.
 - **CI:** NOT VERIFIED; el conector no devolvió runs/checks para el commit de prueba. No se afirma ejecución Node 22.
 - **Beta:** BETA-EXAM-065 existente ampliado con revalidación TOCTOU de userId en blanco; Pendiente beta. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.187 TASK-153 / AUD-NG-386 — revalidación TOCTOU de identidad en reviewPeriodGradebook (C1.534)
@@ -3965,7 +3965,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** el harness entrega identidad válida en preflight y un segundo actor autorizado cuyo userId contiene solo espacios durante la revalidación. La prueba exige rechazo antes de abrir Sheets, ausencia de escritura/cambio de estado y liberación del lock.
 - **Verificación local:** suite dedicada ejecutada en runtime V8 aislado con shims de fs/vm/assert: 28/28 PASS; parseo completo de backend/exam-service/Code.gs: PASS. No se afirma Node 22 nativo.
 - **Beta:** BETA-EXAM-053 ampliado; permanece Pendiente beta. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.188 TASK-153 / AUD-NG-386 — regresión TOCTOU de identidad en reopenPeriodGradebook (C1.535)
@@ -3973,7 +3973,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** actor válido en preflight y actor autorizado con `userId` solo espacios durante la revalidación. Se verifica rechazo, cero aperturas de Sheets, estado `Cerrado` intacto y liberación del lock.
 - **Verificación local:** suite dedicada 27/27 PASS en runtime V8 aislado con shims de `fs`/`vm`/`assert`; parseo completo de `Code.gs` PASS. No se afirma Node 22 nativo.
 - **Beta:** BETA-EXAM-055 ampliado; Pendiente beta. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.189 TASK-153 / AUD-NG-386 — alinear fixture de contrato EXAM con identidad firmada completa (C1.536)
@@ -3989,7 +3989,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** el test ahora alterna identidad válida en preflight y actor autorizado con `userId` compuesto por espacios en contexto; verifica rechazo antes de mutar, liberación del lock y el orden de identidad/contexto. Se añade aserción estática de la comprobación previa a Sheets.
 - **Verificación local:** parseo V8 de Code.gs y del contrato PASS; harness V8 focalizado de la ruta TOCTOU PASS. Node 22/CI sobre el nuevo commit pendiente.
 - **Beta:** BETA-EXAM-072 ya contempla la pérdida de userId bajo lock; permanece Pendiente beta. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.191 TASK-153 / AUD-NG-386 — cubrir revalidación anidada de identidad en mutaciones de entregas EXAM (C1.538)
@@ -3998,7 +3998,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** la suite dedicada ejecuta el handler real `gradeExamSubmission`, wrapper y ambos contextos con identidad sintética válida en preflight/contexto de entrega y `userId` en blanco en el contexto anidado. Comprueba una sola apertura/lectura necesaria para resolver la entrega, cero escrituras y liberación del lock.
 - **Verificación local:** parseo V8 de Code.gs y del test PASS; harness V8 aislado de la ruta anidada PASS (3 verificaciones de identidad, RESOURCE_NOT_AVAILABLE, 1 apertura/lectura, 0 escrituras, lock liberado). Suite Node 22/CI sobre el nuevo commit pendiente.
 - **Beta:** BETA-EXAM-073 agregado para confirmar el mismo escenario en gradeExamSubmission/deleteExamSubmission sobre Apps Script/Sheets desplegado; Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.192 TASK-153 / AUD-NG-386 — cubrir revalidación anidada de identidad en deleteExamSubmission (C1.539)
@@ -4007,7 +4007,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato comprobado:** RESOURCE_NOT_AVAILABLE; una sola apertura y lectura de EntregasExamen para resolver examId; cero deleteRow, ninguna creación/acceso/escritura de HistorialEliminacionesEntregasExamen y liberación del ScriptLock.
 - **Verificación local:** suite dedicada 28/28 PASS en V8 aislado con shims fs/vm/assert; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI posterior NOT RUN; Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-073 ya incluye deleteExamSubmission y permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.193 TASK-153 / AUD-NG-386 — ejecutar deleteExam real ante pérdida de identidad bajo lock (C1.540)
@@ -4016,7 +4016,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato comprobado:** RESOURCE_NOT_AVAILABLE tras dos verificaciones RBAC/identidad; lock adquirido y liberado; cero aperturas de Sheets, cero escrituras/borrados; filas de Examenes y ResourceOwnership permanecen idénticas y ownership ACTIVE.
 - **Verificación local:** suite específica 13/13 PASS en V8 aislado con shims; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI NOT RUN; Apps Script/Sheets real NOT RUN.
 - **Beta:** BETA-EXAM-074 añadido para validar deleteExam en entorno desplegado; Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.194 TASK-153 / AUD-NG-386 — ejecutar updateExamStatus real ante pérdida de identidad bajo lock (C1.541)
@@ -4025,7 +4025,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato comprobado:** RESOURCE_NOT_AVAILABLE; dos verificaciones RBAC/identidad; lock adquirido y liberado; cero aperturas de Sheets, cero escrituras; snapshot de Examenes intacto y Estado permanece Inactivo.
 - **Verificación local:** suite exam-service-exam-mutation-security 14/14 PASS en V8 aislado con shims fs/vm/assert; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI NOT RUN.
 - **Beta:** BETA-EXAM-075 agregado para validar el rechazo y la conservación de Estado en Apps Script/Sheets desplegado; Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 
@@ -4035,18 +4035,18 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato comprobado:** RESOURCE_NOT_AVAILABLE; dos verificaciones RBAC/identidad; lock adquirido y liberado; cero aperturas de Sheets y escrituras; snapshot completo de Examenes intacto pese a solicitar cambios en título, asignatura, grado, sección, fecha límite, tiempo y parcial.
 - **Verificación local:** suite exam-service-exam-mutation-security 15/15 PASS en V8 aislado con shims fs/vm/assert; parseo V8 de Code.gs y test PASS. Node 22 nativo/CI NOT RUN.
 - **Beta:** BETA-EXAM-076 agregado para validar el rechazo y conservación integral de la fila en Apps Script/Sheets desplegado; Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.196 TASK-153 / AUD-NG-386 — ejecutar saveGradebookGrades real ante pérdida de identidad bajo lock (C1.543)
 - **Hallazgo de cobertura:** la suite verificaba dos llamadas de identidad, pero usaba el mismo actor estable; no demostraba que el handler rechazara la pérdida de userId entre preflight y contexto bajo lock ni que preservara las notas.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.197 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en bulkApplyGradebookGrades bajo lock (C1.544; cierre C1.545)
 - **Hallazgo:** la suite del handler bulkApplyGradebookGrades comprobaba la doble verificación de identidad, pero usaba una identidad estable; no cubría pérdida de userId entre preflight y revalidación dentro del lock.
 - **Cambio:** se añadió un escenario a la suite dedicada con identidad válida en preflight y userId compuesto por espacios en la segunda verificación; exige rechazo, liberación del lock, cero aperturas de Sheets y snapshot íntegro de CalificacionesEstudiantes.
 - **Verificación local de cierre (C1.545):** parseo V8 de Code.gs y suite PASS; suite completa 29/29 PASS en aislamiento V8 con shims assert/fs/path/vm. El escenario confirma RESOURCE_NOT_AVAILABLE, dos verificaciones de identidad, lock liberado, cero aperturas de Sheets y calificaciones intactas.
 - **No ejecutado:** Node 22 nativo/CI y Apps Script/Sheets real. BETA-EXAM-057 permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.198 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en saveEvaluationCategory bajo lock (C1.546)
@@ -4054,7 +4054,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** fixture con secuencia de identidades y prueba de regresión que exige RESOURCE_NOT_AVAILABLE, dos verificaciones, lock liberado, cero aperturas de Sheets y snapshots intactos de CategoriasEvaluacion y ResourceOwnership. Se corrigió además el extractor de funciones de la suite para procesar correctamente escapes y comentarios.
 - **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 18/18 PASS en aislamiento V8 con shims assert/fs/path/vm.
 - **Beta:** BETA-EXAM-049 ampliado con el escenario; permanece Pendiente beta. Node 22 nativo/CI y Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.199 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en rectifyStudentGrade bajo lock (C1.547)
@@ -4062,7 +4062,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** fixture con secuencia de identidades y escenario de regresión que exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y calificación/historial intactos. BETA-EXAM-067 actualizado.
 - **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 29/29 PASS en aislamiento V8 con shims assert/fs/path/vm.
 - **CI histórico:** workflow 43053113842 ejecutó 28/28 PASS antes de añadir el escenario. Node 22/CI para la suite actual NOT RUN. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.200 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en saveRubric bajo lock (C1.548)
@@ -4070,7 +4070,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** fixture con secuencia de identidades y prueba de regresión que exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y rúbricas/ownership intactos. Se creó BETA-EXAM-077 para la validación desplegada.
 - **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 20/20 PASS en aislamiento V8 con shims assert/fs/path/vm.
 - **Node 22/CI para la suite actual:** NOT RUN. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.201 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en saveStudentRecovery bajo lock (C1.549)
@@ -4078,7 +4078,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** fixture con secuencia de identidades y regresión que exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y snapshots de hojas intactos. BETA-EXAM-068 ampliado.
 - **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 17/17 PASS en aislamiento V8 con shims assert/fs/path/vm.
 - **Node 22/CI para la suite actual:** NOT RUN. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.202 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en saveCompetencyEvaluation bajo lock (C1.550)
@@ -4086,7 +4086,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** fixture con secuencia de identidades y regresión que exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y evaluación/ownership intactos. BETA-EXAM-050 ampliado.
 - **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 25/25 PASS en aislamiento V8 con shims assert/fs/path/vm.
 - **Node 22/CI para la suite actual:** NOT RUN. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.203 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en submitGradebookForReview bajo lock (C1.551)
@@ -4094,7 +4094,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** fixture con secuencia de identidades y regresión que exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y CierresPeriodos intacto. BETA-EXAM-054 ampliado.
 - **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 26/26 PASS en aislamiento V8 con shims assert/fs/path/vm.
 - **Node 22/CI para la suite actual:** NOT RUN. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.204 TASK-153 / AUD-NG-386 — cubrir pérdida de identidad en copyEvaluationSetupBetweenGroups bajo lock (C1.552)
@@ -4102,21 +4102,21 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cambio:** fixture con secuencia de identidades y regresión que exige RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y snapshots de CategoriasEvaluacion/ResourceOwnership intactos. BETA-EXAM-059 ampliado.
 - **Verificación local:** parseo V8 de Code.gs y suite PASS; suite completa 28 escenarios PASS en aislamiento V8 con shims.
 - **Node 22/CI de esta revisión:** NOT RUN. El workflow 43045163554 SUCCESS es de una revisión anterior. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.205 TASK-153 / AUD-NG-386 — revalidar RBAC e identidad de createExam bajo ScriptLock (C1.553)
 - **Hallazgo:** createExam comprobaba RBAC e identidad antes de adquirir ScriptLock, pero no repetía ambas comprobaciones dentro del lock; scope/departamento y acceso a Sheets también se resolvían antes de proteger la mutación. Una revocación de permiso o pérdida de userId entre ambas fases no tenía cobertura.
 - **Cambio:** createExam ahora ejecuta preflight RBAC/identidad, adquiere el lock compartido, revalida RBAC/identidad y solo entonces abre Sheets y resuelve scope/departamento. La persistencia y el rollback de examen, ownership y preguntas permanecen dentro de la sección protegida. Se amplió la suite dedicada con escenarios de pérdida de identidad y revocación RBAC bajo lock; BETA-EXAM-060 documenta la validación desplegada.
 - **Verificación local:** parseo V8 de Code.gs y suite: PASS; suite dedicada 14/14 PASS en V8 aislada con shims. Node 22/CI para este commit NOT RUN. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.206 TASK-153 / AUD-NG-386 — revalidar RBAC e identidad de submitExam bajo ScriptLock (C1.554)
 - **Hallazgo:** submitExam comprobaba permiso e identidad firmada antes de adquirir ScriptLock, pero después de esperar el lock ejecutaba submitExamUnlocked_ sin repetir RBAC ni identidad en el wrapper. La revalidación contextual interna comprobaba identidad, pero no cubría la revocación del permiso dinámico/estático durante la espera.
 - **Cambio:** submitExam conserva el preflight para rechazar solicitudes inválidas sin competir por el lock; después de adquirirlo vuelve a ejecutar validateRolePermission y getVerifiedExamIdentity_, exigiendo actor autorizado, userId no vacío y rol Estudiante/Alumno antes de invocar la mutación. No se cambian roles, permisos, asignaciones, scope ni reglas de intentos.
 - **Verificación local:** parseo V8 de Code.gs y suite de seguridad submitExam: PASS; 11/11 escenarios en runtime V8 aislado, incluidos RBAC revocado e identidad degradada bajo lock, liberación del lock y timeout. Node 22/CI para este cambio NOT RUN. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.207 TASK-153 / AUD-NG-386 — ejecutar y cerrar cobertura de saveGradebookGrades ante pérdida de identidad bajo lock (C1.555)
@@ -4124,7 +4124,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación ejecutada:** se ejecutó la suite completa `tests/security/exam-service-gradebook-save-security.test.js` contra el `Code.gs` vigente en runtime V8 aislado con shims de assert/fs/path/vm; resultado 28/28 PASS. Parseo V8 del backend y del archivo de prueba: PASS.
 - **Escenario confirmado:** saveGradebookGrades real, wrapper y contexto real; primera identidad autorizada Profesor con userId P1 y segunda identidad autorizada con userId de espacios; RESOURCE_NOT_AVAILABLE, dos verificaciones de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshot de CalificacionesEstudiantes sin cambios. La suite también conserva el caso de guardado válido y las regresiones de RBAC, rol, scope, roster, categorías, cierres, duplicados, validación de nota, timeout y escritura fallida.
 - **Limitaciones:** Node 22/CI para esta revisión NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-057 permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.208 TASK-153 / AUD-NG-386 — verificar revocación RBAC bajo ScriptLock en updateExamStatus (C1.556)
@@ -4132,7 +4132,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** escenario real de updateExamStatus con permiso concedido en preflight y denegado en la segunda comprobación bajo lock. Se exige RESOURCE_NOT_AVAILABLE, dos llamadas RBAC, una sola consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets, cero escrituras y snapshot de Examenes intacto.
 - **Verificación local:** parseo V8 del backend y del test: PASS; suite completa tests/security/exam-service-exam-mutation-security.test.js: 16/16 PASS en runtime V8 aislado con shims. El escenario positivo y las regresiones de identidad incompleta, scope, timeout, updateExam y deleteExam permanecen cubiertos.
 - **Alcance:** solo se amplía la prueba. No se modifica código productivo, permisos, roles, scope, ownership ni persistencia. Node 22/CI para esta revisión NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-072 permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 
@@ -4141,7 +4141,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** fixture con permiso concedido en preflight y denegado durante el contexto bajo lock. Se verifica RESOURCE_NOT_AVAILABLE, dos comprobaciones RBAC, una sola consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CalificacionesEstudiantes e HistorialRectificacionesNotas.
 - **Verificación local:** parseo V8 de backend y test PASS; suite completa tests/security/exam-service-student-grade-rectification-security.test.js: 30/30 PASS en runtime V8 aislado con shims. Se conservan escenarios positivos, validación de rol/scope/nota, auditoría, rollback, timeout e identidad degradada.
 - **Alcance:** ampliación exclusiva de pruebas. No se modifica backend productivo, permisos, roles, scope ni persistencia. Node 22/CI de esta revisión NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-078 permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.210 TASK-153 / AUD-NG-386 — cubrir revocación RBAC de saveEvaluationCategory bajo ScriptLock (C1.558)
@@ -4149,7 +4149,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** fixture con secuencia RBAC [true, false] y escenario de edición de una categoría con ownership válido. Se comprueba RESOURCE_NOT_AVAILABLE, dos comprobaciones RBAC, una consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CategoriasEvaluacion y ResourceOwnership.
 - **Verificación local:** parseo V8 backend/test PASS; suite completa tests/security/exam-service-evaluation-category-mutation-security.test.js: 19/19 PASS en runtime V8 aislado con shims. Se conservan altas/ediciones válidas, aislamiento institucional/departamental, ownership, rollback, validaciones, timeout y reentrada concurrente.
 - **Alcance:** ampliación exclusiva de pruebas. No se modifica backend productivo, permisos, roles, scope, ownership ni persistencia. Node 22/CI de esta revisión NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-049 permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.211 TASK-153 / AUD-NG-386 — cubrir revocación RBAC de saveCompetencyEvaluation bajo ScriptLock (C1.559)
@@ -4157,7 +4157,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** fixture con secuencia RBAC [true, false] y escenario de registro de evaluación cualitativa. Se exige RESOURCE_NOT_AVAILABLE, dos llamadas RBAC, una consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de EvaluacionesCompetencias y RubricasEvaluacion.
 - **Verificación local:** parseo V8 backend/test PASS; suite completa tests/security/exam-service-competency-evaluation-mutation-security.test.js: 26/26 PASS en runtime V8 aislado con shims. Se conservan creación autorizada, asignación docente exacta, aislamiento de roles/scope, rúbricas, esquema, timeout, concurrencia y rollback.
 - **Alcance:** ampliación exclusiva de pruebas. No se modifica backend productivo, RBAC, roles, scope, asignaciones, rúbricas ni persistencia. Node 22/CI de esta revisión NOT RUN; Apps Script/Sheets real NOT RUN. BETA-EXAM-050 permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.212 TASK-153 / AUD-NG-386 — verificar revocación RBAC de submitGradebookForReview bajo ScriptLock (C1.560)
 - **Brecha de cobertura:** submitGradebookForReview conserva preflight RBAC/identidad y getAuthorizedPeriodGradebookSubmissionContext_ vuelve a validar RBAC dentro del lock. La suite cubría identidad degradada bajo lock, pero el mock RBAC devolvía siempre el mismo resultado y no simulaba permiso concedido→revocado.
@@ -4179,7 +4179,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** el fixture acepta una secuencia RBAC determinista y un nuevo escenario [true, false] invoca el handler real. Verifica RESOURCE_NOT_AVAILABLE en la segunda comprobación, secuencia `rbac, identity, lock, rbac`, una identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots intactos de CierresPeriodos e HistorialRectificacionesNotas.
 - **Alcance:** cambio exclusivo de prueba; el backend ya revalida RBAC antes de abrir Sheets, por lo que no se modificó lógica productiva, roles, permisos, scope ni persistencia.
 - **Verificación:** el usuario ejecutó `node --test tests/security/exam-service-period-gradebook-reopen-security.test.js`; resultado informado: Tests 1, Pass 1, Fail 0, con confirmación expresa `PASS (28/28)`. Los 28 escenarios internos completaron, incluido RBAC concedido en preflight y revocado bajo ScriptLock: RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y snapshots de CierresPeriodos e HistorialRectificacionesNotas intactos. Versión de Node no informada. CI y Apps Script/Sheets real: NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.215 TASK-153 / AUD-NG-386 — confirmar cierre local de la cobertura de reopenPeriodGradebook (C1.565)
 - **Evidencia:** el usuario confirmó `PASS (28/28)` tras ejecutar la suite focalizada con Node. Node informó 1 archivo de prueba aprobado y cero fallos; los 28 escenarios internos terminaron correctamente.
@@ -4189,7 +4189,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 ### 10.216 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en bulkApplyGradebookGrades (C1.566)
 - **Brecha confirmada:** bulkApplyGradebookGrades utiliza withAuthorizedGradebookSave_ con permiso específico bulkApplyGradebookGrades. El helper valida RBAC en preflight y vuelve a validarlo en getAuthorizedGradebookSaveContext_ bajo ScriptLock antes de abrir Sheets. La suite cubría doble consulta y pérdida de identidad, pero el fixture RBAC era estático y no modelaba revocación entre ambas validaciones.
 - **Cobertura añadida:** fixture con secuencia RBAC determinista [true, false] y escenario nuevo que invoca el handler real. Exige RESOURCE_NOT_AVAILABLE en la segunda consulta, una sola consulta de identidad, liberación del lock, cero aperturas de Sheets y snapshot de CalificacionesEstudiantes intacto.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Alcance:** cambio exclusivo de prueba; el backend ya aplica la revalidación requerida, sin cambios productivos.
 - **Verificación:** el usuario confirmó la ejecución de la suite focalizada con `PASS (30/30)`. La suite Node contiene un archivo de prueba aprobado; versión de Node y resumen completo de Node no informados. Los 30 escenarios internos completaron, incluido permiso concedido en preflight y revocado bajo ScriptLock: RESOURCE_NOT_AVAILABLE, lock liberado, cero aperturas de Sheets y calificaciones intactas. CI y Apps Script/Sheets real: NOT RUN.
 
@@ -4199,14 +4199,14 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** el fixture admite una secuencia determinista de respuestas RBAC y agrega el caso `[true, false]` invocando el handler real. Exige `RESOURCE_NOT_AVAILABLE` en la segunda comprobación, eventos `[rbac, identity, lock, rbac]`, dos consultas RBAC, una consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y fila de CierresPeriodos intacta.
 - **Alcance:** cambio exclusivo de prueba; el backend ya revalida RBAC bajo lock antes de abrir Sheets. No se modifican permisos, roles, scope, persistencia ni lógica productiva.
 - **Verificación:** parseo sintáctico del test modificado PASS. Suite Node focalizada (29 escenarios internos): NOT RUN en esta iteración; pendiente ejecución local. CI 43102931371: paso específico reviewPeriodGradebook PASS (29/29); el workflow global FAIL en security-contract por ReferenceError: withAuthorizedExamCreation_ is not defined, también presente en run 43101929348 anterior a este cambio. Apps Script/Sheets real: NOT RUN. BETA-EXAM-053 permanece Pendiente beta e incorpora el escenario.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.218 TASK-153 / AUD-NG-386 — registrar ejecución local reportada de reviewPeriodGradebook (C1.569)
 - **Resultado comunicado:** el usuario informa `PASS 28/28` tras ejecutar la suite focalizada `tests/security/exam-service-period-gradebook-review-security.test.js`.
 - **Evidencia remota previa:** GitHub Actions run 43102931371 ejecutó el paso específico en Node.js 22.23.4 y reportó `PASS (29/29)`; el workflow global falla posteriormente en un security-contract por el ReferenceError preexistente documentado en C1.568.
 - **Reconciliación pendiente:** el archivo en HEAD `f607fb31a3e9ae5f98a2fdbb167e0749b3695727` contiene 29 invocaciones internas a `test()` y su salida está configurada como `PASS (count/29)`. El resultado local 28/28 no coincide con el contador de la versión revisada; falta confirmar que se ejecutó exactamente ese HEAD/archivo. Se registra el resultado del usuario literalmente, sin elevarlo a 29/29 ni inventar un escenario aprobado.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.219 TASK-153 / AUD-NG-386 — cubrir revocación RBAC en revalidación anidada de gradeExamSubmission (C1.570)
@@ -4214,7 +4214,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** escenario del handler real `gradeExamSubmission` con secuencia RBAC `[true, true, false]`. Exige `RESOURCE_NOT_AVAILABLE` en la tercera comprobación, dos consultas de identidad (la tercera se evita), lock adquirido/liberado, una sola apertura de Sheets para resolver la entrega, una lectura de entrega y cero escrituras de calificación.
 - **Alcance:** solo se amplía `tests/security/exam-service-delete-submission-audit.test.js`; backend productivo, permisos, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-073 incorpora el escenario desplegado.
 - **Verificación:** parseo sintáctico PASS; GitHub Actions run 43104257279, Node.js 22.23.4: suite focalizada 29/29 PASS. El usuario sincronizó Codespaces con la rama de trabajo y confirmó `node tests/security/exam-service-delete-submission-audit.test.js`: 29/29 PASS. La captura previa mostró HEAD correcto pero hash de archivo distinto y 28/28; tras `git pull --ff-only` se confirmó el conteo actualizado. El workflow global falla después en `exam-service-security-contract.test.js:449` por ReferenceError `withAuthorizedExamCreation_ is not defined`, fallo preexistente en runs anteriores y no introducido por esta tarea. Apps Script/Sheets real: NOT RUN; corresponde a beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.220 TASK-153 / AUD-NG-386 — cubrir revocación RBAC anidada en deleteExamSubmission (C1.571)
@@ -4222,7 +4222,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** escenario del handler real con RBAC `[true, true, false]`. Exige `RESOURCE_NOT_AVAILABLE` en la tercera comprobación, dos identidades, lock adquirido/liberado, una sola apertura de Sheets y una sola lectura de entrega; no elimina la fila, no crea/consulta historial de auditoría ni escribe.
 - **Alcance:** ampliación exclusiva de `tests/security/exam-service-delete-submission-audit.test.js`; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-073 incorpora el escenario desplegado.
 - **Verificación:** usuario confirma ejecución local focalizada 30/30 PASS en Codespaces sincronizado. GitHub Actions run 43105983033: paso `Run exam submission deletion audit regression` PASS 30/30 en Node.js 22.23.4. El workflow global falla después en `exam-service-security-contract.test.js` por `ReferenceError: withAuthorizedExamCreation_ is not defined`, fallo preexistente documentado en iteraciones anteriores. Apps Script/Sheets real: NOT RUN, reservado a beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.221 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en updateExam (C1.572)
@@ -4230,7 +4230,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** escenario del handler real con RBAC `[true, false]`, solicitando cambios en varios campos. Exige `RESOURCE_NOT_AVAILABLE`, dos llamadas RBAC, solo una identidad (la revocación detiene el flujo antes de la identidad contextual), lock adquirido/liberado, cero aperturas Sheets, cero escrituras y fila completa de Examenes intacta.
 - **Alcance:** solo se amplía `tests/security/exam-service-exam-mutation-security.test.js`; backend productivo, permisos, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-076 incorpora el caso de revocación.
 - **Verificación:** el usuario confirma ejecución en Codespaces mediante `node tests/security/exam-service-exam-mutation-security.test.js`: **17/17 PASS**. El archivo en HEAD contiene 17 escenarios y salida /17. CI: NOT RUN en esta iteración. Apps Script/Sheets real: NOT RUN, reservado a beta (BETA-EXAM-076).
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.222 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en deleteExam (C1.573)
@@ -4238,7 +4238,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** escenario del handler real con RBAC `[true, false]`. Exige `RESOURCE_NOT_AVAILABLE`, dos comprobaciones RBAC, una sola consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets, cero escrituras/bajas y snapshots completos de Examenes y ResourceOwnership intactos.
 - **Alcance:** solo se amplía `tests/security/exam-service-exam-mutation-security.test.js`; backend productivo, permisos, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-074 incorpora la variante de revocación.
 - **Verificación aislada:** suite ejecutada en V8 con shims compatibles para assert/fs/path/vm: **18/18 PASS**; parseo de Code.gs y del archivo de prueba PASS. Node 22/Codespaces y CI quedan pendientes de ejecución/verificación posterior al commit. Apps Script/Sheets real: NOT RUN, reservado a beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 
@@ -4247,7 +4247,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** escenario del handler real con RBAC `[true, false]`. Exige `RESOURCE_NOT_AVAILABLE`, dos comprobaciones RBAC, una sola consulta de identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots completos de BancoPreguntas y ResourceOwnership intactos.
 - **Alcance:** solo se amplía `tests/security/exam-service-question-bank-security.test.js`; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-079 incorpora el escenario desplegado.
 - **Verificación:** GitHub Actions run **43108253372**, Node.js 22.23.4: paso `Run question bank mutation security regression` SUCCESS; la suite completa del job falla después en `exam-service-security-contract.test.js` por `ReferenceError: withAuthorizedExamCreation_ is not defined`, fallo preexistente reproducido en ejecuciones anteriores. El paso focalizado de question bank pasó y ejecutó todas las aserciones, incluida la revocación RBAC. Apps Script/Sheets real NOT RUN, reservado a beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.224 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en saveStudentRecovery (C1.575)
@@ -4255,7 +4255,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** escenario del handler real con permisos `[true, false]`; exige `RESOURCE_NOT_AVAILABLE`, dos validaciones RBAC, una sola identidad, lock adquirido/liberado, cero apertura de Sheets y snapshots completos de todas las hojas sintéticas intactos.
 - **Alcance:** solo se amplía `tests/security/exam-service-student-recovery-mutation-security.test.js`; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-080 registra la variante desplegada.
 - **Verificación local:** parseo de backend y suite PASS; ejecución aislada V8 con shims compatibles **18/18 PASS**. GitHub Actions run **43109446831**: paso `Run student recovery mutation security regression` SUCCESS; el workflow global falla después en `exam-service-security-contract.test.js:449` por `ReferenceError: withAuthorizedExamCreation_ is not defined`, fallo preexistente y fuera del alcance de C1.575. Apps Script/Sheets real NOT RUN, reservado a beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.225 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en copyEvaluationSetupBetweenGroups (C1.576)
@@ -4263,7 +4263,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** secuencia RBAC `[true, false]` en el handler real; exige `RESOURCE_NOT_AVAILABLE`, dos llamadas RBAC, una identidad, lock adquirido/liberado, cero aperturas de Sheets y snapshots de CategoriasEvaluacion/ResourceOwnership intactos.
 - **Alcance:** fixture y prueba en `tests/security/exam-service-evaluation-setup-copy-security.test.js`; backend productivo, permisos, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-081 registra la comprobación desplegada.
 - **Verificación local:** parseo del backend y suite PASS; V8 aislado con shims compatibles **29/29 escenarios PASS**. CI focalizado pendiente de ejecución/observación. Apps Script/Sheets real NOT RUN, reservado a beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.226 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en saveRubric (C1.577)
@@ -4271,21 +4271,21 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** fixture con secuencia RBAC y caso `[true, false]` sobre el handler real; exige `RESOURCE_NOT_AVAILABLE`, dos validaciones RBAC, una identidad, lock adquirido/liberado, cero aperturas de Sheets, cero escrituras y snapshots completos de RubricasEvaluacion/ResourceOwnership intactos.
 - **Alcance:** únicamente fixture/prueba en `tests/security/exam-service-save-rubric-security.test.js`; backend productivo, roles, permisos, scope, ownership y persistencia sin cambios. BETA-EXAM-082 registra la comprobación desplegada.
 - **Verificación:** parseo de backend y suite PASS; V8 aislado con shims compatibles **21/21 PASS**. GitHub Actions run **43110460170**, paso `Run rubric mutation security regression` SUCCESS; el workflow global falla después en `exam-service-security-contract.test.js:449` por `ReferenceError: withAuthorizedExamCreation_ is not defined`, fallo preexistente y ajeno a C1.577. Apps Script/Sheets real NOT RUN, reservado a beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.227 TASK-153 / AUD-NG-386 — reparar fixture de creación de exámenes en el contrato general (C1.578)
 - **Hallazgo:** el workflow general repetía un fallo en `tests/security/exam-service-security-contract.test.js:449`: `ReferenceError: withAuthorizedExamCreation_ is not defined`. El fixture `makeCreationRuntime` extraía `createExam` y sus validadores, pero omitía el wrapper real y el worker `createExamUnlocked_`; por ello no ejecutaba la ruta protegida que la prueba pretendía verificar.
 - **Corrección:** el fixture incorpora `withAuthorizedExamCreation_` y `createExamUnlocked_` en el conjunto de funciones cargadas en el runtime aislado. No se modifica backend productivo, matriz RBAC, identidad, ownership, scope ni persistencia.
 - **Verificación local:** parseo de `backend/exam-service/Code.gs` y ejecución completa del contrato general en V8 aislado con shims compatibles: PASS; todas las aserciones completaron, incluida denegación RBAC directa, creación autorizada, aislamiento de departamento y rollback. La ejecución Node 22/CI posterior al commit queda pendiente de observar.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum CI — C1.578
 - GitHub Actions run **43111399591**, commit `aaf068438b2cd3cd24bcb2bafbc50105139c1054`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
 - El job `exam-security-contracts` terminó SUCCESS. Pasaron todos los pasos: suites focalizadas de rúbricas, evaluaciones, recuperaciones, mutaciones EXAM, entregas, libro de calificaciones, banco de preguntas, creación de exámenes, purge de caché, validación de notas, contrato general, acceso departamental y endpoints de lectura.
 - La prueba `exam-service-security-contract.test.js` pasó; desapareció el ReferenceError `withAuthorizedExamCreation_ is not defined`. No se reprodujo el fallo global previo.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.228 TASK-153 / AUD-NG-386 — cubrir revocación RBAC bajo ScriptLock en saveGradebookGrades (C1.579)
@@ -4293,7 +4293,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** fixture RBAC secuencial y escenario `[true, false]` en `saveGradebookGrades`; exige `RESOURCE_NOT_AVAILABLE`, una sola consulta de identidad (la segunda comprobación RBAC detiene el flujo), lock adquirido/liberado, cero apertura de Sheets y snapshot íntegro de CalificacionesEstudiantes.
 - **Alcance:** solo prueba/fixture; backend productivo, RBAC, identidad, scope, asignaciones, ownership y persistencia sin cambios. BETA-EXAM-083 registra el escenario desplegado.
 - **Verificación local:** parseo de Code.gs y del contrato PASS; ejecución completa aislada del contrato con shims compatibles: **29/29 PASS**. CI Node.js 22 pendiente de ejecución/observación tras commit. Apps Script/Sheets real NOT RUN, reservado a beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum CI — C1.579
@@ -4308,7 +4308,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** hook de escritura sintético que invoca una segunda aplicación masiva dentro de la sección crítica de la primera. La segunda solicitud debe fallar con `GRADEBOOK_SAVE_LOCK_TIMEOUT`; la primera completa una sola escritura y un solo alta, no abre Sheets por segunda vez y libera el lock.
 - **Alcance:** solo fixture/prueba en `tests/security/exam-service-gradebook-bulk-apply-security.test.js); backend productivo, permisos, identidad, scope y persistencia sin cambios. BETA-EXAM-057 actualizado.
 - **Verificación local:** parseo de `backend/exam-service/Code.gs` y del contrato PASS; ejecución completa aislada V8 con shims compatibles **31/31 PASS**, incluido el escenario de contención reentrante. CI Node.js 22 pendiente de ejecución/observación tras commit. Apps Script/Sheets real NOT RUN; la simultaneidad de infraestructura desplegada sigue Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.230 TASK-153 / AUD-NG-386 — concurrencia durante auditoría en reopenPeriodGradebook (C1.581)
@@ -4316,7 +4316,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** hook sintético en `mkSheet.appendRow` y escenario de reentrada al handler real mientras el cierre ya está marcado `Reabierto`. La solicitud anidada debe recibir `GRADEBOOK_REOPEN_LOCK_TIMEOUT`; la exterior conserva éxito, deja exactamente una fila de auditoría y libera ScriptLock.
 - **Alcance:** fixture/prueba en `tests/security/exam-service-period-gradebook-reopen-security.test.js`; backend productivo sin cambios. BETA-EXAM-055 actualizado.
 - **Verificación local:** parseo de `backend/exam-service/Code.gs` y del contrato PASS; suite completa aislada V8 con shims compatibles **29/29 PASS**. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN; concurrencia desplegada continúa Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum CI — C1.581
@@ -4330,7 +4330,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** hook sintético en la hoja `RecuperacionesEstudiante` que reentra al handler real durante el append. La segunda solicitud debe fallar con `STUDENT_RECOVERY_MUTATION_LOCK_TIMEOUT`; la solicitud exterior conserva éxito, registra exactamente una recuperación y libera el lock. Se comprueban llamadas RBAC/identidad, intentos de lock, apertura de Sheets y orden de eventos.
 - **Alcance:** fixture/contrato en `tests/security/exam-service-student-recovery-mutation-security.test.js`; backend productivo, reglas de cálculo, roles, scope y persistencia sin cambios. BETA-EXAM-068 actualizado.
 - **Verificación local:** parseo sintáctico de backend y contrato PASS; suite completa aislada V8 con shims compatibles **19/19 PASS**. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN; contención en infraestructura desplegada continúa Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum CI — C1.582
@@ -4344,7 +4344,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** hook sintético en `Examenes.setValue` que reentra al handler real mientras ScriptLock está retenido. La solicitud anidada debe fallar con `EXAM_MUTATION_LOCK_TIMEOUT`; la exterior conserva el cambio de estado, realiza exactamente una escritura, no abre Sheets por segunda vez y libera el lock.
 - **Alcance:** fixture/contrato en `tests/security/exam-service-exam-mutation-security.test.js`; backend productivo, RBAC, identidad, ownership y persistencia sin cambios. BETA-EXAM-084 registra el escenario desplegado.
 - **Verificación local:** parseo sintáctico de `backend/exam-service/Code.gs` y del contrato PASS; suite V8 aislada **19/19 PASS**. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN; contención desplegada Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum CI — C1.583
@@ -4357,7 +4357,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** hook sintético en Examenes.setValues que invoca el handler real updateExam de forma anidada. La secundaria debe recibir EXAM_MUTATION_LOCK_TIMEOUT; la exterior conserva sus campos, realiza exactamente una escritura, no reabre Sheets y libera ScriptLock.
 - **Alcance:** solo contrato en tests/security/exam-service-exam-mutation-security.test.js; backend productivo, permisos, identidad, ownership, scope y persistencia sin cambios. BETA-EXAM-085 registra el escenario desplegado.
 - **Verificación local:** parseo sintáctico de backend y contrato PASS; ejecución completa V8 aislada 20/20 PASS. CI Node.js 22 pendiente tras commit. Apps Script/Sheets real NOT RUN; BETA-EXAM-085 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 #### Addendum CI — C1.584
 - GitHub Actions run **43115333376**, commit de implementación/prueba `230656e62f3d40d5d3e3588044608d2c274d8c5e`, workflow `Exam-Service security local contracts`: **SUCCESS** en Node.js 22.
@@ -4371,21 +4371,21 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** el contrato invoca deleteExam anidado desde ambos hooks setValue. Las dos solicitudes deben recibir EXAM_MUTATION_LOCK_TIMEOUT; la exterior completa exactamente las dos escrituras previstas, abre Sheets una sola vez y libera el lock.
 - **Alcance:** contrato local en tests/security/exam-service-exam-mutation-security.test.js; backend productivo sin cambios. BETA-EXAM-086 registra las dos ventanas de reentrada en Apps Script/Sheets desplegado.
 - **Verificación local:** parseo sintáctico de backend y contrato PASS; ejecución aislada V8 del contrato completo 21/21 PASS. CI Node.js 22: GitHub Actions run 43116003454 SUCCESS. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.235 TASK-153 / AUD-NG-386 — contención reentrante en submitExam durante appendRow (C1.586)
 - **Brecha confirmada:** submitExam valida RBAC e identidad antes y después de adquirir ScriptLock, y luego submitExamUnlocked_ calcula la nota y persiste la entrega con appendRow. El contrato específico verificaba RBAC, identidad y timeout, pero no una segunda entrega reentrante durante esa persistencia.
 - **Cobertura añadida:** el fixture ejecuta submitExam y submitExamUnlocked_ reales con Sheets/contexto sintéticos; appendRow intenta una segunda solicitud del mismo estudiante/examen. La secundaria debe recibir EXAM_SUBMISSION_LOCK_TIMEOUT; la exterior registra exactamente una entrega, obtiene una sola apertura de contexto y libera el lock.
 - **Alcance:** solo tests/security/exam-service-submit-mutation-security.test.js; backend productivo sin cambios. BETA-EXAM-087 registra la verificación desplegada.
 - **Verificación local:** parseo sintáctico de Code.gs y contrato PASS; contrato completo V8 aislado 12/12 PASS. CI Node.js 22: GitHub Actions run 43116458048 SUCCESS. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### 10.236 TASK-153 / AUD-NG-386 — contención reentrante de deleteExamSubmission (C1.587)
 - **Brecha confirmada:** deleteExamSubmission usa el ScriptLock compartido y realiza tres escrituras encadenadas: appendRow del evento DELETE_REQUESTED, deleteRow de EntregasExamen y setValue del estado DELETED. Los contratos existentes cubrían autorización, auditoría y fallos de persistencia, pero no una segunda solicitud durante ninguna de esas ventanas.
 - **Cobertura añadida:** el contrato real ejecuta el wrapper withAuthorizedExamSubmissionMutation_ y el handler deleteExamSubmission con contexto/Sheets sintéticos. Se fuerza una segunda llamada desde cada una de las tres escrituras; todas deben terminar EXAM_SUBMISSION_LOCK_TIMEOUT. La solicitud exterior registra un solo evento, elimina una entrega, finaliza el evento como DELETED, obtiene un único contexto y libera ScriptLock.
 - **Alcance:** solo tests/security/exam-service-delete-submission-audit.test.js; backend productivo sin cambios. BETA-EXAM-088 registra la validación desplegada.
 - **Verificación local:** parseo sintáctico de backend y contrato PASS; harness V8 aislado de los handlers reales 3/3 escenarios PASS. CI Node.js 22 pendiente de observación tras commit. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 #### Addendum CI — C1.587
 - GitHub Actions run 43117909903, commit 6e85cccfe0b19ea72f5ff5f2497acdc505929352, workflow Exam-Service security local contracts: SUCCESS en Node.js 22.
@@ -4397,7 +4397,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** el contrato invoca el handler real y, desde appendRow del cierre exterior, intenta una segunda llamada. La solicitud secundaria debe recibir GRADEBOOK_CLOSURE_LOCK_TIMEOUT; la exterior crea un único cierre, abre Sheets una vez y libera el lock.
 - **Alcance:** solo tests/security/exam-service-period-gradebook-closure-security.test.js; backend productivo sin cambios. BETA-EXAM-089 registra la comprobación desplegada.
 - **Verificación local:** caso añadido; ejecución de la suite Node local NOT RUN en este entorno. CI Node.js 22 pendiente de observar tras commit. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum de verificación local/CI — C1.588
@@ -4412,7 +4412,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** el fixture intercepta setValues de CalificacionesEstudiantes e invoca el handler real de forma anidada. La secundaria debe recibir GRADEBOOK_SAVE_LOCK_TIMEOUT; la exterior conserva la nota solicitada, ejecuta una sola escritura, abre Sheets una vez y libera el lock.
 - **Alcance:** solo tests/security/exam-service-gradebook-save-security.test.js; backend productivo sin cambios. BETA-EXAM-090 registra la comprobación desplegada.
 - **Verificación local:** GitHub Actions run 43119877509, workflow `Exam-Service security local contracts`, Node.js 22: **SUCCESS**; paso `Run gradebook save security regression` y contrato `exam-service-gradebook-save-security: PASS (30/30)`. Job `exam-security-contracts` SUCCESS. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum de verificación local/CI — C1.589
@@ -4427,7 +4427,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** hook en appendRow de CierresPeriodos que invoca el handler real de forma anidada. La secundaria debe recibir GRADEBOOK_SUBMISSION_LOCK_TIMEOUT; la exterior crea un único registro REV-* en PendienteRevision, realiza un append, abre Sheets una vez y libera el lock.
 - **Alcance:** solo tests/security/exam-service-period-gradebook-submission-security.test.js y registro BETA-EXAM-091; backend productivo sin cambios.
 - **Verificación local:** GitHub Actions run 43127400390, workflow `Exam-Service security local contracts`, Node.js 22: **SUCCESS**; paso `Run period gradebook submission security regression` y contrato `exam-service-period-gradebook-submission-security: PASS (28/28)`. Job `exam-security-contracts` SUCCESS. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum de verificación local/CI — C1.590
@@ -4442,7 +4442,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** el fixture intercepta setValues de CierresPeriodos e invoca el handler real de forma anidada. La secundaria debe recibir GRADEBOOK_REVIEW_LOCK_TIMEOUT; la exterior persiste la decisión una sola vez, abre Sheets una vez y libera el lock.
 - **Alcance:** contrato de seguridad y BETA-EXAM-092; backend productivo sin cambios.
 - **Verificación:** GitHub Actions run 43127784802, workflow `Exam-Service security local contracts`, Node.js 22: **SUCCESS**; paso `Run period gradebook review security regression` y contrato `exam-service-period-gradebook-review-security: PASS (30/30)`. Job `exam-security-contracts` SUCCESS. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum de verificación local/CI — C1.591
@@ -4457,7 +4457,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** dos escenarios invocan el handler real de forma anidada durante cada punto de persistencia. En ambos, la secundaria debe recibir GRADE_RECTIFICATION_LOCK_TIMEOUT; la exterior realiza un único append de auditoría y una única escritura de nota, abre Sheets una vez y libera el lock.
 - **Alcance:** contrato de seguridad y BETA-EXAM-093; backend productivo sin cambios.
 - **Verificación:** GitHub Actions run 43128256513, workflow `Exam-Service security local contracts`, Node.js 22: **SUCCESS**; paso `Run student grade rectification security regression` y contrato `exam-service-student-grade-rectification-security: PASS (32/32)`. Job `exam-security-contracts` SUCCESS. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum de verificación local/CI — C1.592
@@ -4472,7 +4472,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** se interceptan ambos appendRow y se invoca el handler real de forma anidada. La secundaria debe recibir EVALUATION_CATEGORY_MUTATION_LOCK_TIMEOUT; la exterior crea exactamente una fila de ownership y una de categoría, abre Sheets una vez y libera ScriptLock.
 - **Alcance:** contrato de seguridad, ejecución en workflow local de contratos y BETA-EXAM-094; backend productivo sin cambios.
 - **Verificación:** GitHub Actions run 43129993264, workflow `Exam-Service security local contracts`, Node.js 22: SUCCESS; paso `Run evaluation category mutation security regression`; contrato 20/20 PASS; job `exam-security-contracts` SUCCESS. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum de verificación local/CI — C1.593
@@ -4487,7 +4487,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Cobertura añadida:** el fixture intercepta setValues en ambas hojas e invoca el handler real de forma anidada. En cada punto la secundaria debe recibir EVALUATION_SETUP_COPY_LOCK_TIMEOUT; la exterior copia una sola categoría, crea un único ownership asociado, realiza una escritura por hoja, abre Sheets una vez y libera ScriptLock.
 - **Alcance:** contrato tests/security/exam-service-evaluation-setup-copy-security.test.js, activación del workflow local y BETA-EXAM-095; backend productivo sin cambios.
 - **Verificación local:** GitHub Actions run 43131212115, workflow `Exam-Service security local contracts`, Node.js 22: **SUCCESS**; paso `Run evaluation setup copy security regression` y contrato `exam-service-evaluation-setup-copy-security: PASS (30 scenarios)`. Job `exam-security-contracts` SUCCESS. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Addendum de verificación local/CI — C1.594
@@ -4503,7 +4503,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Invariantes:** la creación exterior persiste exactamente una pregunta y un ownership asociado; actualización y eliminación realizan una sola escritura por hoja afectada y mantienen estado coherente; la solicitud secundaria no abre Sheets; el lock exterior se libera.
 - **Alcance:** únicamente tests/security/exam-service-question-bank-security.test.js; backend productivo, RBAC, roles, scope, ownership y persistencia sin cambios. BETA-EXAM-096 registra la comprobación desplegada.
 - **Verificación:** GitHub Actions run 43132167465, workflow Exam-Service security local contracts, Node.js 22.23.4: SUCCESS; paso Run question bank mutation security regression SUCCESS; job exam-security-contracts SUCCESS. Cinco escenarios de reentrada superados. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.245 TASK-153 / AUD-NG-386 — contención reentrante de saveCompetencyEvaluation durante appendRow (C1.596)
@@ -4512,7 +4512,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Invariantes:** una sola fila de evaluación persistida y un append exterior; la secundaria no abre Sheets; una apertura por la operación exterior; lock liberado al finalizar.
 - **Alcance:** solo tests/security/exam-service-competency-evaluation-mutation-security.test.js; backend productivo, RBAC, identidad, asignación, scope, rúbricas y persistencia sin cambios. BETA-EXAM-097 registra la comprobación desplegada.
 - **Verificación:** GitHub Actions run 43134830869, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; paso Run competency evaluation mutation security regression y job exam-security-contracts SUCCESS; contrato 27/27 PASS. Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.246 TASK-153 / AUD-NG-386 — contención reentrante de saveRubric durante persistencia (C1.597)
@@ -4522,7 +4522,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Alcance:** únicamente tests/security/exam-service-save-rubric-security.test.js; backend productivo, permisos, identidad, scope, ownership y persistencia sin cambios. BETA-EXAM-098 registra la comprobación desplegada.
 - **Verificación local:** node --check del smoke focalizado PASS; harness local determinista de los tres puntos de reentrada 3/3 PASS. El checkout del repositorio y la suite original completa no estuvieron disponibles localmente por fallo de resolución de github.com; la suite original sí fue ejecutada por CI.
 - **CI:** GitHub Actions run 43135541037, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; paso Run rubric mutation security regression SUCCESS; suite dedicada 24/24 PASS; job exam-security-contracts SUCCESS.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.247 TASK-153 / AUD-NG-386 — contención reentrante de createExam durante persistencia (C1.598)
@@ -4533,7 +4533,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** harness focalizado ejecutado sobre los handlers productivos extraídos de `backend/exam-service/Code.gs`: tres puntos de reentrada, 3/3 PASS. Parseo JavaScript del contrato actualizado PASS.
 - **CI:** GitHub Actions run 43136684120, workflow `Exam-Service security local contracts`, Node.js 22: SUCCESS; paso `Run exam creation security regression`, contrato `exam-service-create-exam-security: 17/17 PASS`; job `exam-security-contracts` SUCCESS. El runner ejecutó código/fixtures sin despliegue ni infraestructura remota.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-099 permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.248 TASK-153 / AUD-NG-386 — contención reentrante de gradeExamSubmission durante setValues (C1.599)
@@ -4544,7 +4544,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** escenario focalizado determinista ejecutado sobre handlers productivos extraídos de `backend/exam-service/Code.gs`: 1/1 PASS; parseo de Code.gs y del contrato PASS.
 - **CI:** GitHub Actions run 43137456877, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; contrato grade-submission-validation 18/18 PASS; job exam-security-contracts SUCCESS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-100 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.249 TASK-153 / AUD-NG-386 — reentrada durante la creación de la hoja de auditoría de eliminación de entregas (C1.600)
@@ -4555,7 +4555,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** escenarios focalizados deterministas ejecutados sobre helper, wrapper y handler productivos extraídos de Code.gs: 5/5 PASS; parseo de Code.gs y contrato PASS.
 - **CI:** GitHub Actions run 43137857655, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; contrato delete-submission-audit 35/35 PASS; job exam-security-contracts SUCCESS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-101 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.250 TASK-153 / AUD-NG-386 — reentrada durante la inicialización de RecuperacionesEstudiante (C1.601)
@@ -4567,7 +4567,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** GitHub Actions run 43138825738, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; contrato saveStudentRecovery 21/21 PASS; job exam-security-contracts SUCCESS.
 - **Corrección de verificación:** el run 43138709373 detectó dos comparaciones de arrays entre contextos JavaScript incompatibles y el runner no propagaba fallos; se corrigieron las aserciones y se añadió un fallo explícito cuando el resumen contiene casos fallidos. La segunda ejecución confirmó 21/21 PASS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-102 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.251 TASK-153 / AUD-NG-386 — reentrada durante la inicialización de EvaluacionesCompetencias (C1.602)
@@ -4578,7 +4578,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** harness determinista sobre saveCompetencyEvaluation, wrapper, contexto y worker productivos extraídos de backend/exam-service/Code.gs: 2/2 PASS; parseo JavaScript del contrato actualizado PASS.
 - **CI:** GitHub Actions run 43139327739, workflow Exam-Service security local contracts, Node.js 22: SUCCESS; paso Run competency evaluation mutation security regression: 29/29 PASS; job exam-security-contracts SUCCESS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-103 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.252 TASK-153 / AUD-NG-386 — reentrada durante la inicialización de CategoriasEvaluacion (C1.603)
@@ -4590,7 +4590,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Contrato local:** suite completa 22/22 PASS en runner aislado; harness focalizado de insertSheet y appendRow de encabezados 2/2 PASS; parseo JavaScript del contrato PASS.
 - **CI:** el conector devolvió una lista de estados vacía para el commit de pruebas; no hay run ID ni resultado verificable disponible. CI NOT VERIFIED; no se declara PASS.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-104 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.253 TASK-153 / AUD-NG-386 — reentrada durante escrituras de reapertura de período (C1.604)
@@ -4601,7 +4601,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** contrato completo 31/31 PASS en runner aislado; parseo JavaScript de Code.gs y del contrato PASS.
 - **CI:** pendiente de resultado verificable tras el commit de pruebas.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-055 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.254 TASK-153 / AUD-NG-386 — reentrada al inicializar CierresPeriodos (C1.605)
@@ -4612,7 +4612,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** contrato completo 24/24 PASS en runner aislado sobre handlers extraídos de Code.gs; parseo JavaScript de Code.gs y del contrato PASS.
 - **CI:** pendiente de resultado verificable tras los commits.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-052 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.255 TASK-153 / AUD-NG-386 — reentrada al inicializar CierresPeriodos en submitGradebookForReview (C1.606)
@@ -4623,7 +4623,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** suite V8 aislada 30/30 PASS; parseo de Code.gs y del contrato PASS.
 - **CI:** pendiente de resultado verificable tras publicar el commit.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-054 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Addendum C1.606-R1 — corrección de aserciones cross-realm**
@@ -4656,7 +4656,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** suite V8 aislada 34/34 PASS; parseo JavaScript de Code.gs y contrato PASS.
 - **CI:** pendiente de resultado verificable tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-056 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Cierre de verificación C1.607**
@@ -4673,7 +4673,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** suite V8 aislada 24/24 PASS; parseo Code.gs/contrato PASS.
 - **CI:** pendiente de resultado verificable tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-EXAM-049 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Cierre de verificación C1.608**
@@ -4690,7 +4690,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** harness V8 focalizado del handler productivo extraído de Code.gs: 1/1 PASS; parseo del archivo de prueba PASS.
 - **CI:** pendiente tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-030 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Cierre de verificación C1.609**
@@ -4707,7 +4707,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** harness V8 focalizado y parseo del contrato pendientes de ejecución.
 - **CI:** pendiente tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-029 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Cierre de verificación C1.610**
@@ -4724,7 +4724,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** harness V8 focalizado y parseo del contrato pendientes de ejecución.
 - **CI:** pendiente tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-028 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Addendum C1.611-R1 — corrección del fixture de lock**
@@ -4747,7 +4747,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación local:** harness V8 focalizado y parseo del contrato pendientes de ejecución.
 - **CI:** pendiente tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-027 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Cierre de verificación C1.612**
@@ -4765,7 +4765,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** Task-Service security local contracts run 43145265418 SUCCESS; backup and restore contract run 43145265344 SUCCESS, Node.js 22.23.4.
 - **Nota de ejecución:** primer workflow 43145146918 FAIL porque se publicó el contrato antes de incluir el cambio productivo; commit posterior 6b23d83 incorporó el ScriptLock y ambos workflows de confirmación pasaron.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-021 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.263 TASK-153 / T153-S02 — vigencia efectiva en consultas de asignaciones (C1.614)
@@ -4777,7 +4777,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **CI:** pendiente de ejecución/observación tras publicar.
 - **Apps Script/Sheets real:** NOT RUN; BETA-FUNC-031 Pendiente beta.
 - **Alcance:** incremento parcial de T153-S02; no completa soporte de múltiples roles simultáneos ni el motor configurable de responsabilidades/autoridad. T153-S01 continúa bloqueada únicamente para decisiones/fuentes institucionales reales; el desarrollo genérico continúa.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Addendum C1.614 — consolidación del cambio ejecutable**
@@ -4803,7 +4803,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Archivos funcionales:** backend/user-service/Code.gs; tests/security/department-scope-contract.test.js; beta_test.txt.
 - **Beta:** BETA-FUNC-032 Pendiente beta. Apps Script/Sheets real NOT RUN.
 - **Límite del incremento:** no habilita múltiples roles RBAC simultáneos. verifySessionToken sigue exigiendo que el rol firmado coincida con el rol único vigente de Usuarios; AsignacionesAmbitosRoles no se utiliza como fuente para elevar roles. El modelo canónico de membresías multirol y su contexto activo requieren una unidad separada dentro de T153-S02.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.265 TASK-153 / T153-S02 — membresías RBAC multirol y selección explícita de rol (C1.616)
@@ -4818,7 +4818,7 @@ C1.424 introdujo un error en el mapeo de rutas al construir el árbol Git: el co
 - **Verificación honesta:** revisión de fuente/diffs y presencia de blobs confirmadas mediante GitHub. Prueba local `node tests/security/user-role-membership-contract.test.js`: **NOT RUN**; parseo local de los servicios y js/auth.js: **NOT RUN**. El conector no expone un ejecutor de Actions para estos eventos push y no se obtuvo run/check verificable para el HEAD; CI: **NOT VERIFIED**, no PASS. Apps Script/Sheets real: NOT RUN.
 - **Beta:** BETA-FUNC-033 Pendiente beta; no bloquea implementación.
 - **Riesgos/dependencias:** cada servicio debe tener `IMA_INSTITUTION_ID` y acceso a la misma hoja institucional; si no puede validar la fuente canónica, falla cerrado. La revocación de membresía se comprueba directamente contra la hoja en cada consumidor. La revocación de sesión de cambio de rol se registra en caché USER; no se afirma propagación de ese caché a proyectos Apps Script independientes.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** ejecutar el contrato Node y los parseos locales sobre el HEAD publicado; corregir cualquier FAIL y obtener evidencia CI. Después continuar el resto de T153-S02 (responsabilidades/capacidades y relación con ámbitos) sin iniciar T153-S03 antes de satisfacer sus dependencias.
 
 
@@ -4859,7 +4859,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Se agregó `tests/security/internal-responsibility-rbac-contract.test.js` y se integró al workflow. Department Scope Contract run **43225238922 SUCCESS** (Node 24.22.2): contratos de ámbitos, responsabilidad/RBAC, membresías, ownership académico/contable, sintaxis de seis servicios Apps Script y clientes JS configurados, todos PASS. La prueba se ejecutó en runner aislado de CI; terminal local de esta sesión NOT RUN por fallo DNS al resolver github.com. Apps Script/Sheets real NOT RUN.
 - Commits de implementación/ajuste/contrato: `ce385606a6113de3877d160c5a0a97efefb4ba4e`, `79187bddab6d6bacbc2a5b9c8dd2b0a2d6eab332`, `3608847e3e181da39ebb0336a462d585f2b0562a`, `c0dacf9a5e885ef2fc34bd179ebc8c5d1b50cffe`, `c669717705d381ceff9ae9e74a10fd5058b04e5b`, `671daded866a44d807523f2ce6036a8b353a69cc`, `aa08228543f44ec1bdf5aae7dd8af9beb5e39722`.
 - BETA-FUNC-033 se amplía para validar en Sheets real la migración de encabezados, la asignación y desactivación de responsabilidades, la revocación de membresía y la denegación RBAC cuando una capacidad no tiene una regla explícita. Permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción elegible:** verificar ciclo de vida y concurrencia de las escrituras de catálogo/asignaciones (duplicados, reintentos, actualización concurrente, desactivación y revocación), confirmar que el vínculo siga siendo efectivo únicamente con membresía y responsabilidad activas, y ampliar los contratos aislados para esos intercalados.
 
 
@@ -4869,7 +4869,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Department Scope Contract run **43226324130 SUCCESS** (Node 24.22.2): Department Scope, Internal Responsibility RBAC, User Role Membership, ownership académico/contable, sintaxis de seis servicios Apps Script y JS cliente configurado, todos PASS. La prueba de concurrencia es una simulación determinista de contención del lock y repetición/idempotencia; no simula múltiples procesos reales ni sustituye la prueba beta sobre Sheets.
 - Commits: `d0552a69d0afe6f78bbe0443db47328c263d43e8` (locks); `911e8900c90079ac71e52ce0f1a3b47334ba7e32` (contratos de contención).
 - Terminal local NOT RUN por DNS de github.com; runner aislado CI PASS. Apps Script/Sheets real NOT RUN; BETA-FUNC-033 sigue Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción elegible:** verificar revocación/desactivación de la responsabilidad vinculada, expiración/revocación de membresía y cambios de rol con una sesión previa; asegurar que el contexto y listados de ámbitos fallen cerrados después de cada cambio y que la actualización del vínculo no deje asignaciones huérfanas.
 
 
@@ -4880,7 +4880,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - El contrato `internal-responsibility-rbac-contract.test.js` añade escenarios sintéticos de desactivación de responsabilidad, desactivación del rol interno, revocación de membresía, cambio del rol y expiración. Comprueba denegación del contexto previo y exclusión de la asignación.
 - Department Scope Contract run **43227647058 SUCCESS** (16 pasos SUCCESS, Node 24.22.2); Task-Service security run **43227456678 SUCCESS**. Terminal local independiente NOT RUN; Apps Script/Sheets real NOT RUN.
 - BETA-FUNC-033 permanece Pendiente beta para comprobar los mismos cambios contra Sheets real, servicios desplegados y solicitudes concurrentes reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción elegible:** verificar reasignación/actualización de ámbitos y vínculos ResponsibilityID/MembershipID, idempotencia, unicidad y ausencia de vínculos residuales o cruzados entre tenants.
 
 
@@ -4891,7 +4891,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato local aislado ampliado: actualización de responsabilidad conservando ID; reasignación de membresía por ID; reintento idempotente; duplicados rechazados sin mutación; intento de mover un ID de otra institución denegado; liberación del ScriptLock.
 - Department Scope Contract run **43228852462 SUCCESS** (Node 24; 16 pasos PASS: contratos de ámbitos, responsabilidad/RBAC, membresías, ownership académico/contable, sintaxis de seis servicios y clientes).
 - Terminal local independiente NOT RUN. La suite se ejecutó en runner aislado CI, sin depender de servicios desplegados. Apps Script/Sheets real y concurrencia entre solicitudes desplegadas quedan Pendiente beta en BETA-FUNC-033.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
  
 **Addendum C1.623 — coherencia entre listados y ámbitos efectivos; IDs ambiguos fail-closed**
@@ -4900,14 +4900,14 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - El contrato local añade escenarios de esquema intermedio y duplicidad de AssignmentID en ambos lectores, con membresía/responsabilidad activas para aislar la condición probada.
 - Se mantiene compatibilidad del esquema legacy sin vínculo, sujeto al flujo legacy ya autorizado; el esquema membership transicional no se considera fuente de contexto RBAC efectivo. No se modifican filas históricas ni se realizan migraciones destructivas.
 - Apps Script/Sheets real y concurrencia multi-solicitud desplegada siguen siendo pruebas beta, no bloqueos de implementación conforme NDASC.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
  
 **Cierre de verificación C1.623**
 - Department Scope Contract run **43257600097 SUCCESS**: contratos de ámbitos, responsabilidad/RBAC, membresías, ownership académico/contable, contratos de firma y sintaxis de servicios/clientes, todos los pasos PASS (Node 24).
 - Task-Service security local contracts run **43257599864 SUCCESS**; Identity mapping and transport security contracts run **43257599910 SUCCESS**. Los tres runs corresponden al HEAD funcional C1.623.
 - El contrato de responsabilidad/RBAC y las regresiones C1.623 se ejecutaron en runner aislado CI, sin servicios desplegados. Terminal independiente de esta sesión NOT RUN; Apps Script/Sheets real NOT RUN.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
  
 **Addendum C1.624 — integridad del catálogo de responsabilidades/capacidades y separación RBAC**
@@ -4923,7 +4923,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - GitHub Actions Department Scope Contract run **43268942510 SUCCESS**, Node.js 24: contratos Department Scope, Internal Responsibility RBAC, User Role Membership, ownership académico/contable, sintaxis de seis servicios Apps Script y clientes configurados, todos los pasos PASS.
 - Se intentó checkout/ejecución Node local independiente, pero DNS no resolvió github.com; Node CLI local: **NOT RUN**. No hay servicios Apps Script/Sheets desplegados en este entorno; validación real: **Pendiente beta**.
 - Revisión del diff: ocho archivos previstos, solo backend USER, contrato focal y registros de seguimiento; sin cambios en otros servicios ni datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
  
@@ -4933,7 +4933,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato ampliado con usuario de dos membresías activas (Director/DEP-A y Auditor/DEP-B), sesiones separadas y una asignación alias `Direct-or` bajo MembershipID Director. El contexto Director conserva solo DEP-A; Auditor solo DEP-B; el alias no incorpora DEP-X.
 - Ejecución completa del contrato `internal-responsibility-rbac-contract.test.js` en harness V8 aislado PASS, incluyendo C1.621–C1.625. Parseo sintáctico de USER y contrato PASS.
 - Node CLI independiente NOT RUN por indisponibilidad de DNS/checkout. La consulta de estados CI no devolvió checks; no se afirma CI PASS. Apps Script/Sheets real y concurrencia desplegada Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** completar pruebas multirol de selección/cambio de departamento por membresía, revocación/expiración independiente y consistencia de permisos RBAC explícitos.
 
 
@@ -4943,7 +4943,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Revocar o expirar MEM-LIFE invalida únicamente la sesión y asignaciones Director; la sesión Auditor continúa activa, conserva DEP-B y su asignación sigue visible. Se comprueba tanto el contexto efectivo como el lector administrativo.
 - No se modificó lógica productiva: el comportamiento existente se verificó con fixtures de membresías, responsabilidades, roles y ámbitos.
 - Contrato completo ejecutado en harness V8 aislado PASS (incluye C1.621–C1.626); parseo sintáctico de USER y contrato PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** verificar alineación entre responsabilidad/ámbito efectivo y permisos RBAC explícitos por membresía, cubriendo concesiones, denegaciones y ausencia de herencia entre roles.
 
 
@@ -4953,7 +4953,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Cada sesión se valida contra su membresía activa. No existe herencia de grants entre los roles del mismo usuario. Una capacidad `CAP_ADMINISTRAR` incluida en metadatos de responsabilidad/payload no eleva el permiso explícitamente denegado por la matriz.
 - Al revocar MEM-LIFE, la autorización de Director se deniega y el grant independiente de Auditor sigue permitido.
 - Contrato completo en harness V8 aislado PASS (bloques iniciales y C1.621–C1.627); sintaxis backend USER y contrato PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** contrastar vínculos de responsabilidad/ámbito del contexto efectivo con el listado administrativo y probar vínculos conflictivos o duplicados.
 
 
@@ -4962,7 +4962,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Se contrasta el conjunto de ResponsibilityID que entrega el contexto efectivo con el listado administrativo para la misma membresía; ambos resuelven la misma responsabilidad institucional.
 - Duplicados de ResponsibilityID, duplicados de RolInternoID y vínculos a ResponsibilityID inexistentes hacen que tanto el contexto como el listado administrativo fallen cerrados, sin exponer ámbitos efectivos.
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.628); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** probar concurrencia determinista de assignRoleScope bajo ScriptLock, sin duplicados ni escrituras parciales.
 
 
@@ -4971,7 +4971,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Se simula una intercalación reproducible: la primera solicitud adquiere ScriptLock y una segunda entra antes de que la primera escriba. La segunda obtiene `WRITE_LOCK_BUSY`, no escribe ni libera el lock de la primera.
 - La primera solicitud crea una sola asignación; tras liberar el lock, el reintento reutiliza el mismo AssignmentID y no crea duplicados. Se verifican adquisición/liberación y ausencia de mutación concurrente.
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.629); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets ScriptLock real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** verificar equivalencia temporal entre contexto efectivo y listado administrativo para fechas de inicio/fin, inválidas y límites exactos.
 
 
@@ -4981,7 +4981,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - `getInternalRoleAssignments` ahora distingue explícitamente vacío (`""`, `null`, `undefined`) de otros valores; los convierte y valida como fechas, igual que el contexto.
 - Contrato temporal con reloj fijo cubre límites inclusivos, inicio futuro, fin pasado, fechas inválidas, límites vacíos y FechaFin 0. La prueba reprodujo FAIL antes de la corrección y PASS después.
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.630); parseo backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** revisar coherencia temporal en las rutas de autorización restantes pertinentes al subflujo, sin ampliar a servicios no afectados.
 
 
@@ -4990,7 +4990,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Se ejecutan `getUserRoleMembershipState_` y `resolveUserRoleMembership_` reales con reloj fijo. Inicio/fin exactamente en el instante actual se aceptan; inicio futuro, fin pasado (incluido epoch numérico 0) y fechas inválidas excluyen solo la membresía afectada.
 - La membresía restante permanece disponible y la resolución del rol expirado devuelve null.
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.631); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** verificar transiciones de rol/membresía en lectores administrativos y su correspondencia con sesión firmada, incluidos roles duplicados.
 
 
@@ -5000,7 +5000,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - El cambio de rol de una MembershipID invalida el claim/token del rol anterior; el claim con el nuevo rol puede resolverse. `getUserRoleMemberships` filtra por usuario e institución y presenta las membresías activas restantes.
 - Una MembershipID duplicada globalmente (incluido otro usuario) invalida ese identificador; las demás membresías únicas permanecen activas.
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.632); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** contrastar lecturas de membresías/roles, contexto activo y permisos de sesión para estados inactivos, duplicados y tenant mismatch.
 
 
@@ -5010,7 +5010,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - La sesión local válida resuelve su MembershipID exacta y el contexto entrega DEP-A. Una membresía válida en otra institución no autentica contra la institución activa; intercambiar InstitutionID sin cambiar MembershipID tampoco autentica.
 - Revocar la membresía local o inactivar la cuenta invalida la sesión firmada. No se altera el estado de la membresía independiente de otro tenant.
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.633); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; HMAC/CacheService/Sheets real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** revisar revocación/caché de sesión, invalidación inmediata, expiración de token y aislamiento entre usuario, membresía y sesión.
 
 
@@ -5022,7 +5022,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Contrato V8 aislado PASS: cache miss/eviction, persistencia, usuario-wide cutoff, nuevo token posterior, IDs falsificados, switch de rol, token expirado y ledger corrupto. Sintaxis backend/test PASS.
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets/CacheService/HMAC real Pendiente beta.
 - Migración: revocaciones antiguas ya desaparecidas de caché no son recuperables; rollout debe validar la invalidez de tokens históricos.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** auditar autorización de revokeUserSession, acceso al ledger y compatibilidad de sesiones históricas.
 
 
@@ -5032,7 +5032,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Tokens legacy role-only sin MembershipID conservan compatibilidad mientras su rol actual coincide; el ledger persistente puede revocar su SessionID.
 - Los registros del ledger con expiración vencida se purgan en la siguiente escritura; filas con fecha de expiración inválida permanecen y hacen que la verificación falle cerrada.
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.635); sintaxis backend USER/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** auditar todas las rutas de marcadores de revocación y definir el tratamiento de tokens/revocaciones previas a C1.634.
 
 
@@ -5042,7 +5042,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Si el ledger fue inicializado y la hoja desaparece, la verificación de sesión falla cerrada. La ausencia inicial antes de la primera revocación sigue siendo compatible.
 - Contrato V8 aislado PASS: sentinel, ledger ausente, restauración, y verificación de que cambio de rol/logout no escriben directamente marcas cache-only. Sintaxis backend/test PASS.
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets/PropertiesService real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** definir el tratamiento de tokens/revocaciones históricas anteriores a C1.634; una invalidación global de sesiones debe ser un paso explícito de rollout.
 
 
@@ -5052,7 +5052,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - El cutoff no se activa automáticamente para evitar una desconexión masiva no autorizada. El responsable de rollout puede agregar esa fila al estado compartido si decide invalidar todas las sesiones anteriores y solicitar reautenticación general.
 - Revocaciones históricas cache-only ya desaparecidas no pueden reconstruirse; sin cutoff, los tokens históricos restantes conservan validez solo hasta su expiración natural y mientras no exista marcador legacy vigente.
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.637); sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; ScriptProperties/rollout real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** revisar los requisitos originales de T153-S02 y verificar matriz de evidencia/dependencias antes de decidir cierre o siguiente subfase.
 
  
@@ -5061,7 +5061,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - `activeDepartmentId` reduce el contexto al departamento elegido. Una asignación explícita de tipo INSTITUCION permite acceso departamental institucional; al seleccionar un departamento activo, el acceso vuelve a limitarse al seleccionado.
 - Revocar Director invalida su autorización de ámbito sin afectar Auditor.
 - Contrato completo V8 aislado PASS (bloques iniciales y C1.621–C1.638); sintaxis backend/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** revisar cada criterio original de T153-S02 y asociarlo a evidencia vigente o pendiente, sin repetir verificaciones.
 
 
@@ -5071,7 +5071,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - Revocación de sesión y revocación user-wide hechas desde USER se aplican en todos los consumidores; sesiones posteriores al corte se aceptan; el cutoff de migración se comparte y un ledger inicializado ausente falla cerrado.
 - Los fixtures usan usuarios/membresías propios; la revocación user-wide se dirige a `U-CROSS-USER` para evitar contaminación de los contratos anteriores.
 - Contrato completo V8 aislado PASS (C1.621–C1.639); sintaxis USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets reales entre despliegues Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** trazar cada criterio de T153-S02 a código y evidencia vigente; ejecutar únicamente pruebas faltantes y determinar cierre.
 
 
@@ -5084,7 +5084,7 @@ Addendum C1.617 — verificación CI de C1.616 y reparación de contratos
 - DEVELOPER permanece como control plane separado y rechaza claims de membresía/institución; no es consumidor del ledger RBAC institucional.
 - Contrato completo V8 aislado PASS: revocación USER propagada a los cuatro consumidores con cachés locales vacías; corte user-wide, login posterior, cutoff compartido y ledger ausente fail-closed. Sintaxis de los cinco servicios y test PASS.
 - Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets multi-proyecto Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
  
@@ -5096,7 +5096,7 @@ La revisión de requisitos originales confirma cobertura de:
 - Separación capacidades/RBAC y autorización de acciones protegidas (C1.624, C1.635).
 - Revocación persistente transversal USER→ACADEMIC/ACCOUNTING/TASK/EXAM (C1.634–C1.639).
 - Selector de rol y login multirol explícito (C1.616–C1.617; Department Scope CI run 43217920934 SUCCESS).
-**Estado:** Pendiente (reinicio del ciclo).
+**Estado:** Pendiente.
 **Siguiente unidad por orden:** T153-S01, inventario/reconciliación técnica de catálogos departamentales. T153-S03 y T153-S04 dependen de S01; T153-S05/S06 mantienen sus dependencias declaradas.
 
 
@@ -5107,7 +5107,7 @@ La revisión de requisitos originales confirma cobertura de:
 - ACCOUNTING consulta ACADEMIC por ID/nombre para ExpedientesLaborales y conserva fallback textual; ACADEMIC lo usa en planificación. Los dos catálogos tienen semánticas/consumidores distintos.
 - `AsignacionesAmbitosRoles` y `ResourceOwnership` almacenan valores DepartmentID, no demuestran una FK canónica.
 - **Conclusión:** no se demuestra autoridad, clave estable ni correspondencia. No fusionar ni migrar; no inferir propietario desde actor, grado, sección, nombre o rol.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente paso:** disponer de una fuente aprobada o crosswalk institucional verificable; luego ejecutar S03/S04.
 
 
@@ -5116,7 +5116,7 @@ La revisión de requisitos originales confirma cobertura de:
 - La revisión posterior al cierre C1.640 encontró que los lectores locales de ámbitos en ACADEMIC, ACCOUNTING, TASK y EXAM no aplicaban el vínculo firmado MembershipID/InstitutionID ni validaban ResponsibilityID activo. El contexto seguro de USER no se propagaba automáticamente a los helpers locales de cada proyecto.
 - Se corrigieron los cuatro lectores para exigir el vínculo exacto de sesión/membresía/tenant/rol, responsabilidad interna/institucional activa, AssignmentID único, vigencia fail-closed y reducción por activeDepartmentId. La compatibilidad legacy solo admite filas sin vínculo de membresía/tenant.
 - Contrato V8 aislado PASS para los cuatro lectores; sintaxis USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets real Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** localizar todos los lectores restantes de `AsignacionesAmbitosRoles` y verificar que usan el contexto ligado a membresía o una excepción legacy fail-closed.
 
 
@@ -5131,7 +5131,7 @@ La revisión de requisitos originales confirma cobertura de:
 - El fallback legacy solo opera si no existen registros de membresía del usuario en ningún tenant y la fila de ámbito carece de InstitutionID/MembershipID.
 - Revisión estática de los seis entrypoints backend del subflujo: USER, ACADEMIC, ACCOUNTING, TASK, EXAM y DEVELOPER. Las lecturas restantes están ligadas a contexto/membresía; el único acceso adicional en ACCOUNTING es una escritura de revocación local durante offboarding. DEVELOPER permanece separado.
 - Contrato V8 aislado PASS (C1.621–C1.644); sintaxis USER/ACADEMIC/ACCOUNTING/TASK/EXAM/test PASS. Node CLI independiente NOT RUN; CI no ejecutado; Apps Script/Sheets multi-proyecto Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente unidad:** revisar dependencias y trabajo elegible tras T153-S01. Su inventario técnico está hecho, pero la autoridad/crosswalk departamental sigue sin evidencia; no fusionar catálogos ni migrar datos.
 
 
@@ -5201,14 +5201,14 @@ La revisión de requisitos originales confirma cobertura de:
 - La lectura usa `getSheetByName` y no crea hojas; exige el esquema exacto de DocumentosLaborales. Filas sin DocumentoID/ExpedienteID o con DocumentoID duplicado se omiten; la autorización se resuelve una vez por expediente y filtros de categoría no conceden acceso.
 - El contrato `accounting-departmental-resource-access.test.js` cubre ámbito DEP-A/DEP-B, autoservicio, institutionWide, spoof de identidad, identidad inválida, anti-enumeración, IDs duplicados, encabezados incorrectos y hoja ausente sin escrituras.
 - Verificación local: 8 escenarios V8 aislados PASS; parseo completo Code.gs/test PASS. Node CLI NOT RUN; CI Department Scope run 43341736674: Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import, USER migrated ownership y ACCOUNTING departmental resource access PASS; el workflow falla después en user-role-membership-contract.test.js:119 porque verifySessionToken(foreignLegacy) devuelve null y el test lee .role (fallo conocido y previo a C1.661). Identity mapping run 43341736657 SUCCESS. Apps Script/Sheets real BETA-FUNC-039 Pendiente beta. No se usaron datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 **Addendum C1.662 — consulta de contratos laborales ACCOUNTING (TASK-153)**
 - `getEmployeeContracts` exige identidad de sesión firmada y valida ámbito/ResourceOwnership por ExpedienteID. Las consultas específicas ajenas responden RESOURCE_NOT_FOUND; los listados generales filtran cada expediente según el ámbito autorizado.
 - Se incorpora la acción a `resourceScopeActions` y a la excepción de autoservicio Empleado. La lectura usa `getSheetByName`, valida los esquemas de ExpedientesLaborales/ContratosLaborales y excluye ContractID duplicados, ExpedienteID ambiguos/inexistentes y mapeos UserID→ExpedienteID ambiguos.
 - El contrato `accounting-departmental-resource-access.test.js` cubre DEP-A/DEP-B, institutionWide, autoservicio, identidad falsificada/inválida, anti-enumeración, duplicados, esquema y hoja ausente sin escrituras.
 - Verificación local: 12 escenarios V8 aislados PASS; parseo completo Code.gs/test PASS. CI final: Department Scope run 43342801024 ejecuta y aprueba el paso ACCOUNTING departmental resource access (incluye C1.662), además de Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated resource ownership. El workflow global termina FAIL después en user-role-membership-contract.test.js:119: verifySessionToken(foreignLegacy) devuelve null y el test accede a .role; mismo fallo ya observado antes de C1.662, no atribuible al cambio. Por el fallo posterior, pasos siguientes —incluido syntax-check global— quedan SKIPPED. Identity mapping run 43342801000 SUCCESS. Apps Script/Sheets real BETA-FUNC-040 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Addendum C1.664 — historial de capacitación y desarrollo profesional ACCOUNTING (TASK-153)**
@@ -5216,7 +5216,7 @@ La revisión de requisitos originales confirma cobertura de:
 - Consultas específicas ajenas responden RESOURCE_NOT_FOUND; empleado solo consulta su identidad firmada. IDs duplicados, expedientes/usuarios ambiguos y esquemas inválidos se excluyen o fallan cerrados. Lecturas no crean hojas y se conserva data.cursos/inscripciones/planesDesarrollo.
 - El endpoint se incorpora a resourceScopeActions y a la excepción de autoservicio de empleados. El contrato ACCOUNTING departmental resource access pasó en CI run 43345686480; el workflow global falla posteriormente en User Role Membership contract (foreignLegacy nulo en línea 119), problema previo y ajeno al subalcance. Identity Mapping and Transport Security run 43345296984 SUCCESS.
 - BETA-FUNC-042 Pendiente beta; no se desplegó Apps Script/Sheets ni se usaron datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Addendum C1.665 — incidencias laborales y medidas disciplinarias ACCOUNTING (TASK-153)**
@@ -5231,7 +5231,7 @@ La revisión de requisitos originales confirma cobertura de:
 - Cada empleado se resuelve mediante relación única UserID↔ExpedienteID y assertEmployeeExpedienteScopeAccess_/ResourceOwnership. Para sustituciones se valida el acceso a ambos participantes. departamentoArea solo filtra resultados ya autorizados.
 - Valida encabezados exactos; excluye IDs duplicados y mappings ambiguos; consulta específica fuera de ámbito RESOURCE_NOT_FOUND; hojas ausentes devuelven colecciones vacías sin crearlas. Preserva data.turnos/sustituciones/horasExtras y contadores.
 - Contrato focalizado añadido; ejecución local/CI pendiente. Apps Script/Sheets real no desplegado; BETA-FUNC-044 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Addendum C1.666-R1 — corrección del contrato de pruebas**
@@ -5248,7 +5248,7 @@ La revisión de requisitos originales confirma cobertura de:
 - Department Scope Contract run 43349369496 (commit 04e66f9682fe78c12b75b6a41df9cfa8e8437120): `Accounting departmental resource and payment voucher access contracts passed.` Se ejecutaron y aprobaron los escenarios añadidos para identidad/rol, aislamiento DEP-A/DEP-B/institución, consulta ajena, sustituciones con ambos participantes autorizados, horas extras, IDs duplicados, mappings ambiguos, esquema inválido y ausencia de creación de hojas.
 - Los cuatro contratos previos del workflow también PASS. El workflow global falló después en User Role Membership contract línea 119 (foreignLegacy nulo, acceso a .role); fallo heredado de C1.665, no relacionado con ACCOUNTING. Pasos posteriores, incluido syntax-check global, SKIPPED.
 - Contrato focalizado ejecutado en Node.js 24, runner aislado sin despliegue; checkout local del entorno bloqueado por DNS github.com. Apps Script/Sheets real NOT RUN; BETA-FUNC-044 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 **Addendum C1.667 — consulta de boletas de pago y datos salariales ACCOUNTING (TASK-153 / AUD-NG-387)**
@@ -5257,7 +5257,7 @@ La revisión de requisitos originales confirma cobertura de:
 - Esquemas exactos, IDs de planilla/boleta duplicados y mappings ambiguos fail-closed, anti-enumeración RESOURCE_NOT_FOUND, hojas ausentes sin creación, respuesta status/boletas preservada.
 - Department Scope Contract run 43350422517: contrato ACCOUNTING departmental resource access PASS con C1.667; Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership también PASS. Workflow global falla después en User Role Membership contract línea 119 (foreignLegacy nulo), fallo heredado previo y ajeno; pasos posteriores SKIPPED.
 - Node.js 24 runner aislado, sin despliegue; Apps Script/Sheets real NOT RUN; BETA-FUNC-045 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ## 10.104 TASK-153 / AUD-NG-388 — consulta de anticipos/préstamos y amortización ACCOUNTING (C1.668)
@@ -5279,7 +5279,7 @@ La revisión de requisitos originales confirma cobertura de:
 - **Verificación:** Department Scope Contract run 43353897445: ACCOUNTING departmental resource access PASS; Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated ownership PASS. El workflow global falla después en User Role Membership contract línea 119 (verifySessionToken(foreignLegacy) nulo y acceso a .role), fallo heredado observado antes de C1.669; pasos posteriores SKIPPED. Identity mapping and transport security run 43353684292 SUCCESS. Node.js 24; el contrato focalizado compila/ejecuta las funciones extraídas en VM. Syntax-check global quedó SKIPPED por el fallo previo. Apps Script/Sheets real NOT RUN.
 - **Commits de código/prueba:** ef320645c76f70fe7272f152daa612dc5d3e1a78; 2af7112011cf4a50834c34fc798002342705da23; b759debc0c650575a2b883e0f5882a39fa15af46; 5e37f9bd449fc6739fcf781e8a1658dd73185d43.
 - **Beta:** BETA-FUNC-047 Pendiente beta. No se declara certificación funcional ni despliegue.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción elegible:** revisar recordStaffCheckIn para derivar la identidad del empleado de la sesión y restringir el registro de terceros a RR. HH./roles autorizados, verificando primero sus dependencias y el contrato original.
 
 
@@ -5293,7 +5293,7 @@ La revisión de requisitos originales confirma cobertura de:
 - **Verificación:** run 43355125476 (Node.js 24), contrato ACCOUNTING departmental resource access **PASS**; Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import y USER migrated resource ownership PASS. Workflow global falla después en User Role Membership contract línea 119 (verifySessionToken(foreignLegacy) nulo y lectura de .role), fallo heredado previo a C1.670; pasos posteriores, incluido syntax-check global, SKIPPED. El contrato VM compila/ejecuta la función y fixtures; Apps Script/Google Sheets reales NOT RUN.
 - **Commits de implementación/pruebas:** d7f9b9caeb2303358f416eabe11ca2ebae5adb6c; 8d1a0c14ccdf9a6df9aa06e00ede136c60bc0167; 273e3aa6c1d155839bfd8f5a7cbff164e55dc91b; c41bca0e1d34a6c49f7966053a263343b9b61ffb; 38fc1402407eac98610e49df9f239921965d1934; 3930efe66e3b897720efd12bc9623acadf3aac86; 71a5f94d6086b6554ab17102271251f624d88bae.
 - **Beta:** BETA-FUNC-048 Pendiente beta; no bloquea el cierre local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción elegible:** revisar el flujo de generación/entrega de PDF de nómina para garantizar propiedad, privacidad y autorización de descarga, conforme al alcance original pendiente de AUD-NG-140.
 
 
@@ -5306,7 +5306,7 @@ La revisión de requisitos originales confirma cobertura de:
 - ScriptLock protege generación y los reintentos reutilizan el archivo existente. `getStaffPayrollReceipt` acepta encabezado legado y extendido.
 - **Archivos:** backend/accounting-service/Code.gs; tests/security/accounting-departmental-resource-access.test.js; Auditoria.txt; beta_test.txt; changueslogs.txt; Plan Maestro; checkpoint e índice.
 - **Verificación:** Department Scope Contract run 43357208066; ACCOUNTING departmental resource access PASS, incluidos escenarios PDF, IDOR, privacidad, reintento, concurrencia y parseo completo de Code.gs. También PASS Department Scope, Internal Responsibility RBAC, ACCOUNTING import y USER migrated resource ownership. Workflow global FAIL posterior en User Role Membership línea 119 (foreignLegacy nulo y acceso a .role), incidencia heredada anterior y ajena a C1.671; pasos posteriores SKIPPED. Checkout local NOT RUN por DNS github.com; el contrato aislado se ejecutó en runner Node.js 24. Apps Script/Drive real NOT RUN; BETA-FUNC-049 Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### 10.269 TASK-153 / AUD-NG-140 — integración cliente de boletas PDF en autoservicio de RR. HH. (C1.672)
@@ -5319,7 +5319,7 @@ La revisión de requisitos originales confirma cobertura de:
 - **Verificación CI:** run 43359108246 Identity mapping and transport security **SUCCESS**. Run 43359108272: contratos anteriores PASS y ACCOUNTING falló por una primera expectativa estática desactualizada, corregida en d97b993. Run 43359194452 detectó una segunda expectativa antigua de la allowlist, corregida en d740e259. Ambas ejecuciones son fallos de contrato estático, no regresiones funcionales. Run 43359254980: Department Scope, Internal Responsibility RBAC, ACCOUNTING departmental import, USER migrated ownership y ACCOUNTING departmental resource access **PASS**; este último ejecutó las pruebas nuevas de listado/recuperación/descarga PDF. El workflow global falla después en User Role Membership contract línea 119 (verifySessionToken(foreignLegacy) devuelve null y el test lee .role), incidencia heredada documentada desde C1.665; pasos posteriores SKIPPED.
 - **Prueba local:** node --check y contrato aislado del helper js/hr-payroll-pdf.js **PASS** con mock de navegador: firma %PDF-, Base64, MIME application/pdf, nombre saneado, click/limpieza del anchor, revocación URL y rechazo de respuesta/firma inválidas. Checkout completo local NOT RUN por DNS al resolver github.com. El contrato del repositorio se ejecutó en runner Node.js 24 y terminó PASS.
 - **Límites:** navegador real y Apps Script/Google Drive desplegados NOT RUN; BETA-FUNC-049 (backend PDF) y BETA-FUNC-050 (UI descarga) Pendiente beta. Sin despliegue ni datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 
@@ -5332,7 +5332,7 @@ La revisión de requisitos originales confirma cobertura de:
 - **Commits:** f54fb20748b5e2074442dca4f0b9447447337e39 (UI/contrato beta/pruebas); c149f321ee41e567cbf54f99617ff97a11df0884 (corrección de alcance a identidad verificada).
 - **Verificaciones:** función cliente extraída del HEAD y ejecutada en harness aislado V8: parseo PASS; identidad efectiva enviada al endpoint PASS; renderizado PASS; estado vacío PASS; error PASS; observaciones XSS tratadas como texto PASS. Archivo de contrato parsea PASS. Se reutiliza la evidencia vigente del backend getStaffAttendanceLogs: ACCOUNTING resource access contract PASS en CI run 43353897445 (C1.669); el backend no cambió en esta iteración. Workflow CI para los commits de esta iteración: NOT RUN (no se generó workflow run ni status check por el mecanismo de actualización de ref); suite completa Node del repositorio NOT RUN. Navegador real y Apps Script/Sheets desplegados NOT RUN; BETA-FUNC-051 Pendiente beta.
 - **Revisión:** diff limitado a los tres archivos indicados; sin cambios de rama base. No se declara PASS para la suite completa ni para beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente tarea elegible:** revisar el siguiente callsite/requisito independiente pendiente de TASK-153/AUD-NG-140 en Plan Maestro y backlog; no iniciar en este checkpoint.
 
 
@@ -5362,7 +5362,7 @@ La revisión de requisitos originales confirma cobertura de:
 - **Verificación Task-Service:** GitHub Actions run 43364715823, Node.js 22.23.4, SUCCESS; task-service-security-contract y task-service-resource-ownership PASS.
 - **Verificación local aislada:** Node.js 22.16.0; contrato focal del scope delegado tutor-estudiante PASS (membresía activa, revocada, ambigua, institución no coincidente, token inválido y fallback legacy); node --check del harness PASS. Checkout local completo NOT RUN por indisponibilidad de red/DNS hacia github.com. No se declara ejecución local completa.
 - **Beta:** BETA-FUNC-052 agregado a beta_test.txt; Pendiente beta, no bloquea la aprobación local. BETA-FUNC-051 permanece Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente tarea:** continuar con el siguiente requisito independiente pendiente de TASK-153/AUD-NG-140.
 
 
@@ -5372,7 +5372,7 @@ La revisión de requisitos originales confirma cobertura de:
 - Department Scope run 43364730161 SUCCESS en Node.js 24.22.2 (19 pasos completos), incluido el contrato ACCOUNTING de autoservicio, historial de asistencia, generación/recuperación PDF y cliente; Task-Service run 43364715823 SUCCESS en Node.js 22.23.4.
 - El harness local disponible en Node.js 22.16.0 y su node --check pasan. La suite completa en checkout local no se ejecutó por fallo DNS hacia github.com. Los workflows ejecutaron los contratos Node pertinentes en runners aislados.
 - BETA-FUNC-050/051 siguen Pendiente beta para navegador y Apps Script/Sheets/Drive desplegados; no bloquean el cierre de código conforme a NDASC.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
  
@@ -5395,7 +5395,7 @@ La revisión de requisitos originales confirma cobertura de:
 - **Pruebas:** se añadió contrato Node con 17 escenarios (HMAC, destino/acción, allowlists exactas, fallo cerrado, HTTP/JSON inválido, secreto/URL ausentes o inválidos, no enumeración, ausencia de Drive/historial y compatibilidad same-department). **NOT RUN local:** el checkout Node está bloqueado por DNS al resolver github.com. **CI:** al verificar el commit 73feaacb, combined status y workflow-run lookup no devolvieron checks/runs; no se declara PASS ni se afirma que Actions ejecutó el nuevo contrato. La sintaxis del archivo completo está incluida en el workflow, pendiente de resultado observable.
 - **Code review:** diff focalizado en getStudentDocuments y helper nuevo; la rama base no se modifica. La autorización USER se consulta solo ante denegación de ownership, no ante fallos de identidad/esquema/propiedad ausente; las referencias no se usan para búsquedas o mutaciones. La integración no activa configuración ni secretos productivos.
 - **Beta:** BETA-FUNC-063 Pendiente beta. Requiere ambos servicios desplegados y secreto coincidente configurado; no es bloqueo de implementación conforme a NDASC.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción elegible:** obtener evidencia ejecutada del contrato ACADEMIC en Node/Actions; después integrar un consumidor ACCOUNTING apropiado y la superficie de configuración/administración sin exponer contenido ni habilitar acceso por defecto.
 
 
@@ -5442,7 +5442,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **Cambio:** el fallback solo se activa cuando el payload contiene explícitamente referenceRequestedFields o referenceDocumentIds. Sin esas propiedades se conserva RESOURCE_SCOPE_DENIED; con intención explícita incompleta o inválida se mantiene DEPARTMENT_REFERENCE_REQUEST_INVALID. No se amplían permisos ni se relajan ownership, identidad o HMAC.
 - **Verificación:** tests/security/departmental-resource-access.test.js añadido al workflow aislado. Node 24.22.2: run 43429425878 SUCCESS (contratos ACADEMIC/ACCOUNTING, regresión y sintaxis); run 43429426602 Department Scope SUCCESS con todos los pasos ejecutables PASS. Checkout local de esta sesión NOT RUN por DNS; el runner CI aislado ejecutó el código de la rama sin despliegue.
 - **Archivos:** backend/academic-service/Code.gs; .github/workflows/academic-reference-consumer.yml. El contrato interdepartamental aclara que la intención debe ser explícita.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 #### Actualización C1.692 — T153-S05 / superficie administrativa configurable
@@ -5461,7 +5461,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - ScriptLock y revalidación dentro del lock en mutaciones; timeout fail-closed. El contrato determinista verifica reentrada sin duplicación.
 - Department Scope CI 43446574257 SUCCESS (Node 24.22.2): 40 aserciones del nuevo contrato, contrato ACCOUNTING existente, contratos transversales y sintaxis Apps Script PASS.
 - BETA-FUNC-067 Pendiente beta. Node CLI local y Apps Script/Sheets reales NOT RUN; no hubo despliegue ni datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### C1.695 — TASK-153 / AUD-NG-386 — ACCOUNTING: incidencias laborales y medidas disciplinarias
@@ -5469,7 +5469,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - ScriptLock y revalidación de ownership dentro del lock; UUID, colisiones/duplicados fail-closed, vínculo incidencia-medida al mismo empleado, validación de fecha/días, actor real en campos de auditoría, historial de aclaraciones y compensación de actualización.
 - Contrato focalizado integrado en Department Scope workflow. Runs 43449143792, 43449143799 y 43449143801 SUCCESS con Node 24.22.2; todos los pasos focalizados y transversales PASS.
 - BETA-FUNC-068 Pendiente beta. No se ejecutó CLI local ni Apps Script/Sheets real; no hubo despliegue ni datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### C1.696 — TASK-153 / AUD-NG-386 — ACCOUNTING: capacitación y desarrollo profesional
@@ -5478,7 +5478,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - IDs UUID/colisión, esquema, curso único, titularidad inmutable, validación de fechas/metas/nota/asistencia, ScriptLock, revalidación y compensación. Workflow actualizado para disparar CI al cambiar cualquiera de los nuevos contratos.
 - Department Scope run 43451485260 SUCCESS (Node 24.22.2), contratos de capacitación/desarrollo y regresión ACCOUNTING PASS; Identity mapping 43451147241 y Department Reference Consumers 43451147225 SUCCESS.
 - BETA-FUNC-069 Pendiente beta; no se ejecutó CLI local ni Apps Script/Sheets real; no hubo despliegue ni datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### C1.697 — TASK-153 / AUD-NG-386 — ACCOUNTING: turnos y sustituciones
@@ -5487,7 +5487,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - getWorkShiftsAndSubstitutionsHistory se preservó/restauró y su contrato de regresión pasó.
 - Department Scope 43452526608, Identity mapping 43452526528 y Department Reference Consumers 43452526505 SUCCESS (Node 24.22.2); contratos ACCOUNTING/ACADEMIC/USER/ABAC y syntax-check Apps Script PASS.
 - BETA-FUNC-070 Pendiente beta; CLI local y Apps Script/Sheets real NOT RUN; no hubo despliegue ni datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### C1.698 — TASK-153 / AUD-NG-386 — ACCOUNTING: planificación de necesidades de personal
@@ -5495,7 +5495,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Escrituras con ID UUID, validación de cantidad/esquema, ScriptLock, revalidación, creador inmutable y compensación.
 - getStaffingNeedsPlanning no crea hojas; filtra planes/vacantes por scope y empleados por ResourceOwnership único de la institución; corrige índices de estado laboral/vacante y filtra también personal/vacantes por departamento solicitado.
 - Department Scope 43454938151, Identity Mapping 43454721673 y Department Reference Consumers 43454721709 SUCCESS (Node 24.22.2). BETA-FUNC-071 Pendiente beta; CLI local y Apps Script/Sheets real NOT RUN; no hubo despliegue ni datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### C1.699 — TASK-153 / AUD-NG-386 — ACCOUNTING: marcajes e historial de asistencia
@@ -5503,7 +5503,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - IDs UUID/colisión fail-closed; turnos vigentes validados; entrada/salida actualizan la fila con compensación y observaciones protegidas; recordStaffAttendance se mantiene como alias.
 - getStaffAttendanceLogs exige scope cuando hay historial, filtra cada expediente por ownership y conserva colección vacía cuando la hoja no existe.
 - Department Scope 43457958664, Identity Mapping 43457958668 y Department Reference Consumers 43457958703 SUCCESS (Node 24.22.2); contrato focalizado y regresión ACCOUNTING PASS. BETA-FUNC-072 Pendiente beta; CLI local y Apps Script/Sheets real NOT RUN; sin despliegue ni datos reales.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### C1.700 — TASK-153 / AUD-NG-386 — ACCOUNTING: aislamiento del portal de autoservicio laboral
@@ -5596,7 +5596,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Se corrigió el corte histórico de reportes, la colisión de claves idempotentes con payload distinto y la carrera de baja concurrente de un activo al registrar mejoras mediante revalidación dentro de ScriptLock.
 - Contrato tests/security/accounting-asset-depreciation.test.js PASS; GitHub Actions Department Scope run 43519538296 SUCCESS (Node.js 24.22.2, contratos y syntax-check Apps Script/JS). Identity Mapping 43519439041 y Department Reference Consumers 43519439164 SUCCESS en el commit previo de código 63562112.
 - **Limitaciones:** CLI local NOT RUN por ausencia de checkout local y resolución de red; Apps Script/Sheets real NOT RUN. La validación desplegada queda en BETA-FUNC-086 y no bloquea el cierre de código.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente tarea elegible:** TASK-186 — catálogo maestro institucional de artículos/materiales. La dependencia técnica F19-Task01 está implementada en recordInventoryMovement y getInventoryKardex con separación por ubicación; F19-TASK05 representa el mismo alcance de catálogo y se resolverá mediante TASK-186. TASK-188 queda después de ese catálogo.
 
  
@@ -5605,7 +5605,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Integración obligatoria en movimientos, transferencias, recepciones y solicitudes; conservación y reconciliación de históricos.
 - Importación/exportación CSV compatible con Excel y validación transaccional de importación.
 - Contratos Node.js 24.22.2 y GitHub Actions aprobados: Department Scope 43522764235, Identity Mapping 43522567093 y Department Reference Consumers 43522567045.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 - Siguiente tarea elegible: TASK-188 — contabilización de entregas y consumo de materiales.
 
 ## Registro de ejecución C1.718 — TASK-188 — Integración contable de entregas y consumo de materiales
@@ -5619,7 +5619,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **Commits de implementación:** 1e7160fad1babbc33bd565bcc7d1076fcd1e98d6; 331c1effb7683615827e7bef890c43e6d1b5908a; 2727e6b21785f5afc6cd749d78f59a14b8edcc32; 83ceac214a4429c7809796e94aac973b79348c9a.
 - **Pruebas:** tests/security/accounting-catalog.test.js PASS y syntax-check de backend Apps Script/JS PASS en GitHub Actions Node.js 24; Department Scope 43528354275 SUCCESS; Department Reference Consumers 43528354359 SUCCESS; Identity Mapping 43528354318 SUCCESS. Los contratos generales del workflow también finalizaron correctamente.
 - **Limitaciones:** CLI local NOT RUN; se intentó clonar el repositorio y el contenedor no pudo resolver github.com (DNS). Apps Script/Sheets desplegado NOT RUN. No se usaron datos productivos. BETA-FUNC-088 queda pendiente de validación desplegada.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente tarea elegible:** TASK-189 — sistema integral de valoración económica del inventario (PEPS/Promedio ponderado, capas de costo, transferencias valorizadas, ajustes y conciliación).
 
 
@@ -5627,7 +5627,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Se añadió un contrato Node independiente para handleSignatureProviderCallback_: HMAC y secreto Script Properties, envelope/allowlist, timestamp, anti-replay, lock ocupado y reentrada; confirma que la respuesta queda AUTHENTICATED_PENDING_VALIDATION y no muta el estado transaccional.
 - Se integró al workflow Department Scope Contract. Pruebas locales aisladas con Node.js v22.16.0 y node --check PASS. No hubo checkout completo local por fallo DNS de github.com; CI Node.js 24 ejecutó el nuevo contrato y el chequeo de sintaxis (run 43678080608: SUCCESS).
 - AUD-NG-063 ya estaba completada en C1.474; la exigencia de proveedor explícito/activo en createAdvancedSignatureRequest ya estaba implementada y cubierta. No se repitió.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente acción:** con PSC y especificación técnica/credenciales autorizadas, implementar adaptador real y validación de firma/certificado X.509, cadena, sello de tiempo, hash del PDF y transición transaccional.
 
 
@@ -5654,7 +5654,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - Pruebas Node/CI: 48 combinaciones de validación binaria; contratos de persistencia/descarga con rutas de entrada USER y ACCOUNTING, denegación de archivos públicos legacy, rollback y aislamiento; contrato de recursos departamentales; cliente de comprobantes y sintaxis Apps Script/JS. Department Scope run 43686093512 SUCCESS (Node.js 24.22.2). Run 43686001435 SUCCESS tras corregir fixtures obsoletos.
 - La primera ejecución 43685937158 detectó mocks de archivos sin getSharingAccess/validador; se actualizaron fixtures en 720f705 y el siguiente run completó todos los pasos. No se ocultó ni reinterpretó el fallo inicial.
 - Commits de esta iteración: bf905e2, 720f705, 1b642ac. CLI local no aplicable: no hay package.json ni scripts/CLI en el repositorio. Node local no ejecutado por fallo DNS al intentar checkout; Node y sintaxis sí ejecutados en CI.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 - Siguiente tarea elegible: F22-Task02 (P0), hash SHA-256 sobre bytes PDF definitivos y vínculo con versión documental/identidad autenticada.
 
 
@@ -5664,7 +5664,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - La revisión detectó un hueco en createAdvancedSignatureRequest: calculaba hash sin compararlo con metadatos persistidos ni guardar la versión. Se corrigió con hash esperado, versión obligatoria, PDF privado/no eliminado, segunda lectura estable, VersionDocumento en la transacción y versión en el endpoint de estado. El estado de PSC sigue Pendiente y no se declara firma avanzada válida.
 - Se añadieron/ajustaron contratos Node para mismatch, archivo público/en papelera/alterado, versión ausente, estabilidad entre lecturas, identidad, idempotencia, lock y reentrada. Department Scope run 43726054293 SUCCESS; Task-Service security 43725992636 SUCCESS; Identity Mapping 43725992655 SUCCESS. Los intentos iniciales detectaron una expectativa incorrecta de número de lecturas en el test de hash cliente; se corrigió y el run final pasó.
 - Node local NOT RUN por ausencia de checkout local ejecutable; CI Node.js 24.22.2 y sintaxis Apps Script/JS PASS. CLI no aplicable: no hay package.json ni scripts CLI. BETA-FUNC-099 sigue Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente candidata:** F22-Task03; analizar subflujo de certificado para conformidad manual y respetar dependencias PSC/múltiples firmantes antes de cerrar la tarea completa.
 
 
@@ -5672,7 +5672,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - El grafo de dependencias revela ciclo entre F22-Task03 (certificado final), F22-Task04 (PSC real) y F22-Task06 (multifirmante). El certificado probatorio no puede generarse hasta disponer de una transacción criptográficamente validada y del conjunto completo de firmantes requeridos.
 - Se aisló un subflujo seguro: generateSignatureAuditCertificate exige metadatos binarios vigentes y limita el resumen a las firmas de la solicitud/documento/hash/versión exactos. Se incluyen las versiones por firmante y se excluyen versiones históricas o hashes divergentes. El resultado continúa explícitamente como resumen NO_PROBATORIO y no se persiste como certificado.
 - Contrato user-service-signature-ownership, callback PSC, integridad documental y sintaxis CI PASS. Department Scope run 43726394404 SUCCESS (Node.js 24.22.2). Node local NOT RUN; CLI no aplicable.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Continuidad:** seleccionar otro P0 de PM-06 que sea técnicamente independiente; no cerrar ni simular F22-Task03/04/06.
 
 
@@ -5745,7 +5745,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **Pruebas:** GitHub Actions run 44090439362 en Node 24.22.2 terminó SUCCESS con 42/42 pasos, 0 fallos y 0 omitidos. Incluye el contrato de catálogo HMAC/anti-replay y la regresión de secretos HMAC de sesión en USER, DEVELOPER, ACADEMIC, TASK y EXAM.
 - **Estrategia:** ante fallos se inspeccionaron logs y se corrigieron fixtures/filtros para ejecutar la condición real; no se redujo cobertura ni se alteró código funcional para forzar PASS. CLI local no ejecutado por fallo DNS del checkout; se usó Node CLI real en runner Actions.
 - **Compatibilidad pendiente:** ACCOUNTING y ACADEMIC mantienen flujos de migración con IMA_MIGRATION_HMAC_SECRET/customSecret explícito, mientras USER ya valida catálogo y versión por servicio. Completar revisión y armonización de rotación/revocación entre emisores y receptores antes de integrar tráfico.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 
@@ -5757,7 +5757,7 @@ Consulta posterior confirma `ima/department-scope-contract = failure` también e
 - **Hallazgo independiente de CI:** Department Scope continúa fallando en Phase 22 por `missing function configureSchoolDocumentTemplate` en `tests/regression/phase22-document-management-suite-contract.test.js`; el mismo fallo aparece en el run previo 44087396968 (commit 392738ad), por lo que es preexistente y ajeno al cambio HMAC. Se deja visible, sin modificar funciones ni pruebas no relacionadas.
 - **Compatibilidad aún pendiente:** ACCOUNTING firma con `IMA_MIGRATION_HMAC_SECRET` explícito y ACADEMIC verifica con la misma propiedad explícita; no se comprobó un catálogo versionado/revocación coordinada en ambos extremos. USER sí valida catálogo, versión y fingerprint. La configuración real de Script Properties y deployments no está disponible para inspección desde este repositorio.
 - **CLI local:** NOT RUN; no se afirma una ejecución local. Node CLI real ejecutado en el runner GitHub Actions.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ## Seguimiento operativo — C1.807 / AUD-NG-084
@@ -5964,7 +5964,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **AUD-NG-158:** revisión de createTask/updateTask/createStudyMaterial/deleteStudyMaterial y uploadFile completada en código/CI. createTask mantiene asignación docente, ámbito departamental y registro ResourceOwnership; se elimina el permiso dinámico redundante registerResourceOwnership porque la acción pública ya pasó RBAC en el dispatcher. updateTask conserva lock, actor verificado, titularidad/asignación y el historial append-only de fecha límite. Task-Service security run 44155426842 SUCCESS.
 - **F34-TASK03:** revisión completada sin retirar ABAC funcional necesario. El token/rol se verifica una vez y se reutiliza el contexto; se mantienen asignación, oferta, período, matrícula y sesiones exactas. La revalidación de ámbito dentro del lock de la constancia se conserva por el requisito de revocación antes de escribir. Academic-Service run 44155827504 SUCCESS (incluye academic-teacher-justification-abac.test.js y academic-absence-justification-canonical.test.js). BETA-FUNC-102 permanece pendiente.
 - **C1.812/C1.813 beta:** BETA-FUNC-110 se amplía para PDF/MP4, versionado/restauración sin hash obligatorio y privacidad Drive. Se añade BETA-FUNC-118 para dos docentes/dos aulas, acceso a tareas, carga genérica, materiales, autoría, soft-delete e idempotencia/lock. Ambas pendientes de despliegue beta; no bloquean la implementación local.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** C1.814 — revisar comentarios/notas, versiones, devoluciones y calificaciones en Task-Service. La revisión de createTask/updateTask queda cerrada para el mandato actual; no duplicar sus pruebas.
 
 
@@ -5977,7 +5977,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Pruebas:** Task-Service security local contracts run 44158016729 SUCCESS (Node 22.23.4), incluidos 12 contratos nuevos de mutaciones/comentarios/versiones, historial de calificaciones/fechas, ownership, uploads y single-auth. `node --check js/teacher.js` PASS.
 - **Hallazgo no resuelto:** deleteSubmission conserva eliminación física y no realiza cascada sobre EntregasVersiones/ComentariosEntregas. No se cambia la retención sin una regla explícita; C1.815 debe decidir conservación, soft-delete o purga.
 - **Beta:** BETA-FUNC-122 pendiente para verificar permisos reales de Drive, comentarios, versiones, devolución, calificación y eliminación con rollback.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente:** C1.815 — definir la retención de historial al eliminar entregas y ejecutar BETA-FUNC-122.
 
 
@@ -5988,7 +5988,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Verificación local:** Task-Service security local contracts run 44171548172 SUCCESS (Node 22.23.4), incluyendo 13 contratos de mutación, 30 de acceso, reentrega, ownership, grade history 14/14, deadline, upload, single-auth y `node --check js/teacher.js`. Backup/restore run 44171274487 SUCCESS.
 - **Hallazgo externo independiente:** Department Scope run 44171274513 FAIL en Phase22 porque el contrato busca `configureSchoolDocumentTemplate` y esa función no existe en ACCOUNTING. No corresponde a Task-Service ni bloquea AUD-NG-165.
 - **Beta:** BETA-FUNC-122 queda Pendiente beta; validar Drive/Sheets y permisos efectivos en despliegue. No se declara prueba beta ejecutada.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Siguiente tarea elegible:** revisar el siguiente pendiente del Plan Maestro, manteniendo AUD-NG-149/121/152 abiertos para sus requisitos propios y sin reabrir AUD-NG-165 por pruebas beta.
 
 
@@ -6231,7 +6231,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Se agregan `GET_CARGOS` y paginación estable por offset/limit (máximo 200) a `getUserInstitutionalAffiliations`. Se incorpora contrato Node al workflow Department Scope Contract.
 - **Evidencia actual:** parseo V8 del servicio y del contrato PASS; ejecución Node/CI pendiente del commit. No se afirma cierre de tarea.
 - **Pendientes:** UI RRHH, autorización contextual por departamento, crosswalk/relación validada con el modelo académico y contratos adicionales de concurrencia/rollback/UI. La función `assignDepartmentHead` no existe en ACADEMIC en el baseline; no se crea un duplicado académico.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ## 10.83 AUD-NG-226 / TASK-506 — gobernanza académica, crosswalk y UI HR (C1.906)
@@ -6241,7 +6241,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Se localiza y corrige la acción existente `assignDepartmentHead` de ACADEMIC: identidad, permiso, scope, departamento y usuario activos, bloqueo y auditoría desde la sesión. No crea departamentos implícitamente.
 - Se define `VinculosDepartamentosInstitucionales` como relación many-to-many explícita entre `DepartamentosAcademicos` y `CatalogoDepartamentos`; ambos catálogos siguen separados. Se validan ambos extremos, se soporta link/read/unlink paginado y USER bloquea la baja administrativa si existe vínculo activo.
 - Dashboard HR conecta catálogos con selectores, altas/bajas, asignaciones, finalización y paginación del historial. Contratos Node 24 para jerarquía, adscripciones, gobernanza académica y UI PASS. El workflow global mantiene un fallo ajeno al alcance: Phase22 no encuentra `configureSchoolDocumentTemplate`, reproducido antes del cambio.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ## 10.84 AUD-NG-221 / TASK-501 y AUD-NG-222 / TASK-502 — dependencias de autorización para AUD-NG-226 (C1.907)
@@ -6258,7 +6258,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - El contrato de tarifas ACCOUNTING incorpora tutor único y permisos financieros explícitos en sus fixtures. No se cambió la política productiva de ACCOUNTING en este incremento.
 - Evidencia Node 24 CI en HEAD 9620f0c4: contratos contextual ABAC, extracurricular y tarifas PASS; Academic-Service, Accounting Import, Task-Service, Hierarchical Configuration, Identity Mapping, SACE y UI Accessibility SUCCESS. Department Scope conserva un fallo ajeno en Phase22 por configureSchoolDocumentTemplate ausente. El agregado Exam de 5c431835 conserva fallos ajenos por configureSchoolDocumentTemplate y ensureSchoolDocumentIssuedSchema_ ausentes.
 - BETA-FUNC-127 pendiente de staging. Apps Script/Sheets real y concurrencia entre proyectos NOT RUN.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 ### Continuidad C1.913 — AUD-NG-222 / TASK-502 (sin cierre)
 
@@ -6267,7 +6267,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - TASK/EXAM: selectors estudiante/expediente se resuelven de forma única; el estudiante solo puede consultar su expediente propio, y los pares estudiante/expediente discordantes o de otro usuario se deniegan. Guardianes requieren relación primaria única con permiso académico explícito; EXAM no concede acceso por fallback legacy.
 - Node 24 CI en HEAD 8a5d87f5: Accounting Import, Task-Service, Academic-Service, UI Accessibility, Hierarchical Configuration, SACE revision e Identity mapping SUCCESS. Los contratos contextual ABAC y task/exam guardian ejecutados dentro de Department Scope PASS; el workflow agregado falla únicamente en Phase22 por configureSchoolDocumentTemplate ausente. No se ejecutó Apps Script/Sheets real.
 - Se añade BETA-FUNC-128 para permisos familiares por dominio, aislamiento de expediente y revocación bajo lock; permanece PENDIENTE DE BETA.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.914 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6279,7 +6279,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Verificación local: Node.js 22.16.0 ejecutó un harness aislado de getStudentEnrollmentHistory con permiso académico/financiero, denegación de cargos sin grant financiero y denegación por revocación del permiso académico; node --check PASS. No equivale a runtime Apps Script real.
 - BETA-FUNC-128 se amplía para incluir historial de matrículas/cargos y crédito familiar; continúa PENDIENTE DE BETA. Apps Script/Sheets desplegado, staging y concurrencia real entre proyectos NOT RUN.
 - HEAD de código verificado antes del registro: a8d8b129ea50e018102d5aad50eff38a54b4fff3. Rama base NG_beta_0.0.0.1 verificada en 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 - Siguiente: Continuar el inventario de action/resource bindings restantes en USER/ACADEMIC/ACCOUNTING/TASK/EXAM, verificar aislamiento institucional y concurrencia de cambios de relación/asignación; después revalidar TASK-506. TASK-502 permanece En ejecución.
 
 
@@ -6288,7 +6288,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Contratos nuevos: roster familiar/expediente, grants de asistencia y revisión de expediente. El harness canónico de justificaciones carga el resolver y los fixtures de identidad/expediente requeridos.
 - GitHub Actions en HEAD 78fe2f552e6c5622d4a869fe827ab189ccad0756: Academic-Service single authorization context SUCCESS; Department Scope ejecutó PASS en los contratos focalizados USER (roster, asistencia y review ownership), ownership académico, historial y sintaxis. El agregado falla únicamente en Phase22 porque falta configureSchoolDocumentTemplate; no se atribuye al cambio.
 - Rama base verificada sin cambios. Apps Script/Sheets real y concurrencia entre proyectos NOT RUN; pruebas beta de despliegue siguen pendientes.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.916 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6296,7 +6296,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Nuevo contrato Node cubre target ausente, IDs similares, solicitud duplicada/inconsistente, expediente duplicado, aislamiento estudiante, tutor con grant, ownership de Director, scope institucional y hoja ausente. Se añadió al workflow y a su filtro de paths.
 - GitHub Actions run 44948737639: contrato nuevo USER paso 85 PASS; otros contratos USER 82–84 y ownership académico 86–88 PASS; syntax-check 100 PASS. El agregado falla solo en Phase22 por ausencia de configureSchoolDocumentTemplate.
 - Workflows complementarios del commit de código beac5277: Academic-Service, Identity, Accounting Import, Task-Service, SACE, UI y Hierarchical Configuration SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.917 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6304,7 +6304,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Contrato Node incorporado al workflow y filtro de paths; cubre ausencia de target, aislamiento de solicitud, colisiones SOL-1/SOL-10, duplicados, ownership denegado y consulta global institucional.
 - GitHub Actions run 44949096376: contrato nuevo paso 86 PASS; contratos USER 82–85, ownership académico 87–89 y syntax-check 101 PASS. El agregado falla solo en Phase22 por configureSchoolDocumentTemplate ausente.
 - Workflows complementarios del commit de código 8df84706: Academic-Service, Hierarchical Configuration, Task-Service, SACE, Identity y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.918 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6312,7 +6312,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Contrato Node cubre scope departamental denegado, institutionWide permitido, permiso dinámico denegado/permitido, identidad ausente y colisión HOR-1/HOR-10.
 - GitHub Actions run 44949449309: contratos USER 82–87 y ownership académico 88–90 PASS; syntax-check 102 PASS. El workflow agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
 - Workflows complementarios del commit bc11bd22: Academic-Service, Hierarchical Configuration, Task-Service, SACE, Identity y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.919 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6321,7 +6321,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - GitHub Actions run 44949766331: contrato nuevo USER paso 88 PASS; contratos USER 82–87, ownership académico 89–90 y syntax-check 103 PASS. Workflow agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
 - Workflows complementarios del commit 647365b3: Task-Service, Academic-Service, Identity, SACE, UI, Hierarchical Configuration y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
 - Hallazgos pendientes: sendInternalMessage permite remitenteId falsificado; closeConversationThread no valida participación; getDepartmentalWorkInbox confía en departamento del cliente; getAppointmentBookings puede devolver todas las citas sin filtro.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.920 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6330,7 +6330,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - GitHub Actions run 44950066951: contratos de conversación pasos 88–89 PASS; USER 82–87 y ownership académico 90–92 PASS; syntax-check 104 PASS. El agregado falla únicamente en Phase22 por configureSchoolDocumentTemplate.
 - Workflows complementarios del commit 708f6681: Academic, UI, Accounting Import, Hierarchical Configuration, SACE, Task e Identity SUCCESS. Lock probado con harness Node; concurrencia real Apps Script NOT RUN.
 - Pendiente: validar destinatario/estudiante al crear conversaciones nuevas; getDepartmentalWorkInbox confía en departamento/authRole del cliente; getAppointmentBookings permite consultas sin filtros.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.921 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6339,7 +6339,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - GitHub Actions run 44950486345: contrato nuevo paso 90 PASS; USER 82–89, ownership académico 91–100, integridad binaria/adjuntos 102–104 y syntax-check 105 PASS. El agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
 - Workflows complementarios del commit 54005cbc: Academic, Task, Identity, UI, Hierarchical, SACE y Accounting Import SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
 - Pendiente: bookAppointment y updateAppointmentStatus no validan solicitante/participante; getDepartmentalWorkInbox confía en departamento/authRole del payload; sendInternalMessage necesita revisar destinatario y estudiante asociado.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.922 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6350,7 +6350,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - GitHub Actions run 44950868005: contratos USER citas pasos 90–91 PASS; USER 82–89, ownership académico 92–101, integridad binaria/adjuntos 103–105 y syntax-check 106 PASS. Workflow agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
 - Workflows complementarios del commit 95e2ca36: Academic, Task, Identity, UI, Hierarchical, SACE y Accounting Import SUCCESS. Lock probado en harness Node; concurrencia real Apps Script NOT RUN.
 - Pendiente: getDepartmentalWorkInbox confía en departamento/authRole del cliente; getAdministrativeRequests requiere revisión de scope; solicitadoA necesita validación de destinatario institucional; sendInternalMessage requiere relación/recipient para conversaciones nuevas.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.923 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6359,7 +6359,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - GitHub Actions run 44951251842: contrato nuevo paso 92 PASS; USER 82–91, academic ownership 93–102, integridad 104–106 y syntax 107 PASS. Workflow agregado falla solo en Phase22 por configureSchoolDocumentTemplate.
 - Workflows complementarios de los commits 50e5b19b/3763344b: Identity, Hierarchical, Accounting Import, SACE, Task, UI y Academic SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN; beta pendiente.
 - Pendiente: getAdministrativeRequests puede ser global sin scope; solicitadoA de citas requiere validación de usuario institucional activo; destinatario/relación en conversación nueva; transiciones de estado.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.924 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6369,7 +6369,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - GitHub Actions run 44951918999: USER 82–93, academic ownership 94–102, firma/adjuntos 103–107 y syntax 108 PASS. El único fallo es Phase22 paso 109 por configureSchoolDocumentTemplate.
 - Academic-Service workflow 44951745539 SUCCESS; Hierarchical, UI, SACE, Task, Accounting e Identity SUCCESS. Apps Script/Sheets real y concurrencia interproyecto NOT RUN.
 - Pendiente: solicitadoA en bookAppointment no valida usuario institucional activo; sendInternalMessage no valida destinatario/relación de estudiante en conversación nueva; transiciones de estado de citas; completar action/resource bindings en ACADEMIC/ACCOUNTING/TASK/EXAM.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Continuidad C1.926 — AUD-NG-222 / TASK-502 (sin cierre)
@@ -6490,7 +6490,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 
 - Sesión: IMA-EXEC-20261123-TASK047-REGISTRY-01.
 - Rama: NG_beta_0.0.0.1_work; HEAD de entrada: 22741dbeffcaa9ea775291f153bd42b10dbcf4ad.
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 - Cambios preparados: catálogo de servicios v2 con roles múltiples, ID de puesto, modalidad individual/compartida, proyecto Apps Script, carpeta Drive y modo de acceso institucional; migración append-only desde el encabezado v1 sin reescribir filas antiguas; UI de alta/consulta en consola de Desarrollador; rol Administrador deja de heredar wildcard en el servicio DEVELOPER.
 - Modalidades admitidas: individual (docente/profesor, coordinador, secretaria, contador); compartida Padres/Estudiantes; compartida de utilidades (Tienda/Cafetería/Transporte).
 - Se conserva el historial y se rechazan endpoint no Apps Script, modo PUBLIC, roles incompatibles y duplicación de PositionID.
@@ -6543,12 +6543,13 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Límite pendiente: el servicio maestro todavía no enruta solicitudes ni bloquea llamadas reales a endpoints suspendidos/retirados. El cambio de estado está registrado y auditado, pero el bloqueo efectivo depende de implementar el resolver/router central.
 - No se ejecutó CLI ni despliegue real entre cuentas. TASK-047 permanece En ejecución.
 
-## 10.95 Reinicio global del ciclo 3 — 2026-11-24
+## 10.95 Antecedente histórico: reinicio extraordinario del ciclo 3 — 2026-11-24 (cerrado)
 
 - **Autorización:** reinicio extraordinario solicitado expresamente por el propietario del proyecto. Esta operación de limpieza se ejecuta como excepción de ciclo; las normas operativas vuelven a regir para la implementación posterior.
 - **Estado inicial:** todas las tareas de los siete backlogs y del Plan Maestro quedan Pendiente. No se elimina, resume ni sustituye ningún requisito técnico, criterio de aceptación, dependencia, ID o tarea derivada.
 - **Requisitos transversales:** se mantienen y aplican a todas las tareas los requisitos IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01 del §1.1; Desarrollador es un rol distinto de Administrador.
 - **Limpieza del ciclo anterior:** se retiraron del árbol de trabajo los registros de auditoría, los archivos de checkpoints anteriores, los archivos de pruebas Node.js/CLI y las definiciones de workflows GitHub Actions del ciclo anterior. Las tareas derivadas y los documentos de planificación se conservaron.
 - **Checkpoint:** numeración reiniciada en C3.001. El índice operativo mantiene un máximo de diez checkpoints; al crear el undécimo se retira del árbol de trabajo el más antiguo y se actualiza el índice. No se reescribe el historial de commits Git.
-- **Siguiente punto de ejecución:** PM-00A, base del portal y registro de servicios por rol, con TASK-047 como trabajo abierto a reconciliar bajo los requisitos transversales del §1.1.
+- **Cierre del antecedente:** la limpieza y reapertura de estados quedaron completadas en C3.001/C3.002; no existe una fase de reinicio pendiente ni debe repetirse esta operación.
+- **Siguiente punto de ejecución:** iniciar directamente PM-00A, base del portal y registro de servicios por rol, comenzando por TASK-047 y aplicando §1.1 y Normas_Desarollo.md §17.8.
 - **Integridad:** no se modificó código funcional en esta operación. Las pruebas eliminadas no se consideran ejecutadas ni aprobadas; las nuevas pruebas se crearán conforme avance la implementación.
