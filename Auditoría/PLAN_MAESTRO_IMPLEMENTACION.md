@@ -4,7 +4,7 @@
 
 
 **Versión:** 1.5 — ciclo 3 y arquitectura de servicios por rol
-**Fecha:** 2026-11-23
+**Fecha:** 2026-11-24
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
 **Estado:** Preparado para implementación; próxima tarea: PM-00A / TASK-047.
@@ -6545,6 +6545,7 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 
 ## 10.95 Antecedente histórico: reinicio extraordinario del ciclo 3 — 2026-11-24 (cerrado)
 
+- **Estado del antecedente:** Cerrado y concluido. No representa el estado operativo actual ni una tarea pendiente.
 - **Autorización:** reinicio extraordinario solicitado expresamente por el propietario del proyecto. Esta operación de limpieza se ejecuta como excepción de ciclo; las normas operativas vuelven a regir para la implementación posterior.
 - **Estado inicial:** todas las tareas de los siete backlogs y del Plan Maestro quedan Pendiente. No se elimina, resume ni sustituye ningún requisito técnico, criterio de aceptación, dependencia, ID o tarea derivada.
 - **Requisitos transversales:** se mantienen y aplican a todas las tareas los requisitos IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01 del §1.1; Desarrollador es un rol distinto de Administrador.
