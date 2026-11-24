@@ -7,9 +7,12 @@ on:
       - NG_beta_0.0.0.1_work
     paths:
       - backend/accounting-service/Code.gs
+      - backend/academic-service/Code.gs
+      - backend/user-service/Code.gs
       - tests/security/accounting-transport-*.test.js
       - tests/security/accounting-payment-voucher-evidence-integrity.test.js
       - tests/security/transport-access-scope.test.js
+      - tests/security/accounting-family-service-guardian-abac-contract.test.js
       - tests/security/accounting-sensitive-read-ownership.test.js
       - .github/workflows/accounting-transport-local-contract.yml
 
@@ -40,6 +43,7 @@ jobs:
           node --check tests/security/accounting-transport-read-scope-ownership.test.js
           node --check tests/security/accounting-payment-voucher-evidence-integrity.test.js
           node --check tests/security/transport-access-scope.test.js
+          node --check tests/security/accounting-family-service-guardian-abac-contract.test.js
           node --check tests/security/accounting-sensitive-read-ownership.test.js
       - name: Run transport monthly billing, proration and rollback contract
         run: node tests/security/accounting-transport-monthly-charges.test.js
@@ -59,6 +63,8 @@ jobs:
         run: node tests/security/accounting-sensitive-read-ownership.test.js
       - name: Run legacy transport access scope regression
         run: node tests/security/transport-access-scope.test.js
+      - name: Run family guardian relationship ABAC contract
+        run: node tests/security/accounting-family-service-guardian-abac-contract.test.js
       - name: Run accounting monthly charge period regression
         run: node tests/security/accounting-monthly-charge-period.test.js
       - name: Run accounting payroll generation authorization regression
