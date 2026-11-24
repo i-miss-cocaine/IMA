@@ -100,3 +100,17 @@ C3.008 — IMA-ITER-20261124-006
 - HEAD de entrada: e478be209583a850488f2c547fc8de40eba4cc7d.
 - Siguiente acción: continuar con los requisitos aplicables de autorización por servicio/acción y el trabajo restante de TASK-047.
 ===============================================================================
+
+===============================================================================
+C3.009 — IMA-ITER-20261124-007
+===============================================================================
+- Objetivo cerrado: AUD-NG-086 — autorización por servicio/dominio, receptor, acción y versión de contrato bajo el modelo de sesión vigente.
+- Implementación: resolución central por ServiceID o clave de dominio; selección por rol/correo/puesto firmados; servicios individuales y compartidos; rechazo de servicio desconocido, duplicado, suspendido, retirado o desconectado; permiso explícito por acción; relaciones activas/revocables; versión de contrato v8.4.0 validada en resolver y receptores; actualización auditada de propietario, recursos y permisos.
+- Resolución normativa: no se usa HMAC interservicio ni secretos nuevos. El actor es el usuario con sesión verificada; el receptor aplica su RBAC y alcance. La identidad criptográfica de un servicio emisor no se añade como mecanismo independiente, conforme a NDASC §17.8.
+- Archivos: backend/developer-service/Code.gs; backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/task-service/Code.gs; backend/exam-service/Code.gs; js/api.js; js/developer.js; developer-dashboard.html; tests/contracts/developer-service-registry.contract.test.js; .github/workflows/developer-service-registry.yml.
+- Evidencia CI: Developer Service Registry Contract run 45326602592 — SUCCESS; Node.js 24.22.0; 23/23 pruebas PASS; node --check en siete archivos JS/Apps Script; git diff --check PASS.
+- Pendiente no incluido en AUD-NG-086: prueba real entre cuentas/proyectos Apps Script separados y restricciones de acceso institucional; permanece en TASK-047/AUD-NG-090.
+- HEAD de entrada: e60fcc4e515cbba14c9a6081178664d2d5b2f642. HEAD de evidencia: 05d0d729249c2d905fdf600b571babdf3f06bf38.
+- Estado: AUD-NG-086 completada; TASK-047 continúa Pendiente por verificación multi-cuenta real.
+- Siguiente tarea elegible: TASK-049 / AUD-NG-087, continuidad criptográfica de decisiones históricas.
+===============================================================================

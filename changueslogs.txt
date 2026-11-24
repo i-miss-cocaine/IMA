@@ -4742,3 +4742,12 @@ C3.008 — IMA-ITER-20261124-006
 - No se implementan tokens/nonce personalizados ni secretos interservicio; el hallazgo original permanece como antecedente.
 - Rama: NG_beta_0.0.0.1_work. HEAD de entrada: e478be209583a850488f2c547fc8de40eba4cc7d.
 ===============================================================================
+
+===============================================================================
+C3.009 — IMA-ITER-20261124-007
+===============================================================================
+- AUD-NG-086 completada: ruta central por rol/puesto y dominio, permisos explícitos por acción, relaciones revocables y validación de versión v8.4.0 en resolver y cinco receptores.
+- Evidencia CI: Developer Service Registry Contract run 45326602592 SUCCESS; 23/23 pruebas Node.js PASS; siete comprobaciones node --check y git diff --check PASS.
+- No se implementan HMAC/secretos interservicio; la identidad es la sesión del usuario verificada, conforme a NDASC §17.8. La prueba real entre cuentas/proyectos sigue pendiente en TASK-047/AUD-NG-090.
+- Rama: NG_beta_0.0.0.1_work. HEAD de evidencia: 05d0d729249c2d905fdf600b571babdf3f06bf38.
+===============================================================================
