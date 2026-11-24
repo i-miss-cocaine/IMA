@@ -625,6 +625,10 @@ document.addEventListener('DOMContentLoaded', function () {
             td.colSpan = 7; td.className = 'p-4 text-slate-500'; td.textContent = 'No hay servicios registrados.';
             tr.appendChild(td); serviceRegistryRows.appendChild(tr); return;
         }
+        const statusOptions = [
+            ['registrado', 'Registrado'], ['activo', 'Activo'], ['degradado', 'Degradado'],
+            ['desconectado', 'Desconectado'], ['suspendido', 'Suspendido'], ['retirado', 'Retirado']
+        ];
         registry.forEach(service => {
             const tr = document.createElement('tr');
             const values = [
@@ -633,13 +637,51 @@ document.addEventListener('DOMContentLoaded', function () {
                 String(service.serviceMode || 'LEGACY'),
                 String(service.cuentaPropietaria || ''),
                 String(service.endpointUrl || '') + ' / ' + String(service.scriptProjectId || 'sin proyecto'),
-                String(service.spreadsheetAsociado || '') + ' / ' + String(service.driveFolderId || 'sin carpeta'),
-                String(service.state || '') + (service.metadataState === 'LEGACY_METADATA_PENDING' ? ' · completar metadatos' : '')
+                String(service.spreadsheetAsociado || '') + ' / ' + String(service.driveFolderId || 'sin carpeta')
             ];
             values.forEach(value => { const td = document.createElement('td'); td.className = 'p-3 text-slate-300 break-all'; td.textContent = value; tr.appendChild(td); });
+            const statusCell = document.createElement('td');
+            statusCell.className = 'p-3 text-slate-300';
+            const controls = document.createElement('div');
+            controls.className = 'flex flex-col gap-2 min-w-[130px]';
+            const select = document.createElement('select');
+            select.className = 'rounded-lg bg-slate-950 border border-slate-700 px-2 py-1 text-xs text-white';
+            select.setAttribute('aria-label', 'Estado del servicio ' + String(service.serviceId || ''));
+            const currentState = String(service.state || 'registrado').toLowerCase();
+            const normalizedState = currentState === 'inactivo' ? 'suspendido' : currentState === 'activo' ? 'activo' : currentState;
+            statusOptions.forEach(([value, label]) => {
+                const option = document.createElement('option'); option.value = value; option.textContent = label;
+                if (value === normalizedState) option.selected = true;
+                select.appendChild(option);
+            });
+            const updateButton = document.createElement('button');
+            updateButton.type = 'button';
+            updateButton.className = 'rounded-lg bg-slate-700 hover:bg-indigo-600 border border-slate-600 px-2 py-1 text-xs font-semibold text-white';
+            updateButton.textContent = 'Guardar estado';
+            updateButton.addEventListener('click', async () => {
+                updateButton.disabled = true;
+                try {
+                    const response = await window.fetchApi('DEVELOPER', 'updateServiceStatus', {
+                        serviceId: service.serviceId,
+                        newState: select.value,
+                        reason: 'Cambio de estado desde la consola de Desarrollador'
+                    });
+                    if (!response || response.status !== 'success') throw new Error(response && (response.code || response.message) || 'No se pudo actualizar el estado.');
+                    serviceRegistryMessage('Estado de ' + service.serviceId + ' actualizado a ' + select.value + '; cambio auditado.', false);
+                    await loadServiceRegistry();
+                } catch (error) {
+                    serviceRegistryMessage(error.message || 'No fue posible actualizar el estado.', true);
+                } finally { updateButton.disabled = false; }
+            });
+            controls.appendChild(select); controls.appendChild(updateButton);
+            if (service.metadataState === 'LEGACY_METADATA_PENDING') {
+                const note = document.createElement('span'); note.className = 'text-[10px] text-amber-300'; note.textContent = 'Completar metadatos'; controls.appendChild(note);
+            }
+            statusCell.appendChild(controls); tr.appendChild(statusCell);
             serviceRegistryRows.appendChild(tr);
         });
     }
+
     async function loadServiceRegistry() {
         if (!serviceRegistryForm) return;
         if (serviceRegistryRefresh) serviceRegistryRefresh.disabled = true;

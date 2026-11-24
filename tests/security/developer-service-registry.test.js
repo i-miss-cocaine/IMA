@@ -398,6 +398,17 @@ assert.equal(result.status, "success");
 assert.equal(result.auditLogs.length, 1, "authenticated developer action exposes the filtered usage record");
 assert.equal(result.auditLogs[0].correlationId, "CORR-1");
 
+h = harness({ CatalogoServicios: sheet([registryHeaders, row("SVC-STATE-MATRIX", "State matrix")]) });
+const serviceStates = ["registrado", "activo", "degradado", "desconectado", "suspendido", "retirado"];
+serviceStates.forEach(state => {
+  result = h.updateServiceStatus_({ serviceId: "SVC-STATE-MATRIX", newState: state, reason: "state matrix test" }, "verified-state-actor");
+  assert.equal(result.status, "success");
+});
+assert.equal(h.sheets.CatalogoServicios.rows[1][7], "retirado");
+assert.equal(h.sheets.HistorialServiciosDistribuidos.rows.length, serviceStates.length + 1);
+assert.deepEqual(h.sheets.HistorialServiciosDistribuidos.rows.slice(1).map(entry => entry[3]), serviceStates);
+assert.throws(() => h.updateServiceStatus_({ serviceId: "SVC-STATE-MATRIX", newState: "publico" }, "verified-state-actor"), /ESTADO_INVALIDO/);
+
 h = harness();
 result = registerService(h, { serviceId: "SVC-FAMILY", roles: ["Padre", "Estudiante"], serviceMode: "SHARED_PARENT_STUDENT" });
 assert.equal(result.status, "success");
@@ -435,6 +446,7 @@ assert.doesNotMatch(developerDashboard, /Root Access|SuperAdmin/);
 assert.match(developerScript, /userRole === 'Desarrollador'/);
 assert.doesNotMatch(developerScript, /userRole === 'Administrador' \|\| userRole === 'Desarrollador'/);
 assert.match(developerScript, /fetchApi\('DEVELOPER', 'registerServiceInstance'/);
+assert.match(developerScript, /fetchApi\('DEVELOPER', 'updateServiceStatus'/);
 assert.match(developerSource, /"Administrador": \[\]/);
 
 console.log("Developer service registry contract PASS.");
