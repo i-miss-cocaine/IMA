@@ -14576,7 +14576,7 @@ function formatInternalRoleAssignmentDate_(date) {
 function assignRoleScope(payload) {
   var lock = null, lockAcquired = false, assignmentSheet = null, writeApplied = false, writeIndex = -1, previousRow = null, wasAppend = false;
   try {
-    var p = payload || {};
+    var p = Object.assign({}, payload || {});
     var verifiedRole = String(p._verifiedRole || "").trim() || "NO_ACCESS";
     var actorUserId = String(p._verifiedUserId || "").trim();
     if (verifiedRole === "NO_ACCESS" || !actorUserId) return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
@@ -14586,9 +14586,41 @@ function assignRoleScope(payload) {
     lock = LockService.getScriptLock();
     lock.waitLock(10000);
     lockAcquired = true;
+    var requestedAssignmentId = String(p.assignmentId || p.asignacionId || "").trim();
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var existingAssignmentRow = null;
+    if (requestedAssignmentId) {
+      var existingAssignmentSheet = ss.getSheetByName("AsignacionesAmbitosRoles");
+      if (!existingAssignmentSheet) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_NOT_FOUND" };
+      var existingAssignmentRows = existingAssignmentSheet.getDataRange().getValues();
+      var existingAssignmentMatches = [];
+      for (var existingIndex = 1; existingIndex < existingAssignmentRows.length; existingIndex++) {
+        if (String(existingAssignmentRows[existingIndex][0] || "").trim() === requestedAssignmentId) existingAssignmentMatches.push(existingAssignmentRows[existingIndex]);
+      }
+      if (existingAssignmentMatches.length !== 1) return { status: "error", code: existingAssignmentMatches.length ? "ROLE_SCOPE_ASSIGNMENT_DUPLICATE" : "ROLE_SCOPE_ASSIGNMENT_NOT_FOUND" };
+      existingAssignmentRow = existingAssignmentMatches[0];
+      if (existingAssignmentRow.length < 15 || !String(existingAssignmentRow[14] || "").trim()) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_SCHEMA_MISMATCH" };
+      if (p.userId === undefined) p.userId = existingAssignmentRow[1];
+      if (p.roleId === undefined && p.rolId === undefined) p.roleId = existingAssignmentRow[2];
+      if (p.responsibilityId === undefined && p.rolInternoId === undefined) p.responsibilityId = existingAssignmentRow[14];
+      if (p.scopeType === undefined && p.tipoAmbito === undefined) p.scopeType = existingAssignmentRow[3];
+      if (p.scopeValues === undefined && p.valoresAmbito === undefined) {
+        try {
+          var storedScopeValues = JSON.parse(String(existingAssignmentRow[4] || "[]"));
+          if (!Array.isArray(storedScopeValues)) return { status: "error", code: "ROLE_SCOPE_VALUES_INVALID" };
+          p.scopeValues = storedScopeValues;
+        } catch (scopeParseError) {
+          return { status: "error", code: "ROLE_SCOPE_VALUES_INVALID" };
+        }
+      }
+      if (p.estado === undefined) p.estado = existingAssignmentRow[5];
+      if (p.fechaInicio === undefined) p.fechaInicio = existingAssignmentRow[8];
+      if (p.fechaFin === undefined) p.fechaFin = existingAssignmentRow[9];
+      if (p.esSuplente === undefined) p.esSuplente = existingAssignmentRow[10];
+      if (p.suplenteDeUserId === undefined) p.suplenteDeUserId = existingAssignmentRow[11];
+    }
     var userId = String(p.userId || "").trim(), roleId = String(p.roleId || p.rolId || "").trim();
     var responsibilityId = String(p.responsibilityId || p.rolInternoId || "").trim();
-    var requestedAssignmentId = String(p.assignmentId || p.asignacionId || "").trim();
     var scopeType = String(p.scopeType || p.tipoAmbito || "").trim().toUpperCase();
     if (!userId || !roleId || !responsibilityId || !scopeType) return { status: "error", code: "ROLE_SCOPE_TARGET_REQUIRED" };
     if (!/^[A-Z][A-Z0-9_]{1,63}$/.test(scopeType)) return { status: "error", code: "ROLE_SCOPE_TYPE_INVALID" };
@@ -14613,7 +14645,6 @@ function assignRoleScope(payload) {
     if (!isSubstitute && substituteFor) return { status: "error", code: "ROLE_SCOPE_SUBSTITUTE_TARGET_INVALID" };
     var institutionId = String(getIdentityInstitutionId_() || "").trim();
     if (!institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" };
-    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     if (!isConfiguredRbacRole_(ss, roleId)) return { status: "error", code: "RBAC_ROLE_NOT_CONFIGURED" };
     var userSheet = ss.getSheetByName("Usuarios");
     if (!userSheet) return { status: "error", code: "ROLE_SCOPE_TARGET_USER_NOT_FOUND" };
@@ -14635,7 +14666,7 @@ function assignRoleScope(payload) {
     var responsibility = resolveActiveInternalResponsibility_(ss, responsibilityId);
     if (!responsibility) return { status: "error", code: "ROLE_RESPONSIBILITY_NOT_ACTIVE" };
     if (isSubstitute && !responsibility.permiteSuplencia) return { status: "error", code: "ROLE_SUBSTITUTION_NOT_ALLOWED" };
-    if (!end.date && !isSubstitute) {
+    if (!end.date && !isSubstitute && !existingAssignmentRow) {
       var defaultEnd = new Date(start.date);
       var startDay = defaultEnd.getDate();
       defaultEnd.setDate(1);
@@ -16389,7 +16420,7 @@ function getUserDynamicDashboardConfig(payload) {
       var dataU = sheetUsers.getDataRange().getValues();
       for (var u = 1; u < dataU.length; u++) {
         if (dataU[u][0] === userId) {
-          userRole = (dataU[u][3] || "Profesor").toString().trim();
+          userRole = (dataU[u][6] || "Profesor").toString().trim();
           break;
         }
       }
@@ -16404,7 +16435,12 @@ function getUserDynamicDashboardConfig(payload) {
       "Estudiante": ["mod_mi_horario_estudiante", "mod_mis_tareas_entregas", "mod_mis_calificaciones", "mod_mi_asistencia"]
     };
 
-    var modulos = modulosMap[userRole] || ["mod_mis_clases", "mod_mis_horarios"];
+    var normalizedUserRole = String(userRole || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    var moduleRole = userRole;
+    if (normalizedUserRole === "docente") moduleRole = "Profesor";
+    else if (normalizedUserRole === "secretaria") moduleRole = "Secretaría";
+    else if (normalizedUserRole.indexOf("coordinador") === 0) moduleRole = "Coordinador";
+    var modulos = modulosMap[moduleRole] || ["mod_mis_clases", "mod_mis_horarios"];
 
     return {
       status: "success",

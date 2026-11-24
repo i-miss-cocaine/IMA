@@ -10,6 +10,7 @@ on:
       - "backend/exam-service/Code.gs"
       - "backend/developer-service/Code.gs"
       - "js/api.js"
+      - "js/ui-common.js"
       - "developer-dashboard.html"
       - "js/developer.js"
       - "tests/contracts/**"
@@ -19,6 +20,7 @@ on:
     paths:
       - "backend/developer-service/Code.gs"
       - "js/api.js"
+      - "js/ui-common.js"
       - "developer-dashboard.html"
       - "js/developer.js"
       - "tests/contracts/developer-service-registry.contract.test.js"
@@ -43,5 +45,6 @@ jobs:
       - run: node --check < backend/exam-service/Code.gs
       - run: node --check < backend/developer-service/Code.gs
       - run: node --check < js/api.js
+      - run: node --check < js/ui-common.js
       - run: node --check < js/developer.js
       - run: node --test tests/contracts/*.test.js

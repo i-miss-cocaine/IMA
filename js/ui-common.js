@@ -6751,6 +6751,37 @@ window.validateUserScopeContext = function(scopeType, requestedValue, userScopeC
 };
 
 // [TAREA-AD-01] [Anexo Tareas: Dashboards Dinámicos] - Controlador de carga de módulos dinámicos y renderizado adaptable por rol
+function getDynamicDashboardModuleRoute(moduleId, role) {
+    var routes = {
+        mod_gestion_usuarios: "../../../dashboard-direccion.html",
+        mod_planificacion_horarios: "../../../dashboard-direccion.html",
+        mod_finanzas: "../../../dashboard-contabilidad.html",
+        mod_auditoria_sistema: "../../../dashboard-direccion.html",
+        mod_resumen_institucional: "../../../dashboard-direccion.html",
+        mod_supervision_docente: "../../../dashboard-coordinacion.html",
+        mod_reportes: "../../../dashboard-direccion.html",
+        mod_expedientes_estudiantiles: "../../../dashboard-secretaria.html",
+        mod_matriculas: "../../../dashboard-secretaria.html",
+        mod_comunicaciones: "../../../dashboard-secretaria.html",
+        mod_coordinacion_academica: "../../../dashboard-coordinacion.html",
+        mod_supervision_silabos: "../../../dashboard-coordinacion.html",
+        mod_horarios_area: "../../../dashboard-coordinacion.html",
+        mod_asistencia_docente: "../../../dashboard-coordinacion.html",
+        mod_mis_clases: "../../../teacher-dashboard.html",
+        mod_mis_horarios: "../../../teacher-dashboard.html",
+        mod_libro_calificaciones: "../../../teacher-dashboard.html",
+        mod_mi_horario_estudiante: "../../../student-dashboard.html",
+        mod_mis_tareas_entregas: "../../../student-dashboard.html",
+        mod_mis_calificaciones: "../../../student-dashboard.html",
+        mod_mi_asistencia: "../../../student-dashboard.html"
+    };
+    if (moduleId === "mod_aula_virtual_tareas") {
+        var roleKey = String(role || "").trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z]/g, "");
+        return roleKey === "ESTUDIANTE" || roleKey === "ALUMNO" ? "../../../student-dashboard.html" : "../../../teacher-dashboard.html";
+    }
+    return routes[moduleId] || "";
+}
+
 window.loadDynamicDashboard = async function() {
     const grid = document.getElementById('dynamic-dashboard-modules-grid');
     const titleEl = document.getElementById('dynamic-dashboard-title');
@@ -6792,23 +6823,53 @@ window.loadDynamicDashboard = async function() {
                 return;
             }
 
-            grid.innerHTML = mods.map(m => `
-                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 hover:border-indigo-300 transition">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg font-bold">
-                            <i class="fa-solid fa-cubes"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">${m.replace('mod_', '').replace(/_/g, ' ')}</h3>
-                            <p class="text-[10px] text-slate-400">Módulo funcional asignado por responsabilidad</p>
-                        </div>
-                    </div>
-                    <div class="pt-2 border-t text-[11px] flex justify-between items-center text-indigo-600 font-bold">
-                        <span>Estado: Activo</span>
-                        <span class="hover:underline cursor-pointer"><i class="fa-solid fa-arrow-right"></i> Acceder</span>
-                    </div>
-                </div>
-            `).join('');
+            while (grid.firstChild) grid.removeChild(grid.firstChild);
+            mods.forEach(moduleId => {
+                var id = String(moduleId || "").trim();
+                var label = id.replace(/^mod_/, "").replace(/_/g, " ");
+                var destination = getDynamicDashboardModuleRoute(id, res.rolPrincipal || user.authRole || user.rol || user.role || "");
+                var card = document.createElement("article");
+                card.className = "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 hover:border-indigo-300 transition";
+                var heading = document.createElement("div");
+                heading.className = "flex items-center gap-3";
+                var iconBox = document.createElement("div");
+                iconBox.className = "w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg font-bold";
+                var icon = document.createElement("i");
+                icon.className = "fa-solid fa-cubes";
+                iconBox.appendChild(icon);
+                var titleBox = document.createElement("div");
+                var title = document.createElement("h3");
+                title.className = "font-bold text-slate-800 text-xs uppercase tracking-wider";
+                title.textContent = label;
+                var description = document.createElement("p");
+                description.className = "text-[10px] text-slate-400";
+                description.textContent = "Módulo funcional asignado por responsabilidad";
+                titleBox.appendChild(title);
+                titleBox.appendChild(description);
+                heading.appendChild(iconBox);
+                heading.appendChild(titleBox);
+                var footer = document.createElement("div");
+                footer.className = "pt-2 border-t text-[11px] flex justify-between items-center text-indigo-600 font-bold";
+                var status = document.createElement("span");
+                status.textContent = "Estado: Activo";
+                footer.appendChild(status);
+                if (destination) {
+                    var link = document.createElement("a");
+                    link.href = destination;
+                    link.className = "hover:underline";
+                    link.textContent = "Acceder";
+                    link.setAttribute("aria-label", "Acceder a " + label);
+                    footer.appendChild(link);
+                } else {
+                    var unavailable = document.createElement("span");
+                    unavailable.textContent = "Ruta no configurada";
+                    unavailable.setAttribute("aria-disabled", "true");
+                    footer.appendChild(unavailable);
+                }
+                card.appendChild(heading);
+                card.appendChild(footer);
+                grid.appendChild(card);
+            });
         } else {
             if (grid) grid.innerHTML = '<p class="col-span-3 text-rose-500 font-bold text-center p-6 bg-white rounded-2xl border">Error al cargar la configuración del dashboard dinámico.</p>';
         }

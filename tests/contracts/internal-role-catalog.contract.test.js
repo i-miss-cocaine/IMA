@@ -68,7 +68,7 @@ function makeContext(options = {}) {
     audit: [],
     events: []
   };
-  for (const name of ["normalizeString","resolveActiveInternalResponsibility_","parseInternalRoleAssignmentDate_","formatInternalRoleAssignmentDate_","manageInternalRoleCatalog","getInternalRoleCatalog","assignRoleScope","getInternalRoleAssignments","getConfiguredRbacRoleIds_"]) {
+  for (const name of ["normalizeString","resolveActiveInternalResponsibility_","parseInternalRoleAssignmentDate_","formatInternalRoleAssignmentDate_","manageInternalRoleCatalog","getInternalRoleCatalog","assignRoleScope","getInternalRoleAssignments","getConfiguredRbacRoleIds_","getUserContextScope","getUserScopeConfig"]) {
     const source = extractFunction(name);
     vm.runInNewContext(source, context);
   }
@@ -359,4 +359,62 @@ test("manageInternalRoleCatalog revierte el alta si falla auditoría y libera Lo
   assert.equal(waits, 1);
   assert.equal(releases, 1);
   assert.equal(context.events.length, 1);
+});
+
+test("actualizar una asignación por ID conserva los atributos omitidos", () => {
+  const { context, assignments } = assignmentContext();
+  const created = assign(context, "EMP-1", "ROL-1", {
+    fechaInicio: "2026-02-10", fechaFin: "2026-11-30", scopeValues: ["DEP-1", "DEP-2"]
+  });
+  assert.equal(created.status, "success");
+  const before = assignments.rows[1].slice();
+  const updated = context.assignRoleScope({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    assignmentId: created.assignmentId, estado: "Revocado",
+    motivo: "Revocación autorizada por cambio de funciones."
+  });
+  assert.equal(updated.status, "success");
+  const after = assignments.rows[1];
+  for (const index of [0,1,2,3,4,6,7,8,9,10,11,12,13,14]) {
+    assert.equal(after[index], before[index], "Debe conservar la columna " + index);
+  }
+  assert.equal(after[5], "Revocado");
+});
+
+test("getUserScopeConfig excluye asignaciones futuras y vencidas", () => {
+  const { context, assignments } = assignmentContext();
+  const created = assign(context, "EMP-1", "ROL-1", { fechaInicio: "2026-01-01", fechaFin: "2026-12-31" });
+  assert.equal(created.status, "success");
+  const expired = assignments.rows[1].slice();
+  expired[0] = "AMB-EXPIRED";
+  expired[8] = "2025-01-01";
+  expired[9] = "2025-12-31";
+  const future = assignments.rows[1].slice();
+  future[0] = "AMB-FUTURE";
+  future[8] = "2027-01-01";
+  future[9] = "2027-12-31";
+  assignments.rows.push(expired, future);
+  const result = context.getUserScopeConfig({
+    _verifiedUserId: "EMP-1", _verifiedRole: "Docente", userId: "EMP-1",
+    _verifiedClaims: { userId: "EMP-1", role: "Docente", membershipId: "MEM-1", institutionId: "INST-1" }
+  });
+  assert.equal(result.status, "success");
+  assert.deepEqual(result.ambitos.map(item => item.assignmentId), [created.assignmentId]);
+});
+
+test("getInternalRoleAssignments aplica vigencia temporal a la consulta de asignaciones", () => {
+  const { context, assignments } = assignmentContext();
+  const created = assign(context, "EMP-1", "ROL-1", { fechaInicio: "2026-01-01", fechaFin: "2026-12-31" });
+  const expired = assignments.rows[1].slice();
+  expired[0] = "AMB-EXPIRED";
+  expired[8] = "2025-01-01";
+  expired[9] = "2025-12-31";
+  const future = assignments.rows[1].slice();
+  future[0] = "AMB-FUTURE";
+  future[8] = "2027-01-01";
+  future[9] = "2027-12-31";
+  assignments.rows.push(expired, future);
+  const result = context.getInternalRoleAssignments({ userId: "EMP-1", soloVigentes: true });
+  assert.equal(result.status, "success");
+  assert.deepEqual(result.data.map(item => item.asignacionId), [created.assignmentId]);
 });
