@@ -228,8 +228,9 @@ test("revocar una asignación conserva el evento y la fila histórica", () => {
   assert.equal(context.audit.length, 2);
 });
 test("el controlador nuevo de RRHH tiene sintaxis JavaScript válida", () => {
-  const start = dashboard.indexOf("const panel=document.getElementById('rrhh-internal-roles-panel')");
-  const end = dashboard.indexOf("</script>", start);
-  assert.ok(start >= 0 && end > start);
+  const panelStart = dashboard.indexOf("const panel=document.getElementById('rrhh-internal-roles-panel')");
+  const start = dashboard.lastIndexOf("document.addEventListener('DOMContentLoaded', function () {", panelStart);
+  const end = dashboard.indexOf("</script>", panelStart);
+  assert.ok(start >= 0 && panelStart > start && end > panelStart);
   assert.doesNotThrow(() => new vm.Script(dashboard.slice(start, end)));
 });
