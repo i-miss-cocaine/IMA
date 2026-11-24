@@ -1,6 +1,6 @@
 # IMA — Norma de Desarrollo Ágil, Seguro y Continuo (NDASC)
-**Versión:** 1.5  
-**Vigencia:** 2026-11-18  
+**Versión:** 1.6  
+**Vigencia:** 2026-11-24  
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama exclusiva de trabajo:** `NG_beta_0.0.0.1_work`  
 **Rama base:** `NG_beta_0.0.0.1` (solo lectura para el agente)
@@ -20,6 +20,14 @@ El agente puede alternar libremente análisis, edición, pruebas y correcciones.
 6. **Consolidar:** documentar lo relevante, crear checkpoint cuando corresponda y publicar cambios coherentes en la rama autorizada.
 
 No se exige una auditoría completa previa separada ni se prohíbe modificar código durante el análisis. El análisis previo puede ser breve y focalizado; se amplía solo si la complejidad o el riesgo lo justifican.
+
+### 2.1 Cierre obligatorio por tarea y continuidad inmediata
+
+- Cuando una tarea del Plan Maestro o de un backlog ya cumpla parcialmente sus requisitos, no se reinicia ni se repite el trabajo válido: se identifica cada criterio pendiente y se completa el alcance faltante hasta satisfacer la tarea.
+- Una tarea solo se marca como completada cuando todos sus criterios aplicables tienen evidencia verificable. Las dependencias externas o pruebas imposibles de ejecutar se registran con precisión; no se declaran aprobadas ni se ocultan como tareas terminadas.
+- Al completar una tarea, se actualizan su estado y los registros de continuidad afectados, se crea el checkpoint correspondiente y se publica un commit recuperable en la rama autorizada. El commit debe incluir los cambios funcionales, pruebas y documentación estrechamente relacionadas con esa tarea.
+- Después de verificar el commit y el checkpoint, se continúa inmediatamente con la siguiente tarea elegible del Plan Maestro, sin esperar una nueva instrucción del usuario. Solo se pausa cuando no exista trabajo ejecutable, haya un bloqueo real de acceso/seguridad/datos externos o se requiera una decisión reservada al propietario.
+- Esta regla aplica a tareas completas, no a cada subpaso ni a cada archivo. No autoriza commits vacíos, checkpoints ficticios, fragmentación artificial ni marcar como terminada una tarea con criterios pendientes.
 
 ## 3. Alcance de inspección proporcional
 - **Bajo riesgo:** texto, documentación, etiquetas o estilos aislados. Revisar el archivo y su contexto inmediato.
