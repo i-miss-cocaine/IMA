@@ -423,7 +423,7 @@ h = harness();
 result = h.doPost({ postData: { contents: JSON.stringify(Object.assign(validServicePayload({ serviceId: "SVC-ADMIN" }), { action: "registerServiceInstance", sessionToken: "administrator" })) } });
 h = harness();
 result = h.doPost({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", sessionToken: "director" }) } });
-assert.equal(result.code, "PERMISSION_DENIED", "Director must not inherit Developer service registry access");
+assert.notEqual(result.status, "success", "Director must not inherit Developer service registry access");
 assert.equal(result.code, "PERMISSION_DENIED");
 assert.equal(Object.keys(h.sheets).length, 0);
 const developerDashboard = fs.readFileSync("developer-dashboard.html", "utf8");
