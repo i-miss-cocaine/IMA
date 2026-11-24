@@ -14874,6 +14874,7 @@ function getUserContextScope(payload) {
     var actualScopeHeaders = data.length ? data[0].map(String) : [];
     var scopeSchema = JSON.stringify(actualScopeHeaders) === JSON.stringify(currentScopeHeaders) ? "current" : (JSON.stringify(actualScopeHeaders) === JSON.stringify(membershipScopeHeaders) ? "membership" : (JSON.stringify(actualScopeHeaders) === JSON.stringify(legacyScopeHeaders) ? "legacy" : "invalid"));
     if (scopeSchema === "invalid") return { status: "error", code: "ROLE_SCOPE_SCHEMA_MISMATCH", message: "El esquema de asignaciones de ámbito no coincide con el contrato esperado." };
+    if (scopeSchema !== "current") return { status: "error", code: "ROLE_SCOPE_RESPONSIBILITY_LINK_REQUIRED", message: "Las asignaciones sin vínculo explícito a una responsabilidad interna no pueden otorgar ámbitos efectivos." };
     var now = new Date();
     var normalizeRole = function(value) { return String(value || "").trim().toUpperCase().replace(/^ROLE[_-]?/, "").replace(/[^A-Z0-9]/g, ""); };
     var parseValues = function(value) {
@@ -17059,7 +17060,6 @@ function getInternalRoleAssignments(payload) {
     if (schema === "invalid") return { status: "error", code: "ROLE_SCOPE_SCHEMA_MISMATCH" };
     var institutionId = schema === "legacy" ? "" : String(getIdentityInstitutionId_() || "").trim();
     if (schema !== "legacy" && !institutionId) return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" };
-    if (schema === "membership") return { status: "success", data: [] };
     var now = new Date(), out = [], membershipCache = {}, idCounts = {};
     data.slice(1).forEach(function(row) {
       var id = String((row || [])[0] || "").trim();
@@ -17070,36 +17070,39 @@ function getInternalRoleAssignments(payload) {
       var userId = String(row[1] || "").trim(), roleId = String(row[2] || "").trim();
       var membershipId = schema === "legacy" ? "" : String(row[13] || "").trim();
       var rowInstitution = schema === "legacy" ? "" : String(row[12] || "").trim();
-      var responsibilityId = schema === "current" ? String(row[14] || "").trim() : (schema === "legacy" ? roleId : "");
+      var responsibilityId = schema === "current" ? String(row[14] || "").trim() : "";
       if (!assignmentId || idCounts[assignmentId] !== 1) continue;
+      if (schema !== "current" && f.soloVigentes !== false) continue;
       if (f.userId && userId !== String(f.userId).trim()) continue;
       if (f.roleId && roleId !== String(f.roleId).trim()) continue;
       if (f.membershipId && membershipId !== String(f.membershipId).trim()) continue;
       if (f.responsibilityId && responsibilityId !== String(f.responsibilityId).trim()) continue;
       if (f.rolInternoId && responsibilityId !== String(f.rolInternoId).trim()) continue;
       if (schema !== "legacy" && rowInstitution !== institutionId) continue;
-      if (schema === "current" && !responsibilityId) continue;
+      if (schema === "current" && !responsibilityId && f.soloVigentes !== false) continue;
       var membershipStatus = "";
       if (schema === "current" && !membershipId) {
         var legacyUserSheet = ss.getSheetByName("Usuarios");
-        if (!legacyUserSheet) continue;
-        var legacyUserRows = legacyUserSheet.getDataRange().getValues().slice(1).filter(function(item) { return String(item[0] || "").trim() === userId; });
-        if (legacyUserRows.length !== 1) continue;
-        var legacyUser = legacyUserRows[0];
-        if (f.soloVigentes !== false && (String(legacyUser[6] || "").trim() !== roleId ||
-            ["ACTIVA","ACTIVO","ACTIVE"].indexOf(String(legacyUser[10] || "Activa").trim().toUpperCase()) === -1)) continue;
-        membershipStatus = "LEGACY_ROLE";
+        var legacyUserRows = legacyUserSheet ? legacyUserSheet.getDataRange().getValues().slice(1).filter(function(item) {
+          return String(item[0] || "").trim() === userId;
+        }) : [];
+        if (f.soloVigentes !== false) {
+          if (legacyUserRows.length !== 1) continue;
+          var legacyUser = legacyUserRows[0];
+          if (String(legacyUser[6] || "").trim() !== roleId ||
+              ["ACTIVA","ACTIVO","ACTIVE"].indexOf(String(legacyUser[10] || "Activa").trim().toUpperCase()) === -1) continue;
+        }
+        membershipStatus = legacyUserRows.length === 1 ? "LEGACY_ROLE" : "LEGACY_USER_MISSING";
       } else if (schema !== "legacy" && f.soloVigentes === false) {
         var membershipSheet = ss.getSheetByName("MembresiasRolesRBAC");
-        if (!membershipSheet) continue;
-        var membershipRows = membershipSheet.getDataRange().getValues().slice(1).filter(function(item) {
+        var membershipRows = membershipSheet ? membershipSheet.getDataRange().getValues().slice(1).filter(function(item) {
           return String(item[0] || "").trim() === membershipId &&
             String(item[1] || "").trim() === userId &&
             String(item[2] || "").trim() === roleId &&
             String(item[3] || "").trim() === institutionId;
-        });
-        if (membershipRows.length !== 1) continue;
-        membershipStatus = String(membershipRows[0][4] || "").trim();
+        }) : [];
+        membershipStatus = membershipRows.length === 1 ? String(membershipRows[0][4] || "").trim() :
+          (membershipRows.length ? "AMBIGUOUS" : "MISSING");
       } else if (schema !== "legacy") {
         var membershipKey = userId + "|" + institutionId;
         if (!Object.prototype.hasOwnProperty.call(membershipCache, membershipKey)) {
@@ -17119,14 +17122,16 @@ function getInternalRoleAssignments(payload) {
       var start = parseInternalRoleAssignmentDate_(row[8], false), end = parseInternalRoleAssignmentDate_(row[9], true);
       if (!start.valid || !end.valid) continue;
       if (f.soloVigentes !== false && ((start.date && start.date.getTime() > now.getTime()) || (end.date && end.date.getTime() < now.getTime()))) continue;
-      var responsibility = responsibilityId && schema !== "legacy" ?
+      var responsibility = responsibilityId && schema === "current" ?
         resolveActiveInternalResponsibility_(ss, responsibilityId, f.soloVigentes === false) : null;
-      if (schema === "current" && !responsibility) continue;
+      if (schema === "current" && !responsibility && f.soloVigentes !== false) continue;
+      var responsibilityStatus = responsibility ? "LINKED" : "LEGACY_UNLINKED";
       if (f.departamento && (!responsibility || normalizeString(responsibility.department) !== normalizeString(f.departamento))) continue;
       if (f.areaAcademica && (!responsibility || normalizeString(responsibility.academicArea).indexOf(normalizeString(f.areaAcademica)) === -1)) continue;
       out.push({
         asignacionId: assignmentId, userId: userId, roleId: roleId, rolInternoId: responsibilityId || null,
         responsibilityId: responsibilityId || null, responsibility: responsibility,
+        responsibilityStatus: responsibilityStatus,
         institutionId: rowInstitution || null, membershipId: membershipId || null, membershipStatus: membershipStatus || null,
         scopeType: row[3], scopeValues: row[4], estado: state, creadoPor: row[6], fechaCreacion: row[7],
         fechaInicio: row[8] || null, fechaFin: row[9] || null,

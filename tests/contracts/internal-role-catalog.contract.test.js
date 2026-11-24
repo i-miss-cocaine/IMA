@@ -513,3 +513,46 @@ test("parseInternalRoleAssignmentDate_ acepta timestamps ISO con milisegundos", 
   assert.equal(parsed.valid, true);
   assert.equal(parsed.date.toISOString(), "2026-02-28T10:15:30.123Z");
 });
+test("las asignaciones sin FK explícita solo aparecen en historial y nunca otorgan ámbitos", () => {
+  const legacyHeaders = assignmentHeaders.slice(0, 12);
+  const assignments = sheet([legacyHeaders,
+    ["AMB-LEGACY","EMP-1","Docente","DEPARTAMENTO",'["DEP-1"]',"Activo","HR-1","2026-01-01","2026-01-01","2026-12-31","No",""]
+  ]);
+  const users = sheet([["UserID"], userRow("EMP-1")]);
+  const roles = sheet([roleHeaders, roleRow("ROL-1","Coordinador","COORD-1")]);
+  const context = makeContext({ sheets: { AsignacionesAmbitosRoles: assignments, Usuarios: users, CatalogoRolesInternos: roles } });
+  const active = context.getInternalRoleAssignments({ soloVigentes: true });
+  assert.equal(active.status, "success");
+  assert.equal(active.data.length, 0);
+  const history = context.getInternalRoleAssignments({ soloVigentes: false });
+  assert.equal(history.status, "success");
+  assert.equal(history.data.length, 1);
+  assert.equal(history.data[0].responsibilityId, null);
+  assert.equal(history.data[0].responsibilityStatus, "LEGACY_UNLINKED");
+  const scope = context.getUserContextScope({
+    _verifiedUserId: "EMP-1", _verifiedRole: "Docente",
+    _verifiedClaims: { userId: "EMP-1", role: "Docente", membershipId: "", institutionId: "" }
+  });
+  assert.equal(scope.status, "error");
+  assert.equal(scope.code, "ROLE_SCOPE_RESPONSIBILITY_LINK_REQUIRED");
+});
+
+test("una asignación con responsabilidad inexistente o inactiva se rechaza", () => {
+  const { context, assignments, roles } = assignmentContext();
+  assert.equal(assign(context, "EMP-1", "ROL-NO-EXISTE").code, "ROLE_RESPONSIBILITY_NOT_ACTIVE");
+  roles.rows[1][9] = "Inactivo";
+  assert.equal(assign(context, "EMP-1", "ROL-1").code, "ROLE_RESPONSIBILITY_NOT_ACTIVE");
+  assert.equal(assignments.rows.length, 1);
+});
+
+test("assignRoleScope no duplica IDs de asignación ante una colisión de UUID", () => {
+  const { context, assignments } = assignmentContext();
+  const collisionId = "AMB-" + "A".repeat(32);
+  assignments.rows.push([collisionId,"EMP-3","Docente","OTRO",'["DEP-3"]',"Activo","HR-1","2026-01-01","2026-01-01","2026-12-31","No","","INST-1","MEM-3","ROL-2"]);
+  context.Utilities.getUuid = () => "A".repeat(32) + "-0000-0000-0000";
+  const result = assign(context, "EMP-1", "ROL-1");
+  assert.equal(result.status, "error");
+  assert.equal(result.code, "ROLE_SCOPE_ASSIGNMENT_ID_CONFLICT");
+  assert.equal(assignments.rows.length, 2);
+  assert.equal(assignments.rows[1][0], collisionId);
+});
