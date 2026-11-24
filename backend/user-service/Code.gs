@@ -12565,7 +12565,7 @@ function verifyWorkflowDecisionAuditChain(payload, lockAlreadyHeld) {
   try {
     var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     var decSheet = ensureWorkflowDecisionAuditSchema_(getOrCreateSheet(ss, "RevisionesDecisionesTramite"));
-    var integrity = verifyWorkflowDecisionAuditChain({ _verifiedUserId: callerId });
+    var integrity = verifyWorkflowDecisionAuditChain({ _verifiedUserId: callerId }, true);
     if (!integrity.cadenaValida) throw new Error("WORKFLOW_AUDIT_CHAIN_BROKEN");
     var data = decSheet.getDataRange().getValues();
     var rows = data.slice(1);
