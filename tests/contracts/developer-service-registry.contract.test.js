@@ -137,3 +137,20 @@ test("doPost deriva identidad y rol de claims firmados, no de authRole del clien
  assert.equal(valid.status, "success");
  assert.equal(valid.actor, "USER-1");
 });
+
+test("el resolver de solo lectura está disponible a cualquier rol con sesión válida", () => {
+ const match = backend.match(/function doPost\(e\) \{[\s\S]*?\n\}/);
+ const normalizerMatch = backend.match(/function developerNormalizeRequestEnvelope_\(rawEnvelope\) \{[\s\S]*?\n\}/);
+ const normalize = vm.runInNewContext("(" + normalizerMatch[0] + ")");
+ const post = vm.runInNewContext("(" + match[0] + ")", {
+  developerNormalizeRequestEnvelope_: normalize,
+  ROLE_PERMISSIONS: { Docente: [] },
+  verifySessionToken: () => ({ role: "Docente", userId: "DOC-1" }),
+  textResponse: value => value,
+  resolveServiceEndpoint: payload => ({ status: "success", serviceId: payload.serviceId }),
+  doGet: () => ({ status: "success" })
+ });
+ const response = post({ postData: { contents: JSON.stringify({ action: "resolveServiceEndpoint", payload: { serviceId: "SVC-1", action: "readRecord", sessionToken: "signed" } }) } });
+ assert.equal(response.status, "success");
+ assert.equal(response.serviceId, "SVC-1");
+});

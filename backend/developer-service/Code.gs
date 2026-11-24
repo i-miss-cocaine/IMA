@@ -642,7 +642,8 @@ function doPost(e) {
     payload._verifiedUserId = verifiedUserId;
 
     const permitted = ROLE_PERMISSIONS[userRole] || [];
-    if (!permitted.includes("*") && !permitted.includes(action)) {
+    // Resolver read-only: cualquier sesión válida puede descubrir un endpoint; el servicio destino aplica sus permisos de acción.
+    if (action !== "resolveServiceEndpoint" && !permitted.includes("*") && !permitted.includes(action)) {
       return textResponse({ status: "error", code: "PERMISSION_DENIED", message: `No tiene permisos para ejecutar la acción '${action}'.` });
     }
 
