@@ -14763,7 +14763,7 @@ function assignRoleScope(payload) {
       userId: userId, roleId: roleId, institutionId: institutionId, membershipId: membershipId || null,
       responsibilityId: responsibilityId, scopeType: scopeType, scopeValues: normalizedScopeValues,
       estado: state, fechaInicio: rowOut[8], fechaFin: rowOut[9], esSuplente: isSubstitute,
-      suplenteDeUserId: isSubstitute ? substituteFor : null
+      suplenteDeUserId: isSubstitute ? substituteFor : null, motivo: reason
     }, state === "Revocado" ? "SCOPE_REVOKED" : (foundIndex !== -1 ? "SCOPE_UPDATED" : "SCOPE_ASSIGNED"), actorUserId);
     logStructuredEvent("USER", "assignRoleScope", "INFO", state === "Revocado" ? "SCOPE_REVOKED" : "SCOPE_ASSIGNED", "Responsabilidad y ámbito organizativo actualizados.", {
       assignmentId: assignmentId, userId: userId, roleId: roleId, responsibilityId: responsibilityId, institutionId: institutionId, motivo: reason
