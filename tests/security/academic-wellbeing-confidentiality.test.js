@@ -210,7 +210,7 @@ test("appointment notes are visible only to the assigned counselor", () => {
   });
   assert.equal(h.api.getGuidanceAppointments({ sessionToken: "secretary", authRole: "Director" }).citas.length, 0);
   assert.equal(h.api.getGuidanceAppointments({ sessionToken: "other", authRole: "Director" }).citas.length, 0);
-  assert.ok(h.logs.some(entry => entry[3] === "WELFARE_APPOINTMENT_NOT_ASSIGNED"));
+  assert.ok(h.logs.some(entry => entry[3] === "UNAUTHORIZED_ACCESS_ATTEMPT" && entry[5] && entry[5].code === "WELFARE_APPOINTMENT_NOT_ASSIGNED"));
   const visible = h.api.getGuidanceAppointments({ sessionToken: "assigned", scopeAllowed: true }).citas;
   assert.equal(visible.length, 1);
   assert.equal(visible[0].notasConfidenciales, "Nota privada");
