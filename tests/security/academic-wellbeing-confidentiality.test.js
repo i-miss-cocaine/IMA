@@ -313,12 +313,25 @@ test("students and guardians retain own appointment summaries with confidential 
       guardian: { authorized: true, userId: "TUTOR-1", role: "Tutor" }
     }
   });
-  const studentAppointments = h.api.getGuidanceAppointments({ sessionToken: "student" }).citas;
+  const studentAppointments = h.api.getGuidanceAppointments({ sessionToken: "student", scopeAllowed: true }).citas;
   assert.equal(studentAppointments.length, 1);
   assert.equal(studentAppointments[0].notasConfidenciales, "***CONFIDENCIAL***");
-  const guardianAppointments = h.api.getGuidanceAppointments({ sessionToken: "guardian" }).citas;
+  const guardianAppointments = h.api.getGuidanceAppointments({ sessionToken: "guardian", scopeAllowed: true }).citas;
   assert.equal(guardianAppointments.length, 1);
   assert.equal(guardianAppointments[0].notasConfidenciales, "***CONFIDENCIAL***");
+});
+
+
+test("student or guardian appointment ID match is insufficient without verified relationship scope", () => {
+  const h = harness({
+    appointments: [["CITA-1", "CASE-1", "STU-1", "TUTOR-1", "counselor-1", "2026-11-20", "Presencial", "Programada", "Entrevista", "Pública", "Nota privada", "", "2026-11-20"]],
+    identities: {
+      student: { authorized: true, userId: "STU-1", role: "Estudiante" },
+      guardian: { authorized: true, userId: "TUTOR-1", role: "Tutor" }
+    }
+  });
+  assert.equal(h.api.getGuidanceAppointments({ sessionToken: "student" }).citas.length, 0);
+  assert.equal(h.api.getGuidanceAppointments({ sessionToken: "guardian" }).citas.length, 0);
 });
 
 test("COMPARTIDO_DOCENTE configuration does not bypass confidential case authorization", () => {

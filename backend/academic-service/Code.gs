@@ -14884,6 +14884,10 @@ function getGuidanceAppointments(payload) {
     var notes = "***CONFIDENCIAL***";
     if (studentRole && studentId !== String(actor.userId).trim()) continue;
     if (guardianRole && tutorId !== String(actor.userId).trim()) continue;
+    if (studentRole || guardianRole) {
+      var ownerScope = validateAcademicResponsibilityAndScopeAccess(Object.assign({}, p, { estudianteId: studentId }));
+      if (!ownerScope || ownerScope.authorized !== true) continue;
+    }
     if (welfareStaff) {
       var privileged = ["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION"].indexOf(role) !== -1;
       if (!privileged && counselorId !== String(actor.userId).trim()) continue;
