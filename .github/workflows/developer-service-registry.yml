@@ -3,11 +3,16 @@ on:
   push:
     branches: [NG_beta_0.0.0.1_work]
     paths:
+      - "backend/user-service/Code.gs"
+      - "backend/academic-service/Code.gs"
+      - "backend/accounting-service/Code.gs"
+      - "backend/task-service/Code.gs"
+      - "backend/exam-service/Code.gs"
       - "backend/developer-service/Code.gs"
       - "js/api.js"
       - "developer-dashboard.html"
       - "js/developer.js"
-      - "tests/contracts/developer-service-registry.contract.test.js"
+      - "tests/contracts/**"
       - ".github/workflows/developer-service-registry.yml"
   pull_request:
     branches: [NG_beta_0.0.0.1_work]
