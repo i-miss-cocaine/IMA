@@ -488,7 +488,7 @@
 - **Criterios verificados:** token y rol docente; separación entre profesores/asignaturas; exclusión de matrícula retirada, período vencido, oferta inactiva y alumno sin matrícula; sesiones ajenas denegadas; notas internas y datos familiares no expuestos; acceso a evidencia privada solo con política explícita; auditoría; revocación revalidada antes de escritura; lock e idempotencia.
 - **Pruebas:** tests/security/academic-teacher-justification-abac.test.js PASS en Department Scope run 43737615044 (Node.js 24.22.2); sintaxis Apps Script/JS PASS. Task-Service run 43737615057 y Department Reference Consumers run 43737615098 SUCCESS.
 - **Límites:** BETA-FUNC-102 pendiente de validación con Apps Script/Sheets/Drive desplegados. Node local NOT RUN porque el entorno no pudo resolver github.com durante el checkout. No se afirma validación productiva ni integridad SHA-256 de adjuntos (F34-Task04).
-- **Estado:** Revisión de código/CI completada en C1.813; BETA-FUNC-102 pendiente de validación desplegada. El cierre C1.752 se conserva como evidencia histórica.
+- **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia histórica:** commit 0c4c81d6c5a59bcc2bce78f6e0b9f9dbd4031f38; checkpoint C1.752.
 - **Reapertura C1.809:** revisar el ABAC por evidencia/justificación frente al permiso del rol ya definido; conservar actor y datos de registro verificados, retirando controles adicionales que no sean necesarios para procesar el flujo.
 - **Revisión C1.813:** no se retiró el ámbito funcional necesario: el token/rol se verifica y cachea una vez; el resolver conserva asignación docente, oferta, período, matrícula y sesiones exactas. La constancia revalida el ámbito dentro del lock por el requisito de revocación antes de escribir. Evidencia CI: Academic-Service run 44155827504 SUCCESS (Node 22.23.4), incluidos academic-teacher-justification-abac.test.js y academic-absence-justification-canonical.test.js. BETA-FUNC-102 continúa Pendiente beta.
@@ -723,7 +723,7 @@
 - **Criterios de Aceptación:**
   - Dos solicitudes simultáneas sobre el mismo ejemplar resultan en un préstamo exitoso y un rechazo controlado.
   - Los reintentos de red no duplican las filas de préstamo en `BibliotecaPrestamos`.
-- **Estado:** [x] Completada en código, revisión y CI; validación de concurrencia real en beta pendiente.
+- **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia:** commits `a5774ef2f16008579a48055a943d734d4c32ef37` (transacciones y permisos), `bfa405b863386ca114c2e24a043919662aab9c8e` (contrato local), `034567c4f698d622de7d74f0fac27b3c00cc227b` (rechazo de esquema malformado) y `ee53929533621905f1889ccd63dad2a3bf896230` (contención de lock y carreras programadas).
 - **Cierre técnico:** `processLibraryLoan` y `reserveLibraryBook` adquieren ScriptLock antes de leer estado; vuelven a leer el ejemplar bajo el lock; rechazan ejemplares ambiguos/no disponibles; usan clave idempotente por operación, institución, ejemplar, usuario y fecha (o clave explícita validada); registran ledger de idempotencia; actualizan préstamo/ejemplar/ledger con rollback compensatorio ante fallos; liberan lock en finally. Identidad y permiso del operador se verifican server-side.
 - **Contrato Node.js 24:** run `44080687260` SUCCESS; sintaxis ACCOUNTING y test PASS; contrato ejecutado PASS. Casos: préstamo/devolución/reserva, reintentos duplicados, colisión de idempotency key, usuario sin sesión, rol denegado, esquema de ejemplares inválido, lock ocupado, contención reentrante y dos solicitudes programadas sobre el mismo ejemplar; una operación gana y la otra se rechaza, sin duplicar filas.
@@ -832,7 +832,7 @@
   - [x] Verificar que la asistencia y el expediente muestran exactamente la misma resolución.
   - [x] Comprobar que las modificaciones quedan registradas con fecha, responsable y solicitud de origen.
 - **Dependencias:** F34-Task03 (acceso contextual docente a justificaciones resultantes), F34-Task04 (integridad criptográfica de evidencias adjuntas).
-- **Estado:** [x] Completada en código/revisión/CI; validación beta real de Apps Script/Sheets pendiente.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 
 - **Implementación verificada:** ciclo USER → ACADEMIC canónico con ID estable, representante/estudiante, evidencia SHA-256 y metadatos; fechas múltiples y resolución exacta de sesiones; sincronización idempotente/reconciliable bajo bloqueo; aprobación total o parcial por sesión; rechazo/observación sin mutación de asistencia; revocación reversible; historial y proyección administrativa coherentes.
@@ -1028,7 +1028,7 @@
 - **Problema:** getSubmissionComments devuelve también registros esPrivado=true a cualquier rol que tenga permiso de consulta (incluidos estudiante, padre, tutor y responsable) y no valida propiedad/relación con el expediente. getSubmissionVersions permite consultar por entregaId sin comprobar que la entrega pertenezca al usuario o al ámbito docente. addSubmissionComment confía en autorId, rolAutor y esPrivado recibidos del cliente. returnSubmissionForRevision usa profesorId del payload para identificar al autor. deleteSubmission elimina la fila principal y el archivo, pero no elimina ni marca de forma coherente las versiones/comentarios relacionados.
 - **Criterios de aceptación:** comentarios privados solo visibles para docentes asignados y roles expresamente autorizados; estudiantes y responsables solo reciben comentarios públicos de entregas propias/vinculadas; versiones filtradas por propietario o asignación docente aun cuando se consulte por entregaId; autor y rol derivados del token verificado; el cliente no puede elevar esPrivado ni suplantar docentes; devoluciones verifican propiedad de la tarea; borrado lógico conserva trazabilidad y referencias; pruebas negativas con dos estudiantes, dos docentes y responsables no vinculados.
 - **Tareas relacionadas (no duplicadas):** AUD-NG-002 (consultas públicas), AUD-NG-124 (propiedad/calificaciones), AUD-NG-158 (ABAC de escrituras docentes).
-- **Estado:** [x] Completada en código y contratos locales (2026-11-17). **Pendiente beta:** BETA-FUNC-122.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas existentes.
 
@@ -3122,7 +3122,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 - **Dependencias Expuestas:** `getTeacherActivity`, `getTeacherExamActivity`, `gradeSubmission`, `gradeExamSubmission`, `EntregasVersiones`, `EntregasExamen` y `_verifiedUserId`.
 - **Descripción del Alcance:** Los endpoints de calificación reciben entregaId y actualizan nota/estado/comentario directamente, sin comprobar que el examen o tarea pertenezca al docente autenticado ni conservar el valor anterior de la calificación. La tabla EntregasVersiones conserva versiones de entregas, pero no las rectificaciones de nota; EntregasExamen tampoco registra historial de cambios de calificación. Vincular la operación al docente propietario y añadir historial append-only de cambios.
 - **Criterios de Aceptación:** Un docente no puede calificar entregas de otro docente; cada rectificación conserva valor anterior/nuevo, actor, fecha y motivo; las consultas de actividad usan identidad verificada y ámbito asignado; pruebas cubren cambio de nota y acceso cruzado.
-- **Estado:** [x] Completada en código (C1.693); BETA-FUNC-066 Pendiente beta.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 ---
 
@@ -3218,7 +3218,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
   - Los defaults solo se aplican a campos opcionales; la falta de configuración obligatoria produce error identificable.
   - Las pruebas cubren tipos CURRICULAR_AREAS/SUBJECTS/ALL, estado activo/inactivo, ID/código, cambio de nombre, ámbito departamental, respuesta vacía/malformada, caché obsoleta y fallo de transporte.
 - **Evidencia C1.37:** js/config.js conserva CAPACITIES_CATALOG, MODULES_CATALOG, RESPONSIBILITIES_CATALOG, CURRICULAR_AREAS_CATALOG y ACADEMIC_DEPARTMENTS_CATALOG como listas locales; fetchInstitutionalCatalog solo sincroniza áreas y devuelve status success con catálogo estático ante ausencia de API, respuesta inválida o error de transporte. registerNewCurricularAreaServiceConfig solo agrega si el ID no existe, no actualiza metadatos ni estado. En Academic, getInstitutionalCatalog (líneas 3824-3883) mapea asignaturas con estado:r[4], aunque el esquema define CargaHorariaRef en índice 4 y Estado en índice 5; no filtra inactivos y el tipo ALL devuelve un objeto mientras los tipos específicos devuelven arrays. validateCatalogReference (3885-3915) solo valida cuando data es array, no comprueba estado y no se invoca desde las escrituras de creación de asignaturas/áreas ni otras operaciones académicas; para ALL falla por la forma del objeto. getSubjectCatalog repite el índice de estado incorrecto. registerCurricularAreaExtension (4084-4145) sobrescribe metadatos/estado de una fila existente y fija Inactivo_PendientePruebas; el endpoint de catálogo omite departmentId. createSubjectCatalogItem genera ASIG- + timestamp y acepta areaAcademica || General. En User, getSharedConfigurationsCatalog (185-200) publica versiones estáticas, no un catálogo persistente de catálogos institucionales. La política de caché/versionado ya está ampliada en TASK-062; no se duplica aquí.
-- **Estado:** [x] Completada en código; validación beta institucional pendiente.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 ---
 - **Cierre técnico C1.902:** se verifica el contrato versionado de getInstitutionalCatalog (CURRICULAR_AREAS/SUBJECTS/DEPARTMENTS/ALL), estado y ámbito desde encabezados canónicos, metadata de registros inactivos para sincronizar estado, referencias activas tipadas por ID/código y validación integrada en escrituras. El cliente sincroniza áreas, asignaturas y departamentos, conserva estado/metadatos, aplica revisiones por tipo para descartar respuestas antiguas y devuelve fallback no autoritativo ante API ausente, respuesta malformada o transporte fallido.
