@@ -12418,7 +12418,7 @@ function computeWorkflowDecisionHashV2_(row) {
 }
 
 function verifyWorkflowDecisionAuditRows_(rows) {
-  var inconsistencias = [], seen = Object.create(null);
+  var inconsistencias = [], seen = Object.create(null), legacyEvents = 0;
   var previousHash = WORKFLOW_DECISION_AUDIT_GENESIS_HASH_, lastDecisionId = "";
   (rows || []).forEach(function(row, index) {
     var rowNumber = index + 2;
@@ -12445,6 +12445,7 @@ function verifyWorkflowDecisionAuditRows_(rows) {
       if (schemaVersion === "2") {
         expectedHash = computeWorkflowDecisionHashV2_(row);
       } else if (schemaVersion === "" || schemaVersion === "1") {
+        legacyEvents++;
         var timestamp = normalizeWorkflowDecisionAuditDate_(row[7]);
         var legacyPayload = [row[0], row[1], row[2], row[3], row[4], timestamp, hashPrevious].map(function(value) { return String(value || ""); }).join("|");
         expectedHash = computeDocumentSHA256(legacyPayload);
@@ -12458,7 +12459,7 @@ function verifyWorkflowDecisionAuditRows_(rows) {
     previousHash = hashActual;
     lastDecisionId = decisionId;
   });
-  return { valid: inconsistencias.length === 0, inconsistencias: inconsistencias, totalEvents: (rows || []).length,
+  return { valid: inconsistencias.length === 0, inconsistencias: inconsistencias, legacyEvents: legacyEvents, totalEvents: (rows || []).length,
     lastDecisionId: lastDecisionId, lastHash: (rows && rows.length) ? String(rows[rows.length - 1][10] || "") : WORKFLOW_DECISION_AUDIT_GENESIS_HASH_ };
 }
 
@@ -12526,7 +12527,8 @@ function verifyWorkflowDecisionAuditChain(payload, lockAlreadyHeld) {
     var rows = decSheet.getDataRange().getValues().slice(1).filter(function(row) {
       return String(row[0] || "").trim() || String(row[1] || "").trim();
     });
-    var audit = verifyWorkflowDecisionAuditRows_(rows), inconsistencias = audit.inconsistencias.slice(), checkpointInitialized = false;
+    var audit = verifyWorkflowDecisionAuditRows_(rows), inconsistencias = audit.inconsistencias.slice(), advertencias = [], checkpointInitialized = false;
+    if (audit.legacyEvents > 0) advertencias.push({ tipo: "WORKFLOW_AUDIT_LEGACY_HASH_SCOPE", cantidad: audit.legacyEvents, mensaje: "Los eventos históricos con esquema legacy verifican su hash original, que no cubría todos los campos v2. Los eventos nuevos protegen actor, rol, observaciones, fuente, corrección y correlationId." });
     var checkpoint = null;
     try {
       checkpoint = getWorkflowDecisionAuditCheckpoint_();
@@ -12545,7 +12547,7 @@ function verifyWorkflowDecisionAuditChain(payload, lockAlreadyHeld) {
     var scopedCount = solicitudId ? rows.filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).length : rows.length;
     var valid = inconsistencias.length === 0;
     return { status: "success", cadenaValida: valid, totalDecisionesAuditadas: rows.length,
-      totalDecisionesSolicitud: scopedCount, inconsistencias: inconsistencias, solicitudId: solicitudId || "TODAS",
+      totalDecisionesSolicitud: scopedCount, inconsistencias: inconsistencias, advertencias: advertencias, solicitudId: solicitudId || "TODAS",
       checkpointInicializado: checkpointInitialized, checkpointVersion: checkpoint && checkpoint.version || null,
       message: valid ? "Cadena global de decisiones y checkpoint confiable verificados."
         : "Alerta de integridad: la cadena global o su checkpoint confiable presentan inconsistencias." };
