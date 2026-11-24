@@ -4677,3 +4677,12 @@ C3.001 — IMA-RESET-20261124-001
 - Actualizada la política normativa de checkpoints: máximo diez en el árbol de trabajo/índice operativo.
 - Próximo trabajo: PM-00A / TASK-047.
 ===============================================================================
+
+===============================================================================
+C3.002 — IMA-RESET-20261124-001
+===============================================================================
+- Consolidada la reapertura de 69 estados de tarea en los backlogs y 245 estados en el Plan Maestro.
+- Se conservan los estados de bloqueo técnico que siguen teniendo dependencia pendiente.
+- IDs, requisitos, criterios de aceptación y dependencias permanecen intactos.
+- TASK-047 / PM-00A es el siguiente trabajo elegible.
+===============================================================================
