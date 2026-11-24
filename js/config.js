@@ -1,0 +1,1392 @@
+// [TAREA-AD-02] [Anexo Tareas: Dashboards Dinámicos - Catálogo de Responsabilidades] - Definición del catálogo central de capacidades, responsabilidades institucionales y módulos reutilizables
+window.CAPACITIES_CATALOG = [
+  { capacityId: "CAP_CONSULTAR", name: "Consultar", operation: "READ", description: "Permiso para visualizar y consultar registros del módulo o área." },
+  { capacityId: "CAP_CREAR", name: "Crear", operation: "CREATE", description: "Permiso para registrar nuevos elementos en el módulo." },
+  { capacityId: "CAP_EDITAR", name: "Editar", operation: "UPDATE", description: "Permiso para modificar registros existentes." },
+  { capacityId: "CAP_ELIMINAR", name: "Eliminar", operation: "DELETE", description: "Permiso para desactivar o eliminar registros." },
+  { capacityId: "CAP_APROBAR", name: "Aprobar", operation: "APPROVE", description: "Permiso para autorizar, aprobar o rechazar solicitudes y entregas." },
+  { capacityId: "CAP_ASIGNAR", name: "Asignar", operation: "ASSIGN", description: "Permiso para asignar recursos, cargas académicas o responsabilidades." },
+  { capacityId: "CAP_EXPORTAR", name: "Exportar", operation: "EXPORT", description: "Permiso para descargar y exportar reportes o datos." },
+  { capacityId: "CAP_ADMINISTRAR", name: "Administrar", operation: "ADMIN", description: "Permiso de control total sobre el módulo o configuración." }
+];
+
+window.MODULES_CATALOG = [
+  { moduleId: "mod_gestion_usuarios", name: "Gestión de Usuarios e Identidades", service: "USER" },
+  { moduleId: "mod_planificacion_horarios", name: "Planificación de Horarios y Aulas", service: "ACADEMIC" },
+  { moduleId: "mod_coordinacion_academica", name: "Coordinación Académica", service: "ACADEMIC" },
+  { moduleId: "mod_supervision_silabos", name: "Supervisión de Jornalizaciones y Sílabos", service: "ACADEMIC" },
+  { moduleId: "mod_horarios_area", name: "Horarios y Cargas por Departamento", service: "ACADEMIC" },
+  { moduleId: "mod_asistencia_docente", name: "Supervisión de Asistencia Docente", service: "ACADEMIC" },
+  { moduleId: "mod_expedientes_estudiantiles", name: "Expedientes Estudiantiles y Matrícula", service: "ACADEMIC" },
+  { moduleId: "mod_mis_clases", name: "Gestión de Clases Docentes", service: "ACADEMIC" },
+  { moduleId: "mod_aula_virtual_tareas", name: "Aula Virtual y Tareas", service: "TASK" },
+  { moduleId: "mod_mis_horarios", name: "Consulta de Horarios Personalizados", service: "ACADEMIC" },
+  { moduleId: "mod_libro_calificaciones", name: "Libro de Calificaciones", service: "ACADEMIC" },
+  { moduleId: "mod_finanzas", name: "Gestión Financiera y Cobranzas", service: "ACCOUNTING" },
+  { moduleId: "mod_auditoria_sistema", name: "Auditoria y Trazabilidad", service: "USER" }
+];
+
+window.RESPONSIBILITIES_CATALOG = [
+  {
+    responsibilityId: "RESP_COORDINACION",
+    name: "Coordinación Académica",
+    description: "Supervisión de docentes, revisión de sílabos y cargas de área.",
+    modules: ["mod_coordinacion_academica", "mod_supervision_silabos", "mod_horarios_area", "mod_asistencia_docente"],
+    capabilities: ["CAP_CONSULTAR", "CAP_CREAR", "CAP_EDITAR", "CAP_APROBAR", "CAP_ASIGNAR", "CAP_EXPORTAR"]
+  },
+  {
+    responsibilityId: "RESP_PLANIFICACION",
+    name: "Planificación y Horarios",
+    description: "Diseño y asignación de horarios de clase, docentes y aulas.",
+    modules: ["mod_planificacion_horarios", "mod_horarios_area"],
+    capabilities: ["CAP_CONSULTAR", "CAP_CREAR", "CAP_EDITAR", "CAP_ASIGNAR", "CAP_EXPORTAR"]
+  },
+  {
+    responsibilityId: "RESP_SUPERVISION_DOCENTE",
+    name: "Supervisión Docente",
+    description: "Evaluación y acompañamiento de jornalizaciones y desempeño.",
+    modules: ["mod_supervision_silabos", "mod_asistencia_docente"],
+    capabilities: ["CAP_CONSULTAR", "CAP_EDITAR", "CAP_APROBAR", "CAP_EXPORTAR"]
+  },
+  {
+    responsibilityId: "RESP_GESTION_ACADEMICA_DOCENTE",
+    name: "Gestión Académica de Aula",
+    description: "Impartición de clases, registro de tareas y notas.",
+    modules: ["mod_mis_clases", "mod_aula_virtual_tareas", "mod_mis_horarios", "mod_libro_calificaciones"],
+    capabilities: ["CAP_CONSULTAR", "CAP_CREAR", "CAP_EDITAR", "CAP_APROBAR", "CAP_EXPORTAR"]
+  },
+  {
+    responsibilityId: "RESP_CONSULTA_ESTUDIANTIL",
+    name: "Consulta y Aprendizaje Estudiantil",
+    description: "Acceso a aula virtual, entregas de tareas y horarios propios.",
+    modules: ["mod_mi_horario_estudiante", "mod_mis_tareas_entregas", "mod_mis_calificaciones", "mod_mi_asistencia"],
+    capabilities: ["CAP_CONSULTAR", "CAP_CREAR"]
+  }
+];
+
+window.getCentralCapabilitiesCatalog = function() {
+  return window.CAPACITIES_CATALOG || [];
+};
+
+window.getInstitutionalResponsibilitiesCatalog = function() {
+  return window.RESPONSIBILITIES_CATALOG || [];
+};
+
+// [TAREA-05] [TAREA-F6-030] [Fase 6: Microservicios Administrativos y Financieros con separación por responsabilidades] - Mapa de servicios por departamento con soporte para microservicio compartido Dirección/Secretaría y microservicio financiero-administrativo modular.
+window.SERVICE_VERSIONS = {
+  USER: '1.0.0',
+  ACADEMIC: '1.0.0',
+  TASK: '1.0.0',
+  EXAM: '1.0.0',
+  ACCOUNTING: '1.0.0'
+};
+
+// [FASE2-T19] [Fase 2 - Gestión de Caché de Datos Institucionales] - Políticas de vigencia (TTL), aislamiento por identidad de usuario e invalidación para datos institucionales.
+window.CACHE_POLICIES = {
+  USER_ROLES: { ttlSeconds: 21600, scope: "USER_SPECIFIC", description: "Canché de roles verificados de usuario (6 horas max) con invalidación inmediata al cambiar estado" },
+  INSTITUTIONAL_CATALOGS: { ttlSeconds: 43200, scope: "GLOBAL", description: "Catálogos estáticos como áreas curriculares y materias (12 horas)" },
+  SESSION_PERMISSIONS: { ttlSeconds: 3600, scope: "USER_SPECIFIC", description: "Permisos de sesión por rol (1 hora)" },
+  FINANCIAL_STATEMENTS: { ttlSeconds: 0, scope: "NO_CACHE", description: "Estados de cuenta y saldos nunca se almacenan en caché sin confirmación del servidor" }
+};
+
+// [FASE2-T17] [Fase 2 - Política de Versionado de Configuraciones Compartidas] - Validación de compatibilidad entre cliente y servidor, detección de consumidores obsoletos y política de evolución de contratos.
+window.getSharedConfigVersion = function() {
+  return "2.0.0";
+};
+
+window.validateServiceVersionCompatibility = function(serviceName, clientMinVersion) {
+  var serviceVersions = window.SERVICE_VERSIONS || {};
+  var currentSvcVersion = serviceVersions[serviceName] || "1.0.0";
+
+  function parseSemVer(v) {
+    var parts = (v || "1.0.0").split(".").map(Number);
+    return { major: parts[0] || 1, minor: parts[1] || 0, patch: parts[2] || 0 };
+  }
+
+  var current = parseSemVer(currentSvcVersion);
+  var required = parseSemVer(clientMinVersion || "1.0.0");
+
+  var isCompatible = current.major === required.major && current.minor >= required.minor;
+
+  if (!isCompatible) {
+    console.warn("[VERSION_COMPATIBILITY_WARN] El servicio " + serviceName + " (v" + currentSvcVersion + ") es incompatible con el cliente (v" + clientMinVersion + ").");
+  }
+
+  return {
+    isCompatible: isCompatible,
+    currentVersion: currentSvcVersion,
+    requiredVersion: clientMinVersion || "1.0.0",
+    actionRequired: isCompatible ? "NONE" : "RELOAD_CLIENT_APP"
+  };
+};
+
+window.DEPARTMENT_SERVICES_MAP = {
+  'DIRECCION_SECRETARIA': ['USER', 'ACADEMIC'],
+  'RECURSOS_HUMANOS': ['USER', 'ACCOUNTING'],
+  'CONTABILIDAD_FINANZAS': ['ACCOUNTING'],
+  'DOCENCIA_ACADEMICO': ['ACADEMIC', 'TASK', 'EXAM'],
+  'ALUMNADO_PADRES': ['USER', 'ACADEMIC', 'TASK', 'EXAM', 'ACCOUNTING']
+};
+
+// [FASE2-T13] [Fase 2 - Documentación de Dependencias] - Mapa programático de responsabilidades de servicios, funciones públicas, roles consumidores y pruebas de integración.
+window.getDepartmentalDependencyMap = function() {
+  return {
+    version: "2.0.0",
+    services: {
+      USER: {
+        domain: "Gestión de Usuarios, Autenticación y RBAC",
+        responsibilities: ["Autenticación de usuarios", "Verificación RBAC con CacheService", "Notificaciones multicanal", "Omnibox global", "Bitácora de eventos y trazabilidad"],
+        consumerRoles: ["Administrador", "Director", "Docente", "Estudiante", "Padre", "RecursosHumanos", "Contador"],
+        integrationTests: ["runUXSuiteTests", "loginUserTest"]
+      },
+      ACADEMIC: {
+        domain: "Gestión Académica, Malla Curricular y Expedientes",
+        responsibilities: ["Malla curricular de 12 áreas", "Expediente digital de estudiante", "Calificaciones SACE y cuadro de honor", "Aulas y ofertas académicas", "Criterios de almacenamiento transaccional"],
+        consumerRoles: ["Administrador", "Director", "Subdirector", "Profesor", "Estudiante", "Padre"],
+        integrationTests: ["runCurricularAreaServiceTests", "reconcileRestoredDataIntegrity"]
+      },
+      ACCOUNTING: {
+        domain: "Contabilidad, Finanzas y Recursos Humanos",
+        responsibilities: ["Estado de cuenta y cobro de aranceles", "Asientos contables y caja/bancos", "Recursos Humanos (Planillas, licencias, contrataciones, evaluaciones)", "Compras, inventario y activos fijos"],
+        consumerRoles: ["Administrador", "Contador", "RecursosHumanos", "EncargadoTienda", "EncargadoCafeteria"],
+        integrationTests: ["runHRIntegrationAndRegressionTests", "runCriticalProcessConcurrencySuite"]
+      },
+      TASK: {
+        domain: "Gestión de Tareas y Entregas con Rúbricas",
+        responsibilities: ["Creación y asignación de tareas", "Borradores progresivos y entregas", "Evaluación con rúbricas", "Penalización por morosidad/tardanza"],
+        consumerRoles: ["Docente", "Profesor", "Estudiante"],
+        integrationTests: ["gradeSubmissionWithRubricTest"]
+      },
+      EXAM: {
+        domain: "Evaluación en Línea y Banco de Preguntas",
+        responsibilities: ["Banco de preguntas por asignatura", "Exámenes cronometrados", "Calificación automática e intentos"],
+        consumerRoles: ["Docente", "Profesor", "Estudiante"],
+        integrationTests: ["getQuestionBankTest"]
+      }
+    }
+  };
+};
+
+// [TAREA-08] [Fase 1 - Malla Curricular] - Estructura jerárquica de la malla curricular por áreas, asignaturas y departamentos.
+window.CURRICULAR_AREAS_CATALOG = [
+    { areaId: "AREA-01", name: "Matemáticas y razonamiento cuantitativo", code: "MAT" },
+    { areaId: "AREA-02", name: "Ciencias naturales", code: "CNT" },
+    { areaId: "AREA-03", name: "Informática, tecnología y computación", code: "INF" },
+    { areaId: "AREA-04", name: "Español, comunicación y literatura", code: "ESP" },
+    { areaId: "AREA-05", name: "Inglés y lenguas extranjeras", code: "ING" },
+    { areaId: "AREA-06", name: "Ciencias sociales y humanidades", code: "SOC" },
+    { areaId: "AREA-07", name: "Artes y expresión creativa", code: "ART" },
+    { areaId: "AREA-08", name: "Educación física, salud y bienestar", code: "EFI" },
+    { areaId: "AREA-09", name: "Formación en valores y desarrollo personal", code: "VAL" },
+    { areaId: "AREA-10", name: "Emprendimiento, economía y formación profesional", code: "EMP" },
+    { areaId: "AREA-11", name: "Agricultura, ambiente y sostenibilidad", code: "AGR" },
+    { areaId: "AREA-12", name: "Áreas complementarias", code: "CMP" }
+];
+
+window.ACADEMIC_DEPARTMENTS_CATALOG = [
+    { deptId: "DEPT-MAT", name: "Departamento de Matemáticas", areaId: "AREA-01" },
+    { deptId: "DEPT-CNT", name: "Departamento de Ciencias", areaId: "AREA-02" },
+    { deptId: "DEPT-INF", name: "Departamento de Informática", areaId: "AREA-03" },
+    { deptId: "DEPT-ESP", name: "Departamento de Español y Comunicación", areaId: "AREA-04" },
+    { deptId: "DEPT-ING", name: "Departamento de Inglés", areaId: "AREA-05" },
+    { deptId: "DEPT-SOC", name: "Departamento de Ciencias Sociales", areaId: "AREA-06" },
+    { deptId: "DEPT-ART", name: "Departamento de Artes", areaId: "AREA-07" },
+    { deptId: "DEPT-EFI", name: "Departamento de Educación Física", areaId: "AREA-08" }
+];
+
+// [TAREA-09] [Fase 1 - Servicios Curriculares] - Registro y enrutador de servicios de Apps Script especializados por área curricular.
+window.CURRICULAR_SPECIALIZED_SERVICES = {
+    "AREA-01": { serviceKey: "MATHEMATICS_SERVICE", name: "Servicio de Matemáticas y Razonamiento Cuantitativo", tools: ["math_editor", "step_by_step_eval", "numeric_tolerance"] },
+    "AREA-02": { serviceKey: "SCIENCE_SERVICE", name: "Servicio de Ciencias Naturales y Experimentales", tools: ["lab_reports", "hypothesis_tracker", "data_graphs"] },
+    "AREA-03": { serviceKey: "COMPUTER_SCIENCE_SERVICE", name: "Servicio de Informática y Pensamiento Computacional", tools: ["code_editor", "pseudocode_tester", "version_history"] },
+    "AREA-04": { serviceKey: "SPANISH_COMMUNICATION_SERVICE", name: "Servicio de Español y Comunicación Escrita", tools: ["essay_evaluator", "inline_rubrics", "grammar_checker"] },
+    "AREA-05": { serviceKey: "ENGLISH_LANGUAGES_SERVICE", name: "Servicio de Inglés y Lenguas Extranjeras", tools: ["audio_submissions", "listening_eval", "speaking_rubrics"] },
+    "AREA-06": { serviceKey: "SOCIAL_SCIENCES_SERVICE", name: "Servicio de Ciencias Sociales y Humanidades", tools: ["historical_source_analysis", "map_evaluator", "essay_rubrics"] },
+    "AREA-07": { serviceKey: "ARTS_CREATIVE_SERVICE", name: "Servicio de Artes y Expresión Creativa", tools: ["media_galleries", "creative_rubrics", "portfolio_eval"] },
+    "AREA-08": { serviceKey: "PHYSICAL_EDUCATION_SERVICE", name: "Servicio de Educación Física y Salud", tools: ["wellness_tracker", "performance_rubrics", "health_reports"] },
+    "AREA-09": { serviceKey: "VALUES_DEVELOPMENT_SERVICE", name: "Servicio de Formación en Valores", tools: ["ethical_case_analysis", "reflective_journals"] },
+    "AREA-10": { serviceKey: "ENTREPRENEURSHIP_SERVICE", name: "Servicio de Emprendimiento y Finanzas", tools: ["business_plan_eval", "financial_sheets"] },
+    "AREA-11": { serviceKey: "AGRICULTURE_ENVIRONMENT_SERVICE", name: "Servicio de Agricultura y Sostenibilidad", tools: ["field_project_eval", "sustainability_tracker"] },
+    "AREA-12": { serviceKey: "COMPLEMENTARY_AREAS_SERVICE", name: "Servicio de Áreas Complementarias", tools: ["interdisciplinary_projects", "club_activities"] }
+};
+
+// --- INSTRUCCIONES DE DESPLIEGUE DE MICROSERVICIOS ---
+// 1. Para cada carpeta en el directorio `backend` (ej. `user-service`), crea un NUEVO proyecto de Google Apps Script.
+// 2. Copia el contenido del archivo `Code.gs` de esa carpeta en el proyecto de Apps Script.
+// 3. Haz clic en "Implementar" > "Nueva implementación".
+// 4. Selecciona "Aplicación web" como tipo, dale una descripción (ej. "User Service v1").
+// 5. En "Quién tiene acceso", selecciona "Cualquiera".
+// 6. Haz clic en "Implementar" y copia la URL de la aplicación web.
+// 7. Pega esa URL en el campo correspondiente de este objeto de configuración.
+// 8. Repite este proceso para CADA microservicio.
+// ----------------------------------------------------------
+
+window.SERVICE_URLS = {
+  // Pega aquí la URL del despliegue del microservicio de usuarios.
+  USER: 'https://script.google.com/macros/s/AKfycbwwJatltmNlynkPPTZtTL8TfRJWWL_1Ho9Xe7-AWAU2ZOv6QnvaATsCzvXJzYTyIGY/exec',
+
+  // REQ: Microservicio Académico Modularizado (v7.9.6) - REEMPLAZAR con la URL del nuevo proyecto académico
+  ACADEMIC: 'https://script.google.com/macros/s/AKfycbyrLQkH5QZemaTVbAbNfTB2MXgy7Aq4grSVxrwLegbGbnKshAAE1KEpAxqp9DuMW33s/exec',
+
+  // Pega aquí la URL del despliegie del microservicio de tareas.
+  TASK: 'https://script.google.com/macros/s/AKfycbx5JaHQjBIJGY2k4QczQ0_QzRz8Iv3-gcVXbd8WRV_JQJaqyEyw6sTtZ-VgzTvM9E-X/exec',
+
+  // Pega aquí la URL del despliegue del microservicio de exámenes. (v7.7.6)
+  EXAM: 'https://script.google.com/macros/s/AKfycbwUlIlqEnkEFeCTrp_tgsyAydhNsLKx6h14A8SvWjbfxNFIj3vSciN5xAe93qtNV-g/exec',
+
+  // Microservicio de Contabilidad y Planillas (v8.0.0)
+  ACCOUNTING: 'https://script.google.com/macros/s/AKfycbzAccountingSvc/exec',
+
+  // Microservicio Central del Desarrollador y Registro de Servicios (v8.4.0) [TAREA-F6-008]
+  DEVELOPER: 'https://script.google.com/macros/s/AKfycbzDeveloperControlPlaneSvc/exec'
+};
+
+// [TAREA-F6-004] [Fase 6: Reestructuración en microservicios independientes] - Registro centralizado de descubrimiento de microservicios con endpoints, versiones y recursos
+window.SERVICE_REGISTRY = {
+  USER: {
+    serviceId: "SVC-USER-01",
+    name: "Microservicio de Usuarios, Permisos e Identidad",
+    version: "v8.4.0",
+    endpointUrl: window.SERVICE_URLS.USER,
+    healthStatus: "ACTIVE",
+    responsibilities: ["Autenticación", "Usuarios", "Roles", "RelacionesFamiliares", "Auditoria"],
+    resources: {
+      spreadsheetId: "1-USER-SPREADSHEET-ID",
+      driveFolderId: "1-USER-DRIVE-FOLDER-ID"
+    }
+  },
+  ACADEMIC: {
+    serviceId: "SVC-ACADEMIC-02",
+    name: "Microservicio Académico, Admisiones y Ciclo de Vida",
+    version: "v8.4.0",
+    endpointUrl: window.SERVICE_URLS.ACADEMIC,
+    healthStatus: "ACTIVE",
+    responsibilities: ["ExpedientesEstudiantes", "Matriculas", "SolicitudesAdmision", "Asistencia", "SupervisionDocente"],
+    resources: {
+      spreadsheetId: "1-ACADEMIC-SPREADSHEET-ID",
+      driveFolderId: "1-ACADEMIC-DRIVE-FOLDER-ID"
+    }
+  },
+  TASK: {
+    serviceId: "SVC-TASK-03",
+    name: "Microservicio de Tareas y Tareas Formativas",
+    version: "v8.4.0",
+    endpointUrl: window.SERVICE_URLS.TASK,
+    healthStatus: "ACTIVE",
+    responsibilities: ["Tareas", "Entregas", "CalificacionesTareas"],
+    resources: {
+      spreadsheetId: "1-TASK-SPREADSHEET-ID"
+    }
+  },
+  EXAM: {
+    serviceId: "SVC-EXAM-04",
+    name: "Microservicio de Exámenes y Banco de Preguntas",
+    version: "v8.4.0",
+    endpointUrl: window.SERVICE_URLS.EXAM,
+    healthStatus: "ACTIVE",
+    responsibilities: ["Examenes", "BancoPreguntas", "CalificacionesExamenes"],
+    resources: {
+      spreadsheetId: "1-EXAM-SPREADSHEET-ID"
+    }
+  },
+  ACCOUNTING: {
+    serviceId: "SVC-ACCOUNTING-05",
+    name: "Microservicio de Contabilidad, Cobros y Planillas",
+    version: "v8.4.0",
+    endpointUrl: window.SERVICE_URLS.ACCOUNTING,
+    healthStatus: "ACTIVE",
+    responsibilities: ["CobrosAdmision", "PagosMatricula", "BecasExenciones", "Facturacion"],
+    resources: {
+      spreadsheetId: "1-ACCOUNTING-SPREADSHEET-ID"
+    }
+  },
+  // [TAREA-F6-008] Plano de Control Central del Desarrollador
+  DEVELOPER: {
+    serviceId: "SVC-DEVELOPER-00",
+    name: "Microservicio Central del Desarrollador y Registro de Servicios",
+    version: "v8.4.0",
+    endpointUrl: window.SERVICE_URLS.DEVELOPER,
+    healthStatus: "ACTIVE",
+    responsibilities: ["RegistroServicios", "ControlPlane", "Diagnostico", "AuditoriaInterServicio", "PermisosMultiRol"],
+    resources: {
+      spreadsheetId: "1-DEVELOPER-SPREADSHEET-ID"
+    }
+  }
+};
+
+// [TAREA-F6-029] [Fase 6: Reestructuración en microservicios independientes] - Consulta de descriptor completo de microservicio para desacoplar el descubrimiento y enrutamiento inter-servicio.
+window.getServiceDescriptor = function(serviceKey) {
+  var registry = window.SERVICE_REGISTRY || {};
+  var svc = registry[serviceKey];
+  if (!svc) {
+    return {
+      serviceId: "SVC-UNKNOWN",
+      name: serviceKey || "Desconocido",
+      healthStatus: "UNREGISTERED",
+      endpointUrl: (window.SERVICE_URLS && window.SERVICE_URLS[serviceKey]) || null,
+      responsibilities: [],
+      resources: {}
+    };
+  }
+  return {
+    serviceId: svc.serviceId,
+    name: svc.name,
+    version: svc.version,
+    endpointUrl: svc.endpointUrl,
+    healthStatus: svc.healthStatus || "ACTIVE",
+    responsibilities: svc.responsibilities || [],
+    resources: svc.resources || {}
+  };
+};
+
+// --- URL del sitio para CORS (si es necesario ajustarlo en el backend) ---
+var FRONTEND_URL = 'https://informatica0101.github.io';
+
+/**
+ * CONFIGURACIÓN ACADÉMICA CENTRALIZADA (v7.7.1)
+ * Punto único de verdad para el alcance académico vigente.
+ */
+window.GLOBAL_SCOPE = {
+    ParcialActual: "II parcial",
+    GradoActual: ["Décimo"],
+    SeccionActual: ["A"],
+    AsignaturaActual: ["Informática I"],
+    TemaActual: ["General"]
+};
+
+/**
+ * ÍNDICE FORMAL DE PRESENTACIONES (v7.7.1)
+ * Mapeo de temas a archivos de presentación para vinculación con el sistema de calificación.
+ */
+window.PRESENTATION_INDEX = [
+    { tema: "Imperativos Procedurales", asignatura: "Programación", grado: "11", file: "Imperativos_Procedurales.html" },
+    { tema: "Estructuras de Control", asignatura: "Programación", grado: "11", file: "Estructuras_Control.html" },
+    { tema: "Hardware y Software", asignatura: "Informática I", grado: "10", file: "Hardware_Software.html" },
+    { tema: "Sistemas Operativos", asignatura: "Informática I", grado: "10", file: "Sistemas_Operativos.html" }
+    // Este índice se expandirá automáticamente tras la migración del banco de preguntas
+];
+
+window.PARCIAL_ACTUAL = window.GLOBAL_SCOPE.ParcialActual;
+
+/**
+ * Mapeo Maestro de Asignaturas a Grados (v7.8.4)
+ * Previene la visualización de materias ajenas al nivel académico del estudiante.
+ */
+window.SUBJECT_GRADE_MAP = {
+    "informatica i": "décimo",
+    "programacion": "undécimo",
+    "ofimatica i": "undécimo",
+    "informatica aplicada i": "undécimo",
+    "analisis y diseño": "undécimo",
+    "diseño web": "duodécimo",
+    "laboratorio i": "undécimo",
+    "laboratorio ii": "duodécimo",
+    "mantenimiento y reparacion i": "undécimo",
+    "mantenimiento y reparacion ii": "duodécimo"
+};
+
+/**
+ * Sincroniza la configuración académica global con el servidor/caché (v7.7.4)
+ */
+window.syncAcademicScope = function(callback) {
+    var normalizeToArray = function(val) {
+        if (!val) return [];
+        if (Array.isArray(val)) return val.filter(Boolean);
+        if (typeof val === 'string') {
+            // REQ: Soporte para arreglos JSON guardados como strings (Tarea 1 - Fase Diagnóstico)
+            if (val.trim().indexOf('[') === 0) {
+                try {
+                    var parsed = JSON.parse(val);
+                    if (Array.isArray(parsed)) return parsed.filter(Boolean);
+                } catch (e) {
+                    console.warn("[IMA-SCOPE] Fallo al parsear arreglo JSON:", val);
+                }
+            }
+            return val.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+        }
+        return [val];
+    };
+
+    var applyConfig = function(data) {
+        if (!data) return;
+
+        var newScope = {
+            ParcialActual: data.ParcialActual || "I parcial",
+            UnidadActual: data.UnidadActual || data.ParcialActual || "I unidad",
+            GradoActual: normalizeToArray(data.GradoActual),
+            SeccionActual: normalizeToArray(data.SeccionActual),
+            AsignaturaActual: normalizeToArray(data.AsignaturaActual),
+            TemaActual: normalizeToArray(data.TemaActual),
+            // REQ: Almacenar configuración granular para filtrado exacto (v7.9.1)
+            GranularConfig: data.GranularConfig || []
+        };
+
+        if (newScope.TemaActual.length === 0) newScope.TemaActual = ["General"];
+
+        // REQ: Evitar disparos redundantes del evento (Optimización v7.8.6)
+        var hasChanged = !window.GLOBAL_SCOPE || JSON.stringify(window.GLOBAL_SCOPE) !== JSON.stringify(newScope);
+
+        window.GLOBAL_SCOPE = newScope;
+        window.PARCIAL_ACTUAL = window.GLOBAL_SCOPE.ParcialActual;
+
+        if (hasChanged) {
+            console.log("[IMA-SCOPE] Alcance académico actualizado:", window.GLOBAL_SCOPE);
+
+            // REQ: Sincronizar el selector de historial inmediatamente con el parcial vigente (v7.9.0)
+            var historySelector = document.getElementById('parcial-history-selector');
+            if (historySelector) {
+                historySelector.value = window.normalizePartial(window.GLOBAL_SCOPE.ParcialActual);
+            }
+
+            document.dispatchEvent(new CustomEvent('academic-scope-updated', { detail: window.GLOBAL_SCOPE }));
+        }
+
+        if (typeof callback === 'function') callback(window.GLOBAL_SCOPE);
+    };
+
+    // REQ: Enviar contexto de usuario para filtrado estricto (v7.9.0)
+    var userRaw = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
+    var currentUser = userRaw ? JSON.parse(userRaw) : null;
+    var payload = {};
+    if (currentUser) {
+        if (currentUser.rol === 'Profesor') payload.profesorId = currentUser.userId;
+        else {
+            payload.grado = currentUser.grado;
+            payload.seccion = currentUser.seccion;
+        }
+    }
+
+    if (typeof fetchApi !== 'function') {
+        console.warn("[IMA-SCOPE] fetchApi no disponible para sincronización inicial.");
+        return Promise.resolve(window.GLOBAL_SCOPE);
+    }
+
+    // Retornamos una promesa para que el llamador pueda esperar a la sincronización REAL (desde el servidor)
+    return new Promise(function(resolve) {
+        // REQ: Uso de Microservicio Académico Modularizado (v7.9.3)
+        fetchApi('ACADEMIC', 'getAcademicConfig', payload, 0, {
+            store: 'academic_stats',
+            key: 'config' + (currentUser ? '_' + currentUser.userId : ''),
+            onUpdate: function(data) {
+                applyConfig(data);
+                // No resolvemos aquí porque onUpdate puede llamarse varias veces (caché y luego servidor)
+            }
+        }).then(function(res) {
+            if (res && res.status === 'success' && res.data) {
+                applyConfig(res.data);
+                resolve(window.GLOBAL_SCOPE);
+            } else {
+                resolve(window.GLOBAL_SCOPE);
+            }
+        }).catch(function(e) {
+            console.error("[IMA-SCOPE] Fallo crítico en sincronización:", e);
+            resolve(window.GLOBAL_SCOPE);
+        });
+    });
+};
+
+var GRADE_MAP = {
+    'decimo': 10, 'undecimo': 11, 'duodecimo': 12,
+    '10': 10, '11': 11, '12': 12, '10mo': 10, '11no': 11, '12mo': 12,
+    'ibtp': 10, 'iibtp': 11, 'iiibtp': 12
+};
+
+window.parseGrade = function(gradeStr) {
+    if (!gradeStr) return 10;
+    var normalized = gradeStr.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+
+    if (normalized.indexOf("duodecimo") !== -1 || normalized.indexOf("iiibtp") !== -1) return 12;
+    if (normalized.indexOf("undecimo") !== -1 || normalized.indexOf("iibtp") !== -1) return 11;
+    if (normalized.indexOf("decimo") !== -1 || normalized.indexOf("ibtp") !== -1) return 10;
+
+    var match = gradeStr.toString().match(/\d+/);
+    if (match) {
+        var num = parseInt(match[0]);
+        if (num === 12) return 12;
+        if (num === 11) return 11;
+        if (num === 10) return 10;
+    }
+
+    return 10;
+};
+
+window.getSanitizedAcademicText = function(text) {
+    if (!text) return "";
+    return text.toString().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/_/g, " ")
+        .toUpperCase();
+};
+
+window.normalizeSubject = function(name) {
+    if (!name) return 'General';
+    return name.trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s*\(?(?:[IVX]+)?\s*Parcial\)?/i, '')
+        .replace(/\s+\(?[IVX]+\)?$/i, '')
+        .replace(/\s+I{1,3}$/i, '')
+        .trim();
+};
+
+window.getStandardLevelName = function(lvl) {
+    if (!lvl) return 'Básico';
+    var n = lvl.toLowerCase().normalize("NFD").replace(/[\u0300._-]/g, "").replace(/[\u0300-\u036f]/g, "");
+    if (n === 'basico') return 'Básico';
+    if (n === 'intermedio') return 'Intermedio';
+    if (n === 'avanzado') return 'Avanzado';
+    return lvl;
+};
+
+/**
+ * REQ: Estandarización Psicométrica (Modulo 2)
+ * Asegura el redondeo simétrico a 2 decimales para métricas de analítica.
+ */
+window.formatearMetricaPsicométrica = function(valor) {
+    if (valor === undefined || valor === null) return "0.00";
+    var num = parseFloat(valor);
+    if (isNaN(num)) return "0.00";
+    return (Math.round(num * 100) / 100).toFixed(2);
+};
+
+window.redondearMetrica = window.formatearMetricaPsicométrica;
+
+
+/**
+ * Sanitizador de HTML para etiquetas técnicas permitidas (Modulo 5.4)
+ * Permite renderizar <code>, <b>, <i>, <br>, <pre> de forma segura.
+ */
+window.sanitizarHTMLTecnico = function(html) {
+    if (!html) return '';
+
+    var temp = document.createElement('div');
+    temp.textContent = html;
+    var sanitized = temp.innerHTML;
+
+    var tags = 'p|div|span|strong|b|i|u|s|strike|em|ul|ol|li|code|pre|br|blockquote|h1|h2|h3|center|table|thead|tbody|tr|td|th';
+
+    sanitized = sanitized.replace(new RegExp('&lt;(/?)(' + tags + ')(.*?)&gt;', 'gi'), function(match, slash, tag, attrs) {
+        var cleanAttrs = attrs.replace(/&quot;/g, '"').replace(/\s*on\w+\s*=\s*(?:'[^']*'|"[^" ]*"|[^\s>]+)/gi, '');
+        return '<' + slash + tag + cleanAttrs + '>';
+    });
+
+    sanitized = sanitized.replace(/&lt;a\s+(.*?)&gt;/gi, function(match, attrs) {
+        var cleanAttrs = attrs.replace(/&quot;/g, '"').replace(/\s*on\w+\s*=\s*(?:'[^']*'|"[^" ]*"|[^\s>]+)/gi, '');
+        if (cleanAttrs.indexOf('target=') === -1) cleanAttrs += ' target="_blank"';
+        return '<a ' + cleanAttrs + '>';
+    });
+    sanitized = sanitized.replace(/&lt;\/a&gt;/gi, '</a>');
+
+    sanitized = sanitized.replace(/&lt;img\s+(.*?)&gt;/gi, function(match, attrs) {
+        var cleanAttrs = attrs.replace(/&quot;/g, '"').replace(/\s*on\w+\s*=\s*(?:'[^']*'|"[^" ]*"|[^\s>]+)/gi, '');
+        return '<img ' + cleanAttrs + '>';
+    });
+
+    sanitized = sanitized.replace(/&amp;(lt|gt|quot|apos|amp|nbsp);/g, '&$1;');
+
+    return sanitized;
+};
+
+/**
+ * Normaliza nombres de parciales para permitir comparaciones flexibles
+ */
+/**
+ * Normaliza nombres de parciales para permitir comparaciones flexibles (v7.9.0)
+ * REQ: Los cheques deben realizarse en orden descendente para evitar que los números romanos
+ * más cortos (I, II) coincidan erróneamente con los más largos (III).
+ */
+function normalizePartial(p) {
+    if (!p) return "";
+    var n = p.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    if (n.indexOf("cuarto") !== -1 || n.indexOf("iv parcial") !== -1 || n.indexOf("unidad iv") !== -1 || n.indexOf("iv") === 0) return "IV parcial";
+    if (n.indexOf("tercer") !== -1 || n.indexOf("iii parcial") !== -1 || n.indexOf("unidad iii") !== -1 || n.indexOf("iii") === 0) return "III parcial";
+    if (n.indexOf("segundo") !== -1 || n.indexOf("ii parcial") !== -1 || n.indexOf("unidad ii") !== -1 || n.indexOf("ii") === 0) return "II parcial";
+    if (n.indexOf("primer") !== -1 || n.indexOf("i parcial") !== -1 || n.indexOf("unidad i") !== -1 || n.indexOf("i") === 0) return "I parcial";
+
+    return p;
+}
+window.normalizePartial = normalizePartial;
+
+window.isContentAuthorized = function(contentUnit, contentSubject, contentTopic, contentGrade, contentSection) {
+    var userRaw = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
+    var user = userRaw ? JSON.parse(userRaw) : { rol: 'Invitado' };
+
+    // El profesor siempre tiene acceso completo
+    if (user.rol === 'Profesor') return true;
+
+    // Si no hay configuración de alcance cargada, ser restrictivo por defecto
+    if (!window.GLOBAL_SCOPE) return false;
+
+    // Helper para normalizar strings de comparación
+    var fastNorm = function(s) {
+        if (!s) return "";
+        return s.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    };
+
+    // --- TIER 1: VALIDACIÓN GLOBAL (VIGENTE) ---
+
+    // 1. Verificación de Parcial (SOLO PARA ACTIVIDADES/ENTREGAS, NO PARA RECURSOS ESTÁTICOS)
+    // Para recursos estáticos (Presentaciones/PDF), priorizamos Asignatura y Tema.
+    // Si NO se provee asignatura/tema (ej: filtrado de nivel superior), el parcial es obligatorio.
+    var normActualP = normalizePartial(window.GLOBAL_SCOPE.ParcialActual);
+
+    if (contentUnit) {
+        var normContentP = normalizePartial(contentUnit);
+        var partialAuthorized = (normContentP === normActualP);
+
+        if (!partialAuthorized) {
+            var partialGroups = {
+                "I y II parcial": ["I parcial", "II parcial"],
+                "III y IV parcial": ["III parcial", "IV parcial"]
+            };
+            if (partialGroups[contentUnit]) {
+                partialAuthorized = partialGroups[contentUnit].indexOf(normActualP) !== -1;
+            }
+        }
+
+        // REQ: Desacoplamiento de recursos (v7.7.6)
+        // Si es un recurso estático (tiene tema) y el parcial no coincide,
+        // aún puede ser autorizado si el tema está explícitamente en el GLOBAL_SCOPE.
+        if (!partialAuthorized && !contentTopic) return false;
+    }
+
+    // 2. Verificación de Grado (Global)
+    if (contentGrade && window.GLOBAL_SCOPE.GradoActual && window.GLOBAL_SCOPE.GradoActual.length > 0) {
+        var cGradeVal = window.parseGrade(contentGrade);
+        var gMatch = false;
+        for (var i = 0; i < window.GLOBAL_SCOPE.GradoActual.length; i++) {
+            if (window.parseGrade(window.GLOBAL_SCOPE.GradoActual[i]) === cGradeVal) {
+                gMatch = true;
+                break;
+            }
+        }
+        if (!gMatch) return false;
+    }
+
+    // 3. Verificación de Sección (Global)
+    if (contentSection && window.GLOBAL_SCOPE.SeccionActual && window.GLOBAL_SCOPE.SeccionActual.length > 0) {
+        var sMatch = false;
+        var sectionsToCheck = Array.isArray(contentSection) ? contentSection : contentSection.toString().split(',').map(function(s){return s.trim();});
+        for (var j = 0; j < sectionsToCheck.length; j++) {
+            if (window.GLOBAL_SCOPE.SeccionActual.indexOf(sectionsToCheck[j]) !== -1) {
+                sMatch = true;
+                break;
+            }
+        }
+        if (!sMatch) return false;
+    }
+
+    // 4. Verificación de Asignatura (Global)
+    if (contentSubject && window.GLOBAL_SCOPE.AsignaturaActual && window.GLOBAL_SCOPE.AsignaturaActual.length > 0) {
+        var normSubj = fastNorm(contentSubject);
+        var asigMatch = false;
+        for (var k = 0; k < window.GLOBAL_SCOPE.AsignaturaActual.length; k++) {
+            if (fastNorm(window.GLOBAL_SCOPE.AsignaturaActual[k]) === normSubj) {
+                asigMatch = true;
+                break;
+            }
+        }
+        if (!asigMatch) return false;
+    }
+
+    // 5. Verificación de Tema (Global)
+    if (contentTopic && window.GLOBAL_SCOPE.TemaActual && window.GLOBAL_SCOPE.TemaActual.length > 0) {
+        if (window.GLOBAL_SCOPE.TemaActual.indexOf("General") === -1) {
+            var normTopic = fastNorm(contentTopic);
+            var tMatch = false;
+            for (var l = 0; l < window.GLOBAL_SCOPE.TemaActual.length; l++) {
+                if (fastNorm(window.GLOBAL_SCOPE.TemaActual[l]) === normTopic) {
+                    tMatch = true;
+                    break;
+                }
+            }
+            if (!tMatch) return false;
+        }
+        // Si el tema coincide pero el parcial no, lo autorizamos de todos modos (Filtro Dinámico v7.7.6)
+        return true;
+    }
+
+    // --- TIER 2: VALIDACIÓN DE PERFIL (SOLO PARA ALUMNOS LOGUEADOS) ---
+    // Si el usuario es estudiante, solo puede ver lo que corresponde a SU grado y sección
+    if (user.rol === 'Estudiante' || user.rol === 'Alumno') {
+        // Validación de Grado vs Asignatura (Crucial para evitar filtración v7.8.4)
+        if (contentSubject) {
+            var requiredGrade = window.SUBJECT_GRADE_MAP[fastNorm(contentSubject)];
+            if (requiredGrade) {
+                if (window.parseGrade(requiredGrade) !== window.parseGrade(user.grado)) {
+                    return false;
+                }
+            }
+        }
+
+        if (contentGrade) {
+            if (window.parseGrade(contentGrade) !== window.parseGrade(user.grado)) return false;
+        }
+        if (contentSection && user.seccion) {
+            if (!window.checkSectionHelper(contentSection, user.seccion)) return false;
+        }
+    }
+
+    return true;
+};
+
+// [F8-Task03] [Anexo Tareas: Modularización - Actualización de Rutas] - Diccionario y verificador de rutas relativas y endpoints de microservicios
+window.MODULE_ROUTING_DICTIONARY = {
+    home: "index.html",
+    login: "login.html",
+    studentDashboard: "student-dashboard.html",
+    teacherDashboard: "teacher-dashboard.html",
+    coordinatorDashboard: "dashboard-coordinacion.html",
+    directorDashboard: "dashboard-direccion.html",
+    secretaryDashboard: "dashboard-secretaria.html",
+    hrDashboard: "dashboard-recursos-humanos.html",
+    accountingDashboard: "dashboard-contabilidad.html",
+    dynamicDashboard: "app/html/dashboards/dynamic-dashboard.html"
+};
+
+// [TAREA-AD-05] [Anexo Tareas: Dashboards Dinámicos - Integración de Módulos] - Contratos de integración por módulo para dashboards dinámicos
+window.DYNAMIC_DASHBOARD_MODULE_CONTRACTS = {
+    "mod_gestion_usuarios": {
+        moduleId: "mod_gestion_usuarios",
+        name: "Gestión de Usuarios y Cuentas",
+        targetService: "USER",
+        readAction: "getStudents",
+        writeAction: "updateUserProfile",
+        requiredCapabilities: ["CAP_CONSULTAR", "CAP_CREAR", "CAP_EDITAR"],
+        defaultParams: {}
+    },
+    "mod_planificacion_horarios": {
+        moduleId: "mod_planificacion_horarios",
+        name: "Planificación de Horarios y Recursos",
+        targetService: "ACADEMIC",
+        readAction: "getClassSchedules",
+        writeAction: "createClassSchedule",
+        requiredCapabilities: ["CAP_CONSULTAR", "CAP_CREAR"],
+        defaultParams: {}
+    },
+    "mod_coordinacion_academica": {
+        moduleId: "mod_coordinacion_academica",
+        name: "Resumen de Coordinación Académica",
+        targetService: "ACADEMIC",
+        readAction: "getCoordinatorOverview",
+        writeAction: "assignTeacherToSection",
+        requiredCapabilities: ["CAP_CONSULTAR", "CAP_ASIGNAR"],
+        defaultParams: {}
+    },
+    "mod_mis_clases": {
+        moduleId: "mod_mis_clases",
+        name: "Clases y Asignaciones Docentes",
+        targetService: "ACADEMIC",
+        readAction: "getTeacherAssignments",
+        writeAction: "assignTeacherToClass",
+        requiredCapabilities: ["CAP_CONSULTAR"],
+        defaultParams: {}
+    },
+    "mod_aula_virtual_tareas": {
+        moduleId: "mod_aula_virtual_tareas",
+        name: "Aula Virtual y Tareas",
+        targetService: "TASK",
+        readAction: "getStudentTasks",
+        writeAction: "submitAssignment",
+        requiredCapabilities: ["CAP_CONSULTAR", "CAP_CREAR"],
+        defaultParams: {}
+    },
+    "mod_libro_calificaciones": {
+        moduleId: "mod_libro_calificaciones",
+        name: "Libro de Calificaciones Exámenes",
+        targetService: "EXAM",
+        readAction: "getStudentExams",
+        writeAction: "gradeSubmission",
+        requiredCapabilities: ["CAP_CONSULTAR", "CAP_APROBAR"],
+        defaultParams: {}
+    }
+};
+
+// [FASE2-T04] [Fase 2 - Fuente de Verdad Institucional de Catálogos] - Sincronización del cliente con el catálogo centralizado de la institución.
+window.fetchInstitutionalCatalog = function(catalogType) {
+    var requestedType = catalogType || "ALL_INSTITUTIONAL_CATALOGS";
+    function fallback(code, message) {
+        var cache = window.INSTITUTIONAL_CATALOG_CACHE;
+        var areas = Object.keys(cache.areas).map(function(key) { return cache.areas[key]; });
+        var subjects = Object.keys(cache.subjects).map(function(key) { return cache.subjects[key]; });
+        var departments = Object.keys(cache.departments).map(function(key) { return cache.departments[key]; });
+        var hasServerCache = areas.concat(subjects, departments).some(function(item) { return item.source === "SERVER"; });
+        var fallbackSource = hasServerCache ? "STALE_SERVER_CACHE" : "LOCAL_FALLBACK";
+        var sources = Object.assign({}, window.INSTITUTIONAL_CATALOG_STATE.catalogSources || {});
+        var normalizedType = String(requestedType).toUpperCase();
+        if (normalizedType === "ALL" || normalizedType === "ALL_INSTITUTIONAL_CATALOGS") {
+            sources.areas = fallbackSource; sources.subjects = fallbackSource; sources.departments = fallbackSource;
+        } else if (normalizedType === "CURRICULAR_AREAS") sources.areas = fallbackSource;
+        else if (normalizedType === "SUBJECTS") sources.subjects = fallbackSource;
+        else if (normalizedType === "DEPARTMENTS") sources.departments = fallbackSource;
+        window.INSTITUTIONAL_CATALOG_STATE = Object.assign({}, window.INSTITUTIONAL_CATALOG_STATE, {
+            source:fallbackSource, authoritative:false, catalogSources:sources,
+            error:{code:code,message:message}, fallbackAt:new Date().toISOString()
+        });
+        return { status:"fallback", source:fallbackSource, authoritative:false, schemaVersion:null, catalogRevision:null,
+            error:{code:code,message:message},
+            data:{
+                areasCurriculares:areas.filter(function(item){return item.isActive===true;}),
+                asignaturas:subjects.filter(function(item){return item.isActive===true;}),
+                departamentosAcademicos:departments.filter(function(item){return item.isActive===true;}),
+                areasCurricularesMetadata:areas, asignaturasMetadata:subjects, departamentosAcademicosMetadata:departments
+            }
+        };
+    }
+    var api = typeof window.fetchApi === "function" ? window.fetchApi : (typeof fetchApi === "function" ? fetchApi : null);
+    if (!api) {
+        if (window.console && console.warn) console.warn("[CATALOG-SYNC] fetchApi no disponible; se conserva catálogo local no autoritativo.");
+        return Promise.resolve(fallback("FETCH_API_UNAVAILABLE","No existe conexión disponible con el catálogo institucional."));
+    }
+    var payload = {
+        catalogType:requestedType,
+        clientConfigVersion:window.getSharedConfigVersion ? window.getSharedConfigVersion() : null,
+        clientServiceVersion:window.SERVICE_VERSIONS ? window.SERVICE_VERSIONS.ACADEMIC : null,
+        knownCatalogRevision:window.INSTITUTIONAL_CATALOG_STATE.catalogRevision
+    };
+    return api("ACADEMIC","getInstitutionalCatalog",payload).then(function(res) {
+        var data = res && res.data;
+        var valid = res && res.status==="success" && res.schemaVersion==="1.0.0" &&
+            Number.isSafeInteger(Number(res.catalogRevision)) && data && typeof data==="object" &&
+            Array.isArray(data.areasCurricularesMetadata) && Array.isArray(data.asignaturasMetadata) &&
+            Array.isArray(data.departamentosAcademicosMetadata);
+        if (!valid) return fallback("INVALID_CATALOG_CONTRACT","La respuesta del servidor no cumple el contrato versionado del catálogo.");
+        var normalizedType = String(requestedType).toUpperCase();
+        var requestedCatalogTypes = normalizedType === "ALL" || normalizedType === "ALL_INSTITUTIONAL_CATALOGS"
+            ? ["areas", "subjects", "departments"]
+            : normalizedType === "CURRICULAR_AREAS" ? ["areas"]
+            : normalizedType === "SUBJECTS" ? ["subjects"]
+            : ["departments"];
+        var responseRevision = Number(res.catalogRevision);
+        var currentState = window.INSTITUTIONAL_CATALOG_STATE || {};
+        var catalogSources = Object.assign({}, currentState.catalogSources || {});
+        var catalogRevisions = Object.assign({areas:null,subjects:null,departments:null}, currentState.catalogRevisions || {});
+        var previousGlobalRevision = Number(currentState.catalogRevision);
+        ["areas","subjects","departments"].forEach(function(type) {
+            if ((catalogRevisions[type] === null || catalogRevisions[type] === undefined) &&
+                catalogSources[type] === "SERVER" && Number.isSafeInteger(previousGlobalRevision)) {
+                catalogRevisions[type] = previousGlobalRevision;
+            }
+        });
+        var applyCatalog = {};
+        var staleCatalogTypes = [];
+        requestedCatalogTypes.forEach(function(type) {
+            var appliedRevision = Number(catalogRevisions[type]);
+            var hasAppliedRevision = catalogRevisions[type] !== null && catalogRevisions[type] !== undefined && Number.isSafeInteger(appliedRevision);
+            applyCatalog[type] = !hasAppliedRevision || responseRevision >= appliedRevision;
+            if (!applyCatalog[type]) staleCatalogTypes.push(type);
+        });
+        if (applyCatalog.areas) {
+            window.INSTITUTIONAL_CATALOG_CACHE.areas = {};
+            data.areasCurricularesMetadata.forEach(function(area){window.registerNewCurricularAreaServiceConfig(Object.assign({},area,{source:"SERVER",authoritative:true}));});
+            catalogSources.areas = "SERVER";
+            catalogRevisions.areas = responseRevision;
+        }
+        if (applyCatalog.subjects) {
+            window.INSTITUTIONAL_CATALOG_CACHE.subjects = {};
+            data.asignaturasMetadata.forEach(function(subject){window.registerNewAcademicSubjectServiceConfig(Object.assign({},subject,{source:"SERVER",authoritative:true}));});
+            catalogSources.subjects = "SERVER";
+            catalogRevisions.subjects = responseRevision;
+        }
+        if (applyCatalog.departments) {
+            window.INSTITUTIONAL_CATALOG_CACHE.departments = {};
+            data.departamentosAcademicosMetadata.forEach(function(department){window.registerNewAcademicDepartmentServiceConfig(Object.assign({},department,{source:"SERVER",authoritative:true}));});
+            catalogSources.departments = "SERVER";
+            catalogRevisions.departments = responseRevision;
+        }
+        var allCatalogsServerAuthoritative = catalogSources.areas === "SERVER" && catalogSources.subjects === "SERVER" && catalogSources.departments === "SERVER";
+        if (staleCatalogTypes.length === requestedCatalogTypes.length) {
+            var knownGlobalRevision = Number(currentState.catalogRevision);
+            return Object.assign({},res,{
+                status:"stale", source:currentState.source || "PARTIAL_SERVER",
+                authoritative:currentState.authoritative === true,
+                catalogRevision:Number.isSafeInteger(knownGlobalRevision) ? knownGlobalRevision : responseRevision,
+                staleResponseIgnored:true, staleCatalogTypes:staleCatalogTypes,
+                cachePolicy:window.CACHE_POLICIES ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS : null
+            });
+        }
+        var nextRevision = Number.isSafeInteger(previousGlobalRevision) ? Math.max(previousGlobalRevision,responseRevision) : responseRevision;
+        window.INSTITUTIONAL_CATALOG_STATE = {
+            source:allCatalogsServerAuthoritative ? "SERVER" : "PARTIAL_SERVER",
+            authoritative:allCatalogsServerAuthoritative, catalogSources:catalogSources,
+            catalogRevisions:catalogRevisions,
+            schemaVersion:res.schemaVersion, version:res.version,
+            catalogRevision:nextRevision, sharedConfigVersion:payload.clientConfigVersion,
+            serviceVersion:payload.clientServiceVersion,
+            cacheTtlSeconds:window.CACHE_POLICIES && window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS.ttlSeconds : 43200,
+            fetchedAt:new Date().toISOString()
+        };
+        return Object.assign({},res,{
+            source:"SERVER", authoritative:allCatalogsServerAuthoritative,
+            authoritativeCatalogType:normalizedType, staleCatalogTypes:staleCatalogTypes,
+            cachePolicy:window.CACHE_POLICIES ? window.CACHE_POLICIES.INSTITUTIONAL_CATALOGS : null
+        });
+    }).catch(function(error) {
+        if (window.console && console.error) console.error("[CATALOG-SYNC] Error en sincronización institucional:",error);
+        return fallback("CATALOG_SYNC_FAILED",String(error && error.message || error || "Error desconocido"));
+    });
+};
+
+window.validateQuestion = function(q) {
+    var normalized = window.normalizeQuestion(q);
+    var required = ['Asignatura', 'Nivel', 'Pregunta', 'RespuestaCorrecta'];
+
+    if (normalized.TipoActividad === 'ordering' || normalized.TipoActividad === 'matching') {
+        var index = required.indexOf('RespuestaCorrecta');
+        if (index > -1) required.splice(index, 1);
+    }
+
+    for (var i = 0; i < required.length; i++) {
+        var field = required[i];
+        if (!normalized[field] || normalized[field].toString().trim() === "") {
+            return { valid: false, error: "Campo requerido faltante: " + field };
+        }
+    }
+
+    if (normalized.TipoActividad === 'verdadero_falso') {
+        if (!normalized.OpcionA || !normalized.OpcionB) return { valid: false, error: "Verdadero/Falso requiere OpcionA y OpcionB" };
+    } else if (normalized.TipoActividad === 'opcion_multiple' || normalized.TipoActividad === 'Selección múltiple') {
+        if (!normalized.OpcionA || !normalized.OpcionB || !normalized.OpcionC) return { valid: false, error: "Opción Múltiple requiere al menos 3 opciones (A, B, C)" };
+    }
+
+    return { valid: true };
+};
+
+window.GamesAdapter = window.GamesAdapter || {
+    isFallback: true,
+    init: function() { return Promise.resolve({ lb: { global: [], subjectTops: {} }, record: {} }); },
+    showLoading: function(active) {
+        console.warn("[IMA-SYSTEM] GamesAdapter (Fallback) showLoading:", active);
+        return Promise.resolve();
+    },
+    saveResult: function() { return Promise.resolve({ status: 'success' }); },
+    recordAction: function() {},
+    finishSession: function() { return Promise.resolve({ status: 'success' }); },
+    endSession: function() {},
+    getLeaderboard: function() { return Promise.resolve({ status: 'success', global: [], subjectTops: {} }); },
+    getPersonalRecord: function() { return Promise.resolve({}); }
+};
+
+window.normalizeQuestion = function(q) {
+    if (!q) return null;
+
+    var id = q.id || q.ID || q.PreguntaID || ("bank_" + Math.random().toString(36).substr(2, 9));
+    var Asignatura = q.Asignatura || q.subject || q.asignatura || "Informática I";
+    var Pregunta = q.Pregunta || q.question || q.pregunta || q.enunciado || "";
+    var TipoActividad = q.TipoActividad || q.type || q.tipoActividad || q.tipo_pregunta || "opcion_multiple";
+    var Nivel = q.Nivel || q.nivel || "Básico";
+    var Tema = q.Tema || q.tema || (q.tags && q.tags[0]) || "General";
+    var Grado = q.Grado || q.grado || 10;
+
+    var OpcionA = q.OpcionA || q.opcionA || (q.options && q.options[0]) || "";
+    var OpcionB = q.OpcionB || q.opcionB || (q.options && q.options[1]) || "";
+    var OpcionC = q.OpcionC || q.opcionC || (q.options && q.options[2]) || "";
+    var OpcionD = q.OpcionD || q.opcionD || (q.options && q.options[3]) || "";
+
+    var respuestaCorrecta = (q.RespuestaCorrecta !== undefined) ? q.RespuestaCorrecta :
+                             ((q.respuestaCorrecta !== undefined) ? q.respuestaCorrecta :
+                             ((q.respuesta_correcta_literal !== undefined) ? q.respuesta_correcta_literal :
+                             ((q.answer !== undefined) ? q.answer :
+                             ((q.correctAnswer !== undefined) ? q.correctAnswer :
+                             ((q.correct_answer !== undefined) ? q.correct_answer :
+                             ((q.correctType !== undefined) ? q.correctType :
+                             ((q.solution !== undefined) ? q.solution :
+                             ((q.a !== undefined) ? q.a : null))))))));
+
+    if (respuestaCorrecta === null && TipoActividad !== 'ordering' && TipoActividad !== 'matching' && TipoActividad !== 'emparejamiento') {
+        console.warn("[IMA-NORMALIZER] No se detectó respuesta correcta para la pregunta:", q);
+    }
+
+    var Enunciado = q.enunciado || Pregunta;
+    var TipoPregunta = q.tipo_pregunta || TipoActividad;
+    var RespuestaCorrectaLiteral = q.respuesta_correcta_literal || respuestaCorrecta;
+    var OpcionesVisibles = q.opciones_visibles || q.opciones || [];
+    var Parejas = q.parejas || [];
+
+    var result = {};
+    for (var key in q) { result[key] = q[key]; }
+
+    result.id = id;
+    result.Asignatura = Asignatura;
+    result.Pregunta = Pregunta;
+    result.TipoActividad = TipoActividad;
+    result.Nivel = Nivel;
+    result.Tema = Tema;
+    result.Grado = Grado;
+    result.OpcionA = OpcionA;
+    result.OpcionB = OpcionB;
+    result.OpcionC = OpcionC;
+    result.OpcionD = OpcionD;
+    result.RespuestaCorrecta = (respuestaCorrecta !== null) ? String(respuestaCorrecta).trim() : null;
+
+    result.enunciado = Enunciado;
+    result.tipo_pregunta = TipoPregunta;
+    result.respuesta_correcta_literal = (RespuestaCorrectaLiteral !== null) ? String(RespuestaCorrectaLiteral).trim() : null;
+    result.opciones_visibles = OpcionesVisibles;
+    result.parejas = Parejas;
+
+    result.asignatura = Asignatura;
+    result.pregunta = Pregunta;
+    result.tipoActividad = TipoActividad;
+    result.nivel = Nivel;
+    result.tema = Tema;
+    result.grado = Grado;
+    result.opcionA = OpcionA;
+    result.opcionB = OpcionB;
+    result.opcionC = OpcionC;
+    result.opcionD = OpcionD;
+    result.respuestaCorrecta = result.RespuestaCorrecta;
+
+    return result;
+};
+
+// [TAREA-20] [Fase 1 - Incorporación Curricular] - Plantilla técnica estandarizada para registro e incorporación de nuevas áreas y servicios curriculares en la configuración global.
+window.ACADEMIC_SUBJECTS_CATALOG = window.ACADEMIC_SUBJECTS_CATALOG || [];
+window.INSTITUTIONAL_CATALOG_CACHE = window.INSTITUTIONAL_CATALOG_CACHE || { areas: {}, subjects: {}, departments: {} };
+window.INSTITUTIONAL_CATALOG_STATE = window.INSTITUTIONAL_CATALOG_STATE || {
+    source: "LOCAL_FALLBACK", authoritative: false, schemaVersion: null,
+    catalogRevision: null, sharedConfigVersion: window.getSharedConfigVersion ? window.getSharedConfigVersion() : null,
+    catalogSources: { areas:"LOCAL_FALLBACK", subjects:"LOCAL_FALLBACK", departments:"LOCAL_FALLBACK" }
+};
+function institutionalCatalogIsActive_(record, existing) {
+    if (Object.prototype.hasOwnProperty.call(record, "isActive")) return record.isActive === true;
+    if (Object.prototype.hasOwnProperty.call(record, "estado")) return ["activo","vigente","active","enabled"].indexOf(String(record.estado || "").trim().toLowerCase()) !== -1;
+    return existing ? existing.isActive === true : false;
+}
+function rebuildInstitutionalCatalogViews_() {
+    var cache = window.INSTITUTIONAL_CATALOG_CACHE;
+    window.CURRICULAR_AREAS_CATALOG = Object.keys(cache.areas).map(function(key) { return cache.areas[key]; }).filter(function(item) { return item.isActive === true; });
+    window.ACADEMIC_SUBJECTS_CATALOG = Object.keys(cache.subjects).map(function(key) { return cache.subjects[key]; }).filter(function(item) { return item.isActive === true; });
+    window.ACADEMIC_DEPARTMENTS_CATALOG = Object.keys(cache.departments).map(function(key) { return cache.departments[key]; }).filter(function(item) { return item.isActive === true; });
+    return true;
+}
+if (!window.INSTITUTIONAL_CATALOG_CACHE_SEEDED) {
+    (window.CURRICULAR_AREAS_CATALOG || []).forEach(function(area) {
+        window.INSTITUTIONAL_CATALOG_CACHE.areas[area.areaId] = Object.assign({}, area, { estado:"Activo", isActive:true, source:"LOCAL_FALLBACK", authoritative:false });
+    });
+    (window.ACADEMIC_DEPARTMENTS_CATALOG || []).forEach(function(department) {
+        var id = department.departmentId || department.deptId;
+        if (!id) return;
+        window.INSTITUTIONAL_CATALOG_CACHE.departments[id] = Object.assign({}, department, { departmentId:id, estado:"Activo", isActive:true, source:"LOCAL_FALLBACK", authoritative:false });
+    });
+    window.INSTITUTIONAL_CATALOG_CACHE_SEEDED = true;
+    rebuildInstitutionalCatalogViews_();
+}
+window.registerNewCurricularAreaServiceConfig = function(areaConfig) {
+    if (!areaConfig || !areaConfig.areaId || !areaConfig.name || !areaConfig.code) return false;
+    var key = String(areaConfig.areaId).trim().toUpperCase();
+    var existing = window.INSTITUTIONAL_CATALOG_CACHE.areas[key];
+    var next = Object.assign({}, existing || {}, areaConfig, {
+        areaId:key, name:String(areaConfig.name).trim(), code:String(areaConfig.code).trim().toUpperCase(),
+        source:areaConfig.source === "SERVER" && areaConfig.authoritative === true ? "SERVER" : "LOCAL_FALLBACK",
+        authoritative:areaConfig.source === "SERVER" && areaConfig.authoritative === true
+    });
+    next.isActive = institutionalCatalogIsActive_(areaConfig, existing);
+    if (!Object.prototype.hasOwnProperty.call(areaConfig,"estado") && !Object.prototype.hasOwnProperty.call(areaConfig,"isActive") && existing) next.estado = existing.estado;
+    else if (!next.estado) next.estado = next.isActive ? "Activo" : "Inactivo";
+    window.INSTITUTIONAL_CATALOG_CACHE.areas[key] = next;
+    if (!window.CURRICULAR_SPECIALIZED_SERVICES) window.CURRICULAR_SPECIALIZED_SERVICES = {};
+    if (next.isActive && next.serviceKey) window.CURRICULAR_SPECIALIZED_SERVICES[key] = { serviceKey:next.serviceKey, name:next.name, tools:Array.isArray(next.tools) ? next.tools : [] };
+    else delete window.CURRICULAR_SPECIALIZED_SERVICES[key];
+    rebuildInstitutionalCatalogViews_();
+    return true;
+};
+window.registerNewAcademicSubjectServiceConfig = function(subjectConfig) {
+    if (!subjectConfig || !subjectConfig.asignaturaId || !subjectConfig.nombreOficial || !subjectConfig.codigo) return false;
+    var key = String(subjectConfig.asignaturaId).trim().toUpperCase();
+    var existing = window.INSTITUTIONAL_CATALOG_CACHE.subjects[key];
+    var next = Object.assign({}, existing || {}, subjectConfig, {
+        asignaturaId:key, codigo:String(subjectConfig.codigo).trim().toUpperCase(),
+        source:subjectConfig.source === "SERVER" && subjectConfig.authoritative === true ? "SERVER" : "LOCAL_FALLBACK",
+        authoritative:subjectConfig.source === "SERVER" && subjectConfig.authoritative === true
+    });
+    next.isActive = institutionalCatalogIsActive_(subjectConfig, existing);
+    if (!Object.prototype.hasOwnProperty.call(subjectConfig,"estado") && !Object.prototype.hasOwnProperty.call(subjectConfig,"isActive") && existing) next.estado = existing.estado;
+    else if (!next.estado) next.estado = next.isActive ? "Activo" : "Inactivo";
+    window.INSTITUTIONAL_CATALOG_CACHE.subjects[key] = next;
+    rebuildInstitutionalCatalogViews_();
+    return true;
+};
+window.registerNewAcademicDepartmentServiceConfig = function(departmentConfig) {
+    if (!departmentConfig || !(departmentConfig.departmentId || departmentConfig.deptId) || !departmentConfig.name) return false;
+    var key = String(departmentConfig.departmentId || departmentConfig.deptId).trim().toUpperCase();
+    var existing = window.INSTITUTIONAL_CATALOG_CACHE.departments[key];
+    var next = Object.assign({}, existing || {}, departmentConfig, {
+        departmentId:key, deptId:key,
+        source:departmentConfig.source === "SERVER" && departmentConfig.authoritative === true ? "SERVER" : "LOCAL_FALLBACK",
+        authoritative:departmentConfig.source === "SERVER" && departmentConfig.authoritative === true
+    });
+    next.isActive = institutionalCatalogIsActive_(departmentConfig, existing);
+    if (!Object.prototype.hasOwnProperty.call(departmentConfig,"estado") && !Object.prototype.hasOwnProperty.call(departmentConfig,"isActive") && existing) next.estado = existing.estado;
+    else if (!next.estado) next.estado = next.isActive ? "Activo" : "Inactivo";
+    window.INSTITUTIONAL_CATALOG_CACHE.departments[key] = next;
+    rebuildInstitutionalCatalogViews_();
+    return true;
+};
+window.getInstitutionalCatalogState = function() { return Object.assign({}, window.INSTITUTIONAL_CATALOG_STATE); };
+
+
+
+/**
+ * Formateo regional centralizado. Los valores de REGIONAL_SETTINGS se validan
+ * antes de aplicarse; los defaults solo cubren instalaciones sin configuración.
+ */
+(function(global) {
+    if (global.IMARegionalFormatters) return;
+
+    var defaults = {
+        locale: "es-HN",
+        currency: "HNL",
+        currencyDisplay: "symbol",
+        timeZone: "America/Tegucigalpa",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        dateStyle: "medium",
+        timeStyle: "short"
+    };
+    var settings = Object.assign({}, defaults);
+    var allowedStyles = ["short", "medium", "long", "full"];
+
+    function validLocale(value) {
+        try {
+            var candidate = String(value || defaults.locale).trim();
+            new Intl.NumberFormat(candidate);
+            new Intl.DateTimeFormat(candidate);
+            return candidate;
+        } catch (_) {
+            return defaults.locale;
+        }
+    }
+
+    function validCurrency(value) {
+        var candidate = String(value || defaults.currency).trim().toUpperCase();
+        if (candidate === "L" || candidate === "LPS" || candidate === "LEMPIRA" || candidate === "LEMPIRAS") candidate = "HNL";
+        try {
+            new Intl.NumberFormat(settings.locale, { style: "currency", currency: candidate }).format(1);
+            return candidate;
+        } catch (_) {
+            return defaults.currency;
+        }
+    }
+
+    function validTimeZone(value) {
+        try {
+            var candidate = String(value || defaults.timeZone).trim();
+            new Intl.DateTimeFormat(settings.locale, { timeZone: candidate }).format(new Date());
+            return candidate;
+        } catch (_) {
+            return defaults.timeZone;
+        }
+    }
+
+    function boundedInteger(value, fallback, min, max) {
+        var parsed = Number(value);
+        if (!Number.isFinite(parsed) || Math.floor(parsed) !== parsed) return fallback;
+        return Math.min(max, Math.max(min, parsed));
+    }
+
+    function normalizeSettings(raw) {
+        raw = raw && typeof raw === "object" ? raw : {};
+        var locale = validLocale(raw.locale || raw.idioma || raw.localeInstitucional || settings.locale);
+        settings.locale = locale;
+        var currency = validCurrency(raw.currencyCode || raw.codigoMoneda || raw.currency || raw.moneda || settings.currency);
+        var timeZone = validTimeZone(raw.timeZone || raw.timezone || raw.zonaHoraria || raw.zonaHorariaInstitucional || settings.timeZone);
+        var minDigits = boundedInteger(raw.minimumFractionDigits !== undefined ? raw.minimumFractionDigits : raw.decimalesMoneda, settings.minimumFractionDigits, 0, 4);
+        var maxDigits = boundedInteger(raw.maximumFractionDigits !== undefined ? raw.maximumFractionDigits : raw.decimalesMoneda, settings.maximumFractionDigits, minDigits, 4);
+        var currencyDisplay = ["symbol", "narrowSymbol", "code", "name"].indexOf(raw.currencyDisplay) !== -1 ? raw.currencyDisplay : settings.currencyDisplay;
+        var dateStyle = allowedStyles.indexOf(raw.dateStyle || raw.formatoFecha) !== -1 ? (raw.dateStyle || raw.formatoFecha) : settings.dateStyle;
+        var timeStyle = allowedStyles.indexOf(raw.timeStyle || raw.formatoHora) !== -1 ? (raw.timeStyle || raw.formatoHora) : settings.timeStyle;
+        return {
+            locale: locale,
+            currency: currency,
+            currencyDisplay: currencyDisplay,
+            timeZone: timeZone,
+            minimumFractionDigits: minDigits,
+            maximumFractionDigits: maxDigits,
+            dateStyle: dateStyle,
+            timeStyle: timeStyle
+        };
+    }
+
+    function getSettings() {
+        return Object.assign({}, settings);
+    }
+
+    function setSettings(raw) {
+        settings = normalizeSettings(raw);
+        try {
+            if (typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") {
+                global.dispatchEvent(new global.CustomEvent("ima:regional-settings-updated", { detail: getSettings() }));
+            }
+        } catch (_) {}
+        return getSettings();
+    }
+
+    function parseRegionalNumber(value, options) {
+        options = options || {};
+        if (typeof value === "number") return Number.isFinite(value) ? value : null;
+        if (value === null || value === undefined) return null;
+        var text = String(value).trim();
+        if (!text) return null;
+
+        try {
+            var numberFormat = new Intl.NumberFormat(settings.locale);
+            var parts = numberFormat.formatToParts(12345.6);
+            var group = (parts.find(function(part) { return part.type === "group"; }) || {}).value || "";
+            var decimal = (parts.find(function(part) { return part.type === "decimal"; }) || {}).value || ".";
+            var sign = (new Intl.NumberFormat(settings.locale).formatToParts(-1).find(function(part) { return part.type === "minusSign"; }) || {}).value || "-";
+            var currencyParts = new Intl.NumberFormat(settings.locale, { style: "currency", currency: settings.currency }).formatToParts(1);
+            currencyParts.filter(function(part) { return part.type === "currency"; }).forEach(function(part) {
+                if (part.value) text = text.split(part.value).join("");
+            });
+            if (options.allowCurrencySymbol !== false) text = text.replace(/[L$€£¥]/g, "");
+            if (group) text = text.split(group).join("");
+            text = text.replace(/[\s\u00A0\u202F]/g, "");
+            if (sign && sign !== "-") text = text.split(sign).join("-");
+            if (decimal && decimal !== ".") text = text.split(decimal).join(".");
+            if (!/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(text)) return null;
+            var parsed = Number(text);
+            return Number.isFinite(parsed) ? parsed : null;
+        } catch (_) {
+            var fallback = Number(text.replace(/,/g, ""));
+            return Number.isFinite(fallback) ? fallback : null;
+        }
+    }
+
+    function formatNumber(value, options) {
+        options = options || {};
+        var parsed = parseRegionalNumber(value);
+        if (parsed === null) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var formatOptions = Object.assign({
+            useGrouping: true,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }, options);
+        delete formatOptions.emptyValue;
+        delete formatOptions.allowCurrencySymbol;
+        try {
+            return new Intl.NumberFormat(settings.locale, formatOptions).format(parsed);
+        } catch (_) {
+            return String(parsed);
+        }
+    }
+
+    function formatCurrency(value, options) {
+        options = options || {};
+        var parsed = parseRegionalNumber(value);
+        if (parsed === null) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var formatOptions = Object.assign({
+            style: "currency",
+            currency: settings.currency,
+            currencyDisplay: settings.currencyDisplay,
+            minimumFractionDigits: settings.minimumFractionDigits,
+            maximumFractionDigits: settings.maximumFractionDigits
+        }, options);
+        delete formatOptions.emptyValue;
+        delete formatOptions.allowCurrencySymbol;
+        try {
+            return new Intl.NumberFormat(settings.locale, formatOptions).format(parsed);
+        } catch (_) {
+            return new Intl.NumberFormat(settings.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parsed);
+        }
+    }
+
+    function parseDateValue(value) {
+        if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : { date: value, dateOnly: false };
+        if (value === null || value === undefined || value === "") return null;
+        if (typeof value === "string") {
+            var match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (match) {
+                var y = Number(match[1]), m = Number(match[2]), d = Number(match[3]);
+                var dateOnly = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+                if (dateOnly.getUTCFullYear() !== y || dateOnly.getUTCMonth() !== m - 1 || dateOnly.getUTCDate() !== d) return null;
+                return { date: dateOnly, dateOnly: true };
+            }
+        }
+        var date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : { date: date, dateOnly: false };
+    }
+
+    function hasDateParts(options) {
+        return ["weekday", "year", "month", "day", "era"].some(function(key) { return options[key] !== undefined; });
+    }
+
+    function hasTimeParts(options) {
+        return ["hour", "minute", "second", "fractionalSecondDigits", "dayPeriod"].some(function(key) { return options[key] !== undefined; });
+    }
+
+    function formatDate(value, options) {
+        options = options || {};
+        var parsed = parseDateValue(value);
+        if (!parsed) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var formatOptions = Object.assign({ timeZone: parsed.dateOnly ? "UTC" : settings.timeZone }, options);
+        delete formatOptions.emptyValue;
+        if (!hasDateParts(options) && !options.dateStyle) formatOptions.dateStyle = settings.dateStyle;
+        if (parsed.dateOnly) formatOptions.timeZone = "UTC";
+        try {
+            return new Intl.DateTimeFormat(settings.locale, formatOptions).format(parsed.date);
+        } catch (_) {
+            return new Intl.DateTimeFormat(settings.locale, { timeZone: parsed.dateOnly ? "UTC" : settings.timeZone, dateStyle: "medium" }).format(parsed.date);
+        }
+    }
+
+    function formatDateTime(value, options) {
+        options = options || {};
+        var parsed = parseDateValue(value);
+        if (!parsed) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        if (parsed.dateOnly) return formatDate(value, options);
+        var formatOptions = Object.assign({ timeZone: settings.timeZone }, options);
+        delete formatOptions.emptyValue;
+        if (!hasDateParts(options) && !options.dateStyle) formatOptions.dateStyle = settings.dateStyle;
+        if (!hasTimeParts(options) && !options.timeStyle) formatOptions.timeStyle = settings.timeStyle;
+        try {
+            return new Intl.DateTimeFormat(settings.locale, formatOptions).format(parsed.date);
+        } catch (_) {
+            return new Intl.DateTimeFormat(settings.locale, { timeZone: settings.timeZone, dateStyle: "medium", timeStyle: "short" }).format(parsed.date);
+        }
+    }
+
+    function formatTime(value, options) {
+        options = options || {};
+        var parsed = parseDateValue(value);
+        if (!parsed || parsed.dateOnly) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var formatOptions = Object.assign({ timeZone: settings.timeZone, hour: "2-digit", minute: "2-digit" }, options);
+        delete formatOptions.emptyValue;
+        try {
+            return new Intl.DateTimeFormat(settings.locale, formatOptions).format(parsed.date);
+        } catch (_) {
+            return new Intl.DateTimeFormat(settings.locale, { timeZone: settings.timeZone, hour: "2-digit", minute: "2-digit" }).format(parsed.date);
+        }
+    }
+
+    function formatClock(value, options) {
+        options = options || {};
+        if (value instanceof Date || (typeof value === "number" && Number.isFinite(value))) return formatTime(value, options);
+        if (typeof value !== "string") return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var match = value.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+        if (!match) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var hour = Number(match[1]), minute = Number(match[2]), second = Number(match[3] || 0);
+        if (hour > 23 || minute > 59 || second > 59) return options.emptyValue !== undefined ? options.emptyValue : "—";
+        var clockDate = new Date(Date.UTC(2000, 0, 1, hour, minute, second));
+        var formatOptions = Object.assign({ timeZone: "UTC", hour: "2-digit", minute: "2-digit" }, options);
+        delete formatOptions.emptyValue;
+        try {
+            return new Intl.DateTimeFormat(settings.locale, formatOptions).format(clockDate);
+        } catch (_) {
+            return String(match[1]).padStart(2, "0") + ":" + match[2];
+        }
+    }
+
+    global.IMARegionalFormatters = {
+        defaults: Object.assign({}, defaults),
+        getSettings: getSettings,
+        setSettings: setSettings,
+        parseNumber: parseRegionalNumber,
+        formatNumber: formatNumber,
+        formatCurrency: formatCurrency,
+        formatDate: formatDate,
+        formatDateTime: formatDateTime,
+        formatTime: formatTime,
+        formatClock: formatClock
+    };
+})(window);

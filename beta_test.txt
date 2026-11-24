@@ -1,0 +1,16 @@
+# Registro de verificaciones beta — IMA
+
+## TASK-047 / AUD-NG-090 — comunicación entre cuentas y deployments Apps Script
+
+- Estado: Pendiente beta.
+- Motivo: requiere dos cuentas Google institucionales autorizadas y deployments reales independientes. No se dispone en esta iteración de acceso aprobado a esas cuentas/proyectos; no se publican endpoints ni se solicitan secretos.
+- Alcance por verificar:
+  1. Registrar desde la consola de Desarrollador un servicio alojado bajo cada cuenta institucional, con su proyecto Apps Script, URL, Spreadsheet, carpeta Drive, dominio, rol/puesto y modalidad.
+  2. Confirmar que cada cuenta puede desplegar su servicio y que el endpoint conserva la privacidad institucional configurada, sin hacerlo público.
+  3. Iniciar sesión una sola vez en el portal y comprobar que el enrutador selecciona el servicio individual correcto según rol/identidad; verificar el servicio compartido Padres/Estudiantes donde aplique.
+  4. Ejecutar acciones permitidas y denegadas para verificar permisos por acción y que el servicio suspendido/retirado no recibe nuevas solicitudes.
+  5. Cambiar responsable, endpoint y recursos; comprobar historial y autorización efectiva actualizados.
+  6. Verificar con Google Workspace que las restricciones de dominio son efectivas y que el acceso a Sheets/Drive corresponde a la cuenta propietaria.
+  7. Confirmar que los permisos de almacenamiento no se confunden con privilegios institucionales de la plataforma.
+- Evidencia requerida: resultados de cada escenario, identificadores de despliegue redactados, estado de acceso y fecha de prueba; nunca copiar tokens, secretos ni URLs sensibles al repositorio.
+- No bloqueante para implementación local: los contratos, fixtures y pruebas locales del registro/enrutamiento ya pasan. La prueba beta no se declara aprobada ni ejecutada.
