@@ -1153,6 +1153,44 @@
         </div>
     </div>
 
+    <section id="rrhh-internal-roles-panel" class="mx-auto max-w-7xl mt-8 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+      <header class="flex flex-wrap items-center justify-between gap-3 mb-4"><div><p class="text-[10px] font-black uppercase tracking-widest text-indigo-600">Gobernanza institucional</p><h2 class="text-lg font-black text-slate-900">Responsabilidades y puestos internos</h2><p class="text-xs text-slate-500">El puesto identifica una función organizativa; no concede permisos RBAC por sí mismo.</p></div><button id="rrhh-internal-role-refresh" type="button" class="px-3 py-2 rounded-lg border text-xs font-bold">Actualizar</button></header>
+      <p id="rrhh-internal-role-status" role="status" aria-live="polite" class="mb-4 text-xs text-slate-500">Cargando…</p>
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <form id="rrhh-internal-role-form" class="rounded-xl border p-4 space-y-3">
+          <input type="hidden" id="rrhh-internal-role-id"><h3 class="text-sm font-black">Catálogo de responsabilidades</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="text-xs font-bold">Código<input id="rrhh-internal-role-code" maxlength="40" class="mt-1 w-full rounded-lg border p-2" placeholder="Automático"></label>
+            <label class="text-xs font-bold">Nombre<input id="rrhh-internal-role-name" maxlength="120" required class="mt-1 w-full rounded-lg border p-2" placeholder="Coordinador de Matemáticas"></label>
+            <label class="text-xs font-bold">Departamento<select id="rrhh-internal-role-department" class="mt-1 w-full rounded-lg border p-2"><option value="">Sin departamento</option></select></label>
+            <label class="text-xs font-bold">Área académica<input id="rrhh-internal-role-area" class="mt-1 w-full rounded-lg border p-2"></label>
+            <label class="text-xs font-bold">Tipo<select id="rrhh-internal-role-type" class="mt-1 w-full rounded-lg border p-2"><option>Administrativa</option><option>Académica</option><option>Operativa</option><option>Supervisión</option></select></label>
+            <label class="text-xs font-bold">Vigencia predeterminada (meses)<input id="rrhh-internal-role-validity" type="number" min="1" max="120" value="12" required class="mt-1 w-full rounded-lg border p-2"></label>
+            <label class="text-xs font-bold">Estado<select id="rrhh-internal-role-state" class="mt-1 w-full rounded-lg border p-2"><option>Activo</option><option>Inactivo</option></select></label>
+            <label class="flex items-center gap-2 text-xs font-bold pt-5"><input id="rrhh-internal-role-substitute" type="checkbox"> Permite suplencia</label>
+          </div>
+          <label class="block text-xs font-bold">Descripción<textarea id="rrhh-internal-role-description" rows="2" class="mt-1 w-full rounded-lg border p-2"></textarea></label>
+          <div class="flex gap-2"><button id="rrhh-internal-role-save" type="submit" class="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white">Guardar</button><button id="rrhh-internal-role-reset" type="button" class="rounded-lg border px-4 py-2 text-xs font-bold">Limpiar</button></div>
+        </form>
+        <div class="rounded-xl border p-4 min-w-0"><h3 class="text-sm font-black mb-3">Responsabilidades registradas</h3><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-50"><tr><th class="p-2">Código / nombre</th><th class="p-2">Departamento</th><th class="p-2">Tipo</th><th class="p-2">Estado</th><th class="p-2">Acciones</th></tr></thead><tbody id="rrhh-internal-role-tbody"></tbody></table></div></div>
+      </div>
+      <div class="mt-6 border-t pt-5"><h3 class="text-sm font-black mb-3">Asignar responsabilidad a empleado</h3>
+        <form id="rrhh-internal-assignment-form" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <label class="text-xs font-bold">Empleado<select id="rrhh-internal-assignment-user" required class="mt-1 w-full rounded-lg border p-2"><option value="">Seleccione</option></select></label>
+          <label class="text-xs font-bold">Rol de acceso existente<select id="rrhh-internal-assignment-role" required class="mt-1 w-full rounded-lg border p-2"><option value="">Seleccione rol</option></select></label>
+          <label class="text-xs font-bold">Responsabilidad<select id="rrhh-internal-assignment-responsibility" required class="mt-1 w-full rounded-lg border p-2"><option value="">Seleccione</option></select></label>
+          <label class="text-xs font-bold">Tipo de ámbito<select id="rrhh-internal-assignment-scope-type" class="mt-1 w-full rounded-lg border p-2"><option value="DEPARTAMENTO">Departamento</option><option value="AREA_ACADEMICA">Área académica</option><option value="INSTITUCION">Institución</option><option value="PERSONAL">Personal</option><option value="UNIDAD">Unidad</option></select></label>
+          <label class="text-xs font-bold sm:col-span-2">Valores de ámbito (separados por coma)<input id="rrhh-internal-assignment-scope-values" required class="mt-1 w-full rounded-lg border p-2" placeholder="IDs de departamento, área o unidad"></label>
+          <label class="text-xs font-bold">Inicio<input id="rrhh-internal-assignment-start" type="date" required class="mt-1 w-full rounded-lg border p-2"></label>
+          <label class="text-xs font-bold">Fin<input id="rrhh-internal-assignment-end" type="date" class="mt-1 w-full rounded-lg border p-2"></label>
+          <label class="flex items-center gap-2 text-xs font-bold pt-5"><input id="rrhh-internal-assignment-substitute" type="checkbox"> Suplencia temporal</label>
+          <label class="text-xs font-bold">Sustituye a<select id="rrhh-internal-assignment-substitute-user" disabled class="mt-1 w-full rounded-lg border p-2"><option value="">No aplica</option></select></label>
+          <div class="sm:col-span-2 xl:col-span-4"><button id="rrhh-internal-assignment-save" type="submit" class="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white">Registrar asignación</button></div>
+        </form>
+      </div>
+      <div class="mt-6 border-t pt-5"><div class="flex items-center justify-between gap-3 mb-3"><h3 class="text-sm font-black">Asignaciones vigentes e históricas</h3><label class="text-xs"><input id="rrhh-internal-assignment-history" type="checkbox"> Incluir historial</label></div><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-slate-50"><tr><th class="p-2">Empleado</th><th class="p-2">Rol</th><th class="p-2">Responsabilidad</th><th class="p-2">Ámbito</th><th class="p-2">Vigencia</th><th class="p-2">Estado</th><th class="p-2">Acción</th></tr></thead><tbody id="rrhh-internal-assignment-tbody"></tbody></table></div></div>
+    </section>
+
     <script src="js/config.js?v=26"></script>
     <script src="js/api.js?v=26"></script>
     <script src="js/hr-payroll-pdf.js?v=1"></script>
@@ -3063,5 +3101,68 @@
         document.addEventListener('DOMContentLoaded',function(){initRrhhDepartmentAffiliationPanel();});
 
     </script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const panel=document.getElementById('rrhh-internal-roles-panel'); if(!panel)return;
+        let currentUser=null;try{currentUser=JSON.parse(localStorage.getItem('currentUser')||sessionStorage.getItem('currentUser')||'null');}catch(_){}
+        const currentRole=String(currentUser&&(currentUser.rol||currentUser.role)||'').trim();
+        if(['Administrador','Director','RecursosHumanos'].indexOf(currentRole)===-1){panel.classList.add('hidden');return;}
+        const $=id=>document.getElementById(id), status=$('rrhh-internal-role-status'), roleBody=$('rrhh-internal-role-tbody'), assignmentBody=$('rrhh-internal-assignment-tbody');
+        const roleForm=$('rrhh-internal-role-form'), assignmentForm=$('rrhh-internal-assignment-form'), history=$('rrhh-internal-assignment-history');
+        let roles=[],assignments=[],employees=[];
+        const msg=(value,error)=>{status.textContent=value;status.className='mb-4 text-xs '+(error?'text-rose-700':'text-slate-500');};
+        const fill=(select,items,placeholder,value,label)=>{select.replaceChildren();const empty=document.createElement('option');empty.value='';empty.textContent=placeholder;select.appendChild(empty);items.forEach(item=>{const o=document.createElement('option');o.value=String(value(item)||'');o.textContent=String(label(item)||o.value);select.appendChild(o);});};
+        const cell=(tr,value)=>{const td=document.createElement('td');td.className='p-2 border-b align-top';td.textContent=String(value==null||value===''?'—':value);tr.appendChild(td);};
+        function reset(){roleForm.reset();$('rrhh-internal-role-id').value='';$('rrhh-internal-role-validity').value='12';$('rrhh-internal-role-state').value='Activo';}
+        function renderRoles(){
+          roleBody.replaceChildren();
+          roles.forEach(item=>{const tr=document.createElement('tr'),main=document.createElement('td');main.className='p-2 border-b';const title=document.createElement('strong');title.textContent=item.codigoInterno+' · '+item.nombreResponsabilidad;const desc=document.createElement('div');desc.className='text-[10px] text-slate-500';desc.textContent=item.descripcion||'';main.append(title,desc);tr.appendChild(main);cell(tr,item.departamento);cell(tr,item.tipoResponsabilidad);cell(tr,item.estado);
+            const actions=document.createElement('td');actions.className='p-2 border-b whitespace-nowrap';[['edit','Editar'],['toggle',item.estado==='Activo'?'Desactivar':'Activar']].forEach(pair=>{const button=document.createElement('button');button.type='button';button.dataset.action=pair[0];button.dataset.id=item.rolInternoId;button.textContent=pair[1];button.className='mr-2 font-bold text-indigo-700';actions.appendChild(button);});tr.appendChild(actions);roleBody.appendChild(tr);});
+          if(!roles.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=5;td.className='p-4 text-center text-slate-400';td.textContent='No hay responsabilidades registradas.';tr.appendChild(td);roleBody.appendChild(tr);}
+        }
+        function renderAssignments(){
+          assignmentBody.replaceChildren();
+          assignments.filter(item=>history.checked||['ACTIVO','ACTIVE','ACTIVA'].indexOf(String(item.estado||'').toUpperCase())!==-1).forEach(item=>{const tr=document.createElement('tr'),employee=employees.find(x=>String(x.userId)===String(item.userId)),responsibility=item.responsibility||roles.find(x=>x.rolInternoId===item.responsibilityId);cell(tr,employee&&(employee.empleadoNombre||employee.nombreCompleto)||item.userId);cell(tr,item.roleId);cell(tr,responsibility&&(responsibility.name||responsibility.nombreResponsabilidad)||item.responsibilityId);cell(tr,String(item.scopeType||'')+': '+String(item.scopeValues||''));cell(tr,String(item.fechaInicio||'')+(item.fechaFin?' → '+String(item.fechaFin):' → vigente'));cell(tr,item.estado);
+            const actions=document.createElement('td');actions.className='p-2 border-b';if(['ACTIVO','ACTIVE','ACTIVA'].indexOf(String(item.estado||'').toUpperCase())!==-1){const button=document.createElement('button');button.type='button';button.dataset.assignmentId=item.asignacionId;button.textContent='Revocar';button.className='font-bold text-rose-700';actions.appendChild(button);}else actions.textContent='—';tr.appendChild(actions);assignmentBody.appendChild(tr);});
+          if(!assignmentBody.children.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.className='p-4 text-center text-slate-400';td.textContent='No hay asignaciones para mostrar.';tr.appendChild(td);assignmentBody.appendChild(tr);}
+        }
+        async function load(){
+          msg('Consultando catálogos y asignaciones…',false);
+          const result=await Promise.all([fetchApi('USER','getInternalRoleCatalog',{soloActivos:false}),fetchApi('USER','getInternalRoleAssignments',{soloVigentes:false}),fetchApi('ACCOUNTING','getEmployeeRecords',{}),fetchApi('USER','manageDepartmentPositions',{subAction:'GET_DEPARTMENT_HIERARCHY'})]);
+          const catalog=result[0],assign=result[1],employeeResult=result[2],deptResult=result[3];
+          if(!catalog||catalog.status!=='success'||!Array.isArray(catalog.data))throw Error(catalog&&(catalog.message||catalog.code)||'No se pudo cargar el catálogo.');
+          if(!assign||assign.status!=='success'||!Array.isArray(assign.data))throw Error(assign&&(assign.message||assign.code)||'No se pudieron cargar las asignaciones.');
+          const employeeRows=employeeResult&&employeeResult.status==='success'?(Array.isArray(employeeResult.data)?employeeResult.data:employeeResult.expedientes):null;
+          if(!Array.isArray(employeeRows))throw Error(employeeResult&&(employeeResult.message||employeeResult.code)||'No se pudieron cargar los empleados.');
+          const departmentRows=deptResult&&deptResult.status==='success'&&deptResult.data&&Array.isArray(deptResult.data.departments)?deptResult.data.departments:null;
+          if(!Array.isArray(departmentRows))throw Error(deptResult&&(deptResult.message||deptResult.code)||'No se pudieron cargar los departamentos.');
+          roles=catalog.data;assignments=assign.data;employees=employeeRows.filter(x=>x.userId&&['activo','active','vigente'].indexOf(String(x.estadoLaboral||'').toLowerCase())!==-1);
+          const departments=departmentRows.filter(x=>['activo','active','enabled','vigente'].indexOf(String(x.estado||'').toLowerCase())!==-1);
+          fill($('rrhh-internal-role-department'),departments,'Sin departamento',x=>x.deptId,x=>x.nombre+' · '+x.deptId);
+          fill($('rrhh-internal-assignment-user'),employees,'Seleccione empleado',x=>x.userId,x=>(x.empleadoNombre||x.nombreCompleto||x.userId)+' · '+x.userId);
+          fill($('rrhh-internal-assignment-substitute-user'),employees,'No aplica',x=>x.userId,x=>(x.empleadoNombre||x.nombreCompleto||x.userId)+' · '+x.userId);
+          fill($('rrhh-internal-assignment-role'),catalog.rolesDisponibles||[],'Seleccione rol RBAC',x=>x,x=>x);
+          fill($('rrhh-internal-assignment-responsibility'),roles.filter(x=>x.estado==='Activo'),'Seleccione responsabilidad',x=>x.rolInternoId,x=>x.nombreResponsabilidad+' · '+x.codigoInterno);
+          renderRoles();renderAssignments();msg('Catálogos actualizados. El servidor valida membresía, vigencia y ámbito.',false);
+        }
+        roleForm.addEventListener('submit',async event=>{event.preventDefault();const button=$('rrhh-internal-role-save');button.disabled=true;try{
+          const result=await fetchApi('USER','manageInternalRoleCatalog',{accion:'guardar',rolInternoId:$('rrhh-internal-role-id').value,codigoInterno:$('rrhh-internal-role-code').value.trim(),nombreResponsabilidad:$('rrhh-internal-role-name').value.trim(),descripcion:$('rrhh-internal-role-description').value.trim(),departamento:$('rrhh-internal-role-department').value,areaAcademica:$('rrhh-internal-role-area').value.trim(),tipoResponsabilidad:$('rrhh-internal-role-type').value,vigenciaMeses:Number($('rrhh-internal-role-validity').value),permiteSuplencia:$('rrhh-internal-role-substitute').checked,estado:$('rrhh-internal-role-state').value});
+          if(!result||result.status!=='success')throw Error(result&&(result.message||result.code)||'No se pudo guardar.');reset();await load();msg('Responsabilidad guardada; las asignaciones históricas se conservaron.',false);
+        }catch(error){msg(error.message,true);}finally{button.disabled=false;}});
+        roleBody.addEventListener('click',async event=>{const button=event.target.closest('button[data-action]');if(!button)return;const item=roles.find(x=>String(x.rolInternoId)===String(button.dataset.id));if(!item)return;
+          if(button.dataset.action==='edit'){$('rrhh-internal-role-id').value=item.rolInternoId;$('rrhh-internal-role-code').value=item.codigoInterno||'';$('rrhh-internal-role-name').value=item.nombreResponsabilidad||'';$('rrhh-internal-role-description').value=item.descripcion||'';$('rrhh-internal-role-department').value=item.departamento||'';$('rrhh-internal-role-area').value=item.areaAcademica||'';$('rrhh-internal-role-type').value=item.tipoResponsabilidad||'Administrativa';$('rrhh-internal-role-validity').value=item.vigenciaMeses||12;$('rrhh-internal-role-substitute').checked=!!item.permiteSuplencia;$('rrhh-internal-role-state').value=item.estado||'Activo';roleForm.scrollIntoView({behavior:'smooth',block:'center'});}
+          else{button.disabled=true;try{const result=await fetchApi('USER','manageInternalRoleCatalog',{accion:item.estado==='Activo'?'desactivar':'activar',rolInternoId:item.rolInternoId});if(!result||result.status!=='success')throw Error(result&&(result.message||result.code)||'No se pudo cambiar el estado.');await load();}catch(error){msg(error.message,true);}finally{button.disabled=false;}}});
+        assignmentForm.addEventListener('submit',async event=>{event.preventDefault();const isSub=$('rrhh-internal-assignment-substitute').checked,values=$('rrhh-internal-assignment-scope-values').value.split(',').map(x=>x.trim()).filter(Boolean);
+          const payload={userId:$('rrhh-internal-assignment-user').value,roleId:$('rrhh-internal-assignment-role').value,responsibilityId:$('rrhh-internal-assignment-responsibility').value,scopeType:$('rrhh-internal-assignment-scope-type').value,scopeValues:values,fechaInicio:$('rrhh-internal-assignment-start').value,fechaFin:$('rrhh-internal-assignment-end').value,esSuplente:isSub,suplenteDeUserId:isSub?$('rrhh-internal-assignment-substitute-user').value:'',estado:'Activo'};
+          const button=$('rrhh-internal-assignment-save');button.disabled=true;try{const result=await fetchApi('USER','assignRoleScope',payload);if(!result||result.status!=='success')throw Error(result&&(result.message||result.code)||'No se pudo registrar la asignación.');assignmentForm.reset();$('rrhh-internal-assignment-start').value=new Date().toISOString().slice(0,10);$('rrhh-internal-assignment-substitute-user').disabled=true;await load();msg('Asignación registrada y auditada.',false);}catch(error){msg(error.message,true);}finally{button.disabled=false;}});
+        assignmentBody.addEventListener('click',async event=>{const button=event.target.closest('button[data-assignment-id]');if(!button)return;const item=assignments.find(x=>String(x.asignacionId)===String(button.dataset.assignmentId));if(!item)return;button.disabled=true;let values=item.scopeValues;try{values=typeof values==='string'?JSON.parse(values||'[]'):values;}catch(_){values=[];}
+          try{const result=await fetchApi('USER','assignRoleScope',{assignmentId:item.asignacionId,userId:item.userId,roleId:item.roleId,responsibilityId:item.responsibilityId,scopeType:item.scopeType,scopeValues:Array.isArray(values)?values:[],fechaInicio:item.fechaInicio,fechaFin:item.fechaFin,esSuplente:item.esSuplente,suplenteDeUserId:item.suplenteDeUserId||'',estado:'Revocado'});if(!result||result.status!=='success')throw Error(result&&(result.message||result.code)||'No se pudo revocar.');await load();msg('Asignación revocada; se conservó su historial.',false);}catch(error){msg(error.message,true);}finally{button.disabled=false;}});
+        $('rrhh-internal-role-reset').addEventListener('click',reset);$('rrhh-internal-role-refresh').addEventListener('click',()=>load().catch(error=>msg(error.message,true)));history.addEventListener('change',renderAssignments);
+        $('rrhh-internal-assignment-start').value=new Date().toISOString().slice(0,10);
+        $('rrhh-internal-assignment-substitute').addEventListener('change',()=>{$('rrhh-internal-assignment-substitute-user').disabled=!$('rrhh-internal-assignment-substitute').checked;$('rrhh-internal-assignment-end').required=$('rrhh-internal-assignment-substitute').checked;});
+        load().catch(error=>msg(error.message||'No fue posible cargar el módulo.',true));
+      });
+    </script>
+
 </body>
 </html>
