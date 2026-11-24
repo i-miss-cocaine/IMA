@@ -2341,12 +2341,10 @@ function generateConsolidatedAttendanceAndCoexistenceReport(payload) {
   var caseSheet = ss.getSheetByName("CasosSeguimiento");
   var caseData = caseSheet ? caseSheet.getDataRange().getValues() : [];
   var totalCases = 0, totalCommitments = 0;
-  var appointmentsSheet = ss.getSheetByName("CitasOrientacion");
-  var appointmentsRows = appointmentsSheet ? appointmentsSheet.getDataRange().getValues() : [];
   if (caseData.length > 1) for (var k = 1; k < caseData.length; k++) {
     var caseRow = caseData[k];
     if (isConfidentialWelfareCase_(caseRow)) {
-      var caseAccess = getWelfareCaseAccess_(p, caseRow[0], ss, true, appointmentsRows);
+      var caseAccess = getWelfareCaseAccess_(p, caseRow[0], ss, true);
       if (!caseAccess.authorized) continue;
     }
     totalCases++;
@@ -14515,7 +14513,7 @@ function getWelfareStudentAccess_(payload, studentId) {
   }
 }
 
-function getWelfareCaseAccess_(payload, caseId, spreadsheet, forceSensitive, appointmentRowsCache) {
+function getWelfareCaseAccess_(payload, caseId, spreadsheet, forceSensitive) {
   var identity = getVerifiedAcademicIdentity_(payload);
   if (!identity || identity.authorized !== true) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
   var role = normalizeWelfareRole_(identity.role);
@@ -14531,28 +14529,15 @@ function getWelfareCaseAccess_(payload, caseId, spreadsheet, forceSensitive, app
   if (!sensitive) return { authorized: true, identity: identity, row: row, rowIndex: match.rowIndex, sheet: sheet, spreadsheet: ss };
   if (!isWelfareStaffRole_(role)) return { authorized: false, code: "WELFARE_ROLE_REQUIRED" };
   if (role === "ADMINISTRADOR" || role === "ADMIN") return { authorized: true, identity: identity, row: row, rowIndex: match.rowIndex, sheet: sheet, spreadsheet: ss };
-  var actorId = String(identity.userId || "").trim();
-  var responsibleMatch = !!actorId && String(row[4] || "").trim() === actorId;
-  var appointmentRows = Array.isArray(appointmentRowsCache) ? appointmentRowsCache : null;
-  if (!appointmentRows) {
-    try {
-      var appointments = ss.getSheetByName("CitasOrientacion");
-      appointmentRows = appointments ? appointments.getDataRange().getValues() : [];
-    } catch (_) { appointmentRows = []; }
+  var studentId = String(row[1] || "").trim();
+  if (!studentId) return { authorized: false, code: "WELFARE_STUDENT_REQUIRED" };
+  try {
+    var scope = validateAcademicResponsibilityAndScopeAccess(Object.assign({}, payload || {}, { estudianteId: studentId }));
+    if (!scope || scope.authorized !== true) return { authorized: false, code: String(scope && scope.code || "WELFARE_SCOPE_DENIED") };
+    return { authorized: true, identity: identity, row: row, rowIndex: match.rowIndex, sheet: sheet, spreadsheet: ss, scope: scope };
+  } catch (_) {
+    return { authorized: false, code: "WELFARE_SCOPE_VALIDATION_FAILED" };
   }
-  var appointmentMatch = appointmentRows.slice(1).some(function(appointment) {
-    return String(appointment[1] || "").trim() === target && String(appointment[4] || "").trim() === actorId;
-  });
-  var assigned = responsibleMatch || appointmentMatch;
-  var scopeAllowed = false, studentId = String(row[1] || "").trim();
-  if (!assigned && studentId) {
-    try {
-      var scope = validateAcademicResponsibilityAndScopeAccess(Object.assign({}, payload || {}, { estudianteId: studentId }));
-      scopeAllowed = !!(scope && scope.authorized === true);
-    } catch (_) { scopeAllowed = false; }
-  }
-  if (!assigned && !scopeAllowed) return { authorized: false, code: "WELFARE_CASE_ASSIGNMENT_OR_SCOPE_REQUIRED" };
-  return { authorized: true, identity: identity, row: row, rowIndex: match.rowIndex, sheet: sheet, spreadsheet: ss };
 }
 
 function persistAttendanceFollowupCase_(payload) {
@@ -14636,14 +14621,12 @@ function getAttendanceFollowupCases(payload) {
   if (!sheet) return { status: "success", data: [], nivelVisibilidad: nivelVisibilidad };
   var data = sheet.getDataRange().getValues();
   if (data.length <= 1) return { status: "success", data: [], nivelVisibilidad: nivelVisibilidad };
-  var appointmentsSheet = ss.getSheetByName("CitasOrientacion");
-  var appointmentRows = appointmentsSheet ? appointmentsSheet.getDataRange().getValues() : [];
   var visible = [], blocked = false;
   data.slice(1).forEach(function(row) {
     if (casoId && String(row[0] || "").trim() !== String(casoId).trim()) return;
     if (userId && String(row[1] || "").trim() !== String(userId).trim()) return;
     if (isConfidentialWelfareCase_(row)) {
-      var access = getWelfareCaseAccess_(p, row[0], ss, true, appointmentRows);
+      var access = getWelfareCaseAccess_(p, row[0], ss, true);
       if (!access.authorized) { blocked = true; return; }
     }
     var actions = [];
@@ -14904,7 +14887,7 @@ function getGuidanceAppointments(payload) {
     if (welfareStaff) {
       var privileged = ["ADMINISTRADOR", "ADMIN", "DIRECTOR", "DIRECCION"].indexOf(role) !== -1;
       if (!privileged && counselorId !== String(actor.userId).trim()) continue;
-      var access = getWelfareCaseAccess_(p, caseId, ss, true, data);
+      var access = getWelfareCaseAccess_(p, caseId, ss, true);
       if (!access.authorized || String(access.row && access.row[1] || "").trim() !== studentId) {
         try { logStructuredEvent("ACADEMIC", "getGuidanceAppointments", "WARN", "UNAUTHORIZED_ACCESS_ATTEMPT", "Consulta de cita confidencial sin asignación o ámbito.", { citaOrientacionId: cId, casoId: caseId }, actor.role); } catch (_) {}
         continue;
@@ -14943,7 +14926,7 @@ function updateGuidanceAppointmentStatusUnsafe_(payload) {
   if (!privileged && String(row[4] || "").trim() !== String(actor.userId).trim()) {
     return { status: "error", code: "WELFARE_APPOINTMENT_NOT_ASSIGNED", message: "La cita no está asignada al usuario autenticado." };
   }
-  var access = getWelfareCaseAccess_(p, row[1], ss, true, data);
+  var access = getWelfareCaseAccess_(p, row[1], ss, true);
   if (String(access.row && access.row[1] || "").trim() !== String(row[2] || "").trim()) return { status: "error", code: "WELFARE_APPOINTMENT_CASE_MISMATCH", message: "La cita no coincide con el expediente asociado." };
   if (!access.authorized) return { status: "error", code: access.code || "WELFARE_ACCESS_DENIED", message: "No tiene acceso autorizado al expediente asociado." };
   sheet.getRange(idx + 1, 8).setValue(p.nuevoEstado);

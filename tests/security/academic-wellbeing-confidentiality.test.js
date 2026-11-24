@@ -107,7 +107,7 @@ test("assigned counselor can read; unassigned counselor needs verified scope", (
       unassigned: { authorized: true, userId: "counselor-2", role: "Consejeros" }
     }
   });
-  assert.equal(h.api.getAttendanceFollowupCases({ sessionToken: "assigned", casoId: "CASE-1" }).data.length, 1);
+  assert.equal(h.api.getAttendanceFollowupCases({ sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1" }).data.length, 1);
   assert.equal(h.api.getAttendanceFollowupCases({ sessionToken: "unassigned", casoId: "CASE-1" }).data.length, 0);
   assert.equal(h.api.getAttendanceFollowupCases({ sessionToken: "unassigned", scopeAllowed: true, casoId: "CASE-1" }).data.length, 1);
 });
@@ -117,7 +117,18 @@ test("malformed confidential case data fails closed", () => {
     cases: [caseRow("CASE-1", "STU-1", "Categoría: Orientación", "counselor-1", "{broken")],
     identities: { assigned: { authorized: true, userId: "counselor-1", role: "Orientacion" } }
   });
-  assert.equal(h.api.getAttendanceFollowupCases({ sessionToken: "assigned", casoId: "CASE-1" }).data.length, 0);
+  assert.equal(h.api.getAttendanceFollowupCases({ sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1" }).data.length, 0);
+});
+
+
+test("ResponsableID alone is not proof of case assignment or scope", () => {
+  const h = harness({
+    cases: [caseRow("CASE-1", "STU-1", "Categoría: Consejería", "counselor-1")],
+    identities: { actor: { authorized: true, userId: "counselor-1", role: "Consejeros" } }
+  });
+  const result = h.api.getAttendanceFollowupCases({ sessionToken: "actor", casoId: "CASE-1" });
+  assert.equal(result.data.length, 0);
+  assert.equal(h.api.getWelfareCaseAccess_({ sessionToken: "actor" }, "CASE-1", h.db, true).authorized, false);
 });
 
 test("duplicate case identifiers fail closed", () => {
@@ -161,11 +172,11 @@ test("notes and session acts require assignment or verified scope", () => {
   const denied = h.api.addCaseFollowUpNote({ sessionToken: "other", casoId: "CASE-1", nota: "intrusión" });
   assert.equal(denied.status, "error");
   assert.equal(h.db.getSheetByName("CasosSeguimiento").rows[1][5], "[]");
-  const note = h.api.addCaseFollowUpNote({ sessionToken: "assigned", casoId: "CASE-1", nota: "seguimiento" });
+  const note = h.api.addCaseFollowUpNote({ sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1", nota: "seguimiento" });
   assert.equal(note.status, "success");
   const actions = JSON.parse(h.db.getSheetByName("CasosSeguimiento").rows[1][5]);
   assert.equal(actions[0].autor, "counselor-1");
-  const act = h.api.recordCounselingSessionAct({ sessionToken: "assigned", casoId: "CASE-1", resumenSesion: "Sesión" });
+  const act = h.api.recordCounselingSessionAct({ sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1", resumenSesion: "Sesión" });
   assert.equal(act.status, "success");
   const afterAct = JSON.parse(h.db.getSheetByName("CasosSeguimiento").rows[1][5]);
   assert.equal(afterAct[1].consejeroUserId, "counselor-1");
@@ -181,7 +192,7 @@ test("counseling derivation and commitment updates deny unassigned actors", () =
   });
   assert.equal(h.api.referCounselingCase({ sessionToken: "other", casoId: "CASE-1", destinoDerivacion: "Externo", motivoDerivacion: "Motivo" }).status, "error");
   assert.equal(h.api.updateCaseCommitmentStatus({ sessionToken: "other", casoId: "CASE-1", compromisoId: "COM-1", nuevoEstado: "Cumplido" }).status, "error");
-  const updated = h.api.updateCaseCommitmentStatus({ sessionToken: "assigned", casoId: "CASE-1", compromisoId: "COM-1", nuevoEstado: "Cumplido" });
+  const updated = h.api.updateCaseCommitmentStatus({ sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1", compromisoId: "COM-1", nuevoEstado: "Cumplido" });
   assert.equal(updated.status, "success");
 });
 
@@ -197,7 +208,7 @@ test("appointment notes are visible only to the assigned counselor", () => {
   });
   assert.equal(h.api.getGuidanceAppointments({ sessionToken: "secretary", authRole: "Director" }).citas.length, 0);
   assert.equal(h.api.getGuidanceAppointments({ sessionToken: "other", authRole: "Director" }).citas.length, 0);
-  const visible = h.api.getGuidanceAppointments({ sessionToken: "assigned" }).citas;
+  const visible = h.api.getGuidanceAppointments({ sessionToken: "assigned", scopeAllowed: true }).citas;
   assert.equal(visible.length, 1);
   assert.equal(visible[0].notasConfidenciales, "Nota privada");
 });
@@ -214,7 +225,7 @@ test("appointment status mutation requires the assigned counselor", () => {
   const denied = h.api.updateGuidanceAppointmentStatus({ sessionToken: "other", authRole: "Director", citaOrientacionId: "CITA-1", nuevoEstado: "Realizada" });
   assert.equal(denied.status, "error");
   assert.equal(h.db.getSheetByName("CitasOrientacion").rows[1][7], "Programada");
-  const allowed = h.api.updateGuidanceAppointmentStatus({ sessionToken: "assigned", citaOrientacionId: "CITA-1", nuevoEstado: "Realizada" });
+  const allowed = h.api.updateGuidanceAppointmentStatus({ sessionToken: "assigned", scopeAllowed: true, citaOrientacionId: "CITA-1", nuevoEstado: "Realizada" });
   assert.equal(allowed.status, "success");
   assert.equal(h.db.getSheetByName("CitasOrientacion").rows[1][7], "Realizada");
 });
@@ -224,7 +235,7 @@ test("appointment cannot be attached to a different student's case", () => {
     cases: [caseRow("CASE-1", "STU-1", "Categoría: Orientación", "counselor-1")],
     identities: { assigned: { authorized: true, userId: "counselor-1", role: "Orientacion" } }
   });
-  const result = h.api.scheduleGuidanceAppointment({ sessionToken: "assigned", casoId: "CASE-1", userId: "STU-2", fechaHora: "2026-11-25T10:00:00" });
+  const result = h.api.scheduleGuidanceAppointment({ sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1", userId: "STU-2", fechaHora: "2026-11-25T10:00:00" });
   assert.equal(result.status, "error");
   assert.equal(h.db.getSheetByName("CitasOrientacion").rows.length, 1);
 });
@@ -251,7 +262,7 @@ test("write lock contention fails closed and does not mutate the case", () => {
     identities: { assigned: { authorized: true, userId: "counselor-1", role: "Consejeros" } },
     lockAvailable: false
   });
-  const result = h.api.addCaseFollowUpNote({ sessionToken: "assigned", casoId: "CASE-1", nota: "concurrent write" });
+  const result = h.api.addCaseFollowUpNote({ sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1", nota: "concurrent write" });
   assert.equal(result.code, "WELFARE_WRITE_BUSY");
   assert.equal(h.db.getSheetByName("CasosSeguimiento").rows[1][5], "[]");
   assert.equal(h.lockState.acquired, 0);
@@ -262,7 +273,7 @@ test("write lock is released after a successful mutation", () => {
     cases: [caseRow("CASE-1", "STU-1", "Categoría: Consejería", "counselor-1")],
     identities: { assigned: { authorized: true, userId: "counselor-1", role: "Consejeros" } }
   });
-  const result = h.api.addCaseFollowUpNote({ sessionToken: "assigned", casoId: "CASE-1", nota: "ok" });
+  const result = h.api.addCaseFollowUpNote({ sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1", nota: "ok" });
   assert.equal(result.status, "success");
   assert.equal(h.lockState.acquired, 1);
   assert.equal(h.lockState.released, 1);
@@ -281,12 +292,12 @@ test("confidential classification marker cannot be removed by a generic update",
     identities: { assigned: { authorized: true, userId: "counselor-1", role: "Consejeros" } }
   });
   const result = h.api.saveAttendanceFollowupCase({
-    sessionToken: "assigned", casoId: "CASE-1", userId: "STU-1",
+    sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1", userId: "STU-1",
     motivoApertura: "Actualización", resumenAsistencia: "Resumen general", estado: "Abierto"
   });
   assert.equal(result.status, "success");
   assert.match(h.db.getSheetByName("CasosSeguimiento").rows[1][3], /Categoría: Bienestar/);
-  assert.equal(h.api.getAttendanceFollowupCases({ sessionToken: "assigned", casoId: "CASE-1" }).data.length, 1);
+  assert.equal(h.api.getAttendanceFollowupCases({ sessionToken: "assigned", scopeAllowed: true, casoId: "CASE-1" }).data.length, 1);
 });
 
 
