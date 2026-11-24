@@ -26,7 +26,7 @@ function textResponse(obj) {
 
 const ROLE_PERMISSIONS = {
   "Administrador": [],
-  "Desarrollador": ["getCentralServiceRegistry", "resolveServiceEndpoint", "registerServiceInstance", "updateServiceStatus", "updateServiceMetadata", "auditInterServiceCalls", "manageUserMultiRolePermissions", "getCentralizedLogs", "executeOperationalCommand", "getServiceVersionChangelog", "executeServiceVersionRollback", "getCentralConfigAndContractCatalog", "validateServiceConfigDependencies", "runFullArchitectureIntegrationAndPerformanceSuite", "runModularAndDynamicDashboardsRegressionSuite", "runAcademicGradingRegressionSuite", "runPhase10AttendanceAndCoexistenceRegressionSuite", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "getPhase10FunctionalDocumentation", "validateStagedMigrationProgress", "validateModularFolderStructure", "validateMonolithDecompositionContracts", "getArchitectureAndDependencyMapReport", "getRoleFunctionalSpaceConfig", "auditRoleIndependenceAndMasterDataIntegrity", "validateStableIdentifiersAndControlColumns", "ensureStandardObservabilitySheets", "validateObservabilitySheetsIntegrity", "getCentralSpreadsheetConfigRegistry", "recordProvisioningHistory", "provisionRoleSpreadsheet", "migrateSpreadsheetSchema", "auditServiceBackendIsolationAndDriveSecurity", "batchSpreadsheetReadOperations", "getServiceHealthDiagnostics", "getCentralCapabilitiesCatalog", "getInstitutionalIndicatorsDictionary"],
+  "Desarrollador": ["getCentralServiceRegistry", "resolveServiceEndpoint", "registerServiceInstance", "updateServiceStatus", "updateServiceMetadata", "setServiceCommunicationPermission", "auditServiceRegistryIntegrity", "auditInterServiceCalls", "manageUserMultiRolePermissions", "getCentralizedLogs", "executeOperationalCommand", "getServiceVersionChangelog", "executeServiceVersionRollback", "getCentralConfigAndContractCatalog", "validateServiceConfigDependencies", "runFullArchitectureIntegrationAndPerformanceSuite", "runModularAndDynamicDashboardsRegressionSuite", "runAcademicGradingRegressionSuite", "runPhase10AttendanceAndCoexistenceRegressionSuite", "runPhase18PurchasingAndSuppliersRegressionSuite", "runPhase19InventoryAndAssetsRegressionSuite", "runPhase20LibraryAndResourcesRegressionSuite", "runPhase21TransportAndServicesRegressionSuite", "runPhase22DocumentManagementAndSACERegressionSuite", "getPhase10FunctionalDocumentation", "validateStagedMigrationProgress", "validateModularFolderStructure", "validateMonolithDecompositionContracts", "getArchitectureAndDependencyMapReport", "getRoleFunctionalSpaceConfig", "auditRoleIndependenceAndMasterDataIntegrity", "validateStableIdentifiersAndControlColumns", "ensureStandardObservabilitySheets", "validateObservabilitySheetsIntegrity", "getCentralSpreadsheetConfigRegistry", "recordProvisioningHistory", "provisionRoleSpreadsheet", "migrateSpreadsheetSchema", "auditServiceBackendIsolationAndDriveSecurity", "batchSpreadsheetReadOperations", "getServiceHealthDiagnostics", "getCentralCapabilitiesCatalog", "getInstitutionalIndicatorsDictionary"],
   "Director": ["getInstitutionalIndicatorsDictionary", "getCentralConfigAndContractCatalog"],
   "Coordinador": ["getInstitutionalIndicatorsDictionary"],
   "Contador": ["getInstitutionalIndicatorsDictionary"]
@@ -653,6 +653,8 @@ function doPost(e) {
       case "registerServiceInstance": result = registerServiceInstance_(payload, payload._verifiedUserId); break;
       case "updateServiceStatus": result = updateServiceStatus_(payload, payload._verifiedUserId); break;
       case "updateServiceMetadata": result = updateServiceMetadata_(payload, payload._verifiedUserId); break;
+      case "setServiceCommunicationPermission": result = setServiceCommunicationPermission_(payload, payload._verifiedUserId); break;
+      case "auditServiceRegistryIntegrity": result = auditServiceRegistryIntegrity(payload); break;
       case "auditInterServiceCalls": result = auditInterServiceCalls(payload); break;
       case "manageUserMultiRolePermissions": result = manageUserMultiRolePermissions(payload); break;
       case "getServiceHealthDiagnostics": result = getServiceHealthDiagnostics(payload); break;
@@ -3140,6 +3142,20 @@ function resolveServiceEndpoint(payload) {
       return { status: "error", code: "SERVICE_PERMISSIONS_INVALID", serviceId: serviceId, endpointUrl: "" };
     }
     if (permissions.indexOf(requestedAction) === -1) return { status: "error", code: "SERVICE_ACTION_NOT_GRANTED", serviceId: serviceId, action: requestedAction, endpointUrl: "" };
+    var sourceServiceId = String(payload && payload.sourceServiceId || "").trim();
+    if (sourceServiceId) {
+      var relationSheet = ss.getSheetByName("CatalogoRelacionesServicios");
+      if (!relationSheet) return { status: "error", code: "SERVICE_RELATION_NOT_GRANTED", endpointUrl: "" };
+      var relationRows = relationSheet.getDataRange().getValues().slice(1);
+      var relationMatches = relationRows.filter(function(relation) {
+        return String(relation[1] || "").trim().toUpperCase() === sourceServiceId.toUpperCase() &&
+          String(relation[2] || "").trim().toUpperCase() === serviceId.toUpperCase() &&
+          String(relation[3] || "").trim() === requestedAction;
+      });
+      if (relationMatches.length !== 1 || String(relationMatches[0][4] || "").trim().toUpperCase() !== "ACTIVE") {
+        return { status: "error", code: "SERVICE_RELATION_NOT_GRANTED", endpointUrl: "" };
+      }
+    }
     if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpointUrl)) return { status: "error", code: "SERVICE_ENDPOINT_INVALID", serviceId: serviceId, endpointUrl: "" };
     return { status: "success", serviceId: String(row[0]).trim(), endpointUrl: endpointUrl, state: state, version: version, degraded: state === "degradado" };
   } catch (error) { return { status: "error", code: "SERVICE_ENDPOINT_RESOLUTION_FAILED", endpointUrl: "" }; }
@@ -3212,6 +3228,110 @@ function updateServiceMetadata_(payload, verifiedActorId) {
       throw new Error("SERVICE_METADATA_WRITE_FAILED");
     }
     return { status: "success", serviceId: serviceId, changed: true, fields: Object.keys(changed), updatedBy: actorId, updatedAt: timestamp };
+  } finally { lock.releaseLock(); }
+}
+
+const DEVELOPER_SERVICE_RELATION_HEADERS_ = [
+  "RelationID", "SourceServiceID", "TargetServiceID", "Action", "Status", "CreatedBy", "CreatedAt", "UpdatedBy", "UpdatedAt", "Reason"
+];
+
+function auditServiceRegistryIntegrity(payload) {
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var serviceSheet = ss.getSheetByName("CatalogoServicios");
+    if (!serviceSheet) return { status: "success", registryState: "UNINITIALIZED", duplicateServiceIds: [], incompleteServices: [], orphanRelations: [], counts: { services: 0, duplicates: 0, incomplete: 0, orphanRelations: 0 } };
+    var parsed = developerParseServiceRegistryRows_(serviceSheet.getDataRange().getValues());
+    var duplicates = [], incomplete = [], serviceIds = Object.create(null);
+    parsed.rows.forEach(function(row) {
+      var id = String(row[0] || "").trim(), key = id.toUpperCase();
+      if (!id) { incomplete.push({ serviceId: "", issue: "SERVICE_ID_MISSING" }); return; }
+      serviceIds[key] = (serviceIds[key] || 0) + 1;
+      if (serviceIds[key] > 1 && duplicates.indexOf(id) === -1) duplicates.push(id);
+      var missing = [];
+      if (!String(row[3] || "").trim()) missing.push("OWNER_ACCOUNT");
+      if (!String(row[4] || "").trim()) missing.push("ENDPOINT_URL");
+      if (!String(row[5] || "").trim()) missing.push("SPREADSHEET_ID");
+      if (!String(row[14] || "").trim()) missing.push("SCRIPT_PROJECT_ID");
+      if (!String(row[15] || "").trim()) missing.push("DRIVE_FOLDER_ID");
+      if (missing.length) incomplete.push({ serviceId: id, issue: "SERVICE_METADATA_INCOMPLETE", missing: missing });
+    });
+    var relationSheet = ss.getSheetByName("CatalogoRelacionesServicios"), orphanRelations = [];
+    if (relationSheet) relationSheet.getDataRange().getValues().slice(1).forEach(function(row) {
+      var source = String(row[1] || "").trim(), target = String(row[2] || "").trim();
+      if (!source || !target || !serviceIds[source.toUpperCase()] || !serviceIds[target.toUpperCase()]) {
+        orphanRelations.push({ relationId: String(row[0] || ""), sourceServiceId: source, targetServiceId: target });
+      }
+    });
+    return { status: "success", registryState: parsed.state, duplicateServiceIds: duplicates, incompleteServices: incomplete, orphanRelations: orphanRelations,
+      counts: { services: parsed.rows.length, duplicates: duplicates.length, incomplete: incomplete.length, orphanRelations: orphanRelations.length } };
+  } catch (error) {
+    return { status: "error", code: "SERVICE_REGISTRY_AUDIT_FAILED", counts: { services: 0, duplicates: 0, incomplete: 0, orphanRelations: 0 } };
+  }
+}
+
+function setServiceCommunicationPermission_(payload, verifiedActorId) {
+  var actorId = String(verifiedActorId || "").trim();
+  var sourceId = String(payload && payload.sourceServiceId || "").trim();
+  var targetId = String(payload && payload.targetServiceId || "").trim();
+  var action = String(payload && payload.action || "").trim();
+  var enabled = payload && payload.enabled;
+  var reason = String(payload && payload.reason || "").trim().slice(0, 500);
+  if (!actorId) throw new Error("SERVICE_ACTOR_NOT_VERIFIED");
+  if (!sourceId || !targetId || sourceId.toUpperCase() === targetId.toUpperCase()) throw new Error("SERVICE_RELATION_ENDPOINTS_INVALID");
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/.test(sourceId) || !/^[A-Za-z0-9][A-Za-z0-9._:-]{1,127}$/.test(targetId)) throw new Error("SERVICE_RELATION_ID_INVALID");
+  if (!action || action.length > 128 || action.indexOf("*") !== -1) throw new Error("SERVICE_RELATION_ACTION_INVALID");
+  if (typeof enabled !== "boolean") throw new Error("SERVICE_RELATION_STATUS_INVALID");
+  var lock = LockService.getScriptLock();
+  if (!lock || !lock.tryLock(30000)) throw new Error("SERVICE_REGISTRY_LOCK_TIMEOUT");
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var services = developerEnsureServiceTable_(ss, "CatalogoServicios", DEVELOPER_SERVICE_REGISTRY_HEADERS_, function(row) {
+      return Array.isArray(row) && row.length >= 11 && String(row[0] || "").trim() !== "" && String(row[1] || "").trim() !== "";
+    });
+    [sourceId, targetId].forEach(function(id) {
+      var matches = services.rows.filter(function(row) { return String(row[0] || "").trim().toUpperCase() === id.toUpperCase(); });
+      if (matches.length !== 1) throw new Error(matches.length ? "SERVICE_REGISTRY_DUPLICATE_ID" : "SERVICE_RELATION_SERVICE_NOT_FOUND");
+    });
+    var relationTable = developerEnsureServiceTable_(ss, "CatalogoRelacionesServicios", DEVELOPER_SERVICE_RELATION_HEADERS_, function(row) {
+      return Array.isArray(row) && row.length >= 7 && String(row[0] || "").indexOf("REL-SVC-") === 0;
+    });
+    var matching = [];
+    relationTable.rows.forEach(function(row, index) {
+      if (String(row[1] || "").trim().toUpperCase() === sourceId.toUpperCase() &&
+          String(row[2] || "").trim().toUpperCase() === targetId.toUpperCase() &&
+          String(row[3] || "").trim() === action) matching.push(index + 2);
+    });
+    if (matching.length > 1) throw new Error("SERVICE_RELATION_DUPLICATE");
+    var now = new Date().toISOString(), state = enabled ? "ACTIVE" : "REVOKED";
+    var relationId, rowNumber, previous;
+    if (matching.length) {
+      rowNumber = matching[0];
+      previous = relationTable.rows[rowNumber - 2].slice();
+      relationId = String(previous[0] || "");
+      if (String(previous[4] || "").toUpperCase() === state) return { status: "success", relationId: relationId, changed: false, state: state };
+      var updated = previous.slice();
+      updated[4] = state; updated[7] = actorId; updated[8] = now; updated[9] = reason;
+      try { relationTable.sheet.getRange(rowNumber, 1, 1, DEVELOPER_SERVICE_RELATION_HEADERS_.length).setValues([updated]); }
+      catch (writeError) { throw new Error("SERVICE_RELATION_UPDATE_FAILED"); }
+    } else {
+      if (!enabled) return { status: "success", relationId: "", changed: false, state: "REVOKED" };
+      relationId = "REL-SVC-" + Utilities.getUuid();
+      rowNumber = relationTable.sheet.getLastRow() + 1;
+      relationTable.sheet.appendRow([relationId, sourceId, targetId, action, state, actorId, now, actorId, now, reason]);
+    }
+    try {
+      var history = developerEnsureServiceTable_(ss, "HistorialServiciosDistribuidos", DEVELOPER_SERVICE_HISTORY_HEADERS_, function(row) {
+        return Array.isArray(row) && row.length >= 7 && String(row[0] || "").indexOf("HIST-SVC-") === 0;
+      });
+      history.sheet.appendRow([developerCreateServiceHistoryId_(), sourceId + "->" + targetId, previous ? String(previous[4] || "") : "NONE",
+        state + ":" + action, reason || "Cambio de relación de comunicación", actorId, now]);
+      if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush();
+    } catch (historyError) {
+      if (previous) relationTable.sheet.getRange(rowNumber, 1, 1, previous.length).setValues([previous]);
+      else developerDeleteRowByKey_(relationTable.sheet, 1, relationId);
+      throw new Error("SERVICE_RELATION_HISTORY_WRITE_FAILED");
+    }
+    return { status: "success", relationId: relationId, sourceServiceId: sourceId, targetServiceId: targetId, action: action, state: state, changed: true, updatedBy: actorId, updatedAt: now };
   } finally { lock.releaseLock(); }
 }
 

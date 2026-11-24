@@ -709,6 +709,35 @@ document.addEventListener('DOMContentLoaded', function () {
                 } finally { editMetadataButton.disabled = false; }
             });
             controls.appendChild(editMetadataButton);
+            const relationButton = document.createElement('button');
+            relationButton.type = 'button';
+            relationButton.className = 'rounded-lg bg-slate-700 hover:bg-indigo-600 border border-slate-600 px-2 py-1 text-xs font-semibold text-white';
+            relationButton.textContent = 'Relación';
+            relationButton.addEventListener('click', async () => {
+                const targetServiceId = window.prompt('ID del servicio destino:', '');
+                if (targetServiceId === null || !targetServiceId.trim()) return;
+                const action = window.prompt('Acción exacta permitida (por ejemplo, getStudentGrades):', '');
+                if (action === null || !action.trim()) return;
+                const enabledValue = window.prompt('Escriba ACTIVAR o REVOCAR:', 'ACTIVAR');
+                if (enabledValue === null) return;
+                const normalized = enabledValue.trim().toUpperCase();
+                if (normalized !== 'ACTIVAR' && normalized !== 'REVOCAR') {
+                    serviceRegistryMessage('Indique ACTIVAR o REVOCAR para cambiar la relación.', true); return;
+                }
+                relationButton.disabled = true;
+                try {
+                    const response = await window.fetchApi('DEVELOPER', 'setServiceCommunicationPermission', {
+                        sourceServiceId: service.serviceId, targetServiceId: targetServiceId.trim(),
+                        action: action.trim(), enabled: normalized === 'ACTIVAR',
+                        reason: 'Cambio desde la consola de Desarrollador'
+                    });
+                    if (!response || response.status !== 'success') throw new Error(response && (response.code || response.message) || 'No se pudo actualizar la relación.');
+                    serviceRegistryMessage('Relación ' + service.serviceId + ' → ' + targetServiceId + ': ' + response.state + '.', false);
+                } catch (error) {
+                    serviceRegistryMessage(error.message || 'No fue posible actualizar la relación.', true);
+                } finally { relationButton.disabled = false; }
+            });
+            controls.appendChild(relationButton);
             if (service.metadataState === 'LEGACY_METADATA_PENDING') {
                 const note = document.createElement('span'); note.className = 'text-[10px] text-amber-300'; note.textContent = 'Completar metadatos'; controls.appendChild(note);
             }
@@ -746,6 +775,19 @@ document.addEventListener('DOMContentLoaded', function () {
         serviceRegistryMessage(mode ? 'Modalidad calculada según los roles seleccionados: ' + mode + '.' : 'La combinación de roles no corresponde a una modalidad admitida.', !mode);
     });
     if (serviceRegistryRefresh) serviceRegistryRefresh.addEventListener('click', loadServiceRegistry);
+    const serviceRegistryAuditButton = document.getElementById('btn-audit-service-registry');
+    if (serviceRegistryAuditButton) serviceRegistryAuditButton.addEventListener('click', async () => {
+        serviceRegistryAuditButton.disabled = true;
+        try {
+            const audit = await window.fetchApi('DEVELOPER', 'auditServiceRegistryIntegrity', {});
+            if (!audit || audit.status !== 'success') throw new Error(audit && (audit.code || audit.message) || 'No se pudo auditar el catálogo.');
+            const counts = audit.counts || {};
+            serviceRegistryMessage('Auditoría: ' + (counts.services || 0) + ' servicios, ' + (counts.duplicates || 0) + ' IDs duplicados, ' + (counts.incomplete || 0) + ' registros incompletos y ' + (counts.orphanRelations || 0) + ' relaciones huérfanas.', !!(counts.duplicates || counts.incomplete || counts.orphanRelations));
+        } catch (error) {
+            serviceRegistryMessage(error.message || 'No fue posible auditar el catálogo.', true);
+        } finally { serviceRegistryAuditButton.disabled = false; }
+    });
+
     if (serviceRegistryForm) serviceRegistryForm.addEventListener('submit', async event => {
         event.preventDefault();
         const roles = selectedServiceRoles(), mode = inferServiceMode(roles);

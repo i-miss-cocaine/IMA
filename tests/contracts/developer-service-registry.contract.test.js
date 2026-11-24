@@ -24,14 +24,18 @@ test("mantiene compatibilidad con solicitudes planas heredadas", () => {
 test("rechaza sobres nulos, arrays y valores no objeto", () => {
  for (const value of [null, [], "invalid", 4]) assert.throws(() => normalize(value), { message: "INVALID_REQUEST_ENVELOPE" });
 });
-function resolverFor(rows) {
+function resolverFor(rows, relations = []) {
  const match = backend.match(/function resolveServiceEndpoint\(payload\) \{[\s\S]*?\n\}/);
  assert.ok(match, "Debe existir el resolver central");
  const lock = { tryLock: () => true, releaseLock: () => {} };
  const context = {
   SPREADSHEET_ID: "CONTROL",
   LockService: { getScriptLock: () => lock },
-  SpreadsheetApp: { openById: () => ({ getSheetByName: () => ({ getDataRange: () => ({ getValues: () => [["headers"], ...rows] }) }) }) },
+  SpreadsheetApp: { openById: () => ({ getSheetByName: name => {
+   if (name === "CatalogoServicios") return { getDataRange: () => ({ getValues: () => [["headers"], ...rows] }) };
+   if (name === "CatalogoRelacionesServicios") return { getDataRange: () => ({ getValues: () => [["headers"], ...relations] }) };
+   return null;
+  } }) },
   developerParseServiceRegistryRows_: data => ({ rows: data.slice(1) })
  };
  return vm.runInNewContext("(" + match[0] + ")", context);
@@ -76,4 +80,27 @@ test("el dispatcher limita resolución y edición al rol Desarrollador", () => {
  assert.match(backend, /"Desarrollador": \[[^\]]*"resolveServiceEndpoint"[^\]]*"updateServiceMetadata"/);
  assert.match(backend, /case "resolveServiceEndpoint": result = resolveServiceEndpoint\(payload\); break;/);
  assert.match(backend, /case "updateServiceMetadata": result = updateServiceMetadata_\(payload, payload\._verifiedUserId\); break;/);
+});
+
+test("el resolver exige relación activa cuando se identifica un servicio emisor", () => {
+ const relation = ["REL-1", "SRC-1", "SVC-1", "readRecord", "ACTIVE"];
+ const resolveAllowed = resolverFor([serviceRow("activo")], [relation]);
+ assert.equal(resolveAllowed({ serviceId: "SVC-1", sourceServiceId: "SRC-1", action: "readRecord" }).status, "success");
+ assert.equal(resolverFor([serviceRow("activo")], [])({ serviceId: "SVC-1", sourceServiceId: "SRC-1", action: "readRecord" }).code, "SERVICE_RELATION_NOT_GRANTED");
+ relation[4] = "REVOKED";
+ assert.equal(resolverFor([serviceRow("activo")], [relation])({ serviceId: "SVC-1", sourceServiceId: "SRC-1", action: "readRecord" }).code, "SERVICE_RELATION_NOT_GRANTED");
+});
+test("la consola puede habilitar y revocar relaciones de comunicación auditadas", () => {
+ assert.match(backend, /function setServiceCommunicationPermission_\(payload, verifiedActorId\)/);
+ assert.match(backend, /CatalogoRelacionesServicios/);
+ assert.match(backend, /REL-SVC-/);
+ assert.match(backend, /Cambio de relación de comunicación/);
+ assert.match(developerUi, /setServiceCommunicationPermission/);
+});
+test("la auditoría identifica IDs duplicados, metadatos incompletos y relaciones huérfanas", () => {
+ assert.match(backend, /function auditServiceRegistryIntegrity\(payload\)/);
+ assert.match(backend, /SERVICE_METADATA_INCOMPLETE/);
+ assert.match(backend, /orphanRelations/);
+ assert.match(developerUi, /auditServiceRegistryIntegrity/);
+ assert.match(dashboard, /btn-audit-service-registry/);
 });
