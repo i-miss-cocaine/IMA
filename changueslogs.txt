@@ -4695,7 +4695,7 @@ C3.003 — IMA-ITER-20261124-001
 - Normas_Desarollo.md §17.8 define el despliegue sencillo de Apps Script, servicios individuales por empleado/puesto y excepciones compartidas para padres/estudiantes y utilidades.
 - Se aclara el registro maestro por URL, el alta desde el panel Desarrollador, la reutilización de sesión desde el login y la prohibición de propiedades de comandos, secretos o tokens personalizados interservicio.
 - Se preservan las reglas de visibilidad de información académica por rol y ámbito.
-- Plan Maestro actualizado a versión 1.5: estado general preparado para implementación, checkpoint de planificación C3.003, §1.1 rotulado ciclo 3, §10.95 marcado como antecedente histórico cerrado y 244 etiquetas de estado `Pendiente (reinicio del ciclo)` normalizadas a `Pendiente`.
+- Plan Maestro actualizado a versión 1.5 (2026-11-24): estado general preparado para implementación, checkpoint de planificación C3.003, §1.1 rotulado ciclo 3, §10.95 marcado como antecedente histórico cerrado y 244 etiquetas de estado `Pendiente (reinicio del ciclo)` normalizadas a `Pendiente`.
 - Los siete backlogs quedan normalizados al ciclo 3; se retiran las etiquetas operativas de reinicio/reapertura sin eliminar antecedentes históricos ni requisitos.
 - No se modificó código ni se ejecutaron pruebas locales en esta unidad documental.
 - Rama: NG_beta_0.0.0.1_work. HEAD de partida documentado: 5ba407df1679e2d44d634407e84eaaf8fa47db88.
