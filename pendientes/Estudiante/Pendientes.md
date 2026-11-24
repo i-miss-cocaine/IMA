@@ -205,7 +205,7 @@
 - **Dependencias:** AUD-NG-001 (token), AUD-NG-202/TASK-429 (vistas guardadas), TASK-430 (sistema visual).
 - **Alcance:** preferencias personales, herencia institucional, controles por rol, persistencia y reset; no incluye vistas guardadas de tablas.
 - **Criterios:** preferencias sobreviven nuevo inicio/cambio de dispositivo; personales prevalecen sin alterar defaults institucionales; reset restaura defaults; cada control visible persiste o se identifica como no configurable; matriz de roles segura; identidad deriva del token; pruebas de persistencia/herencia/reset/roles.
-- **Prioridad:** P2. **Estado:** conservar el de TASK-422.
+- **Prioridad:** P2. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia:** pendiente; no se probaron sesiones reales ni persistencia en Sheets.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
