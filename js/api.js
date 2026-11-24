@@ -181,7 +181,7 @@ function fetchApi(service, action, payload, retryCount, options) {
       serviceKey: options.serviceId ? "" : service,
       action: action,
       sourceServiceId: options.sourceServiceId || "",
-      contractVersion: options.contractVersion || ""
+      contractVersion: options.contractVersion || (window.SERVICE_REGISTRY && window.SERVICE_REGISTRY[service] && window.SERVICE_REGISTRY[service].version) || ""
     };
     return fetchApi("DEVELOPER", "resolveServiceEndpoint", routeRequest, 0, { silentAuthError: true })
       .then(function(resolution) {
@@ -192,7 +192,7 @@ function fetchApi(service, action, payload, retryCount, options) {
           }
           return createApiClientError(resolutionCode, null, false, createApiClientCorrelationId());
         }
-        var routedPayload = Object.assign({}, payload || {}, { contractVersion: options.contractVersion || resolution.version || "" });
+        var routedPayload = Object.assign({}, payload || {}, { contractVersion: options.contractVersion || (window.SERVICE_REGISTRY && window.SERVICE_REGISTRY[service] && window.SERVICE_REGISTRY[service].version) || resolution.version || "" });
         return fetchApi(service, action, routedPayload, 0, Object.assign({}, options, { resolvedEndpointUrl: resolution.endpointUrl }));
       });
   }

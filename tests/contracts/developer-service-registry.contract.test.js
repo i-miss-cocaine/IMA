@@ -156,7 +156,7 @@ test("el resolver de solo lectura está disponible a cualquier rol con sesión v
   ROLE_PERMISSIONS: { Docente: [] },
   verifySessionToken: (token, options) => token === "membership-session" && options && options.allowMembership ? { role: "Docente", userId: "DOC-1", membershipId: "MEM-1", institutionId: "INST-1" } : null,
   textResponse: value => value,
-  resolveServiceEndpoint: payload => ({ status: "success", serviceId: payload.serviceId }),
+  resolveServiceEndpoint: payload => ({ status: "success", serviceId: payload.serviceId, resolvedRole: payload._verifiedClaims && payload._verifiedClaims.role, resolvedMembership: payload._verifiedClaims && payload._verifiedClaims.membershipId }),
   doGet: () => ({ status: "success" })
  });
  const response = post({ postData: { contents: JSON.stringify({ action: "resolveServiceEndpoint", payload: { serviceId: "SVC-1", action: "readRecord", sessionToken: "membership-session" } }) } });
@@ -234,4 +234,9 @@ test("el cliente enruta automáticamente servicios institucionales y solo hace f
  assert.match(api, /resolutionCode === "SERVICE_NOT_FOUND"/);
  assert.match(api, /skipCentralRouting: true/);
  assert.match(backend, /payload\._verifiedClaims = claims/);
+});
+
+test("el cliente compara la versión registrada con la versión del descriptor local", () => {
+ assert.match(api, /window\.SERVICE_REGISTRY && window\.SERVICE_REGISTRY\[service\] && window\.SERVICE_REGISTRY\[service\]\.version/);
+ assert.match(backend, /SERVICE_CONTRACT_VERSION_MISMATCH/);
 });
