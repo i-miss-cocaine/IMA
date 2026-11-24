@@ -319,3 +319,44 @@ test("la vigencia predeterminada limita el día al último día del mes destino"
   assert.equal(result.status, "success");
   assert.match(String(assignments.rows[1][9]), /^2028-02-29/);
 });
+
+test("manageInternalRoleCatalog libera LockService después de crear una responsabilidad", () => {
+  const roles = sheet([roleHeaders]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
+  let waits = 0, releases = 0;
+  context.LockService = { getScriptLock: () => ({
+    waitLock() { waits++; },
+    releaseLock() { releases++; }
+  }) };
+  const result = context.manageInternalRoleCatalog({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    nombreResponsabilidad: "Jefe de Nivel", tipoResponsabilidad: "Administrativa",
+    vigenciaMeses: 12, motivo: "Alta autorizada para prueba."
+  });
+  assert.equal(result.status, "success");
+  assert.equal(roles.rows.length, 2);
+  assert.equal(waits, 1);
+  assert.equal(releases, 1);
+});
+
+test("manageInternalRoleCatalog revierte el alta si falla auditoría y libera LockService", () => {
+  const roles = sheet([roleHeaders]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
+  let waits = 0, releases = 0;
+  context.LockService = { getScriptLock: () => ({
+    waitLock() { waits++; },
+    releaseLock() { releases++; }
+  }) };
+  context.recordEntityChangeLog = () => { throw new Error("AUDIT_WRITE_FAILED"); };
+  const result = context.manageInternalRoleCatalog({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    nombreResponsabilidad: "Orientador", tipoResponsabilidad: "Administrativa",
+    vigenciaMeses: 12, motivo: "Alta autorizada para prueba."
+  });
+  assert.equal(result.status, "error");
+  assert.equal(result.code, "AUDIT_WRITE_FAILED");
+  assert.equal(roles.rows.length, 1);
+  assert.equal(waits, 1);
+  assert.equal(releases, 1);
+  assert.equal(context.events.length, 1);
+});
