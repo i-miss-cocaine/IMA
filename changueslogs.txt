@@ -4751,3 +4751,12 @@ C3.009 — IMA-ITER-20261124-007
 - No se implementan HMAC/secretos interservicio; la identidad es la sesión del usuario verificada, conforme a NDASC §17.8. La prueba real entre cuentas/proyectos sigue pendiente en TASK-047/AUD-NG-090.
 - Rama: NG_beta_0.0.0.1_work. HEAD de evidencia: 05d0d729249c2d905fdf600b571babdf3f06bf38.
 ===============================================================================
+
+===============================================================================
+C3.010 — IMA-ITER-20261124-008
+===============================================================================
+- AUD-NG-087 completada: Se verifica la cadena completa en orden global, no solo la solicitud filtrada; cada hashPrevio debe enlazar con el hashActual anterior desde el génesis. Hash ausente, enlace roto, ID duplicado, alteración o truncamiento final se detectan. El último ID/hash/total se compara con checkpoint interno persistido; las escrituras quedan bloqueadas si la integridad falla. El primer baseline se inicializa solo tras verificar el historial existente.
+- Evidencia CI: run 45327820272 SUCCESS; 43/43 pruebas Node.js PASS; siete node --check y git diff --check PASS.
+- AUD-NG-090 continúa pendiente por la prueba real entre proyectos Apps Script aislados; los ensayos HMAC interservicio quedan supersedidos por NDASC §17.8.
+- Rama: NG_beta_0.0.0.1_work. HEAD de entrada: f87852dcb8938242e6a7be849be3e0fd4aba2976.
+===============================================================================

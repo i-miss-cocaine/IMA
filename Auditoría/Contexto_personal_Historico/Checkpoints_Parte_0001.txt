@@ -114,3 +114,15 @@ C3.009 — IMA-ITER-20261124-007
 - Estado: AUD-NG-086 completada; TASK-047 continúa Pendiente por verificación multi-cuenta real.
 - Siguiente tarea elegible: TASK-049 / AUD-NG-087, continuidad criptográfica de decisiones históricas.
 ===============================================================================
+
+===============================================================================
+C3.010 — IMA-ITER-20261124-008
+===============================================================================
+- Objetivo cerrado: AUD-NG-087 — Continuidad global y checkpoint confiable de decisiones.
+- Resultado: Se verifica la cadena completa en orden global, no solo la solicitud filtrada; cada hashPrevio debe enlazar con el hashActual anterior desde el génesis. Hash ausente, enlace roto, ID duplicado, alteración o truncamiento final se detectan. El último ID/hash/total se compara con checkpoint interno persistido; las escrituras quedan bloqueadas si la integridad falla. El primer baseline se inicializa solo tras verificar el historial existente.
+- Verificaciones: GitHub Actions run 45327820272 SUCCESS; 43/43 pruebas Node.js PASS; sintaxis Node.js de siete archivos Apps Script/JS; git diff --check PASS.
+- Límites: las pruebas locales/CI no sustituyen despliegues reales Apps Script. Los eventos históricos legacy conservan su fórmula original y se reporta su alcance de hash limitado; no se reescriben.
+- HEAD de entrada: f87852dcb8938242e6a7be849be3e0fd4aba2976.
+- Estado: AUD-NG-087 completada; AUD-NG-090 mantiene pendiente la validación real entre proyectos aislados.
+- Siguiente tarea: continuar inmediatamente con el siguiente requisito elegible del Plan Maestro.
+===============================================================================

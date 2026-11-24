@@ -3669,6 +3669,10 @@
 - **Descripción del Alcance:** Validar cada hash y además comprobar que hashPrevio coincida exactamente con hashActual del evento inmediatamente anterior, comenzando por el valor génesis. Marcar como inconsistencia cualquier hash vacío, enlace roto, evento eliminado o secuencia incompleta; al filtrar por solicitud, verificar el tramo global correspondiente sin perder continuidad.
 - **Criterios de Aceptación:** Cambiar un dato, quitar un hash, alterar un enlace o eliminar una fila de prueba produce cadena inválida; una cadena completa se verifica de forma determinista; el último hash se compara con un checkpoint confiable.
 
+- **Implementación C3.010:** Se verifica la cadena completa en orden global, no solo la solicitud filtrada; cada hashPrevio debe enlazar con el hashActual anterior desde el génesis. Hash ausente, enlace roto, ID duplicado, alteración o truncamiento final se detectan. El último ID/hash/total se compara con checkpoint interno persistido; las escrituras quedan bloqueadas si la integridad falla. El primer baseline se inicializa solo tras verificar el historial existente.
+- **Evidencia CI:** GitHub Actions Developer Service Registry Contract run 45327820272 — SUCCESS; Node.js 24.22; 43/43 pruebas PASS; node --check en user-service, academic-service, accounting-service, task-service, exam-service, developer-service, js/api.js y js/developer.js; git diff --check PASS.
+- **Estado:** [x] Completada (C3.010).
+
 ### [AUD-NG-088] Incluir todos los datos probatorios y relaciones en el hash de cada evento
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-088 (TASK-049 / F23-Task06)
 - **Archivos Involucrados:** backend/user-service/Code.gs; RevisionesDecisionesTramite
