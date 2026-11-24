@@ -321,6 +321,51 @@ test("COMPARTIDO_DOCENTE configuration does not bypass confidential case authori
   assert.equal(result.nivelVisibilidad, "COMPARTIDO_DOCENTE");
 });
 
+
+test("authorized guidance scheduling creates a scoped case and assigns the appointment to the verified actor", () => {
+  const h = harness({
+    identities: { counselor: { authorized: true, userId: "counselor-1", role: "Orientacion" } }
+  });
+  const result = h.api.scheduleGuidanceAppointment({
+    sessionToken: "counselor", scopeAllowed: true, userId: "STU-1",
+    fechaHora: "2026-11-25T10:00:00", notasConfidenciales: "nota privada"
+  });
+  assert.equal(result.status, "success");
+  const caseRowSaved = h.db.getSheetByName("CasosSeguimiento").rows[1];
+  const appointment = h.db.getSheetByName("CitasOrientacion").rows[1];
+  assert.equal(caseRowSaved[4], "counselor-1");
+  assert.match(caseRowSaved[3], /Categoría: Orientación/);
+  assert.equal(appointment[1], result.casoId);
+  assert.equal(appointment[2], "STU-1");
+  assert.equal(appointment[4], "counselor-1");
+  assert.equal(appointment[10], "nota privada");
+  assert.equal(h.lockState.acquired, 2);
+  assert.equal(h.lockState.released, 2);
+});
+
+test("counseling and guidance plan writers preserve actor ownership and confidentiality markers", () => {
+  const h = harness({
+    identities: { counselor: { authorized: true, userId: "counselor-1", role: "Consejeros" } }
+  });
+  const appointment = h.api.scheduleCounselingAppointment({
+    sessionToken: "counselor", scopeAllowed: true, userId: "STU-1",
+    fechaHora: "2026-11-25T10:00:00", motivo: "Acompañamiento"
+  });
+  const plan = h.api.saveGuidanceFollowupPlan({
+    sessionToken: "counselor", scopeAllowed: true, userId: "STU-2", metasAprendizaje: "Meta"
+  });
+  const recommendation = h.api.saveVocationalRecommendation({
+    sessionToken: "counselor", scopeAllowed: true, userId: "STU-3", perfilVocacional: "Perfil"
+  });
+  assert.equal(appointment.status, "success");
+  assert.equal(plan.status, "success");
+  assert.equal(recommendation.status, "success");
+  const rows = h.db.getSheetByName("CasosSeguimiento").rows.slice(1);
+  assert.equal(rows.length, 3);
+  assert.ok(rows.every(row => row[4] === "counselor-1"));
+  assert.ok(rows.every(row => /consejer[ií]a|orientaci[oó]n|bienestar/i.test(row[3])));
+});
+
 test("missing signed identity is denied even when the payload claims a privileged role", () => {
   const h = harness({ cases: [caseRow("CASE-1", "STU-1", "Categoría: Consejería", "counselor-1")] });
   const result = h.api.validateStudentWelfareAccess({ authRole: "Director", casoId: "CASE-1" });
