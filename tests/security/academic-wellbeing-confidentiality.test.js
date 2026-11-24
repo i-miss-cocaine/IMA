@@ -43,8 +43,8 @@ const names = [
 const program = names.map(name => extractFunction(source, name)).join("\n\n");
 
 class FakeSheet {
-  constructor(rows) { this.rows = (rows || []).map(row => row.slice()); }
-  getDataRange() { return { getValues: () => this.rows.map(row => row.slice()) }; }
+  constructor(rows) { this.rows = (rows || []).map(row => row.slice()); this.readCount = 0; }
+  getDataRange() { this.readCount++; return { getValues: () => this.rows.map(row => row.slice()) }; }
   getLastRow() { return this.rows.length; }
   appendRow(row) { this.rows.push(row.slice()); }
   getRange(row, column) {
@@ -415,6 +415,30 @@ test("general follow-up accepts valid JSON-string actions without treating them 
   });
   assert.equal(result.status, "success");
   assert.deepEqual(JSON.parse(h.db.getSheetByName("CasosSeguimiento").rows[1][5]), [{ tipo: "Seguimiento", nota: "pública" }]);
+});
+
+
+test("bulk welfare readers reuse one case snapshot instead of rereading the sheet per record", () => {
+  const cases = Array.from({ length: 12 }, (_, index) =>
+    caseRow("CASE-" + index, "STU-" + index, "Categoría: Consejería", "not-an-auth-proof")
+  );
+  const appointments = cases.map((row, index) => [
+    "CITA-" + index, row[0], row[1], "", "counselor-1", "2026-11-20",
+    "Presencial", "Programada", "Entrevista", "Pública", "Privada-" + index, "", "2026-11-20"
+  ]);
+  const h = harness({
+    cases, appointments,
+    identities: { counselor: { authorized: true, userId: "counselor-1", role: "Orientacion" } }
+  });
+  const caseSheet = h.db.getSheetByName("CasosSeguimiento");
+  const caseList = h.api.getAttendanceFollowupCases({ sessionToken: "counselor", scopeAllowed: true });
+  assert.equal(caseList.data.length, 12);
+  assert.equal(caseSheet.readCount, 1);
+
+  caseSheet.readCount = 0;
+  const citaList = h.api.getGuidanceAppointments({ sessionToken: "counselor", scopeAllowed: true });
+  assert.equal(citaList.citas.length, 12);
+  assert.equal(caseSheet.readCount, 1);
 });
 
 test("missing signed identity is denied even when the payload claims a privileged role", () => {
