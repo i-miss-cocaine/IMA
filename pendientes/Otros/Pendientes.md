@@ -1,6 +1,6 @@
 <!-- ID: AUD-NG-063 | Fuente: índice de hallazgos del Plan Maestro; componente USER -->
 
-> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
+> **Ciclo 3:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Los estados vigentes se actualizan conforme a la implementación y verificación; la evidencia histórica se conserva.
 ### [ ] [AUD-NG-063] Proteger secretos y credenciales de proveedores de firma
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componente:** USER — configureAdvancedSignatureProvider / getAdvancedSignatureProviderConfig.
@@ -9,7 +9,7 @@
 - **Controles adicionales:** configuracionJSON no admite claves de secreto; endpoint nuevo requiere HTTPS y no admite credenciales/tokens incrustados; endpoint legacy con credenciales se redacciona; la lectura no crea hojas ni inventa proveedor PSC.
 - **Verificación local:** 12 escenarios / 17 aserciones V8 PASS; parseo de servicio y contrato PASS. CI Department Scope 42910740964, Task-Service 42910740844 e Identity Mapping 42910740991 — SUCCESS.
 - **Estado histórico anterior:** Completada en código. BETA-FUNC-028 Pendiente beta para migración/PropertiesService real.
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 - **Riesgo residual:** Script Properties es accesible a editores autorizados del proyecto; no equivale a un gestor externo de secretos ni se afirma cifrado de extremo a extremo.
 
 
@@ -22,7 +22,7 @@
 - **Seguridad:** mensajes renderizados con textContent; caché reconciliada solo en success; timeout de AUD-NG-007 conservado.
 - **Pruebas:** suite Node HTTP local y helpers de ambos servicios PASS; Department Scope 43675111519, Identity Mapping 43675111535, Department Reference Consumers 43675111514 y Task-Service 43675111510 SUCCESS.
 - **Estado histórico anterior:** Completada en código/CI; BETA-FUNC-097 pendiente.
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 
 <!-- ID: AUD-NG-254 | Fuente: NDASC 1.5, secciones 12 y 17; solicitud de política institucional configurable del 2026-11-19 | Ubicación: última tarea del Plan Maestro (PM-09) -->
 ### [ ] [AUD-NG-254] Auditoría final de conformidad de módulos con la política institucional configurable y seguridad proporcional
@@ -52,7 +52,7 @@
 - **Evidencia de implementación previa:** satisfecha como parte de TASK-068; hoja CorrespondenciaIdentificadores con esquema canónico, inicialización segura, clave compuesta fuente/tipo/ID/institución, registro idempotente, conflicto de destino, resolución bidireccional, revisión humana y HistorialDecisionesIdentidad. La auditoría de consistencia detecta duplicados, filas incompletas y destinos huérfanos sin autocorregir ni fusionar.
 - **Verificación:** Auditoría TASK-068 C1.363 dictaminó criterios locales PASS; Identity Mapping and Transport Security Contract run 45291418277 SUCCESS en SHA 364e4dc4c01471226be6fbe47511b306bcc09a73; incluye identity-mapping-contract.test.js y accounting-identity-map-snapshot.test.js, con aislamiento por institución y transporte HMAC firmado ACCOUNTING→USER.
 - **Estado histórico anterior:** Completada en código/CI por implementación previa TASK-068; BETA-FUNC-008 permanece PENDIENTE DE BETA para validar transporte entre despliegues, fuentes reales y persistencia en servicios vivos.
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 - **Nota de trazabilidad:** se recupera esta entrada faltante del backlog porque el Plan Maestro ya la referencia. No se duplicó ni reimplementó el módulo; se vinculó la evidencia existente al identificador F29-TASK01.
 
 
