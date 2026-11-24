@@ -11199,203 +11199,113 @@ function getApprovalWorkflows(payload) {
 
 // [TASK-044] [F23-Task01] [P0] Motor de Workflows: Integridad Transaccional, Candados Atómicos y Autorización de Decisiones
 function processWorkflowDecision(payload) {
-  const {
-    solicitudId,
-    etapaNombre,
-    revisorId,
-    accionDecision,
-    observacionesInternas,
-    observacionesPublicas
-  } = payload || {};
-
-  if (!solicitudId || !accionDecision) {
-    throw new Error("solicitudId y accionDecision son requeridos para procesar la revisión.");
-  }
-
-  // 1. Exclusión mutua atómica mediante LockService (timeout 15s)
-  const lock = LockService.getScriptLock();
-  const hasLock = lock.tryLock(15000);
-  if (!hasLock) {
-    throw new Error("WORKFLOW_CONCURRENCY_LOCKED: No se pudo adquirir el bloqueo de concurrencia para resolver la solicitud. Reintente en unos instantes.");
-  }
-
-  var workflowResponse = null;
-  var workflowNotificationContext = null;
+  payload = payload || {};
+  var solicitudId = String(payload.solicitudId || "").trim();
+  var accionDecision = String(payload.accionDecision || "").trim();
+  var callerId = String(payload._verifiedUserId || "").trim();
+  var callerRole = String(payload._verifiedRole || "").trim();
+  var etapaNombre = String(payload.etapaNombre || "").trim();
+  var observacionesInternas = String(payload.observacionesInternas || "").slice(0, 2000);
+  var observacionesPublicas = String(payload.observacionesPublicas || "").slice(0, 2000);
+  if (!solicitudId || !accionDecision) throw new Error("solicitudId y accionDecision son requeridos para procesar la revisión.");
+  if (!callerId || !callerRole) throw new Error("WORKFLOW_VERIFIED_ACTOR_REQUIRED");
+  if (["APROBADO", "RECHAZADO", "DEVUELTO_CORRECCION", "DERIVADO"].indexOf(accionDecision) === -1) throw new Error("WORKFLOW_DECISION_ACTION_INVALID");
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error("WORKFLOW_CONCURRENCY_LOCKED");
+  var workflowResponse = null, workflowNotificationContext = null;
   try {
-    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-    // 2. Recuperar estado actual y precondiciones de la solicitud en SolicitudesTramites
-    const solSheet = getOrCreateSheet(ss, "SolicitudesTramites");
-    const solData = solSheet.getDataRange().getValues();
-    const idx = solData.findIndex(r => String(r[0]).trim() === String(solicitudId).trim());
-
-    if (idx === -1) {
-      throw new Error(`SOLICITUD_NOT_FOUND: No se encontró la solicitud con ID '${solicitudId}'.`);
-    }
-
-    const solRow = solData[idx];
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var solSheet = getOrCreateSheet(ss, "SolicitudesTramites");
+    var solData = solSheet.getDataRange().getValues();
+    var idx = solData.findIndex(function(row) { return String(row[0] || "").trim() === solicitudId; });
+    if (idx < 1) throw new Error("SOLICITUD_NOT_FOUND");
+    var solRow = solData[idx].slice();
     if (String(solRow[3] || "") === "Justificación de Ausencia") throw new Error("ABSENCE_REVIEW_REQUIRES_CANONICAL_WORKFLOW");
-    const estadoActual = String(solRow[6] || "").trim();
-    const asignadoAActual = String(solRow[7] || "").trim();
-
-    // Comprobar que la solicitud esté en estado operable
-    if (estadoActual === "Aprobada" || estadoActual === "Rechazada" || estadoActual === "Cancelada") {
-      throw new Error(`WORKFLOW_INVALID_STATE: La solicitud ${solicitudId} ya se encuentra finalizada en estado '${estadoActual}' y no admite nuevas decisiones.`);
-    }
-
-    // 3. Recuperar historial de decisiones previas para detectar conflictos de etapa ya resuelta
-    const decSheet = getOrCreateSheet(ss, "RevisionesDecisionesTramite");
-    const decData = decSheet.getDataRange().getValues();
-    const targetEtapa = etapaNombre || asignadoAActual || "Revisión General";
-
-    const etapaYaResuelta = decData.slice(1).find(r => {
-      const rSolId = String(r[1]).trim();
-      const rEtapa = String(r[2]).trim();
-      const rDecision = String(r[4]).trim();
-      return rSolId === String(solicitudId).trim() && rEtapa.toLowerCase() === targetEtapa.toLowerCase() && (rDecision === "APROBADO" || rDecision === "RECHAZADO");
+    var estadoActual = String(solRow[6] || "").trim(), asignadoAActual = String(solRow[7] || "").trim();
+    if (["Aprobada", "Rechazada", "Cancelada"].indexOf(estadoActual) !== -1) throw new Error("WORKFLOW_INVALID_STATE");
+    var decSheet = ensureWorkflowDecisionAuditSchema_(getOrCreateSheet(ss, "RevisionesDecisionesTramite"));
+    var integrity = verifyWorkflowDecisionAuditChain({ _verifiedUserId: callerId });
+    if (!integrity.cadenaValida) throw new Error("WORKFLOW_AUDIT_CHAIN_BROKEN");
+    var decData = decSheet.getDataRange().getValues();
+    var targetEtapa = etapaNombre || asignadoAActual || "Revisión General";
+    var etapaYaResuelta = decData.slice(1).find(function(row) {
+      return String(row[1] || "").trim() === solicitudId && String(row[2] || "").trim().toLowerCase() === targetEtapa.toLowerCase() &&
+        ["APROBADO", "RECHAZADO"].indexOf(String(row[4] || "").trim()) !== -1;
     });
-
-    if (etapaYaResuelta) {
-      throw new Error(`STAGE_ALREADY_RESOLVED_CONFLICT: La etapa '${targetEtapa}' para la solicitud ${solicitudId} ya fue resuelta previamente con resultado '${etapaYaResuelta[4]}'.`);
+    if (etapaYaResuelta) throw new Error("STAGE_ALREADY_RESOLVED_CONFLICT");
+    var estadoFinalCalculado = "En Revisión", siguienteAsignadoCalculado = asignadoAActual;
+    if (accionDecision === "APROBADO") { estadoFinalCalculado = "Aprobada"; siguienteAsignadoCalculado = "Finalizado/Aprobado"; }
+    else if (accionDecision === "RECHAZADO") { estadoFinalCalculado = "Rechazada"; siguienteAsignadoCalculado = "Finalizado/Rechazado"; }
+    else if (accionDecision === "DEVUELTO_CORRECCION") { estadoFinalCalculado = "Requiere Corrección"; siguienteAsignadoCalculado = solRow[1] || "Solicitante"; }
+    else if (accionDecision === "DERIVADO") { estadoFinalCalculado = "Derivada"; siguienteAsignadoCalculado = "Dirección/Comité"; }
+    var decisionId = "DEC-" + Utilities.getUuid(), now = new Date(), nowISO = now.toISOString();
+    var auditRow = [decisionId, solicitudId, targetEtapa, callerId, accionDecision, observacionesInternas,
+      observacionesPublicas, nowISO, "APPS_SCRIPT", "", "", "", "", "2"];
+    var appended = appendWorkflowDecisionAuditEvent_(decSheet, auditRow, callerId);
+    var requestRowNumber = idx + 1;
+    try {
+      solSheet.getRange(requestRowNumber, 7).setValue(estadoFinalCalculado);
+      solSheet.getRange(requestRowNumber, 8).setValue(siguienteAsignadoCalculado);
+      if (observacionesPublicas) solSheet.getRange(requestRowNumber, 9).setValue(observacionesPublicas);
+      solSheet.getRange(requestRowNumber, 11).setValue(now);
+      if (typeof SpreadsheetApp.flush === "function") SpreadsheetApp.flush();
+    } catch (stateError) {
+      try { if (decSheet.getLastRow() >= appended.rowNumber) decSheet.deleteRow(appended.rowNumber); } catch (deleteError) { throw new Error("WORKFLOW_DECISION_COMPENSATION_FAILED"); }
+      try { solSheet.getRange(requestRowNumber, 1, 1, solRow.length).setValues([solRow]); } catch (restoreError) { throw new Error("WORKFLOW_REQUEST_STATE_COMPENSATION_FAILED"); }
+      try { saveWorkflowDecisionAuditCheckpoint_(verifyWorkflowDecisionAuditRows_(decSheet.getDataRange().getValues().slice(1)), appended.checkpointBefore.updatedBy || callerId); }
+      catch (checkpointError) { throw new Error("WORKFLOW_AUDIT_CHECKPOINT_COMPENSATION_FAILED"); }
+      throw stateError;
     }
-
-    // 4. Validar autorización del revisor autenticado
-    const callerId = String(revisorId || (payload && payload._verifiedUserId) || "Revisor").trim();
-    const callerRole = String((payload && payload._verifiedRole) || "").trim();
-
-    // 5. Cálculo y transición determinada estrictamente por el servidor
-    let estadoFinalCalculado = "En Revisión";
-    let siguienteAsignadoCalculado = "";
-
-    if (accionDecision === "APROBADO") {
-      estadoFinalCalculado = "Aprobada";
-      siguienteAsignadoCalculado = "Finalizado/Aprobado";
-    } else if (accionDecision === "RECHAZADO") {
-      estadoFinalCalculado = "Rechazada";
-      siguienteAsignadoCalculado = "Finalizado/Rechazado";
-    } else if (accionDecision === "DEVUELTO_CORRECCION") {
-      estadoFinalCalculado = "Requiere Corrección";
-      siguienteAsignadoCalculado = solRow[1] || "Solicitante"; // Devolver al solicitante original
-    } else if (accionDecision === "DERIVADO") {
-      estadoFinalCalculado = "Derivada";
-      siguienteAsignadoCalculado = "Dirección/Comité";
-    } else {
-      estadoFinalCalculado = "En Revisión";
-      siguienteAsignadoCalculado = asignadoAActual;
-    }
-
-    // 6. [TASK-049] Registrar la decisión con encadenamiento criptográfico anti-manipulación (hashPrevio + hashActual)
-    const decId = "DEC-" + Date.now();
-    const now = new Date();
-    const nowISO = now.toISOString();
-
-    // Obtener hash de la última decisión registrada
-    let hashPrevio = "GENESIS_DECISION_HASH_0000000000000000000000000000000000000000";
-    if (decData.length > 1) {
-      const lastRow = decData[decData.length - 1];
-      if (lastRow[10]) {
-        hashPrevio = String(lastRow[10]).trim();
-      }
-    }
-
-    const decisionPayloadToHash = `${decId}|${solicitudId}|${targetEtapa}|${callerId}|${accionDecision}|${nowISO}|${hashPrevio}`;
-    const hashActual = computeDocumentSHA256(decisionPayloadToHash);
-
-    decSheet.appendRow([
-      decId,
-      solicitudId,
-      targetEtapa,
-      callerId,
-      accionDecision,
-      observacionesInternas || "",
-      observacionesPublicas || "",
-      nowISO,
-      "127.0.0.1",
-      hashPrevio,
-      hashActual
-    ]);
-
-    // 7. Actualizar estado de la solicitud en el servidor
-    solSheet.getRange(idx + 1, 7).setValue(estadoFinalCalculado);
-    solSheet.getRange(idx + 1, 8).setValue(siguienteAsignadoCalculado);
-    if (observacionesPublicas) solSheet.getRange(idx + 1, 9).setValue(observacionesPublicas);
-    solSheet.getRange(idx + 1, 11).setValue(now);
-
-    workflowResponse = {
-      status: "success", decisionId: decId, solicitudId: solicitudId, etapaResuelta: targetEtapa,
+    workflowResponse = { status: "success", decisionId: decisionId, solicitudId: solicitudId, etapaResuelta: targetEtapa,
       accionDecision: accionDecision, nuevoEstado: estadoFinalCalculado, siguienteAsignadoA: siguienteAsignadoCalculado,
-      message: `Decisión '${accionDecision}' procesada y registrada exitosamente con candado atómico para la solicitud ${solicitudId}.`
-    };
+      hashActual: appended.hashActual, message: "Decisión procesada y registrada con cadena SHA-256 y checkpoint confiable." };
     workflowNotificationContext = {
-      solicitudId: String(solicitudId), decisionId: decId, destinatarioUserId: String(solRow[1] || "").trim(),
-      estado: estadoFinalCalculado, observacionesPublicas: String(observacionesPublicas || ""),
+      solicitudId: solicitudId, decisionId: decisionId, destinatarioUserId: String(solRow[1] || "").trim(),
+      estado: estadoFinalCalculado, observacionesPublicas: observacionesPublicas,
       fechaLimite: (function() {
-        const headers = solData[0] || [], candidates = ["FechaLimite", "FechaLimiteSubsanacion", "FechaVencimiento"];
-        const index = headers.findIndex(function(header) { return candidates.indexOf(String(header || "").trim()) !== -1; });
+        var headers = solData[0] || [], candidates = ["FechaLimite", "FechaLimiteSubsanacion", "FechaVencimiento"];
+        var index = headers.findIndex(function(header) { return candidates.indexOf(String(header || "").trim()) !== -1; });
         return index >= 0 ? solRow[index] : "";
       })()
     };
-  } finally {
-    lock.releaseLock();
-  }
+  } finally { lock.releaseLock(); }
   if (workflowNotificationContext) {
     try { workflowResponse.notificacion = dispatchWorkflowStatusNotification_(workflowNotificationContext); }
     catch (notificationError) {
       logStructuredEvent("USER", "processWorkflowDecision", "WARN", "WORKFLOW_NOTIFICATION_FAILED",
         "La transición quedó registrada; el aviso no pudo completarse y requiere seguimiento.",
         { solicitudId: solicitudId, decisionId: workflowNotificationContext.decisionId,
-          error: String(notificationError && notificationError.message || notificationError) }, "Sistema");
+          error: String(notificationError && notificationError.message || notificationError) }, callerId);
       workflowResponse.notificacion = { status: "error", code: "WORKFLOW_NOTIFICATION_FAILED" };
     }
   }
   return workflowResponse;
 }
-
 function getWorkflowHistory(payload) {
-  const { solicitudId } = payload || {};
+  var solicitudId = String(payload && payload.solicitudId || "").trim();
   if (!solicitudId) throw new Error("solicitudId es requerido.");
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-
-  // Decisiones
-  const decSheet = getOrCreateSheet(ss, "RevisionesDecisionesTramite");
-  const decData = decSheet.getDataRange().getValues();
-  const history = (decData.length > 1) ? decData.slice(1).filter(r => String(r[1]).trim() === String(solicitudId).trim()).map(r => ({
-    decisionId: r[0],
-    solicitudId: r[1],
-    etapaNombre: r[2],
-    revisorId: r[3],
-    accionDecision: r[4],
-    observacionesInternas: r[5],
-    observacionesPublicas: r[6],
-    fechaDecision: r[7] ? new Date(r[7]).toISOString() : null,
-    hashPrevio: r[9] || "",
-    hashActual: r[10] || ""
-  })) : [];
-
-  // Firmas
-  const firmSheet = getOrCreateSheet(ss, "FirmasConformidades");
-  const firmData = firmSheet.getDataRange().getValues();
-  const signatures = (firmData.length > 1) ? firmData.slice(1).filter(r => String(r[1]).trim() === String(solicitudId).trim()).map(r => ({
-    firmaId: r[0],
-    solicitudId: r[1],
-    documentoId: r[2],
-    firmanteId: r[3],
-    rolFirmante: r[4],
-    tipoFirma: r[5],
-    tokenVerificacion: r[6],
-    fechaFirma: r[7] ? new Date(r[7]).toISOString() : null,
-    ipOrigen: r[8] || "",
-    documentoHash: r[9] || "",
-    signatureHash: r[10] || "",
-    versionDocumento: r[11] || "",
-    metodoAutenticacion: r[12] || "",
-    transaccionId: r[13] || ""
-  })) : [];
-
-  return { status: "success", historialDecisiones: history, firmas: signatures };
+  var integrity = verifyWorkflowDecisionAuditChain({ solicitudId: solicitudId, _verifiedUserId: payload && payload._verifiedUserId });
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var decSheet = ensureWorkflowDecisionAuditSchema_(getOrCreateSheet(ss, "RevisionesDecisionesTramite"));
+  var decData = decSheet.getDataRange().getValues();
+  var history = decData.length > 1 ? decData.slice(1).filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).map(function(row) {
+    return { decisionId: row[0], solicitudId: row[1], etapaNombre: row[2], revisorId: row[3],
+      accionDecision: row[4], observacionesInternas: row[5], observacionesPublicas: row[6],
+      fechaDecision: row[7] ? normalizeWorkflowDecisionAuditDate_(row[7]) : null,
+      hashPrevio: row[9] || "", hashActual: row[10] || "", decisionIdOriginal: row[11] || "",
+      motivoCorreccion: row[12] || "", hashSchemaVersion: row[13] || "legacy" };
+  }) : [];
+  var firmSheet = getOrCreateSheet(ss, "FirmasConformidades"), firmData = firmSheet.getDataRange().getValues();
+  var signatures = firmData.length > 1 ? firmData.slice(1).filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).map(function(row) {
+    return { firmaId: row[0], solicitudId: row[1], documentoId: row[2], firmanteId: row[3], rolFirmante: row[4],
+      tipoFirma: row[5], tokenVerificacion: row[6], fechaFirma: row[7] ? new Date(row[7]).toISOString() : null,
+      ipOrigen: row[8] || "", documentoHash: row[9] || "", signatureHash: row[10] || "",
+      versionDocumento: row[11] || "", metodoAutenticacion: row[12] || "", transaccionId: row[13] || "" };
+  }) : [];
+  return { status: "success", historialDecisiones: history, firmas: signatures,
+    integridadAuditoria: { cadenaValida: integrity.cadenaValida, totalDecisionesAuditadas: integrity.totalDecisionesAuditadas,
+      inconsistencias: integrity.inconsistencias } };
 }
-
 // [TASK-039] [F22-Task02] - Registro de firma electrónica y conformidad institucional con vinculación criptográfica SHA-256
 function ensureDocumentSignatureSchema_(sheet) {
   const headers = ["FirmaID","SolicitudID","DocumentoID","FirmanteID","RolFirmante","TipoFirma","TokenVerificacion",
@@ -12465,125 +12375,196 @@ function getSpreadsheetCatalog(payload) {
 
 
 // [TASK-049] [F23-Task06] [P0] Auditoría Criptográfica: Verificación de Cadena de Decisiones y Registro de Correcciones
-function verifyWorkflowDecisionAuditChain(payload) {
-  const { solicitudId } = payload || {};
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const decSheet = getOrCreateSheet(ss, "RevisionesDecisionesTramite");
-  const data = decSheet.getDataRange().getValues();
+const WORKFLOW_DECISION_AUDIT_GENESIS_HASH_ = "GENESIS_DECISION_HASH_0000000000000000000000000000000000000000";
+const WORKFLOW_DECISION_AUDIT_CHECKPOINT_KEY_ = "WORKFLOW_DECISION_AUDIT_CHECKPOINT_V2";
 
-  if (data.length <= 1) {
-    return {
-      status: "success",
-      cadenaValida: true,
-      totalDecisionesAuditadas: 0,
-      inconsistencias: [],
-      message: "Historial de decisiones vacío, cadena íntegra por defecto."
-    };
-  }
+function ensureWorkflowDecisionAuditSchema_(sheet) {
+  var currentWidth = Math.max(9, Number(sheet.getLastColumn()) || 9);
+  var current = sheet.getRange(1, 1, 1, currentWidth).getValues()[0] || [];
+  var header = new Array(14).fill("");
+  for (var i = 0; i < Math.min(current.length, 14); i++) header[i] = current[i];
+  header[9] = "HashPrevio";
+  header[10] = "HashActual";
+  header[11] = "DecisionIdOriginal";
+  header[12] = "MotivoCorreccion";
+  header[13] = "HashSchemaVersion";
+  sheet.getRange(1, 1, 1, 14).setValues([header]);
+  return sheet;
+}
 
-  const rows = data.slice(1);
-  const filteredRows = solicitudId ? rows.filter(r => String(r[1]).trim() === String(solicitudId).trim()) : rows;
+function normalizeWorkflowDecisionAuditDate_(value) {
+  var date = value instanceof Date ? value : new Date(value);
+  if (!value || isNaN(date.getTime())) throw new Error("WORKFLOW_AUDIT_TIMESTAMP_INVALID");
+  return date.toISOString();
+}
 
-  const inconsistencias = [];
-  let cadenaValida = true;
+function computeWorkflowDecisionHashV2_(row) {
+  var canonical = [
+    String(row[0] || "").trim(), String(row[1] || "").trim(), String(row[2] || "").trim(),
+    String(row[3] || "").trim(), String(row[4] || "").trim(), String(row[5] || ""),
+    String(row[6] || ""), normalizeWorkflowDecisionAuditDate_(row[7]), String(row[8] || ""),
+    String(row[9] || ""), String(row[11] || ""), String(row[12] || ""), String(row[13] || "2")
+  ];
+  return computeDocumentSHA256(JSON.stringify(canonical));
+}
 
-  for (let i = 0; i < filteredRows.length; i++) {
-    const row = filteredRows[i];
-    const decId = row[0];
-    const solId = row[1];
-    const targetEtapa = row[2];
-    const callerId = row[3];
-    const accion = row[4];
-    const fIso = row[7] ? new Date(row[7]).toISOString() : "";
-    const hashPrevioAlmacenado = row[9] || "";
-    const hashActualAlmacenado = row[10] || "";
-
-    // Si tiene campos de hash criptográfico, recalcular y cotejar
-    if (hashActualAlmacenado) {
-      const payloadExpected = `${decId}|${solId}|${targetEtapa}|${callerId}|${accion}|${fIso}|${hashPrevioAlmacenado}`;
-      const recalculatedHash = computeDocumentSHA256(payloadExpected);
-
-      if (recalculatedHash !== hashActualAlmacenado) {
-        cadenaValida = false;
-        inconsistencias.push({
-          decisionId: decId,
-          solicitudId: solId,
-          tipoError: "AUDIT_CHAIN_INTEGRITY_COMPROMISED",
-          mensaje: `Alteración detectada en decisión ${decId}: el hash actual no coincide con los datos del registro.`,
-          hashAlmacenado: hashActualAlmacenado,
-          hashRecalculado: recalculatedHash
-        });
+function verifyWorkflowDecisionAuditRows_(rows) {
+  var inconsistencias = [], seen = Object.create(null);
+  var previousHash = WORKFLOW_DECISION_AUDIT_GENESIS_HASH_, lastDecisionId = "";
+  (rows || []).forEach(function(row, index) {
+    var rowNumber = index + 2;
+    var decisionId = String(row[0] || "").trim(), solicitudId = String(row[1] || "").trim();
+    var hashPrevious = String(row[9] || "").trim(), hashActual = String(row[10] || "").trim();
+    var schemaVersion = String(row[13] || "").trim();
+    function add(code, message) { inconsistencias.push({ rowNumber: rowNumber, decisionId: decisionId, solicitudId: solicitudId, tipoError: code, mensaje: message }); }
+    if (!decisionId || !solicitudId) add("WORKFLOW_AUDIT_REQUIRED_FIELDS_MISSING", "La decisión carece de ID o solicitud.");
+    if (decisionId && seen[decisionId]) add("WORKFLOW_AUDIT_DUPLICATE_DECISION_ID", "El ID de decisión aparece más de una vez.");
+    if (decisionId) seen[decisionId] = true;
+    if (!hashPrevious) add("WORKFLOW_AUDIT_PREVIOUS_HASH_MISSING", "La decisión no contiene hashPrevio.");
+    if (hashPrevious !== previousHash) add("WORKFLOW_AUDIT_CHAIN_LINK_BROKEN", "hashPrevio no coincide con el hashActual del evento anterior.");
+    if (!/^[a-f0-9]{64}$/i.test(hashActual)) add("WORKFLOW_AUDIT_CURRENT_HASH_MISSING_OR_INVALID", "hashActual está ausente o no es SHA-256 hexadecimal.");
+    var expectedHash = "";
+    try {
+      if (schemaVersion === "2") {
+        expectedHash = computeWorkflowDecisionHashV2_(row);
+      } else if (schemaVersion === "" || schemaVersion === "1") {
+        var timestamp = normalizeWorkflowDecisionAuditDate_(row[7]);
+        var legacyPayload = [row[0], row[1], row[2], row[3], row[4], timestamp, hashPrevious].map(function(value) { return String(value || ""); }).join("|");
+        expectedHash = computeDocumentSHA256(legacyPayload);
+      } else {
+        add("WORKFLOW_AUDIT_SCHEMA_VERSION_UNSUPPORTED", "Versión de esquema de hash no reconocida: " + schemaVersion);
       }
+    } catch (hashError) {
+      add("WORKFLOW_AUDIT_HASH_RECOMPUTE_FAILED", String(hashError && hashError.message || hashError));
     }
-  }
-
-  return {
-    status: "success",
-    cadenaValida: cadenaValida,
-    totalDecisionesAuditadas: filteredRows.length,
-    inconsistencias: inconsistencias,
-    solicitudId: solicitudId || "TODAS",
-    message: cadenaValida
-      ? "Cadena criptográfica de decisiones verificada: integridad 100% inalterada."
-      : `Alerta de seguridad: se detectaron ${inconsistencias.length} inconsistencias o manipulaciones en la cadena histórica.`
-  };
+    if (expectedHash && hashActual && expectedHash !== hashActual) add("WORKFLOW_AUDIT_HASH_MISMATCH", "El hash recalculado no coincide; se detectó alteración de campos protegidos.");
+    previousHash = hashActual;
+    lastDecisionId = decisionId;
+  });
+  return { valid: inconsistencias.length === 0, inconsistencias: inconsistencias, totalEvents: (rows || []).length,
+    lastDecisionId: lastDecisionId, lastHash: (rows && rows.length) ? String(rows[rows.length - 1][10] || "") : WORKFLOW_DECISION_AUDIT_GENESIS_HASH_ };
 }
 
+function getWorkflowDecisionAuditCheckpoint_() {
+  var raw = PropertiesService.getScriptProperties().getProperty(WORKFLOW_DECISION_AUDIT_CHECKPOINT_KEY_);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch (error) { throw new Error("WORKFLOW_AUDIT_CHECKPOINT_MALFORMED"); }
+}
+
+function saveWorkflowDecisionAuditCheckpoint_(audit, actorId) {
+  var checkpoint = { version: 2, totalEvents: audit.totalEvents, lastDecisionId: audit.lastDecisionId,
+    lastHash: audit.lastHash, updatedAt: new Date().toISOString(), updatedBy: String(actorId || "SYSTEM_BASELINE") };
+  PropertiesService.getScriptProperties().setProperty(WORKFLOW_DECISION_AUDIT_CHECKPOINT_KEY_, JSON.stringify(checkpoint));
+  return checkpoint;
+}
+
+function compareWorkflowDecisionAuditCheckpoint_(audit, checkpoint) {
+  if (!checkpoint || Number(checkpoint.version) !== 2 || Number(checkpoint.totalEvents) !== audit.totalEvents ||
+      String(checkpoint.lastDecisionId || "") !== audit.lastDecisionId || String(checkpoint.lastHash || "") !== audit.lastHash) {
+    return { valid: false, inconsistencia: { tipoError: "WORKFLOW_AUDIT_TRUSTED_CHECKPOINT_MISMATCH",
+      mensaje: "El historial global no coincide con el último checkpoint confiable; posible truncamiento, sustitución o modificación." } };
+  }
+  return { valid: true };
+}
+
+function appendWorkflowDecisionAuditEvent_(sheet, row, actorId) {
+  var beforeRows = sheet.getDataRange().getValues().slice(1).filter(function(item) { return String(item[0] || "").trim() || String(item[1] || "").trim(); });
+  var beforeAudit = verifyWorkflowDecisionAuditRows_(beforeRows);
+  if (!beforeAudit.valid) throw new Error("WORKFLOW_AUDIT_CHAIN_BROKEN_BEFORE_APPEND");
+  var checkpointBefore = getWorkflowDecisionAuditCheckpoint_();
+  if (!checkpointBefore) checkpointBefore = saveWorkflowDecisionAuditCheckpoint_(beforeAudit, actorId || "SYSTEM_BASELINE");
+  else {
+    var checkpointCheck = compareWorkflowDecisionAuditCheckpoint_(beforeAudit, checkpointBefore);
+    if (!checkpointCheck.valid) throw new Error("WORKFLOW_AUDIT_TRUSTED_CHECKPOINT_MISMATCH");
+  }
+  row[9] = beforeAudit.lastHash;
+  row[13] = "2";
+  row[10] = computeWorkflowDecisionHashV2_(row);
+  var rowNumber = sheet.getLastRow() + 1;
+  try {
+    sheet.appendRow(row);
+    var afterRows = sheet.getDataRange().getValues().slice(1).filter(function(item) { return String(item[0] || "").trim() || String(item[1] || "").trim(); });
+    var afterAudit = verifyWorkflowDecisionAuditRows_(afterRows);
+    if (!afterAudit.valid) throw new Error("WORKFLOW_AUDIT_CHAIN_BROKEN_AFTER_APPEND");
+    saveWorkflowDecisionAuditCheckpoint_(afterAudit, actorId);
+    return { rowNumber: rowNumber, hashActual: row[10], checkpointBefore: checkpointBefore };
+  } catch (error) {
+    try { if (sheet.getLastRow() >= rowNumber) sheet.deleteRow(rowNumber); } catch (deleteError) { throw new Error("WORKFLOW_AUDIT_APPEND_COMPENSATION_FAILED"); }
+    try { saveWorkflowDecisionAuditCheckpoint_(beforeAudit, checkpointBefore.updatedBy || actorId); } catch (checkpointError) { throw new Error("WORKFLOW_AUDIT_CHECKPOINT_COMPENSATION_FAILED"); }
+    throw error;
+  }
+}
+
+function verifyWorkflowDecisionAuditChain(payload) {
+  var solicitudId = String(payload && payload.solicitudId || "").trim();
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var decSheet = ensureWorkflowDecisionAuditSchema_(getOrCreateSheet(ss, "RevisionesDecisionesTramite"));
+  var rows = decSheet.getDataRange().getValues().slice(1).filter(function(row) {
+    return String(row[0] || "").trim() || String(row[1] || "").trim();
+  });
+  var audit = verifyWorkflowDecisionAuditRows_(rows), inconsistencias = audit.inconsistencias.slice(), checkpointInitialized = false;
+  var checkpoint = null;
+  try {
+    checkpoint = getWorkflowDecisionAuditCheckpoint_();
+    if (!checkpoint && audit.valid) {
+      checkpoint = saveWorkflowDecisionAuditCheckpoint_(audit, payload && payload._verifiedUserId || "SYSTEM_BASELINE");
+      checkpointInitialized = true;
+    } else if (!checkpoint) {
+      inconsistencias.push({ tipoError: "WORKFLOW_AUDIT_CHECKPOINT_NOT_INITIALIZED", mensaje: "No se pudo establecer el checkpoint inicial porque la cadena ya contiene inconsistencias." });
+    } else {
+      var check = compareWorkflowDecisionAuditCheckpoint_(audit, checkpoint);
+      if (!check.valid) inconsistencias.push(check.inconsistencia);
+    }
+  } catch (checkpointError) {
+    inconsistencias.push({ tipoError: "WORKFLOW_AUDIT_CHECKPOINT_ERROR", mensaje: String(checkpointError && checkpointError.message || checkpointError) });
+  }
+  var scopedCount = solicitudId ? rows.filter(function(row) { return String(row[1] || "").trim() === solicitudId; }).length : rows.length;
+  var valid = inconsistencias.length === 0;
+  return { status: "success", cadenaValida: valid, totalDecisionesAuditadas: rows.length,
+    totalDecisionesSolicitud: scopedCount, inconsistencias: inconsistencias, solicitudId: solicitudId || "TODAS",
+    checkpointInicializado: checkpointInitialized, checkpointVersion: checkpoint && checkpoint.version || null,
+    message: valid ? "Cadena global de decisiones y checkpoint confiable verificados."
+      : "Alerta de integridad: la cadena global o su checkpoint confiable presentan inconsistencias." };
+}
 function recordWorkflowDecisionCorrection(payload) {
-  const { decisionIdOriginal, solicitudId, motivoCorreccion, nuevaAccionDecision, revisorId, observaciones } = payload || {};
-  if (!decisionIdOriginal || !solicitudId || !motivoCorreccion || !nuevaAccionDecision) {
-    throw new Error("decisionIdOriginal, solicitudId, motivoCorreccion y nuevaAccionDecision son requeridos.");
-  }
-
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const decSheet = getOrCreateSheet(ss, "RevisionesDecisionesTramite");
-  const data = decSheet.getDataRange().getValues();
-
-  const originalRow = data.slice(1).find(r => String(r[0]).trim() === String(decisionIdOriginal).trim());
-  if (!originalRow) {
-    throw new Error(`DECISION_ORIGINAL_NOT_FOUND: No se encontró la decisión previa '${decisionIdOriginal}'.`);
-  }
-
-  // Obtener último hash de la cadena
-  let hashPrevio = "GENESIS_DECISION_HASH_0000000000000000000000000000000000000000";
-  if (data.length > 1 && data[data.length - 1][10]) {
-    hashPrevio = String(data[data.length - 1][10]).trim();
-  }
-
-  const corrId = "DEC-CORR-" + Date.now();
-  const now = new Date();
-  const nowISO = now.toISOString();
-  const caller = revisorId || "Auditor/Dirección";
-  const obs = `[CORRECCIÓN VINCULADA A ${decisionIdOriginal}]: Motivo: ${motivoCorreccion}. ${observaciones || ""}`;
-
-  const payloadHash = `${corrId}|${solicitudId}|Corrección-${originalRow[2]}|${caller}|${nuevaAccionDecision}|${nowISO}|${hashPrevio}`;
-  const hashActual = computeDocumentSHA256(payloadHash);
-
-  decSheet.appendRow([
-    corrId,
-    solicitudId,
-    `Corrección-${originalRow[2]}`,
-    caller,
-    nuevaAccionDecision,
-    obs,
-    motivoCorreccion,
-    nowISO,
-    "127.0.0.1",
-    hashPrevio,
-    hashActual
-  ]);
-
-  return {
-    status: "success",
-    decisionIdCorreccion: corrId,
-    decisionIdOriginal: decisionIdOriginal,
-    solicitudId: solicitudId,
-    nuevaAccion: nuevaAccionDecision,
-    hashActual: hashActual,
-    message: "Corrección vinculada registrada en la cadena inmutable sin reescribir el evento original."
-  };
+  payload = payload || {};
+  var decisionIdOriginal = String(payload.decisionIdOriginal || "").trim();
+  var solicitudId = String(payload.solicitudId || "").trim();
+  var motivoCorreccion = String(payload.motivoCorreccion || "").trim().slice(0, 2000);
+  var nuevaAccionDecision = String(payload.nuevaAccionDecision || "").trim();
+  var callerId = String(payload._verifiedUserId || "").trim();
+  var callerRole = String(payload._verifiedRole || "").trim();
+  if (!decisionIdOriginal || !solicitudId || !motivoCorreccion || !nuevaAccionDecision) throw new Error("WORKFLOW_CORRECTION_REQUIRED_FIELDS_MISSING");
+  if (!callerId || !callerRole) throw new Error("WORKFLOW_VERIFIED_ACTOR_REQUIRED");
+  if (["APROBADO", "RECHAZADO", "DEVUELTO_CORRECCION", "DERIVADO"].indexOf(nuevaAccionDecision) === -1) throw new Error("WORKFLOW_CORRECTION_ACTION_INVALID");
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) throw new Error("WORKFLOW_CONCURRENCY_LOCKED");
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var decSheet = ensureWorkflowDecisionAuditSchema_(getOrCreateSheet(ss, "RevisionesDecisionesTramite"));
+    var integrity = verifyWorkflowDecisionAuditChain({ _verifiedUserId: callerId });
+    if (!integrity.cadenaValida) throw new Error("WORKFLOW_AUDIT_CHAIN_BROKEN");
+    var data = decSheet.getDataRange().getValues();
+    var rows = data.slice(1);
+    var originalRow = rows.find(function(row) { return String(row[0] || "").trim() === decisionIdOriginal; });
+    if (!originalRow) throw new Error("DECISION_ORIGINAL_NOT_FOUND");
+    if (String(originalRow[1] || "").trim() !== solicitudId) throw new Error("DECISION_ORIGINAL_REQUEST_MISMATCH");
+    var alreadyCorrected = rows.some(function(row) {
+      return String(row[11] || "").trim() === decisionIdOriginal ||
+        String(row[5] || "").indexOf("[CORRECCIÓN VINCULADA A " + decisionIdOriginal + "]") !== -1;
+    });
+    if (alreadyCorrected) throw new Error("DECISION_ALREADY_CORRECTED");
+    var correctionId = "DEC-CORR-" + Utilities.getUuid(), now = new Date(), nowISO = now.toISOString();
+    var observation = String(payload.observaciones || "").slice(0, 2000);
+    var auditRow = [correctionId, solicitudId, "Corrección-" + String(originalRow[2] || ""), callerId,
+      nuevaAccionDecision, observation, motivoCorreccion, nowISO, "APPS_SCRIPT", "", "",
+      decisionIdOriginal, motivoCorreccion, "2"];
+    var appended = appendWorkflowDecisionAuditEvent_(decSheet, auditRow, callerId);
+    return { status: "success", decisionIdCorreccion: correctionId, decisionIdOriginal: decisionIdOriginal,
+      solicitudId: solicitudId, nuevaAccion: nuevaAccionDecision, hashActual: appended.hashActual,
+      message: "Corrección vinculada registrada como nuevo evento; el original permanece intacto." };
+  } finally { lock.releaseLock(); }
 }
-
 // ---------------------------------------------------------------------------
 // FASE 26: NOTIFICACIONES, MENSAJERÍA INTERNA Y COMUNICACIONES MULTICANAL
 // ---------------------------------------------------------------------------
