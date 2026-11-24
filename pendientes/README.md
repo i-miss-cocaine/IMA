@@ -44,3 +44,8 @@ Esta etapa ejecuta la instrucción específica de migrar también tareas marcada
 ## Control de calidad pendiente
 
 La migración automática consolidó IDs y duplicados textuales exactos. La revisión semántica de requisitos con redacciones distintas debe hacerse sin eliminar formulaciones hasta confirmar que expresan exactamente el mismo requisito. Ninguna tarea se considera implementada por el hecho de haber sido migrada.
+
+
+## Reconciliación de integridad C1.964 — ciclo 2
+
+La cifra de migración de 1.346 tareas es histórica. En el HEAD de inicio del ciclo 2, la tabla del Plan Maestro contiene 1.350 IDs únicos, mientras los siete backlogs actuales contienen 687 IDs únicos. Se detectaron 672 IDs del plan sin bloque vigente: 671 asignados a `pendientes/Otros/Pendientes.md` y 1 a `pendientes/Docente/Pendientes.md`; además, 9 IDs actuales no aparecen en la tabla del plan. No se reconstruyen requisitos a partir de títulos. La recuperación íntegra queda registrada en **AUD-NG-393**. Hasta cerrar esa reconciliación, el inventario no se considera completo.

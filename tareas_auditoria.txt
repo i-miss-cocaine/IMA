@@ -1127,3 +1127,14 @@ TASK-636 — ITERACIÓN C1.310 / INTEGRACIÓN DEL FORMULARIO PÚBLICO DE ADMISI�
 - Alcance: identidad verificada, permisos RBAC, relaciones familiares vigentes, titularidad de estudiante, ruta/viaje y expediente laboral para personal; auditoría de denegaciones; sin endpoint público GPS.
 - Límite: la suite histórica Fase 21 207/207 no se reejecutó; no hubo despliegue ni pruebas contra hojas reales.
 - Pendiente: BETA-FUNC-134 con usuarios y datos sintéticos.
+
+
+===============================================================================
+## AUD-NG-393 — Recuperar y reconciliar los bloques de tareas ausentes del backlog
+- Origen: hallazgo de continuidad C1.964.
+- Prioridad: P0 para integridad del plan; no bloquea trabajo independiente del portal.
+- Alcance: recuperar 672 IDs ausentes (671 asignados a Otros, 1 a Docente) y reconciliar 9 IDs actuales no indexados; preservar todos los requisitos y evidencias.
+- Criterios: recuperar texto original íntegro desde la rama autorizada y fuentes originales; no inventar requisitos desde títulos; reconciliar la totalidad de los IDs del Plan Maestro y de los backlogs; conservar historial.
+- Estado: Pendiente.
+- Checkpoint: C1.964.
+===============================================================================

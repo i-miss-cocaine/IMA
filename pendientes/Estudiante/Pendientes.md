@@ -9,7 +9,10 @@
 ---
 
 <!-- ID: TASK-193 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
+
+> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
 ### [ ] [TASK-193] Portal OPAC de consulta y autoservicio para estudiantes y docentes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección C (2.10) y Plan de Trabajo P1
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Experiencia de usuario estudiantil, fomento de la lectura escolar y autoservicio digital)
@@ -42,6 +45,7 @@
 
 <!-- ID: TASK-258 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-02.md ; AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-19.md ; Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
 ### [ ] [TASK-258] [F28-T05] [P1] Sistema Integral de Accesibilidad Visual, Foco Universal y Navegación por Teclado (WCAG 2.2 AA/AAA)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-181; ampliación de TASK-258. No crear TASK-479 para este mismo alcance.
 - **Severidad:** Alto.
 - **Objetivo:** garantizar que cualquier modal/drawer se cierre correctamente y restaure el foco sin romper overlays anidados.
@@ -111,6 +115,7 @@
 
 <!-- ID: TASK-330 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
 ### [ ] [TASK-330] [P1] Orientación automática de primera visita y aprendizaje progresivo por función
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 6 (Onboarding contextual y adopción progresiva)
 - **Componentes Afectados:**
@@ -144,6 +149,7 @@
 
 <!-- ID: TASK-331 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
 ### [ ] [TASK-331] [P1] Administración de preferencias, reconsulta y restablecimiento de guías
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 7 (Gobernanza de preferencias y recuperación de tutoriales)
 - **Componentes Afectados:**
@@ -179,6 +185,7 @@
 
 <!-- ID: TASK-422 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2-T07.md ; AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-25.md ; Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
 ### [ ] [TASK-422] [P2] [Preferencias de Usuario - Ampliar la Administración de Preferencias Personales sin Permitir Conflictos Institucionales]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** FASE2-T07, sección de preferencias.
 - **Severidad:** Medio.
 - **Objetivo:** hacer que las preferencias persistidas gobiernen categorías, canales y frecuencia de notificación.
@@ -259,6 +266,7 @@
 
 <!-- ID: TASK-255 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
 ### [ ] [TASK-255] [F28-T02] [P1] Implementación Integral de PWA: Manifiesto, Instalación y Ciclo de Vida del Service Worker
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Tipo:** Ampliación de Infraestructura y Resiliencia Offline.
 - **Componentes Afectados:**
   - `manifest.json` (nuevo archivo en raíz del proyecto)
@@ -304,6 +312,7 @@
 
 <!-- ID: TASK-426 | Fuentes: Pendientes.md ; pendientes/Estudiante/Pendientes.md -->
 ### [ ] [TASK-426] [F28-T06] [P2] Sistema de Preferencias Individuales de Visualización y Personalización de Accesibilidad
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Tipo:** Optimización Funcional y Personalización.
 - **Componentes Afectados:**
   - `js/ui-common.js` (gestor de temas y preferencias de accesibilidad)

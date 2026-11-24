@@ -9,7 +9,10 @@
 ---
 
 <!-- ID: AUD-NG-217 | Fuentes: Pendientes.md -->
+
+> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
 ### [ ] [AUD-NG-217] Restringir perfiles, vínculos familiares y trámites al ámbito docente autenticado
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-217 (TAREA-F4-P0-02, C1.73).
 - **Severidad/Clasificación:** Crítico · P0 · Seguridad · IDOR · Protección de datos personales.
 - **Archivos Involucrados:** backend/user-service/Code.gs.
@@ -22,6 +25,7 @@
 
 <!-- ID: F9-TASK01 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK01] Verificar y fortalecer la compatibilidad de las plantillas oficiales de calificaciones de SACE
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task01 (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Exportación académica, compatibilidad institucional y automatización de calificaciones)
@@ -68,6 +72,7 @@
 
 <!-- ID: F9-TASK02 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK02] Fortalecer la validación y el diagnóstico de archivos SACE antes de generar las calificaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task02 (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Validación de datos e integridad de exportaciones)
@@ -106,6 +111,7 @@
 
 <!-- ID: F9-TASK03 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK03] Consolidar la administración de escalas, ponderaciones y métodos de cálculo académico
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task03 (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Configuración académica y motor de cálculo)
@@ -147,6 +153,7 @@
 
 <!-- ID: F9-TASK04 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK04] Fortalecer la precisión de los cálculos y la detección de inconsistencias académicas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task04 (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Integridad de las calificaciones y resultados oficiales)
@@ -182,6 +189,7 @@
 
 <!-- ID: F9-TASK05 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK05] Completar el ciclo de revisión, aprobación, cierre y publicación de calificaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task06 (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Gestión de períodos académicos y publicación oficial)
@@ -220,6 +228,7 @@
 
 <!-- ID: F9-TASK06 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK06] Fortalecer las rectificaciones de notas y la trazabilidad de los cambios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task07 (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Seguridad académica, auditoría e integridad histórica)
@@ -258,6 +267,7 @@
 
 <!-- ID: F9-TASK07 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK07] Fortalecer la generación de boletines, certificados e historiales académicos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task10 (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Documentación académica y resultados oficiales)
@@ -294,6 +304,7 @@
 
 <!-- ID: F9-TASK08 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK08] Fortalecer el control de permisos y la separación de responsabilidades académicas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task12 (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Seguridad, privacidad y acceso a calificaciones)
@@ -329,6 +340,7 @@
 
 <!-- ID: F9-TASK09 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK09] Completar las pruebas automatizadas de regresión de la Fase 9
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task14 (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Calidad funcional e integridad académica)
@@ -366,6 +378,7 @@
 
 <!-- ID: F16-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
 ### [ ] [F16-TASK02] Desarrollar la gestión de docentes por área académica independiente y comités pedagógicos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Estructura académica institucional y conformación de academias)
 - **Componentes Afectados:** `backend/academic-service/Code.gs`, `backend/accounting-service/Code.gs`, hoja `DocentesAreasAcademicas`.
 - **Descripción:** Implementar la hoja y endpoints `assignTeacherToAcademicArea` y `getTeachersByAcademicArea`, permitiendo vincular docentes a una o varias áreas académicas (Matemáticas, Informática, Ciencias, etc.) de forma institucional, designando docentes titulares y coordinadores sin depender de que tengan una oferta de clases asignada en el período lectivo vigente.
@@ -385,6 +398,7 @@
 
 <!-- ID: F16-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
 ### [ ] [F16-TASK03] Ejecutar un offboarding atómico con revocación de accesos en cascada
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Seguridad de accesos, prevención de fugas de información e integridad)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`, `backend/academic-service/Code.gs`.
 - **Descripción:** Refactorizar `updateEmployeeLaborStatus` para que, al marcar a un empleado como `Retirado` o `Desvinculado`, ejecute una operación atómica que: 1) cierre el expediente laboral con fecha de salida y motivo; 2) invalide sus adscripciones en `HistorialAdscripciones`; 3) desactive su cuenta de usuario en `Usuarios` revocando tokens activos; 4) finalice sus asignaciones docentes activas en `AsignacionesDocentes`; y 5) genere la constancia de finiquito y liquidación laboral conforme a ley.
@@ -406,6 +420,7 @@
 
 <!-- ID: F29-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_29_MIGRACION_Y_TRANSICION.md -->
 ### [ ] [F29-TASK03] Proteger la inalterabilidad de calificaciones históricas migradas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** BR-29-03; F29-06; secciones C.6, E y G.
 - **Severidad:** Crítica / P0. **Objetivo:** conservar notas oficiales de ciclos cerrados sin que los motores actuales las recalculen o sobrescriban.
 - **Acción ejecutable:** identificar y versionar cada nota migrada; registrar sistema/periodo de origen, fórmula histórica, valor original y evidencia; establecer estado de solo lectura para ciclos cerrados; separar rectificaciones autorizadas de recálculos automáticos.
@@ -420,6 +435,7 @@
 
 <!-- ID: F29-TASK16 | Fuentes: AUDITORIAS/AUDITORIA_FASE_29_MIGRACION_Y_TRANSICION.md -->
 ### [ ] [F29-TASK16] Ejecutar smoke tests e integridad posterior a cada migración
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F29-13; sección C.13 y H.
 - **Severidad:** Crítica / P0. **Objetivo:** verificar que el destino permanece funcional y coherente después de cada lote, piloto y cutover.
 - **Acción ejecutable:** ampliar `AUD-NG-161` con suites conductuales específicas de migración: conteos, relaciones, permisos, cálculos, documentos, saldos, calificaciones, asistencia y flujos de lectura; generar evidencia por entidad y bloquear promoción ante fallos.
@@ -434,6 +450,7 @@
 
 <!-- ID: F30-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md -->
 ### [ ] [F30-TASK02] Implementar motor de integridad referencial cruzada y detección de registros huérfanos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F30-02; relaciones entre Usuarios, ExpedientesEstudiantes, MatriculasEstudiantes, CargosEstudiante, RelacionesFamiliares y AsignacionesDocentes.
 - **Severidad:** Crítica / P0. **Objetivo:** detectar y prevenir relaciones inválidas o huérfanas en el almacenamiento basado en hojas.
 - **Acción ejecutable:** crear catálogo declarativo de entidades, claves y relaciones; implementar validación previa a escritura, escaneo periódico de integridad y reporte de huérfanos; impedir borrados/archivados que rompan relaciones o exigir operación controlada.
@@ -448,6 +465,7 @@
 
 <!-- ID: F31-TASK04 | Fuentes: AUDITORIAS/AUDITORIA_FASE_31_DISENADOR_UNIVERSAL_DOCUMENTOS_PLANTILLAS.md -->
 ### [ ] [F31-TASK04] Ampliar catálogo de variables con secciones y tablas repetibles
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F31-23 y brecha F.3; plan G.4.
 - **Severidad:** Crítica / P0. **Objetivo:** generar tablas de longitud variable (asignaturas, calificaciones, conceptos de cobro) dentro de plantillas.
 - **Acción ejecutable:** ampliar el motor de plantillas con bloques iterables tipados (por ejemplo `{{#each asignaturas}}...`) y contexto limitado; validar listas, campos permitidos, anidamiento y límites de filas; escapar contenido por contexto.
@@ -462,6 +480,7 @@
 
 <!-- ID: F34-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
 ### [ ] [F34-TASK03] Implementar acceso contextual ABAC docente a justificaciones de sus estudiantes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F34-11 y CAR-F34-04; PT-F34-06 no aprobado.
 - **Severidad:** Crítica / P0. **Objetivo:** permitir al docente consultar solo justificaciones de estudiantes matriculados en sus asignaturas/secciones vigentes.
 - **Implementación:** getTeacherStudentJustifications deriva identidad del token verificado y valida asignación activa, oferta académica, período vigente, matrícula confirmada y sesiones exactas del docente. Se incorporó DTO mínimo, auditoría de accesos, constancias CONOCIMIENTO/CONFORMIDAD idempotentes y evidencia privada condicionada por política institucional fail-closed.
@@ -478,6 +497,7 @@
 
 <!-- ID: F35-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_35_IMPORTADOR_INTELIGENTE.md -->
 ### [ ] [F35-TASK02] Normalizar tipos, formatos regionales y preservar identificadores
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F35-06; CAR-F35-06.
 - **Severidad:** Crítica / P0. **Objetivo:** preservar códigos con ceros iniciales y convertir fechas/importes de forma explícita y reversible.
 - **Acción ejecutable:** configurar lectura de identificadores como texto; crear normalizadores por tipo/locale para fecha, decimal, moneda y booleano; exigir selección de formato cuando los valores sean ambiguos; conservar valor bruto y valor normalizado.
@@ -492,6 +512,7 @@
 
 <!-- ID: F35-TASK15 | Fuentes: AUDITORIAS/AUDITORIA_FASE_35_IMPORTADOR_INTELIGENTE.md -->
 ### [ ] [F35-TASK15] Implementar selección de hoja, detección de encabezados y rangos/columnas de origen
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F35-01/F35-02/F35-05; CAR-F35-01/CAR-F35-02/CAR-F35-05.
 - **Severidad:** Crítica / P0. **Objetivo:** permitir importar desde la hoja y rango correctos aunque el archivo contenga varias pestañas, títulos o columnas irrelevantes.
 - **Acción ejecutable:** mostrar hojas disponibles; detectar filas candidatas de encabezado con confianza; permitir elegir fila/rango de datos, columnas incluidas/excluidas y vista de muestra antes del mapeo.
@@ -506,6 +527,7 @@
 
 <!-- ID: TAREA-F7-IMP-22 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md ; completadas.md -->
 ### [ ] [TAREA-F7-IMP-22] Ampliar la planificación mediante plantillas y reutilización controlada de horarios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Dictamen:** NO CUMPLE; la marca [ ] de completadas.md no acredita cumplimiento.
 - **Criterios:** CA-F7-133 CUMPLE; CA-F7-134 NO CUMPLE; CA-F7-135 NO CUMPLE; CA-F7-136 CUMPLE; CA-F7-137 NO CUMPLE.
 - **Hallazgos:** AUD-NG-265 nuevo CRÍTICO/P0 (tres acciones de plantillas públicas y sin token); AUD-NG-266 nuevo ALTO/P1 (esquema/captura de origen); AUD-NG-267 nuevo ALTO/P1 (conflictos y referencias no bloqueados); AUD-NG-268 nuevo MEDIO/P2 (UI, selección, preview y ajustes ausentes); AUD-NG-269 nuevo MEDIO/P2 (sin trazabilidad y sin pruebas conductuales).
@@ -550,6 +572,7 @@
 
 <!-- ID: TASK-023 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-023] Implementación de funciones backend faltantes para biblioteca
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E (Defecto 1), Sección G y Plan de Trabajo P0
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Funciones cableadas en enrutador doPost y ROLE_PERMISSIONS pero no declaradas, originando errores fatales de ejecución ReferenceError)
@@ -584,6 +607,7 @@
 
 <!-- ID: TASK-024 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-024] Conexión y activación del módulo de Biblioteca en la interfaz institucional
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E (Defecto 2), Sección G y Plan de Trabajo P0
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Código de frontend huérfano, falta de navegación en dashboards y operatividad de la interfaz)
@@ -613,6 +637,7 @@
 
 <!-- ID: TASK-025 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-025] Normalización relacional del catálogo: separación entre Obras y Ejemplares
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E (Defecto 3), Sección C y Plan de Trabajo P0
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Normalización de datos bibliográficos, modelo FRBR/RDA y prevención de duplicidad de obras)
@@ -643,6 +668,7 @@
 
 <!-- ID: TASK-026 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-026] Control de políticas de circulación, límites de préstamo y bloqueo por mora
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E (Defecto 4), Sección C y Plan de Trabajo P0
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Políticas institucionales de circulación, límites por rol escolar y prevención de retención indebida de libros)
@@ -674,7 +700,9 @@
 ---
 
 <!-- ID: TASK-027 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
-### [x] [TASK-027] Control de concurrencia e idempotencia en circulación bibliotecaria
+### [ ] [TASK-027] Control de concurrencia e idempotencia en circulación bibliotecaria
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección F (PT-20-24, PT-20-25) y Plan de Trabajo P0
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Integridad transaccional, prevención de doble asignación de ejemplares y protección de reintentos)
@@ -708,6 +736,7 @@
 
 <!-- ID: TASK-071 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-071] [P0] Protección de Historiales Académicos y Conservación de Calificaciones Históricas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 5
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -743,7 +772,9 @@
 ---
 
 <!-- ID: TASK-105 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
-### [x] [TASK-105] [P0] Unificación del ciclo de vida de las justificaciones de asistencia y sincronización con los registros académicos
+### [ ] [TASK-105] [P0] Unificación del ciclo de vida de las justificaciones de asistencia y sincronización con los registros académicos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Prioridad:** P0 (Crítica)
 - **Orden de Ejecución:** 1 (Dependencia base para sincronización académica)
 - **Componentes Afectados:**
@@ -816,6 +847,7 @@
 
 <!-- ID: TASK-107 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-107] [P0] Consulta contextual de justificaciones de asistencia para docentes mediante permisos ABAC
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P0 (Crítica)
 - **Orden de Ejecución:** 3 (Control de acceso basado en atributos y privacidad docente)
 - **Componentes Afectados:**
@@ -869,6 +901,7 @@
 
 <!-- ID: TASK-131 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-131] [P0] Persistencia server-side de preferencias y progreso de aprendizaje por usuario
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P0 (Bloqueante / Esencial)
 - **Orden de Ejecución:** 4 (Sincronización multi-dispositivo y aislamiento de usuario)
 - **Componentes Afectados:**
@@ -904,6 +937,7 @@
 
 <!-- ID: TASK-496 | Fuentes: Pendientes.md -->
 ### [ ] [TASK-496] [P0] Restringir perfiles, tutores y trámites al ámbito docente autenticado
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P0 (Crítica).
 - **Componentes Afectados:** backend/user-service/Code.gs; hojas AsignacionesDocentes y RelacionesFamiliares.
 - **Origen del Hallazgo:** AUD-NG-217 / TAREA-F4-P0-02.
@@ -917,6 +951,7 @@
 
 <!-- ID: TASK-521 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-02.md -->
 ### [ ] [TASK-521] Normalizar el DTO de horarios y su mapeo de columnas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-237 / H3; amplía AUD-NG-168.
 - **Severidad:** Crítico.
 - **Objetivo:** representar fielmente estado, grado, sección, asignatura, docente, aula y fechas.
@@ -933,6 +968,7 @@
 
 <!-- ID: TASK-532 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-04.md -->
 ### [ ] [TASK-532] Aislar escenarios de planificación del horario oficial
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-239 / H1-H2.
 - **Severidad:** Crítico.
 - **Objetivo:** almacenar propuestas completas en un espacio independiente hasta que se publiquen.
@@ -949,6 +985,7 @@
 
 <!-- ID: TASK-556 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-07.md -->
 ### [ ] [TASK-556] Implementar simulación y confirmación segura de reprogramaciones sin perder historial
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-242 / H1-H6; amplía AUD-NG-238.
 - **Severidad:** Crítica.
 - **Objetivo:** aplicar únicamente propuestas que hayan sido simuladas y revalidadas, manteniendo la identidad e historial de la evaluación.
@@ -965,6 +1002,7 @@
 
 <!-- ID: TASK-557 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-07.md -->
 ### [ ] [TASK-557] Conectar la interfaz docente de programación y simulación de evaluaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-242 / H5-H6; amplía AUD-NG-237.
 - **Severidad:** Crítica.
 - **Objetivo:** hacer accesible el flujo de programación, validación, simulación y confirmación desde el dashboard.
@@ -980,7 +1018,9 @@
 ---
 
 <!-- ID: AUD-NG-165 | Fuentes: Pendientes.md -->
-### [x] [AUD-NG-165] Proteger la privacidad y el acceso contextual a comentarios y versiones de entregas
+### [ ] [AUD-NG-165] Proteger la privacidad y el acceso contextual a comentarios y versiones de entregas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen:** Auditoría de completadas.md / TAREA-10.
 - **Severidad:** Alto (P1; privacidad de entregas y retroalimentación).
 - **Archivos:** backend/task-service/Code.gs; js/student.js; js/teacher.js; student-dashboard.html; teacher-dashboard.html.
@@ -999,7 +1039,9 @@ Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas exist
 ---
 
 <!-- ID: AUD-NG-166 | Fuentes: Pendientes.md -->
-### [x] [AUD-NG-166] Completar el modelo verificable de reactivos y la integridad del motor de exámenes
+### [ ] [AUD-NG-166] Completar el modelo verificable de reactivos y la integridad del motor de exámenes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen:** Auditoría de completadas.md / TAREA-11.
 - **Severidad:** Alto (P1).
 - **Archivos:** backend/exam-service/Code.gs; js/exam.js; js/quizpro.js; exam.html; results.html.
@@ -1079,6 +1121,7 @@ Hallazgo nuevo: AUD-NG-167. Progreso de auditoría: 18/183; 165 pendientes. Sigu
 
 <!-- ID: AUD-NG-168 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-168] Unificar el modelo de asignaciones docentes, carga horaria y planificación de horarios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen:** Auditoría de completadas.md / TAREA-13.
 - **Severidad:** Alto (P1).
 - **Archivos:** backend/academic-service/Code.gs; js/teacher.js; teacher-dashboard.html.
@@ -1093,6 +1136,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-172 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-172] Implementar migración curricular transaccional con prevalidación y rollback verificable
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - Severidad: Alto (P1).
 - Origen: Auditoría TAREA-19 de completadas.md; backend/academic-service/Code.gs, js/teacher.js y teacher-dashboard.html.
 - Problema: getCurricularEquivalences ignora PlanesEstudio/PlanAsignaturas y asigna cada asignatura a sí misma como MapeadoExacto, sin comparar plan origen/destino ni revisión. executeCurricularMigration no utiliza equivalenciasMap, no modifica registros, no detecta duplicados/huérfanos, no compara antes/después y aun así devuelve success en modo REAL. No existe rollback curricular ni snapshot de las tablas/boletines afectados. El controlador UI no tiene modal en teacher-dashboard.html.
@@ -1105,6 +1149,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: F9-TASK10 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK10] Ampliar el libro de calificaciones para mejorar el registro individual y masivo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task05 (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Portal docente y administración de calificaciones)
@@ -1145,6 +1190,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: F9-TASK12 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK12] Ampliar la evaluación por competencias, rúbricas e indicadores de logro
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task09 (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Evaluación formativa y seguimiento del aprendizaje)
@@ -1182,6 +1228,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: F9-TASK13 | Fuentes: completadas.md -->
 ### [ ] [F9-TASK13] Optimizar la exportación académica y los formatos de intercambio
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_9_EVALUACIONES_CALIFICACIONES_RESULTADOS.md` / Tarea F9-Task11 (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Exportaciones, interoperabilidad y reportes descargables)
@@ -1219,6 +1266,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: F10-TASK03 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [F10-TASK03] Fortalecer el modelo de asistencia y su configuración institucional
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea 10.1 (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Configuración institucional de asistencia)
@@ -1238,6 +1286,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: F10-TASK04 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [F10-TASK04] Optimizar el registro masivo de asistencia y la gestión de sesiones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea 10.2 (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Optimización y registro masivo)
@@ -1257,6 +1306,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: F10-TASK06 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [F10-TASK06] Desarrollar un sistema avanzado de alertas de asistencia y seguimiento preventivo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea F10-Task02 (P1) y Tarea 10.4
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Comunicaciones, alertas y prevención de deserción)
@@ -1276,6 +1326,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: F10-TASK10 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [F10-TASK10] Completar el modelo funcional de orientación académica y vocacional
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea 10.9 (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Orientación vocacional y proyectos de aprendizaje)
@@ -1293,6 +1344,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: F11-TASK08 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-17.md ; Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [F11-TASK08] Alertas tempranas basadas en métricas académicas reales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Desarrollar el sistema de alertas tempranas de rendimiento académico y deserción escolar
@@ -1344,6 +1396,7 @@ HALLAZGO TAREA-18 - RECURSOS REUTILIZABLES Y PROYECTOS INTERDISCIPLINARIOS (2026
 
 <!-- ID: F11-TASK09 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [F11-TASK09] Completar repositorio de planificación pedagógica, jornalizaciones y guiones docentes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Completar la gestión de planificación pedagógica, jornalizaciones y guiones docentes
@@ -1374,6 +1427,7 @@ HALLAZGO TAREA-18 - RECURSOS REUTILIZABLES Y PROYECTOS INTERDISCIPLINARIOS (2026
 
 <!-- ID: F20-TASK08 | Fuentes: AUDITORIAS/AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md -->
 ### [ ] [F20-TASK08] Desarrollar portal OPAC de consulta y autoservicio
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones A.1, D/F20-25..F20-30 y G P1.
 - **Severidad:** Alta. **Objetivo:** permitir a estudiantes y docentes buscar obras, consultar ejemplares y gestionar solicitudes desde su portal.
 - **Acción ejecutable:** crear vista OPAC con búsqueda por título/autor/ISBN/materia, disponibilidad por ejemplar, filtros por grado/asignatura y acceso a préstamos/reservas personales.
@@ -1388,6 +1442,7 @@ HALLAZGO TAREA-18 - RECURSOS REUTILIZABLES Y PROYECTOS INTERDISCIPLINARIOS (2026
 
 <!-- ID: F20-TASK10 | Fuentes: AUDITORIAS/AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md -->
 ### [ ] [F20-TASK10] Asociar obras bibliográficas con asignaturas y grados académicos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones D/F20-36..F20-40 y G P1.
 - **Severidad:** Alta. **Objetivo:** vincular bibliografía recomendada con el currículo institucional.
 - **Acción ejecutable:** crear relación obra-asignatura-grado-nivel con vigencia y tipo de recomendación; permitir consulta desde OPAC y panel docente.
@@ -1402,6 +1457,7 @@ HALLAZGO TAREA-18 - RECURSOS REUTILIZABLES Y PROYECTOS INTERDISCIPLINARIOS (2026
 
 <!-- ID: F32-TASK04 | Fuentes: AUDITORIAS/AUDITORIA_FASE_32_EDITOR_VISUAL_PDF_CAMPOS_SUPERPUESTOS.md -->
 ### [ ] [F32-TASK04] Incorporar selección múltiple y alineación en bloque
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** C.2, CAR-12 y G.2.
 - **Severidad:** Alta / P1. **Objetivo:** editar grupos de campos de manera eficiente y consistente.
 - **Acción ejecutable:** implementar selección múltiple con Shift y marco elástico; agregar alineación izquierda/derecha/centro/superior/inferior y distribución/igualación de dimensiones; mantener selección dentro de la página.
@@ -1416,6 +1472,7 @@ HALLAZGO TAREA-18 - RECURSOS REUTILIZABLES Y PROYECTOS INTERDISCIPLINARIOS (2026
 
 <!-- ID: TAREA-10 | Fuentes: Pendientes.md ; completadas.md -->
 ### [ ] [TAREA-10] Ampliación de criterios existentes derivada de TAREA-10 (2026-11-05)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **AUD-NG-149:** incorporar asignaciones individuales/grupales/recurrentes; persistir y versionar el ciclo de vida de la tarea; emitir comprobante con token almacenado y verificable; usar clave idempotente para evitar entregas/versiones duplicadas. Validar modalidad y alcance al crear.
 - **AUD-NG-121:** aplicar en servidor el límite de intentos configurado y las reglas de reentrega, además de la penalización tardía; el comentario actual sobre límites no constituye una validación.
 - **AUD-NG-152:** completar transiciones publicable/programada, abierta, vencida y cerrada, separando apertura, fecha límite y cierre.
@@ -1468,6 +1525,7 @@ Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas exist
 
 <!-- ID: TAREA-11 | Fuentes: Pendientes.md ; completadas.md -->
 ### [ ] [TAREA-11] Ampliación de criterios derivada de TAREA-11 (2026-11-05)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **AUD-NG-121:** hacer cumplir en backend fecha de apertura/cierre, duración y máximo de intentos por estudiante; rechazar entregas fuera de ventana o después del máximo permitido y no confiar en temporizadores del cliente.
 - **AUD-NG-124:** incorporar corrección manual por pregunta abierta, puntuación parcial, rúbricas/criterios y guardado del progreso de revisión con historial.
 - **AUD-NG-006:** aplicar clave idempotente y reserva atómica a submitExam; una repetición tras timeout debe recuperar la entrega existente y no crear otra.
@@ -1517,6 +1575,7 @@ Hallazgo nuevo: AUD-NG-166. Progreso de auditoría: 17/183; 166 pendientes. Sigu
 
 <!-- ID: TAREA-12 | Fuentes: Pendientes.md ; completadas.md -->
 ### [ ] [TAREA-12] Ampliación de criterios derivada de TAREA-12 (2026-11-05)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **AUD-NG-002:** getStudentAcademicReport debe derivar el estudiante de claims verificados o comprobar relación familiar; no debe exponer registros no publicados ni ignorar el ámbito/periodo autorizado.
 - **AUD-NG-158:** incluir todas las operaciones de calificación institucional, rúbricas, competencias, recuperación, cierre, revisión, reapertura y rectificación en ABAC server-side; actor/autoridad deben derivarse de claims, no de campos libres del payload.
 - **AUD-NG-124:** conservar su alcance original de historial/propiedad de calificaciones de entregas; no absorber el libro académico consolidado, que se registra en AUD-NG-167.
@@ -1558,6 +1617,7 @@ Hallazgo nuevo: AUD-NG-167. Progreso de auditoría: 18/183; 165 pendientes. Sigu
 
 <!-- ID: TAREA-13 | Fuentes: Pendientes.md ; completadas.md -->
 ### [ ] [TAREA-13] Ampliación de criterios derivada de TAREA-13 (2026-11-05)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **AUD-NG-164:** usar OfertaAcademica como fuente canónica de ofertas; eliminar la divergencia de lectura con OfertasAcademicas y conservar IDs estables en área/asignatura/plan/oferta.
 - **AUD-NG-158:** incorporar ABAC a asignación, consulta y baja de docentes por área/oferta/grado/sección/periodo; derivar actor de claims verificados para sustituciones, preferencias, horarios y excepciones; validar asignaciones vigentes antes de leer o modificar.
 
@@ -1595,6 +1655,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F6-006 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-006.md ; completadas.md -->
 ### [ ] [TAREA-F6-006] Crear una plantilla de microservicio académico reutilizable para múltiples áreas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 | Requisito | Dictamen | Motivo |
 |---|---|---|
 | R1 plantilla reutilizable para siete áreas | Parcial | hay catálogo seed, pero está hardcodeado y no coincide con el frontend de doce áreas. |
@@ -1639,6 +1700,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F6-031 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-006.md ; completadas.md -->
 ### [ ] [TAREA-F6-031] Crear una plantilla de microservicio académico reutilizable para múltiples áreas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 | Criterio | Dictamen | Motivo |
 |---|---|---|
 | CA-061 siete áreas y materias configurables | Parcial | siete seeds hardcodeados; no sincronizados con frontend ni catálogo de materias por área. |
@@ -1713,6 +1775,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-01 | Fuentes: completadas.md -->
 ### [ ] [TAREA-F7-IMP-01] Ampliar la validación integral de horarios y asignaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md` / Tarea F7-IMP-01 (P1 · Fortalecimiento de Validaciones)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Ampliación funcional y fortalecimiento de validaciones)
@@ -1756,6 +1819,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-02 | Fuentes: completadas.md -->
 ### [ ] [TAREA-F7-IMP-02] Implementar una matriz visual de planificación y disponibilidad
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md` / Tarea F7-IMP-02 (P1 · Interfaz de Planificación)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Ampliación de interfaz y herramientas de planificación)
@@ -1801,6 +1865,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-03 | Fuentes: completadas.md -->
 ### [ ] [TAREA-F7-IMP-03] Desarrollar una herramienta de resolución asistida de conflictos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md` / Tarea F7-IMP-03 (P1 · Optimización de Horarios)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Nueva capacidad de planificación y optimización)
@@ -1839,6 +1904,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-05 | Fuentes: completadas.md -->
 ### [ ] [TAREA-F7-IMP-05] Ampliar el control de carga laboral y las preferencias docentes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md` / Tarea F7-IMP-05 (P1 · Carga Docente)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Ampliación de reglas académicas y laborales)
@@ -1875,6 +1941,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-07 | Fuentes: completadas.md -->
 ### [ ] [TAREA-F7-IMP-07] Fortalecer la programación de evaluaciones y la prevención de sobrecargas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md` / Tarea F7-IMP-07 (P1 · Programación de Evaluaciones)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Ampliación de planificación evaluativa)
@@ -1913,6 +1980,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-10 | Fuentes: completadas.md -->
 ### [ ] [TAREA-F7-IMP-10] Fortalecer las notificaciones y la trazabilidad de cambios académicos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md` / Tarea F7-IMP-10 (P1 · Notificaciones de Horarios)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Ampliación de notificaciones e integración)
@@ -1951,6 +2019,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-12 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md ; completadas.md -->
 ### [ ] [TAREA-F7-IMP-12] Auditoría de reportes de carga docente, ocupación y calidad (C1.244)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Fecha:** 2026-11-08.
 - **Dictamen:** NO CUMPLE; se preserva [ ] histórico en completadas.md.
 - **Hallazgo:** AUD-NG-247 (ALTO/P1), relacionado con AUD-NG-001, AUD-NG-244, AUD-NG-245 y AUD-NG-246.
@@ -2004,6 +2073,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-16 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md ; completadas.md -->
 ### [ ] [TAREA-F7-IMP-16] Auditoría de sustituciones y reasignación de clases (C1.248)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Fecha:** 2026-11-08.
 - **Dictamen:** NO CUMPLE; se conserva [ ] histórico en completadas.md.
 - **Criterios:** CA-F7-99 NO CUMPLE; CA-F7-100 PARCIAL; CA-F7-101 NO CUMPLE; CA-F7-102 NO CUMPLE; CA-F7-103 NO CUMPLE; CA-F7-104 NO CUMPLE; CA-F7-105 NO CUMPLE.
@@ -2061,6 +2131,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-18 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md ; completadas.md -->
 ### [ ] [TAREA-F7-IMP-18] Auditoría de restricciones curriculares y dependencias entre asignaturas (C1.250)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Fecha:** 2026-11-08; sesión IMA-AUDIT-20261108-1814Z.
 - **Checkpoint inicial:** C1.249; HEAD auditado ae26055ea27c87adfeb473a45e31bff8d5da43b1.
 - **Dictamen:** NO CUMPLE; se conserva [ ] histórico en completadas.md, líneas 4487-4521.
@@ -2118,6 +2189,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-191 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-191] Flujo de devolución con inspección física y derivación a incidencias
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección F (PT-20-21) y Plan de Trabajo P1
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Preservación del fondo bibliográfico, control de deterioro y reporte inmediato de averías)
@@ -2150,6 +2222,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-192 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-192] Renovaciones de préstamo con bloqueo automático por reservas en lista de espera
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección C y Plan de Trabajo P1
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Equidad en el acceso a recursos bibliográficos, control de lista de espera y límites de renovación)
@@ -2179,6 +2252,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-195 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-195] Asociación curricular de obras bibliográficas con asignaturas y niveles
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección C (2.8) y Plan de Trabajo P1
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Apoyo pedagógico, bibliografía recomendada por materia y pertinencia académica)
@@ -2207,6 +2281,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-216 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-216] Compatibilidad con las plantillas oficiales de cuadros de calificaciones de SACE
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_22_GESTION_DOCUMENTAL_FORMULARIOS_FIRMA_ELECTRONICA.md` / Sección E, Sección G y Plan de Trabajo TAREA 22-09
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Compatibilidad con el sistema educativo oficial SACE de Honduras, llenado exacto de calificaciones y preservación de formato)
@@ -2259,6 +2334,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-217 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-217] Administración de versiones y compatibilidad de plantillas SACE
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_22_GESTION_DOCUMENTAL_FORMULARIOS_FIRMA_ELECTRONICA.md` / Sección E, Sección G y Plan de Trabajo TAREA 22-10
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Gestión de cambios de formato oficial SACE, retrocompatibilidad y mapeo versionado)
@@ -2291,6 +2367,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-263 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-263] [P1] Migración de Asistencia y Registros Operativos Históricos Consolidados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 9
 - **Prioridad:** P1 (Alta)
 - **Componentes Afectados:**
@@ -2324,6 +2401,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-269 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-269] [P1] Importación y Exportación Integral de Información SACE
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 16
 - **Prioridad:** P1 (Alta)
 - **Componentes Afectados:**
@@ -2354,6 +2432,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-517 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-01.md -->
 ### [ ] [TASK-517] Unificar calendario y contexto temporal de las asignaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-236 / H5-H6; amplía AUD-NG-168.
 - **Severidad:** Alto.
 - **Objetivo:** validar asignaciones dentro de su año, período y fechas efectivas con un esquema de calendario único.
@@ -2370,6 +2449,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-522 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-02.md -->
 ### [ ] [TASK-522] Implementar disponibilidad por intervalos y filtros temporales/organizativos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-237 / H2/H4/H5; amplía AUD-NG-168.
 - **Severidad:** Alto.
 - **Objetivo:** calcular disponibilidad simultánea de docente, sección, aula y recursos en año/período/fecha concretos.
@@ -2386,6 +2466,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-527 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-03.md -->
 ### [ ] [TASK-527] Ampliar generación de candidatos y agrupación de conflictos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-238 / H2-H3.
 - **Severidad:** Alto.
 - **Objetivo:** evaluar alternativas de docente, aula, horario, día, recurso y reprogramación.
@@ -2402,6 +2483,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-533 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-04.md -->
 ### [ ] [TASK-533] Implementar asignación masiva basada en restricciones y preferencias
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-239 / H3-H4.
 - **Severidad:** Alto.
 - **Objetivo:** generar soluciones que consideren frecuencia, duración, disponibilidad, recursos, jornadas y preferencias autorizadas.
@@ -2418,6 +2500,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-534 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-04.md -->
 ### [ ] [TASK-534] Explicar restricciones imposibles y comparar impacto antes/después
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-239 / H5.
 - **Severidad:** Alto.
 - **Objetivo:** permitir decidir con información completa antes de aplicar un escenario.
@@ -2434,6 +2517,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-538 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-05.md -->
 ### [ ] [TASK-538] Definir políticas de carga docente por contrato y jornada
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-240 / H3-H7.
 - **Severidad:** Alto.
 - **Objetivo:** resolver límites efectivos por docente sin inventar valores institucionales.
@@ -2448,6 +2532,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-539 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-05.md -->
 ### [ ] [TASK-539] Corregir el cálculo de carga lectiva por período y estado
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-240 / H4-H5.
 - **Severidad:** Alto.
 - **Objetivo:** calcular carga semanal solo con asignaciones lectivas vigentes y aplicables.
@@ -2462,6 +2547,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-540 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-05.md -->
 ### [ ] [TASK-540] Implementar reglas de jornada, descansos y actividades adicionales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-240 / H5.
 - **Severidad:** Alto.
 - **Objetivo:** evaluar carga laboral integral sin confundir horas lectivas y responsabilidades adicionales.
@@ -2476,6 +2562,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-546 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-06.md -->
 ### [ ] [TASK-546] Aplicar el ciclo de vida y la vigencia temporal del mantenimiento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-241 / H2-H3.
 - **Severidad:** Alta.
 - **Objetivo:** impedir asignaciones únicamente durante intervalos reales de indisponibilidad.
@@ -2491,6 +2578,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-547 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-06.md -->
 ### [ ] [TASK-547] Modelar equipamiento y recursos compartidos o exclusivos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-241 / H4.
 - **Severidad:** Alta.
 - **Objetivo:** validar que el espacio y los recursos físicos satisfagan las necesidades de cada actividad.
@@ -2506,6 +2594,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-549 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-06.md -->
 ### [ ] [TASK-549] Consultar ocupación, clases afectadas y alternativas compatibles
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-241 / H3-H4-H6.
 - **Severidad:** Alta.
 - **Objetivo:** mostrar la utilización real de espacios y permitir resolver indisponibilidades antes de confirmar cambios.
@@ -2521,6 +2610,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-552 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-07.md -->
 ### [ ] [TASK-552] Normalizar el modelo de programación y la configuración institucional de evaluaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-242 / H2-H3.
 - **Severidad:** Alta.
 - **Objetivo:** separar la fecha de aplicación de la fecha límite y representar el contexto completo de cada evaluación.
@@ -2537,6 +2627,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-553 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-07.md -->
 ### [ ] [TASK-553] Implementar el motor configurable de carga, coincidencia y separación entre evaluaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-242 / H1-H2.
 - **Severidad:** Alta.
 - **Objetivo:** detectar incompatibilidades antes de crear o modificar una evaluación.
@@ -2553,6 +2644,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-555 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-07.md -->
 ### [ ] [TASK-555] Integrar conflictos de docentes, aulas y recursos físicos en la programación evaluativa
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-242 / H3; depende de los contratos de TASK-552 y amplía las tareas de espacios TASK-545..TASK-551.
 - **Severidad:** Alta.
 - **Objetivo:** impedir solapamientos de evaluaciones con disponibilidad docente, aulas y recursos reservables.
@@ -2569,6 +2661,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-605 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-15.md -->
 ### [ ] [TASK-605] Unificar la exclusión mutua de todas las mutaciones de horarios y recursos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-250, secciones 3.1 y 3.6.
 - **Severidad:** Alto.
 - **Objetivo:** impedir que cualquier escritor relacionado cambie horarios, disponibilidad docente o recursos mientras otra operación está validando y confirmando una asignación incompatible.
@@ -2585,6 +2678,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-607 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md -->
 ### [ ] [TASK-607] Implementar el ciclo de vida temporal y la resolución efectiva de sustituciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-168 ampliado.
 - **Severidad:** Alto.
 - **Objetivo:** garantizar que cada sustitución sea efectiva únicamente dentro de su intervalo y que al vencer se restituya la asignación titular para las fechas posteriores, manteniendo historial.
@@ -2598,6 +2692,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-608 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-16.md -->
 ### [ ] [TASK-608] Implementar planificación, previsualización y aplicación multibloque de sustituciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-168 ampliado; AUD-NG-250 ampliado.
 - **Severidad:** Alto.
 - **Objetivo:** localizar todos los bloques/actividades afectados y aplicar una sustitución relacionada a varios horarios sin omitir asignaturas ni crear ofertas ficticias.
@@ -2611,6 +2706,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-613 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-18.md -->
 ### [ ] [TASK-613] Definir el modelo canónico y ciclo de vida de las restricciones curriculares
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-255, H2.
 - **Severidad:** Alto.
 - **Objetivo:** persistir relaciones con tipo, ámbito, vigencia, actor y versiones inequívocas.
@@ -2627,6 +2723,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-614 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-18.md -->
 ### [ ] [TASK-614] Integrar el motor de dependencias curriculares en todas las rutas de planificación
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-254, H1.
 - **Severidad:** Alto.
 - **Objetivo:** aplicar las cinco clases de relaciones antes de crear, reorganizar, importar, restaurar o publicar horarios.
@@ -2643,6 +2740,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-623 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-22.md -->
 ### [ ] [TASK-623] Normalizar el contrato de plantillas y la selección de componentes reutilizables
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-266.
 - **Severidad/Prioridad:** ALTO/P1.
 - **Objetivo y acción:** definir el esquema canónico de HorariosClase y una estructura versionada de plantilla; resolver período/oferta fuente; corregir la extracción de filas; permitir seleccionar distribución semanal, períodos, asignaturas, secciones y preferencias; excluir docentes/aulas/asignaciones por defecto cuando deban revalidarse; impedir guardar una plantilla vacía como éxito.
@@ -2655,6 +2753,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-624 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-22.md -->
 ### [ ] [TASK-624] Implementar validación, previsualización y confirmación segura de plantillas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-267.
 - **Severidad/Prioridad:** ALTO/P1.
 - **Objetivo y acción:** resolver referencias contra catálogos del período destino; comprobar oferta, asignatura, docente, aula, disponibilidad y colisiones de sección; pasar claves canónicas al validador; bloquear la aplicación ante conflictos o referencias faltantes; mostrar propuesta y permitir ajustes antes de confirmar; crear únicamente borradores y mantener publicación como acción separada.
@@ -2667,6 +2766,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-626 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-23.md -->
 ### [ ] [TASK-626] Integrar el flujo de impresión docente con filtros y vista previa
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-270.
 - **Severidad/Prioridad:** ALTO/P1.
 - **Objetivo y acción:** incorporar en teacher-dashboard.html los controles, modal, vista previa y contenedores que requiere js/teacher.js; permitir seleccionar perspectiva docente/sección/aula, período e intervalo de fechas; cargar solo el conjunto filtrado y autorizado; conectar los eventos sin fallback a imprimir toda la página.
@@ -2679,6 +2779,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-648 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK04.md -->
 ### [ ] [TASK-648] Incorporar regresión funcional de procesos académicos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - Hallazgo: AUD-NG-293. Severidad: Alto.
 - Objetivo: probar flujos de docentes, jornalizaciones, sílabos, eventos, horarios y tareas.
 - Acción: fixtures/dobles aislados; invocar contratos y operaciones de cada flujo; validar estados, reglas, errores y persistencia simulada.
@@ -2692,6 +2793,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-171 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-171] Completar catálogo reutilizable, versionado y relaciones de proyectos interdisciplinarios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - Severidad: Medio (P2).
 - Origen: Auditoría TAREA-18 de completadas.md; archivos backend/academic-service/Code.gs, js/teacher.js y teacher-dashboard.html.
 - Problema: el backend solo registra filas básicas en RecursosEducativosReutilizables y ProyectosInterdisciplinarios. Los proyectos guardan departamentos como texto, no enlazan RecursoID ni versiones; el año lectivo está fijado en 2026. El campo Version es texto suministrado por el cliente, sin historial ni linaje; manageReusableResource siempre hace appendRow incluso cuando recibe recursoId, por lo que no actualiza ni evita duplicados. El controlador docente busca un modal ausente en teacher-dashboard.html. No se demuestra integración de recursos con actividades publicadas ni preservación de la versión histórica usada.
@@ -2704,6 +2806,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: F8-TASK25 | Fuentes: completadas.md -->
 ### [ ] [F8-TASK25] Incorporar estadísticas descriptivas y una visualización de la distribución de calificaciones de exámenes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **ID Anterior:** `[TAREA-F8-OPT-02]`
 - **Origen del Hallazgo:** `AUDITORIA_FASE_8_AULA_VIRTUAL_APRENDIZAJE.md` / Tarea F8-OPT-02 (P2 · Analítica de Exámenes)
 - **Prioridad:** P2
@@ -2733,6 +2836,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: F11-TASK17 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md -->
 ### [ ] [F11-TASK17] Consolidar indicadores de calidad educativa y cumplimiento pedagógico
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** sección 3.C.5; existen métricas en `getCurricularAnalyticsReport`, pero falta reporte consolidado de cumplimiento pedagógico.
 - **Severidad:** Media. **Objetivo:** disponer de indicadores agregados y trazables sobre planificación y cumplimiento.
 - **Acción ejecutable:** definir indicadores, fuentes, fórmulas y periodos; consolidar entregas/revisiones de F11-Task09/10, supervisiones y métricas curriculares en un reporte con filtros autorizados.
@@ -2747,6 +2851,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-04 | Fuentes: completadas.md -->
 ### [ ] [TAREA-F7-IMP-04] Incorporar planificación masiva y optimización de horarios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_7_PLANIFICACION_HORARIOS_RECURSOS.md` / Tarea F7-IMP-04 (P2 · Planificación Masiva)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Medio (Nueva herramienta de planificación avanzada)
@@ -2786,6 +2891,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-357 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-357] Ampliar los indicadores de calidad educativa y cumplimiento pedagógico
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área III (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Métricas institucionales)
@@ -2804,6 +2910,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-382 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-382] Identificación y escaneo de ejemplares mediante códigos QR y códigos de barras
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección C (2.2) y Plan de Trabajo P2
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Agilidad en mostrador de préstamo, reducción de errores de digitación y etiquetado físico)
@@ -2830,6 +2937,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-617 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-20.md -->
 ### [ ] [TASK-617] Optimizar consultas de horarios y recursos con filtros de origen y resultados acotados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgos de origen:** AUD-NG-257 y AUD-NG-259.
 - **Prioridad:** P2.
 - **Objetivo:** reducir filas/columnas transferidas y procesadas por las consultas de planificación, manteniendo el contrato semántico.
@@ -2843,6 +2951,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-F7-IMP-23 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md ; completadas.md -->
 ### [ ] [TAREA-F7-IMP-23] Ampliar las herramientas de impresión y distribución de horarios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Dictamen:** NO CUMPLE; se conserva la marca histórica [ ].
 - **Criterios:** CA-F7-138 NO CUMPLE; CA-F7-139 NO CUMPLE; CA-F7-140 NO CUMPLE; CA-F7-141 NO CUMPLE; CA-F7-142 NO VERIFICABLE.
 - **Hallazgos:** AUD-NG-270..273 nuevos: impresión docente desconectada; estado/período falsos; impresión estudiante sin área imprimible; paginación insuficiente.
@@ -2888,6 +2997,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-105 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-105] Alinear el contrato de almacenamiento, permisos y lectura del historial académico
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-105
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/academic-service/Code.gs; js/student.js
@@ -2901,6 +3011,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-107 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-107] Aplicar la validación de grado del estudiante antes de autorizar recursos por tema
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-107
 - **Severidad/Clasificación:** Medio
 - **Archivos Involucrados:** js/config.js
@@ -2913,6 +3024,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-108 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-108] Aislar la configuración académica por el profesor autenticado
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-108
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/academic-service/Code.gs
@@ -2925,6 +3037,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-113 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-113] Completar la clave Upsert de configuración académica con el parcial
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-113 (CONF-001).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de regresión de configuración académica.
@@ -2937,6 +3050,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-115 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-115] Aplicar el parcial vigente en todos los niveles de navegación docente
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-115 (NAV-002).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `js/teacher.js`; `backend/academic-service/Code.gs`; pruebas de regresión de navegación docente.
@@ -2949,6 +3063,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-118 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-118] Completar navegación jerárquica con secciones dinámicas y salto automático
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-118 (REQ-EXP-003).
 - **Severidad/Clasificación:** Medio
 - **Archivos Involucrados:** `js/teacher.js`; `teacher-dashboard.html`; pruebas de regresión de navegación académica.
@@ -2961,6 +3076,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-119 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-119] Aislar el cierre de año al docente autenticado y sus entregas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-119 (REQ-EXP-005).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/task-service/Code.gs`; `js/teacher.js`.
@@ -2973,6 +3089,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-121 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-121] Aplicar en servidor la penalización del 50% por entrega tardía
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-121 (REQ-EXP-004).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/task-service/Code.gs`; `js/teacher.js`; pruebas de calificación.
@@ -2985,6 +3102,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-122 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-122] Aplicar ámbito docente en todas las operaciones de asistencia
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-122 (REQ-EXP-004).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`; pruebas de seguridad de asistencia.
@@ -2997,6 +3115,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-124 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-124] Validar propiedad y conservar historial de rectificaciones de calificaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-124 (REQ-EXP-004).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/task-service/Code.gs`; `backend/exam-service/Code.gs`; pruebas de calificaciones.
@@ -3009,6 +3128,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-150 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-150] Reforzar la separación entre guías informativas y tareas evaluables en el servidor
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-150 (REQ-DOC-004).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** js/teacher.js; js/student.js; backend/task-service/Code.gs; teacher-dashboard.html.
@@ -3021,6 +3141,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-151 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-151] Calcular y validar la fecha límite a partir de la fecha impartida
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-151 (REQ-DOC-005).
 - **Severidad/Clasificación:** Medio
 - **Archivos Involucrados:** teacher-dashboard.html; js/teacher.js; backend/task-service/Code.gs.
@@ -3033,6 +3154,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-153 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-153] Completar las tarjetas estudiantiles con tema, recursos y estados coherentes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-153 (REQ-DOC-007).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** student-dashboard.html; js/student.js; backend/task-service/Code.gs; js/api.js.
@@ -3044,14 +3166,16 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 ---
 
 <!-- ID: AUD-NG-158 | Fuentes: Pendientes.md -->
-### [x] [AUD-NG-158] Aplicar autorización contextual a escrituras docentes y conservar historial de fechas límite
+### [ ] [AUD-NG-158] Aplicar autorización contextual a escrituras docentes y conservar historial de fechas límite
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-158 (REQ-DOC-012).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/task-service/Code.gs; backend/academic-service/Code.gs; js/api.js; pruebas de seguridad académica.
 - **Dependencias Expuestas:** validateRolePermission, validateContextualAccess, getDynamicPermissionsForRole, createTask, updateTask, createStudyMaterial, AsignacionesDocentes, _verifiedUserId, fechaLimite, historial de tareas.
 - **Descripción del Alcance:** Aplicar ABAC server-side a todas las escrituras docentes. Derivar profesorId/autorId exclusivamente de la sesión verificada y comprobar que asignatura, grado y sección pertenecen a asignaciones vigentes del docente. Verificar propiedad/ámbito antes de editar o eliminar una tarea/material. Añadir historial append-only de cambios de fecha límite con valor anterior/nuevo, actor verificado, timestamp y motivo. Coordinar con AUD-NG-001/AUD-NG-004 para token y secreto, y con TASK-085/TASK-142 para privacidad documental, sin duplicar esos alcances.
 - **Criterios de Aceptación:** Un profesor no puede crear, editar ni eliminar tareas/materiales fuera de sus asignaciones aunque manipule el payload; el servidor deriva identidad y ámbito de claims verificados; updateTask rechaza tareas de otro profesor; cada cambio de fecha límite conserva historial inmutable con actor/fecha/motivo; pruebas negativas con dos docentes y dos secciones, modificación de IDs y múltiples cambios de fecha.
-- **Estado:** Completado C1.888 (2026-11-20). C1.781 y C1.813 se conservan como evidencia histórica; la revisión C1.809 queda resuelta por la validación adicional de alcance y contexto de autorización.
+- **Estado histórico anterior:** Completado C1.888 (2026-11-20). C1.781 y C1.813 se conservan como evidencia histórica; la revisión C1.809 queda resuelta por la validación adicional de alcance y contexto de autorización.
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 
 - **Cierre C1.781 (2026-11-16):** createTask, updateTask, createStudyMaterial y deleteStudyMaterial derivan identidad de getVerifiedTaskIdentity_ y aplican propiedad/ámbito antes de mutar. updateTask revalida identidad tras adquirir ScriptLock, valida asignación vigente y conserva cada cambio de fecha límite en HistorialFechasLimiteTareas (valor anterior/nuevo, actor verificado, rol, timestamp, motivo obligatorio y correlationId). Si falla la escritura del historial, la fila de tarea se revierte; no se modifican ni eliminan filas históricas. La UI docente solicita motivo cuando cambia la fecha.
 - **Evidencia histórica:** Task-Service security local contracts run 43789958601 SUCCESS (11/11 pasos, Node.js 22.23.4); Task-Service backup and restore run 43789660478 SUCCESS.
@@ -3067,6 +3191,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: AUD-NG-175 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-175] Corregir el contrato, la sincronización y la validación de los catálogos institucionales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-175 (FASE2-03 y revisión de la implementación posterior FASE2-T04).
 - **Severidad/Clasificación:** Alto (integridad y consistencia de catálogos institucionales).
 - **Archivos Involucrados:** `js/config.js`; `backend/academic-service/Code.gs`; `backend/user-service/Code.gs`; `tests/regression/modular-dashboard-suite.js`.
@@ -3105,6 +3230,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: T-UX-02 | Fuentes: completadas.md -->
 ### [ ] [T-UX-02] Soporte Universal Tecla Escape para Cierre de Modales y Restauración de Foco
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 3, octubre de 2026 (AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md - Área 7)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `js/ui-common.js`
@@ -3121,6 +3247,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-08 | Fuentes: completadas.md -->
 ### [ ] [TAREA-08] Implementar la estructura jerárquica de la malla curricular por áreas, asignaturas y departamentos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 1, octubre de 2026 (AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md - Sección B & K)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`, `js/config.js`, `js/teacher.js`, `teacher-dashboard.html`
@@ -3150,6 +3277,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-09 | Fuentes: completadas.md -->
 ### [ ] [TAREA-09] Crear un servicio de Apps Script especializado para cada área curricular
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 1, octubre de 2026 (AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md - Sección D & K)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`, `backend/task-service/Code.gs`, `backend/exam-service/Code.gs`, `js/config.js`, `js/api.js`
@@ -3184,6 +3312,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-17 | Fuentes: completadas.md -->
 ### [ ] [TAREA-17] Incorporar analítica académica por área, asignatura y programa
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 1, octubre de 2026 (AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md - Sección B & K)
 - **Severidad/Clasificación:** Bajo
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`, `js/teacher.js`, `teacher-dashboard.html`
@@ -3205,6 +3334,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-18 | Fuentes: completadas.md -->
 ### [ ] [TAREA-18] Ampliar la reutilización de recursos educativos y actividades entre áreas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 1, octubre de 2026 (AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md - Sección B & K)
 - **Severidad/Clasificación:** Bajo
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`, `js/teacher.js`, `teacher-dashboard.html`
@@ -3225,6 +3355,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-19 | Fuentes: completadas.md -->
 ### [ ] [TAREA-19] Implementar configuración y migración curricular sin pérdida de datos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 1, octubre de 2026 (AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md - Sección B & K)
 - **Severidad/Clasificación:** Bajo
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`, `js/teacher.js`, `teacher-dashboard.html`
@@ -3247,6 +3378,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TAREA-20 | Fuentes: completadas.md -->
 ### [ ] [TAREA-20] Formalizar la incorporación de nuevas áreas y servicios curriculares
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 1, octubre de 2026 (AUDITORIA_FASE1_PLANIFICACION_EXPANSION.md - Sección B & K)
 - **Severidad/Clasificación:** Bajo
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`, `js/config.js`
@@ -3268,6 +3400,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-406 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-406] [P2] [Analítica Académica Avanzada - Análisis de Cohortes y Seguimiento Longitudinal de Estudiantes]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/academic-service/Code.gs`
 - **Dependencias Expuestas:** Protección histórica existente, DataMart (`F24-Task05`), series históricas (`F24-Task07`), filtros (`F24-Task03`).
@@ -3320,6 +3453,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-417 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-417] [P2] [SACE - Fortalecimiento de la Generación y Validación de Archivos SACE Oficiales]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/accounting-service/Code.gs`
   - Hojas `PlantillasSACEVerificadas`, `CalificacionesEstudiantes`
@@ -3380,6 +3514,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-424 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-424] [P2] [Continuidad Offline - Continuidad Operativa Fuera de Línea y Sincronización Diferida Académica]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `js/api.js`
   - `js/teacher.js`
@@ -3446,6 +3581,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-685 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
 ### [ ] [TASK-685] Proteger las consultas de evaluaciones por estudiante
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-356, ALTO/P1.
 - **Objetivo:** impedir lecturas anónimas o IDOR de exámenes, entregas, calificaciones y comentarios.
 - **Archivos:** backend/exam-service/Code.gs, js/student.js, js/teacher.js.
@@ -3457,6 +3593,7 @@ Hallazgo nuevo: AUD-NG-168. Progreso de auditoría: 19/183; 164 pendientes. Sigu
 
 <!-- ID: TASK-689 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
 ### [ ] [TASK-689] Estabilizar identificadores y disponibilidad de bancos QuizPro
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-360, MEDIO/P2.
 - **Objetivo:** conservar la identidad de cada pregunta y evitar niveles habilitados sin contenido.
 - **Archivos:** js/config.js, js/quizpro.js, js/Banco_Preguntas/.

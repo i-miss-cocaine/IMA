@@ -428,3 +428,6 @@ Los checkpoints posteriores se registran aquí.
 | C1.962 | IMA-EXEC-20261123-F11-TASK01-WELFARE-CONFIDENTIALITY-CLOSE | F11-TASK01/AUD-NG-383 completada en código/CI; 26/26 pruebas específicas y 26/26 suite Node.js; sintaxis, diff guard y Actions PASS; BETA-FUNC-133 pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt — C1.962 | C1.961 | Revisar y ejecutar TASK-030 (P0) si sus dependencias y evidencia siguen elegibles |
 
 | C1.963 | IMA-EXEC-20261123-TASK030-TRANSPORT-PRIVACY-REVALIDATION | TASK-030/F21-Task02 revalidada; ACCOUNTING Transport Local Contracts SUCCESS (12 scripts; incluye TASK-030 y 24 aserciones guardian ABAC); BETA-FUNC-134 pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt — C1.963 | C1.962 | Revisar TASK-032/F21-Task04 y verificar dependencia F21-Task03 antes de implementar |
+
+
+| C1.964 | IMA-EXEC-20261123-CYCLE2-RESET-01 | Reinicio ciclo 2; IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; PM-00A portal base; reapertura de completadas; AUD-NG-393 detecta 672 IDs ausentes | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.964 | C1.963 | commit consolidado de ciclo 2; SHA verificado tras publicación |

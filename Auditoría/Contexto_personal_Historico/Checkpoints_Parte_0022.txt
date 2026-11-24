@@ -1,0 +1,64 @@
+===============================================================================
+### C1.964 — IMA-EXEC-20261123-CYCLE2-RESET-01
+===============================================================================
+
+### Continuidad, rama y estado Git
+- Repositorio: i-miss-cocaine/IMA.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- HEAD inicial verificado: 429abcbdd15027e73ed7e60f8704a0e15b795bad.
+- Rama base NG_beta_0.0.0.1: 44d9891132332e692dbe2ba8602b41f50a508a59; no modificada.
+- Normativa leída: Normas_Desarollo.md, NDASC 1.5, secciones 1–17.
+- Checkpoint anterior: C1.963, Checkpoints_Parte_0021.txt.
+- Índice central: Auditoría/INDICE_CHECKPOINTS.md.
+
+### Objetivo y requisitos registrados
+- Reiniciar el ciclo de implementación sin eliminar requisitos ni evidencia histórica.
+- Requisito transversal: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; definición canónica en Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md §1.1.
+- Login único e interactivo; el portal reutiliza el contexto de sesión y rol; no se introducen prompts o revalidaciones completas por función.
+- Servicios Apps Script personales por profesor, coordinador, secretaria y contador; servicio compartido Padres/Estudiantes; servicio utilitario compartido Tienda/Cafetería/Transporte.
+- Registro maestro de URL, cuenta propietaria, proyecto, Spreadsheet, Drive, dominio y modalidad desde el panel de Desarrollador.
+- No agregar propiedades de comandos ni secretos dedicados interservicio.
+- Secretaría, Dirección, Coordinación y Administrador acceden conforme a sus facultades; Desarrollador es un rol técnico separado.
+- Profesor restringido a sus clases/grados/secciones; alumno a sus notas/métricas/tareas; padre a estudiantes vinculados.
+- Notas, calificaciones, exámenes, jornalizaciones, sílabos, planes, guías y exámenes sujetos a esos ámbitos.
+
+### Trabajo documental realizado
+- Se añadió la referencia transversal a IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01 a los 731 encabezados de tarea existentes (687 IDs únicos por duplicaciones entre archivos).
+- Se retiraron 61 marcas de completado y se actualizaron 19 campos de estado Completada; 62 tareas quedaron reabiertas como Pendiente. Los valores previos y sus evidencias se conservaron como antecedentes.
+- Se amplió TASK-004 con requisitos de alta de puestos usando roles existentes y sin elevar privilegios RBAC.
+- Se amplió TASK-047 con modalidades de servicios individuales/compartidos, registro desde la consola y separación Desarrollador/Administrador.
+- Se reorganizó el Plan Maestro: PM-00A portal base primero; PM-00T triage después.
+- Se añadieron los casos beta BETA-FUNC-135..140, todos Pendientes.
+- Se creó AUD-NG-393 para reconciliar el backlog incompleto.
+
+### Hallazgo de integridad del backlog
+- Tabla del Plan Maestro: 1.350 IDs únicos.
+- Backlogs actuales: 687 IDs únicos.
+- Faltan 672 IDs en los backlogs: 671 con ruta Otros y 1 con ruta Docente.
+- Nueve IDs presentes en backlogs no aparecen en la tabla del plan.
+- pendientes/Otros/Pendientes.md contenía cuatro bloques previos; no se inventaron los 671 bloques faltantes.
+- AUD-NG-393 queda Pendiente. No bloquea trabajo independiente del portal.
+
+### Conservación y límites
+- No se borraron auditorías, legacy, checkpoints antiguos ni archivos de prueba.
+- No se modificó código fuente ni configuración Apps Script.
+- La compatibilidad de Google Apps Script para comunicación entre cuentas distintas, despliegues no públicos, ausencia de prompts y ausencia de secretos no se ha probado; no se declaran despliegues ni servicios operativos.
+- No se ejecutaron Node.js, CLI, pruebas locales ni GitHub Actions porque esta iteración es documental y no modifica código. No se declara PASS.
+- No se ejecutaron pruebas beta; BETA-FUNC-135..140 quedan Pendientes.
+
+### Archivos modificados
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt (nuevo)
+- pendientes/README.md
+- siete archivos pendientes departamentales
+- tareas_auditoria.txt
+- Auditoria.txt
+- changueslogs.txt
+- beta_test.txt
+
+### Siguiente acción concreta
+Iniciar TASK-047 en PM-00A. Revisar la UI de developer-dashboard.html/js/developer.js, el registro de backend/developer-service/Code.gs y sus contratos; implementar el alta de servicios por rol y separar Desarrollador de Administrador. No introducir propiedades de comandos ni secretos dedicados; comprobar la compatibilidad de despliegue entre cuentas sin publicar endpoints. Ejecutar las pruebas Node.js, sintaxis y CI pertinentes antes de cerrar.
+
+HEAD final: se confirmará después de publicar el commit consolidado de C1.964.
+===============================================================================

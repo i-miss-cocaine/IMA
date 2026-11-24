@@ -2623,3 +2623,57 @@ BETA-F18-007 — F18-TASK07: ciclo de compromisos presupuestarios de órdenes de
 - **Evidencia requerida:** SHA del despliegue, IDs sintéticos, matriz allow/deny por rol, snapshots de RelacionesFamiliares/TransporteAsignaciones/TransporteViajes, logs saneados y pruebas de revocación/concurrencia.
 - **Tarea vinculada:** TASK-030 / F21-Task02 / C1.963.
 ===============================================================================
+
+
+### BETA-FUNC-135 — Login único y reutilización de sesión
+Área/roles: Portal / todos los roles. Requisito: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; tareas TASK-047/TASK-004 y requisitos transversales.
+Objetivo: Login único y reutilización de sesión.
+Precondiciones: versión beta aislada, cuentas institucionales sintéticas, recursos y datos de prueba sin información personal real.
+Pasos: Verificar login inicial y navegar por módulos del rol sin volver a pedir login o autorización interactiva; cerrar/revocar sesión y comprobar que el contexto deja de ser utilizable al recibir la señal de revocación.
+Resultado esperado: No aparecen prompts repetidos; la sesión del portal se reutiliza; logout/revocación invalida el contexto según el ciclo de sesión.
+Estado: Pendiente. Evidencia requerida: requests/respuestas saneadas, IDs sintéticos, configuración de despliegue sin secretos y registros de acceso.
+
+
+### BETA-FUNC-136 — Alta de servicios personales por rol y cuentas Google distintas
+Área/roles: Desarrollador / servicios Apps Script. Requisito: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; tareas TASK-047/TASK-004 y requisitos transversales.
+Objetivo: Alta de servicios personales por rol y cuentas Google distintas.
+Precondiciones: versión beta aislada, cuentas institucionales sintéticas, recursos y datos de prueba sin información personal real.
+Pasos: Registrar servicios sintéticos para profesor, coordinador, secretaria y contador en cuentas institucionales distintas; asociar proyecto Apps Script, URL, Spreadsheet y carpeta Drive; consultar desde el servicio maestro sin ser propietario.
+Resultado esperado: Cada servicio conserva su cuenta y recursos; el servicio maestro enruta a la URL registrada; no se requieren propiedades de comandos ni secretos dedicados; el endpoint no queda público y no solicita autorización interactiva al usuario.
+Estado: Pendiente. Evidencia requerida: requests/respuestas saneadas, IDs sintéticos, configuración de despliegue sin secretos y registros de acceso.
+
+
+### BETA-FUNC-137 — Servicio compartido de familia
+Área/roles: Padres y Estudiantes. Requisito: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; tareas TASK-047/TASK-004 y requisitos transversales.
+Objetivo: Servicio compartido de familia.
+Precondiciones: versión beta aislada, cuentas institucionales sintéticas, recursos y datos de prueba sin información personal real.
+Pasos: Registrar una sola cuenta, servicio, despliegue, Spreadsheet y carpeta Drive para Padres/Estudiantes; ejecutar consultas con dos estudiantes y tutores vinculados/no vinculados.
+Resultado esperado: La infraestructura compartida funciona; estudiantes solo ven sus datos; tutores solo los estudiantes vinculados; no se exponen notas, métricas ni tareas de terceros.
+Estado: Pendiente. Evidencia requerida: requests/respuestas saneadas, IDs sintéticos, configuración de despliegue sin secretos y registros de acceso.
+
+
+### BETA-FUNC-138 — Servicio utilitario compartido
+Área/roles: Tienda / Cafetería / Transporte. Requisito: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; tareas TASK-047/TASK-004 y requisitos transversales.
+Objetivo: Servicio utilitario compartido.
+Precondiciones: versión beta aislada, cuentas institucionales sintéticas, recursos y datos de prueba sin información personal real.
+Pasos: Registrar las tres funciones en una misma cuenta, despliegue, Spreadsheet y carpeta Drive; probar operaciones simultáneas de cada función.
+Resultado esperado: Las funciones comparten el servicio sin colisiones ni duplicados; los datos se guardan en la fuente común; fallos de un módulo no corrompen los demás.
+Estado: Pendiente. Evidencia requerida: requests/respuestas saneadas, IDs sintéticos, configuración de despliegue sin secretos y registros de acceso.
+
+
+### BETA-FUNC-139 — Matriz de privacidad académica por rol
+Área/roles: Docente / Estudiante / Padre / Secretaría / Dirección / Coordinación / Administrador. Requisito: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; tareas TASK-047/TASK-004 y requisitos transversales.
+Objetivo: Matriz de privacidad académica por rol.
+Precondiciones: versión beta aislada, cuentas institucionales sintéticas, recursos y datos de prueba sin información personal real.
+Pasos: Preparar datos sintéticos con varios grados/secciones y asignaturas; probar notas, calificaciones, exámenes, jornalizaciones, sílabos, planes, guías y tareas alterando IDs y relaciones.
+Resultado esperado: Docente solo accede a sus clases/asignaturas/grados-secciones; estudiante solo a sus notas, métricas y tareas; padre solo a estudiantes vinculados; Secretaría, Dirección, Coordinación y Administrador acceden conforme a sus facultades configuradas.
+Estado: Pendiente. Evidencia requerida: requests/respuestas saneadas, IDs sintéticos, configuración de despliegue sin secretos y registros de acceso.
+
+
+### BETA-FUNC-140 — Separación del plano técnico e institucional
+Área/roles: Desarrollador vs Administrador. Requisito: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; tareas TASK-047/TASK-004 y requisitos transversales.
+Objetivo: Separación del plano técnico e institucional.
+Precondiciones: versión beta aislada, cuentas institucionales sintéticas, recursos y datos de prueba sin información personal real.
+Pasos: Probar login y paneles con roles Desarrollador, Administrador, Dirección y usuario sin privilegios; intentar abrir el registro de servicios y expedientes institucionales.
+Resultado esperado: Desarrollador administra el plano técnico sin heredar permisos administrativos de datos; Administrador no se convierte en Desarrollador automáticamente; cada rol conserva su alcance configurado.
+Estado: Pendiente. Evidencia requerida: requests/respuestas saneadas, IDs sintéticos, configuración de despliegue sin secretos y registros de acceso.

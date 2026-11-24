@@ -3,14 +3,15 @@
 > **Referencia normativa obligatoria:** antes de modificar este plan o cualquier archivo del repositorio, leer `Normas_Desarollo.md`. Este plan organiza tareas, dependencias y estados; no define una normativa operativa paralela. Las reglas de desarrollo y gobierno se consultan exclusivamente en el archivo maestro.
 
 
-**Versión:** 1.3 — auditoría final de conformidad con NDASC 1.5  
-**Fecha:** 2026-11-19  
+**Versión:** 1.4 — reorganización del ciclo 2 y arquitectura del portal  
+**Fecha:** 2026-11-23  
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
 **Estado:** plan rector de secuenciación; ninguna tarea se declara implementada por aparecer aquí.  
 **Línea base operativa C1.285:** las 1.346 tareas de los siete backlogs están en `Pendiente`; no existe ninguna tarea del Plan Maestro con estado operativo `Completada`. Los registros históricos de la sección 10 se conservan como evidencia histórica y quedan subordinados al reinicio de estados de la sección 10.1.  
 **Checkpoint de origen:** C1.277 (consolidación del backlog).  
 **Checkpoint de planificación:** C1.278.
+**Ciclo operativo vigente:** 2 — C1.964; ver reinicio de estados y requisitos en §10.85.
 
 ---
 
@@ -21,6 +22,44 @@ Este documento establece el orden maestro para ejecutar las tareas de los siete 
 El plan **ordena la ejecución, pero no reemplaza los requisitos originales**. Cada tarea conserva su ID, descripción, criterios, archivos, prioridad, relaciones y fuentes en su archivo departamental. El anexo de este documento es un índice de planificación por ID, no una versión abreviada del requisito.
 
 La asignación de fase es una propuesta inicial basada en el contenido de cada registro, su familia de ID, componentes y dependencias disponibles. Antes de implementar se confirma únicamente el alcance y las dependencias que afecten al cambio. PM-00 es una fase de inventario y triage, no una puerta universal: las tareas independientes pueden implementarse mientras se resuelven clasificaciones pendientes.
+
+
+## 1.1 Requisitos transversales del ciclo 2 — IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01
+
+Estos requisitos se aplican a todas las tareas pendientes y reabiertas del Plan Maestro. Cada bloque presente en los siete backlogs referencia este apartado. No se eliminan ni sustituyen requisitos técnicos originales.
+
+### A. Login y continuidad de sesión
+- El login del portal es el único flujo de autenticación interactiva del usuario. Tras autenticarse, el portal reutiliza el contexto de sesión y rol para las funciones correspondientes.
+- Ninguna función debe abrir un segundo login, solicitar al usuario que vuelva a autorizarse ni repetir validaciones completas de sesión durante cada subpaso de una operación.
+- Los servicios Apps Script no deben iniciar flujos de autorización interactiva ni pedir al usuario una segunda verificación de sesión. El portal reutiliza el contexto establecido en login.
+- Los permisos y ámbitos funcionales siguen siendo obligatorios; no se deben confiar roles, IDs o ámbitos editables por el cliente.
+- No introducir controles redundantes ni validaciones que no cambien el resultado de la operación.
+
+### B. Servicios Apps Script por puesto/rol
+- Cada servicio individual tendrá proyecto/despliegue Apps Script, Spreadsheet y carpeta Drive propios, alojados en la cuenta Google institucional correspondiente.
+- Cada servicio se despliega desde su cuenta institucional. Su URL, cuenta propietaria, proyecto, Spreadsheet, carpeta Drive, dominio de datos, rol/puesto y estado se registran en el servicio maestro.
+- El servicio maestro podrá enrutar servicios en cuentas distintas sin exigir que su operador sea propietario de dichas cuentas.
+- No se agregan propiedades de comandos ni claves secretas dedicadas para comunicación interservicio. Los despliegues deben ser simples de crear, configurar, actualizar y mantener.
+- No introducir prompts de autorización ni verificaciones de sesión repetidas. La compatibilidad entre cuentas, modo de ejecución y restricciones de acceso se verificará con la configuración real de Apps Script; no se convertirán endpoints en públicos ni se introducirán secretos no autorizados si las condiciones no coexisten.
+
+### C. Modalidades de servicio
+- **Individual:** cada profesor, coordinador de área, secretaria y contador tendrá servicio, cuenta Google, proyecto/despliegue, Spreadsheet y carpeta Drive propios.
+- **Compartido Padres/Estudiantes:** ambos roles usarán la misma cuenta institucional, servicio, despliegue, Spreadsheet y carpeta Drive.
+- **Compartido utilitario:** Tienda, Cafetería y Transporte podrán compartir servicio/despliegue, cuenta, Spreadsheet y carpeta Drive.
+- El panel de Desarrollador permitirá registrar un puesto/servicio seleccionando un rol existente, modalidad, cuenta propietaria y recursos asociados; el alta no requerirá modificar código fuente.
+
+### D. Acceso por rol y privacidad académica
+- Secretaría, Dirección, Coordinación y Administrador podrán acceder a información de otros roles conforme a sus facultades y ámbitos configurados.
+- **Desarrollador no es Administrador.** Desarrollador administra el plano técnico y el registro de servicios; no recibe automáticamente permisos institucionales ni acceso irrestricto a expedientes.
+- Los docentes solo consultan notas, calificaciones y resultados de estudiantes de sus clases, grados/secciones, asignaturas y períodos asignados.
+- Los estudiantes solo consultan sus propias notas, calificaciones y métricas, y suben/consultan sus propias tareas; no ven datos de compañeros.
+- Padres/tutores solo consultan notas, calificaciones, métricas y tareas de estudiantes vinculados y autorizados.
+- Notas, calificaciones, resultados de exámenes, jornalizaciones, sílabos, planes de clase, guías y exámenes respetan esos ámbitos.
+
+### E. Aplicación a tareas y verificación
+- Revisar estos requisitos en toda tarea que toque login, roles, dashboards, Apps Script, registro de servicios, datos académicos, archivos, notas o reportes.
+- Las pruebas que requieren despliegues/cuentas institucionales se registran en `beta_test.txt`; las pruebas locales de lógica, contratos, privacidad por fixtures y concurrencia reproducible siguen siendo obligatorias.
+- La combinación de despliegues no públicos, comunicación entre cuentas, ausencia de prompts y ausencia de secretos se verifica técnicamente; no se presume resuelta ni se sustituye por un endpoint público.
 
 ## 2. Inventario estudiado
 
@@ -147,7 +186,19 @@ Las pruebas de seguridad, unidad y contrato no se posponen hasta PM-08: se ejecu
 
 ## 4. Fases del plan maestro
 
-### PM-00 — Inventario, triage y resolución de dependencias
+### PM-00A — Fundación del portal y registro de servicios por rol
+
+**Objetivo:** establecer la base operativa del portal existente antes de ampliar módulos departamentales: login único, contexto de sesión reutilizable, navegación por rol, separación Desarrollador/Administrador, alta de puestos y registro de servicios Apps Script por cuenta institucional. Reutilizar los componentes que ya cumplan; no reconstruirlos desde cero.
+
+**Incluye:** login y contexto de sesión; navegación por rol; separación del plano técnico; interfaz del panel de Desarrollador para registrar puestos/servicios; asignación por rol y cuenta Google; registro de URL, Spreadsheet y carpeta Drive; modalidades individuales y compartidas; restricciones académicas/familiares de §1.1.
+
+**Tareas iniciales:** TASK-047 (registro/gestión de servicios y consola de Desarrollador); TASK-004 (catálogo y UI de puestos/responsabilidades); F16-TASK01 (origen de TASK-004, sin implementación duplicada); TASK-505 (integración del catálogo, pendiente de recuperar su bloque original completo).
+
+**Orden recomendado:** TASK-047 → TASK-004 → TASK-505. F16-TASK01 conserva trazabilidad y no constituye una segunda implementación. Verificar dependencias reales antes de cada tarea.
+
+**Puerta de salida:** el portal inicia sesión una sola vez; el contexto se reutiliza sin prompts redundantes; Desarrollador y Administrador están separados; el panel permite registrar puestos/servicios; las modalidades y restricciones de privacidad están verificadas localmente. Despliegues reales se validan en beta.
+
+### PM-00T — Inventario, triage y resolución de dependencias
 
 **Objetivo:** cerrar la ambigüedad antes de programar. Confirmar que cada ID representa una tarea ejecutable, una ampliación de otra tarea o un encabezado/agrupador.
 
@@ -340,20 +391,21 @@ La tabla de la sección 9 se agrupa estrictamente por fase PM y añade una ruta 
 
 ## 7. Primer orden de trabajo recomendado
 
-La ejecución de producto no comienza por pantallas. El primer bloque es de arquitectura, seguridad y datos:
+El nuevo ciclo comienza por la base del portal existente, sin reiniciar componentes que ya cumplan ni bloquear tareas independientes por triage documental:
 
-1. PM-00: resolver los 35 registros sin clasificación ejecutable; completar el inventario y dependencias de TASK-637/638/639 y revisar sus relaciones.
-2. PM-01: auditar y cerrar autenticación/autorización transversal, separación RBAC/ABAC, ámbitos, revocación, roles múltiples y bypasses (incluye TAREA-F4-P0-01..04, F8-TASK01, TASK-153, TASK-636 y TASK-682, además de sus dependencias reales).
-3. PM-02: fijar IDs canónicos, fuente de verdad, propiedad única de escritura, esquemas y contratos; incluir TASK-068, TASK-679 y TASK-678/676/677 según su grafo.
-4. PM-03: asegurar HMAC, eventos persistentes, idempotencia, Saga y workflows; incluir TASK-681 y dependencias de F23/F25/F30/F34.
-5. PM-04: preparar la migración y la digitalización con inventario, staging, mapeo, anonimización, conciliación y rollback.
-6. PM-05: ejecutar los módulos funcionales en el orden de subflujos descrito.
-7. PM-06: completar los ciclos documentales y de trámites integrados con los servicios funcionales.
-8. PM-07: conectar los portales y paneles por rol.
-9. PM-08: certificar el sistema completo y sus escenarios de fallo.
-10. PM-09: piloto, aprobación, cutover y retiro de legado.
+1. **PM-00A — Fundación del portal:** TASK-047 (consola de Desarrollador y registro de servicios por rol); TASK-004 (UI de puestos/responsabilidades); conservar F16-TASK01 como origen y no duplicar implementación. TASK-505 se ejecuta cuando se recupere su bloque original completo.
+2. **PM-00T — Inventario y triage:** reconciliar IDs faltantes mediante AUD-NG-385 y continuar TASK-637/638/639 solo en alcances sin evidencia vigente.
+3. **PM-01:** identidad, autorización por rol/ámbito, privacidad y separación institucional.
+4. **PM-02:** IDs canónicos, fuentes de verdad, propiedad de escritura, esquemas y contratos.
+5. **PM-03:** integraciones interservicio, eventos, idempotencia y workflows.
+6. **PM-04:** migración/importación y preservación de datos.
+7. **PM-05:** servicios funcionales por área institucional.
+8. **PM-06:** documentos, formularios, firmas y trámites.
+9. **PM-07:** portales, experiencia, paneles y analítica.
+10. **PM-08:** pruebas integrales, resiliencia y observabilidad.
+11. **PM-09:** piloto, cutover y retiro controlado de legado.
 
-La lista anterior expresa una secuencia recomendada de capas. La selección de trabajo puede desviarse cuando exista independencia técnica demostrable; basta una verificación focalizada de los requisitos y dependencias relevantes.
+Las dependencias explícitas de cada tarea se vuelven a comprobar antes de implementarla; una discrepancia documental no bloquea trabajo independiente del portal.
 
 ## 8. Criterios de avance y control del plan
 
@@ -371,9 +423,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 
 | ID | Departamento | Orden PM | Fase | Subflujo | Prioridad | Orden local | Dependencias registradas (extracto) | Título original | Ruta exacta de requisitos |
 |---|---|---|---|---|---|---:|---|---|---|
-| AUD-NG-096 | Contabilidad | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | No explícita | — | Contradicción histórica [X]/[ ] Pendiente en commit 40c9e15; estado canónico actual [ ]/Pendiente; ocho criterios TASK-050 abiertos; AUD-NG-091–096 vinculadas. | Rectificar de forma aditiva el estado contradictorio de TASK-050 | `pendientes/Contabilidad/Pendientes.md` |
-| TASK-637 | Contabilidad | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P1 | — | árbol Git de la rama de trabajo, documentación vigente, punto de entrada `index.html`. | Completar el inventario integral de archivos | `pendientes/Contabilidad/Pendientes.md` |
-| TASK-638 | Contabilidad | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P1 | — | TASK-637, catálogo completo de archivos. | Trazar dependencias estáticas y dinámicas de extremo a extremo | `pendientes/Contabilidad/Pendientes.md` |
+| AUD-NG-096 | Contabilidad | 00T | PM-00T | Triage manual: metadato incompleto, ampliación o relación por resolver | No explícita | — | Contradicción histórica [X]/[ ] Pendiente en commit 40c9e15; estado canónico actual [ ]/Pendiente; ocho criterios TASK-050 abiertos; AUD-NG-091–096 vinculadas. | Rectificar de forma aditiva el estado contradictorio de TASK-050 | `pendientes/Contabilidad/Pendientes.md` |
+| TASK-637 | Contabilidad | 00T | PM-00T | Triage manual: metadato incompleto, ampliación o relación por resolver | P1 | — | árbol Git de la rama de trabajo, documentación vigente, punto de entrada `index.html`. | Completar el inventario integral de archivos | `pendientes/Contabilidad/Pendientes.md` |
+| TASK-638 | Contabilidad | 00T | PM-00T | Triage manual: metadato incompleto, ampliación o relación por resolver | P1 | — | TASK-637, catálogo completo de archivos. | Trazar dependencias estáticas y dinámicas de extremo a extremo | `pendientes/Contabilidad/Pendientes.md` |
 | TASK-279 | Dirección | 03 | PM-03 | Integración, procesos y eventos | P1 | 9 | AUD-NG-128 (PM-01; autorización/identidad en tickets) y modelo existente de tickets; validar ambos antes de iniciar | [P1] Clasificación Automática de Incidencias y Gestión Paramétrica de SLA | `pendientes/Dirección/Pendientes.md` |
 | TAREA-10 | Docente | — | No ejecutable (agregado) | Índice de ampliaciones; hallazgos independientes ya clasificados | No aplica | — | AUD-NG-165 PM-01; AUD-NG-149 y demás ampliaciones ligadas a tareas existentes; sin entrega separada | Ampliación de criterios existentes derivada de TAREA-10 (2026-11-05) | `pendientes/Docente/Pendientes.md` |
 | TAREA-13 | Docente | — | No ejecutable (agregado) | Índice de ampliaciones; hallazgos independientes ya clasificados | No aplica | — | AUD-NG-168 PM-05; AUD-NG-164/AUD-NG-158 conservan sus registros propios; sin entrega separada | Ampliación de criterios existentes derivada de TAREA-13 (2026-11-05) | `pendientes/Docente/Pendientes.md` |
@@ -405,7 +457,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | TASK-641 | Otros | 08 | PM-08 | Calidad y resiliencia | P1 | — | ASSETS del Service Worker, cache.addAll, ciclo install/activate/offline y recursos versionados; sin dependencia de tarea declarada | Reparar y verificar el precache del Service Worker | `pendientes/Otros/Pendientes.md` |
 | TASK-680 | Otros | 04 | PM-04 | Migración, importación y preservación | CRÍTICO | — | F8-TASK19 (PM-02), F8-TASK20 (PM-02), F8-TASK22 (PM-04); configuración real de Drive/Script Properties para pruebas productivas | Implementar aprovisionamiento real y verificable de espacios funcionales | `pendientes/Otros/Pendientes.md` |
 | TASK-682 | Otros | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | P1 | — | catálogo de roles/responsabilidades, matriz de permisos, asignaciones de ámbito y auditoría. - Aceptación: un usuario puede tener dos o más roles vigentes en una sesión; cada acción se autoriza con rol/ámbito correcto; a | Soportar múltiples roles simultáneos y ámbitos independientes por rol | `pendientes/Otros/Pendientes.md` |
-| TASK-639 | Secretaría | 00 | PM-00 | Triage manual: metadato incompleto, ampliación o relación por resolver | P2 | — | TASK-637 y TASK-638. | Verificar duplicaciones, símbolos globales y ciclos | `pendientes/Secretaria/Pendientes.md` |
+| TASK-639 | Secretaría | 00T | PM-00T | Triage manual: metadato incompleto, ampliación o relación por resolver | P2 | — | TASK-637 y TASK-638. | Verificar duplicaciones, símbolos globales y ciclos | `pendientes/Secretaria/Pendientes.md` |
 | AUD-NG-033 | Contabilidad | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | recordAccountingJournalEntry, verifyAccountingIntegrity, approvePurchaseOrder, createPurchaseOrder, validateRolePermission, AsientosContables, OrdenesCompra | Validar importes contables y vincular las aprobaciones de compra con la identidad verificada | `pendientes/Contabilidad/Pendientes.md` |
 | AUD-NG-044 | Contabilidad | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | validateRolePermission, doPost, _verifiedUserId, _verifiedRole, approvePurchaseOrder, OrdenesCompra.AprobadoPor, bitácora de estados | Atribuir aprobaciones y transiciones a la identidad autenticada del usuario | `pendientes/Contabilidad/Pendientes.md` |
 | AUD-NG-130 | Contabilidad | 01 | PM-01 | Identidad, seguridad y gobierno de acceso | No explícita | — | `getStudentEnrollmentHistory`, `getStudentAccountStatement`, `applyApprovedScholarshipsToCharges`, `tienePermisoFinanciero`, `tab-financial`. | Respetar permisos financieros y aplicar beneficios por periodo sin mutar consultas | `pendientes/Contabilidad/Pendientes.md` |
@@ -928,7 +980,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | F10-TASK17 | Dirección | 05 | PM-05 | RR. HH. y finanzas | P2 | — | AsistenciaPersonal | Optimizar el registro de asistencia laboral del personal | `pendientes/Dirección/Pendientes.md` |
 | F11-TASK10 | Dirección | 05 | PM-05 | Operación escolar | P1 | — | RevisionesPlanificacion | Formalizar el flujo de entrega, observaciones y aprobación de planes docentes | `pendientes/Dirección/Pendientes.md` |
 | F11-TASK12 | Dirección | 05 | PM-05 | Operación escolar | P1 | — | SustitucionesDocentes | Reconciliar y consolidar el registro de suplencias temporales docentes | `pendientes/Dirección/Pendientes.md` |
-| F16-TASK01 | Dirección | 05 | PM-05 | Gestión institucional | P0 | — | No declaradas en el bloque extraído | Implementar el catálogo de roles internos organizativos y asignación de responsabilidades | `pendientes/Dirección/Pendientes.md` |
+| F16-TASK01 | Dirección | 00A | PM-00A | Fundación del portal y puestos por rol | P0 | — | No declaradas en el bloque extraído | Implementar el catálogo de roles internos organizativos y asignación de responsabilidades | `pendientes/Dirección/Pendientes.md` |
 | F16-TASK05 | Dirección | 05 | PM-05 | Gestión institucional | P1 | — | No declaradas en el bloque extraído | Proyectar saldos de vacaciones futuras y gestionar ausencias fraccionadas | `pendientes/Dirección/Pendientes.md` |
 | F16-TASK06 | Dirección | 05 | PM-05 | Gestión institucional | P1 | — | No declaradas en el bloque extraído | Impedir jerarquías circulares y validar la estructura de departamentos | `pendientes/Dirección/Pendientes.md` |
 | F16-TASK07 | Dirección | 05 | PM-05 | Gestión institucional | P2 | — | No declaradas en el bloque extraído | Desarrollar el organigrama interactivo y directorio jerárquico | `pendientes/Dirección/Pendientes.md` |
@@ -938,9 +990,9 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | F17-TASK06 | Dirección | 05 | PM-05 | Gestión institucional | P1 | — | No declaradas en el bloque extraído | Vincular y amortizar automáticamente préstamos y anticipos en el ciclo mensual de planilla | `pendientes/Dirección/Pendientes.md` |
 | F19-TASK07 | Dirección | 05 | PM-05 | Gestión institucional | P1 | — | No declaradas en el bloque extraído | Contabilizar automáticamente el consumo de materiales por departamento | `pendientes/Dirección/Pendientes.md` |
 | F21-TASK10 | Dirección | 05 | PM-05 | Servicios complementarios | P1 | — | No declaradas en el bloque extraído | Registrar y escalar incidencias y emergencias de transporte | `pendientes/Dirección/Pendientes.md` |
-| TASK-004 | Dirección | 05 | PM-05 | RR. HH. y finanzas | P0 | — | `AsignacionesAmbitosRoles`, `CatalogoDepartamentos`, `AreasCurricularesExtensiones`, `ROLE_PERMISSIONS` | Crear un catálogo dinámico de roles internos organizativos y administrar sus asignaciones | `pendientes/Dirección/Pendientes.md` |
+| TASK-004 | Dirección | 00A | PM-00A | Fundación del portal y puestos por rol | P0 | — | `AsignacionesAmbitosRoles`, `CatalogoDepartamentos`, `AreasCurricularesExtensiones`, `ROLE_PERMISSIONS` | Crear un catálogo dinámico de roles internos organizativos y administrar sus asignaciones | `pendientes/Dirección/Pendientes.md` |
 | TASK-005 | Dirección | 05 | PM-05 | Operación escolar | P0 | — | `AreasCurricularesExtensiones`, `CoordinacionesArea`, `AsignacionesDocentes`, `ExpedientesLaborales`, `F16-Task01` | Implementar la asignación institucional de docentes a áreas académicas, independiente de la carga lectiva | `pendientes/Dirección/Pendientes.md` |
-| TASK-047 | Dirección | 05 | PM-05 | RR. HH. y finanzas | No explícita | — | `CatalogoServicios`, `CatalogoSpreadsheets`, `F23-Task03`. | TAREAS DERIVADAS DE AUDITORÍA — TASK-047 (HALLAZGO ADICIONAL), TASK-048 Y TASK-049 / FASE 23 (2026-11-04) | `pendientes/Dirección/Pendientes.md` |
+| TASK-047 | Dirección | 00A | PM-00A | Fundación del portal y registro de servicios | No explícita | — | `CatalogoServicios`, `CatalogoSpreadsheets`, `F23-Task03`. | TAREAS DERIVADAS DE AUDITORÍA — TASK-047 (HALLAZGO ADICIONAL), TASK-048 Y TASK-049 / FASE 23 (2026-11-04) | `pendientes/Dirección/Pendientes.md` |
 | TASK-050 | Dirección | 05 | PM-05 | RR. HH. y finanzas | No explícita | — | Diccionario de indicadores (`F24-Task02`), control de permisos existente y servicios de generación actuales. | TAREAS DERIVADAS DE AUDITORÍA — TASK-050 / F24-Task01 (2026-11-04) | `pendientes/Dirección/Pendientes.md` |
 | TASK-173 | Dirección | 05 | PM-05 | RR. HH. y finanzas | P1 | — | `HorariosLaborales`, `AsignacionesDocentes`, `createTeacherSubstitution`, `HorariosClase` | Validar colisiones entre horarios laborales, asignaciones docentes y sustituciones | `pendientes/Dirección/Pendientes.md` |
 | TASK-365 | Dirección | 05 | PM-05 | RR. HH. y finanzas | P2 | — | `CatalogoDepartamentos`, `CatalogoCargos`, `HistorialAdscripciones`, `CoordinacionesArea`, `F16-Task01`, `F16-Task06` | Desarrollar un organigrama institucional interactivo y directorio de personal | `pendientes/Dirección/Pendientes.md` |
@@ -1332,7 +1384,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | TASK-479 | Otros | 06 | PM-06 | Documentos, formularios y firmas | P1 | — | No declaradas en el bloque extraído | Implementar protección conductual y ciclo de vida completo para cambios no guardados | `pendientes/Otros/Pendientes.md` |
 | TASK-480 | Otros | 06 | PM-06 | Documentos, formularios y firmas | P1 | — | AUD-NG-001 (token), AUD-NG-144 (health checks), TASK-484 (pruebas UX). | Ampliación: indicador de frescura y sincronización efectiva | `pendientes/Otros/Pendientes.md` |
 | TASK-504 | Otros | 06 | PM-06 | Documentos, formularios y firmas | P1 | — | No declaradas en el bloque extraído | Unificar y hacer verificable el historial de cambios de entidades | `pendientes/Otros/Pendientes.md` |
-| TASK-505 | Otros | 06 | PM-06 | Documentos, formularios y firmas | P1 | — | CatalogoRolesInternos, AsignacionesAmbitosRoles, assignRoleScope, getUserScopeConfig, getInternalRoleAssignments, getUserDynamicDashboardConfig, ROLE_PERMISSIONS, MatrizPermisosRoles. | Integrar el catálogo de roles internos con asignaciones, vigencias y administración institucional | `pendientes/Otros/Pendientes.md` |
+| TASK-505 | Otros | 00A | PM-00A | Fundación del portal y puestos por rol | P1 | — | CatalogoRolesInternos, AsignacionesAmbitosRoles, assignRoleScope, getUserScopeConfig, getInternalRoleAssignments, getUserDynamicDashboardConfig, ROLE_PERMISSIONS, MatrizPermisosRoles. | Integrar el catálogo de roles internos con asignaciones, vigencias y administración institucional | `pendientes/Otros/Pendientes.md` |
 | TASK-515 | Otros | 06 | PM-06 | Documentos, formularios y firmas | P0 | — | No declaradas en el bloque extraído | Conectar el formulario real de planificación con el controlador de horarios | `pendientes/Otros/Pendientes.md` |
 | TASK-529 | Otros | 06 | PM-06 | Documentos, formularios y firmas | P0 | — | No declaradas en el bloque extraído | Aplicar alternativas sobre los registros originales seleccionados | `pendientes/Otros/Pendientes.md` |
 | TASK-536 | Otros | 06 | PM-06 | Documentos, formularios y firmas | P0 | — | No declaradas en el bloque extraído | Hacer atómica la generación y publicación masiva | `pendientes/Otros/Pendientes.md` |
@@ -1721,6 +1773,7 @@ Cada fila conserva el ID original, la fase/orden PM y la **ruta exacta donde se 
 | TASK-080 | Dirección | 09 | PM-09 | Corte, piloto y liberación | P0 | 24 | [F29-Task07], [F29-Task13], [F29-Task21], [F29-Task22], [F29-Task23]. | [P0] Protocolo de Retiro Formal (Decommissioning) y Archivo Histórico de Sistemas Legados | `pendientes/Dirección/Pendientes.md` |
 | F29-TASK08 | Otros | 09 | PM-09 | Corte, piloto y liberación | P1 | — | No declaradas en el bloque extraído | Ejecutar cutover controlado con congelamiento y sincronización delta | `pendientes/Otros/Pendientes.md` |
 | AUD-NG-254 | Otros | 09 | PM-09 | Corte, piloto y liberación | P1 | — | Todas las tareas anteriores del Plan Maestro; ejecución estrictamente al cierre del plan, sin bloquearlas. | Auditoría final de conformidad de módulos con la política institucional configurable y seguridad proporcional; identificar y planificar ajustes de módulos heredados | `pendientes/Otros/Pendientes.md` |
+| AUD-NG-393 | Otros | 00T | PM-00T | Inventario, triage y resolución de dependencias | P0 | — | Historial Git, blobs y fuentes originales de migración. | Recuperar y reconciliar 672 IDs ausentes de los backlogs | `pendientes/Otros/Pendientes.md` |
 
 ## 10. Historial de versiones
 
@@ -6390,3 +6443,17 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Se amplió el workflow ACCOUNTING Transport Local Contracts para activarse también ante cambios de identidad/relación académica y ejecutar el contrato familiar guardian ABAC. Run 45298723761 SUCCESS: sintaxis de accounting-service y contratos PASS; 12 scripts de contrato ejecutados sin fallos, incluyendo TASK-030 transport access scope y 24 aserciones del contrato familiar ABAC.
 - La cifra histórica 207/207 de Fase 21 no se reejecutó; no se presenta como evidencia actual. No hubo despliegue ni pruebas contra Sheets/Drive reales. BETA-FUNC-134 queda pendiente.
 - TASK-030 cerrada en código/CI. Siguiente P0 a revisar: TASK-032/F21-Task04 (personas autorizadas de recogida), previa comprobación de su dependencia F21-Task03 y de la cobertura real de pruebas.
+
+
+## 10.85 Reinicio de ciclo 2 y requisitos transversales — C1.964
+
+- Sesión: IMA-EXEC-20261123-CYCLE2-RESET-01.
+- HEAD inicial: 429abcbdd15027e73ed7e60f8704a0e15b795bad; rama autorizada NG_beta_0.0.0.1_work; rama base NG_beta_0.0.0.1 en 44d9891132332e692dbe2ba8602b41f50a508a59.
+- Requisito transversal: IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01, definido en §1.1 y referenciado desde cada bloque de tarea vigente en los siete backlogs.
+- Reapertura: se retiraron las marcas de completado de los bloques existentes; los estados operativos anteriormente Completada pasan a Pendiente. Los valores previos y sus evidencias se conservan como antecedentes.
+- Reorganización: PM-00A para base del portal y servicios por rol; PM-00 pasa a PM-00T. Primera tarea recomendada: TASK-047, seguida por TASK-004; F16-TASK01 es trazabilidad, no implementación duplicada.
+- Integridad: tabla del Plan Maestro con 1.350 IDs únicos; backlogs con 687 IDs únicos; 672 IDs sin bloque vigente (671 Otros, 1 Docente); nueve IDs de backlog no indexados. AUD-NG-393 registra la recuperación sin inventar requisitos.
+- Conservación: no se borraron auditorías, legacy, checkpoints anteriores ni archivos de pruebas.
+- Compatibilidad pendiente: comunicación Apps Script entre cuentas distintas, despliegues no públicos, ausencia de prompts y ausencia de secretos; no se publicaron endpoints ni se introdujeron secretos.
+- No se modificó código ni se ejecutaron pruebas Node.js/CLI/Actions en esta actualización documental.
+- Siguiente acción: iniciar TASK-047, auditar developer-dashboard.html/js/developer.js, backend/developer-service/Code.gs y contratos; implementar UI de registro por rol y separar Desarrollador de Administrador.

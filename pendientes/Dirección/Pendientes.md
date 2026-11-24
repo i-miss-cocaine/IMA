@@ -9,7 +9,10 @@
 ---
 
 <!-- ID: F16-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
+
+> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
 ### [ ] [F16-TASK01] Implementar el catálogo de roles internos organizativos y asignación de responsabilidades
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Gobernanza institucional y separación estricta de permisos vs responsabilidades)
 - **Componentes Afectados:** `backend/user-service/Code.gs`, `backend/accounting-service/Code.gs`, `dashboard-recursos-humanos.html`, hoja `CatalogoRolesInternos`.
 - **Descripción:** Crear la entidad `CatalogoRolesInternos` que permita parametrizar responsabilidades organizativas (Coordinador de Área, Encargado de Laboratorio, Jefe de Nivel, Orientador) con nombre, departamento, vigencia y suplentes, sin conceder permisos de acceso administrativo por defecto.
@@ -29,6 +32,7 @@
 
 <!-- ID: F17-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK01] Dinamizar el salario base desde los contratos laborales vigentes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Integridad financiera y cálculo salarial exacto)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs` (`calculatePayrollPeriod`), `ContratosLaborales`.
 - **Problema:** `calculatePayrollPeriod` utiliza una constante hardcodeada `const salarioBase = 22000;`, provocando que todos los colaboradores reciban el mismo salario en la nómina calculada.
@@ -49,6 +53,7 @@
 
 <!-- ID: F17-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK02] Integrar novedades de asistencia, horas extras aprobadas y permisos sin goce en el cálculo de nómina
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Remuneración justa y cumplimiento de jornada)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `AprobacionHorasExtras`, `DeduccionesAsistencia`.
 - **Problema:** Las horas extras aprobadas en `AprobacionHorasExtras` y las ausencias/tardanzas en `DeduccionesAsistencia` no impactan automáticamente el total devengado ni deducido de la planilla del mes.
@@ -67,7 +72,9 @@
 ---
 
 <!-- ID: F25-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md -->
-### [x] [F25-TASK03] Detectar duplicados avanzados y validar integridad referencial antes de importar
+### [ ] [F25-TASK03] Detectar duplicados avanzados y validar integridad referencial antes de importar
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Hallazgo de origen:** F25-004, sección F y G.3.
 - **Severidad:** Crítica. **Objetivo:** evitar duplicados de personas y relaciones huérfanas en importaciones masivas.
 - **Acción ejecutable:** ampliar `importDataWithColumnMapping` con búsqueda previa de DNI, correo y claves naturales según entidad; clasificar coincidencias exactas/posibles; validar referencias a grado, sección, departamento y expediente; ofrecer política explícita rechazar/actualizar/vincular.
@@ -82,7 +89,9 @@
 ---
 
 <!-- ID: F26-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_26_CONFIGURACION_INSTITUCIONAL_PERSONALIZACION.md -->
-### [x] [F26-TASK01] Implementar motor central de precedencia y configuración jerárquica
+### [ ] [F26-TASK01] Implementar motor central de precedencia y configuración jerárquica
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Hallazgo de origen:** F26-002 y F26-010; secciones C.2/C.9, F.1 y G.1.
 - **Severidad:** Alta / P0. **Objetivo:** resolver configuraciones de manera determinista respetando la precedencia Global → Institucional → Departamental → Personal.
 - **Acción ejecutable:** definir un contrato único de configuración por clave, ámbito, institución, departamento y usuario; implementar resolución por capas, herencia, overrides permitidos y detección de conflictos; validar actor y ámbito en servidor; impedir que una configuración de menor alcance sobrescriba una de mayor alcance; proporcionar valores predeterminados seguros y explicar el origen efectivo de cada valor.
@@ -100,6 +109,7 @@
 
 <!-- ID: F29-TASK17 | Fuentes: AUDITORIAS/AUDITORIA_FASE_29_MIGRACION_Y_TRANSICION.md -->
 ### [ ] [F29-TASK17] Migrar roles y permisos con aislamiento y privacidad verificables
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F29-09/F29-21; secciones C.9/C.21 y H.
 - **Severidad:** Crítica / P0. **Objetivo:** trasladar cuentas y asignaciones de acceso sin conceder privilegios por defecto ni exponer datos entre instituciones/departamentos.
 - **Acción ejecutable:** mapear roles legados a roles canónicos; validar relaciones de usuario, institución, departamento, familia y asignación docente; migrar permisos mínimos; suspender cuentas ambiguas hasta revisión; auditar accesos y revocar privilegios obsoletos.
@@ -113,7 +123,9 @@
 ---
 
 <!-- ID: F34-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
-### [x] [F34-TASK02] Crear bandeja de salida departamental y acuses de entrega/lectura
+### [ ] [F34-TASK02] Crear bandeja de salida departamental y acuses de entrega/lectura
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Hallazgo de origen:** F34-02 y CAR-F34-02; PT-F34-05 no aprobado.
 - **Severidad:** Crítica / P0. **Objetivo:** rastrear documentos enviados por Secretaría/Dirección y distinguir solicitud de envío, entrega, apertura y recepción formal.
 - **Acción ejecutable:** crear `EntregasDocumentales` y `getDepartmentalOutbox` con documento, destinatario, emisor, departamento, canal, fecha, estado, acuse, hash y correlación; registrar entrega/apertura solo con evidencia verificable.
@@ -130,6 +142,7 @@
 
 <!-- ID: F39-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md -->
 ### [ ] [F39-TASK01] Crear inventario documental legado y clasificación por departamento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** 3.1 y CAR-F39-01; ausencia de inventario físico/digital previo a la migración.
 - **Severidad:** Crítica / P0. **Objetivo:** conocer qué documentos existen, dónde están, quién es responsable y cuál es su estado de digitalización.
 - **Acción ejecutable:** crear `InventarioDocumentalLegado` con institución/departamento, tipo documental, origen físico/digital, ubicación, propietario, rango temporal, volumen, sensibilidad, estado, responsable y lote; permitir inventario manual y carga asistida.
@@ -144,6 +157,7 @@
 
 <!-- ID: TASK-004 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-004] Crear un catálogo dinámico de roles internos organizativos y administrar sus asignaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha F.1) y Sección H (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Gobernanza institucional, responsabilidades organizativas y separación estricta de permisos vs funciones)
@@ -189,6 +203,12 @@
   - Crear o asignar una responsabilidad no concede permisos administrativos automáticamente en `ROLE_PERMISSIONS`.
   - Todas las operaciones quedan registradas con autor, fecha y justificación.
   - Las asignaciones existentes continúan funcionando tras la incorporación del catálogo.
+
+**Ampliación ciclo 2 — creación de puestos desde roles existentes:**
+1. La interfaz permitirá crear y administrar un puesto/responsabilidad institucional seleccionando un rol de acceso ya definido, sin crear roles RBAC nuevos ni modificar `ROLE_PERMISSIONS` automáticamente.
+2. El puesto se asociará con departamento/área, persona responsable, vigencia y suplencias cuando corresponda; conservará historial y no duplicará la identidad ni el expediente del empleado.
+3. La UI distinguirá rol de acceso, puesto, responsabilidad y servicio. Un puesto no concede privilegios adicionales por su nombre.
+4. El rol Desarrollador será técnico y separado de Administrador; no heredará permisos institucionales de Administración.
 - **Estado:** Pendiente
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 808-856; clave TASK-005; asignación única: Dirección -->
@@ -197,6 +217,7 @@
 
 <!-- ID: TASK-005 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-005] Implementar la asignación institucional de docentes a áreas académicas, independiente de la carga lectiva
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha F.2) y Sección H (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Estructura académica institucional, comités pedagógicos y desacoplamiento de asignaturas)
@@ -249,6 +270,7 @@
 
 <!-- ID: TASK-006 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-006] Implementar el flujo de desvinculación laboral con revocación coordinada de accesos y asignaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha F.3) y Sección H (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Seguridad de la información, prevención de accesos residuales e integridad en el cese laboral)
@@ -308,7 +330,9 @@
 
 
 <!-- ID: TASK-068 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
-### [X] [TASK-068] [P0] Sistema Centralizado de Correspondencia de Identificadores y Resolución de Identidades
+### [ ] [TASK-068] [P0] Sistema Centralizado de Correspondencia de Identificadores y Resolución de Identidades
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Orden de Ejecución:** 1
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -364,6 +388,7 @@
 <!-- ID: TASK-073 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 
 ### [ ] [TASK-073] [P0] Migración Segura de Usuarios, Roles y Flujo de Activación Masiva de Cuentas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 8
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -406,6 +431,7 @@
 
 <!-- ID: TASK-077 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-077] [P0] Protocolo Técnico de Corte Temporal y Transición Operativa (Cutover)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 21
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -442,6 +468,7 @@
 
 <!-- ID: TASK-080 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-080] [P0] Protocolo de Retiro Formal (Decommissioning) y Archivo Histórico de Sistemas Legados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 24
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -477,6 +504,7 @@
 
 <!-- ID: TASK-081 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-081] [P0] Protección de Datos Personales, Anonimización y Enmascaramiento en Pruebas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 25
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -506,6 +534,7 @@
 
 <!-- ID: TASK-084 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-084] [P0] Versionado Histórico de Políticas, Aranceles y Parámetros de Cálculo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 2
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -556,6 +585,7 @@
 
 <!-- ID: TASK-086 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-086] [P0] Orquestador de Transacciones Interdepartamentales y Compensación Automática
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 4
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -599,6 +629,7 @@
 
 <!-- ID: TASK-125 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-125] [P0] Catálogo de proyecciones de campos y compartición mínima de información entre departamentos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P0 (Bloqueante / Esencial)
 - **Orden de Ejecución:** 3 (Privacidad, principio de menor privilegio y máscaras de atributos)
 - **Componentes Afectados:**
@@ -635,6 +666,7 @@
 
 <!-- ID: TASK-146 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-146] [P0] Implementar bitácora forense de consultas, accesos y descargas (F40-05)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P0 (Prioridad crítica / Bloqueante)
 - **Orden de Ejecución:** 8 (Auditoría forense y trazabilidad de eventos)
 - **Componentes Afectados:**
@@ -671,6 +703,7 @@
 
 <!-- ID: TASK-147 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-147] [P0] Incorporar un rol independiente de auditoría de solo lectura (F40-03)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P0 (Prioridad crítica / Bloqueante)
 - **Orden de Ejecución:** 9 (Segregación de funciones y fiscalización institucional)
 - **Componentes Afectados:**
@@ -707,6 +740,7 @@
 
 <!-- ID: TASK-153 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-153] [P0] Aislamiento departamental estricto y autorización por ámbito institucional
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P0 (Prioridad crítica / Bloqueante)
 - **Orden de Ejecución:** 1 (Aislamiento perimetral y autorización basada en atributos - ABAC)
 - **Componentes Afectados:**
@@ -836,6 +870,7 @@
 
 <!-- ID: AUD-NG-164 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-164] Completar catálogo curricular maestro y relaciones de asignaturas/planes/ofertas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - Severidad: Alto (P1).
 - Alcance: consolidar áreas y departamentos; definir asignaturas con ID/código único, área, departamento, programa, grado, idioma, carga horaria, créditos, prerrequisitos y obligatoriedad; versionar planes y validar ofertas; conservar historia y propagar cambios a formularios/reportes.
 - Criterios: fuente única sincronizada cliente/backend; departamentos sin catálogos paralelos; referencias válidas; soporte de modelos hondureños/bilingües; desactivación sin pérdida histórica; pruebas de integridad y múltiples grados.
@@ -897,6 +932,7 @@
 
 <!-- ID: AUD-NG-226 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-226] [P1] Integridad referencial y atomicidad en departamentos, cargos y adscripciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-226; auditoría TAREA-F4-P1-07 (C1.82).
 - **Severidad/Clasificación:** Alto (P1) - Integridad estructural, persistencia y consistencia de asignaciones.
 - **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; dashboard-recursos-humanos.html; tests/regression/academic-grading-suite.js.
@@ -912,6 +948,7 @@
 
 <!-- ID: F8-TASK10 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md ; completadas.md -->
 ### [ ] [F8-TASK10] / TAREA-AD-04 — Dashboard de coordinador académico (C1.270)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Dictamen:** NO CUMPLE; se conserva [ ] histórica en completadas.md.
 - **Criterios:** CA-AD-109 NO CUMPLE; CA-AD-110 NO CUMPLE; CA-AD-111 NO CUMPLE (trazabilidad parcial).
 - **Hallazgos:** AUD-NG-316 overview global sin filtro de ámbito; AUD-NG-317 métricas placeholder y módulos/filtros incompletos; AUD-NG-318 modelo de coordinación basado en areaId sin dimensiones tipadas para nivel/departamento/carrera; AUD-NG-319 trazabilidad parcial y revisión no integrada al dashboard.
@@ -951,6 +988,7 @@
 
 <!-- ID: F10-TASK11 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [F10-TASK11] Completar la delegación de responsabilidades para asistentes administrativos y académicos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea F10-Task03 (P1) y Tarea 10.10
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Delegación de funciones, roles y auditoría de asistentes)
@@ -970,6 +1008,7 @@
 
 <!-- ID: F11-TASK10 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [F11-TASK10] Formalizar el flujo de entrega, observaciones y aprobación de planes docentes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Implementar el flujo de entrega, observaciones y aprobación de documentación docente
@@ -1000,6 +1039,7 @@
 
 <!-- ID: F11-TASK11 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [F11-TASK11] Incorporar rúbricas configurables para observación y evaluación docente
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Desarrollar el sistema de observaciones, rúbricas de supervisión y evaluaciones pedagógicas
@@ -1030,6 +1070,7 @@
 
 <!-- ID: F11-TASK12 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [F11-TASK12] Reconciliar y consolidar el registro de suplencias temporales docentes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Implementar el sistema de suplencias temporales y relevos docentes con alcance acotado
@@ -1060,6 +1101,7 @@
 
 <!-- ID: F16-TASK04 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
 ### [ ] [F16-TASK04] Implementar el checklist y proceso de incorporación de nuevos empleados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Alta (Cumplimiento de requisitos de contratación)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `dashboard-recursos-humanos.html`, hoja `ChecklistIncorporacion`.
 - **Descripción:** Administrar el proceso previo y posterior a la contratación: lista de verificación de requisitos (contrato firmado, título cotejado, antecedentes penales, carnet IHSS, examen médico, asignación de horario, inducción), impidiendo que el empleado pase a estado `Activo` pleno hasta completar los requisitos obligatorios configurados.
@@ -1077,6 +1119,7 @@
 
 <!-- ID: F16-TASK05 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
 ### [ ] [F16-TASK05] Proyectar saldos de vacaciones futuras y gestionar ausencias fraccionadas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Alta (Experiencia de usuario y cumplimiento del Código de Trabajo)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `dashboard-recursos-humanos.html`.
 - **Descripción:** Permitir solicitar vacaciones para fechas futuras proyectando los días que se devengarán a la fecha de disfrute (cuando la política institucional lo autorice), permitiendo además la solicitud de permisos por fracciones de jornada (medio día / horas) e impidiendo el solapamiento de solicitudes.
@@ -1095,6 +1138,7 @@
 
 <!-- ID: F16-TASK06 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
 ### [ ] [F16-TASK06] Impedir jerarquías circulares y validar la estructura de departamentos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Alta (Integridad de la estructura organizativa)
 - **Componentes Afectados:** `backend/user-service/Code.gs` (`manageDepartmentPositions`).
 - **Descripción:** Incorporar un algoritmo de detección de ciclos en las dependencias jerárquicas de departamentos y cargos, impidiendo que una unidad sea asignada como subordinada de sí misma o de sus unidades dependientes.
@@ -1114,6 +1158,7 @@
 
 <!-- ID: F17-TASK06 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK06] Vincular y amortizar automáticamente préstamos y anticipos en el ciclo mensual de planilla
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Alta (Recuperación de cuentas por cobrar a empleados)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `AnticiposPrestamosEmpleado`.
 - **Solución Propuesta:** Deducir automáticamente la cuota mensual pactada en `otrasDeducciones` y, al cerrar la planilla, descontar la cuota del `SaldoPendiente` en `AnticiposPrestamosEmpleado`.
@@ -1131,6 +1176,7 @@
 
 <!-- ID: F17-TASK08 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK08] Generar y enviar masivamente boletas de pago firmadas por correo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Alta (Entrega de comprobantes a colaboradores)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs`.
 - **Solución Propuesta:** Permitir a RRHH enviar en lote las boletas de pago por correo electrónico a todos los empleados de la planilla cerrada con registro de recepción.
@@ -1149,6 +1195,7 @@
 
 <!-- ID: F19-TASK07 | Fuentes: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md -->
 ### [ ] [F19-TASK07] Contabilizar automáticamente el consumo de materiales por departamento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones C.2.17, D, E/F19-17 y H P1; ampliación relacionada con AUD-NG-142.
 - **Severidad:** Alta. **Objetivo:** reflejar el gasto de materiales en el centro de costo que recibe el suministro.
 - **Acción ejecutable:** al entregar una requisición aprobada, registrar salida del almacén físico correcto y generar asiento de gasto por departamento/centro de costo con referencia a la requisición y movimiento de Kardex.
@@ -1164,6 +1211,7 @@
 
 <!-- ID: F21-TASK10 | Fuentes: AUDITORIAS/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md -->
 ### [ ] [F21-TASK10] Registrar y escalar incidencias y emergencias de transporte
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones A.1.8, C.1.12, D/F21-16..F21-18 y H P1.
 - **Severidad:** Alta. **Objetivo:** documentar averías, accidentes y emergencias y notificar a los responsables.
 - **Acción ejecutable:** crear flujo de incidencias con viaje, vehículo, estudiantes afectados, categoría, gravedad, ubicación, evidencia, responsable y estados; escalar a Dirección y familias según severidad.
@@ -1178,6 +1226,7 @@
 
 <!-- ID: F22-TASK05 | Fuentes: AUDITORIAS/AUDITORIA_FASE_22_GESTION_DOCUMENTAL_FORMULARIOS_FIRMA_ELECTRONICA.md -->
 ### [ ] [F22-TASK05] Crear explorador documental institucional unificado
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones C.1, D/F22-01..F22-03, E y H P1.
 - **Severidad:** Alta. **Objetivo:** consultar documentos de estudiantes y empleados desde una vista centralizada.
 - **Acción ejecutable:** crear explorador con búsqueda/filtros por titular, expediente, categoría, departamento, fecha, tipo y estado; recuperar metadatos de documentos emitidos, laborales y trámites desde sus fuentes sin duplicar archivos.
@@ -1192,6 +1241,7 @@
 
 <!-- ID: F22-TASK08 | Fuentes: AUDITORIAS/AUDITORIA_FASE_22_GESTION_DOCUMENTAL_FORMULARIOS_FIRMA_ELECTRONICA.md -->
 ### [ ] [F22-TASK08] Generar documentos oficiales por lotes con CUV y correlativos independientes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones D/F22-37 y H P1.
 - **Severidad:** Alta. **Objetivo:** emitir constancias/diplomas masivamente sin colisiones ni mezcla de expedientes.
 - **Acción ejecutable:** permitir selección autorizada por grado/sección/grupo; generar cada documento con datos del titular, plantilla/version, correlativo anual y CUV único; aislar errores por registro y ofrecer reporte de lote.
@@ -1206,6 +1256,7 @@
 
 <!-- ID: F23-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_23_MOTOR_INSTITUCIONAL_FLUJOS_TRABAJO.md -->
 ### [ ] [F23-TASK03] Crear bandeja unificada de trabajo con asignación por rol/departamento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F23-004 y F23-022; H (getUnifiedWorkInbox); AUD-NG-205.
 - **Severidad:** Alta. **Objetivo:** reunir trámites, autorizaciones, compras y justificaciones asignadas en una vista segura.
 - **Acción ejecutable:** implementar `getUnifiedWorkInbox` con esquema canónico de origen, responsable, rol/departamento, estado, vencimiento, SLA y enlaces; conectar frontend; incluir asignación round-robin/carga cuando la política lo permita.
@@ -1221,6 +1272,7 @@
 
 <!-- ID: F23-TASK04 | Fuentes: AUDITORIAS/AUDITORIA_FASE_23_MOTOR_INSTITUCIONAL_FLUJOS_TRABAJO.md -->
 ### [ ] [F23-TASK04] Implementar motor de reglas condicionales y compuertas AND/OR
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F23-005 y F23-021; sección C y H.
 - **Severidad:** Alta. **Objetivo:** enrutar trámites según reglas institucionales sin permitir que el cliente elija la siguiente etapa.
 - **Acción ejecutable:** definir lenguaje de expresiones seguro; evaluar monto, categoría, urgencia y departamento; soportar compuertas AND/OR y fork/join; versionar reglas junto al flujo.
@@ -1235,6 +1287,7 @@
 
 <!-- ID: F24-TASK06 | Fuentes: AUDITORIAS/AUDITORIA_FASE_24_INFORMES_INDICADORES_ANALISIS_INSTITUCIONAL.md -->
 ### [ ] [F24-TASK06] Validar filtros temporales, fiscales y estructura institucional en todos los informes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F24-003/F24-004, E y G; relación con TASK-052.
 - **Severidad:** Alta. **Objetivo:** asegurar que períodos y dimensiones institucionales aplican de forma consistente en backend y UI.
 - **Acción ejecutable:** validar rangos invertidos, límites y cruce de ejercicios fiscales; implementar cascada grado-sección y filtros de departamento/área; unificar contrato de filtros entre catálogo, generador, exportador y DataMart.
@@ -1250,6 +1303,7 @@
 
 <!-- ID: F24-TASK07 | Fuentes: AUDITORIAS/AUDITORIA_FASE_24_INFORMES_INDICADORES_ANALISIS_INSTITUCIONAL.md -->
 ### [ ] [F24-TASK07] Unificar dashboards por rol e informes personalizados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F24-007/F24-009/F24-020/F24-A06/F24-A07 y J.
 - **Severidad:** Alta. **Objetivo:** presentar indicadores relevantes por responsabilidad institucional y permitir configuraciones personales autorizadas.
 - **Acción ejecutable:** consolidar dashboards globales para Dirección, Coordinación, Contabilidad, Secretaría y Docentes; agregar constructor de informes personalizados con selección de columnas/agrupaciones; validar cada métrica y columna contra catálogo y permisos.
@@ -1264,6 +1318,7 @@
 
 <!-- ID: F26-TASK06 | Fuentes: AUDITORIAS/AUDITORIA_FASE_26_CONFIGURACION_INSTITUCIONAL_PERSONALIZACION.md -->
 ### [ ] [F26-TASK06] Persistir y recuperar vistas personalizadas de informes por usuario y ámbito
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F26-008; sección C.7 e I (próximo paso: vistas guardadas).
 - **Severidad:** Media / P1. **Objetivo:** permitir guardar configuraciones de informes y dashboards para reutilizarlas con permisos y filtros consistentes.
 - **Acción ejecutable:** ampliar `F24-Task07` (dashboards e informes personalizados) con persistencia de vistas: propietario, institución/departamento, informe, columnas, agrupaciones, filtros, orden, versión y fecha; permitir guardar, duplicar, editar, activar y eliminar; validar permisos al guardar y al recuperar.
@@ -1278,6 +1333,7 @@
 
 <!-- ID: F30-TASK10 | Fuentes: AUDITORIAS/AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md -->
 ### [ ] [F30-TASK10] Clasificar tickets automáticamente y calcular SLA de soporte
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F30-13; tickets sin severidad automática ni tiempos límite.
 - **Severidad:** Alta / P1. **Objetivo:** priorizar incidencias y hacer visible el tiempo de respuesta comprometido.
 - **Acción ejecutable:** ampliar `TASK-279` y `TASK-318` con clasificación P0-P3 basada en reglas explicables, categoría, impacto, urgencia, SLA por severidad/horario, pausas justificadas, escalamiento y notificación de vencimiento.
@@ -1292,6 +1348,7 @@
 
 <!-- ID: F31-TASK08 | Fuentes: AUDITORIAS/AUDITORIA_FASE_31_DISENADOR_UNIVERSAL_DOCUMENTOS_PLANTILLAS.md -->
 ### [ ] [F31-TASK08] Gestionar estilos corporativos globales y encabezados diferenciados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F31-03; plan G.8.
 - **Severidad:** Alta / P1. **Objetivo:** mantener identidad visual consistente con encabezados/pies por página y estilos reutilizables.
 - **Acción ejecutable:** ampliar `configFormatoJSON` con bibliotecas versionadas de estilos, logotipo, tipografía, márgenes, encabezado primera página y páginas pares/impares; permitir herencia por institución/departamento y previsualización.
@@ -1306,6 +1363,7 @@
 
 <!-- ID: F33-TASK04 | Fuentes: AUDITORIAS/AUDITORIA_FASE_33_FORMULARIOS_INSTITUCIONALES_TRAMITES_DIGITALES.md -->
 ### [ ] [F33-TASK04] Crear consola unificada de trámites y bandejas operativas por SLA
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** Fase 33-16 y riesgo G.3.
 - **Severidad:** Alta / P1. **Objetivo:** permitir a Secretaría y Dirección supervisar trámites por estado, prioridad, departamento, responsable y vencimiento.
 - **Acción ejecutable:** implementar bandeja central con filtros, búsqueda, paginación, semáforos de SLA, asignación, historial y acciones permitidas por rol; obtener contadores desde backend y no desde arreglos locales.
@@ -1320,6 +1378,7 @@
 
 <!-- ID: F33-TASK05 | Fuentes: AUDITORIAS/AUDITORIA_FASE_33_FORMULARIOS_INSTITUCIONALES_TRAMITES_DIGITALES.md -->
 ### [ ] [F33-TASK05] Implementar distribución dinámica y delegación temporal de responsables
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** Fase 33-08 y plan H.5.
 - **Severidad:** Alta / P1. **Objetivo:** asignar automáticamente trámites al responsable correcto según departamento/grado y cubrir ausencias sin transferir privilegios permanentes.
 - **Acción ejecutable:** definir reglas de enrutamiento por tipo de trámite, institución, departamento y grado; permitir delegación temporal con inicio/fin, acciones permitidas, sustituto, revocación y registro de ambos actores.
@@ -1334,6 +1393,7 @@
 
 <!-- ID: F34-TASK05 | Fuentes: AUDITORIAS/AUDITORIA_FASE_34_BANDEJAS_REVISION_FIRMAS.md -->
 ### [ ] [F34-TASK05] Registrar historial de asignaciones, reasignaciones y traspasos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F34-04 y CAR-F34-07.
 - **Severidad:** Alta / P1. **Objetivo:** conocer quién asignó o reasignó cada expediente, a quién, cuándo y por qué motivo.
 - **Acción ejecutable:** crear bitácora append-only de asignaciones con solicitud, actor, responsable anterior/nuevo, departamento, motivo, timestamp, estado y origen de la regla; validar que el responsable esté activo y pertenezca al ámbito; permitir revisión colegiada cuando corresponda.
@@ -1348,6 +1408,7 @@
 
 <!-- ID: F37-TASK05 | Fuentes: AUDITORIAS/AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md -->
 ### [ ] [F37-TASK05] Diagnosticar registros huérfanos y desalineados entre departamentos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F37-12; PT-F37-31; CAR-F37-12.
 - **Severidad:** Alta / P1 según el plan I. **Objetivo:** identificar registros almacenados en un destino distinto del propietario esperado y relaciones huérfanas.
 - **Acción ejecutable:** implementar escaneo de integridad que compare entidad, ámbito, catálogo de destino y relaciones; generar informe con ubicación real/esperada, origen de escritura, impacto y prioridad; permitir exportar hallazgos.
@@ -1362,6 +1423,7 @@
 
 <!-- ID: F37-TASK10 | Fuentes: AUDITORIAS/AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md -->
 ### [ ] [F37-TASK10] Automatizar pruebas de aislamiento y enrutamiento interdepartamental
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** PT-F37-01..PT-F37-32; fallos de destino, proyección, referencias, idempotencia y diagnóstico.
 - **Severidad:** Alta / P1. **Objetivo:** prevenir regresiones en límites entre departamentos y servicios.
 - **Acción ejecutable:** ampliar AUD-NG-161 con fixtures multiinstitución/departamento, roles, esquemas, destinos, referencias y concurrencia; verificar que los endpoints devuelvan solo campos permitidos y que escrituras fuera de ámbito se rechacen.
@@ -1376,6 +1438,7 @@
 
 <!-- ID: F39-TASK07 | Fuentes: AUDITORIAS/AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md -->
 ### [ ] [F39-TASK07] Crear tablero directivo de avance de digitalización por departamento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** 3.11 y CAR-F39-11; P21 no aprobado.
 - **Severidad:** Alta / P1. **Objetivo:** supervisar volumen inventariado, migrado, pendiente, duplicado y con errores por área.
 - **Acción ejecutable:** construir dashboard con métricas derivadas de `InventarioDocumentalLegado`, lotes y manifiestos; segmentar por departamento, tipo, periodo y estado; mostrar frescura, responsable y tendencia.
@@ -1390,6 +1453,7 @@
 
 <!-- ID: F39-TASK19 | Fuentes: AUDITORIAS/AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md -->
 ### [ ] [F39-TASK19] Implementar búsqueda documental por metadatos y contenido
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** CAR-F39-14; búsqueda cruzada insuficiente por expediente, fecha y tipo.
 - **Severidad:** Media / P1. **Objetivo:** localizar documentos digitales e históricos por atributos y contenido extraído autorizado.
 - **Acción ejecutable:** indexar tipo, fecha, departamento, expediente, CUV, hash, origen y estado; incorporar texto extraído de DOCX/PDF/OCR cuando exista; aplicar permisos/ámbitos a cada resultado y permitir filtros cruzados.
@@ -1404,6 +1468,7 @@
 
 <!-- ID: TASK-169 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-169] Implementar el checklist configurable de incorporación de empleados (Onboarding)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha F.4) y Sección H (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Calidad en la contratación, control de requisitos legales y onboarding estructurado)
@@ -1448,6 +1513,7 @@
 
 <!-- ID: TASK-170 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-170] Incorporar proyección de vacaciones futuras y mejorar la gestión de permisos por horas y fracciones de jornada
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección C (C.3), Sección F y Sección H (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Experiencia de usuario, planificación del descanso y cumplimiento del Código del Trabajo)
@@ -1494,6 +1560,7 @@
 
 <!-- ID: TASK-171 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-171] Implementar validación de jerarquías organizativas y prevención de ciclos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha en F16-02) y Sección H (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Integridad de la estructura organizativa y prevención de recurrencia infinita)
@@ -1538,6 +1605,7 @@
 
 <!-- ID: TASK-172 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-172] Integrar alertas de vencimiento documental y contractual en el panel de Recursos Humanos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección B (F16-08, F16-18) y Sección H (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Continuidad contractual, cumplimiento legal y experiencia del administrador)
@@ -1575,6 +1643,7 @@
 
 <!-- ID: TASK-173 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-173] Validar colisiones entre horarios laborales, asignaciones docentes y sustituciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha en F16-09) y Sección H (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Coherencia en la planificación, disponibilidad docente y prevención de solapamientos)
@@ -1611,6 +1680,7 @@
 
 <!-- ID: TASK-176 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-176] Incorporar una interfaz completa de administración de políticas fiscales, laborales y parámetros de cálculo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.7), Sección G y Sección H (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Parametrización contable, gobernanza tributaria y actualización normativa)
@@ -1647,6 +1717,7 @@
 
 <!-- ID: TASK-275 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-275] [P1] Panel de Control y Seguimiento Integral de Migraciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 27
 - **Prioridad:** P1 (Alta)
 - **Componentes Afectados:**
@@ -1677,6 +1748,7 @@
 
 <!-- ID: TASK-276 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-276] [P1] Gestión Formal de Aprobaciones, Excepciones y Actas de Aceptación Institucional
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 28
 - **Prioridad:** P1 (Alta)
 - **Componentes Afectados:**
@@ -1710,6 +1782,7 @@
 
 <!-- ID: TASK-279 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-23.md ; Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-279] [P1] Clasificación Automática de Incidencias y Gestión Paramétrica de SLA
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Tipo:** tarea existente ya cubierta.
 - **Hallazgo:** TASK-279 cubre clasificación/SLA, no autenticación ni autorización.
 - **Objetivo/acción:** verificar reglas por tipo/prioridad y tiempos, sin usar esta tarea como sustituto de seguridad.
@@ -1756,6 +1829,7 @@
 
 <!-- ID: TASK-282 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-282] [P1] Delegación Temporal de Responsabilidades y Sustituciones Administrativas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 12
 - **Prioridad:** P1 (Alta)
 - **Componentes Afectados:**
@@ -1788,6 +1862,7 @@
 
 <!-- ID: TASK-285 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-285] [P1] Actualización Controlada de Dashboards Ejecutivos e Indicadores Institucionales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 15
 - **Prioridad:** P1 (Alta)
 - **Componentes Afectados:**
@@ -1820,6 +1895,7 @@
 
 <!-- ID: TASK-286 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-286] [P1] Reconciliación Automatizada de Operaciones y Resultados entre Módulos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 16
 - **Prioridad:** P1 (Alta)
 - **Componentes Afectados:**
@@ -1857,6 +1933,7 @@
 
 <!-- ID: TASK-295 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-295] [F31-T14] [P1] Administración Granular de Permisos y Flujos de Aprobación Documental
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 14
 - **Prioridad:** P1 (Alta)
 - **Componentes Afectados:**
@@ -1894,6 +1971,7 @@
 
 <!-- ID: TASK-311 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-311] [P1] Motor de Distribución Dinámica, Asignación Automática y Delegación Temporal
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 6
 - **Prioridad:** P1 (Alta)
 - **Componentes Afectados:**
@@ -1927,6 +2005,7 @@
 
 <!-- ID: TASK-314 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-314] [P1] Historial de asignaciones, reasignaciones y revisión individual o colegiada
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta)
 - **Orden de Ejecución:** 5 (Coordinación administrativa multidepartamental)
 - **Componentes Afectados:**
@@ -1978,6 +2057,7 @@
 
 <!-- ID: TASK-317 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-317] [P1] Delimitación del alcance de las firmas institucionales y requisitos para mecanismos de firma legal
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta)
 - **Orden de Ejecución:** 8 (Seguridad jurídica y cumplimiento del Decreto 149-2013)
 - **Componentes Afectados:**
@@ -2020,6 +2100,7 @@
 
 <!-- ID: TASK-325 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-325] [F35-ID-Task07] [P1] Consola administrativa de gestión de series, versionado y control de permisos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 7 (Gobernanza administrativa y control de acceso)
 - **Componentes Afectados:**
@@ -2056,6 +2137,7 @@
 
 <!-- ID: TASK-326 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-326] [P1] Diagnóstico de coherencia departamental y detección de registros desalineados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 6 (Supervisión proactiva e integridad interdepartamental)
 - **Componentes Afectados:**
@@ -2094,6 +2176,7 @@
 
 <!-- ID: TASK-327 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-327] [P1] Consola administrativa de destinos, fuentes y relaciones interdepartamentales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 7 (Gobernanza y administración de fuentes en panel de control)
 - **Componentes Afectados:**
@@ -2130,6 +2213,7 @@
 
 <!-- ID: TASK-328 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-328] [P1] Reasignación asistida y recuperación de registros almacenados en destinos incorrectos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 8 (Saneamiento asistido y reconciliación de datos mal ubicados)
 - **Componentes Afectados:**
@@ -2165,6 +2249,7 @@
 
 <!-- ID: TASK-341 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-341] [P1] Implementación del tablero directivo de avance de digitalización por departamento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 14 (Supervisión institucional y gobernanza del proceso de transición)
 - **Componentes Afectados:**
@@ -2196,6 +2281,7 @@
 
 <!-- ID: TASK-342 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-342] [P1] Implementación de seguimiento operativo y gestión de tareas de digitalización
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 15 (Asignación y workflow de trabajo operativo de digitalización)
 - **Componentes Afectados:**
@@ -2226,6 +2312,7 @@
 
 <!-- ID: TASK-347 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-347] [P1] Incorporar detección de actividad documental anómala y alertas de seguridad (F40-15)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 17 (Monitoreo de seguridad y detección de exfiltración)
 - **Componentes Afectados:**
@@ -2259,6 +2346,7 @@
 
 <!-- ID: TASK-349 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-349] [P1] Crear un panel de integridad, seguridad y salud documental (F40-17)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 19 (Tablero directivo de monitoreo de seguridad documental)
 - **Componentes Afectados:**
@@ -2291,6 +2379,7 @@
 
 <!-- ID: TASK-350 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-350] [P1] Generar reportes de auditoría exportables, verificables y protegidos (F40-18)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 20 (Evidencias de fiscalización externa e interna)
 - **Componentes Afectados:**
@@ -2327,6 +2416,7 @@
 
 <!-- ID: TASK-404 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_FASE2-T07.md ; Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-404] [P2] [Alertas y Monitoreo - Ampliación de Alertas Tempranas a Indicadores Financieros y Operativos]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** FASE2-T07, sección de alertas financieras.
 - **Severidad:** Alto.
 - **Objetivo:** convertir el cálculo de mora en una alerta operativa verificable.
@@ -2392,6 +2482,7 @@
 
 <!-- ID: TASK-488 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK07.md ; AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-12.md ; Pendientes.md -->
 ### [ ] [TASK-488] Completar los indicadores y accesos operativos de Dirección, Coordinación y dashboards dinámicos por rol
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen:** AUD-NG-191, confirmado en F8-Task07.
 - **Componentes:** `app/html/dashboards/dynamic-dashboard.html`, `js/ui-common.js`, `backend/user-service/Code.gs`, contratos de rutas y pruebas.
 - **Acciones:** eliminar el mapa rígido y el fallback docente; resolver todas las responsabilidades activas y ámbitos vigentes del usuario autenticado; filtrar módulos mediante capacidades/permisos efectivos; convertir cada tarjeta en enlace/acción real con ruta validada; no mostrar módulos si la consulta de permisos falla.
@@ -2434,7 +2525,8 @@
 ---
 
 <!-- ID: TASK-489 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-12.md ; Pendientes.md -->
-### [x] [TASK-489] Corregir el contrato de datos entre el panel de Recursos Humanos y las solicitudes de vacaciones
+### [ ] [TASK-489] Corregir el contrato de datos entre el panel de Recursos Humanos y las solicitudes de vacaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-192; T-UX-12.
 - **Severidad:** Alto.
 - **Objetivo:** alinear el panel de RR. HH. con la respuesta real del backend.
@@ -2445,7 +2537,8 @@
 - **Alcance:** consulta y renderizado de solicitudes laborales/vacaciones.
 - **Criterios de aceptación:** esquema documentado coincide en ambos lados; lista/contador muestran los mismos registros; estados se traducen explícitamente; pruebas de éxito, vacío y error.
 - **Prioridad:** P1.
-- **Estado:** Completada en código/CI; BETA-FUNC-098 pendiente..
+- **Estado histórico anterior:** Completada en código/CI; BETA-FUNC-098 pendiente..
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 - **Evidencia de cierre:** pruebas de contrato y renderizado.
 - **Origen del Hallazgo:** AUD-NG-192 en Auditoria.txt (T-UX-12; integridad de indicadores y listas de RR. HH.).
 - **Severidad/Clasificación:** Alto / P1.
@@ -2471,7 +2564,8 @@
 <!-- ID: TASK-490 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-12.md ; Pendientes.md -->
 - **Evidencia C1.742:** backend DTO data[] y alias solicitudes; empleadoNombre por PersonaID; estados normalizados; UI con carga/vacío/error/incompleto; privacidad autoservicio; pruebas Node de dashboard y ownership; CI 43675596189/43675596202/43675596211 SUCCESS.
 
-### [x] [TASK-490] Aislar en servidor los expedientes y solicitudes laborales de cada empleado
+### [ ] [TASK-490] Aislar en servidor los expedientes y solicitudes laborales de cada empleado
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-193; T-UX-12.
 - **Severidad:** Alto.
 - **Objetivo:** impedir que un empleado autenticado consulte datos laborales de otros empleados.
@@ -2481,7 +2575,8 @@
 - **Alcance:** lectura de datos laborales y expedientes.
 - **Criterios de aceptación:** empleado no puede leer otro UserId manipulando payload; roles administrativos autorizados mantienen su alcance; accesos denegados se registran; pruebas IDOR por rol.
 - **Prioridad:** P1.
-- **Estado:** Completada en código/CI; beta pendiente.
+- **Estado histórico anterior:** Completada en código/CI; beta pendiente.
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 - **Evidencia de cierre:** pruebas de aislamiento y autorización servidor.
 - **Origen del Hallazgo:** AUD-NG-193 en Auditoria.txt (T-UX-12; permisos efectivos y confidencialidad del panel de RR. HH.).
 - **Severidad/Clasificación:** Alto / P1 (exposición de información laboral entre usuarios autenticados).
@@ -2502,7 +2597,8 @@
   - Pruebas de regresión cubren empleado A consultando empleado B, filtros ausentes, IDs manipulados, usuario sin expediente, rol RR. HH. autorizado y rol no autorizado.
   - Las pruebas no utilizan ni exponen datos personales productivos.
 - **Relaciones y límites:** T-UX-12 exige que los servicios respeten los permisos efectivos. TASK-489 corrige el contrato de presentación de solicitudes; TASK-490 corrige la autorización y el aislamiento de datos. No ampliar permisos de RR. HH. ni duplicar las tareas generales de RBAC ya registradas.
-- **Estado:** Completada en código/CI; beta pendiente.
+- **Estado histórico anterior:** Completada en código/CI; beta pendiente.
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 
 - **Cierre técnico C1.740 (2026-11-15):** identidad SELF derivada del token verificado en getEmployeeRecords/getVacationRequests; IDs ajenos rechazados con RESOURCE_NOT_FOUND; intentos auditados sin registrar el ID objetivo; observaciones internas ocultas en autoservicio; HR departamental/institucional y roles administrativos probados. Contrato de ownership y acceso departamental PASS; Department Scope 43674129348, Identity Mapping 43674075666 y Department Reference Consumers 43674075654 SUCCESS. BETA-FUNC-096 pendiente de despliegue/runtime.
 
@@ -2510,6 +2606,7 @@
 
 <!-- ID: TASK-506 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F4-P1-07.md ; Pendientes.md -->
 ### [ ] [TASK-506] Garantizar integridad referencial y atomicidad en departamentos, cargos y adscripciones institucionales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-226, sección 3 de este informe. CREATE_DEPT/CREATE_CARGO aceptan identificadores y referencias sin validación suficiente; ASSIGN_USER no valida el estado ni las referencias completas y cierra la adscripción anterior antes de garantizar la nueva; la operación no es atómica bajo fallos o concurrencia; las consultas carecen de paginación y filtro de ámbito; la interfaz no utiliza los catálogos.
 - **Severidad:** Alto.
 - **Objetivo:** mantener catálogos institucionales consistentes y adscripciones laborales válidas, evitando filas huérfanas, duplicados, pérdida parcial de la adscripción vigente y divergencias entre los modelos administrativo y académico.
@@ -2555,6 +2652,7 @@
 - **Avance C1.906:** USER aplica autorización contextual y operaciones CRUD/fin de adscripción con bloqueo, idempotencia, paginación y protección de dependencias. ACADEMIC valida assignDepartmentHead y mantiene DepartamentosAcademicos separado de CatalogoDepartamentos mediante VinculosDepartamentosInstitucionales many-to-many, activo y reversible. UI HR ya utiliza selectores, alta/baja de catálogos, asignación de jefatura y adscripción, y paginación de historial. Node 24: contratos de jerarquía, USER, ACADEMIC y UI PASS; suite global falla solo por Phase22/configureSchoolDocumentTemplate preexistente. Pendientes: edición visual de catálogos/crosswalk, dispatcher/roles reales, estrés concurrente y migración. TASK-506 sigue En ejecución.
 <!-- ID: TASK-668 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK09.md -->
 ### [ ] [TASK-668] Resolver jerarquías y vigencia temporal de ámbitos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-314.
 - **Severidad/Prioridad:** ALTO/P1.
 - **Objetivo:** validar que cada valor asignado exista, esté activo y sea coherente con sus entidades padre y con el período de vigencia.
@@ -2567,6 +2665,7 @@
 
 <!-- ID: TASK-670 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK10.md -->
 ### [ ] [TASK-670] Completar el dashboard de coordinación académica como referencia funcional
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgos de origen:** AUD-NG-316, AUD-NG-317 y AUD-NG-319.
 - **Severidad:** Alto.
 - **Objetivo:** entregar un dashboard operativo con datos reales, filtros funcionales, módulos de supervisión y flujos de revisión conectados a servicios existentes.
@@ -2583,6 +2682,7 @@
 
 <!-- ID: F10-TASK16 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [F10-TASK16] Ampliar los informes de asistencia, convivencia y seguimiento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea 10.12 (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Informes, reportes y estadísticas)
@@ -2601,6 +2701,7 @@
 
 <!-- ID: F10-TASK17 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [F10-TASK17] Optimizar el registro de asistencia laboral del personal
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea 10.13 (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Asistencia de personal laboral)
@@ -2617,6 +2718,7 @@
 
 <!-- ID: F16-TASK07 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
 ### [ ] [F16-TASK07] Desarrollar el organigrama interactivo y directorio jerárquico
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Media (Visualización institucional)
 - **Componentes Afectados:** `dashboard-recursos-humanos.html`, `js/accounting.js`.
 - **Descripción:** Renderizar un organigrama dinámico basado en SVG o nodos HTML que ilustre la jerarquía de departamentos, coordinaciones, jefaturas y colaboradores asignados con filtros por área y departamento.
@@ -2635,6 +2737,7 @@
 
 <!-- ID: F16-TASK08 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
 ### [ ] [F16-TASK08] Exportar expedientes laborales y boletas de liquidación con filtros avanzados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Media (Gestión documental)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `js/accounting.js`.
 - **Descripción:** Permitir descargar el expediente laboral completo en PDF membretado y exportar nóminas consolidadas a Excel con desglose de retenciones IHSS, RAP e ISR.
@@ -2653,6 +2756,7 @@
 
 <!-- ID: F16-TASK10 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
 ### [ ] [F16-TASK10] Automatizar la conversión de candidatos seleccionados a empleados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** tabla E/F16-05: reclutamiento completo, pero conversión de candidato a empleado manual; omitida de H/J.
 - **Severidad:** Media (P2 en tabla E). **Objetivo:** enlazar selección aprobada con creación del expediente laboral.
 - **Acción ejecutable:** crear transición candidato-seleccionado a empleado que valide aprobación, evite duplicados, transfiera datos autorizados y conserve vínculo al proceso de reclutamiento.
@@ -2667,6 +2771,7 @@
 
 <!-- ID: F29-TASK10 | Fuentes: AUDITORIAS/AUDITORIA_FASE_29_MIGRACION_Y_TRANSICION.md -->
 ### [ ] [F29-TASK10] Habilitar pilotos controlados por departamento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F29-14; secciones C.14, I y J.
 - **Severidad:** Media / P2. **Objetivo:** validar procesos y datos en departamentos seleccionados antes de ampliar el Go-Live.
 - **Acción ejecutable:** definir feature flags por institución/departamento, cohortes piloto, métricas, criterios de salida y procedimiento de reversión; habilitar operación paralela sin permitir doble escritura no conciliada.
@@ -2681,6 +2786,7 @@
 
 <!-- ID: F32-TASK11 | Fuentes: AUDITORIAS/AUDITORIA_FASE_32_EDITOR_VISUAL_PDF_CAMPOS_SUPERPUESTOS.md -->
 ### [ ] [F32-TASK11] Crear suite de fidelidad PDF y detección de desplazamientos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** CAR-13/CAR-15 y plan H.11.
 - **Severidad:** Media / P2. **Objetivo:** detectar desplazamientos geométricos entre preview, archivo emitido e impresión en diferentes visores.
 - **Acción ejecutable:** crear fixtures PDF con coordenadas conocidas, textos de longitud variable y rotaciones; comparar posiciones/rasterizados del resultado en navegadores/visores; verificar CUV/hash y regresiones de exportación.
@@ -2695,6 +2801,7 @@
 
 <!-- ID: TASK-365 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-365] Desarrollar un organigrama institucional interactivo y directorio de personal
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección F (Brecha F.5) y Sección H (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Supervisión directiva, claridad organizativa y experiencia de usuario)
@@ -2736,6 +2843,7 @@
 
 <!-- ID: TASK-366 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-366] Implementar exportación avanzada de expedientes laborales, reportes y documentos de liquidación
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección B (F16-19) y Sección H (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Gestión documental, archivo institucional y exportación para auditorías)
@@ -2773,6 +2881,7 @@
 
 <!-- ID: TASK-367 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-367] Automatizar la conversión de candidatos seleccionados en expedientes de empleados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_16_RECURSOS_HUMANOS.md` / Sección B (F16-05) y Sección H (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Eficiencia administrativa en reclutamiento y continuidad del ciclo laboral)
@@ -2810,6 +2919,7 @@
 
 <!-- ID: TASK-391 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-391] Indicadores de eficiencia operativa y análisis de demanda de transporte
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (3.12) y Plan de Implementación TAREA 29
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Analítica gerencial, toma de decisiones de rutas y costos por alumno)
@@ -2841,6 +2951,7 @@
 
 <!-- ID: TASK-430 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-24.md ; Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-430] [F28-T10] [P2] Profesionalización de la Identidad Visual y Unificación del Sistema de Diseño Institucional
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Tipo:** tarea existente ampliada; no crear tarea paralela.
 - **Hallazgo/severidad:** AUD-NG-215, MEDIO/P2; variantes compartidas no se adoptan transversalmente y renderizadores difieren en estados equivalentes.
 - **Objetivo:** establecer sistema de diseño consistente entre departamentos.
@@ -2896,6 +3007,7 @@
 
 <!-- ID: TASK-433 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-433] [P2] Gestión de Pruebas Piloto por Departamento y Grupo de Usuarios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 20
 - **Prioridad:** P2 (Media)
 - **Componentes Afectados:**
@@ -2925,6 +3037,7 @@
 
 <!-- ID: TASK-437 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-437] [P2] Módulo de Inducción, Capacitación y Certificación de Competencias del Personal
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 19
 - **Prioridad:** P2 (Media)
 - **Componentes Afectados:**
@@ -2958,6 +3071,7 @@
 
 <!-- ID: TASK-438 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-438] [P2] Protocolo Formal de Autorización de Go-Live y Certificación Departamental
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 20
 - **Prioridad:** P2 (Media)
 - **Componentes Afectados:**
@@ -2994,6 +3108,7 @@
 
 <!-- ID: TASK-445 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-445] [F31-T22] [P2] Auditoría Documental Ampliada, Trazabilidad y Métricas Operativas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 24
 - **Prioridad:** P2 (Media)
 - **Componentes Afectados:**
@@ -3023,6 +3138,7 @@
 
 <!-- ID: TASK-456 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-456] [P2] Implementación de políticas institucionales de conservación y disposición documental
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P2 (Media / Complementaria)
 - **Orden de Ejecución:** 18 (Gobernanza de archivo, retención y disposición final)
 - **Componentes Afectados:**
@@ -3054,6 +3170,7 @@
 
 <!-- ID: TASK-492 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-18.md -->
 ### [ ] [TASK-492] Normalizar contrato visual y semántico de campos de formulario
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-208 (MEDIO/P2); coordinación con AUD-NG-211 de T-UX-19.
 - **Severidad:** Media. **Objetivo:** mantener coherencia de etiquetas, controles, ayudas, validación y mensajes entre formularios de todos los dashboards.
 - **Acción ejecutable:** definir clases y/o helper común para campo, label, control, ayuda, error, éxito, disabled y required; normalizar espaciado, tipografía y estados visuales; asociar cada control con label e instrucciones/errores mediante IDs, `for`, `aria-describedby` y `aria-invalid`; migrar formularios representativos sin duplicar validaciones de negocio.
@@ -3068,6 +3185,7 @@
 
 <!-- ID: TASK-631 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-24.md -->
 ### [ ] [TASK-631] Aislar preferencias por usuario y proteger eventos críticos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgos:** AUD-NG-275 y AUD-NG-276.
 - **Severidad/Prioridad:** MEDIO/P2 y ALTO/P1.
 - **Objetivo:** mantener preferencias personales sin contaminación entre cuentas ni ocultación de alertas esenciales.
@@ -3081,6 +3199,7 @@
 
 <!-- ID: AUD-NG-015 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-015] Corregir tarifas faltantes y deduplicación de generación masiva de cargos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-015
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -3093,6 +3212,7 @@
 
 <!-- ID: AUD-NG-018 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-018] Preservar historial inmutable de asignaciones docentes a áreas académicas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-018
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/academic-service/Code.gs
@@ -3105,6 +3225,7 @@
 
 <!-- ID: AUD-NG-019 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-019] Calcular nómina por intervalos cuando cambian contratos dentro del período
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-019
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -3117,6 +3238,7 @@
 
 <!-- ID: AUD-NG-020 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-020] Integrar el tratamiento remunerativo de incapacidades médicas en nómina
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-020
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -3129,6 +3251,7 @@
 
 <!-- ID: AUD-NG-075 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-075] Incorporar todas las dimensiones de partición en el catálogo y en su clave de resolución
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-075 (TASK-046 / F23-Task03)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; esquema CatalogoSpreadsheets
@@ -3140,7 +3263,9 @@
 ---
 
 <!-- ID: AUD-NG-129 | Fuentes: Pendientes.md -->
-### [x] [AUD-NG-129] Unificar matrícula y rematrícula con cargos financieros por periodo
+### [ ] [AUD-NG-129] Unificar matrícula y rematrícula con cargos financieros por periodo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-129 (REQ-EXP-009).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `js/secretary.js`.
@@ -3160,7 +3285,9 @@
 ---
 
 <!-- ID: AUD-NG-132 | Fuentes: Pendientes.md -->
-### [x] [AUD-NG-132] Corregir el motor de cargos mensuales y su deduplicación por periodo
+### [ ] [AUD-NG-132] Corregir el motor de cargos mensuales y su deduplicación por periodo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-132 (REQ-EXP-010).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`; pruebas de generación de cargos.
@@ -3172,7 +3299,9 @@
 ---
 
 <!-- ID: AUD-NG-140 | Fuentes: Pendientes.md -->
-### [x] [AUD-NG-140] Vincular autoservicio, asistencia y recibos de nómina a la identidad verificada
+### [ ] [AUD-NG-140] Vincular autoservicio, asistencia y recibos de nómina a la identidad verificada
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-140 (REQ-EXP-014).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
@@ -3188,6 +3317,7 @@
 
 <!-- ID: T-UX-12 | Fuentes: completadas.md -->
 ### [ ] [T-UX-12] Consolidar los paneles de control por rol y departamento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 3, octubre de 2026 (AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md - Área 2)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `js/student.js`, `js/teacher.js`, `js/accounting.js`
@@ -3211,6 +3341,7 @@
 
 <!-- ID: T-UX-15 | Fuentes: completadas.md -->
 ### [ ] [T-UX-15] Implementar filtros avanzados, vistas guardadas y paginación coherente
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 3, octubre de 2026 (AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md - Área 5)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `js/ui-common.js`
@@ -3233,6 +3364,7 @@
 
 <!-- ID: T-UX-25 | Fuentes: completadas.md -->
 ### [ ] [T-UX-25] Incorporar preferencias de usuario y personalización controlada de vistas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 3, octubre de 2026 (AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md - Área 20)
 - **Severidad/Clasificación:** Medio
 - **Archivos Involucrados:** `js/ui-common.js`, `backend/user-service/Code.gs`
@@ -3250,6 +3382,7 @@
 
 <!-- ID: TAREA-F4-P1-07 | Fuentes: completadas.md -->
 ### [ ] [TAREA-F4-P1-07] Implementar gestión institucional de roles, cargos, departamentos y asignaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 4 (AUDITORIA_FASE4_IDENTIDAD_PERMISOS_GOBIERNO.md)
 - **Severidad/Clasificación:** Alto · Identidad · Backend
 - **Archivos Involucrados:** `backend/user-service/Code.gs`, `backend/academic-service/Code.gs`
@@ -3259,6 +3392,7 @@
 
 <!-- ID: TASK-044 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-044] TAREAS DERIVADAS DE AUDITORÍA — TASK-044 Y TASK-045 / FASE 23 (2026-11-04)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - [P0] [Motor de Workflows - Integridad Transaccional, Candados Atómicos y Autorización de Decisiones]
@@ -3353,6 +3487,7 @@
 
 <!-- ID: TASK-045 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-045] [P0] [Motor de Workflows - Idempotencia de Solicitudes, Decisiones y Operaciones Institucionales]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
   - `js/api.js`
@@ -3390,6 +3525,7 @@
 
 <!-- ID: TASK-047 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-047] TAREAS DERIVADAS DE AUDITORÍA — TASK-047 (HALLAZGO ADICIONAL), TASK-048 Y TASK-049 / FASE 23 (2026-11-04)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - [P0] [Arquitectura Distribuida - Catálogo Institucional de Cuentas, Servicios y Permisos Distribuidos]
@@ -3435,6 +3571,17 @@
   - [ ] Intentar registrar un servicio duplicado y verificar su rechazo.
   - [ ] Consultar un servicio suspendido y comprobar que se bloquean peticiones.
   - [ ] Comprobar que los permisos de almacenamiento y los privilegios institucionales se administran por separado.
+
+**Ampliación ciclo 2 — servicios personales y registro desde el portal de desarrollador:**
+1. Incorporar en la consola de Desarrollador una interfaz para registrar servicios asociados a puestos y roles existentes; guardar cuenta Google propietaria, proyecto Apps Script, URL, Spreadsheet, carpeta Drive, dominio de datos, modalidad, estado y versión de contrato.
+2. Modalidad individual: cada profesor, coordinador de área, secretaria y contador tendrá su propio servicio, proyecto/despliegue, Spreadsheet y carpeta Drive en su cuenta institucional.
+3. Modalidad compartida: Padres y Estudiantes utilizarán la misma cuenta, servicio, despliegue, Spreadsheet y carpeta Drive; Tienda, Cafetería y Transporte podrán compartir esos mismos recursos.
+4. El servicio maestro registrará las URL y permitirá enrutar a servicios alojados en cuentas distintas sin exigir que su operador sea propietario de la cuenta Google.
+5. No agregar propiedades de comandos ni claves secretas dedicadas para comunicación interservicio. No crear flujos de autorización interactiva ni revalidaciones de sesión por función; el portal reutilizará el contexto establecido en login.
+6. Desarrollador administra el plano técnico; no es Administrador ni obtiene por ello acceso institucional irrestricto.
+7. Secretaría, Dirección, Coordinación y Administrador acceden conforme a sus facultades; docentes solo a sus clases/grados/secciones; estudiantes solo a sus notas, métricas y tareas; padres solo a estudiantes vinculados.
+8. Notas, calificaciones, resultados de exámenes, jornalizaciones, sílabos, planes de clase, guías y exámenes deben respetar esos ámbitos.
+9. Los requisitos originales de TASK-047/F23 sobre HMAC, sesión y credenciales se conservan como evidencia; su contradicción con el modelo nuevo debe resolverse técnicamente sin añadir secretos no autorizados ni publicar endpoints.
 - **Estado:** Pendiente
 
 ### [AUD-NG-082] Exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente
@@ -3519,6 +3666,7 @@
 
 <!-- ID: TASK-049 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-049] [P0] [Auditoría Criptográfica - Protección de Decisiones Históricas y Auditoría Anti-Manipulación]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
 - **Dependencias Expuestas:** `RevisionesDecisionesTramite`, `F23-Task01`, `F23-Task13`.
@@ -3552,6 +3700,7 @@
 
 <!-- ID: TASK-050 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-17.md ; Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-050] TAREAS DERIVADAS DE AUDITORÍA — TASK-050 / F24-Task01 (2026-11-04)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - [P0] [Catálogo de Informes - Catálogo Centralizado de Informes Institucionales con Permisos por Perfil]
@@ -3685,6 +3834,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-051 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-17.md ; Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-051] [P0] [Indicadores Centrales - Diccionario Semántico Centralizado de Indicadores Institucionales]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - Resolver la inconsistencia de estado registrada en el propio artefacto (encabezado [ ] frente a estado interno Pendiente) mediante revisión explícita y evidencia; no cambiar el estado por esta normalización documental.
 - Definir para cada indicador fórmula, unidad, población, granularidad, periodicidad, fuente primaria, filtros válidos, tratamiento de pendientes/ausentes y versión de la definición.
 - Definir indicadores de rendimiento y acompañamiento sin ambigüedad: promedio, distribución, reprobación, tareas pendientes, asistencia, alertas activas y estudiantes únicos.
@@ -3775,6 +3925,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-060 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-060] [P0] [Gobernanza Jerárquica - Motor Central de Configuración Jerárquica y Herencia Departamental]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
   - `backend/academic-service/Code.gs`
@@ -3857,6 +4008,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-219 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-219] [P1] [Motor de Workflows - Reglas Configurables, Condiciones y Enrutamiento de Procesos]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
 - **Dependencias Expuestas:** `FlujosAprobacion`, `F23-Task01`, `F23-Task10`.
@@ -3902,6 +4054,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-220 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-220] [P1] [Motor de Workflows - Diseñador Configurable de Flujos y Validación de Estructuras]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
   - `js/api.js`
@@ -3947,6 +4100,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-222 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-222] [P1] [Motor de Workflows - Procesos Paralelos y Compuertas de Convergencia (Fork / Join)]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
 - **Dependencias Expuestas:** `FlujosAprobacion`, `F23-Task07`, `F23-Task08`.
@@ -3982,6 +4136,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-223 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-223] [P1] [Operaciones y SLA - Gestión de SLA, Vencimientos y Escalamiento Automático]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
 - **Dependencias Expuestas:** `SolicitudesTramites`, `F23-Task09`, `F23-Task15`.
@@ -4020,6 +4175,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-228 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-228] [P1] [Seguridad y Roles - Delegación Temporal de Aprobaciones Integrada con los Workflows]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
 - **Dependencias Expuestas:** `F23-Task01`, `F23-Task09`.
@@ -4055,6 +4211,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-235 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-17.md ; Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-235] [P1] [Analítica Histórica - Motor de Tendencias y Series Históricas Académicas y Administrativas]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - Construir series por parcial, periodo y año lectivo desde calificaciones publicadas y atribuidas a dimensiones verificadas.
 - Mantener comparabilidad de cohortes, escalas y planes curriculares; registrar cambios de fórmula o catálogo que afecten una serie.
 - No rellenar puntos ausentes con cero ni conectar periodos no comparables; indicar huecos y tamaños de muestra.
@@ -4112,12 +4269,14 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-236 | Fuentes: Pendientes.md -->
 ### [ ] [TASK-236] BLOQUE 3. Informes exportables, personalizados y programados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 
 ---
 
 <!-- ID: TASK-238 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-238] [P1] [Automatización - Programador Automático de Generación de Informes Calendarizados]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
   - `backend/developer-service/Code.gs`
@@ -4180,6 +4339,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-241 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-241] [P1] [Cuadros de Mando - Integración y Ampliación de Paneles Institucionales por Rol]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/accounting-service/Code.gs`
   - `backend/academic-service/Code.gs`
@@ -4246,6 +4406,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-249 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-249] [P1] [Reportes Personalizados - Implementar Persistencia de Vistas y Configuraciones Personalizadas de Reportes]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
   - `backend/accounting-service/Code.gs`
@@ -4302,6 +4463,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-396 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-396] [P2] [Distribución de Carga - Asignación Automática y Reparto Equilibrado de Trabajo]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
 - **Dependencias Expuestas:** `F23-Task09`, `F23-Task11`.
@@ -4338,6 +4500,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-397 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-397] [P2] [Analítica - Métricas, Analítica y Supervisión del Rendimiento de Procesos]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
 - **Dependencias Expuestas:** `F23-Task11`, `F23-Task13`.
@@ -4378,6 +4541,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-401 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-401] [P2] [Gobernanza - Mejora del Versionamiento y Compatibilidad de Definiciones de Workflow]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
 - **Dependencias Expuestas:** `FlujosAprobacion`, `F23-Task08`.
@@ -4412,6 +4576,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-402 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-402] [P2] [Informes Personalizados - Constructor de Informes Personalizados y Plantillas Reutilizables]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
   - `js/ui-common.js`
@@ -4471,6 +4636,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-403 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-403] [P2] [Gobierno Institucional - Sistema Institucional de Metas, Objetivos y Cumplimiento de Indicadores]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/developer-service/Code.gs`
   - `backend/accounting-service/Code.gs`
@@ -4534,6 +4700,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-405 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-405] [P2] [Eficiencia Operativa - Indicadores de Tiempos de Resolución y Eficiencia Administrativa]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
 - **Dependencias Expuestas:** Diccionario de indicadores (`F24-Task02`), filtros (`F24-Task03`), fuentes administrativas normalizadas (`F24-Task04`).
@@ -4583,6 +4750,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-407 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-407] [P2] [Analítica de Riesgos - Detección de Anomalías en Indicadores Financieros y Operativos]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/accounting-service/Code.gs`
   - `backend/developer-service/Code.gs`
@@ -4630,6 +4798,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-408 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-408] [P2] [Informes Consolidados - Informes Institucionales Consolidados y Análisis Multidimensional]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
   - `backend/accounting-service/Code.gs`
@@ -4687,6 +4856,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-415 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-415] [P2] [Trazabilidad - Ampliación de la Trazabilidad y Consulta del Historial de Operaciones]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/accounting-service/Code.gs`
   - `backend/user-service/Code.gs`
@@ -4756,6 +4926,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-419 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-419] [P2] [Supervisión - Mejoras de Administración y Supervisión Centralizada de Integraciones]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/developer-service/Code.gs`
   - `backend/accounting-service/Code.gs`
@@ -4816,6 +4987,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-421 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-421] [P2] [Historial y Recuperación - Centro de Historial, Comparación y Restauración de Configuraciones Críticas]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
   - Hojas `ConfiguracionSistema`, `RegistroEventos`, `HistorialVersionesConfiguracion`
@@ -4872,6 +5044,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-427 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-427] [F28-T07] [P2] Optimización de Paneles Departamentales, Flujos de Trabajo y Accesos Rápidos Personalizados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Tipo:** Optimización Funcional y Productividad Operativa.
 - **Componentes Afectados:**
   - `dashboards/` (`dashboard-docente.html`, `dashboard-estudiante.html`, `dashboard-contabilidad.html`, etc.)
@@ -4907,6 +5080,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-471 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-471] [P3] [Consultas y Trazabilidad - Optimización de Consultas y Visualización del Historial de Procesos]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/user-service/Code.gs`
 - **Dependencias Expuestas:** `RevisionesDecisionesTramite`, `F23-Task13`.
@@ -4935,6 +5109,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-687 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
 ### [ ] [TASK-687] Reparar los contratos API activos sin dispatcher
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-358, MEDIO/P2.
 - **Objetivo:** garantizar que las acciones del panel de desarrollador lleguen a un dispatcher y handler reales.
 - **Archivos:** js/api.js, js/developer.js, backend/user-service/Code.gs, backend/academic-service/Code.gs.
@@ -4946,6 +5121,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-688 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
 ### [ ] [TASK-688] Completar handlers referenciados por los dispatchers
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-359, ALTO/P1.
 - **Objetivo:** eliminar referencias a funciones inexistentes y evitar escrituras con respuesta de error ambigua.
 - **Archivos:** backend/user-service/Code.gs, backend/academic-service/Code.gs, backend/task-service/Code.gs.
@@ -4957,6 +5133,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
 
 <!-- ID: TASK-690 | Fuentes: AUDITORIA_TASK-638_C1.293.md -->
 ### [ ] [TASK-690] Eliminar el secreto predecible del restablecimiento de contraseña
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-361, CRÍTICO/P0 condicionado a ausencia de Script Property.
 - **Objetivo:** impedir la falsificación de tokens de recuperación.
 - **Archivos:** backend/user-service/Code.gs, Script Properties, requestPasswordRecovery/resetPassword.
@@ -4971,6 +5148,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 
 <!-- ID: TASK-691 | Fuentes: AUD-NG-374 / Auditoría/AUDITORIA_TASK-639_C1.302.md -->
 ### [ ] [TASK-691] Consolidar redefiniciones globales en microservicios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-374, MEDIO/P2.
 - **Fase PM:** PM-02 — Arquitectura, datos, contratos y persistencia.
 - **Archivos:** backend/task-service/Code.gs; backend/accounting-service/Code.gs; backend/user-service/Code.gs.
@@ -4984,6 +5162,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 
 <!-- ID: TASK-692 | Fuentes: AUD-NG-375 / Auditoría/AUDITORIA_TASK-639_C1.302.md -->
 ### [ ] [TASK-692] Establecer propiedad única de handlers globales en dashboards
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-375, MEDIO/P2.
 - **Fase PM:** PM-02 — Arquitectura, datos, contratos y persistencia.
 - **Archivos:** js/secretary.js; js/teacher.js; js/ui-common.js; dashboard-direccion.html; dashboard-secretaria.html y dashboards consumidores.
@@ -4996,6 +5175,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 
 <!-- ID: TASK-693 | Fuentes: AUD-NG-376 / Auditoría/AUDITORIA_TASK-639_C1.302.md -->
 ### [ ] [TASK-693] Formalizar contratos de helpers compartidos y guardas estáticas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-376, MEDIO/P2.
 - **Fase PM:** PM-02 — Arquitectura, datos, contratos y persistencia.
 - **Archivos:** backend/*/Code.gs; pruebas/reglas de arquitectura.
@@ -5009,7 +5189,9 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 ---
 
 <!-- ID: TASK-694 | Origen: Solicitud de producto 2026-11-10; investigación en Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md -->
-### [X] [TASK-694] [P0] Especificar la arquitectura universal multiinstitucional y el modelo educativo P-20W
+### [ ] [TASK-694] [P0] Especificar la arquitectura universal multiinstitucional y el modelo educativo P-20W
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Objetivo:** definir arquitectura configurable para primera infancia, prebásica, básica, media, técnica, superior y formación continua, sin bifurcar código.
 - **Alcance:** investigación SIS/LMS/primera infancia/superior y estándares; modelo tenant/institución/organización; separación de estructuras administrativa, académica, enseñanza y física; trayectoria longitudinal; seguridad/propiedad; configuración; perfiles; interoperabilidad; localización; privacidad; accesibilidad; subplan UNI-S01…UNI-S10.
 - **Entregables:** Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md; subplan en Plan Maestro; relaciones en MapaDependencias.
@@ -5024,7 +5206,9 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 ---
 
 <!-- ID: TASK-695 | Fuentes: solicitud de producto 2026-11-10; TASK-694; PLAN-IMA-001 -->
-### [X] [TASK-695] [P0] Descomponer la arquitectura universal en 24 unidades funcionales con requisitos y criterios de aceptación
+### [ ] [TASK-695] [P0] Descomponer la arquitectura universal en 24 unidades funcionales con requisitos y criterios de aceptación
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Tipo:** diseño/planificación documental PM-02; no equivale a implementación.
 - **Objetivo:** convertir la arquitectura universal multiinstitucional P-20W en un plan ejecutable desde primera infancia hasta educación superior, con servicios administrativos y operativos.
 - **Entregable:** Auditoría/PLAN-IMA-001_UNIDADES_FUNCIONALES.md y vínculo en Auditoría/ARQUITECTURA_UNIVERSAL_MULTIINSTITUCIONAL_INVESTIGACION.md.
@@ -5043,6 +5227,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 
 <!-- ID: TASK-696 | Fuentes: AUD-NG-384; TASK-695/PLAN-IMA-001 UNI-U01 -->
 ### [ ] [TASK-696] [P0] Implementar registro y aislamiento runtime de tenants (UNI-U01)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Tipo:** implementación de arquitectura y seguridad, PM-02. No es una ampliación de la migración de roles ni de los ámbitos departamentales.
 - **Objetivo:** establecer el tenant como frontera de seguridad verificable, con instituciones y sedes subordinadas, grupos opcionales y contexto explícito de tenant en sesión/API.
 - **Requisitos:**

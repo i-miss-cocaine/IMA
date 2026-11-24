@@ -9,7 +9,10 @@
 ---
 
 <!-- ID: F11-TASK02 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [F11-TASK02] Asegurar la integridad de los asientos contables y las autorizaciones multinivel
+
+> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
+### [ ] [F11-TASK02] Asegurar la integridad de los asientos contables y las autorizaciones multinivel
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Garantizar la integridad de los registros contables y el flujo de autorizaciones financieras
@@ -32,7 +35,8 @@
   Asegurar el principio de partida doble, validar el equilibrio entre débitos y créditos en cada asiento contable e implementar autorizaciones financieras multinivel según límites de monto antes de la afectación presupuestaria.
 - **Criterios de Aceptación:**
   - Todo asiento desequilibrado es rechazado y las compras mayores al umbral requieren aprobación formal de Dirección.
-- **Estado:** Completada
+- **Estado histórico anterior:** Completada
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 234-248; clave F11-Task13; asignación única: Contabilidad -->
 
@@ -40,6 +44,7 @@
 
 <!-- ID: F17-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK03] Calcular aportaciones patronales legales (IHSS, RAP e INFOP) y contabilizarlas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Costos laborales institucionales y cumplimiento con la seguridad social)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `PlanillasNomenclatura`, `AsientosContables`.
 - **Problema:** Solo se calculan las retenciones obreras (3.5% IHSS y 1.5% RAP), omitiendo el costo patronal obligatorio: IHSS Patronal (~7.2%), RAP Patronal (1.5%) e INFOP (1.0%).
@@ -59,6 +64,7 @@
 
 <!-- ID: F17-TASK04 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK04] Implementar la tabla progresiva oficial del ISR para personas naturales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Cumplimiento tributario con el SAR)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `PoliticasFiscales`.
 - **Problema:** El ISR aplica un 15% fijo sobre el excedente de L 20,000.00 en lugar de aplicar la tabla progresiva anual del Art. 22 de la Ley del ISR de Honduras.
@@ -78,6 +84,7 @@
 
 <!-- ID: F17-TASK05 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK05] Desarrollar el motor de liquidación del Décimo Tercer Mes y Décimo Cuarto Mes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Beneficios laborales obligatorios en Honduras)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `PlanillasNomenclatura`.
 - **Problema:** No existe capacidad para procesar planillas extraordinarias de 13º mes (diciembre) y 14º mes de compensación social (junio Decreto 135-94).
@@ -97,7 +104,9 @@
 ---
 
 <!-- ID: F18-TASK01 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [x] [F18-TASK01] Implementar el control de recepciones parciales, entregas escalonadas y saldos pendientes
+### [ ] [F18-TASK01] Implementar el control de recepciones parciales, entregas escalonadas y saldos pendientes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Severidad:** Crítica (Integridad en la recepción física de compras y control de inventario)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs` (`recordPurchaseReceipt`), `OrdenesCompra`, `RecepcionesCompra`.
 - **Problema:** Al registrar la primera recepción, la orden se marca incondicionalmente como `RecibidaTotal`, impidiendo recepciones posteriores de los artículos faltantes.
@@ -116,7 +125,8 @@
 ---
 
 <!-- ID: F18-TASK02 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [x] [F18-TASK02] Desarrollar el motor de validación documental y conciliación de tres vías
+### [ ] [F18-TASK02] Desarrollar el motor de validación documental y conciliación de tres vías
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Prevención de fraudes, sobreprecios y pagos indebidos a proveedores)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs` (`verifyThreeWayMatch`), `CuentasPorPagarGastos`.
 - **Problema:** Las facturas se registran sin comparar los precios unitarios de la Orden de Compra ni las cantidades efectivamente ingresadas en la Recepción de Bodega.
@@ -130,13 +140,16 @@
 - **Alcance:** conciliación documental previa a aprobación; no sustituye autorización de pagos ni conciliación bancaria.
 - **Criterios de aceptación:** ninguna factura con diferencia no justificada pasa a aprobada para pago; discrepancias quedan identificadas y sujetas a aprobación autorizada; coincidencias verificables permiten continuar el flujo.
 - **Prioridad:** P0. **Estado:** Completada (C1.945).
-- **Estado:** Completada en C1.945.
+- **Estado histórico anterior:** Completada en C1.945.
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 - **Evidencia de cierre:** recordAccountsPayableExpense registra facturas con snapshot de partidas, hash e idempotencia; verifyThreeWayMatch compara orden, recepciones conformes, proveedor, precios y montos y persiste EstadoConciliacion/DiferenciasJSON, bloqueando el pago ante discrepancias. Permisos, ámbito y lock revalidados; CI Department Scope run 44979718178 SUCCESS (138 pasos), incluidos contratos de cotización, recepción parcial, capitalización, expediente de compras, catálogo y sintaxis Apps Script.
 
 ---
 
 <!-- ID: F18-TASK03 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [x] [F18-TASK03] Construir la consola interactiva de compras y proveedores
+### [ ] [F18-TASK03] Construir la consola interactiva de compras y proveedores
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Severidad:** Crítica (Operatividad de la gestión de compras y eliminación de carga en Sheets)
 - **Componentes Afectados:** `js/accounting.js` (`renderComprasModule`), `dashboard-contabilidad.html`.
 - **Problema:** La pestaña `compras` es actualmente un texto estático sin controles interactivos.
@@ -155,7 +168,9 @@
 ---
 
 <!-- ID: F18-TASK04 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [x] [F18-TASK04] Generar órdenes de compra oficiales en PDF y ciclo de estados
+### [ ] [F18-TASK04] Generar órdenes de compra oficiales en PDF y ciclo de estados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Severidad:** Crítica (Formalización contractual y envío formal a proveedores)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs` (`generatePurchaseOrderPDF`), `OrdenesCompra`.
 - **Problema:** Las órdenes solo existen como registros en la hoja de cálculo, sin documento descargable para enviar al proveedor.
@@ -176,6 +191,7 @@
 
 <!-- ID: F19-TASK14 | Fuentes: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md -->
 ### [ ] [F19-TASK14] Hacer atómica e idempotente la conciliación de inventario físico
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-142, REQ-EXP-015, evidencia sobre `reconcilePhysicalCount`.
 - **Severidad:** Crítica. **Objetivo:** impedir que un mismo conteo aplique dos veces el ajuste al Kardex.
 - **Acción ejecutable:** exigir estado previo conciliable; adquirir lock; registrar identificador único de conciliación; aplicar ajuste por ubicación una sola vez y marcar conteo como conciliado en la misma operación lógica.
@@ -190,6 +206,7 @@
 
 <!-- ID: F20-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md -->
 ### [ ] [F20-TASK02] Conectar y activar el módulo de Biblioteca en la navegación institucional
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones A.2, B, E.2, F (PT-20-44) y G P0.
 - **Severidad:** Crítica. **Objetivo:** hacer accesible el módulo bibliotecario desde el dashboard institucional.
 - **Acción ejecutable:** agregar botón de Biblioteca en `dashboard-contabilidad.html` y conectar `tab === 'biblioteca'` con `renderBibliotecaModule(container)` en `window.switchTab`; comprobar acceso de roles bibliotecarios autorizados.
@@ -205,6 +222,7 @@
 
 <!-- ID: F21-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md -->
 ### [ ] [F21-TASK01] Control estricto de cupos y prevención de sobrecupo en rutas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones B, C.1.6/C.1.7, E/F21-07 y F21-31, G.1 y H P0.
 - **Severidad:** Crítica. **Objetivo:** impedir asignaciones que excedan la capacidad oficial y colisiones de horario.
 - **Acción ejecutable:** validar capacidad real del vehículo desde el catálogo maestro al crear/editar asignaciones; usar lock y revalidación atómica de cupos; bloquear duplicados por estudiante/ruta/período y colisiones horarias.
@@ -220,6 +238,7 @@
 
 <!-- ID: F23-TASK07 | Fuentes: AUDITORIAS/AUDITORIA_FASE_23_MOTOR_INSTITUCIONAL_FLUJOS_TRABAJO.md -->
 ### [ ] [F23-TASK07] Integrar protocolo HMAC interservicio real con secretos rotables
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F23-010, F23-025 y F23-029; TASK-048 y AUD-NG-083..086.
 - **Severidad:** Crítica. **Objetivo:** autenticar cada llamada entre servicios, impedir replay y autorizar emisor/receptor/acción.
 - **Acción ejecutable:** conectar `createInterServiceEnvelope` a llamadas salientes y `verifyInterServiceEnvelope` antes del dispatcher; usar secretos aleatorios por par de servicios con rotación/revocación; validar HMAC antes de reservar requestId; autorizar sourceService/acción; incluir versión y correlationId.
@@ -235,6 +254,7 @@
 
 <!-- ID: F29-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_29_MIGRACION_Y_TRANSICION.md -->
 ### [ ] [F29-TASK02] Separar saldos iniciales de facturas y movimientos históricos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** BR-29-02; F29-07; secciones C.7, E y G.
 - **Severidad:** Crítica / P0. **Objetivo:** impedir que documentos históricos ya representados en el saldo inicial vuelvan a generar deudas vivas.
 - **Acción ejecutable:** crear `SaldosInicialesCorte` por institución, cuenta, titular, moneda y fecha de corte; conciliar facturas/movimientos anteriores y posteriores al corte; bloquear contabilización duplicada; mantener referencias a documentos históricos sin reabrirlos como cargos pendientes.
@@ -249,6 +269,7 @@
 
 <!-- ID: F30-TASK03 | Fuentes: AUDITORIAS/AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md -->
 ### [ ] [F30-TASK03] Versionar históricamente políticas y tarifas usadas en cálculos financieros
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F30-03; cambios de `ParametrosInstitucionales` que pueden alterar recálculos extemporáneos.
 - **Severidad:** Crítica / P0. **Objetivo:** reproducir importes históricos con las políticas y tarifas vigentes al momento de emisión.
 - **Acción ejecutable:** persistir versiones inmutables de aranceles, recargos, becas y políticas fiscales; asociar cada cargo/factura/periodo con su versión efectiva; impedir que consultas históricas utilicen valores actuales por defecto.
@@ -263,6 +284,7 @@
 
 <!-- ID: F37-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_FASE_37_AISLAMIENTO_DATOS_ASIGNACION_DEPARTAMENTOS.md -->
 ### [ ] [F37-TASK02] Crear catálogo de proyecciones y máscaras mínimas de atributos interdepartamentales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F37-02/F37-04/F37-08; PT-F37-09/25; CAR-F37-02/CAR-F37-04/CAR-F37-08.
 - **Severidad:** Crítica / P0. **Objetivo:** compartir solo los atributos necesarios para la operación del departamento receptor.
 - **Acción ejecutable:** crear `CatalogoRelacionesInterdepartamentales` con entidad origen/destino, campos permitidos, propósito, rol, ámbito y vigencia; aplicar proyección server-side en consultas; bloquear retornos de filas completas cuando exista máscara.
@@ -277,6 +299,7 @@
 
 <!-- ID: TASK-001 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-001] Corrección del motor de facturación fiscal SAR, clasificación tributaria y control de CAI
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección E (Brecha E.2) y Sección J (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Cumplimiento fiscal tributario SAR, prevención de sanciones legales e integridad documental)
@@ -336,6 +359,7 @@
 
 <!-- ID: TASK-002 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-002] Motor de generación masiva, programada y recurrente de mensualidades escolares
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección E (Brecha E.1) y Sección J (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Ciclo de cobranza institucional, prevención de omisiones e integridad financiera)
@@ -398,6 +422,7 @@
 
 <!-- ID: TASK-003 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-003] Sistema integral de anulaciones, reversión de pagos, notas de crédito y reembolsos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección E (Brecha E.3) y Sección J (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Integridad contable, reversión de pagos, control tributario SAR y prevención de fraude)
@@ -468,6 +493,7 @@
 
 <!-- ID: TASK-007 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-007] Eliminar el salario fijo y calcular la remuneración según el contrato vigente de cada empleado
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección E (Brecha E.1) y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Integridad financiera, legalidad de pagos y cálculo salarial contractual exacto)
@@ -510,6 +536,7 @@
 
 <!-- ID: TASK-008 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-008] Integrar automáticamente las novedades aprobadas en el cálculo de planilla
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección E (Brecha E.2) y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Remuneración integral, compensación de horas extras y deducción de ausencias)
@@ -554,6 +581,7 @@
 
 <!-- ID: TASK-009 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-009] Implementar las aportaciones patronales y separar los costos institucionales de las deducciones del empleado
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección C (C.1), Sección E (Brecha E.3) y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Costos laborales institucionales, cumplimiento de seguridad social y exactitud contable)
@@ -596,6 +624,7 @@
 
 <!-- ID: TASK-010 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-010] Sustituir el cálculo simplificado del ISR por un motor de retención progresiva y anualizada
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección C (C.1), Sección E (Brecha E.3) y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Cumplimiento tributario con el SAR, retención progresiva y prevención de multas)
@@ -636,6 +665,7 @@
 
 <!-- ID: TASK-011 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-011] Crear el cálculo y procesamiento independiente del décimo tercer y décimo cuarto mes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección C (C.1), Sección E (Brecha E.4) y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Beneficios sociales obligatorios en Honduras: Aguinaldo y Décimo Cuarto Mes Decreto 135-94)
@@ -680,6 +710,7 @@
 
 <!-- ID: TASK-012 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-012] Corregir el control de recepciones parciales y entregas escalonadas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección E (Brecha E.1) y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Integridad en recepción física de compras, control de inventario y prevención de pérdidas)
@@ -727,6 +758,7 @@
 
 <!-- ID: TASK-013 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-013] Implementar conciliación documental de tres vías entre orden, recepción y factura
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección E (Brecha E.2) y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Prevención de fraudes, sobreprecios, control de egresos y conciliación de tres documentos)
@@ -779,6 +811,7 @@
 
 <!-- ID: TASK-014 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-014] Desarrollar la interfaz operativa completa del módulo de compras
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección E (Brecha E.3) y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Operatividad del usuario, eliminación de dependencia de Sheets y productividad administrativa)
@@ -823,6 +856,7 @@
 
 <!-- ID: TASK-015 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-015] Implementar documentos PDF oficiales para órdenes de compra y ampliar su ciclo de estados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.3), Sección E y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Formalización contractual de adquisiciones y emisión documental oficial)
@@ -857,6 +891,7 @@
 
 <!-- ID: TASK-016 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-016] TAREAS DERIVADAS DE AUDITORÍA — TASK-016 / F18-Task06 (2026-11-04)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Ampliar la gestión de cuentas por pagar con abonos, vencimientos y notas de crédito
@@ -966,7 +1001,8 @@
 ---
 
 <!-- ID: TASK-017 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-017] Implementar el compromiso presupuestario formal al aprobar órdenes de compra
+### [ ] [TASK-017] Implementar el compromiso presupuestario formal al aprobar órdenes de compra
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.6), Sección E y Sección G (P0)
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Control preventivo del gasto, protección presupuestaria y concurrencia)
@@ -995,7 +1031,8 @@
   - La cancelación formal de una orden de compra libera el compromiso devolviendo los fondos a disponibilidad.
   - Reducir el importe de una orden ajusta la diferencia en el compromiso de forma trazable.
   - Las autorizaciones de sobregiro quedan auditadas con usuario directivo responsable y motivo.
-- **Estado:** Completada
+- **Estado histórico anterior:** Completada
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 - **Cierre C1.954:** transferencia idempotente de compromisos a ejecución al aprobar facturas conciliadas; reducción autorizada de órdenes Aprobadas no emitidas con liberación proporcional del compromiso no ejecutado y ledger de auditoría append-only; excepciones extraordinarias de sobregiro solo para Director/Administrador, justificación obligatoria y log BUDGET_OVERRUN_ALERT. La reducción se bloquea después de emitir PDF, registrar recepción o factura, o crear ejecución; el backend conserva el cierre fail-closed y rollback.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1400-1460; clave TASK-019; asignación única: Contabilidad -->
@@ -1003,7 +1040,8 @@
 ---
 
 <!-- ID: TASK-019 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-019] Corrección integral del control de existencias multialmacén
+### [ ] [TASK-019] Corrección integral del control de existencias multialmacén
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-02), Sección G (Defecto 1) y Plan de Trabajo F19-01
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Integridad física de inventarios, auditoría por bodega, prevención de saldos inconsistentes y desabastecimiento)
@@ -1059,7 +1097,8 @@
   - Los registros históricos mantienen su trazabilidad y cantidades intactas.
   - Los conteos físicos y conciliaciones operan bajo el nuevo modelo por almacén.
   - Los reportes muestran correctamente los saldos individuales por ubicación y el consolidado institucional.
-- **Estado:** Completada
+- **Estado histórico anterior:** Completada
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 - **Seguimiento C1.957:** UI de conteo físico integrada en Kardex; backend/API/RBAC y conciliación por sede/ubicación verificadas. Node.js 24.22.3: contrato multialmacén y conteo físico PASS; contrato UI de almacenes y conteos PASS; sintaxis Apps Script/JS PASS en GitHub Actions. Department Scope run 45283096948 SUCCESS y UI Accessibility run 45283097143 SUCCESS sobre SHA 20107c19c30b03a0e8694d769d42b256a7a33fbf. BETA-FUNC-130 permanece Pendiente beta, no bloqueante.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1461-1501; clave TASK-020; asignación única: Contabilidad -->
@@ -1068,6 +1107,7 @@
 
 <!-- ID: TASK-020 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-020] Implementación del flujo completo de devolución y recepción de activos bajo custodia
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-06), Sección G (Defecto 2) y Plan de Trabajo F19-02
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Control patrimonial, cierre formal de responsabilidades de custodios, actas de devolución y reasignación de bienes)
@@ -1105,14 +1145,16 @@
   - Se genera un acta verificable de entrega-recepción descargable en PDF.
   - Se rechazan devoluciones duplicadas de una misma asignación.
 - **Seguimiento C1.958:** Backend y UI integrados; devolución vinculada a asignación activa, historial append-only, PDF privado con identidad del receptor, evidencias privadas sin alterar permisos de archivos externos, escalamiento automático a mantenimiento por daños/faltantes y liberación controlada a `available` al completar mantenimiento. Contratos Node.js 24, regresión de catálogo y sintaxis Apps Script/JS PASS en GitHub Actions run 45286954207 (SHA `acabdec1e2b378705418cbc903d2693db79de2da`).
-- **Estado:** Completada
+- **Estado histórico anterior:** Completada
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1502-1541; clave TASK-021; asignación única: Contabilidad -->
 
 ---
 
 <!-- ID: TASK-021 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-021] Validación transaccional de transferencias entre almacenes
+### [ ] [TASK-021] Validación transaccional de transferencias entre almacenes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-05), Sección F (PT-04) y Plan de Trabajo F19-03
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Consistencia de traslados físicos, prevención de existencias negativas, atocimidad y control de tránsito)
@@ -1149,7 +1191,8 @@
   - No existen movimientos huérfanos bajo fallos o interrupciones de red.
   - Se garantiza integridad y bloqueo transaccional bajo solicitudes concurrentes.
 - **Seguimiento C1.960:** TASK-021 completada. Además del flujo de despacho/recepción y rollback, se añadió idempotencia real de creación: clave validada, hash SHA-256 del payload canónico persistido en TransferenciasInventario, reintento idéntico devuelve el mismo TRF sin duplicar Kardex/ledger y reutilización de clave con payload distinto falla cerrada. Migración compatible del esquema existente. Contrato inventory-multilocation-kardex.test.js (reintento, conflicto de payload, clave inválida, ubicación/stock reservado/rollback) PASS en Department Scope run 45291514151; pasos 72, 73 y 75 PASS y estado de commit ima/department-scope-contract SUCCESS. UI Accessibility run 45291514101 SUCCESS. Department Scope run 45291514151 terminó SUCCESS; el estado ima/department-scope-contract del HEAD de código también quedó SUCCESS.
-- **Estado:** Completada
+- **Estado histórico anterior:** Completada
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3601-3637; clave TASK-072; asignación única: Contabilidad -->
 
@@ -1157,6 +1200,7 @@
 
 <!-- ID: TASK-072 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-072] [P0] Modelo de Corte Contable y Migración de Saldos Iniciales sin Duplicación
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 6
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -1197,6 +1241,7 @@
 
 <!-- ID: TASK-088 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-088] [P0] Integración Financiera de Biblioteca, Transporte, Tienda y Cafetería
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 6
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -1238,6 +1283,7 @@
 
 <!-- ID: TASK-535 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F7-IMP-04.md -->
 ### [ ] [TASK-535] Publicar exclusivamente el escenario confirmado
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-239 / H6-H7.
 - **Severidad:** Crítico.
 - **Objetivo:** que una confirmación solo afecte los bloques del escenario revisado.
@@ -1254,6 +1300,7 @@
 
 <!-- ID: TASK-667 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK09.md -->
 ### [ ] [TASK-667] Normalizar el esquema y la clave de las asignaciones de ámbito
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-313.
 - **Severidad/Prioridad:** CRÍTICO/P0.
 - **Objetivo:** persistir cada ámbito de forma independiente por usuario, rol y responsabilidad.
@@ -1266,6 +1313,7 @@
 
 <!-- ID: F8-TASK02 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_PLAN.md ; completadas.md -->
 ### [ ] [F8-TASK02] / TAREA-MOD-01 — Inventario y dependencias (C1.262)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Dictamen:** NO CUMPLE; se conserva la marca histórica [ ] en completadas.md.
 - **Criterios:** CA-MOD-101 NO CUMPLE; CA-MOD-102 PARCIAL.
 - **Hallazgos:** AUD-NG-281 inventario parcial; AUD-NG-282 mapa/rutas sin cobertura integral; AUD-NG-283 falta de evidencia de duplicaciones/globales/ciclos.
@@ -1299,6 +1347,7 @@
 
 <!-- ID: F11-TASK13 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [F11-TASK13] Completar conciliación bancaria asistida y pareo de extractos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Desarrollar la conciliación bancaria asistida y pareo automático de extractos
@@ -1328,7 +1377,8 @@
 ---
 
 <!-- ID: F11-TASK14 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [F11-TASK14] Implementar control presupuestario y alertas de sobregiro por centro de costo
+### [ ] [F11-TASK14] Implementar control presupuestario y alertas de sobregiro por centro de costo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Desarrollar el control presupuestario y alertas de sobregiro por centro de costo
@@ -1351,7 +1401,8 @@
   Comparar montos presupuestados vs ejecutados por departamento/centro de costo, emitiendo alertas cuando un gasto comprometa la partida asignada.
 - **Criterios de Aceptación:**
   - Se genera una advertencia o bloqueo presupuestario cuando una solicitud excede el presupuesto disponible.
-- **Estado:** Completada
+- **Estado histórico anterior:** Completada
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 264-278; clave F11-Task15; asignación única: Contabilidad -->
 
@@ -1359,6 +1410,7 @@
 
 <!-- ID: F11-TASK15 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [F11-TASK15] Integrar becas y exoneraciones en los estados de cuenta
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Integrar la gestión de becas y exoneraciones con los estados de cuenta estudiantiles
@@ -1387,6 +1439,7 @@
 
 <!-- ID: F17-TASK07 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK07] Crear catálogo dinámico de conceptos salariales, bonificaciones y deducciones voluntarias
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Alta (Flexibilidad administrativa)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `dashboard-recursos-humanos.html`.
 - **Solución Propuesta:** Crear la hoja `CatalogoConceptosPlanilla` permitiendo definir bonificaciones fijas/variables y deducciones voluntarias con código contable y tratamiento tributario.
@@ -1403,7 +1456,9 @@
 ---
 
 <!-- ID: F18-TASK05 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [x] [F18-TASK05] Implementar matriz comparativa de cotizaciones y adjudicación por partidas
+### [ ] [F18-TASK05] Implementar matriz comparativa de cotizaciones y adjudicación por partidas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Severidad:** Alta (Optimización de costos y transparencia en adjudicaciones)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `js/accounting.js`, `CotizacionesCompra`.
 - **Solución Propuesta:** Vista comparativa que evalúe simultáneamente hasta 5 cotizaciones por precio unitario, plazo, impuestos y condiciones, permitiendo adjudicar partidas a diferentes proveedores.
@@ -1420,7 +1475,9 @@
 ---
 
 <!-- ID: F18-TASK06 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [x] [F18-TASK06] Completar gestión de cuentas por pagar
+### [ ] [F18-TASK06] Completar gestión de cuentas por pagar
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Severidad:** Alta (Tesorería institucional y control de flujo de caja)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `CuentasPorPagarGastos`.
 - **Solución Propuesta:** Permitir registrar abonos parciales a facturas de proveedores, registrar notas de crédito por devoluciones y consultar la cartera por fecha de vencimiento.
@@ -1437,7 +1494,9 @@
 ---
 
 <!-- ID: F18-TASK07 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
-### [x] [F18-TASK07] Registrar compromisos presupuestarios al emitir órdenes de compra
+### [ ] [F18-TASK07] Registrar compromisos presupuestarios al emitir órdenes de compra
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Severidad:** Alta (Control presupuestario preventivo)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs` (`checkBudgetAvailability`), `PresupuestosInstitucionales`.
 - **Solución Propuesta:** Al aprobar una orden de compra, incrementar automáticamente el `montoComprometido` en la partida presupuestaria del centro de costo para bloquear sobregiros antes de la facturación.
@@ -1456,6 +1515,7 @@
 
 <!-- ID: F19-TASK04 | Fuentes: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md -->
 ### [ ] [F19-TASK04] Implementar depreciación periódica de activos fijos y asientos contables
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones B, C.2.12, D, E/F19-12 y H P1.
 - **Severidad:** Alta. **Objetivo:** reflejar depreciación acumulada y valor neto en libros de los activos.
 - **Acción ejecutable:** implementar cálculo lineal mensual por categoría con costo, valor residual, vida útil, fecha de puesta en servicio y fecha de baja; generar asientos de gasto/depreciación acumulada y conservar períodos contabilizados.
@@ -1469,7 +1529,9 @@
 ---
 
 <!-- ID: F19-TASK05 | Fuentes: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md -->
-### [x] [F19-TASK05] Crear catálogo maestro centralizado de artículos e insumos
+### [ ] [F19-TASK05] Crear catálogo maestro centralizado de artículos e insumos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Hallazgo de origen:** secciones C.2.1, D, E/F19-01 y H P1.
 - **Severidad:** Alta. **Objetivo:** evitar que el Kardex cree artículos implícitos con nombres/unidades inconsistentes.
 - **Acción ejecutable:** crear `CatalogoArticulos` con código único, nombre normalizado, categoría, unidad de medida, especificaciones, marca/modelo, costo de referencia, código de barras/QR y estado; exigir referencia válida al registrar movimientos.
@@ -1484,6 +1546,7 @@
 
 <!-- ID: F20-TASK06 | Fuentes: AUDITORIAS/AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md -->
 ### [ ] [F20-TASK06] Implementar devolución con inspección física y derivación a incidencias
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones B, D/F20-19, F (PT-20-21), E.5 y G P1.
 - **Severidad:** Alta. **Objetivo:** evitar que un ejemplar dañado se libere automáticamente como disponible.
 - **Acción ejecutable:** extender la devolución para capturar condición física (Bueno, Deteriorado, Incompleto, DañadoIrreparable); actualizar disponibilidad; crear incidencia y estado maintenance cuando corresponda; derivar reposición si la pérdida es irreparable.
@@ -1498,6 +1561,7 @@
 
 <!-- ID: F20-TASK09 | Fuentes: AUDITORIAS/AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md -->
 ### [ ] [F20-TASK09] Integrar notificaciones multicanal de vencimientos y disponibilidad de reservas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones A.1, D/F20-31..F20-35 y G P1.
 - **Severidad:** Alta. **Objetivo:** avisar vencimientos próximos y disponibilidad de ejemplares reservados.
 - **Acción ejecutable:** integrar biblioteca con `sendMultiChannelNotification`; programar aviso 24 horas antes del vencimiento y aviso de reserva disponible; deduplicar por evento/usuario y respetar preferencias.
@@ -1512,6 +1576,7 @@
 
 <!-- ID: F21-TASK06 | Fuentes: AUDITORIAS/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md -->
 ### [ ] [F21-TASK06] Configurar rutas asimétricas de ida/regreso y días específicos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones C.1.3-C.1.5, D, F/F21-03..F21-06 y H P1.
 - **Severidad:** Alta. **Objetivo:** modelar rutas diferentes por jornada, días lectivos y eventos.
 - **Acción ejecutable:** permitir segmentos de ida/regreso independientes, paradas ordenadas, horarios por día de semana, rutas especiales y vigencias; validar consistencia con vehículo, conductor y asignaciones.
@@ -1527,6 +1592,7 @@
 
 <!-- ID: F21-TASK09 | Fuentes: AUDITORIAS/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md -->
 ### [ ] [F21-TASK09] Integrar cobros recurrentes de transporte con cuentas estudiantiles
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones A.1.9, C.1.14-C.1.17, D/F21-25/F21-26 y H P1.
 - **Severidad:** Alta. **Objetivo:** reflejar tarifas y servicios contratados en el estado de cuenta del estudiante.
 - **Acción ejecutable:** configurar tarifa por ruta/servicio/período; crear cargos mensuales idempotentes vinculados a estudiante, contrato y período; gestionar altas, bajas, cambios y prorrateos; conciliar con pagos.
@@ -1541,6 +1607,7 @@
 
 <!-- ID: F21-TASK15 | Fuentes: AUDITORIAS/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md -->
 ### [ ] [F21-TASK15] Auditar y migrar datos históricos de transporte al modelo maestro
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** registro TASK-036 de Auditoria.txt (etiquetado allí como F21-Task08, pero su alcance real es auditoría/migración, no GPS).
 - **Severidad:** Alta. **Objetivo:** corregir rutas sin vehículo maestro, paradas JSON no estructuradas y asignaciones huérfanas sin crear entidades ficticias.
 - **Acción ejecutable:** implementar/ejecutar `auditAndMigrateTransportData` con diagnóstico previo, reporte de discrepancias, vinculación de vehículos reales, normalización de paradas JSON y resolución de asignaciones huérfanas; autoaprovisionar solo cuando exista evidencia de una unidad real.
@@ -1557,6 +1624,7 @@
 
 <!-- ID: F25-TASK04 | Fuentes: AUDITORIAS/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md -->
 ### [ ] [F25-TASK04] Crear endpoint autenticado de webhooks para confirmaciones de pasarelas de pago
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F25-011, sección F.1 y G.4.
 - **Severidad:** Alta. **Objetivo:** recibir confirmaciones asíncronas de pago y conciliarlas con transacciones institucionales.
 - **Acción ejecutable:** implementar `handlePaymentGatewayWebhook`; validar firma HMAC sobre el cuerpo original, timestamp, nonce/eventId y proveedor configurado; comprobar importe/moneda/referencia; reservar evento idempotentemente y actualizar estado de pago solo después de validar.
@@ -1571,6 +1639,7 @@
 
 <!-- ID: F25-TASK05 | Fuentes: AUDITORIAS/AUDITORIA_FASE_25_INTEGRACIONES_EXTERNAS.md -->
 ### [ ] [F25-TASK05] Procesar importaciones masivas en lotes reanudables
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F25-019, sección F.3 y G.5.
 - **Severidad:** Alta. **Objetivo:** procesar archivos de más de 1,000 registros sin exceder el límite de ejecución de Apps Script.
 - **Acción ejecutable:** particionar importaciones en bloques configurables (200 filas iniciales); persistir ejecuciónId, cursor, total, estado, errores y próximo lote; reanudar por trigger/worker; validar cada lote y evitar duplicados al reintentar.
@@ -1585,6 +1654,7 @@
 
 <!-- ID: F29-TASK09 | Fuentes: AUDITORIAS/AUDITORIA_FASE_29_MIGRACION_Y_TRANSICION.md -->
 ### [ ] [F29-TASK09] Procesar migraciones por lotes paginados y reanudables bajo límites GAS
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** BR-29-05; F29-11 y F29-20; secciones C.11/C.20, G e I.
 - **Severidad:** Alta / P1. **Objetivo:** completar migraciones grandes sin exceder tiempo/cuotas y sin duplicar filas al reanudar.
 - **Acción ejecutable:** particionar lotes (100 iniciales, configurables), persistir executionId/cursor/estado en PropertiesService o cola durable, controlar tiempo restante, checkpoints, backoff y reanudación; registrar fallos por fila y compensaciones.
@@ -1599,6 +1669,7 @@
 
 <!-- ID: F29-TASK13 | Fuentes: AUDITORIAS/AUDITORIA_FASE_29_MIGRACION_Y_TRANSICION.md -->
 ### [ ] [F29-TASK13] Completar inventario, extracción y mapeo declarativo de fuentes legadas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F29-01/F29-02/F29-03; secciones B, C.1-C.3 y H.
 - **Severidad:** Alta / P1. **Objetivo:** asegurar que cada fuente y estructura origen tenga un destino y una transformación documentados antes de migrar.
 - **Acción ejecutable:** inventariar sistemas, bases, archivos, entidades, responsables, volumen, calidad y dependencias; crear conectores de extracción de solo lectura; versionar perfiles de mapeo origen-destino, transformaciones y reglas de normalización; conservar muestras/checksums.
@@ -1613,6 +1684,7 @@
 
 <!-- ID: F30-TASK07 | Fuentes: AUDITORIAS/AUDITORIA_FASE_30_CONSOLIDACION_CERTIFICACION_MEJORA_CONTINUA.md -->
 ### [ ] [F30-TASK07] Integrar pasarela alternativa de notificaciones y gestión de cuotas de correo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F30-06; cuota diaria MailApp y ausencia de SMTP alternativo.
 - **Severidad:** Alta / P1. **Objetivo:** mantener entrega de notificaciones críticas cuando se agote o degrade la cuota de Google Apps Script.
 - **Acción ejecutable:** ampliar `TASK-316` y `TASK-064` para registrar cuota disponible, clasificar prioridad, encolar envíos, conmutar a proveedor alternativo configurado y deduplicar por destinatario/evento; exigir configuración y prueba del proveedor antes de activarlo.
@@ -1627,6 +1699,7 @@
 
 <!-- ID: F35-TASK06 | Fuentes: AUDITORIAS/AUDITORIA_FASE_35_IMPORTADOR_INTELIGENTE.md -->
 ### [ ] [F35-TASK06] Persistir perfiles de mapeo reutilizables por formato y origen
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F35-14; CAR-F35-14.
 - **Severidad:** Alta / P1 en la matriz E. **Objetivo:** reutilizar correspondencias de columnas para proveedores y archivos recurrentes.
 - **Acción ejecutable:** ampliar F25-Task02 con perfiles de importador que guarden origen/proveedor, entidad destino, encabezados, mapeo, reglas, locale y versión; validar compatibilidad antes de aplicar.
@@ -1641,6 +1714,7 @@
 
 <!-- ID: F35-TASK07 | Fuentes: AUDITORIAS/AUDITORIA_FASE_35_IMPORTADOR_INTELIGENTE.md -->
 ### [ ] [F35-TASK07] Generar CSV descargable de errores y filas observadas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F35-13; CAR-F35-13.
 - **Severidad:** Alta / P1. **Objetivo:** entregar al usuario un reporte accionable de cada fila rechazada y su causa.
 - **Acción ejecutable:** generar CSV UTF-8 con número de fila, columna, valor sanitizado, código de error, descripción y acción recomendada; permitir descargar solo registros autorizados y limitar exposición de PII.
@@ -1655,6 +1729,7 @@
 
 <!-- ID: F38-TASK07 | Fuentes: AUDITORIAS/AUDITORIA_FASE_38_AYUDA_CONTEXTUAL_METADATOS_APRENDIZAJE.md -->
 ### [ ] [F38-TASK07] Ampliar guías especializadas para procesos administrativos y financieros
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F38-12; CAR-F38-12.
 - **Severidad:** Alta / P1. **Objetivo:** orientar tareas complejas que requieren secuencias y controles específicos.
 - **Acción ejecutable:** crear guías para conciliación bancaria, importador Excel/CSV, emisión de documentos CUV, cierre de año lectivo y procesos administrativos; vincularlas a controles/contexto de cada módulo.
@@ -1669,6 +1744,7 @@
 
 <!-- ID: F39-TASK20 | Fuentes: AUDITORIAS/AUDITORIA_FASE_39_DIGITALIZACION_TRANSICION.md -->
 ### [ ] [F39-TASK20] Detectar documentos similares con revisión humana
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** P12 y CAR-F39-04/CAR-F39-14; ausencia de comparación de similitud documental.
 - **Severidad:** Media / P1. **Objetivo:** detectar copias renombradas, versiones parecidas o documentos casi duplicados sin confundirlos con duplicados exactos.
 - **Acción ejecutable:** complementar SHA-256 con comparación de metadatos y similitud de texto/estructura; generar candidatos con score y evidencia; requerir decisión humana para fusionar, marcar versión o mantener ambos.
@@ -1683,6 +1759,7 @@
 
 <!-- ID: F40-TASK24 | Fuentes: AUDITORIAS/AUDITORIA_FASE_40_SEGURIDAD_DOCUMENTAL_TRAZABILIDAD_Y_CONSERVACION.md -->
 ### [ ] [F40-TASK24] Revisar y revocar permisos heredados u obsoletos automáticamente
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F40-18; accesos residuales tras egreso o desvinculación laboral.
 - **Severidad:** Alta / P1. **Objetivo:** retirar accesos que ya no corresponden a la relación laboral, académica o familiar vigente.
 - **Acción ejecutable:** programar revisión de ACL por recurso y ámbito; comparar con estado de usuario/relación; proponer revocación de permisos directos/heredados y registrar excepciones aprobadas.
@@ -1697,6 +1774,7 @@
 
 <!-- ID: F41-TASK05 | Fuentes: AUDITORIAS/AUDITORIA_FASE_41_PRUEBAS_INTEGRALES_DIGITALIZACION.md -->
 ### [ ] [F41-TASK05] Servicio OCR con corrección humana asistida
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** F41-05; CAR-F41-06; E2E-41-06.
 - **Severidad:** Alta. **Objetivo:** extraer texto de documentos escaneados y validar/corregir resultados antes de persistirlos.
 - **Acción ejecutable:** integrar OCR para español; procesar PDF escaneado e imágenes; devolver texto, coordenadas y confianza por campo; crear interfaz comparativa que marque baja confianza y exija revisión humana.
@@ -1711,6 +1789,7 @@
 
 <!-- ID: TAREA-F5-013 | Fuentes: completadas.md -->
 ### [ ] [TAREA-F5-013] Integrar los cobros de admisión, los pagos y las becas con el expediente del aspirante
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `Auditoria.txt` (HALLAZGOS F5: HALLAZGOS-F5-P1-01) / `AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md` (Subcapacidad 5.13, Brecha P1-01)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`, `backend/user-service/Code.gs` (l. 3330-3420), `js/student.js`
@@ -1745,6 +1824,7 @@
 
 <!-- ID: TAREA-F5-018 | Fuentes: completadas.md -->
 ### [ ] [TAREA-F5-018] Completar la experiencia multiestudiante y el resumen familiar consolidado
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `Auditoria.txt` (HALLAZGOS F5: HALLAZGOS-F5-P1-01) / `AUDITORIA_FASE_5_ADMISIONES_PORTAL_FAMILIAS.md` (Subcapacidad 5.9, Brecha P1-01)
 - **Severidad/Clasificación:** Medio
 - **Archivos Involucrados:** `js/student.js` (l. 182-350), `backend/user-service/Code.gs` (l. 3261-3320)
@@ -1775,6 +1855,7 @@
 
 <!-- ID: TAREA-F6-005 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-005.md ; completadas.md -->
 ### [ ] [TAREA-F6-005] Crear los microservicios administrativos y financieros con separación por responsabilidades
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 | Requisito | Dictamen | Motivo |
 |---|---|---|
 | R1 Dirección/Secretaría comparten microservicio y Spreadsheet cuando corresponda, con Drive y permisos separados | Parcial | academic-service y roles existen; carpetas creadas sin ACL ni política efectiva. |
@@ -1825,6 +1906,7 @@
 
 <!-- ID: TAREA-F6-030 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_TAREA-F6-005.md ; completadas.md -->
 ### [ ] [TAREA-F6-030] Crear los microservicios administrativos y financieros con separación por responsabilidades
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 | Criterio | Dictamen | Motivo |
 |---|---|---|
 | CA-053 Dirección/Secretaría compartido, permisos diferenciados y sin duplicar entidades | Parcial | servicio/roles/carpeta existen; no hay ACL y la acción de inicialización no está autorizada en ROLE_PERMISSIONS. |
@@ -1910,6 +1992,7 @@
 
 <!-- ID: TASK-159 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-159] Materialización automática de recargos por mora y administración de morosidad
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.3) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Recaudación, incentivo de pronto pago y gestión de morosidad)
@@ -1948,6 +2031,7 @@
 
 <!-- ID: TASK-160 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-160] Desarrollo de la consola administrativa de cobranza, caja y revisión de comprobantes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección E (Brecha E.5) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Operatividad de la tesorería escolar y productividad contable)
@@ -1985,6 +2069,7 @@
 
 <!-- ID: TASK-161 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-161] Interfaz de configuración de conceptos, tarifas, aranceles y planes de pago
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.1) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Parametrización administrativa y consistencia de tarifas)
@@ -2018,6 +2103,7 @@
 
 <!-- ID: TASK-162 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-162] Integración real de pasarelas de pago y procesamiento de notificaciones externas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.8) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Automatización de recaudación, pasarelas digitales y seguridad criptográfica)
@@ -2056,6 +2142,7 @@
 
 <!-- ID: TASK-164 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-164] Sistema analítico de morosidad, antigüedad de saldos y proyección de recaudación
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.7) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Inteligencia financiera, gestión de tesorería y toma de decisiones)
@@ -2092,6 +2179,7 @@
 
 <!-- ID: TASK-166 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-166] Ajustes administrativos de cargos, modificaciones de obligaciones y control de retiros
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.2) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Integridad de cargos, sincronización académica y gestión de bajas)
@@ -2127,6 +2215,7 @@
 
 <!-- ID: TASK-167 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-167] Administración de becas, descuentos temporales y vencimiento automático de beneficios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.3) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Control de beneficios económicos y vigencia de becas)
@@ -2159,7 +2248,9 @@
 ---
 
 <!-- ID: TASK-174 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-174] Automatizar la deducción de anticipos y préstamos y actualizar su amortización al cerrar la planilla
+### [ ] [TASK-174] Automatizar la deducción de anticipos y préstamos y actualizar su amortización al cerrar la planilla
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.5), Sección E (Brecha E.5) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Recuperación de cuentas por cobrar a empleados y consistencia de amortizaciones)
@@ -2200,7 +2291,9 @@
 ---
 
 <!-- ID: TASK-175 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-175] Implementar un catálogo dinámico de conceptos salariales, reglas de cálculo y ajustes
+### [ ] [TASK-175] Implementar un catálogo dinámico de conceptos salariales, reglas de cálculo y ajustes
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.2) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Flexibilidad salarial, parametrización de ingresos/deducciones y reglas de negocio)
@@ -2240,7 +2333,9 @@
 ---
 
 <!-- ID: TASK-177 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-177] Implementar la generación masiva y distribución segura de comprobantes de pago
+### [ ] [TASK-177] Implementar la generación masiva y distribución segura de comprobantes de pago
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.6) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Entrega de comprobantes de pago, privacidad salarial y comunicación al personal)
@@ -2281,6 +2376,7 @@
 
 <!-- ID: TASK-178 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-178] Incorporar exportación bancaria para dispersión masiva de salarios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección G y Sección H (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Eficiencia en tesorería escolar, pagos ACH y automatización bancaria)
@@ -2320,6 +2416,7 @@
 
 <!-- ID: TASK-179 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-179] Integrar correctamente las obligaciones patronales con la contabilidad por partida doble
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.7), Sección E y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Consistencia contable, balance por partida doble y provisiones laborales)
@@ -2354,7 +2451,9 @@
 ---
 
 <!-- ID: TASK-180 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-180] Mejorar el procesamiento de planillas por lotes y la revisión comparativa de resultados
+### [ ] [TASK-180] Mejorar el procesamiento de planillas por lotes y la revisión comparativa de resultados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md` / Sección B (B.3) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Productividad en Recursos Humanos, detección de variaciones y auditoría previa al cierre)
@@ -2389,7 +2488,9 @@
 ---
 
 <!-- ID: TASK-181 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-181] Crear una matriz comparativa de cotizaciones y adjudicación por partidas
+### [ ] [TASK-181] Crear una matriz comparativa de cotizaciones y adjudicación por partidas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.2) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Optimización de costos, transparencia en compras y adjudicaciones divididas)
@@ -2427,7 +2528,9 @@
 ---
 
 <!-- ID: TASK-182 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-182] Integrar la recepción de compras con el registro de activos fijos
+### [ ] [TASK-182] Integrar la recepción de compras con el registro de activos fijos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.4), Sección D y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Control patrimonial institucional, capitalización de bienes y prevención de extravíos)
@@ -2464,7 +2567,9 @@
 ---
 
 <!-- ID: TASK-183 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-183] Ampliar el catálogo de proveedores con contactos múltiples y datos comerciales protegidos
+### [ ] [TASK-183] Ampliar el catálogo de proveedores con contactos múltiples y datos comerciales protegidos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.1) y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Gestión de proveedores, seguridad de información bancaria y control de pagos ACH)
@@ -2505,7 +2610,9 @@
 ---
 
 <!-- ID: TASK-184 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-184] Implementar el expediente digital unificado de adquisiciones
+### [ ] [TASK-184] Implementar el expediente digital unificado de adquisiciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.5), Sección D y Sección G (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Trazabilidad 360°, auditoría interna y archivo documental de compras)
@@ -2543,7 +2650,9 @@
 ---
 
 <!-- ID: TASK-185 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-185] Motor integral de depreciación y gestión contable de activos fijos
+### [ ] [TASK-185] Motor integral de depreciación y gestión contable de activos fijos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-12), Sección G (Defecto 3) y Plan de Trabajo F19-04
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Cumplimiento contable institucional, cálculo de vida útil, amortización acumulada y balance patrimonial)
@@ -2600,7 +2709,9 @@
 ---
 
 <!-- ID: TASK-186 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-186] Creación de un catálogo maestro institucional de artículos, materiales y suministros
+### [ ] [TASK-186] Creación de un catálogo maestro institucional de artículos, materiales y suministros
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-01), Sección G y Plan de Trabajo F19-05
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Estandarización de materiales, prevención de duplicados tipográficos, normalización de unidades de medida y control de adquisiciones)
@@ -2642,7 +2753,9 @@
 ---
 
 <!-- ID: TASK-187 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-187] Programación automática y administración del mantenimiento preventivo recurrente
+### [ ] [TASK-187] Programación automática y administración del mantenimiento preventivo recurrente
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-15), Sección C (2.15) y Plan de Trabajo F19-06
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Preservación de infraestructura, continuidad operativa, planificación de intervenciones y prevención de fallas mayores)
@@ -2687,7 +2800,9 @@
 ---
 
 <!-- ID: TASK-188 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-188] Integración contable de consumos, entregas y movimientos de inventario
+### [ ] [TASK-188] Integración contable de consumos, entregas y movimientos de inventario
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-17), Sección C (2.17) y Plan de Trabajo F19-07
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Control de costos departamentales, exactitud contable en consumo de suministros y seguimiento presupuestario)
@@ -2728,7 +2843,9 @@
 ---
 
 <!-- ID: TASK-189 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-189] Implementación de un sistema integral de valoración económica del inventario
+### [ ] [TASK-189] Implementación de un sistema integral de valoración económica del inventario
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-19) y Plan de Trabajo F19-08
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Valuación de existencias, estados financieros precisos, métodos PEPS/Promedio y auditoría contable)
@@ -2770,7 +2887,9 @@
 ---
 
 <!-- ID: TASK-190 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-190] Implementación de reservas, disponibilidad y reposición inteligente de materiales
+### [ ] [TASK-190] Implementación de reservas, disponibilidad y reposición inteligente de materiales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-04, F19-10) y Plan de Trabajo F19-09
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Continuidad operativa, abastecimiento oportuno, prevención de sobrecompras y gestión de compromisos)
@@ -2809,7 +2928,9 @@
 ---
 
 <!-- ID: TASK-200 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-200] Facturación automática de servicios y cargos recurrentes en estados de cuenta
+### [ ] [TASK-200] Facturación automática de servicios y cargos recurrentes en estados de cuenta
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección E (PT-21-44), Sección C (1.16) y Plan de Implementación TAREA 12
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Automatización de cobros mensuales, integridad financiera y conciliación de servicios)
@@ -2840,7 +2961,9 @@
 ---
 
 <!-- ID: TASK-205 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
-### [x] [TASK-205] Administración centralizada de tarifas, contratos y condiciones de servicios
+### [ ] [TASK-205] Administración centralizada de tarifas, contratos y condiciones de servicios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (1.16) y Plan de Implementación TAREA 17
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Políticas tarifarias configurables, vigencias contractuales y descuentos institucionales)
@@ -2872,6 +2995,7 @@
 
 <!-- ID: TASK-270 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-270] [P1] Migración Histórica de Contabilidad, Cuentas por Cobrar y Obligaciones Administrativas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 18
 - **Prioridad:** P1 (Alta)
 - **Componentes Afectados:**
@@ -2901,6 +3025,7 @@
 
 <!-- ID: TASK-332 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-332] [P1] Guía interactiva especializada para conciliación bancaria
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 8 (Orientación guiada en procesos contables de alta complejidad)
 - **Componentes Afectados:**
@@ -2936,6 +3061,7 @@
 
 <!-- ID: TASK-485 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-11.md ; Pendientes.md -->
 ### [ ] [TASK-485] Activar un enrutador contextual único con soporte de historial y rutas directas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-188; T-UX-11.
 - **Severidad:** Alto.
 - **Objetivo:** hacer que navegación, URL y estado de vista representen el mismo destino.
@@ -2975,6 +3101,7 @@
 
 <!-- ID: TASK-486 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-11.md ; Pendientes.md -->
 ### [ ] [TASK-486] Preservar y restaurar el estado real de listas y vistas de detalle al navegar
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-189; T-UX-11.
 - **Severidad:** Alto.
 - **Objetivo:** conservar filtros, búsqueda, orden, página y contexto al entrar a detalle y regresar.
@@ -3011,6 +3138,7 @@
 
 <!-- ID: TASK-487 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_T-UX-12.md ; Pendientes.md -->
 ### [ ] [TASK-487] Integrar indicadores operativos reales en los paneles de Estudiante, Docente y Contabilidad
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** AUD-NG-190; T-UX-12.
 - **Severidad:** Alto.
 - **Objetivo:** que los resúmenes de cada panel se alimenten de datos reales y tengan accesos útiles.
@@ -3049,11 +3177,13 @@
 ---
 
 <!-- ID: TASK-637 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
-### [X] [TASK-637] Completar el inventario integral de archivos
+### [ ] [TASK-637] Completar el inventario integral de archivos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Referencia:** AUD-NG-281.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** Completada (C1.295; inventario integral reconciliado, autoauditoría y Code Review documental aprobados).
+- **Estado histórico anterior:** Completada (C1.295; inventario integral reconciliado, autoauditoría y Code Review documental aprobados).
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 - **Objetivo y acción:** generar y mantener un inventario exhaustivo de los 974 archivos versionados, con ruta exacta, tipo, tamaño, SHA, área funcional, propósito y condición de uso; reconciliarlo con el árbol Git vigente y contemplar contenido académico, assets, datos, documentación, pruebas, configuración y backend.
 - **Archivos/módulos afectados:** `docs/architecture/repository-inventory.md`, `AUDITORIAS/MapaDependencias.md`, árbol completo del repositorio.
 - **Dependencias:** árbol Git de la rama de trabajo, documentación vigente, punto de entrada `index.html`.
@@ -3085,11 +3215,13 @@
 - **Pruebas beta:** no aplican al cierre documental; escenarios funcionales permanecen en su catálogo y no se declaran ejecutados.
 - **Dependencia:** TASK-638 se reanudará después de verificar este commit A y completar su auditoría preimplementación; no se mezcla en este commit.
 <!-- ID: TASK-638 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK02.md -->
-### [X] [TASK-638] Trazar dependencias estáticas y dinámicas de extremo a extremo
+### [ ] [TASK-638] Trazar dependencias estáticas y dinámicas de extremo a extremo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Referencia:** AUD-NG-282.
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
-- **Estado:** Completada (C1.301; matriz estática de dependencias, consumidores, dispatchers, handlers, persistencia y contratos documentada en Auditoría/MapaDependencias.md, sección C1.301; limitaciones de deployments y pruebas runtime declaradas).
+- **Estado histórico anterior:** Completada (C1.301; matriz estática de dependencias, consumidores, dispatchers, handlers, persistencia y contratos documentada en Auditoría/MapaDependencias.md, sección C1.301; limitaciones de deployments y pruebas runtime declaradas).
+- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 - **Objetivo y acción:** documentar por archivo las dependencias HTML `script/link`, CSS, imágenes, fuentes, imports, referencias dinámicas, rutas, endpoints, acciones backend, contratos y servicios externos; distinguir referencias comprobadas de inferidas y registrar consumidores/proveedores.
 - **Archivos/módulos afectados:** HTML, JS, CSS, JSON, GAS, configuración, documentación y recursos del repositorio; `AUDITORIAS/MapaDependencias.md`.
 - **Dependencias:** TASK-637, catálogo completo de archivos.
@@ -3100,6 +3232,7 @@
 
 <!-- ID: TASK-660 | Fuentes: AUDITORIAS/AUDITORIA_COMPLETADAS_F8-TASK06.md -->
 ### [ ] [TASK-660] Inventariar ubicaciones y limpiar temporales huérfanos de forma segura
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo:** AUD-NG-305.
 - **Severidad:** ALTO/P1.
 - **Objetivo:** identificar los destinos de materiales, entregas, versiones, proyectos y cargas temporales y evitar acumulación de residuos.
@@ -3115,6 +3248,7 @@
 
 <!-- ID: AUD-NG-173 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-173] Integrar y completar la vista de actividad reciente contextual
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de tareas completadas, T-UX-26; evidencia en `js/ui-common.js` y `ChangesLogs.txt` (octubre de 2026).
 - **Severidad/Clasificación:** Medio (P2; integración funcional, navegación y privacidad de actividad).
 - **Archivos Involucrados:** `js/ui-common.js`, paneles de control por rol, módulos que generan actividad, pruebas de regresión; relacionado con TASK-067 y TASK-221.
@@ -3141,6 +3275,7 @@
 
 <!-- ID: F11-TASK16 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md -->
 ### [ ] [F11-TASK16] Ampliar reportes contables y balance de comprobación
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** sección 16 (backlog unificado); no se documenta una brecha técnica individual adicional en las secciones 1-4.
 - **Severidad:** Media. **Objetivo:** ofrecer reportes contables consolidados y verificables para control financiero.
 - **Acción ejecutable:** especificar y desarrollar reportes requeridos y balance de comprobación a partir de asientos contabilizados, con filtros por periodo/cuenta/centro de costo y conciliación de totales.
@@ -3155,6 +3290,7 @@
 
 <!-- ID: F17-TASK09 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK09] Crear interfaz gráfica de administración de políticas fiscales y techos salariales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Media (Parametrización contable)
 - **Componentes Afectados:** `dashboard-recursos-humanos.html`, `dashboard-contabilidad.html`.
 - **Solución Propuesta:** Panel interactivo para actualizar techos del IHSS y tramos del ISR sin editar la base de datos.
@@ -3172,6 +3308,7 @@
 
 <!-- ID: F17-TASK10 | Fuentes: AUDITORIAS/AUDITORIA_FASE_17_PLANILLAS_COMPENSACIONES.md -->
 ### [ ] [F17-TASK10] Exportar nóminas para acreditación bancaria en formato ACH
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Media (Tesorería institucional)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`.
 - **Solución Propuesta:** Generar archivo de dispersión bancaria para pagos masivos de nómina en bancos locales.
@@ -3189,6 +3326,7 @@
 
 <!-- ID: F18-TASK09 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
 ### [ ] [F18-TASK09] Evaluar y calificar el desempeño de proveedores
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Media (Gestión de la calidad del servicio de proveedores)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `ProveedoresActivos`.
 - **Solución Propuesta:** Registrar calificaciones por puntualidad, calidad del producto y soporte, generando un score histórico por proveedor.
@@ -3206,6 +3344,7 @@
 
 <!-- ID: F18-TASK10 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
 ### [ ] [F18-TASK10] Crear visor consolidado del expediente digital de adquisición
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Media (Auditoría interna y archivo documental)
 - **Componentes Afectados:** `js/accounting.js`, `dashboard-contabilidad.html`.
 - **Solución Propuesta:** Vista donde, ingresando el número de solicitud o de orden, se desplieguen todos los documentos vinculados (solicitud, cotizaciones, orden, recepción, factura, asiento y pago).
@@ -3223,6 +3362,7 @@
 
 <!-- ID: F18-TASK11 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
 ### [ ] [F18-TASK11] Generar alertas de retrasos en entregas de compras
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Media (Seguimiento operativo)
 - **Componentes Afectados:** `backend/accounting-service/Code.gs`, `OrdenesCompra`.
 - **Solución Propuesta:** Alertar a compras cuando la fecha actual supere `fechaEntregaEstimada` de una orden pendiente.
@@ -3240,6 +3380,7 @@
 
 <!-- ID: F18-TASK12 | Fuentes: AUDITORIAS/AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md -->
 ### [ ] [F18-TASK12] Implementar suite automatizada de pruebas y regresión de compras
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Media-alta (Aseguramiento de Calidad)
 - **Componentes Afectados:** `tests/regression/academic-grading-suite.js`, `backend/developer-service/Code.gs`.
 - **Solución Propuesta:** Implementar `runPhase18PurchasingAndSuppliersRegressionSuite` para validar el flujo completo desde la solicitud hasta el pago y asiento contable.
@@ -3258,6 +3399,7 @@
 
 <!-- ID: F19-TASK09 | Fuentes: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md -->
 ### [ ] [F19-TASK09] Registrar pólizas y controlar vencimiento de garantías de activos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones C.2.13, D, E/F19-13 y H P2.
 - **Severidad:** Media. **Objetivo:** conservar cobertura y fechas de garantía/póliza asociadas a cada activo.
 - **Acción ejecutable:** agregar proveedor, número de póliza/garantía, cobertura, inicio/fin, documentos y estado; generar alertas previas al vencimiento y permitir consulta por activo/proveedor.
@@ -3272,6 +3414,7 @@
 
 <!-- ID: F19-TASK10 | Fuentes: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md -->
 ### [ ] [F19-TASK10] Controlar lotes y fechas de expiración de insumos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones C.2.8, D, E/F19-08 y H P2.
 - **Severidad:** Media. **Objetivo:** evitar uso de insumos vencidos y mantener trazabilidad por lote.
 - **Acción ejecutable:** permitir lote y caducidad opcionales por artículo/entrada; controlar existencias por lote y ubicación; alertar próximos vencimientos y bloquear salidas de lotes vencidos según política.
@@ -3286,6 +3429,7 @@
 
 <!-- ID: F19-TASK11 | Fuentes: AUDITORIAS/AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md -->
 ### [ ] [F19-TASK11] Integrar alertas multicanal de inventario y mantenimiento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones C.2.18, E/F19-18 y H P2.
 - **Severidad:** Media. **Objetivo:** notificar oportunamente quiebres de stock y vencimientos/órdenes de mantenimiento a responsables.
 - **Acción ejecutable:** integrar alertas de stock bajo y mantenimiento con `sendMultiChannelNotification`, usando destinatarios por bodega/rol, preferencias, deduplicación y registro de entrega.
@@ -3300,6 +3444,7 @@
 
 <!-- ID: F20-TASK11 | Fuentes: AUDITORIAS/AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md -->
 ### [ ] [F20-TASK11] Integrar colecciones bibliográficas valiosas con inventario patrimonial
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones B, D/F20-41..F20-45 y G P2.
 - **Severidad:** Media. **Objetivo:** controlar colecciones de valor patrimonial sin duplicar registros físicos.
 - **Acción ejecutable:** permitir que ejemplares/colecciones designados se vinculen a `ActivosPatrimoniales` mediante referencia estable; reflejar custodio, ubicación, condición y baja sin crear una segunda ficha patrimonial.
@@ -3314,6 +3459,7 @@
 
 <!-- ID: F20-TASK13 | Fuentes: AUDITORIAS/AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md -->
 ### [ ] [F20-TASK13] Implementar solicitudes de adquisición bibliográfica y sugerencias de compra
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Hallazgo de origen:** secciones D/F20-46..F20-50 y G P2.
 - **Severidad:** Media. **Objetivo:** canalizar necesidades bibliográficas de docentes/estudiantes hacia compras institucionales.
 - **Acción ejecutable:** permitir sugerencias con título, autor, ISBN, motivo y asignatura; someterlas a revisión/aprobación; convertir solicitudes aprobadas en requisición del módulo de compras sin duplicar catálogo ni orden.
@@ -3328,6 +3474,7 @@
 
 <!-- ID: TASK-165 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-165] Visor avanzado de comprobantes y documentos financieros
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección J (P2)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Comodidad operativa, usabilidad y validación de transferencias)
@@ -3362,6 +3509,7 @@
 
 <!-- ID: TASK-356 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-356] Ampliar los reportes contables, balance de comprobación y estado de resultados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área IV (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Informes financieros)
@@ -3380,6 +3528,7 @@
 
 <!-- ID: TASK-359 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-359] Fortalecimiento de idempotencia, concurrencia y consistencia de operaciones financieras
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección H (H.2, H.3) y Sección J (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media-alta (Integridad financiera, prevención de condiciones de carrera y persistencia de idempotencia)
@@ -3413,6 +3562,7 @@
 
 <!-- ID: TASK-360 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-360] Correcciones fiscales, notas de corrección y trazabilidad documental
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.6) y Sección J (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Trazabilidad fiscal, cumplimiento SAR y corrección de documentos)
@@ -3443,6 +3593,7 @@
 
 <!-- ID: TASK-361 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-361] Exportación avanzada de estados de cuenta, recibos y reportes financieros
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.4) y Sección J (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Presentación institucional, descarga documental y reportería)
@@ -3474,6 +3625,7 @@
 
 <!-- ID: TASK-362 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-362] Incorporación de comisiones bancarias y liquidación neta de pasarelas en contabilidad
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.8) y Sección J (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Exactitud contable y conciliación de pasarelas digitales)
@@ -3504,6 +3656,7 @@
 
 <!-- ID: TASK-363 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-363] Ampliación de la conciliación bancaria asistida y gestión de excepciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.9) y Sección J (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Control de tesorería, conciliación bancaria y automatización de extractos)
@@ -3535,6 +3688,7 @@
 
 <!-- ID: TASK-370 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-370] Implementar seguimiento de entregas y alertas de retrasos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.3) y Sección G (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Seguimiento operativo, cumplimiento de proveedores y gestión de alertas)
@@ -3568,6 +3722,7 @@
 
 <!-- ID: TASK-371 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-371] Implementar control de consumo y disponibilidad de contratos marco
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.1) y Sección G (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Gestión de suministros recurrentes y control de topes contractuales)
@@ -3600,6 +3755,7 @@
 
 <!-- ID: TASK-372 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-372] Implementar sugerencias de compra basadas en existencias y niveles mínimos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.4) y Sección G (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Continuidad operativa, abastecimiento oportuno y prevención de quiebres de stock)
@@ -3632,6 +3788,7 @@
 
 <!-- ID: TASK-373 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-373] Implementar evaluación histórica del desempeño de proveedores
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.1) y Sección G (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Calidad en las adquisiciones, scoring de proveedores y evaluación de servicio)
@@ -3665,6 +3822,7 @@
 
 <!-- ID: TASK-374 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-374] Incorporar un procedimiento formal para compras urgentes y excepcionales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección G y Sección H (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Gestión de emergencias institucionales, trazabilidad de excepciones y control financiero)
@@ -3697,6 +3855,7 @@
 
 <!-- ID: TASK-375 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-375] Desarrollar reportes consolidados de compras, compromisos y cuentas por pagar
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (B.5), Sección D y Sección G (P2)
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Reportería gerencial, control de compromisos y auditoría contable)
@@ -3732,6 +3891,7 @@
 
 <!-- ID: TASK-376 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-376] Identificación institucional de activos y materiales mediante códigos QR y códigos de barras
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-07), Sección C (2.7) y Plan de Trabajo F19-10
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Productividad en campo, toma ágil de inventarios, reducción de errores de digitación y escaneo móvil)
@@ -3774,6 +3934,7 @@
 
 <!-- ID: TASK-377 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-377] Control de lotes, números de serie y fechas de vencimiento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-08, F19-10) y Plan de Trabajo F19-11
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Control sanitario, trazabilidad de insumos perecederos de cafetería, reactivos de ciencias y medicamentos de enfermería)
@@ -3815,6 +3976,7 @@
 
 <!-- ID: TASK-378 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-378] Gestión de garantías, pólizas y cobertura de activos patrimoniales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-13), Sección C (2.13) y Plan de Trabajo F19-12
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Ahorro en reparaciones, soporte de proveedores, trazabilidad de siniestros y reclamos comerciales)
@@ -3850,6 +4012,7 @@
 
 <!-- ID: TASK-379 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-379] Sistema centralizado de alertas y notificaciones multicanal
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-18), Sección C (2.18) y Plan de Trabajo F19-13
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Comunicación oportuna, abastecimiento ágil, atención prioritaria de fallas y alertas preventivas)
@@ -3887,6 +4050,7 @@
 
 <!-- ID: TASK-380 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-380] Gestión documental, expedientes y actas de inventario y patrimonio
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E (F19-14), Sección C y Plan de Trabajo F19-14
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Respaldo probatorio, expedientes patrimoniales 360°, actas digitales y archivo seguro en Drive)
@@ -3924,6 +4088,7 @@
 
 <!-- ID: TASK-381 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-381] Integración de colecciones bibliográficas con el inventario patrimonial
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección C (2.13) y Plan de Trabajo P2
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Control de activos institucionales, capitalización de colecciones valiosas y trazabilidad de bajas)
@@ -3950,6 +4115,7 @@
 
 <!-- ID: TASK-383 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-383] Solicitudes de adquisición bibliográfica y sugerencias de compra escolar
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección C (2.12) y Plan de Trabajo P2
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Desarrollo de colecciones, detección de necesidades pedagógicas e integración con compras)
@@ -3976,6 +4142,7 @@
 
 <!-- ID: TASK-386 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-386] Gestión de proveedores externos y servicios de transporte contratados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (3.11) y Plan de Implementación TAREA 24
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Microbuses subcontratados, control de proveedores y homologación de requisitos)
@@ -4002,6 +4169,7 @@
 
 <!-- ID: TASK-387 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-387] Control de combustible, kilometraje y costos operativos de la flota
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (1.1, 1.21) y Plan de Implementación TAREA 25
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Eficiencia energética, bitácora de consumo de combustible y costos por kilómetro)
@@ -4029,6 +4197,7 @@
 
 <!-- ID: TASK-388 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-388] Reportes operativos, administrativos y financieros de transporte
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (1.19) y Plan de Implementación TAREA 26
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Reportería consolidada, auditoría de puntualidad, ocupación de flota y cobranza)
@@ -4059,6 +4228,7 @@
 
 <!-- ID: TASK-432 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-432] [P2] Migración Histórica de Nómina, Empleados y Obligaciones Laborales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 19
 - **Prioridad:** P2 (Media)
 - **Componentes Afectados:**
@@ -4086,6 +4256,7 @@
 
 <!-- ID: TASK-462 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-462] Implementar portal de proveedores para operaciones externas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (F18-A01) y Sección G (P3)
 - **Prioridad:** P3
 - **Severidad/Clasificación:** Baja (Capacidad complementaria de autoservicio para proveedores externos)
@@ -4116,6 +4287,7 @@
 
 <!-- ID: TASK-463 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-463] Incorporar procesos competitivos y licitaciones para adquisiciones de mayor cuantía
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (F18-A04) y Sección G (P3)
 - **Prioridad:** P3
 - **Severidad/Clasificación:** Baja (Capacidad complementaria para proyectos mayores de infraestructura o equipamiento)
@@ -4144,6 +4316,7 @@
 
 <!-- ID: TASK-464 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-464] Incorporar captura asistida de datos de facturas mediante OCR
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-18-COMPRAS-PROVEEDORES-CONTRATACION.md` / Sección B (F18-A05) y Sección G (P3)
 - **Prioridad:** P3
 - **Severidad/Clasificación:** Baja (Capacidad complementaria de productividad en digitalización)
@@ -4171,6 +4344,7 @@
 
 <!-- ID: TASK-465 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-465] Panel de control gerencial de inventarios, activos y mantenimiento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E y Plan de Trabajo F19-15
 - **Prioridad:** P3
 - **Severidad/Clasificación:** Baja (Analítica gerencial, toma de decisiones estratégicas, indicadores en tiempo real y reportería ejecutiva)
@@ -4205,6 +4379,7 @@
 
 <!-- ID: TASK-466 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-466] Gestión presupuestaria y análisis de costos de suministros y mantenimiento por departamento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E y Plan de Trabajo F19-16
 - **Prioridad:** P3
 - **Severidad/Clasificación:** Baja (Control del gasto departamental, comparativa planificado vs real y límites de consumo)
@@ -4240,6 +4415,7 @@
 
 <!-- ID: TASK-467 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-467] Optimización del ciclo de requisiciones internas y distribución de materiales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E y Plan de Trabajo F19-17
 - **Prioridad:** P3
 - **Severidad/Clasificación:** Baja (Productividad operativa, solicitudes multirrenglón, entregas parciales y confirmación de recepción)
@@ -4274,6 +4450,7 @@
 
 <!-- ID: TASK-468 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-468] Optimización del inventario físico y conciliaciones periódicas por ubicación
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E, Sección F y Plan de Trabajo F19-18
 - **Prioridad:** P3
 - **Severidad/Clasificación:** Baja (Auditoría continua, conteos cíclicos sin detener operaciones, conteos ciegos y precisión de inventario)
@@ -4309,6 +4486,7 @@
 
 <!-- ID: TASK-469 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-469] Gestión integral de bajas patrimoniales, disposición y recuperación de valor
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_19_INVENTARIO_ACTIVOS_MANTENIMIENTO.md` / Sección E, Sección G y Plan de Trabajo F19-19
 - **Prioridad:** P3
 - **Severidad/Clasificación:** Baja (Disposición final de bienes, cálculo de ganancia/pérdida contable, venta, donación o chatarrización)
@@ -4343,6 +4521,7 @@
 
 <!-- ID: AUD-NG-014 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-014] Validar estado, prefijo y rango completo del CAI antes de emitir facturas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-014
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4355,6 +4534,7 @@
 
 <!-- ID: AUD-NG-016 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-016] Corregir reversión parcial y validación de elegibilidad de reembolsos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-016
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4367,6 +4547,7 @@
 
 <!-- ID: AUD-NG-017 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-017] Corregir la variable de motivo y garantizar la continuidad del offboarding
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-017
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4382,6 +4563,7 @@
 
 <!-- ID: AUD-NG-021 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-021] Completar el cálculo anualizado del ISR con saldo pendiente y parámetros por ejercicio
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-021
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4394,6 +4576,7 @@
 
 <!-- ID: AUD-NG-022 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-022] Parametrizar aportaciones patronales y demostrar su contabilización
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-022
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4406,6 +4589,7 @@
 
 <!-- ID: AUD-NG-023 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-023] Sustituir pruebas simuladas de compras e inventario por pruebas de comportamiento
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-023
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs, tests/regression/
@@ -4418,6 +4602,7 @@
 
 <!-- ID: AUD-NG-028 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-028] Completar el cálculo, cierre, boletas y contabilización de beneficios extraordinarios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-028
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4430,6 +4615,7 @@
 
 <!-- ID: AUD-NG-033 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-033] Validar importes contables y vincular las aprobaciones de compra con la identidad verificada
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-033 (F11-Task02)
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4442,6 +4628,7 @@
 
 <!-- ID: AUD-NG-041 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-041] Completar los datos oficiales de la orden y validar partidas, impuestos y total antes de generar el PDF
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-041 (TASK-015 / F18-Task04)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs; esquema de datos de ProveedoresActivos y OrdenesCompra
@@ -4454,6 +4641,7 @@
 
 <!-- ID: AUD-NG-042 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-042] Conservar un historial inmutable de versiones documentales de cada orden de compra
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-042 (TASK-015 / F18-Task04)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento documental en Google Drive; estructura de historial de órdenes
@@ -4466,6 +4654,7 @@
 
 <!-- ID: AUD-NG-043 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-043] Implementar una máquina de estados con transiciones permitidas y bitácora completa
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-043 (TASK-015 / F18-Task04)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs; estructura de OrdenesCompra y bitácora de estados
@@ -4478,6 +4667,7 @@
 
 <!-- ID: AUD-NG-044 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-044] Atribuir aprobaciones y transiciones a la identidad autenticada del usuario
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-044 (TASK-015 / F18-Task04)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4490,6 +4680,7 @@
 
 <!-- ID: AUD-NG-045 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-045] Exigir revisión, re-aprobación y nueva versión al modificar órdenes ya aprobadas o enviadas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-045 (TASK-015 / F18-Task04)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento documental e historial de órdenes
@@ -4502,6 +4693,7 @@
 
 <!-- ID: AUD-NG-046 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-046] Exigir conciliación de tres vías satisfactoria antes de habilitar cualquier pago a proveedores
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-046 (TASK-016 / F18-Task06)
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4514,6 +4706,7 @@
 
 <!-- ID: AUD-NG-047 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-047] Crear un registro estructurado e inmutable del detalle de cada pago parcial a proveedores
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-047 (TASK-016 / F18-Task06)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento contable; dashboard-contabilidad.html; js/accounting.js
@@ -4526,6 +4719,7 @@
 
 <!-- ID: AUD-NG-048 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-048] Rechazar cualquier pago o nota de crédito que exceda el saldo exacto de la obligación
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-048 (TASK-016 / F18-Task06)
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4538,6 +4732,7 @@
 
 <!-- ID: AUD-NG-049 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-049] Garantizar consistencia atómica entre pagos, movimientos de caja y asientos contables
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-049 (TASK-016 / F18-Task06)
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4550,6 +4745,7 @@
 
 <!-- ID: AUD-NG-050 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-050] Hacer obligatoria la idempotencia y validar la unicidad de referencias bancarias de pagos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-050 (TASK-016 / F18-Task06)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs
@@ -4562,6 +4758,7 @@
 
 <!-- ID: AUD-NG-051 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-051] Implementar registro central de notas de crédito y deduplicación global por proveedor
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-051 (TASK-016 / F18-Task06)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento contable; dashboard-contabilidad.html; js/accounting.js
@@ -4574,6 +4771,7 @@
 
 <!-- ID: AUD-NG-052 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-052] Persistir estados de vencimiento y validar fechas de las obligaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-052 (TASK-016 / F18-Task06)
 - **Severidad/Clasificación:** Medio
 - **Archivos Involucrados:** backend/accounting-service/Code.gs; almacenamiento contable; dashboard-contabilidad.html; js/accounting.js
@@ -4586,6 +4784,7 @@
 
 <!-- ID: AUD-NG-053 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-053] Implementar la interfaz operativa de cuentas por pagar, pagos y notas de crédito
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-053 (TASK-016 / F18-Task06)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** dashboard-contabilidad.html; js/accounting.js; backend/accounting-service/Code.gs
@@ -4598,6 +4797,7 @@
 
 <!-- ID: AUD-NG-054 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-054] Sustituir pruebas simuladas de cuentas por pagar por pruebas funcionales sobre operaciones reales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-054 (TASK-016 / F18-Task06)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/accounting-service/Code.gs; tests/regression/academic-grading-suite.js; tests/regression/
@@ -4610,6 +4810,7 @@
 
 <!-- ID: AUD-NG-079 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-079] Evitar que el catálogo devuelva servicios de ejemplo o éxito ante errores de lectura
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-079 (TASK-047 / F23-Task04)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** backend/developer-service/Code.gs
@@ -4621,7 +4822,9 @@
 ---
 
 <!-- ID: AUD-NG-096 | Fuentes: Pendientes.md -->
-### [x] [AUD-NG-096] Rectificar de forma aditiva el estado contradictorio de TASK-050
+### [ ] [AUD-NG-096] Rectificar de forma aditiva el estado contradictorio de TASK-050
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-096 (TASK-050 / F24-Task01)
 - **Severidad/Clasificación:** Observación
 - **Archivos Involucrados:** Pendientes.md; ChangesLogs.txt; Auditoria.txt
@@ -4636,6 +4839,7 @@
 
 <!-- ID: AUD-NG-098 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-098] Eliminar datos ficticios de los resultados institucionales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-098 (TASK-050 / F24-Task01)
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** backend/user-service/Code.gs; generadores académicos y financieros
@@ -4648,6 +4852,7 @@
 
 <!-- ID: AUD-NG-130 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-130] Respetar permisos financieros y aplicar beneficios por periodo sin mutar consultas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-130 (REQ-EXP-009).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/academic-service/Code.gs`; `backend/accounting-service/Code.gs`; `js/student.js`; `student-dashboard.html`.
@@ -4660,6 +4865,7 @@
 
 <!-- ID: AUD-NG-133 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-133] Asegurar integridad e idempotencia atómica de pagos y abonos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-133 (REQ-EXP-010).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
@@ -4676,6 +4882,7 @@
 
 <!-- ID: AUD-NG-134 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-134] Conectar el portal financiero estudiantil y generar recibos PDF correlativos
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-134 (REQ-EXP-011).
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `student-dashboard.html`; `js/student.js`; `js/accounting.js`; `backend/accounting-service/Code.gs`; `js/config.js`.
@@ -4688,6 +4895,7 @@
 
 <!-- ID: AUD-NG-135 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-135] Endurecer CAI, rango y correlativo de facturación fiscal hondureña
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-135 (REQ-EXP-012).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
@@ -4700,6 +4908,7 @@
 
 <!-- ID: AUD-NG-136 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-136] Restringir estados de cuenta, comprobantes, recibos y facturas a la familia autorizada
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-136 (REQ-EXP-011/012).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`, `backend/academic-service/Code.gs`; módulo de relaciones familiares.
@@ -4713,6 +4922,7 @@
 
 <!-- ID: AUD-NG-137 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-137] Unificar el nombre institucional en recibos y documentos financieros
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-137 (REQ-EXP-007).
 - **Severidad/Clasificación:** Bajo
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`; configuración central de marca y plantillas documentales.
@@ -4725,6 +4935,7 @@
 
 <!-- ID: AUD-NG-138 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-138] Corregir cierres de caja y conciliación bancaria por sesión/cuenta
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-138 (REQ-EXP-013).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
@@ -4737,6 +4948,7 @@
 
 <!-- ID: AUD-NG-139 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-139] Impedir bypass de autorización en cuentas por pagar y three-way match
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-139 (REQ-EXP-013).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`.
@@ -4749,6 +4961,7 @@
 
 <!-- ID: AUD-NG-141 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-141] Actualizar cálculo de nómina a parámetros legales hondureños vigentes y versionados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-141 (REQ-EXP-014).
 - **Severidad/Clasificación:** Crítico
 - **Archivos Involucrados:** `backend/accounting-service/Code.gs`; tabla de políticas de nómina.
@@ -4761,6 +4974,7 @@
 
 <!-- ID: T-UX-11 | Fuentes: completadas.md -->
 ### [ ] [T-UX-11] Unificar la navegación contextual y conservar el estado de las vistas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 3, octubre de 2026 (AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md - Área 1)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `js/ui-common.js`, Dashboards HTML
@@ -4784,6 +4998,7 @@
 
 <!-- ID: T-UX-16 | Fuentes: completadas.md -->
 ### [ ] [T-UX-16] Unificar los estados de notificaciones, tareas pendientes y aprobaciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 3, octubre de 2026 (AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md - Área 11 & 12)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `js/ui-common.js`, `backend/user-service/Code.gs`
@@ -4806,6 +5021,7 @@
 
 <!-- ID: T-UX-17 | Fuentes: completadas.md -->
 ### [ ] [T-UX-17] Corregir y completar la protección de cambios no guardados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 3, octubre de 2026 (AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md - Área 6)
 - **Severidad/Clasificación:** Alto
 - **Archivos Involucrados:** `js/ui-common.js`
@@ -4826,6 +5042,7 @@
 
 <!-- ID: T-UX-26 | Fuentes: completadas.md -->
 ### [ ] [T-UX-26] Incorporar una vista de actividad reciente contextual
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** Auditoría de la Fase 3, octubre de 2026 (AUDITORIA_FASE3_EXPERIENCIA_USUARIO_NAVEGACION.md - Área 13)
 - **Severidad/Clasificación:** Bajo
 - **Archivos Involucrados:** `js/ui-common.js`
@@ -4844,6 +5061,7 @@
 
 <!-- ID: TASK-245 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-245] [P1] [Pasarelas de Pago - Recepción Autenticada de Webhooks de Pasarelas de Pago]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/accounting-service/Code.gs`
   - Hojas `IntegracionesPasarelas`, `EventosWebhooksPasarelas`, `MovimientosCajaBancos`, `CargosEstudiante`
@@ -4918,6 +5136,7 @@
 
 <!-- ID: TASK-409 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-409] [P2] [Control Presupuestario - Seguimiento de Objetivos Presupuestarios y Desviaciones Financieras]
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Componentes Afectados:**
   - `backend/accounting-service/Code.gs`
 - **Dependencias Expuestas:** Diccionario (`F24-Task02`), metas (`F24-Task12`), alertas (`F24-Task14`), fuentes normalizadas (`F24-Task04`).

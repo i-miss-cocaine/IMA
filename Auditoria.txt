@@ -3339,3 +3339,29 @@ C1.495 — EXAM: autorización y ownership de saveEvaluationCategory (TASK-153 /
 - **Evidencia actual:** ACCOUNTING Transport Local Contracts run 45298723761 SUCCESS; 12 scripts Node.js 24 ejecutados sin fallos, incluidos TASK-030 transport-access-scope y guardian ABAC (24 aserciones). Academic Wellbeing run 45298723699 SUCCESS.
 - **Controles:** identidad de sesión, permisos por rol, scope ABAC para familias/estudiantes/conductores/monitores/gestión, auditoría de denegaciones; sin endpoint público GPS.
 - **Límite:** no se reejecutó la suite histórica Fase 21 de 207/207; no se afirma ese resultado. No hubo despliegue ni pruebas con hojas reales.
+
+===============================================================================
+AUD-NG-393 — INTEGRIDAD DEL BACKLOG: 672 IDs DEL PLAN SIN BLOQUE VIGENTE
+===============================================================================
+Fecha: 2026-11-23
+Severidad: ALTO / P1 — integridad de planificación y trazabilidad.
+Sesión: IMA-EXEC-20261123-CYCLE2-RESET-01
+Rama: NG_beta_0.0.0.1_work
+HEAD de inspección: 429abcbdd15027e73ed7e60f8704a0e15b795bad
+
+Evidencia:
+- La tabla de Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md contiene 1.350 IDs únicos.
+- Los siete archivos departamentales actuales contienen 687 IDs únicos.
+- 672 IDs del plan no tienen encabezado de tarea en los backlogs: 671 apuntan a pendientes/Otros/Pendientes.md y 1 a pendientes/Docente/Pendientes.md.
+- Nueve IDs existentes en los backlogs no aparecen en la tabla maestra.
+- pendientes/Otros/Pendientes.md contiene cuatro bloques previos, aunque el Plan Maestro/README le atribuyen cientos de tareas.
+
+Impacto:
+No es posible certificar que todos los requisitos originales estén presentes ni reiniciar el estado de los 672 bloques ausentes. No se deben inferir requisitos desde títulos, eliminar referencias ni sustituir los documentos fuente por resúmenes.
+
+Acción:
+AUD-NG-393 en pendientes/Otros/Pendientes.md: recuperar los bloques completos desde blobs/commits alcanzables en la rama autorizada y sus fuentes originales; reconciliar IDs, requisitos, criterios, dependencias y estados. No bloquea tareas independientes del portal.
+
+Estado: ABIERTO.
+Checkpoint: C1.964 — Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt.
+===============================================================================

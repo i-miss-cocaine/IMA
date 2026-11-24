@@ -4574,3 +4574,16 @@ Este archivo es el registro oficial de cambios del nuevo plan de implementación
 
 
 [2026-11-23 | TASK-030 / C1.963] TASK-030/F21-Task02 revalidada sin duplicar código. ACCOUNTING Transport Local Contracts run 45298723761 SUCCESS; 12 scripts Node.js 24 PASS, incluidos TASK-030 transport-access-scope, permisos de lectura, scope/ownership, asignación/concurrencia, rutas, métricas y guardian ABAC (24 aserciones). Academic Wellbeing run 45298723699 SUCCESS. No se reejecutó la suite histórica Fase 21 207/207; no hubo despliegue ni pruebas contra hojas reales. BETA-FUNC-134 pendiente. Siguiente P0 a revisar: TASK-032/F21-Task04.
+
+===============================================================================
+C1.964 — IMA-EXEC-20261123-CYCLE2-RESET-01
+===============================================================================
+- Se registra IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01 como requisito transversal del ciclo 2 y se referencia desde cada bloque de tarea disponible en los siete backlogs.
+- Se retiran las marcas de completado de las tareas existentes; los estados históricos y evidencias se conservan.
+- Se reorganiza el Plan Maestro para iniciar por PM-00A (base del portal y registro de servicios por rol); el triage anterior pasa a PM-00T.
+- Se amplían TASK-004 y TASK-047 con requisitos de puestos y servicios personales/compartidos; Desarrollador queda separado de Administrador.
+- Se detectan 672 IDs ausentes en los backlogs y se crea AUD-NG-393 para recuperarlos sin inventar requisitos.
+- Se conservan auditorías legacy, checkpoints anteriores y pruebas automatizadas; no se borran archivos históricos.
+- No se modificó código ni se ejecutaron pruebas Node.js/CLI/Actions en esta iteración documental.
+- Rama: NG_beta_0.0.0.1_work; HEAD inicial 429abcbdd15027e73ed7e60f8704a0e15b795bad; commit de cierre verificado tras publicación.
+===============================================================================

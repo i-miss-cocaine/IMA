@@ -9,7 +9,10 @@
 ---
 
 <!-- ID: TASK-085 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
+
+> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
 ### [ ] [TASK-085] [P0] Acceso Seguro y Temporal a Documentos Institucionales Sensibles
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Orden de Ejecución:** 3
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -48,6 +51,7 @@
 
 <!-- ID: F11-TASK05 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
 ### [ ] [F11-TASK05] Unificar confirmaciones de lectura y autorizaciones familiares
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
 **Otros títulos originales:**
 - Desarrollar el motor de confirmaciones de lectura, respuestas y solicitudes de autorización
@@ -78,6 +82,7 @@
 
 <!-- ID: TASK-157 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-157] Sistema de billetera familiar, anticipos y créditos a favor
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección E (Brecha E.4) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Experiencia de usuario, gestión de anticipos y trazabilidad familiar)
@@ -117,6 +122,7 @@
 
 <!-- ID: TASK-158 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-158] Liquidación atómica y distribución inteligente de pagos conjuntos multihijo
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección E (Brecha E.5) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Integridad de saldos entre hermanos y recaudación unificada)
@@ -158,6 +164,7 @@
 
 <!-- ID: TASK-163 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-163] Automatización de notificaciones de cargos, vencimientos, pagos y obligaciones familiares
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.9) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Comunicación institucional familiar y reducción de morosidad)
@@ -193,6 +200,7 @@
 
 <!-- ID: TASK-168 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-168] Reasignación administrativa de pagos y corrección de distribuciones
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_15_PAGOS_COBROS_FACTURACION.md` / Sección B (B.5) y Sección J (P1)
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Flexibilidad operativa y resolución de pagos mal aplicados)
@@ -226,6 +234,7 @@
 
 <!-- ID: TASK-194 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-194] Notificaciones multicanal de vencimientos y disponibilidad de reservas
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección C (2.6, 2.10) y Plan de Trabajo P1
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Reducción de morosidad en biblioteca, aviso oportuno de reservas disponibles y comunicación familiar)
@@ -256,6 +265,7 @@
 
 <!-- ID: TASK-197 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
 ### [ ] [TASK-197] Portal administrativo, operativo y familiar de transporte escolar
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección E (PT-21-28), Sección C (1.18) y Plan de Implementación TAREA 09
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Interfaces adaptadas por perfil, usabilidad móvil para choferes y experiencia familiar)
@@ -284,6 +294,7 @@
 
 <!-- ID: TASK-203 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-203] Control de asistencia y participación en servicios complementarios
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección E (PT-21-42), Sección C (1.17) y Plan de Implementación TAREA 15
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Asistencia a actividades extracurriculares, talleres, clubes y raciones de cafetería)
@@ -311,6 +322,7 @@
 
 <!-- ID: TASK-210 | Fuentes: Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 ### [ ] [TASK-210] Consolidación de cafetería y tienda con estados de cuenta familiares
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección E, Sección C (1.14) y Plan de Implementación TAREA 30
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Consolidación financiera, prevención de doble cobro y conciliación de consumos)
@@ -377,6 +389,7 @@
 
 <!-- ID: TASK-211 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-211] Ampliación del sistema de actividades extracurriculares y sus servicios asociados
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección E, Sección C (1.14) y Plan de Implementación TAREA 31
 - **Prioridad:** P1
 - **Severidad/Clasificación:** Alta (Gestión integral de clubes, deportes, tutorías, cupos y cobros asociados)
@@ -415,6 +428,7 @@
 
 <!-- ID: TASK-346 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
 ### [ ] [TASK-346] [P1] Implementar revisión automática de permisos obsoletos y accesos residuales (F40-14)
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Prioridad:** P1 (Alta / Importante)
 - **Orden de Ejecución:** 16 (Gobernanza de identidades y depuración de accesos)
 - **Componentes Afectados:**
@@ -447,7 +461,9 @@
 ---
 
 <!-- ID: TASK-392 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
-### [x] [TASK-392] Configuración centralizada de servicios complementarios institucionales
+### [ ] [TASK-392] Configuración centralizada de servicios complementarios institucionales
+- **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
+- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (1.14) y Plan de Implementación TAREA 32
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Arquitectura reutilizable de servicios escolares, parametrización y escalabilidad)
