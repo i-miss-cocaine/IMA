@@ -24,10 +24,10 @@ test("mantiene compatibilidad con solicitudes planas heredadas", () => {
 test("rechaza sobres nulos, arrays y valores no objeto", () => {
  for (const value of [null, [], "invalid", 4]) assert.throws(() => normalize(value), { message: "INVALID_REQUEST_ENVELOPE" });
 });
-function resolverFor(rows, relations = []) {
+function resolverFor(rows, relations = [], lockOverride) {
  const match = backend.match(/function resolveServiceEndpoint\(payload\) \{[\s\S]*?\n\}/);
  assert.ok(match, "Debe existir el resolver central");
- const lock = { tryLock: () => true, releaseLock: () => {} };
+ const lock = lockOverride || { tryLock: () => true, releaseLock: () => {} };
  const roleMatch = backend.match(/function developerNormalizeServiceRouteRole_\(value\) \{[\s\S]*?\n\}/);
  assert.ok(roleMatch, "Debe existir normalización de roles");
  const normalizeRole = vm.runInNewContext("(" + roleMatch[0] + ")");
@@ -251,4 +251,17 @@ test("los microservicios receptores rechazan versiones de contrato incompatibles
   assert.match(source, /const SERVICE_CONTRACT_VERSION = "v8\.4\.0"/, name + " debe declarar versión de contrato");
   assert.match(source, /SERVICE_CONTRACT_VERSION_MISMATCH/, name + " debe rechazar versiones incompatibles");
  }
+});
+
+test("el resolver falla cerrado ante contención y libera el lock después de resolver", () => {
+ let releases = 0;
+ const busyLock = { tryLock: timeout => { assert.equal(timeout, 5000); return false; }, releaseLock: () => { releases++; } };
+ const busy = resolverFor([serviceRow("activo")], [], busyLock)({ serviceId: "SVC-1", action: "readRecord" });
+ assert.equal(busy.code, "SERVICE_REGISTRY_BUSY");
+ assert.equal(releases, 0, "no debe liberar un lock que no adquirió");
+
+ const acquiredLock = { tryLock: timeout => { assert.equal(timeout, 5000); return true; }, releaseLock: () => { releases++; } };
+ const success = resolverFor([serviceRow("activo")], [], acquiredLock)({ serviceId: "SVC-1", action: "readRecord" });
+ assert.equal(success.status, "success");
+ assert.equal(releases, 1, "debe liberar el lock adquirido");
 });
