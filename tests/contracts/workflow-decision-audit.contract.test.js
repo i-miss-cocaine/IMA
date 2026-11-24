@@ -95,7 +95,9 @@ test("las decisiones heredadas mantienen verificación de su fórmula histórica
  const timestamp = new Date(row[7]).toISOString();
  const legacyPayload = [row[0], row[1], row[2], row[3], row[4], timestamp, row[9]].map(v => String(v || "")).join("|");
  row[10] = crypto.createHash("sha256").update(legacyPayload, "utf8").digest("hex");
- assert.equal(helpers.verify([row]).valid, true);
+ const legacyResult = helpers.verify([row]);
+ assert.equal(legacyResult.valid, true);
+ assert.equal(legacyResult.legacyEvents, 1);
 });
 test("las correcciones se vinculan al original y su motivo queda protegido", () => {
  const original = makeRow("DEC-ORIGINAL", helpers.genesis);
@@ -131,6 +133,7 @@ test("el historial expone el resultado de integridad y el esquema del hash", () 
  assert.match(backend, /ActorRole/);
  assert.match(backend, /CorrelationId/);
  assert.match(backend, /FuenteEjecucion/);
+ assert.match(backend, /WORKFLOW_AUDIT_LEGACY_HASH_SCOPE/);
 });
 test("la verificación y las escrituras serializan el acceso con LockService", () => {
  assert.match(backend, /verifyWorkflowDecisionAuditChain\(payload, lockAlreadyHeld\)/);
