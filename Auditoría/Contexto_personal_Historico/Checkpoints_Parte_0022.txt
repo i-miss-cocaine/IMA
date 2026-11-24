@@ -119,3 +119,17 @@ Verificar la nueva ejecución de GitHub Actions en el HEAD posterior a esta corr
 - Siguiente tarea elegible: TASK-047, PM-00A — registro de servicios por rol y consola de Desarrollador.
 
 ===============================================================================
+===============================================================================
+### C1.967 — IMA-EXEC-20261123-CI-WHITESPACE-FIX
+===============================================================================
+
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD de entrada: 42f470bb728887ef28fbf2a4314bfcd564483e1f.
+- Run GitHub Actions Academic Wellbeing Confidentiality Contract: 45317652052 — FAILURE.
+- Causa exacta: git diff --check reportó "new blank line at EOF" en Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md, línea 6481.
+- Node.js 24, syntax checks y contrato quedaron SKIPPED/NOT RUN por fallo del guard.
+- Corrección: quitar solo la línea vacía final; conservar todo el contenido.
+- No se modificó código productivo ni pruebas.
+- Nueva ejecución requerida; no declarar PASS anticipado.
+
+===============================================================================

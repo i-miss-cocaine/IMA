@@ -6479,3 +6479,9 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - No se ejecutaron suites CLI ni pruebas beta/despliegue; no aplicaban a este cambio documental.
 - Siguiente tarea elegible: TASK-047 en PM-00A, con verificación independiente de sus dependencias y contradicciones heredadas de HMAC/sesión.
 
+## 10.88 Corrección final de whitespace CI — C1.967
+
+- Run `45317652052` volvió a fallar en `git diff --check` por una línea vacía adicional al final de `Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md`; el paso Node.js y el contrato quedaron NOT RUN.
+- Se elimina únicamente la línea vacía final añadida en C1.966; se conserva el contenido del plan.
+- No se cambia el contrato, las pruebas, la lógica de autorización ni el código productivo.
+- Se requiere una nueva ejecución para confirmar el guard y las pruebas Node.js.

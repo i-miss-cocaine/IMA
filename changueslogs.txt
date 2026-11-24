@@ -4605,3 +4605,10 @@ C1.966 — IMA-EXEC-20261123-CYCLE2-DOCS-CI-PASS
 - El run 45317208341 fallido por espacios finales queda conservado como antecedente; sus pasos Node.js/contrato fueron NOT RUN.
 - Siguiente tarea: TASK-047, PM-00A.
 ===============================================================================
+===============================================================================
+C1.967 — IMA-EXEC-20261123-CI-WHITESPACE-FIX
+===============================================================================
+- Run 45317652052 falló en git diff --check por línea vacía adicional al final del Plan Maestro.
+- Se elimina la línea vacía final; no se modifican tests ni código.
+- Node.js/contrato quedaron NOT RUN; nueva ejecución requerida.
+===============================================================================
