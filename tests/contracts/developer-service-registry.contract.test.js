@@ -124,10 +124,12 @@ function postHandler() {
 }
 test("doPost exige el token de sesión dentro del payload normalizado", () => {
  const post = postHandler();
- const missing = post({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", payload: {} }) } });
+ const missing = post({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", payload: { authRole: "Administrador" } }) } });
  assert.equal(missing.code, "AUTHENTICATION_REQUIRED");
  const invalid = post({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", payload: { sessionToken: "bad" } }) } });
  assert.equal(invalid.code, "INVALID_SESSION_TOKEN");
+ const expired = post({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", payload: { sessionToken: "expired-session" } }) } });
+ assert.equal(expired.code, "INVALID_SESSION_TOKEN");
 });
 test("doPost deriva identidad y rol de claims firmados, no de authRole del cliente", () => {
  const post = postHandler();
