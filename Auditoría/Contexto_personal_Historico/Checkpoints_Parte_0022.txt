@@ -151,3 +151,17 @@ Verificar la nueva ejecución de GitHub Actions en el HEAD posterior a esta corr
 - Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59.
 - TASK-047 sigue En ejecución; quedan orquestación interservicio, historial completo de recursos/propietarios y compatibilidad real entre cuentas Apps Script.
 ===============================================================================
+
+===============================================================================
+### C1.971 — IMA-EXEC-20261124-CI-ALLOWLIST-ROLE-TEST
+===============================================================================
+
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD de entrada: 65c40185741f2f25e87a98351887df050eecf684.
+- Developer Service Registry Contract run 45320034556: SUCCESS; sintaxis Apps Script, contrato de registro, sintaxis UI y contrato de límite de rol PASS.
+- Regional Formatting Contract run 45320034406: SUCCESS.
+- Department Scope Contract run 45320034461: SUCCESS.
+- Academic Wellbeing Confidentiality Contract run 45320034509: FAIL en "Check task diff integrity": faltaba tests/security/developer-console-role-boundary.test.js en allowlist. Los pasos Node.js y contrato académico quedaron NOT RUN.
+- Corrección: agregar el test a path filter y allowlist; no se cambia la lógica ni se reducen verificaciones.
+- Reejecutar workflow académico y verificar PASS antes de continuar.
+===============================================================================

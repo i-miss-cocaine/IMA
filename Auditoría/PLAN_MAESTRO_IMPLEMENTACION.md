@@ -6508,3 +6508,12 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - HEAD de entrada: 327a8bd3b4d5d4a0eb39aa5569fb7f15b66ff499.
 - Resultado de workflows en HEAD de entrada: Developer Service Registry run 45319443700 SUCCESS; Regional Formatting 45319443779, Department Scope 45319443690, Hierarchical Configuration 45319443698, Accounting Import Preflight 45319443694 y Academic Wellbeing 45319443782 SUCCESS.
 - Las nuevas pruebas de consola y la CI de este cambio quedan pendientes hasta su ejecución.
+
+## 10.91 Alinear guardia de archivos del workflow académico con el nuevo contrato de consola — C1.971
+
+- El Developer Service Registry Contract run 45320034556 aprobó Node.js 24, sintaxis de backend, sintaxis de developer.js, sintaxis de ambos contratos y ejecución de las pruebas de registro y de límite de rol UI.
+- Regional Formatting Contract run 45320034406 y Department Scope Contract run 45320034461 también aprobaron.
+- Academic Wellbeing Confidentiality Contract run 45320034509 falló en el paso inicial de integridad porque su allowlist no incluía el nuevo archivo tests/security/developer-console-role-boundary.test.js. Node.js y el contrato académico quedaron SKIPPED; no es un fallo de lógica académica.
+- Se actualizó únicamente el path filter y la allowlist para reconocer ese archivo de prueba ya incorporado en la rama. No se debilitaron las aserciones del workflow.
+- Se requiere una nueva ejecución del workflow académico para confirmar la corrección.
+- HEAD de entrada: 65c40185741f2f25e87a98351887df050eecf684; rama base sin cambios.

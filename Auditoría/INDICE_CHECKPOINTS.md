@@ -441,3 +441,5 @@ Los checkpoints posteriores se registran aquí.
 | C1.967 | IMA-EXEC-20261123-CI-WHITESPACE-FIX | Run 45317652052 FAIL en git diff --check por línea vacía al EOF del Plan; corregida; Node.js/contrato NOT RUN | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.967 | C1.966 | Reejecutar Academic Wellbeing Contract |
 
 | C1.970 | IMA-EXEC-20261124-TASK047-ROLE-BOUNDARY-02 | Consola técnica requiere sesión login + rol Desarrollador; contrato Node.js de acceso UI añadido; CI pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.970 | C1.969 | Confirmar Developer Service Registry Contract y ejecutar siguiente alcance de TASK-047 |
+
+| C1.971 | IMA-EXEC-20261124-CI-ALLOWLIST-ROLE-TEST | Developer Registry/UI tests PASS; Academic Wellbeing diff guard detectó nuevo test no permitido; allowlist alineada, nueva ejecución pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.971 | C1.970 | Reejecutar Academic Wellbeing Contract y continuar TASK-047 |

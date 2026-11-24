@@ -4630,3 +4630,12 @@ C1.970 — IMA-EXEC-20261124-TASK047-ROLE-BOUNDARY-02
 - Se añade prueba Node.js dinámica y se amplía el workflow Developer Service Registry Contract.
 - CI pendiente de ejecutar en el commit de esta unidad.
 ===============================================================================
+
+===============================================================================
+C1.971 — IMA-EXEC-20261124-CI-ALLOWLIST-ROLE-TEST
+===============================================================================
+- Developer Service Registry Contract y contrato UI de límite de rol: PASS.
+- Regional Formatting y Department Scope: PASS.
+- Academic Wellbeing falló únicamente en diff guard por allowlist sin el nuevo test; Node.js/contrato académico no se ejecutaron.
+- Se amplió path filter/allowlist sin debilitar aserciones; nueva ejecución pendiente.
+===============================================================================
