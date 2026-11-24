@@ -50,7 +50,7 @@
 - **Dependencias/riesgos:** modelo de roles y permisos, identidad autenticada y auditoría de accesos; exposición de datos sensibles si una ruta omite el control.
 - **Alcance:** expedientes y observaciones de bienestar/orientación; no ampliar permisos generales por conveniencia.
 - **Criterios de aceptación:** roles no autorizados no pueden consultar ni modificar datos confidenciales por ninguna ruta; los accesos autorizados conservan la funcionalidad; cada rechazo queda trazado sin revelar el contenido protegido.
-- **Prioridad:** P0. **Estado:** Completada en código/CI (C1.962); pendiente de validación beta real.
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** commit de implementación 0aa33574d9112acb0757c18b4f78ca8595d84aeb; contrato Node.js 24: 26/26 PASS; suite Node.js de repositorio: 26/26 PASS; sintaxis Apps Script/JS y git diff --check PASS; Department Scope, Exam-Service security, Academic-Service auth, SACE, Task-Service, Hierarchical Configuration, Department Reference Consumers y Accounting Import Preflight SUCCESS. **Discrepancia:** reconciliada. RegistrosOrientacion no existe en el backend; las fuentes reales protegidas son CasosSeguimiento (acciones/actas) y CitasOrientacion (notas confidenciales). No se creó una hoja ficticia.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área II (P0)
 - **Prioridad:** P0
@@ -210,7 +210,7 @@
 - **Dependencias/riesgos:** F33-Task01/03, AUD-NG-006 (idempotencia), AUD-NG-158 (contexto/ámbito); riesgo de doble aprobación, actualización parcial o marcar justificada una sesión incorrecta.
 - **Alcance:** una fuente de verdad y sincronización de estado; no mantener dos flujos que puedan divergir ni sobrescribir correcciones históricas.
 - **Criterios de aceptación:** una justificación tiene ID estable y vínculo a alumno/sesión/periodo; aprobación en cualquier interfaz actualiza asistencia; operación idempotente; rechazo/revocación conserva historial; errores generan estado reconciliable; pruebas de ambos canales, duplicados, periodos y concurrencia.
-- **Prioridad:** P0. **Estado:** Completada en código, revisión y CI; pendiente validación beta real.
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** commits c8fb91e, d47b8e3, a2d59ba, 3e691fd, 7ea4e30, f10213b y 0910e6f. Contrato Node de ambos canales y sintaxis Apps Script/JS PASS en Department Scope run 43727954380; Identity Mapping, Task-Service Security y Department Reference Consumers PASS en runs 43727738102, 43727778249 y 43727778243. BETA-FUNC-100 pendiente: requiere ACADEMIC_SERVICE_URL y el mismo IMA_MIGRATION_HMAC_SECRET en ambos proyectos Apps Script, UrlFetch autorizado y prueba real.
 - **Cierre técnico:** ACADEMIC mantiene JustificacionesAsistencia como registro canónico; USER delega alta/revisión mediante sobre HMAC. Se enlazan alumno, fecha, período y sesiones exactas; las decisiones se serializan, registran en historial y se pueden reconciliar. updateRequestStatus y processWorkflowDecision genéricos bloquean este tipo de trámite.
 
@@ -1889,7 +1889,7 @@
 - **Dependencias/riesgos:** F33-Task01/03, AUD-NG-006 (idempotencia), AUD-NG-158 (contexto/ámbito); riesgo de doble aprobación, actualización parcial o marcar justificada una sesión incorrecta.
 - **Alcance:** una fuente de verdad y sincronización de estado; no mantener dos flujos que puedan divergir ni sobrescribir correcciones históricas.
 - **Criterios de aceptación:** una justificación tiene ID estable y vínculo a alumno/sesión/periodo; aprobación en cualquier interfaz actualiza asistencia; operación idempotente; rechazo/revocación conserva historial; errores generan estado reconciliable; pruebas de ambos canales, duplicados, periodos y concurrencia.
-- **Prioridad:** P0. **Estado:** Completada en código, revisión y CI; pendiente validación beta real.
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** commits c8fb91e, d47b8e3, a2d59ba, 3e691fd, 7ea4e30, f10213b y 0910e6f. Contrato Node de ambos canales y sintaxis Apps Script/JS PASS en Department Scope run 43727954380; Identity Mapping, Task-Service Security y Department Reference Consumers PASS en runs 43727738102, 43727778249 y 43727778243. BETA-FUNC-100 pendiente: requiere ACADEMIC_SERVICE_URL y el mismo IMA_MIGRATION_HMAC_SECRET en ambos proyectos Apps Script, UrlFetch autorizado y prueba real.
 - **Cierre técnico:** ACADEMIC mantiene JustificacionesAsistencia como registro canónico; USER delega alta/revisión mediante sobre HMAC. Se enlazan alumno, fecha, período y sesiones exactas; las decisiones se serializan, registran en historial y se pueden reconciliar. updateRequestStatus y processWorkflowDecision genéricos bloquean este tipo de trámite.
 
@@ -4654,7 +4654,7 @@
 - **Dependencias/riesgos:** TASK-316 (multicanal/preferencias/reintentos), TASK-227 (eventos workflow), TASK-064 (cuotas); riesgo de revelar observaciones internas o enviar avisos duplicados.
 - **Alcance:** notificación de transiciones al solicitante; no enviar notas internas ni tratar el envío como prueba de recepción.
 - **Criterios de aceptación:** evento solo tras commit de transición; contenido público minimizado; deduplicación; canal según preferencias/consentimiento; reintentos y fallos visibles; pruebas de corrección/aprobación/rechazo, cambio repetido y cuota agotada.
-- **Prioridad:** P1. **Estado:** Completada en código y CI; BETA-FUNC-105 pendiente beta.
+- **Prioridad:** P1. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** C1.756; `dispatchWorkflowStatusNotification_` se ejecuta después de liberar el lock y persistir la decisión; deduplicación atómica; notas públicas únicamente; correo con consentimiento explícito; fallos de cuota quedan `Pendiente_Reintento`. Node local y Department Scope Contract PASS; validación Apps Script/MailApp real pendiente.
 
 ---
