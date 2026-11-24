@@ -1,6 +1,6 @@
 # Backlog consolidado — Secretaria
 
-**Estado operativo del Plan Maestro (reinicio global):** todas las tareas de este backlog quedan en estado `Pendiente` al inicio de la ejecución. Ninguna tarea se considera `Completada`; marcas, etiquetas o declaraciones históricas de cierre son únicamente antecedentes y no acreditan estado vigente. Una tarea solo podrá cambiar de estado tras su implementación y verificación conforme al Plan Maestro.
+**Estado operativo del Plan Maestro (ciclo 3):** los estados vigentes son los consignados en cada tarea. Las tareas solo podrán cambiar de estado tras su implementación y verificación conforme al Plan Maestro; la evidencia histórica se conserva.
 
 **Fuentes integradas:** informes de auditoría de `AUDITORIAS/`, `Pendientes.md`, `completadas.md` y los archivos departamentales preexistentes. Los registros con el mismo identificador se reúnen en una sola tarea.
 
@@ -10,7 +10,7 @@
 
 <!-- ID: F10-TASK01 | Fuentes: Pendientes.md ; pendientes/Secretaria/Pendientes.md -->
 
-> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
+> **Ciclo 3:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Los estados vigentes se actualizan conforme a la implementación y verificación; la evidencia histórica se conserva.
 ### [ ] [F10-TASK01] Fortalecer la confidencialidad y el control de acceso a expedientes sensibles
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_10_ASISTENCIA_DISCIPLINA_CONVIVENCIA.md` / Tarea F10-Task01 (P0) y Tarea 10.7
@@ -50,7 +50,7 @@
 - **Dependencias/riesgos:** modelo de roles y permisos, identidad autenticada y auditoría de accesos; exposición de datos sensibles si una ruta omite el control.
 - **Alcance:** expedientes y observaciones de bienestar/orientación; no ampliar permisos generales por conveniencia.
 - **Criterios de aceptación:** roles no autorizados no pueden consultar ni modificar datos confidenciales por ninguna ruta; los accesos autorizados conservan la funcionalidad; cada rechazo queda trazado sin revelar el contenido protegido.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia de cierre:** commit de implementación 0aa33574d9112acb0757c18b4f78ca8595d84aeb; contrato Node.js 24: 26/26 PASS; suite Node.js de repositorio: 26/26 PASS; sintaxis Apps Script/JS y git diff --check PASS; Department Scope, Exam-Service security, Academic-Service auth, SACE, Task-Service, Hierarchical Configuration, Department Reference Consumers y Accounting Import Preflight SUCCESS. **Discrepancia:** reconciliada. RegistrosOrientacion no existe en el backend; las fuentes reales protegidas son CasosSeguimiento (acciones/actas) y CitasOrientacion (notas confidenciales). No se creó una hoja ficticia.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área II (P0)
 - **Prioridad:** P0
@@ -64,7 +64,7 @@
 - **Criterios de Aceptación:**
   - Un docente sin rol autorizado no puede consultar notas privadas de orientación de un estudiante.
 - **Estado histórico anterior:** Completada en código/CI (C1.962); BETA-FUNC-133 pendiente de ejecución contra Apps Script/Sheets reales.
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 83-98; clave F11-Task03; asignación única: Secretaria -->
 
@@ -210,7 +210,7 @@
 - **Dependencias/riesgos:** F33-Task01/03, AUD-NG-006 (idempotencia), AUD-NG-158 (contexto/ámbito); riesgo de doble aprobación, actualización parcial o marcar justificada una sesión incorrecta.
 - **Alcance:** una fuente de verdad y sincronización de estado; no mantener dos flujos que puedan divergir ni sobrescribir correcciones históricas.
 - **Criterios de aceptación:** una justificación tiene ID estable y vínculo a alumno/sesión/periodo; aprobación en cualquier interfaz actualiza asistencia; operación idempotente; rechazo/revocación conserva historial; errores generan estado reconciliable; pruebas de ambos canales, duplicados, periodos y concurrencia.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia de cierre:** commits c8fb91e, d47b8e3, a2d59ba, 3e691fd, 7ea4e30, f10213b y 0910e6f. Contrato Node de ambos canales y sintaxis Apps Script/JS PASS en Department Scope run 43727954380; Identity Mapping, Task-Service Security y Department Reference Consumers PASS en runs 43727738102, 43727778249 y 43727778243. BETA-FUNC-100 pendiente: requiere ACADEMIC_SERVICE_URL y el mismo IMA_MIGRATION_HMAC_SECRET en ambos proyectos Apps Script, UrlFetch autorizado y prueba real.
 - **Cierre técnico:** ACADEMIC mantiene JustificacionesAsistencia como registro canónico; USER delega alta/revisión mediante sobre HMAC. Se enlazan alumno, fecha, período y sesiones exactas; las decisiones se serializan, registran en historial y se pueden reconciliar. updateRequestStatus y processWorkflowDecision genéricos bloquean este tipo de trámite.
 
@@ -454,7 +454,7 @@
   - Las coordenadas GPS no son accesibles mediante enlaces públicos sin autenticación.
   - Se auditan los intentos de acceso no autorizado.
 - **Estado histórico anterior:** Completada en código/CI (C1.963); BETA-FUNC-134 pendiente de validación real.
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 
 
 - **Reconciliación de endpoint GPS:** getTransportTripLiveLocation no existe en el backend auditado; no hay endpoint público de GPS. Las rutas y asignaciones existentes exigen sesión, permiso y ámbito; no se creó un endpoint GPS ni un enlace público.
@@ -1628,7 +1628,7 @@
   - [ ] Comprobar que un reenvío conserva el historial del intento previo sin destruirlo.
   - [ ] Modificar una copia posterior del documento y verificar que el acuse original permanece vinculado a la versión efectivamente recibida.
 - **Dependencias:** F34-Task04 (integridad criptográfica), F34-Task06 (notificaciones de envío y entrega), historial institucional.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5723-5755; clave TASK-130; asignación única: Secretaria -->
 
@@ -1668,7 +1668,7 @@
   - [ ] Los mensajes de error de validación aparecen junto al campo correspondiente y no sustituyen la ayuda descriptiva.
   - [ ] Una operación crítica cancelada por el usuario no altera ningún dato en la plataforma.
 - **Dependencias:** F38-Task01, F38-Task02.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5788-5825; clave TASK-132; asignación única: Secretaria -->
 
@@ -1686,7 +1686,7 @@
 
 
 
-**Estado operativo del Plan Maestro (reinicio global):** todas las tareas de este backlog quedan en estado `Pendiente` al inicio de la ejecución. Ninguna tarea se considera `Completada`; marcas, etiquetas o declaraciones históricas de cierre son únicamente antecedentes y no acreditan estado vigente. Una tarea solo podrá cambiar de estado tras su implementación y verificación conforme al Plan Maestro.
+**Estado operativo del Plan Maestro (ciclo 3):** los estados vigentes son los consignados en cada tarea. Las tareas solo podrán cambiar de estado tras su implementación y verificación conforme al Plan Maestro; la evidencia histórica se conserva.
 
 **Fuentes integradas:** informes de auditoría de `AUDITORIAS/`, `Pendientes.md`, `completadas.md` y los archivos departamentales preexistentes. Los registros con el mismo identificador se reúnen en una sola tarea.
 
@@ -1889,7 +1889,7 @@
 - **Dependencias/riesgos:** F33-Task01/03, AUD-NG-006 (idempotencia), AUD-NG-158 (contexto/ámbito); riesgo de doble aprobación, actualización parcial o marcar justificada una sesión incorrecta.
 - **Alcance:** una fuente de verdad y sincronización de estado; no mantener dos flujos que puedan divergir ni sobrescribir correcciones históricas.
 - **Criterios de aceptación:** una justificación tiene ID estable y vínculo a alumno/sesión/periodo; aprobación en cualquier interfaz actualiza asistencia; operación idempotente; rechazo/revocación conserva historial; errores generan estado reconciliable; pruebas de ambos canales, duplicados, periodos y concurrencia.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia de cierre:** commits c8fb91e, d47b8e3, a2d59ba, 3e691fd, 7ea4e30, f10213b y 0910e6f. Contrato Node de ambos canales y sintaxis Apps Script/JS PASS en Department Scope run 43727954380; Identity Mapping, Task-Service Security y Department Reference Consumers PASS en runs 43727738102, 43727778249 y 43727778243. BETA-FUNC-100 pendiente: requiere ACADEMIC_SERVICE_URL y el mismo IMA_MIGRATION_HMAC_SECRET en ambos proyectos Apps Script, UrlFetch autorizado y prueba real.
 - **Cierre técnico:** ACADEMIC mantiene JustificacionesAsistencia como registro canónico; USER delega alta/revisión mediante sobre HMAC. Se enlazan alumno, fecha, período y sesiones exactas; las decisiones se serializan, registran en historial y se pueden reconciliar. updateRequestStatus y processWorkflowDecision genéricos bloquean este tipo de trámite.
 
@@ -3300,7 +3300,7 @@
   - [ ] Comprobar que un reenvío conserva el historial del intento previo sin destruirlo.
   - [ ] Modificar una copia posterior del documento y verificar que el acuse original permanece vinculado a la versión efectivamente recibida.
 - **Dependencias:** F34-Task04 (integridad criptográfica), F34-Task06 (notificaciones de envío y entrega), historial institucional.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5723-5755; clave TASK-130; asignación única: Secretaria -->
 
@@ -3340,7 +3340,7 @@
   - [ ] Los mensajes de error de validación aparecen junto al campo correspondiente y no sustituyen la ayuda descriptiva.
   - [ ] Una operación crítica cancelada por el usuario no altera ningún dato en la plataforma.
 - **Dependencias:** F38-Task01, F38-Task02.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5788-5825; clave TASK-132; asignación única: Secretaria -->
 
@@ -3401,7 +3401,7 @@
   - [ ] Los departamentos consultan su propio inventario sin acceder a información restringida de otras áreas.
   - [ ] Dirección puede consultar el inventario consolidado de toda la institución.
 - **Dependencias:** Estructura de departamentos, roles, permisos y almacenamiento institucional.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5826-5863; clave TASK-133; asignación única: Secretaria -->
 
@@ -3450,7 +3450,7 @@
   - [ ] Los registros válidos no se pierden por errores aislados de otras filas.
   - [ ] Los errores nunca se transforman silenciosamente en valores predeterminados.
 - **Dependencias:** F39-Task01.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 5864-5896; clave TASK-134; asignación única: Secretaria -->
 
@@ -3523,7 +3523,7 @@
   - [ ] Un archivo modificado produce un hash diferente y se clasifica como nueva versión o documento independiente.
   - [ ] La verificación de integridad detecta si un archivo en Drive fue alterado o sustituido con posterioridad.
 - **Dependencias:** F39-Task01 (inventario documental institucional); TASK-134 implementa F39-Task02 y es prerrequisito de F39-Task03.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 - **Resolución C1.768:** se corrigió el Plan Maestro: TASK-134 depende del inventario F39-Task01, implementa F39-Task02 (SHA-256) y habilita F39-Task03 (custodia protegida). Se conserva F39-Task03 como dependiente de F39-Task02; el ciclo queda eliminado.
 
@@ -3828,7 +3828,7 @@
   - [ ] Reutilizar un token vencido, revocado o asociado a otra versión: el servidor rechaza la solicitud.
   - [ ] Ningún proceso de carga privado vuelve a establecer `ANYONE_WITH_LINK`.
 - **Dependencias:** F40-Task01, F40-Task03.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Avance C1.780 (2026-11-16):** Academic ya separa PREVIEW y DOWNLOAD con permisos RBAC, tokens HMAC de un solo uso vinculados a operación/documento/versión/usuario y auditoría diferenciada; la UI muestra botones Ver y Descargar. Accounting getEmployeeDocuments deja de devolver archivoUrl y solo informa tieneArchivo, con verificación de privacidad Drive. No se localizaron uploadEmployeeDocument ni uploadPaymentVoucher ni un proxy binario Accounting en el servicio actual; no se inventó una ruta. La carga/entrega laboral autenticada y beta real permanecen pendientes.
 - **Verificación C1.780:** Accounting Import Preflight run 43788968649 SUCCESS (Node 24.22.2); Department Reference Consumers run 43789068286 SUCCESS. Department Scope run 43789068303 conserva FAIL independiente porque falta resolveEmployeeDepartmentId_ en ACCOUNTING. BETA-FUNC-110 describe la validación aislada pendiente.
 
@@ -4654,7 +4654,7 @@
 - **Dependencias/riesgos:** TASK-316 (multicanal/preferencias/reintentos), TASK-227 (eventos workflow), TASK-064 (cuotas); riesgo de revelar observaciones internas o enviar avisos duplicados.
 - **Alcance:** notificación de transiciones al solicitante; no enviar notas internas ni tratar el envío como prueba de recepción.
 - **Criterios de aceptación:** evento solo tras commit de transición; contenido público minimizado; deduplicación; canal según preferencias/consentimiento; reintentos y fallos visibles; pruebas de corrección/aprobación/rechazo, cambio repetido y cuota agotada.
-- **Prioridad:** P1. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P1. **Estado:** Pendiente.
 - **Evidencia de cierre:** C1.756; `dispatchWorkflowStatusNotification_` se ejecuta después de liberar el lock y persistir la decisión; deduplicación atómica; notas públicas únicamente; correo con consentimiento explícito; fallos de cuota quedan `Pendiente_Reintento`. Node local y Department Scope Contract PASS; validación Apps Script/MailApp real pendiente.
 
 ---
@@ -5123,7 +5123,7 @@
 - **Pruebas:** tests/security/accounting-transport-route-optimization.test.js PASS en Node.js 24.22.2; cubre orden optimizado, ventanas, coordenadas inválidas, propuesta sin mutación, aprobación, rechazo, idempotencia de decisión, conflicto por ruta obsoleta, RBAC y lock. Syntax-check Apps Script PASS.
 - **CI final:** Department Scope Contract 43615291620 SUCCESS; Identity Mapping 43615291629 SUCCESS; Department Reference Consumers 43615291613 SUCCESS. El primer run 43615033670 detectó una variable const reasignada; se corrigió y el run final aprobó.
 - **Limitaciones:** no se integró geocodificación externa; cada parada debe recibir lat/lng válidos mediante la gestión de rutas. La velocidad promedio se proporciona en la solicitud, sin asumir una velocidad predeterminada. Apps Script/Sheets real NOT RUN. BETA-FUNC-093 pendiente.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8477-8514; clave TASK-212; asignación única: Secretaria -->
 
@@ -5717,7 +5717,7 @@
   - [ ] Los scripts o macros dentro de archivos importados son desarmados sin interrumpir el sistema.
   - [ ] Los documentos privados no se pueden descargar mediante enlaces públicos ni manipulación de identificadores.
   - [ ] Todos los accesos a documentos sensibles quedan registrados en la bitácora de seguridad.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Avance C1.783 (2026-11-16):** se corrigió XSS almacenado en el panel de migración curricular: equivalencias, mensajes y resultados ahora se insertan con textContent mediante helper DOM; se amplió reusable-resource-xss-url-contract.test.js con payloads hostiles ejecutados como texto inerte. Accounting Import Preflight run 43791459608 SUCCESS (40/40, Node 24.22.2).
 - **Avance C1.784 (2026-11-16):** todos los campos de texto que manageReusableResource guarda en RecursosEducativosReutilizables y ProyectosInterdisciplinarios pasan por sanitizeReusableResourceSheetCell_, que neutraliza prefijos de fórmula (=, +, @, -). El contrato prueba HYPERLINK/SUM y campos de texto adversariales; Accounting Import Preflight run 43791680550 SUCCESS (40/40, Node 24.22.2).
 - **Límites:** no se declara antivirus ni cuarentena real; F31-Task09 continúa pendiente y la validación de ACL/Drive heredadas requiere pruebas beta.
@@ -7841,7 +7841,7 @@ No se crea AUD-NG nuevo. Se amplían tareas pendientes existentes, sin borrar ni
 - **Severidad:** MEDIO.
 - **Prioridad:** P2.
 - **Estado histórico anterior:** Completada.
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 - **Resultado:** inspección estática de 24 archivos JS y 6 servicios Apps Script; propietarios, redefiniciones, consumidores, acoplamientos y grafo interservicio documentados con referencias exactas. Ciclos estáticos no observados; ciclos runtime no verificables.
 - **Expediente principal:** Auditoría/AUDITORIA_TASK-639_C1.302.md.
 - **Tareas derivadas:** TASK-691, TASK-692 y TASK-693 en pendientes/Dirección/Pendientes.md.
