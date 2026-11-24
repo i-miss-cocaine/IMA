@@ -3690,12 +3690,19 @@
 - **Descripción del Alcance:** Derivar actor de la sesión verificada y exigir permiso específico de corrección. Comprobar que la solicitud corresponde al evento original, validar el tipo de corrección y conservar una relación estructurada. Proteger lectura del último hash y append mediante exclusión mutua; impedir correcciones duplicadas o bifurcaciones.
 - **Criterios de Aceptación:** Un actor sin permiso no corrige; revisorId manipulado no cambia al autor; una solicitud distinta del evento original es rechazada; acciones no permitidas se rechazan; dos correcciones simultáneas no crean ramas ni eventos duplicados.
 
+- **Implementación C3.012:** El actor procede exclusivamente de _verifiedUserId y el rol de claims verificados; revisorId del cliente se ignora. La corrección valida ID original, solicitud asociada, motivo y acción permitida; bloquea duplicados; conserva el evento original y añade uno nuevo vinculado. LockService serializa verificación/append; correlationId evita duplicados; se compensa el append si falla el checkpoint o la actualización del estado.
+- **Evidencia CI:** GitHub Actions run 45327820272 — SUCCESS; Node.js 24.22; 43/43 pruebas PASS; node --check en siete archivos Apps Script/JS; git diff --check PASS.
+- **Estado:** [x] Completada (C3.012).
+
 ### [AUD-NG-090] Implementar pruebas funcionales de HMAC, anti-replay y auditoría histórica
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-090 (TASK-048 y TASK-049 / F23-Task05 y F23-Task06)
 - **Archivos Involucrados:** tests/regression/academic-grading-suite.js; cuatro microservicios; entorno de integración aislado
 - **Dependencias Expuestas:** createInterServiceEnvelope, verifyInterServiceEnvelope, getAuthTokenSecret, verifyWorkflowDecisionAuditChain y recordWorkflowDecisionCorrection.
 - **Descripción del Alcance:** Sustituir aserciones de presencia por pruebas reales entre despliegues aislados. Cubrir secretos ausentes/rotados/revocados, firma inválida, expiración, replay simple y concurrente, autorización por acción, manipulación/eliminación de eventos, hash previo roto, campos probatorios y correcciones cruzadas.
 - **Criterios de Aceptación:** Las pruebas envían sobres reales entre servicios; verifican autenticación y autorización por separado; cada alteración del historial se detecta; las correcciones válidas quedan encadenadas; los escenarios negativos no producen efectos persistentes.
+
+- **Resolución normativa C3.012:** las pruebas de HMAC/anti-replay entre servicios se conservan como antecedente, pero quedan supersedidas por Normas_Desarollo.md §17.8. Las pruebas de cadena SHA-256, alteración, eliminación, corrección, idempotencia y concurrencia sí se ejecutaron en Node.js. Falta la prueba real de dos proyectos Apps Script aislados con las cuentas institucionales; no se declara ejecutada.
+- **Estado:** Pendiente exclusivamente por validación real entre proyectos/deployments; no bloquea las tareas locales independientes.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 2486-2652; clave TASK-049; asignación única: Dirección -->
 
@@ -3732,6 +3739,10 @@
   - [ ] Comprobar que la secuencia histórica conserva todos los eventos originales.
   - [ ] Intentar eliminar registros mediante una cuenta sin privilegios y verificar su bloqueo.
 - **Estado:** Pendiente
+
+- **Avance C3.010-C3.012:** AUD-NG-087, AUD-NG-088 y AUD-NG-089 completadas con cadena SHA-256 global, checkpoint confiable, esquema v2 y correcciones autorizadas/serializadas.
+- **Pendiente:** AUD-NG-090 conserva la prueba real entre proyectos Apps Script aislados. Las pruebas HMAC/anti-replay interservicio quedan supersedidas por NDASC §17.8; no se implementan secretos ni tokens interservicio.
+- **Estado:** Pendiente por AUD-NG-090 (validación real de despliegues).
 
 ---
 

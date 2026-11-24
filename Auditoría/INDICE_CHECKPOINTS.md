@@ -17,3 +17,4 @@ Estado operativo: ciclo 3 en implementación continua. La regla de cierre por ta
 | C3.009 | IMA-ITER-20261124-007 | AUD-NG-086: autorización por dominio/rol/acción y versión de contrato | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.010 | IMA-ITER-20261124-008 | AUD-NG-087: Continuidad global y checkpoint confiable de decisiones | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
 | C3.011 | IMA-ITER-20261124-009 | AUD-NG-088: hash canónico v2 de todos los campos probatorios | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |
+| C3.012 | IMA-ITER-20261124-010 | AUD-NG-089: correcciones autorizadas, inmutables y serializadas | Cerrado | Contexto_personal_Historico/Checkpoints_Parte_0001.txt |

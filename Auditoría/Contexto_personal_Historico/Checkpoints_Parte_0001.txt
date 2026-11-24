@@ -137,3 +137,14 @@ C3.011 — IMA-ITER-20261124-009
 - HEAD de entrada: 4aaf6cd92ed92e0a985c1566f1f70fcbbd9505db.
 - Estado: AUD-NG-088 completada. AUD-NG-090 sigue pendiente por prueba real entre proyectos aislados.
 ===============================================================================
+
+===============================================================================
+C3.012 — IMA-ITER-20261124-010
+===============================================================================
+- Objetivo cerrado: AUD-NG-089 — autorización y serialización de correcciones históricas.
+- Resultado: El actor procede exclusivamente de _verifiedUserId y el rol de claims verificados; revisorId del cliente se ignora. La corrección valida ID original, solicitud asociada, motivo y acción permitida; bloquea duplicados; conserva el evento original y añade uno nuevo vinculado. LockService serializa verificación/append; correlationId evita duplicados; se compensa el append si falla el checkpoint o la actualización del estado.
+- Verificaciones: GitHub Actions run 45327820272 SUCCESS; 43/43 pruebas Node.js PASS, incluidas corrección válida, actor ausente, solicitud original distinta, duplicado, lock ocupado, append compensado y correlationId duplicado.
+- Pendiente separado: AUD-NG-090 mantiene prueba real entre proyectos Apps Script aislados; no se declara realizada.
+- HEAD de entrada: c28bfde9b355cd5173db21e31f87569102407794.
+- Estado: AUD-NG-089 completada; TASK-049 continúa pendiente únicamente por AUD-NG-090.
+===============================================================================

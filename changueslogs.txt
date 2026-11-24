@@ -4768,3 +4768,12 @@ C3.011 — IMA-ITER-20261124-009
 - Evidencia CI: run 45327820272 SUCCESS; 43/43 pruebas Node.js PASS; siete node --check y git diff --check PASS.
 - Rama: NG_beta_0.0.0.1_work. HEAD de entrada: 4aaf6cd92ed92e0a985c1566f1f70fcbbd9505db.
 ===============================================================================
+
+===============================================================================
+C3.012 — IMA-ITER-20261124-010
+===============================================================================
+- AUD-NG-089 completada: actor verificado, original vinculado, corrección inmutable, duplicados bloqueados, LockService y compensación.
+- Evidencia CI: run 45327820272 SUCCESS; 43/43 pruebas Node.js PASS; siete node --check y git diff --check PASS.
+- AUD-NG-090 sigue pendiente por la prueba real entre proyectos aislados; HMAC/anti-replay interservicio queda supersedido por NDASC §17.8.
+- Rama: NG_beta_0.0.0.1_work. HEAD de entrada: c28bfde9b355cd5173db21e31f87569102407794.
+===============================================================================
