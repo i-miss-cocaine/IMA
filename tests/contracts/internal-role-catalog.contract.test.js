@@ -202,3 +202,34 @@ test("la interfaz de RRHH separa rol RBAC, responsabilidad, asignación y suplen
   assert.doesNotMatch(dashboard.slice(panelStart, panelEnd), /innerHTML\s*=/);
   assert.match(backend, /"assignRoleScope"/);
 });
+
+test("el código interno también es único y se compara sin diferencias de mayúsculas", () => {
+  const roles = sheet([roleHeaders]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
+  const first = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos", codigoInterno: "COORD-01", nombreResponsabilidad: "Coordinador de Área", tipoResponsabilidad: "Académica" });
+  assert.equal(first.status, "success");
+  const duplicate = context.manageInternalRoleCatalog({ _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos", codigoInterno: "coord-01", nombreResponsabilidad: "Otro puesto", tipoResponsabilidad: "Académica" });
+  assert.equal(duplicate.code, "INTERNAL_ROLE_CODE_DUPLICATE");
+  assert.equal(roles.rows.length, 2);
+});
+test("la vigencia predeterminada del catálogo se aplica cuando no se indica fecha final", () => {
+  const { context, assignments } = assignmentContext();
+  const result = assign(context, "EMP-1", "ROL-1", { fechaFin: "" });
+  assert.equal(result.status, "success");
+  assert.match(String(assignments.rows[1][9]), /^2027-01-01/);
+});
+test("revocar una asignación conserva el evento y la fila histórica", () => {
+  const { context, assignments } = assignmentContext();
+  const created = assign(context, "EMP-1", "ROL-1");
+  const revoked = assign(context, "EMP-1", "ROL-1", { assignmentId: created.assignmentId, estado: "Revocado" });
+  assert.equal(revoked.status, "success");
+  assert.equal(assignments.rows.length, 2);
+  assert.equal(assignments.rows[1][5], "Revocado");
+  assert.equal(context.audit.length, 2);
+});
+test("el controlador nuevo de RRHH tiene sintaxis JavaScript válida", () => {
+  const start = dashboard.indexOf("const panel=document.getElementById('rrhh-internal-roles-panel')");
+  const end = dashboard.indexOf("</script>", start);
+  assert.ok(start >= 0 && end > start);
+  assert.doesNotThrow(() => new vm.Script(dashboard.slice(start, end)));
+});

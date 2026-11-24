@@ -14625,6 +14625,12 @@ function assignRoleScope(payload) {
     var responsibility = resolveActiveInternalResponsibility_(ss, responsibilityId);
     if (!responsibility) return { status: "error", code: "ROLE_RESPONSIBILITY_NOT_ACTIVE" };
     if (isSubstitute && !responsibility.permiteSuplencia) return { status: "error", code: "ROLE_SUBSTITUTION_NOT_ALLOWED" };
+    if (!end.date && !isSubstitute) {
+      var defaultEnd = new Date(start.date);
+      defaultEnd.setMonth(defaultEnd.getMonth() + (responsibility.validityMonths || 12));
+      defaultEnd.setHours(23, 59, 59, 999);
+      end = { valid: true, date: defaultEnd };
+    }
     var sheet = assignmentSheet = getOrCreateSheet(ss, "AsignacionesAmbitosRoles");
     var legacyHeaders = ["AsignacionAmbitoID","UserID","RoleID","ScopeType","ScopeValues","Estado","CreadoPor","FechaCreacion","FechaInicio","FechaFin","EsSuplente","SuplenteDeUserID"];
     var membershipHeaders = legacyHeaders.concat(["InstitutionID","MembershipID"]);
