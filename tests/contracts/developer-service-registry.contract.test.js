@@ -156,3 +156,15 @@ test("el resolver de solo lectura está disponible a cualquier rol con sesión v
  assert.equal(response.status, "success");
  assert.equal(response.serviceId, "SVC-1");
 });
+
+test("el resolver valida la versión de contrato y el estado del emisor", () => {
+ const target = serviceRow("activo"); target[8] = "2.1";
+ const source = serviceRow("activo"); source[0] = "SRC-1";
+ const relation = ["REL-1", "SRC-1", "SVC-1", "readRecord", "ACTIVE"];
+ const rows = [target, source];
+ const resolve = resolverFor(rows, [relation]);
+ assert.equal(resolve({ serviceId: "SVC-1", action: "readRecord", contractVersion: "1.0" }).code, "SERVICE_CONTRACT_VERSION_MISMATCH");
+ assert.equal(resolve({ serviceId: "SVC-1", action: "readRecord", contractVersion: "2.1" }).status, "success");
+ source[7] = "suspendido";
+ assert.equal(resolverFor([target, source], [relation])({ serviceId: "SVC-1", sourceServiceId: "SRC-1", action: "readRecord" }).code, "SERVICE_SOURCE_NOT_ACTIVE");
+});

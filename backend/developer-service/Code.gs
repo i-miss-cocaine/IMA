@@ -3132,6 +3132,8 @@ function resolveServiceEndpoint(payload) {
     if (matches.length !== 1) return { status: "error", code: "SERVICE_REGISTRY_DUPLICATE_ID", endpointUrl: "" };
     var row = matches[0], state = String(row[7] || "").trim().toLowerCase();
     var endpointUrl = String(row[4] || "").trim(), version = String(row[8] || "").trim();
+    var requestedVersion = String(payload && payload.contractVersion || "").trim();
+    if (requestedVersion && requestedVersion !== version) return { status: "error", code: "SERVICE_CONTRACT_VERSION_MISMATCH", serviceId: serviceId, expectedVersion: version, receivedVersion: requestedVersion, endpointUrl: "" };
     if (["activo", "degradado"].indexOf(state) === -1) {
       var blockedCode = state === "suspendido" ? "SERVICE_SUSPENDED" : state === "retirado" || state === "inactivo" ? "SERVICE_RETIRED" : state === "desconectado" ? "SERVICE_DISCONNECTED" : "SERVICE_NOT_ACTIVE";
       return { status: "error", code: blockedCode, serviceId: serviceId, state: state, endpointUrl: "" };
@@ -3145,6 +3147,10 @@ function resolveServiceEndpoint(payload) {
     if (permissions.indexOf(requestedAction) === -1) return { status: "error", code: "SERVICE_ACTION_NOT_GRANTED", serviceId: serviceId, action: requestedAction, endpointUrl: "" };
     var sourceServiceId = String(payload && payload.sourceServiceId || "").trim();
     if (sourceServiceId) {
+      var sourceMatches = parsed.rows.filter(function(sourceRow) { return String(sourceRow[0] || "").trim().toUpperCase() === sourceServiceId.toUpperCase(); });
+      if (sourceMatches.length !== 1) return { status: "error", code: sourceMatches.length ? "SERVICE_SOURCE_DUPLICATE_ID" : "SERVICE_SOURCE_NOT_FOUND", endpointUrl: "" };
+      var sourceState = String(sourceMatches[0][7] || "").trim().toLowerCase();
+      if (["activo", "degradado"].indexOf(sourceState) === -1) return { status: "error", code: "SERVICE_SOURCE_NOT_ACTIVE", endpointUrl: "" };
       var relationSheet = ss.getSheetByName("CatalogoRelacionesServicios");
       if (!relationSheet) return { status: "error", code: "SERVICE_RELATION_NOT_GRANTED", endpointUrl: "" };
       var relationRows = relationSheet.getDataRange().getValues().slice(1);

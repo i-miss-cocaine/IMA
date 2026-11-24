@@ -177,7 +177,8 @@ function fetchApi(service, action, payload, retryCount, options) {
     return fetchApi("DEVELOPER", "resolveServiceEndpoint", { serviceId: requestedServiceId, action: action, sourceServiceId: options.sourceServiceId || "" }, 0, { silentAuthError: true })
       .then(function(resolution) {
         if (!resolution || resolution.status !== "success" || !resolution.endpointUrl) return createApiClientError(resolution && resolution.code || "SERVICE_NOT_AVAILABLE", null, false, createApiClientCorrelationId());
-        return fetchApi(service, action, payload, 0, Object.assign({}, options, { resolvedEndpointUrl: resolution.endpointUrl }));
+        var routedPayload = Object.assign({}, payload || {}, { contractVersion: options.contractVersion || resolution.version || "" });
+        return fetchApi(service, action, routedPayload, 0, Object.assign({}, options, { resolvedEndpointUrl: resolution.endpointUrl }));
       });
   }
   var correlationId = createApiClientCorrelationId();
