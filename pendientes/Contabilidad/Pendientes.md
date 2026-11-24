@@ -23,7 +23,7 @@
 - **Dependencias/riesgos:** catálogo contable, identidad/roles, concurrencia y persistencia transaccional; riesgo de asientos desbalanceados o autorizaciones indebidas.
 - **Alcance:** integridad del asiento y autorización multinivel; no modificar el historial de pagos/recibos sin migración y respaldo verificables.
 - **Criterios de aceptación:** se rechazan asientos no balanceados; no hay escrituras parciales ante error; cada aprobación corresponde a un rol autorizado y queda trazada; pruebas de concurrencia y rechazo cubren los casos críticos.
-- **Prioridad:** P0. **Estado:** Completada (C1.951).
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** C1.951; `recordAccountingJournalEntry` exige identidad/permiso dinámico, revalida actor bajo ScriptLock y fuerza `CreadoPor` verificado; el núcleo valida cuentas activas del `PlanCuentas`, partidas individuales, equilibrio exacto a centavos, idempotencia y rollback de escritura. Lecturas del libro protegidas. `approvePurchaseOrder` queda expuesto por router, segregado por rol/umbral, exige justificación y persiste aprobador/fecha/motivo/rol atómicamente. Contratos Node.js 24 y sintaxis Apps Script: Department Scope run 44991489881 SUCCESS.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área IV (P0)
 - **Prioridad:** P0
@@ -119,7 +119,7 @@
 - **Dependencias/riesgos:** consistencia transaccional de recepciones e inventario; riesgo de pérdida de saldos o cierre prematuro.
 - **Alcance:** recepción parcial y cálculo de saldo por partida; no incluye conciliación de facturas (F18-Task02).
 - **Criterios de aceptación:** permitir varias recepciones por orden; no superar cantidades autorizadas; saldo pendiente correcto; estado total únicamente al completar el 100%.
-- **Prioridad:** P0. **Estado:** Completada en C1.948; implementación incorporada en C1.944.
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** recordPurchaseReceipt acumula cantidades conformes/rechazadas por partida, conserva saldos pendientes, permite recepciones sucesivas, bloquea sobre-recepción y solo marca RecibidaTotal al completar las cantidades conformes. Idempotencia persistente y rollback de Kardex/valoración/recepción/estado. Contrato accounting-purchase-receipt-partial.test.js PASS; Department Scope run 44985649501 SUCCESS (139 pasos), además de C1.944 run 44968525211 SUCCESS (137 pasos).
 
 ---
@@ -139,7 +139,7 @@
 - **Dependencias/riesgos:** F18-Task01 y contratos de factura/recepción; riesgo de sobreprecio o pago por mercancía no recibida.
 - **Alcance:** conciliación documental previa a aprobación; no sustituye autorización de pagos ni conciliación bancaria.
 - **Criterios de aceptación:** ninguna factura con diferencia no justificada pasa a aprobada para pago; discrepancias quedan identificadas y sujetas a aprobación autorizada; coincidencias verificables permiten continuar el flujo.
-- **Prioridad:** P0. **Estado:** Completada (C1.945).
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Estado histórico anterior:** Completada en C1.945.
 - **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
 - **Evidencia de cierre:** recordAccountsPayableExpense registra facturas con snapshot de partidas, hash e idempotencia; verifyThreeWayMatch compara orden, recepciones conformes, proveedor, precios y montos y persiste EstadoConciliacion/DiferenciasJSON, bloqueando el pago ante discrepancias. Permisos, ámbito y lock revalidados; CI Department Scope run 44979718178 SUCCESS (138 pasos), incluidos contratos de cotización, recepción parcial, capitalización, expediente de compras, catálogo y sintaxis Apps Script.
@@ -162,7 +162,7 @@
 - **Dependencias/riesgos:** contratos backend, permisos por rol y tareas F18-Task01/02; riesgo de exponer operaciones sin autorización.
 - **Alcance:** interfaz de gestión de compras; no duplicar reglas de negocio en el cliente.
 - **Criterios de aceptación:** usuarios autorizados pueden consultar y ejecutar las operaciones habilitadas; errores y estados se reflejan desde respuestas backend; no se habilitan acciones fuera del rol.
-- **Prioridad:** P0. **Estado:** Completada en C1.946.
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** consola de compras conectada con submódulos de solicitudes, cotizaciones, órdenes, recepciones, conciliación documental, expediente 360° y proveedores. Se implementó carga de capacidades del servidor con cierre seguro ante error y protección contra respuestas asíncronas obsoletas; los controles de proveedor y las acciones dinámicas se muestran únicamente con permisos concedidos. Se agregó el modal de registro de factura vinculado a orden, partidas y recepciones, con clave idempotente; las discrepancias se envían al backend para persistirse bloqueadas, sin impedir que la UI registre diferencias para conciliación. Contrato de capacidades, carreras y fail-closed PASS; Department Scope run 44982602781 SUCCESS (139 pasos), Regional Formatting 44982602811 SUCCESS, UI Accessibility 44982602793 SUCCESS y Accounting Import Preflight 44982602789 SUCCESS.
 
 ---
@@ -183,7 +183,7 @@
 - **Dependencias/riesgos:** datos completos de proveedor/orden y flujo de autorizaciones; riesgo de emitir documentos inconsistentes o duplicados.
 - **Alcance:** generación y trazabilidad del PDF; no sustituye aprobación multinivel.
 - **Criterios de aceptación:** PDF descargable con los campos indicados, correlativo no duplicado y datos coincidentes con la orden autorizada.
-- **Prioridad:** P0. **Estado:** Completada en C1.947.
+- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** se implementó aprobación independiente de órdenes con bloqueo de autoaprobación y umbral multinivel (> L 50,000: Administrador/Director), revalidación de identidad/permisos/scope bajo lock y requisito de solicitud aprobada/adjudicada. La orden transita Borrador → Aprobada → Emitida → Confirmada → Recepción parcial/total. `generatePurchaseOrderPDF` crea PDF membretado con correlativo anual único, proveedor/RTN, partidas, descuentos, impuestos, transporte, total y firmas; persiste DriveFileId, SHA-256, fecha y usuario en `OrdenesCompra`. El archivo y carpeta quedan privados; descarga autenticada comprueba scope, actor, MIME, extensión, firma PDF y hash. Reintentos son idempotentes; rollback elimina el archivo si falla la persistencia. La UI ofrece aprobar, emitir, descargar y registrar confirmación con gating de capacidades.
 - **Verificación:** Department Scope Contract run 44985337249 SUCCESS (140/140); Regional Formatting 44983281876 SUCCESS; UI Accessibility 44983281874 SUCCESS; Accounting Import Preflight 44984983035 SUCCESS; ACCOUNTING Transport Local 44984983036 SUCCESS; Identity Mapping/Transport Security 44984983052 SUCCESS; Hierarchical Configuration 44984983050 SUCCESS; Department Reference Consumers 44984983024 SUCCESS; Library Circulation Concurrency 44984983018 SUCCESS. Pruebas PDF, aprobación, idempotencia, privacidad, integridad, revocación de permisos/scope, cambio de actor, rollback y transiciones de estado ejecutadas en Node.js CI. No se ejecutó Apps Script/Drive real ni CLI local independiente.
 
@@ -1469,7 +1469,7 @@
 - **Dependencias/riesgos:** cotizaciones vinculadas a una misma solicitud y permisos de adjudicación; riesgo de comparar ofertas no equivalentes.
 - **Alcance:** comparación y adjudicación; no reemplaza aprobación de la orden.
 - **Criterios de aceptación:** ofertas comparables aparecen lado a lado; criterios y adjudicación por partida quedan trazables; solo roles autorizados adjudican.
-- **Prioridad:** P1. **Estado:** Completada (C1.949).
+- **Prioridad:** P1. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** `tests/security/accounting-purchase-quotation-adjudication.test.js` ejecutado en Node.js 24 mediante GitHub Actions; Department Scope Contract run `44986422407` SUCCESS en HEAD `51f57f063eeff551bc8cafe919577c034573e451`. El contrato cubre límite de cinco cotizaciones, comparación por partida, ofertas parciales/vencidas, adjudicación dividida, justificación, ofertas descartadas, snapshot inmutable, idempotencia, RBAC, sobreasignación, rollback y contención del lock. UI verificada en `js/accounting.js`: registro detallado y matriz lado a lado con plazo/condiciones, selección por partida/cantidad y emisión de acta/órdenes.
 
 ---
@@ -1488,7 +1488,7 @@
 - **Dependencias/riesgos:** facturas conciliadas (F18-Task02), permisos financieros y consistencia de saldos; riesgo de pagos duplicados o flujo de caja incorrecto.
 - **Alcance:** ciclo de cuentas por pagar; no incluye conciliación bancaria.
 - **Criterios de aceptación:** abonos reducen saldo sin excederlo; notas de crédito se aplican una sola vez; vencimientos y saldos pendientes se consultan correctamente.
-- **Prioridad:** P1. **Estado:** Completada (C1.950).
+- **Prioridad:** P1. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** MovimientosCuentasPorPagar conserva pagos y notas de crédito con referencia, actor, fecha, hash e idempotencia; recordAccountsPayablePayment y recordAccountsPayableCreditNote validan aprobación/conciliación, saldo y duplicados; approveAccountsPayableInvoice registra aprobación autorizada y motivo; getAccountsPayablePortfolio consulta vencimientos, saldos y movimientos con filtro por fecha y ámbito. Migración append-only agrega metadatos de aprobación. Contratos Node 24, UI, expediente, ayuda de fechas y sintaxis pasan en Department Scope run 44990212024 SUCCESS. CLI local independiente y Apps Script/Sheets reales: NOT RUN.
 
 ---
@@ -1507,7 +1507,7 @@
 - **Dependencias/riesgos:** F11-TASK14 (completada C1.952) (control presupuestario, PresupuestosInstitucionales y checkBudgetAvailability), autorización de órdenes y consistencia concurrente; riesgo de sobregiro o doble compromiso.
 - **Alcance:** reserva presupuestaria vinculada a la orden; no sustituye el registro contable del gasto.
 - **Criterios de aceptación:** aprobación actualiza el compromiso una sola vez; órdenes concurrentes no exceden el disponible; cancelación libera la reserva según estado y reglas auditables.
-- **Prioridad:** P1. **Estado:** Completada (C1.953).
+- **Prioridad:** P1. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** Department Scope run 45267083587 SUCCESS; Node.js 24; contratos de presupuesto, ledger de compromisos, reservas multi-partida, rollback, aprobación/cancelación y sintaxis de servicios Apps Script PASS. CLI local independiente NOT RUN por ausencia de checkout local; Apps Script/Sheets/Drive reales PENDIENTE DE BETA.
 - **Implementación:** approvePurchaseOrder reserva cada partida dentro del mismo ScriptLock, con clave idempotente, control de disponibilidad y rollback si falla la persistencia de la orden. cancelPurchaseOrder exige Director/Administrador y justificación, bloquea órdenes confirmadas/recibidas/facturadas y libera los compromisos de órdenes cancelables con rollback e idempotencia.
 
@@ -1539,7 +1539,7 @@
 - **Dependencias/riesgos:** Kardex existente, compras/recepciones, unidades y códigos históricos; riesgo de romper referencias antiguas o duplicar artículos.
 - **Alcance:** catálogo maestro y validación de referencias; no borrar artículos históricos ni cambiar códigos sin migración trazable.
 - **Criterios de aceptación:** alta/edición autorizada; código único; unidad/categoría obligatorias; movimientos referencian artículo existente; reportes consolidan por ID, no por texto libre; datos antiguos quedan vinculados o marcados para reconciliación.
-- **Prioridad:** P1. **Estado:** Completada mediante la implementación unificada TASK-186; BETA-FUNC-087 Pendiente beta.
+- **Prioridad:** P1. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** C1.717. El catálogo independiente, la referencia obligatoria en movimientos/solicitudes, el vínculo histórico por código y la reconciliación de registros antiguos cubren este alcance sin borrar el historial.
 
 ---
