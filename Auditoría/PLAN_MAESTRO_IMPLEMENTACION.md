@@ -3,15 +3,15 @@
 > **Referencia normativa obligatoria:** antes de modificar este plan o cualquier archivo del repositorio, leer `Normas_Desarollo.md`. Este plan organiza tareas, dependencias y estados; no define una normativa operativa paralela. Las reglas de desarrollo y gobierno se consultan exclusivamente en el archivo maestro.
 
 
-**Versión:** 1.5 — ciclo 3 y arquitectura de servicios por rol
+**Versión:** 1.6 — ciclo 3 y arquitectura de servicios por rol
 **Fecha:** 2026-11-24
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
-**Estado:** Preparado para implementación; próxima tarea: PM-00A / TASK-047.
+**Estado:** Implementación continua; siguiente tarea elegible: PM-00A / TASK-004.
 **Línea base operativa Ciclo 3:** todas las tareas conservadas en los siete backlogs y en el Plan Maestro inician en `Pendiente`; no se elimina, resume ni sustituye ningún requisito técnico, criterio, dependencia ni identificador de tarea.  
 **Checkpoint de origen:** C3.001 (base histórica del ciclo 3).  
-**Checkpoint de planificación:** C3.003.
-**Ciclo operativo vigente:** 3 — preparación documental cerrada; la próxima iteración comienza con PM-00A / TASK-047. El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
+**Checkpoint de planificación:** C3.013.
+**Ciclo operativo vigente:** 3 — implementación continua; TASK-047 cerrada en implementación local (C3.013), validación multi-cuenta reservada a beta; siguiente tarea PM-00A / TASK-004. El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
 
 ---
 
@@ -195,6 +195,8 @@ Las pruebas de seguridad, unidad y contrato no se posponen hasta PM-08: se ejecu
 **Tareas iniciales:** TASK-047 (registro/gestión de servicios y consola de Desarrollador); TASK-004 (catálogo y UI de puestos/responsabilidades); F16-TASK01 (origen de TASK-004, sin implementación duplicada); TASK-505 (integración del catálogo, pendiente de recuperar su bloque original completo).
 
 **Orden recomendado:** TASK-047 → TASK-004 → TASK-505. F16-TASK01 conserva trazabilidad y no constituye una segunda implementación. Verificar dependencias reales antes de cada tarea.
+
+**Avance C3.013:** TASK-047 completada en alcance local/contractual; el escenario real multi-cuenta queda registrado en beta_test.txt. La siguiente tarea elegible es TASK-004. TASK-505 permanece después de TASK-004 y sujeto a la recuperación de su bloque original completo.
 
 **Puerta de salida:** el portal inicia sesión una sola vez; el contexto se reutiliza sin prompts redundantes; Desarrollador y Administrador están separados; el panel permite registrar puestos/servicios; las modalidades y restricciones de privacidad están verificadas localmente. Despliegues reales se validan en beta.
 
@@ -6554,3 +6556,17 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - **Cierre del antecedente:** la limpieza y reapertura de estados quedaron completadas en C3.001/C3.002; no existe una fase de reinicio pendiente ni debe repetirse esta operación.
 - **Siguiente punto de ejecución:** iniciar directamente PM-00A, base del portal y registro de servicios por rol, comenzando por TASK-047 y aplicando §1.1 y Normas_Desarollo.md §17.8.
 - **Integridad:** no se modificó código funcional en esta operación. Las pruebas eliminadas no se consideran ejecutadas ni aprobadas; las nuevas pruebas se crearán conforme avance la implementación.
+
+## 10.96 PM-00A — cierre de implementación de TASK-047 (C3.013)
+
+- Sesión: IMA-ITER-20261124-011.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- HEAD de entrada: 3ae320de74f4e44be510cd667ff5bbefea3ee2c0.
+- Tarea: TASK-047 — registro y gestión central de servicios distribuidos por rol/puesto.
+- Resultado: se completó el alcance local/contractual reutilizando el catálogo v2 y la consola existentes; se cerraron los pendientes de resolución por rol/puesto, selección individual/compartida, enrutamiento automático desde el cliente, validación de versión del contrato y cobertura de contención/liberación del lock. No se reescribieron filas históricas ni se añadieron secretos o autenticación interservicio personalizada.
+- Archivos funcionales de esta continuidad: backend/developer-service/Code.gs, js/api.js, los receptores USER/ACADEMIC/ACCOUNTING/TASK/EXAM y tests/contracts/developer-service-registry.contract.test.js. La última unidad añadió una prueba reproducible de lock ocupado y liberación.
+- Verificación: GitHub Actions Developer Service Registry Contract run 45382256118 — SUCCESS; Node.js 24; 49/49 pruebas PASS; node --check en USER, ACADEMIC, ACCOUNTING, TASK, EXAM, DEVELOPER, js/api.js y js/developer.js; git diff --check PASS.
+- Revisión: el diff de la unidad de prueba quedó limitado al contrato; los cambios funcionales previos de enrutamiento/contrato se revisaron por consumidores y receptores. No se afirma prueba desplegada entre cuentas.
+- Límite beta: faltan dos cuentas Google institucionales autorizadas y proyectos Apps Script desplegados para verificar conectividad privada real, propiedad efectiva, restricciones de dominio y acceso real a Spreadsheet/Drive. Escenarios registrados en beta_test.txt; estado Pendiente beta, no bloqueante para la implementación local.
+- Estado: TASK-047 Completada en alcance local/contractual; beta pendiente.
+- Siguiente tarea elegible: TASK-004 (PM-00A), catálogo de responsabilidades internas y asignaciones con separación estricta de RBAC.

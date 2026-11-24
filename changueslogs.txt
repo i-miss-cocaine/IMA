@@ -4777,3 +4777,13 @@ C3.012 — IMA-ITER-20261124-010
 - AUD-NG-090 sigue pendiente por la prueba real entre proyectos aislados; HMAC/anti-replay interservicio queda supersedido por NDASC §17.8.
 - Rama: NG_beta_0.0.0.1_work. HEAD de entrada: c28bfde9b355cd5173db21e31f87569102407794.
 ===============================================================================
+
+===============================================================================
+C3.013 — IMA-ITER-20261124-011
+===============================================================================
+- TASK-047 / PM-00A completada en alcance local/contractual: resolución central por rol/puesto, servicios individuales/compartidos, enrutamiento automático, permisos/estado/versión de contrato y prueba de contención/liberación de LockService.
+- GitHub Actions run 45382256118 SUCCESS; 49/49 pruebas Node.js PASS; ocho node --check y git diff --check PASS.
+- La comunicación real entre dos cuentas/proyectos Apps Script y las restricciones de dominio/recursos permanecen Pendiente beta en beta_test.txt; no se inventa evidencia de despliegue.
+- Siguiente tarea: TASK-004 (PM-00A).
+- HEAD de entrada: 3ae320de74f4e44be510cd667ff5bbefea3ee2c0.
+===============================================================================

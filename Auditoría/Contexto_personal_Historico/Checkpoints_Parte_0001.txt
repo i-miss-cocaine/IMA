@@ -148,3 +148,14 @@ C3.012 — IMA-ITER-20261124-010
 - HEAD de entrada: c28bfde9b355cd5173db21e31f87569102407794.
 - Estado: AUD-NG-089 completada; TASK-049 continúa pendiente únicamente por AUD-NG-090.
 ===============================================================================
+
+===============================================================================
+C3.013 — IMA-ITER-20261124-011
+===============================================================================
+- Objetivo cerrado: TASK-047 / PM-00A — completar el registro y enrutamiento central de servicios Apps Script por rol/puesto.
+- Resultado: resolución central por ServiceID o clave de dominio; selección de servicio individual/compartido mediante claims verificados; enrutamiento automático del cliente para ACADEMIC, TASK, EXAM y ACCOUNTING; validación de permisos, estado y versión de contrato en resolver/receptores; continuidad del login sin prompt interactivo adicional.
+- Pruebas: GitHub Actions run 45382256118 SUCCESS; Node.js 24; 49/49 pruebas PASS; sintaxis de ocho archivos JS/Apps Script PASS; git diff --check PASS. Se añadió prueba local de lock ocupado y liberación correcta.
+- Límite: la prueba real entre dos cuentas Google y deployments privados, restricciones de dominio y acceso efectivo a Sheets/Drive queda Pendiente beta en beta_test.txt. No se afirma realizada.
+- HEAD de entrada: 3ae320de74f4e44be510cd667ff5bbefea3ee2c0.
+- Estado: TASK-047 completada en alcance local/contractual; siguiente tarea elegible TASK-004 (PM-00A).
+===============================================================================
