@@ -702,7 +702,7 @@
 <!-- ID: TASK-027 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-027] Control de concurrencia e idempotencia en circulación bibliotecaria
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_20_BIBLIOTECA_RECURSOS_EDUCATIVOS.md` / Sección E, Sección F (PT-20-24, PT-20-25) y Plan de Trabajo P0
 - **Prioridad:** P0
 - **Severidad/Clasificación:** Crítica (Integridad transaccional, prevención de doble asignación de ejemplares y protección de reintentos)
@@ -774,7 +774,7 @@
 <!-- ID: TASK-105 | Fuentes: Pendientes.md ; pendientes/Docente/Pendientes.md -->
 ### [ ] [TASK-105] [P0] Unificación del ciclo de vida de las justificaciones de asistencia y sincronización con los registros académicos
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Prioridad:** P0 (Crítica)
 - **Orden de Ejecución:** 1 (Dependencia base para sincronización académica)
 - **Componentes Afectados:**
@@ -1020,7 +1020,7 @@
 <!-- ID: AUD-NG-165 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-165] Proteger la privacidad y el acceso contextual a comentarios y versiones de entregas
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Origen:** Auditoría de completadas.md / TAREA-10.
 - **Severidad:** Alto (P1; privacidad de entregas y retroalimentación).
 - **Archivos:** backend/task-service/Code.gs; js/student.js; js/teacher.js; student-dashboard.html; teacher-dashboard.html.
@@ -1041,7 +1041,7 @@ Hallazgo nuevo: AUD-NG-165. Los demás vacíos de TAREA-10 amplían tareas exist
 <!-- ID: AUD-NG-166 | Fuentes: Pendientes.md -->
 ### [ ] [AUD-NG-166] Completar el modelo verificable de reactivos y la integridad del motor de exámenes
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Origen:** Auditoría de completadas.md / TAREA-11.
 - **Severidad:** Alto (P1).
 - **Archivos:** backend/exam-service/Code.gs; js/exam.js; js/quizpro.js; exam.html; results.html.
