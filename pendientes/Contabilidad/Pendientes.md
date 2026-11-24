@@ -1,6 +1,6 @@
 # Backlog consolidado — Contabilidad
 
-**Estado operativo del Plan Maestro (reinicio global):** todas las tareas de este backlog quedan en estado `Pendiente` al inicio de la ejecución. Ninguna tarea se considera `Completada`; marcas, etiquetas o declaraciones históricas de cierre son únicamente antecedentes y no acreditan estado vigente. Una tarea solo podrá cambiar de estado tras su implementación y verificación conforme al Plan Maestro.
+**Estado operativo del Plan Maestro (ciclo 3):** los estados vigentes son los consignados en cada tarea. Las tareas solo podrán cambiar de estado tras su implementación y verificación conforme al Plan Maestro; la evidencia histórica se conserva.
 
 **Fuentes integradas:** informes de auditoría de `AUDITORIAS/`, `Pendientes.md`, `completadas.md` y los archivos departamentales preexistentes. Los registros con el mismo identificador se reúnen en una sola tarea.
 
@@ -10,7 +10,7 @@
 
 <!-- ID: F11-TASK02 | Fuentes: AUDITORIAS/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md ; Pendientes.md ; pendientes/Contabilidad/Pendientes.md -->
 
-> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
+> **Ciclo 3:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Los estados vigentes se actualizan conforme a la implementación y verificación; la evidencia histórica se conserva.
 ### [ ] [F11-TASK02] Asegurar la integridad de los asientos contables y las autorizaciones multinivel
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 
@@ -23,7 +23,7 @@
 - **Dependencias/riesgos:** catálogo contable, identidad/roles, concurrencia y persistencia transaccional; riesgo de asientos desbalanceados o autorizaciones indebidas.
 - **Alcance:** integridad del asiento y autorización multinivel; no modificar el historial de pagos/recibos sin migración y respaldo verificables.
 - **Criterios de aceptación:** se rechazan asientos no balanceados; no hay escrituras parciales ante error; cada aprobación corresponde a un rol autorizado y queda trazada; pruebas de concurrencia y rechazo cubren los casos críticos.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia de cierre:** C1.951; `recordAccountingJournalEntry` exige identidad/permiso dinámico, revalida actor bajo ScriptLock y fuerza `CreadoPor` verificado; el núcleo valida cuentas activas del `PlanCuentas`, partidas individuales, equilibrio exacto a centavos, idempotencia y rollback de escritura. Lecturas del libro protegidas. `approvePurchaseOrder` queda expuesto por router, segregado por rol/umbral, exige justificación y persiste aprobador/fecha/motivo/rol atómicamente. Contratos Node.js 24 y sintaxis Apps Script: Department Scope run 44991489881 SUCCESS.
 - **Origen del Hallazgo:** `AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md` / Área IV (P0)
 - **Prioridad:** P0
@@ -36,7 +36,7 @@
 - **Criterios de Aceptación:**
   - Todo asiento desequilibrado es rechazado y las compras mayores al umbral requieren aprobación formal de Dirección.
 - **Estado histórico anterior:** Completada
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 234-248; clave F11-Task13; asignación única: Contabilidad -->
 
@@ -119,7 +119,7 @@
 - **Dependencias/riesgos:** consistencia transaccional de recepciones e inventario; riesgo de pérdida de saldos o cierre prematuro.
 - **Alcance:** recepción parcial y cálculo de saldo por partida; no incluye conciliación de facturas (F18-Task02).
 - **Criterios de aceptación:** permitir varias recepciones por orden; no superar cantidades autorizadas; saldo pendiente correcto; estado total únicamente al completar el 100%.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia de cierre:** recordPurchaseReceipt acumula cantidades conformes/rechazadas por partida, conserva saldos pendientes, permite recepciones sucesivas, bloquea sobre-recepción y solo marca RecibidaTotal al completar las cantidades conformes. Idempotencia persistente y rollback de Kardex/valoración/recepción/estado. Contrato accounting-purchase-receipt-partial.test.js PASS; Department Scope run 44985649501 SUCCESS (139 pasos), además de C1.944 run 44968525211 SUCCESS (137 pasos).
 
 ---
@@ -139,9 +139,9 @@
 - **Dependencias/riesgos:** F18-Task01 y contratos de factura/recepción; riesgo de sobreprecio o pago por mercancía no recibida.
 - **Alcance:** conciliación documental previa a aprobación; no sustituye autorización de pagos ni conciliación bancaria.
 - **Criterios de aceptación:** ninguna factura con diferencia no justificada pasa a aprobada para pago; discrepancias quedan identificadas y sujetas a aprobación autorizada; coincidencias verificables permiten continuar el flujo.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Estado histórico anterior:** Completada en C1.945.
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 - **Evidencia de cierre:** recordAccountsPayableExpense registra facturas con snapshot de partidas, hash e idempotencia; verifyThreeWayMatch compara orden, recepciones conformes, proveedor, precios y montos y persiste EstadoConciliacion/DiferenciasJSON, bloqueando el pago ante discrepancias. Permisos, ámbito y lock revalidados; CI Department Scope run 44979718178 SUCCESS (138 pasos), incluidos contratos de cotización, recepción parcial, capitalización, expediente de compras, catálogo y sintaxis Apps Script.
 
 ---
@@ -162,7 +162,7 @@
 - **Dependencias/riesgos:** contratos backend, permisos por rol y tareas F18-Task01/02; riesgo de exponer operaciones sin autorización.
 - **Alcance:** interfaz de gestión de compras; no duplicar reglas de negocio en el cliente.
 - **Criterios de aceptación:** usuarios autorizados pueden consultar y ejecutar las operaciones habilitadas; errores y estados se reflejan desde respuestas backend; no se habilitan acciones fuera del rol.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia de cierre:** consola de compras conectada con submódulos de solicitudes, cotizaciones, órdenes, recepciones, conciliación documental, expediente 360° y proveedores. Se implementó carga de capacidades del servidor con cierre seguro ante error y protección contra respuestas asíncronas obsoletas; los controles de proveedor y las acciones dinámicas se muestran únicamente con permisos concedidos. Se agregó el modal de registro de factura vinculado a orden, partidas y recepciones, con clave idempotente; las discrepancias se envían al backend para persistirse bloqueadas, sin impedir que la UI registre diferencias para conciliación. Contrato de capacidades, carreras y fail-closed PASS; Department Scope run 44982602781 SUCCESS (139 pasos), Regional Formatting 44982602811 SUCCESS, UI Accessibility 44982602793 SUCCESS y Accounting Import Preflight 44982602789 SUCCESS.
 
 ---
@@ -183,7 +183,7 @@
 - **Dependencias/riesgos:** datos completos de proveedor/orden y flujo de autorizaciones; riesgo de emitir documentos inconsistentes o duplicados.
 - **Alcance:** generación y trazabilidad del PDF; no sustituye aprobación multinivel.
 - **Criterios de aceptación:** PDF descargable con los campos indicados, correlativo no duplicado y datos coincidentes con la orden autorizada.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia de cierre:** se implementó aprobación independiente de órdenes con bloqueo de autoaprobación y umbral multinivel (> L 50,000: Administrador/Director), revalidación de identidad/permisos/scope bajo lock y requisito de solicitud aprobada/adjudicada. La orden transita Borrador → Aprobada → Emitida → Confirmada → Recepción parcial/total. `generatePurchaseOrderPDF` crea PDF membretado con correlativo anual único, proveedor/RTN, partidas, descuentos, impuestos, transporte, total y firmas; persiste DriveFileId, SHA-256, fecha y usuario en `OrdenesCompra`. El archivo y carpeta quedan privados; descarga autenticada comprueba scope, actor, MIME, extensión, firma PDF y hash. Reintentos son idempotentes; rollback elimina el archivo si falla la persistencia. La UI ofrece aprobar, emitir, descargar y registrar confirmación con gating de capacidades.
 - **Verificación:** Department Scope Contract run 44985337249 SUCCESS (140/140); Regional Formatting 44983281876 SUCCESS; UI Accessibility 44983281874 SUCCESS; Accounting Import Preflight 44984983035 SUCCESS; ACCOUNTING Transport Local 44984983036 SUCCESS; Identity Mapping/Transport Security 44984983052 SUCCESS; Hierarchical Configuration 44984983050 SUCCESS; Department Reference Consumers 44984983024 SUCCESS; Library Circulation Concurrency 44984983018 SUCCESS. Pruebas PDF, aprobación, idempotencia, privacidad, integridad, revocación de permisos/scope, cambio de actor, rollback y transiciones de estado ejecutadas en Node.js CI. No se ejecutó Apps Script/Drive real ni CLI local independiente.
 
@@ -1032,7 +1032,7 @@
   - Reducir el importe de una orden ajusta la diferencia en el compromiso de forma trazable.
   - Las autorizaciones de sobregiro quedan auditadas con usuario directivo responsable y motivo.
 - **Estado histórico anterior:** Completada
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 - **Cierre C1.954:** transferencia idempotente de compromisos a ejecución al aprobar facturas conciliadas; reducción autorizada de órdenes Aprobadas no emitidas con liberación proporcional del compromiso no ejecutado y ledger de auditoría append-only; excepciones extraordinarias de sobregiro solo para Director/Administrador, justificación obligatoria y log BUDGET_OVERRUN_ALERT. La reducción se bloquea después de emitir PDF, registrar recepción o factura, o crear ejecución; el backend conserva el cierre fail-closed y rollback.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1400-1460; clave TASK-019; asignación única: Contabilidad -->
@@ -1098,7 +1098,7 @@
   - Los conteos físicos y conciliaciones operan bajo el nuevo modelo por almacén.
   - Los reportes muestran correctamente los saldos individuales por ubicación y el consolidado institucional.
 - **Estado histórico anterior:** Completada
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 - **Seguimiento C1.957:** UI de conteo físico integrada en Kardex; backend/API/RBAC y conciliación por sede/ubicación verificadas. Node.js 24.22.3: contrato multialmacén y conteo físico PASS; contrato UI de almacenes y conteos PASS; sintaxis Apps Script/JS PASS en GitHub Actions. Department Scope run 45283096948 SUCCESS y UI Accessibility run 45283097143 SUCCESS sobre SHA 20107c19c30b03a0e8694d769d42b256a7a33fbf. BETA-FUNC-130 permanece Pendiente beta, no bloqueante.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1461-1501; clave TASK-020; asignación única: Contabilidad -->
@@ -1146,7 +1146,7 @@
   - Se rechazan devoluciones duplicadas de una misma asignación.
 - **Seguimiento C1.958:** Backend y UI integrados; devolución vinculada a asignación activa, historial append-only, PDF privado con identidad del receptor, evidencias privadas sin alterar permisos de archivos externos, escalamiento automático a mantenimiento por daños/faltantes y liberación controlada a `available` al completar mantenimiento. Contratos Node.js 24, regresión de catálogo y sintaxis Apps Script/JS PASS en GitHub Actions run 45286954207 (SHA `acabdec1e2b378705418cbc903d2693db79de2da`).
 - **Estado histórico anterior:** Completada
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 1502-1541; clave TASK-021; asignación única: Contabilidad -->
 
@@ -1192,7 +1192,7 @@
   - Se garantiza integridad y bloqueo transaccional bajo solicitudes concurrentes.
 - **Seguimiento C1.960:** TASK-021 completada. Además del flujo de despacho/recepción y rollback, se añadió idempotencia real de creación: clave validada, hash SHA-256 del payload canónico persistido en TransferenciasInventario, reintento idéntico devuelve el mismo TRF sin duplicar Kardex/ledger y reutilización de clave con payload distinto falla cerrada. Migración compatible del esquema existente. Contrato inventory-multilocation-kardex.test.js (reintento, conflicto de payload, clave inválida, ubicación/stock reservado/rollback) PASS en Department Scope run 45291514151; pasos 72, 73 y 75 PASS y estado de commit ima/department-scope-contract SUCCESS. UI Accessibility run 45291514101 SUCCESS. Department Scope run 45291514151 terminó SUCCESS; el estado ima/department-scope-contract del HEAD de código también quedó SUCCESS.
 - **Estado histórico anterior:** Completada
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3601-3637; clave TASK-072; asignación única: Contabilidad -->
 
@@ -1402,7 +1402,7 @@
 - **Criterios de Aceptación:**
   - Se genera una advertencia o bloqueo presupuestario cuando una solicitud excede el presupuesto disponible.
 - **Estado histórico anterior:** Completada
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 264-278; clave F11-Task15; asignación única: Contabilidad -->
 
@@ -1469,7 +1469,7 @@
 - **Dependencias/riesgos:** cotizaciones vinculadas a una misma solicitud y permisos de adjudicación; riesgo de comparar ofertas no equivalentes.
 - **Alcance:** comparación y adjudicación; no reemplaza aprobación de la orden.
 - **Criterios de aceptación:** ofertas comparables aparecen lado a lado; criterios y adjudicación por partida quedan trazables; solo roles autorizados adjudican.
-- **Prioridad:** P1. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P1. **Estado:** Pendiente.
 - **Evidencia de cierre:** `tests/security/accounting-purchase-quotation-adjudication.test.js` ejecutado en Node.js 24 mediante GitHub Actions; Department Scope Contract run `44986422407` SUCCESS en HEAD `51f57f063eeff551bc8cafe919577c034573e451`. El contrato cubre límite de cinco cotizaciones, comparación por partida, ofertas parciales/vencidas, adjudicación dividida, justificación, ofertas descartadas, snapshot inmutable, idempotencia, RBAC, sobreasignación, rollback y contención del lock. UI verificada en `js/accounting.js`: registro detallado y matriz lado a lado con plazo/condiciones, selección por partida/cantidad y emisión de acta/órdenes.
 
 ---
@@ -1488,7 +1488,7 @@
 - **Dependencias/riesgos:** facturas conciliadas (F18-Task02), permisos financieros y consistencia de saldos; riesgo de pagos duplicados o flujo de caja incorrecto.
 - **Alcance:** ciclo de cuentas por pagar; no incluye conciliación bancaria.
 - **Criterios de aceptación:** abonos reducen saldo sin excederlo; notas de crédito se aplican una sola vez; vencimientos y saldos pendientes se consultan correctamente.
-- **Prioridad:** P1. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P1. **Estado:** Pendiente.
 - **Evidencia de cierre:** MovimientosCuentasPorPagar conserva pagos y notas de crédito con referencia, actor, fecha, hash e idempotencia; recordAccountsPayablePayment y recordAccountsPayableCreditNote validan aprobación/conciliación, saldo y duplicados; approveAccountsPayableInvoice registra aprobación autorizada y motivo; getAccountsPayablePortfolio consulta vencimientos, saldos y movimientos con filtro por fecha y ámbito. Migración append-only agrega metadatos de aprobación. Contratos Node 24, UI, expediente, ayuda de fechas y sintaxis pasan en Department Scope run 44990212024 SUCCESS. CLI local independiente y Apps Script/Sheets reales: NOT RUN.
 
 ---
@@ -1507,7 +1507,7 @@
 - **Dependencias/riesgos:** F11-TASK14 (completada C1.952) (control presupuestario, PresupuestosInstitucionales y checkBudgetAvailability), autorización de órdenes y consistencia concurrente; riesgo de sobregiro o doble compromiso.
 - **Alcance:** reserva presupuestaria vinculada a la orden; no sustituye el registro contable del gasto.
 - **Criterios de aceptación:** aprobación actualiza el compromiso una sola vez; órdenes concurrentes no exceden el disponible; cancelación libera la reserva según estado y reglas auditables.
-- **Prioridad:** P1. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P1. **Estado:** Pendiente.
 - **Evidencia de cierre:** Department Scope run 45267083587 SUCCESS; Node.js 24; contratos de presupuesto, ledger de compromisos, reservas multi-partida, rollback, aprobación/cancelación y sintaxis de servicios Apps Script PASS. CLI local independiente NOT RUN por ausencia de checkout local; Apps Script/Sheets/Drive reales PENDIENTE DE BETA.
 - **Implementación:** approvePurchaseOrder reserva cada partida dentro del mismo ScriptLock, con clave idempotente, control de disponibilidad y rollback si falla la persistencia de la orden. cancelPurchaseOrder exige Director/Administrador y justificación, bloquea órdenes confirmadas/recibidas/facturadas y libera los compromisos de órdenes cancelables con rollback e idempotencia.
 
@@ -1539,7 +1539,7 @@
 - **Dependencias/riesgos:** Kardex existente, compras/recepciones, unidades y códigos históricos; riesgo de romper referencias antiguas o duplicar artículos.
 - **Alcance:** catálogo maestro y validación de referencias; no borrar artículos históricos ni cambiar códigos sin migración trazable.
 - **Criterios de aceptación:** alta/edición autorizada; código único; unidad/categoría obligatorias; movimientos referencian artículo existente; reportes consolidan por ID, no por texto libre; datos antiguos quedan vinculados o marcados para reconciliación.
-- **Prioridad:** P1. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P1. **Estado:** Pendiente.
 - **Evidencia de cierre:** C1.717. El catálogo independiente, la referencia obligatoria en movimientos/solicitudes, el vínculo histórico por código y la reconciliación de registros antiguos cubren este alcance sin borrar el historial.
 
 ---
@@ -2284,7 +2284,7 @@
   - La última cuota de amortización ajusta el saldo restante a exactamente 0.00 marcando el préstamo como `Liquidado`.
   - Reintentar o recalcular la planilla no genera deducciones dobles del mismo préstamo.
   - La anulación de una planilla restituye el saldo del préstamo con auditoría inmutable.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7314-7350; clave TASK-175; asignación única: Contabilidad -->
 
@@ -2326,7 +2326,7 @@
   - Se vincula cada concepto con su respectiva cuenta contable para el asiento automático.
   - Se bloquean fórmulas con dependencias circulares o parámetros incompletos.
   - Desactivar un concepto no altera los registros de planillas cerradas.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7384-7420; clave TASK-177; asignación única: Contabilidad -->
 
@@ -2368,7 +2368,7 @@
   - Un fallo de conexión en el servidor de correo permite reintentar solo los envíos pendientes sin duplicados.
   - El sistema impide despachar boletas de planillas que permanezcan en estado preliminar `Calculada`.
   - La boleta continúa accesible y descargable desde el portal de autoservicio del empleado.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7421-7456; clave TASK-178; asignación única: Contabilidad -->
 
@@ -2444,7 +2444,7 @@
   - Las obligaciones patronales incrementan el gasto institucional y no reducen el salario neto de los colaboradores.
   - Reintentar la operación de cierre de planilla no genera un asiento contable duplicado.
   - Los totales contables coinciden exactamente con el resumen de nómina presentado a Recursos Humanos.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7489-7520; clave TASK-180; asignación única: Contabilidad -->
 
@@ -2481,7 +2481,7 @@
   - Se puede consultar el desglose de causas que originaron la diferencia salarial de un colaborador.
   - Los totales individuales suman con exactitud milimétrica el consolidado general de la planilla.
   - La interfaz permite buscar y filtrar colaboradores por nombre, puesto o estado de cálculo sin recargar la pantalla.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7525-7559; clave TASK-181; asignación única: Contabilidad -->
 
@@ -2521,7 +2521,7 @@
   - Las órdenes de compra resultantes conservan los importes, partidas y condiciones adjudicadas.
   - La decisión de adjudicación registra el responsable, fecha y justificación técnica.
   - Una cotización modificada con posterioridad no altera silenciosamente una adjudicación ya aprobada.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7560-7593; clave TASK-182; asignación única: Contabilidad -->
 
@@ -2560,7 +2560,7 @@
   - Se detecta y rechaza el registro de activos con números de serie previamente existentes.
   - Las compras de materiales consumibles no generan activos patrimoniales automáticamente.
   - La consulta del activo permite navegar directamente hacia su expediente de adquisición original.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7594-7631; clave TASK-183; asignación única: Contabilidad -->
 
@@ -2603,7 +2603,7 @@
   - Modificar una cuenta bancaria genera una entrada de auditoría con usuario, fecha y valor anterior.
   - Se detectan posibles proveedores duplicados al validar el número de RTN (14 dígitos).
   - Un proveedor suspendido queda bloqueado para la emisión de nuevas órdenes de compra.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7632-7666; clave TASK-184; asignación única: Contabilidad -->
 
@@ -2643,7 +2643,7 @@
   - Los totales de cantidades e importes del expediente coinciden exactamente con los documentos individuales.
   - Las órdenes con entregas o facturaciones parciales reflejan con claridad los saldos pendientes.
   - El expediente mantiene protegidos los documentos confidenciales conforme al rol del usuario que consulta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7671-7723; clave TASK-185; asignación única: Contabilidad -->
 
@@ -2702,7 +2702,7 @@
   - Las bajas reconocen el valor neto en libros a la fecha de disposición.
   - Los reportes patrimoniales coinciden exactamente con las cuentas contables de balance.
 - **Resolución C1.716:** ficha financiera y políticas configurables por categoría; métodos línea recta, saldo decreciente y unidades; apertura histórica; mejoras capitalizables; asientos automáticos por partida doble; reversión auditable; bajas con valor neto/resultado; calendario y conciliación patrimonial por activo, categoría y libro mayor. Se corrigieron el corte histórico, la idempotencia de mejoras y la revalidación del activo dentro de ScriptLock.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7724-7761; clave TASK-186; asignación única: Contabilidad -->
 
@@ -2745,7 +2745,7 @@
   - Se detectan y alertan posibles duplicados antes de guardar.
   - Todas las operaciones de Kardex y solicitudes exigen la selección de artículos del catálogo.
   - Los artículos desactivados conservan su historial pero quedan bloqueados para nuevas operaciones.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Evidencia de cierre:** C1.717; contratos de catálogo, recepción parcial, capitalización y sintaxis en GitHub Actions Node.js 24.22.2.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7762-7802; clave TASK-187; asignación única: Contabilidad -->
@@ -2793,7 +2793,7 @@
   - Los repuestos utilizados se descuentan de forma exacta en Kardex.
   - Se consultan indicadores de cumplimiento y costos acumulados por activo.
 - **Resolución C1.792:** planes preventivos por activo/categoría/ubicación/grupo; frecuencias calendario y horas de uso; generación idempotente de órdenes al abrir el módulo; alertas 30/15/7/1 días y vencidas; avance del ciclo al completar, postergación justificada con historial, plantillas, consumo contable de repuestos e indicadores. Contrato Node 24 y sintaxis Apps Script verificados en GitHub Actions.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7803-7840; clave TASK-188; asignación única: Contabilidad -->
 
@@ -2836,7 +2836,7 @@
   - Los asientos cumplen estricta partida doble (`totalDebe === totalHaber`).
   - No se generan contabilizaciones duplicadas por reintentos.
   - Se concilia el consumo físico en Kardex con el saldo de las cuentas de mayor contable.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7841-7879; clave TASK-189; asignación única: Contabilidad -->
 
@@ -2880,7 +2880,7 @@
   - Se generan reportes de inventario valorizado a fechas históricas de corte.
   - Los totales valorizados coinciden con los balances contables de inventario.
   - Se exportan informes estructurados a Excel y PDF sin discrepancias.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7880-7915; clave TASK-190; asignación única: Contabilidad -->
 
@@ -2921,7 +2921,7 @@
   - Las sugerencias de reposición descuentan las compras en tránsito evitando sobrecompras.
   - Las sugerencias pueden convertirse en solicitudes de compra internas sin alterar órdenes aprobadas.
   - Se identifican oportunamente artículos con exceso de existencias y artículos con riesgo de quiebre.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8172-8198; clave TASK-200; asignación única: Contabilidad -->
 
@@ -2954,7 +2954,7 @@
   - Reprocesar la facturación no duplica cargos del mismo mes.
   - Cancelar el servicio detiene los cobros futuros de manera transparente.
 - **Evidencia de implementación y verificación:** TransporteTarifas por ruta/modalidad; asignación vinculada a ConceptosCobro/CargosEstudiante; clave idempotente TRN-MM-YYYY-ESTUDIANTE; prorrateo de altas y cancelaciones con ajustes; cancelación bloquea períodos futuros. Contrato Node.js 24.22.2 y sintaxis Apps Script PASS en GitHub Actions.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8300-8322; clave TASK-205; asignación única: Contabilidad -->
 
@@ -2987,7 +2987,7 @@
 - **CI:** Department Scope Contract 43614101832 SUCCESS; Department Reference Consumers 43614101548 SUCCESS; Identity Mapping 43614101542 SUCCESS.
 - **Limitaciones:** CLI local independiente NOT RUN (sin checkout/runner local disponible); Apps Script/Google Sheets reales NOT RUN. BETA-FUNC-092 queda Pendiente beta.
 - **Dependencias:** F21-Task13 describe transporte extraordinario/excursiones y no es prerrequisito técnico del catálogo de tarifas; se trata como referencia informativa, no bloqueante.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8425-8450; clave TASK-210; asignación única: Contabilidad -->
 
@@ -3183,7 +3183,7 @@
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
 - **Estado histórico anterior:** Completada (C1.295; inventario integral reconciliado, autoauditoría y Code Review documental aprobados).
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 - **Objetivo y acción:** generar y mantener un inventario exhaustivo de los 974 archivos versionados, con ruta exacta, tipo, tamaño, SHA, área funcional, propósito y condición de uso; reconciliarlo con el árbol Git vigente y contemplar contenido académico, assets, datos, documentación, pruebas, configuración y backend.
 - **Archivos/módulos afectados:** `docs/architecture/repository-inventory.md`, `AUDITORIAS/MapaDependencias.md`, árbol completo del repositorio.
 - **Dependencias:** árbol Git de la rama de trabajo, documentación vigente, punto de entrada `index.html`.
@@ -3221,7 +3221,7 @@
 - **Severidad:** ALTO.
 - **Prioridad:** P1.
 - **Estado histórico anterior:** Completada (C1.301; matriz estática de dependencias, consumidores, dispatchers, handlers, persistencia y contratos documentada en Auditoría/MapaDependencias.md, sección C1.301; limitaciones de deployments y pruebas runtime declaradas).
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 - **Objetivo y acción:** documentar por archivo las dependencias HTML `script/link`, CSS, imágenes, fuentes, imports, referencias dinámicas, rutas, endpoints, acciones backend, contratos y servicios externos; distinguir referencias comprobadas de inferidas y registrar consumidores/proveedores.
 - **Archivos/módulos afectados:** HTML, JS, CSS, JSON, GAS, configuración, documentación y recursos del repositorio; `AUDITORIAS/MapaDependencias.md`.
 - **Dependencias:** TASK-637, catálogo completo de archivos.
@@ -4833,7 +4833,7 @@
 - **Criterios de Aceptación:** El inventario permite identificar inequívocamente el estado de TASK-050; la rectificación conserva el encabezado y contenido históricos; la decisión se apoya en evidencias y revisión formal; las tareas derivadas permanecen vinculadas a AUD-NG-091 a AUD-NG-096.
 - **Resolución C1.417:** el histórico de TASK-050 presentaba `[X]` en encabezado y `[ ] Pendiente` en estado interno; el backlog canónico actual ya presenta ambos como pendientes y mantiene ocho criterios sin marcar. Se añade conciliación en el bloque TASK-050, sin reescribir historia ni cambiar su estado. AUD-NG-091 a AUD-NG-096 siguen vinculadas. Se cumplen los criterios de esta tarea documental.
 - **Evidencia:** commit histórico `40c9e15f85224f716d0ddfa597b72e1142ed0191`, blob `bd6b1e573e3eda36e34af2a8c83f0483673026a0`; HEAD previo `b055ecf685ad7a6a2d18bd11323767dd772bbe76`, blob actual `0f82e33a8c62a4bb31b9b1280d10d0838f213c94`; ocho criterios de TASK-050 abiertos.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ---
 
