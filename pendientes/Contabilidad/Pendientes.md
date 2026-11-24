@@ -2284,7 +2284,7 @@
   - La última cuota de amortización ajusta el saldo restante a exactamente 0.00 marcando el préstamo como `Liquidado`.
   - Reintentar o recalcular la planilla no genera deducciones dobles del mismo préstamo.
   - La anulación de una planilla restituye el saldo del préstamo con auditoría inmutable.
-- **Estado:** [x] Implementada y verificada por contratos Node.js 24 y sintaxis Apps Script en GitHub Actions; beta pendiente.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7314-7350; clave TASK-175; asignación única: Contabilidad -->
 
@@ -2326,7 +2326,7 @@
   - Se vincula cada concepto con su respectiva cuenta contable para el asiento automático.
   - Se bloquean fórmulas con dependencias circulares o parámetros incompletos.
   - Desactivar un concepto no altera los registros de planillas cerradas.
-- **Estado:** [x] Completada — motor de conceptos, catálogo, reglas versionadas, asignaciones por ámbito, integración de nómina/asiento y UI HR verificados por Node.js 24 y sintaxis Apps Script en GitHub Actions. Se corrigió validación YYYY-MM para conceptos no recurrentes y preservación de estado inactivo al editar. BETA-FUNC-077 Pendiente beta.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7384-7420; clave TASK-177; asignación única: Contabilidad -->
 
@@ -2368,7 +2368,7 @@
   - Un fallo de conexión en el servidor de correo permite reintentar solo los envíos pendientes sin duplicados.
   - El sistema impide despachar boletas de planillas que permanezcan en estado preliminar `Calculada`.
   - La boleta continúa accesible y descargable desde el portal de autoservicio del empleado.
-- **Estado:** [x] Completada en código y verificada por contratos Node.js 24.22.2 y sintaxis Apps Script/HR en GitHub Actions. Vista previa, aislamiento de ámbito, correos faltantes/duplicados, generación privada, envío individual, reintentos, idempotencia, concurrencia y descarga histórica PASS. BETA-FUNC-078 Pendiente beta.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7421-7456; clave TASK-178; asignación única: Contabilidad -->
 
@@ -2444,7 +2444,7 @@
   - Las obligaciones patronales incrementan el gasto institucional y no reducen el salario neto de los colaboradores.
   - Reintentar la operación de cierre de planilla no genera un asiento contable duplicado.
   - Los totales contables coinciden exactamente con el resumen de nómina presentado a Recursos Humanos.
-- **Estado:** [x] Implementada y verificada en CI; BETA-FUNC-079 pendiente de validación en entorno desplegado. Revisar el catálogo institucional heredado si 2101 aún corresponde a Proveedores.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7489-7520; clave TASK-180; asignación única: Contabilidad -->
 
@@ -2481,7 +2481,7 @@
   - Se puede consultar el desglose de causas que originaron la diferencia salarial de un colaborador.
   - Los totales individuales suman con exactitud milimétrica el consolidado general de la planilla.
   - La interfaz permite buscar y filtrar colaboradores por nombre, puesto o estado de cálculo sin recargar la pantalla.
-- **Estado:** [x] Completada en código y CI; validación beta desplegada separada.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7525-7559; clave TASK-181; asignación única: Contabilidad -->
 
@@ -2521,7 +2521,7 @@
   - Las órdenes de compra resultantes conservan los importes, partidas y condiciones adjudicadas.
   - La decisión de adjudicación registra el responsable, fecha y justificación técnica.
   - Una cotización modificada con posterioridad no altera silenciosamente una adjudicación ya aprobada.
-- **Estado:** [x] Completada en código y CI; validación beta desplegada separada.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7560-7593; clave TASK-182; asignación única: Contabilidad -->
 
@@ -2560,7 +2560,7 @@
   - Se detecta y rechaza el registro de activos con números de serie previamente existentes.
   - Las compras de materiales consumibles no generan activos patrimoniales automáticamente.
   - La consulta del activo permite navegar directamente hacia su expediente de adquisición original.
-- **Estado:** [x] Completada en código y CI; validación beta pendiente.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7594-7631; clave TASK-183; asignación única: Contabilidad -->
 
@@ -2603,7 +2603,7 @@
   - Modificar una cuenta bancaria genera una entrada de auditoría con usuario, fecha y valor anterior.
   - Se detectan posibles proveedores duplicados al validar el número de RTN (14 dígitos).
   - Un proveedor suspendido queda bloqueado para la emisión de nuevas órdenes de compra.
-- **Estado:** [x] Completada en código y CI; validación beta pendiente.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7632-7666; clave TASK-184; asignación única: Contabilidad -->
 
@@ -2643,7 +2643,7 @@
   - Los totales de cantidades e importes del expediente coinciden exactamente con los documentos individuales.
   - Las órdenes con entregas o facturaciones parciales reflejan con claridad los saldos pendientes.
   - El expediente mantiene protegidos los documentos confidenciales conforme al rol del usuario que consulta.
-- **Estado:** [x] Completada en código y CI; validación beta pendiente.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7671-7723; clave TASK-185; asignación única: Contabilidad -->
 
@@ -2702,7 +2702,7 @@
   - Las bajas reconocen el valor neto en libros a la fecha de disposición.
   - Los reportes patrimoniales coinciden exactamente con las cuentas contables de balance.
 - **Resolución C1.716:** ficha financiera y políticas configurables por categoría; métodos línea recta, saldo decreciente y unidades; apertura histórica; mejoras capitalizables; asientos automáticos por partida doble; reversión auditable; bajas con valor neto/resultado; calendario y conciliación patrimonial por activo, categoría y libro mayor. Se corrigieron el corte histórico, la idempotencia de mejoras y la revalidación del activo dentro de ScriptLock.
-- **Estado:** [x] Completada en código y CI; BETA-FUNC-086 Pendiente beta.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7724-7761; clave TASK-186; asignación única: Contabilidad -->
 
@@ -2745,7 +2745,7 @@
   - Se detectan y alertan posibles duplicados antes de guardar.
   - Todas las operaciones de Kardex y solicitudes exigen la selección de artículos del catálogo.
   - Los artículos desactivados conservan su historial pero quedan bloqueados para nuevas operaciones.
-- **Estado:** [x] Completada en código y CI; BETA-FUNC-087 Pendiente beta.
+- **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia de cierre:** C1.717; contratos de catálogo, recepción parcial, capitalización y sintaxis en GitHub Actions Node.js 24.22.2.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7762-7802; clave TASK-187; asignación única: Contabilidad -->
@@ -2793,7 +2793,7 @@
   - Los repuestos utilizados se descuentan de forma exacta en Kardex.
   - Se consultan indicadores de cumplimiento y costos acumulados por activo.
 - **Resolución C1.792:** planes preventivos por activo/categoría/ubicación/grupo; frecuencias calendario y horas de uso; generación idempotente de órdenes al abrir el módulo; alertas 30/15/7/1 días y vencidas; avance del ciclo al completar, postergación justificada con historial, plantillas, consumo contable de repuestos e indicadores. Contrato Node 24 y sintaxis Apps Script verificados en GitHub Actions.
-- **Estado:** [x] Completada en código y CI; BETA-FUNC-111 pendiente de validación desplegada.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7803-7840; clave TASK-188; asignación única: Contabilidad -->
 
@@ -2836,7 +2836,7 @@
   - Los asientos cumplen estricta partida doble (`totalDebe === totalHaber`).
   - No se generan contabilizaciones duplicadas por reintentos.
   - Se concilia el consumo físico en Kardex con el saldo de las cuentas de mayor contable.
-- **Estado:** [x] Completada en código y CI; BETA-FUNC-088 pendiente de validación desplegada.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7841-7879; clave TASK-189; asignación única: Contabilidad -->
 
@@ -2880,7 +2880,7 @@
   - Se generan reportes de inventario valorizado a fechas históricas de corte.
   - Los totales valorizados coinciden con los balances contables de inventario.
   - Se exportan informes estructurados a Excel y PDF sin discrepancias.
-- **Estado:** [x] Completada en código y CI; BETA-FUNC-089 pendiente de validación desplegada.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7880-7915; clave TASK-190; asignación única: Contabilidad -->
 
@@ -2921,7 +2921,7 @@
   - Las sugerencias de reposición descuentan las compras en tránsito evitando sobrecompras.
   - Las sugerencias pueden convertirse en solicitudes de compra internas sin alterar órdenes aprobadas.
   - Se identifican oportunamente artículos con exceso de existencias y artículos con riesgo de quiebre.
-- **Estado:** [x] Completada en código y CI; BETA-FUNC-090 pendiente de validación desplegada.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8172-8198; clave TASK-200; asignación única: Contabilidad -->
 
@@ -2954,7 +2954,7 @@
   - Reprocesar la facturación no duplica cargos del mismo mes.
   - Cancelar el servicio detiene los cobros futuros de manera transparente.
 - **Evidencia de implementación y verificación:** TransporteTarifas por ruta/modalidad; asignación vinculada a ConceptosCobro/CargosEstudiante; clave idempotente TRN-MM-YYYY-ESTUDIANTE; prorrateo de altas y cancelaciones con ajustes; cancelación bloquea períodos futuros. Contrato Node.js 24.22.2 y sintaxis Apps Script PASS en GitHub Actions.
-- **Estado:** [x] Completada en código, revisión y CI; pendiente validación beta desplegada.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8300-8322; clave TASK-205; asignación única: Contabilidad -->
 
@@ -2987,7 +2987,7 @@
 - **CI:** Department Scope Contract 43614101832 SUCCESS; Department Reference Consumers 43614101548 SUCCESS; Identity Mapping 43614101542 SUCCESS.
 - **Limitaciones:** CLI local independiente NOT RUN (sin checkout/runner local disponible); Apps Script/Google Sheets reales NOT RUN. BETA-FUNC-092 queda Pendiente beta.
 - **Dependencias:** F21-Task13 describe transporte extraordinario/excursiones y no es prerrequisito técnico del catálogo de tarifas; se trata como referencia informativa, no bloqueante.
-- **Estado:** [x] Completada en código, revisión y CI; pendiente validación beta desplegada.
+- **Estado:** Pendiente (reinicio del ciclo).
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 8425-8450; clave TASK-210; asignación única: Contabilidad -->
 
@@ -4833,7 +4833,7 @@
 - **Criterios de Aceptación:** El inventario permite identificar inequívocamente el estado de TASK-050; la rectificación conserva el encabezado y contenido históricos; la decisión se apoya en evidencias y revisión formal; las tareas derivadas permanecen vinculadas a AUD-NG-091 a AUD-NG-096.
 - **Resolución C1.417:** el histórico de TASK-050 presentaba `[X]` en encabezado y `[ ] Pendiente` en estado interno; el backlog canónico actual ya presenta ambos como pendientes y mantiene ocho criterios sin marcar. Se añade conciliación en el bloque TASK-050, sin reescribir historia ni cambiar su estado. AUD-NG-091 a AUD-NG-096 siguen vinculadas. Se cumplen los criterios de esta tarea documental.
 - **Evidencia:** commit histórico `40c9e15f85224f716d0ddfa597b72e1142ed0191`, blob `bd6b1e573e3eda36e34af2a8c83f0483673026a0`; HEAD previo `b055ecf685ad7a6a2d18bd11323767dd772bbe76`, blob actual `0f82e33a8c62a4bb31b9b1280d10d0838f213c94`; ocho criterios de TASK-050 abiertos.
-- **Estado:** [x] Completada
+- **Estado:** Pendiente (reinicio del ciclo).
 
 ---
 
