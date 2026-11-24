@@ -76,7 +76,7 @@ function harness(initial, options) {
     ROLE_PERMISSIONS: {
       Administrador: [],
       Desarrollador: ["registerServiceInstance", "updateServiceStatus", "auditInterServiceCalls"],
-      Director: ["getCentralServiceRegistry"]
+      Director: []
     },
     verifySessionToken(token) {
       if (token === "valid") return { userId: "verified-user", role: "Desarrollador" };
