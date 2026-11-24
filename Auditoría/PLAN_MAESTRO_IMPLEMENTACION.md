@@ -3,8 +3,8 @@
 > **Referencia normativa obligatoria:** antes de modificar este plan o cualquier archivo del repositorio, leer `Normas_Desarollo.md`. Este plan organiza tareas, dependencias y estados; no define una normativa operativa paralela. Las reglas de desarrollo y gobierno se consultan exclusivamente en el archivo maestro.
 
 
-**Versión:** 1.4 — reorganización del ciclo 2 y arquitectura del portal  
-**Fecha:** 2026-11-23  
+**Versión:** 1.4 — reorganización del ciclo 2 y arquitectura del portal
+**Fecha:** 2026-11-23
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
 **Estado:** plan rector de secuenciación; ninguna tarea se declara implementada por aparecer aquí.  
@@ -6457,3 +6457,13 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Compatibilidad pendiente: comunicación Apps Script entre cuentas distintas, despliegues no públicos, ausencia de prompts y ausencia de secretos; no se publicaron endpoints ni se introdujeron secretos.
 - No se modificó código ni se ejecutaron pruebas Node.js/CLI/Actions en esta actualización documental.
 - Siguiente acción: iniciar TASK-047, auditar developer-dashboard.html/js/developer.js, backend/developer-service/Code.gs y contratos; implementar UI de registro por rol y separar Desarrollador de Administrador.
+
+
+## 10.86 Corrección de guardia CI documental y confirmación de C1.964 — C1.965
+
+- C1.964 fue publicado en la rama autorizada con commit `ceb7a730cb02c2aa991266c3d58903243b8dd8ab`; HEAD de la rama base permaneció en `44d9891132332e692dbe2ba8602b41f50a508a59`.
+- Academic Wellbeing Confidentiality Contract run `45317208341` detectó dos líneas nuevas con espacios finales en el encabezado del Plan Maestro; la comprobación `git diff --check` falló antes de ejecutar Node.js.
+- La guardia de archivos del workflow también necesitaba reconocer los archivos de los siete backlogs y el nuevo checkpoint que forman parte del reinicio documental C1.964.
+- Se corrigieron los espacios finales y se amplió la lista explícita de archivos permitidos/observados para este cambio documental. No se debilitaron las aserciones del contrato ni se modificó su código de prueba.
+- Estado de pruebas del run `45317208341`: diff guard FAIL; Node.js y contrato NOT RUN (omitidos por el fallo inicial). Se requiere nueva ejecución tras esta corrección.
+- No se declara aún PASS para Node.js ni para el contrato académico.

@@ -62,3 +62,31 @@ Iniciar TASK-047 en PM-00A. Revisar la UI de developer-dashboard.html/js/develop
 
 HEAD final: se confirmará después de publicar el commit consolidado de C1.964.
 ===============================================================================
+
+===============================================================================
+### C1.965 — IMA-EXEC-20261123-CI-DIFF-GUARD-FIX
+===============================================================================
+
+### Continuidad y Git
+- Sesión: continuación inmediata de C1.964.
+- Rama: NG_beta_0.0.0.1_work.
+- HEAD de C1.964 confirmado: ceb7a730cb02c2aa991266c3d58903243b8dd8ab.
+- HEAD de la rama base: 44d9891132332e692dbe2ba8602b41f50a508a59; intacta.
+
+### Hallazgo CI y corrección
+- GitHub Actions Academic Wellbeing Confidentiality Contract, run 45317208341, falló en el paso "Check task diff integrity".
+- Causa confirmada por logs: dos líneas añadidas en el encabezado del Plan Maestro contenían espacios finales; además, la allowlist/path filter no contemplaba todos los backlogs modificados ni Checkpoints_Parte_0022.txt.
+- Se eliminaron los espacios finales de las líneas nuevas y se añadieron los archivos explícitos del ciclo 2 al path filter y a la allowlist. No se cambiaron los tests, aserciones, lógica de autorización ni código productivo.
+- En run 45317208341, Node.js, sintaxis y contrato quedaron SKIPPED/NOT RUN porque el paso de integridad falló antes de esos pasos.
+- La siguiente ejecución debe confirmar diff guard PASS, sintaxis Apps Script PASS, sintaxis del contrato PASS y ejecución del contrato. No se declara PASS anticipado.
+
+### Archivos de esta corrección
+- .github/workflows/academic-wellbeing-confidentiality.yml
+- Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md
+- Auditoría/INDICE_CHECKPOINTS.md
+- Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt
+- changueslogs.txt
+
+### Siguiente acción
+Verificar la nueva ejecución de GitHub Actions en el HEAD posterior a esta corrección y continuar TASK-047 en PM-00A solo después de registrar el resultado real.
+===============================================================================

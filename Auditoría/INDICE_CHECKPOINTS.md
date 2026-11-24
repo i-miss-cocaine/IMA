@@ -430,4 +430,7 @@ Los checkpoints posteriores se registran aquí.
 | C1.963 | IMA-EXEC-20261123-TASK030-TRANSPORT-PRIVACY-REVALIDATION | TASK-030/F21-Task02 revalidada; ACCOUNTING Transport Local Contracts SUCCESS (12 scripts; incluye TASK-030 y 24 aserciones guardian ABAC); BETA-FUNC-134 pendiente | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt — C1.963 | C1.962 | Revisar TASK-032/F21-Task04 y verificar dependencia F21-Task03 antes de implementar |
 
 
-| C1.964 | IMA-EXEC-20261123-CYCLE2-RESET-01 | Reinicio ciclo 2; IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; PM-00A portal base; reapertura de completadas; AUD-NG-393 detecta 672 IDs ausentes | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.964 | C1.963 | commit consolidado de ciclo 2; SHA verificado tras publicación |
+| C1.964 | IMA-EXEC-20261123-CYCLE2-RESET-01 | Reinicio ciclo 2; IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01; PM-00A portal base; reapertura de completadas; AUD-NG-393 detecta 672 IDs ausentes | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.964 | C1.963 | ceb7a730cb02c2aa991266c3d58903243b8dd8ab |
+
+
+| C1.965 | IMA-EXEC-20261123-CI-DIFF-GUARD-FIX | Corrección de espacios finales y allowlist del workflow Academic Wellbeing para incluir los archivos del reinicio C1.964; run 45317208341 documentado FAIL antes de Node.js | Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt — C1.965 | C1.964 | Reejecutar workflow y confirmar diff guard, sintaxis y contrato |

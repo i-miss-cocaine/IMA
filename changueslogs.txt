@@ -4587,3 +4587,12 @@ C1.964 — IMA-EXEC-20261123-CYCLE2-RESET-01
 - No se modificó código ni se ejecutaron pruebas Node.js/CLI/Actions en esta iteración documental.
 - Rama: NG_beta_0.0.0.1_work; HEAD inicial 429abcbdd15027e73ed7e60f8704a0e15b795bad; commit de cierre verificado tras publicación.
 ===============================================================================
+
+===============================================================================
+C1.965 — IMA-EXEC-20261123-CI-DIFF-GUARD-FIX
+===============================================================================
+- C1.964 commit confirmado: ceb7a730cb02c2aa991266c3d58903243b8dd8ab.
+- Academic Wellbeing Confidentiality Contract run 45317208341 falló en git diff --check por espacios finales del Plan Maestro; los pasos Node.js y contrato no se ejecutaron.
+- Se amplió la allowlist/path filter del workflow para los archivos de backlogs y checkpoint incluidos en el reinicio C1.964; no se debilitaron aserciones.
+- Se corrigieron los espacios finales. Nueva ejecución pendiente de verificación.
+===============================================================================

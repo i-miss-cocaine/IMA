@@ -20,6 +20,14 @@ on:
       - beta_test.txt
       - changueslogs.txt
       - tareas_auditoria.txt
+      - pendientes/README.md
+      - pendientes/Otros/Pendientes.md
+      - pendientes/Padre/Pendientes.md
+      - pendientes/Estudiante/Pendientes.md
+      - pendientes/Docente/Pendientes.md
+      - pendientes/Contabilidad/Pendientes.md
+      - pendientes/Dirección/Pendientes.md
+      - Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt
   workflow_dispatch:
 
 permissions:
@@ -42,7 +50,7 @@ jobs:
           while IFS= read -r file; do
             [ -z "$file" ] && continue
             case "$file" in
-              backend/academic-service/Code.gs|tests/security/academic-wellbeing-confidentiality.test.js|.github/workflows/academic-wellbeing-confidentiality.yml|.github/workflows/exam-service-security-contract.yml|.github/workflows/accounting-transport-local-contract.yml|Auditoría/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md|Auditoría/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md|Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md|Auditoría/INDICE_CHECKPOINTS.md|Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt|pendientes/Secretaria/Pendientes.md|Auditoria.txt|beta_test.txt|changueslogs.txt|tareas_auditoria.txt) ;;
+              backend/academic-service/Code.gs|tests/security/academic-wellbeing-confidentiality.test.js|.github/workflows/academic-wellbeing-confidentiality.yml|.github/workflows/exam-service-security-contract.yml|.github/workflows/accounting-transport-local-contract.yml|Auditoría/AUDITORIA-FASE-11-COMUNICACION-BIENESTAR-SUPERVISION-FINANZAS.md|Auditoría/AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md|Auditoría/PLAN_MAESTRO_IMPLEMENTACION.md|Auditoría/INDICE_CHECKPOINTS.md|Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0021.txt|pendientes/Secretaria/Pendientes.md|Auditoria.txt|beta_test.txt|changueslogs.txt|tareas_auditoria.txt|Auditoría/Contexto_personal_Historico/Checkpoints_Parte_0022.txt|pendientes/Dirección/Pendientes.md|pendientes/Contabilidad/Pendientes.md|pendientes/Docente/Pendientes.md|pendientes/Estudiante/Pendientes.md|pendientes/Padre/Pendientes.md|pendientes/Otros/Pendientes.md|pendientes/README.md) ;;
               *) echo "Unexpected changed file: $file"; exit 1 ;;
             esac
           done <<< "$changed"
