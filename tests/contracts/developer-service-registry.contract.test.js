@@ -28,8 +28,12 @@ function resolverFor(rows, relations = []) {
  const match = backend.match(/function resolveServiceEndpoint\(payload\) \{[\s\S]*?\n\}/);
  assert.ok(match, "Debe existir el resolver central");
  const lock = { tryLock: () => true, releaseLock: () => {} };
+ const roleMatch = backend.match(/function developerNormalizeServiceRouteRole_\(value\) \{[\s\S]*?\n\}/);
+ assert.ok(roleMatch, "Debe existir normalización de roles");
+ const normalizeRole = vm.runInNewContext("(" + roleMatch[0] + ")");
  const context = {
   SPREADSHEET_ID: "CONTROL",
+  developerNormalizeServiceRouteRole_: normalizeRole,
   LockService: { getScriptLock: () => lock },
   SpreadsheetApp: { openById: () => ({ getSheetByName: name => {
    if (name === "CatalogoServicios") return { getDataRange: () => ({ getValues: () => [["headers"], ...rows] }) };
@@ -200,4 +204,34 @@ test("las sesiones de membresía se reutilizan solo para resolver rutas, no para
  const admin = post({ postData: { contents: JSON.stringify({ action: "getCentralServiceRegistry", payload: { sessionToken: "membership-session" } }) } });
  assert.equal(admin.code, "INVALID_SESSION_TOKEN");
  assert.deepEqual(calls, [true, false]);
+});
+
+function roleServiceRow(id, domain, owner, roles, positionId, mode) {
+ const row = serviceRow("activo");
+ row[0] = id; row[3] = owner; row[6] = domain; row[11] = JSON.stringify(roles);
+ row[12] = positionId; row[13] = mode;
+ return row;
+}
+test("la ruta automática selecciona el servicio individual por rol y responsable verificados", () => {
+ const individual = roleServiceRow("SVC-TEACHER-1", "ACADEMIC", "teacher@school.edu", ["Profesor"], "EMP-1", "INDIVIDUAL");
+ const resolve = resolverFor([individual]);
+ const result = resolve({ serviceKey: "ACADEMIC", action: "readRecord", _verifiedClaims: { role: "Docente", email: "teacher@school.edu", userId: "EMP-1" } });
+ assert.equal(result.status, "success");
+ assert.equal(result.serviceId, "SVC-TEACHER-1");
+ assert.equal(resolve({ serviceKey: "ACADEMIC", action: "readRecord", _verifiedClaims: { role: "Docente", email: "other@school.edu", userId: "EMP-2" } }).code, "SERVICE_POSITION_NOT_ASSIGNED");
+});
+test("la ruta automática permite servicios compartidos por rol y rechaza asignaciones ambiguas", () => {
+ const shared = roleServiceRow("SVC-SHARED-1", "ACADEMIC", "shared@school.edu", ["Padre/Tutor", "Estudiante"], "", "SHARED_PARENT_STUDENT");
+ const sharedResult = resolverFor([shared])({ serviceKey: "ACADEMIC", action: "readRecord", _verifiedClaims: { role: "Estudiante", email: "student@school.edu", userId: "STU-1" } });
+ assert.equal(sharedResult.status, "success");
+ const first = roleServiceRow("SVC-TEACHER-1", "ACADEMIC", "teacher@school.edu", ["Docente"], "EMP-1", "INDIVIDUAL");
+ const second = roleServiceRow("SVC-TEACHER-2", "ACADEMIC", "teacher@school.edu", ["Profesor"], "EMP-1", "INDIVIDUAL");
+ const ambiguous = resolverFor([first, second])({ serviceKey: "ACADEMIC", action: "readRecord", _verifiedClaims: { role: "Docente", email: "teacher@school.edu", userId: "EMP-1" } });
+ assert.equal(ambiguous.code, "SERVICE_ROUTE_AMBIGUOUS");
+});
+test("el cliente enruta automáticamente servicios institucionales y solo hace fallback si no existe catálogo", () => {
+ assert.match(api, /autoRouteKeys = \["ACADEMIC", "TASK", "EXAM", "ACCOUNTING"\]/);
+ assert.match(api, /resolutionCode === "SERVICE_NOT_FOUND"/);
+ assert.match(api, /skipCentralRouting: true/);
+ assert.match(backend, /payload\._verifiedClaims = claims/);
 });
