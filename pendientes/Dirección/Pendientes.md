@@ -2960,7 +2960,7 @@
 - **Dependencias:** TASK-492 (campos), TASK-493 (modal), TASK-494 (overlays), TASK-495 (conectividad).
 - **Alcance:** botones, alertas, badges, carga/vacío y renderizadores; no sustituye accesibilidad ni contrato de campos.
 - **Criterios:** controles equivalentes usan variantes compartidas; jerarquía primaria/secundaria/destructiva coherente; estados semánticos iguales tienen reglas equivalentes; patrones comunes disponibles; excepciones documentadas; revisión visual y de contraste/foco.
-- **Prioridad:** P2. **Estado:** conservar el de TASK-430.
+- **Prioridad:** P2. **Estado:** Pendiente (reinicio del ciclo).
 - **Evidencia:** pendiente; sin pruebas visuales/runtime.
 - **Tipo:** Profesionalización Visual y Calidad de Presentación.
 - **Componentes Afectados:**
