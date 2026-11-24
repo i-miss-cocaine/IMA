@@ -25,13 +25,13 @@ const helpers = vm.runInNewContext(helperSource, {
  computeDocumentSHA256: value => crypto.createHash("sha256").update(String(value), "utf8").digest("hex")
 });
 function makeRow(id, previousHash, overrides = {}) {
- const row = Array(16).fill("");
+ const row = Array(17).fill("");
  row[0] = id; row[1] = "SOL-1"; row[2] = overrides.stage || "Revisión General";
  row[3] = overrides.actorId || "USER-1"; row[4] = overrides.action || "APROBADO";
  row[5] = overrides.internalNotes || "Nota interna"; row[6] = overrides.publicNotes || "Nota pública";
- row[7] = "2026-11-24T04:00:00.000Z"; row[8] = "APPS_SCRIPT"; row[9] = previousHash;
+ row[7] = "2026-11-24T04:00:00.000Z"; row[8] = ""; row[9] = previousHash;
  row[11] = overrides.originalId || ""; row[12] = overrides.reason || ""; row[13] = "2";
- row[14] = overrides.actorRole || "Dirección"; row[15] = overrides.correlationId || ("CORR-" + id);
+ row[14] = overrides.actorRole || "Dirección"; row[15] = overrides.correlationId || ("CORR-" + id); row[16] = "APPS_SCRIPT";
  row[10] = helpers.hashV2(row);
  return row;
 }
@@ -53,7 +53,7 @@ test("el hash v2 protege observaciones internas y públicas", () => {
 });
 test("el hash v2 protege actor, rol y correlationId", () => {
  const original = makeRow("DEC-1", helpers.genesis);
- for (const index of [3, 14, 15]) {
+ for (const index of [3, 14, 15, 16]) {
   const changed = original.slice(); changed[index] += "-alterado";
   assert.equal(helpers.verify([changed]).valid, false);
  }
@@ -115,6 +115,7 @@ test("el historial expone el resultado de integridad y el esquema del hash", () 
  assert.match(backend, /hashSchemaVersion: row\[13\]/);
  assert.match(backend, /ActorRole/);
  assert.match(backend, /CorrelationId/);
+ assert.match(backend, /FuenteEjecucion/);
 });
 test("la verificación y las escrituras serializan el acceso con LockService", () => {
  assert.match(backend, /verifyWorkflowDecisionAuditChain\(payload, lockAlreadyHeld\)/);
