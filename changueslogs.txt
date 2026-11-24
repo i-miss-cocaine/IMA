@@ -4734,3 +4734,11 @@ C3.007 — IMA-ITER-20261124-005
 - Los requisitos originales se conservan como antecedentes; no se declara aprobada ninguna prueba HMAC ni se afirman propiedades/deployments reales.
 - Rama: NG_beta_0.0.0.1_work. HEAD de entrada: 605c543f596acedb50d45def98ac9c968ab5845f.
 ===============================================================================
+
+===============================================================================
+C3.008 — IMA-ITER-20261124-006
+===============================================================================
+- AUD-NG-085 resuelta por supersesión normativa: anti-replay de sobres HMAC no aplica al protocolo autorizado por Normas_Desarollo.md §17.8.
+- No se implementan tokens/nonce personalizados ni secretos interservicio; el hallazgo original permanece como antecedente.
+- Rama: NG_beta_0.0.0.1_work. HEAD de entrada: e478be209583a850488f2c547fc8de40eba4cc7d.
+===============================================================================

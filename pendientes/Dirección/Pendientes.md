@@ -3645,6 +3645,9 @@
 - **Descripción del Alcance:** Validar primero estructura, destinatario, vigencia y firma HMAC; solo después reservar el requestId mediante operación atómica y persistente o un mecanismo equivalente. Rechazar replays concurrentes y mantener la deduplicación por un período coherente con la ventana de validez y retención definida.
 - **Criterios de Aceptación:** Una firma inválida no consume requestId; dos solicitudes concurrentes con igual requestId producen una sola aceptación; un replay dentro de la ventana se rechaza incluso ante evicción de caché; el registro permite auditoría posterior.
 
+- **Resolución normativa C3.008:** La protección anti-replay basada en sobres HMAC y reserva de nonce descrita en este hallazgo queda supersedida junto con AUD-NG-083 por Normas_Desarollo.md §17.8. No introducir requestId/nonce como token personalizado ni propiedades secretas para un protocolo interservicio que la norma vigente no permite. El hallazgo se conserva como antecedente histórico y no bloquea la implementación del registro central.
+- **Estado:** Supersedida por norma vigente (NDASC §17.8); no implementar anti-replay de sobres HMAC interservicio.
+
 ### [AUD-NG-086] Aplicar autorización por emisor, receptor, acción y versión de contrato
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-086 (TASK-048 / F23-Task05)
 - **Archivos Involucrados:** backend/user-service/Code.gs; backend/academic-service/Code.gs; backend/accounting-service/Code.gs; backend/developer-service/Code.gs; CatalogoServicios

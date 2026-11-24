@@ -88,3 +88,15 @@ C3.007 — IMA-ITER-20261124-005
 - HEAD de entrada: 605c543f596acedb50d45def98ac9c968ab5845f.
 - Siguiente acción: continuar con requisitos compatibles y mantener pendiente la prueba autorizada multi-cuenta de TASK-047.
 ===============================================================================
+
+===============================================================================
+C3.008 — IMA-ITER-20261124-006
+===============================================================================
+- Objetivo: resolver AUD-NG-085 por dependencia de un protocolo HMAC interservicio incompatible con la norma vigente.
+- Resolución: La protección anti-replay basada en sobres HMAC y reserva de nonce descrita en este hallazgo queda supersedida junto con AUD-NG-083 por Normas_Desarollo.md §17.8. No introducir requestId/nonce como token personalizado ni propiedades secretas para un protocolo interservicio que la norma vigente no permite. El hallazgo se conserva como antecedente histórico y no bloquea la implementación del registro central.
+- Decisión: conservar el hallazgo como antecedente; no implementar sobres HMAC, nonce interservicio ni secretos personalizados.
+- Verificación: lectura de Normas_Desarollo.md §17.8 y del alcance original AUD-NG-085; no se modificó código ni se ejecutaron pruebas de producto en esta unidad documental.
+- Estado: resuelto por supersesión normativa; no se declara una prueba anti-replay HMAC aprobada.
+- HEAD de entrada: e478be209583a850488f2c547fc8de40eba4cc7d.
+- Siguiente acción: continuar con los requisitos aplicables de autorización por servicio/acción y el trabajo restante de TASK-047.
+===============================================================================
