@@ -240,3 +240,15 @@ test("el cliente compara la versión registrada con la versión del descriptor l
  assert.match(api, /window\.SERVICE_REGISTRY && window\.SERVICE_REGISTRY\[service\] && window\.SERVICE_REGISTRY\[service\]\.version/);
  assert.match(backend, /SERVICE_CONTRACT_VERSION_MISMATCH/);
 });
+
+const userBackend = fs.readFileSync(path.join(__dirname, "../../backend/user-service/Code.gs"), "utf8");
+const academicBackend = fs.readFileSync(path.join(__dirname, "../../backend/academic-service/Code.gs"), "utf8");
+const accountingBackend = fs.readFileSync(path.join(__dirname, "../../backend/accounting-service/Code.gs"), "utf8");
+const taskBackend = fs.readFileSync(path.join(__dirname, "../../backend/task-service/Code.gs"), "utf8");
+const examBackend = fs.readFileSync(path.join(__dirname, "../../backend/exam-service/Code.gs"), "utf8");
+test("los microservicios receptores rechazan versiones de contrato incompatibles", () => {
+ for (const [name, source] of [["USER", userBackend], ["ACADEMIC", academicBackend], ["ACCOUNTING", accountingBackend], ["TASK", taskBackend], ["EXAM", examBackend]]) {
+  assert.match(source, /const SERVICE_CONTRACT_VERSION = "v8\.4\.0"/, name + " debe declarar versión de contrato");
+  assert.match(source, /SERVICE_CONTRACT_VERSION_MISMATCH/, name + " debe rechazar versiones incompatibles");
+ }
+});
