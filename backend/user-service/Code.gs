@@ -14683,10 +14683,15 @@ function assignRoleScope(payload) {
       if (data.slice(1).some(function(row) { return String(row[0] || "").trim() === assignmentId; })) return { status: "error", code: "ROLE_SCOPE_ASSIGNMENT_ID_CONFLICT" };
     }
     if (isSubstitute) {
+      var substituteMembershipState = getUserRoleMembershipState_(substituteFor, institutionId);
+      var substituteMemberships = (substituteMembershipState && substituteMembershipState.memberships || []).filter(function(item) { return item.roleId === roleId; });
+      if (substituteMemberships.length !== 1) return { status: "error", code: "ROLE_SCOPE_SUBSTITUTE_MEMBERSHIP_INVALID" };
+      var targetMembershipId = String(substituteMemberships[0].membershipId || "").trim();
       var targetAssignments = data.slice(1).filter(function(row) {
         return String(row[1] || "").trim() === substituteFor &&
           String(row[2] || "").trim() === roleId &&
           String(row[12] || "").trim() === institutionId &&
+          String(row[13] || "").trim() === targetMembershipId &&
           String(row[14] || "").trim() === responsibilityId &&
           ["ACTIVO","ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) !== -1;
       });
@@ -14695,6 +14700,22 @@ function assignRoleScope(payload) {
       var targetEnd = parseInternalRoleAssignmentDate_(targetAssignments[0][9], true);
       if (!targetStart.valid || !targetEnd.valid || (targetStart.date && start.date && start.date.getTime() < targetStart.date.getTime()) ||
           (targetEnd.date && end.date && end.date.getTime() > targetEnd.date.getTime())) return { status: "error", code: "ROLE_SCOPE_SUBSTITUTE_PERIOD_INVALID" };
+      var substituteStartMs = start.date ? start.date.getTime() : new Date().getTime();
+      var substituteEndMs = end.date ? end.date.getTime() : Number.MAX_SAFE_INTEGER;
+      var overlappingSubstitute = data.slice(1).some(function(row) {
+        if (String(row[0] || "").trim() === assignmentId) return false;
+        if (String(row[11] || "").trim() !== substituteFor ||
+            String(row[14] || "").trim() !== responsibilityId ||
+            String(row[12] || "").trim() !== institutionId ||
+            ["ACTIVO","ACTIVE"].indexOf(String(row[5] || "").trim().toUpperCase()) === -1 ||
+            !["SÍ","SI","TRUE"].includes(String(row[10] || "").trim().toUpperCase())) return false;
+        var oldStart = parseInternalRoleAssignmentDate_(row[8], false), oldEnd = parseInternalRoleAssignmentDate_(row[9], true);
+        if (!oldStart.valid || !oldEnd.valid) return true;
+        var oldStartMs = oldStart.date ? oldStart.date.getTime() : 0;
+        var oldEndMs = oldEnd.date ? oldEnd.date.getTime() : Number.MAX_SAFE_INTEGER;
+        return oldStartMs <= substituteEndMs && substituteStartMs <= oldEndMs;
+      });
+      if (overlappingSubstitute) return { status: "error", code: "ROLE_SCOPE_SUBSTITUTE_OVERLAP" };
     }
     var now = new Date().toISOString();
     var before = foundIndex !== -1 ? {
@@ -16759,12 +16780,12 @@ function manageInternalRoleCatalog(payload) {
     if (!Number.isInteger(months) || months < 1 || months > 120) return { status: "error", code: "INTERNAL_ROLE_VALIDITY_INVALID" };
     var state = String(p.estado || "Activo").trim();
     if (["Activo","Inactivo"].indexOf(state) === -1) return { status: "error", code: "INTERNAL_ROLE_STATE_INVALID" };
-    var allowSubstitute = p.permiteSuplencia === true || String(p.permiteSuplencia || "").toLowerCase() === "true";
+    var allowSubstitute = p.permiteSuplencia === true || ["true","sí","si"].indexOf(String(p.permiteSuplencia || "").trim().toLowerCase()) !== -1;
     var linkedId = String(p.responsibilityId || (id ? data[idMatches[0]][13] || "" : "")).trim();
     if (linkedId && !getInstitutionalResponsibilityRecord_(ss, linkedId)) {
       return { status: "error", code: "ROLE_INSTITUTIONAL_RESPONSIBILITY_NOT_ACTIVE" };
     }
-    var nameKey = normalizeString(name), codeKey = normalizeString(code);
+    var nameKey = normalizeString(name).replace(/\s+/g, " "), codeKey = normalizeString(code).replace(/\s+/g, " ");
     for (var r = 1; r < data.length; r++) {
       if (id && r === idMatches[0]) continue;
       if (normalizeString(data[r][2]) === nameKey) return { status: "error", code: "INTERNAL_ROLE_NAME_DUPLICATE" };
@@ -16851,7 +16872,7 @@ function getInternalRoleCatalog(payload) {
       var id = String(row[0] || "").trim();
       if (!id) return;
       roleIds[id] = (roleIds[id] || 0) + 1;
-      var nameKey = normalizeString(row[2]), codeKey = normalizeString(row[1]);
+      var nameKey = normalizeString(row[2]).replace(/\s+/g, " "), codeKey = normalizeString(row[1]).replace(/\s+/g, " ");
       if (nameKey) nameKeys[nameKey] = (nameKeys[nameKey] || 0) + 1;
       if (codeKey) codeKeys[codeKey] = (codeKeys[codeKey] || 0) + 1;
     });
@@ -16871,7 +16892,7 @@ function getInternalRoleCatalog(payload) {
       if (f.tipoResponsabilidad && normalizeString(row[6]) !== normalizeString(f.tipoResponsabilidad)) return;
       var linkedId = data[0].length === 14 ? String(row[13] || "").trim() : "";
       var institutional = linkedId ? getInstitutionalResponsibilityRecord_(ss, linkedId) : null;
-      if (linkedId && !institutional) return;
+
       list.push({
         rolInternoId: id, codigoInterno: String(row[1] || ""), nombreResponsabilidad: String(row[2] || ""),
         descripcion: String(row[3] || ""), departamento: String(row[4] || ""), areaAcademica: String(row[5] || ""),
@@ -16923,15 +16944,29 @@ function getInternalRoleAssignments(payload) {
       if (f.rolInternoId && responsibilityId !== String(f.rolInternoId).trim()) continue;
       if (schema !== "legacy" && rowInstitution !== institutionId) continue;
       if (schema === "current" && (!membershipId || !responsibilityId)) continue;
-      if (schema !== "legacy") {
+      var membershipStatus = "";
+      if (schema !== "legacy" && f.soloVigentes === false) {
+        var membershipSheet = ss.getSheetByName("MembresiasRolesRBAC");
+        if (!membershipSheet) continue;
+        var membershipRows = membershipSheet.getDataRange().getValues().slice(1).filter(function(item) {
+          return String(item[0] || "").trim() === membershipId &&
+            String(item[1] || "").trim() === userId &&
+            String(item[2] || "").trim() === roleId &&
+            String(item[3] || "").trim() === institutionId;
+        });
+        if (membershipRows.length !== 1) continue;
+        membershipStatus = String(membershipRows[0][4] || "").trim();
+      } else if (schema !== "legacy") {
         var membershipKey = userId + "|" + institutionId;
         if (!Object.prototype.hasOwnProperty.call(membershipCache, membershipKey)) {
           var membershipState = getUserRoleMembershipState_(userId, institutionId);
           membershipCache[membershipKey] = membershipState && Array.isArray(membershipState.memberships) ? membershipState.memberships : [];
         }
-        if (!membershipCache[membershipKey].some(function(item) {
+        var activeMembership = membershipCache[membershipKey].filter(function(item) {
           return item.membershipId === membershipId && item.roleId === roleId && item.institutionId === institutionId;
-        })) continue;
+        });
+        if (activeMembership.length !== 1) continue;
+        membershipStatus = activeMembership[0].status || "ACTIVE";
       }
       var state = String(row[5] || "").trim(), stateKey = state.toUpperCase();
       if (f.soloVigentes !== false) {
@@ -16947,7 +16982,7 @@ function getInternalRoleAssignments(payload) {
       out.push({
         asignacionId: assignmentId, userId: userId, roleId: roleId, rolInternoId: responsibilityId || null,
         responsibilityId: responsibilityId || null, responsibility: responsibility,
-        institutionId: rowInstitution || null, membershipId: membershipId || null,
+        institutionId: rowInstitution || null, membershipId: membershipId || null, membershipStatus: membershipStatus || null,
         scopeType: row[3], scopeValues: row[4], estado: state, creadoPor: row[6], fechaCreacion: row[7],
         fechaInicio: row[8] || null, fechaFin: row[9] || null,
         esSuplente: String(row[10] || "").toLowerCase() === "sí" || String(row[10] || "").toLowerCase() === "true",
