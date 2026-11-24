@@ -463,7 +463,7 @@
 <!-- ID: TASK-392 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-392] Configuración centralizada de servicios complementarios institucionales
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo (ciclo 2):** Pendiente (reapertura C1.964; evidencia histórica conservada en Git).
+- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
 - **Origen del Hallazgo:** `AUDITORIA_FASE_21_TRANSPORTE_SERVICIOS_COMPLEMENTARIOS.md` / Sección C (1.14) y Plan de Implementación TAREA 32
 - **Prioridad:** P2
 - **Severidad/Clasificación:** Media (Arquitectura reutilizable de servicios escolares, parametrización y escalabilidad)
