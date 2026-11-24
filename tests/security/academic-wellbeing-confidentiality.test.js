@@ -30,7 +30,7 @@ function extractFunction(source, name) {
 
 const source = fs.readFileSync("backend/academic-service/Code.gs", "utf8");
 const names = [
-  "withWelfareCaseLock_", "createWelfareRecordId_", "normalizeWelfareRole_", "isWelfareStaffRole_", "isConfidentialWelfareCase_",
+  "logWelfareAuthorizationFailure_", "withWelfareCaseLock_", "createWelfareRecordId_", "normalizeWelfareRole_", "isWelfareStaffRole_", "isConfidentialWelfareCase_",
   "isConfidentialWelfarePayload_", "getWelfareStudentAccess_", "getWelfareCaseAccess_",
   "persistAttendanceFollowupCase_", "saveAutomatedAttendanceFollowupCase_", "saveAutomatedAttendanceFollowupCase_Unsafe_",
   "validateStudentWelfareAccess", "getAttendanceFollowupCases", "saveAttendanceFollowupCase", "saveAttendanceFollowupCaseUnsafe_",
