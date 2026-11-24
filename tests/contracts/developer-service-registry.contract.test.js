@@ -108,7 +108,11 @@ test("la auditoría identifica IDs duplicados, metadatos incompletos y relacione
 function postHandler() {
  const match = backend.match(/function doPost\(e\) \{[\s\S]*?\n\}/);
  assert.ok(match, "Debe existir doPost");
+ const normalizerMatch = backend.match(/function developerNormalizeRequestEnvelope_\(rawEnvelope\) \{[\s\S]*?\n\}/);
+ assert.ok(normalizerMatch);
+ const normalizer = vm.runInNewContext("(" + normalizerMatch[0] + ")");
  const context = {
+  developerNormalizeRequestEnvelope_: normalizer,
   ROLE_PERMISSIONS: { Desarrollador: ["getCentralServiceRegistry"], Docente: [], Administrador: [] },
   verifySessionToken: token => token === "valid-session" ? { role: "Desarrollador", userId: "USER-1" } :
     token === "docente-session" ? { role: "Docente", userId: "USER-2" } : null,
