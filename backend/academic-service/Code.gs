@@ -14575,7 +14575,7 @@ function getWelfareCaseAccess_(payload, caseId, spreadsheet, forceSensitive, cas
   if (!studentId) return { authorized: false, code: "WELFARE_STUDENT_REQUIRED" };
   try {
     var scope = validateAcademicResponsibilityAndScopeAccess(Object.assign({}, payload || {}, { estudianteId: studentId }));
-    if (!scope || scope.authorized !== true) return { authorized: false, code: String(scope && scope.code || "WELFARE_SCOPE_DENIED") };
+    if (!scope || scope.authorized !== true) return { authorized: false, code: "WELFARE_SCOPE_DENIED" };
     return { authorized: true, identity: identity, row: row, rowIndex: match.rowIndex, sheet: sheet, spreadsheet: ss, scope: scope };
   } catch (_) {
     return { authorized: false, code: "WELFARE_SCOPE_VALIDATION_FAILED" };
