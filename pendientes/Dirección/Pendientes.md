@@ -1,6 +1,6 @@
 # Backlog consolidado — Dirección
 
-**Estado operativo del Plan Maestro (reinicio global):** todas las tareas de este backlog quedan en estado `Pendiente` al inicio de la ejecución. Ninguna tarea se considera `Completada`; marcas, etiquetas o declaraciones históricas de cierre son únicamente antecedentes y no acreditan estado vigente. Una tarea solo podrá cambiar de estado tras su implementación y verificación conforme al Plan Maestro.
+**Estado operativo del Plan Maestro (ciclo 3):** los estados vigentes son los consignados en cada tarea. Las tareas solo podrán cambiar de estado tras su implementación y verificación conforme al Plan Maestro; la evidencia histórica se conserva.
 
 **Fuentes integradas:** informes de auditoría de `AUDITORIAS/`, `Pendientes.md`, `completadas.md` y los archivos departamentales preexistentes. Los registros con el mismo identificador se reúnen en una sola tarea.
 
@@ -10,7 +10,7 @@
 
 <!-- ID: F16-TASK01 | Fuentes: AUDITORIAS/AUDITORIA_FASE_16_RECURSOS_HUMANOS.md -->
 
-> **Ciclo 2:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Las marcas de completado se reabren; la evidencia histórica se conserva.
+> **Ciclo 3:** requisito transversal `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` aplicable a cada tarea de este backlog. Los estados vigentes se actualizan conforme a la implementación y verificación; la evidencia histórica se conserva.
 ### [ ] [F16-TASK01] Implementar el catálogo de roles internos organizativos y asignación de responsabilidades
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
 - **Severidad:** Crítica (Gobernanza institucional y separación estricta de permisos vs responsabilidades)
@@ -82,7 +82,7 @@
 - **Dependencias/riesgos:** F25-Task02, identificadores canónicos y políticas de merge; riesgo de fusionar personas distintas o duplicar expedientes.
 - **Alcance:** detección y decisión previa; no fusionar registros automáticamente solo por nombre.
 - **Criterios de aceptación:** DNI/correo normalizados y comparados; duplicados se muestran antes de escribir; referencias foráneas existen/están activas; política de conflicto seleccionada y auditada; importación repetida es idempotente; errores no dejan escritura parcial.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Implementación:** comparación normalizada de DNI/correo y claves naturales; coincidencias exactas/posibles; revisión manual de nombres; referencias de grado/sección, departamento y expediente; políticas RECHAZAR/ACTUALIZAR/VINCULAR con vínculo solo cuando el ID canónico coincide; auditoría de política; unicidad revalidada dentro de LockService en USER/ACADEMIC/ACCOUNTING.
 - **Evidencia de cierre:** Accounting Import Preflight Contract PASS (run 44010695701); USER migration writer/identity contract PASS (run 44010128015); academic/accounting migration writer contracts PASS (runs 44009939154 y 44009952334); USER/ACADEMIC snapshot y referencias PASS (run 44010452335); UI Accessibility PASS (run 44010601192). BETA-FUNC-114 pendiente para validación desplegada.
 
@@ -99,7 +99,7 @@
 - **Dependencias/riesgos:** jerarquía institucional y departamental canónica, RBAC/ABAC y contratos entre servicios; riesgo de fuga de configuración entre departamentos o escalamiento de privilegios.
 - **Alcance:** resolución y persistencia de ámbitos; no permitir que el cliente determine su rol, institución o departamento mediante valores arbitrarios del payload.
 - **Criterios de aceptación:** las cuatro capas se resuelven con precedencia documentada; claves admiten ámbitos explícitos; cada override registra actor/ámbito/versión; acceso se verifica server-side; conflictos se rechazan o resuelven con política determinista; pruebas cubren herencia, ausencia de valor, conflicto, aislamiento entre departamentos y usuario no autorizado.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia de cierre:** commits de implementación y corrección en la rama autorizada, con HEAD de código/pruebas `5d53e4d69212898fc7b201cafc92e5889aab188f`. Hierarchical Configuration Contract PASS, GitHub Actions run `44019419989` (Node.js 24.22.2); sintaxis USER/DEVELOPER/contrato PASS y ejecución del contrato PASS. Verificaciones locales aisladas sobre funciones recuperadas del código: 8/8 PASS.
 - **Cierre técnico:** precedencia GLOBAL → INSTITUCIONAL → DEPARTAMENTAL → PERSONAL; políticas y ámbitos permitidos; contexto institucional/departmental validado server-side; valores departamentales decodificados con su esquema; lectura sensible autorizada por ámbito efectivo y capas no autorizadas redactadas; políticas inválidas y conflictos rechazados; tipo de override consistente con la clave base; versiones monotónicas por ámbito, reset versionado y reactivación sin duplicar filas; migración de esquema legacy preservadora e idempotente; bloqueo de escrituras concurrentes y verificación real de acceso Spreadsheet/Drive en el contrato DEVELOPER.
 - **CI transversal:** Department Scope Contract conserva un fallo ajeno en `Run Phase 22 document management suite contract` (run `44019171555`); los pasos previos del workflow pasan. El mismo paso fallaba antes de esta implementación (run `44012050276`); no se modificó Phase 22.
@@ -133,7 +133,7 @@
 - **Dependencias/riesgos:** TASK-221/TASK-318 (bandejas), TASK-227 (eventos workflow), TASK-316 (canales); riesgo de afirmar lectura por simple apertura de enlace o exponer documentos a destinatarios equivocados.
 - **Alcance:** bandeja de salida y acuses; no confundir entrega técnica con lectura humana ni con aceptación legal.
 - **Criterios de aceptación:** estados diferenciados; destinatario/actor verificados; acuse con timestamp y hash del documento exacto; reintentos idempotentes; revocación/expiración de enlaces; filtros por departamento y documento; pruebas de entrega fallida, apertura, destinatario incorrecto y duplicados.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia de cierre:** commits 0bfb106, 00e924f y 5a72049; contrato Node y sintaxis Apps Script/JS PASS en Department Scope run 43729081735; Task-Service Security 43729081760 e Identity Mapping 43729081762 SUCCESS. BETA-FUNC-101 pendiente de Drive/Sheets desplegados.
 - **Cierre técnico:** EntregasDocumentales y getDepartmentalOutbox con scope institucional/departamental, hash/version del documento emitido, destinatario contrastado, notificación de plataforma, apertura autenticada, acuse explícito, reintento idempotente y revocación/expiración. La notificación aceptada por la plataforma no se presenta como lectura ni recepción.
 - **Límites/dependencias:** canal actual PLATAFORMA; correo queda para TASK-316. Integración con bandejas unificadas/eventos/UI pendiente de TASK-221/TASK-318, TASK-227 y F34-Task08. FechaApertura registra apertura autenticada del flujo, no prueba lectura humana del PDF.
@@ -378,7 +378,7 @@
   - [x] Las decisiones de vinculación pueden consultarse y auditarse en bitácora.
   - [x] Las relaciones académicas, familiares y administrativas permanecen asociadas al identificador interno correcto.
   - [x] Se demuestra la resolución de identidades provenientes de, al menos, dos fuentes diferentes.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3638-3673; clave TASK-073; asignación única: Dirección -->
 
@@ -420,7 +420,7 @@
   - [ ] No se asignan contraseñas genéricas masivas.
   - [ ] Los usuarios existentes no se duplican.
   - [ ] Ninguna cuenta hereda privilegios superiores a su perfil autorizado.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Evidencia:** mapeo de matrícula por encabezados; tarifa seleccionada por año/grado/concepto sin monto predeterminado; clave única estudiante+concepto+mes+año; repetición idempotente; faltante de tarifa sin cargo; lock y fail-closed ante concurrencia; liberación del lock tras error de escritura.
 - **Cobertura:** grados, secciones, años lectivos, descuentos, distintos conceptos/meses, schema inválido, duplicidad de matrícula, reentrada concurrente y reintento tras fallo. Suite local del contenedor NOT RUN por DNS de github.com; no se declara como PASS.
 - **Beta:** BETA-FUNC-058 Pendiente beta; no bloquea el cierre de implementación conforme NDASC.
@@ -798,7 +798,7 @@
 - **Pruebas C1.445:** 14 aserciones estáticas PASS; contratos dinámicos añadidos, Node local NOT RUN y CI sin checks visibles para el HEAD consultado; no se declara PASS dinámico/CI.
 - **Avance C1.446:** ACADEMIC exige ResourceOwnership y ámbito del estudiante tanto para acceso propio como para tutores; la relación activa no sustituye ownership. getStudentGuardians/saveStudentGuardian/unlinkStudentGuardian validan el expediente antes de exponer o cambiar relaciones. Department Scope Contract runs 42876302825 y 42876368270 PASS; Task-Service run 42876334741 PASS.
 - **Avance C1.447:** además de SELF/GUARDIAN y relaciones, `findDuplicateStudents` y `getStudentFileAdministrativeReports` filtran por ResourceOwnership; se corrige PersonaID→UserID y fecha de nacimiento. `getAdmissionRequests`/`updateAdmissionStatus` aplican scope y ownership; solicitudes públicas no asignadas quedan limitadas a ámbito institucional explícito. BETA-FUNC-023/024 añadidas.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Avance C1.679 / T153-S04:** getStudentEnrollmentHistory exige identidad firmada, cuenta activa, mapping estudiante/expediente único y assertStudentExpedienteScopeAccess_ (ResourceOwnership/ámbito). Los tutores requieren relación y AccesoPortal vigentes; los cargos financieros se limitan a relaciones con EsResponsableFinanciero. MatriculaID/CargoID duplicados se excluyen, se validan esquemas (incluidas columnas opcionales posteriores) y no se crean hojas durante lectura. Contrato Node/CI PASS: Department Scope 43367811579 PASS (Node 24.22.2, 20 pasos incluyendo el contrato ajustado y sintaxis ACADEMIC); Task-Service 43367602453 PASS (Node 22.23.4). 25 invocaciones repetidas de lectura sin efectos laterales; no aplica concurrencia de escrituras por ser endpoint de solo lectura. CLI del contenedor NOT RUN por DNS. BETA-FUNC-054 Pendiente beta. T153-S04 Completada; TASK-153 continúa En ejecución.
 - **Avance C1.680 / TASK-153 — mutaciones de matrícula:** createStudentEnrollment, renewStudentEnrollment y registerStudentEnrollment ahora exigen actor firmado de personal, estudiante activo y único, expediente único y ResourceOwnership UPDATE. LockService no puede omitirse desde payload; el registro usa journal de compensación y la creación revierte matrícula/reactivación ante fallo posterior. Renovación preserva token y departamento activo; override de cupo requiere permiso dinámico. Contrato `academic-student-enrollment-write-ownership.test.js` PASS; Department Scope CI 43368812280 SUCCESS (Node 24.22.2, 21 pasos y sintaxis de seis servicios). CLI local NOT RUN por DNS. BETA-FUNC-055 Pendiente beta. Este subalcance de TASK-153 queda Completado; TASK-153 sigue En ejecución. AUD-NG-129 (unificación de cargos por periodo) permanece Pendiente y no se declara cerrado.
  (C1.474; USER/ACADEMIC/ACCOUNTING y TASK/EXAM parcialmente integrados; TASK protege aulas, contenido, entregas y archivos; ACADEMIC protege expedientes SELF/GUARDIAN, relaciones, informes PII, duplicados, cola de admisiones, evaluaciones y entrevistas; USER protege certificado, callback genérico y credenciales de proveedor. Siguen validación criptográfica PSC específica, recursos institucionales, otras rutas de firma, permisos granulares, referencias compartidas, filtros/importaciones y E2E; T153-S01 no bloquea el motor genérico).
@@ -1591,7 +1591,7 @@
   - Se permiten estructuras jerárquicas válidas de múltiples niveles sin restricciones indebidas.
   - Las operaciones rechazadas no alteran los registros de departamentos ni causan estados huérfanos.
   - La consulta de líneas de mando maneja estructuras extensas sin generar desbordamiento de pila o bucles infinitos.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 7205-7238; clave TASK-172; asignación única: Dirección -->
 
@@ -2538,7 +2538,7 @@
 - **Criterios de aceptación:** esquema documentado coincide en ambos lados; lista/contador muestran los mismos registros; estados se traducen explícitamente; pruebas de éxito, vacío y error.
 - **Prioridad:** P1.
 - **Estado histórico anterior:** Completada en código/CI; BETA-FUNC-098 pendiente..
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 - **Evidencia de cierre:** pruebas de contrato y renderizado.
 - **Origen del Hallazgo:** AUD-NG-192 en Auditoria.txt (T-UX-12; integridad de indicadores y listas de RR. HH.).
 - **Severidad/Clasificación:** Alto / P1.
@@ -2576,7 +2576,7 @@
 - **Criterios de aceptación:** empleado no puede leer otro UserId manipulando payload; roles administrativos autorizados mantienen su alcance; accesos denegados se registran; pruebas IDOR por rol.
 - **Prioridad:** P1.
 - **Estado histórico anterior:** Completada en código/CI; beta pendiente.
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 - **Evidencia de cierre:** pruebas de aislamiento y autorización servidor.
 - **Origen del Hallazgo:** AUD-NG-193 en Auditoria.txt (T-UX-12; permisos efectivos y confidencialidad del panel de RR. HH.).
 - **Severidad/Clasificación:** Alto / P1 (exposición de información laboral entre usuarios autenticados).
@@ -2598,7 +2598,7 @@
   - Las pruebas no utilizan ni exponen datos personales productivos.
 - **Relaciones y límites:** T-UX-12 exige que los servicios respeten los permisos efectivos. TASK-489 corrige el contrato de presentación de solicitudes; TASK-490 corrige la autorización y el aislamiento de datos. No ampliar permisos de RR. HH. ni duplicar las tareas generales de RBAC ya registradas.
 - **Estado histórico anterior:** Completada en código/CI; beta pendiente.
-- **Estado:** Pendiente (reinicio del ciclo 2, C1.964).
+- **Estado:** Pendiente.
 
 - **Cierre técnico C1.740 (2026-11-15):** identidad SELF derivada del token verificado en getEmployeeRecords/getVacationRequests; IDs ajenos rechazados con RESOURCE_NOT_FOUND; intentos auditados sin registrar el ID objetivo; observaciones internas ocultas en autoservicio; HR departamental/institucional y roles administrativos probados. Contrato de ownership y acceso departamental PASS; Department Scope 43674129348, Identity Mapping 43674075666 y Department Reference Consumers 43674075654 SUCCESS. BETA-FUNC-096 pendiente de despliegue/runtime.
 
@@ -2633,7 +2633,7 @@
   7. La UI de RRHH utiliza catálogos institucionales y muestra resultados/errores reales, sin depender de texto libre para referencias controladas.
   8. Las pruebas automatizadas cubren integridad, fallos, recuperación, concurrencia, paginación, permisos y regresión de USER/ACADEMIC/UI.
 - **Prioridad:** P1.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Avance C1.905:** USER valida referencias/estados, serializa reasignaciones con compensación y agrega paginación/consulta de cargos; contrato Node agregado al workflow. Sintaxis V8 PASS; CI pendiente. UI RRHH, autorización contextual y relación intercatálogo siguen pendientes.
 - **Evidencia de cierre:** pendiente. Registrar SHA de implementación, pruebas de integridad/atomicidad y concurrencia, validación de migración y evidencia de UI antes de cambiar el estado.
 - **Origen del Hallazgo:** AUD-NG-226.
@@ -2642,7 +2642,7 @@
 - **Dependencias Expuestas:** CatalogoDepartamentos, CatalogoCargos, HistorialAdscripciones, DepartamentosAcademicos, Usuarios, manageDepartmentPositions, assignDepartmentHead, generateInstitutionalId.
 - **Descripción del Alcance:** Cerrar validaciones referenciales, unicidad, consistencia intercatálogo y atomicidad de las operaciones de departamento, cargo y adscripción; conectar flujos a la consola HR con consultas paginadas y auditoría.
 - **Criterios de Aceptación:** Se cumplen los criterios de AUD-NG-226; ningún fallo parcial cierra la asignación anterior; no se generan IDs duplicados ni referencias huérfanas; UI y pruebas verifican comportamiento real.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 - **Avance C1.907:** dashboard HR permite actualizar departamentos/cargos y el panel de Dirección administra el crosswalk explícito many-to-many. Se auditan UPDATE_DEPT, DEACTIVATE_DEPT y ASSIGN_DEPARTMENT_HEAD; pruebas Node 24 cubren fallo al cerrar la fila anterior y al cancelar la candidata, conservando la adscripción previa. Los cinco contratos del alcance pasan; el único fallo del workflow es Phase22/configureSchoolDocumentTemplate preexistente. La autorización local no reemplaza AUD-NG-221/TASK-501 ni AUD-NG-222/TASK-502, aún pendientes. TASK-506 permanece En ejecución hasta integrar matriz/ABAC común, probar dispatcher/roles reales, estrés Apps Script y migración de huérfanos.
 
@@ -2943,7 +2943,7 @@
 - **Estado:** [ ] Pendiente.
 - **Avance verificado C1.739 (2026-11-15):** se implementó getTransportEfficiencyMetrics y el panel de analítica de Dirección para ocupación, puntualidad y duración por ruta/jornada. La ocupación usa abordajes reales y marca cuando recurre a asignaciones activas como estimación; se conserva la sobrecapacidad superior al 100%. Nuevo contrato Node.js y CI/sintaxis PASS (Department Scope 43673593703; Identity Mapping 43673593702; Department Reference Consumers 43673593667).
 - **Brechas pendientes:** costo operativo por estudiante sigue sin fuente de combustible/costos; demanda geográfica sin cobertura sigue sin solicitudes georreferenciadas ni regla de cobertura. Ambos indicadores se muestran como SIN_DATOS, sin estimaciones inventadas. E2E Apps Script/Sheets pendiente (BETA-FUNC-095).
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 14079-14099; clave TASK-392; asignación única: Dirección -->
 
@@ -2960,7 +2960,7 @@
 - **Dependencias:** TASK-492 (campos), TASK-493 (modal), TASK-494 (overlays), TASK-495 (conectividad).
 - **Alcance:** botones, alertas, badges, carga/vacío y renderizadores; no sustituye accesibilidad ni contrato de campos.
 - **Criterios:** controles equivalentes usan variantes compartidas; jerarquía primaria/secundaria/destructiva coherente; estados semánticos iguales tienen reglas equivalentes; patrones comunes disponibles; excepciones documentadas; revisión visual y de contraste/foco.
-- **Prioridad:** P2. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P2. **Estado:** Pendiente.
 - **Evidencia:** pendiente; sin pruebas visuales/runtime.
 - **Tipo:** Profesionalización Visual y Calidad de Presentación.
 - **Componentes Afectados:**
@@ -3280,7 +3280,7 @@
 - **Avance C1.682:** ACADEMIC consume la política desde registerStudentEnrollment, createStudentEnrollment y renewStudentEnrollment; MANUAL conserva la ruta explícita, MATRICULA_ONLY genera la tarifa seleccionada y ALL_ACTIVE_TARIFFS genera las tarifas activas válidas. Clave idempotente estudiante+periodo+concepto, lock compartido por las rutas, journal de compensación, reintento que reconcilia cargos ausentes, descuentos/becas aprobados dentro de vigencia y exoneración por saldo cero. La conversión de admisión mantiene referencia del cargo aunque el esquema tenga Observaciones y ClaveUnicaDedupe; el historial expone periodo desde la clave.
 - **Verificación:** contrato de integración ACADEMIC y regresiones de matrícula/historial/admisión/ACCOUNTING; Department Scope CI 43417167222 SUCCESS (Node.js 24.22.2; sintaxis de servicios PASS). Mock local Node.js 22.16.0 PASS para modos, dedupe, compensación y beneficios; no hubo despliegue ni lectura/escritura de datos reales.
 - **Limitación:** TarifasPlanPago continúa sin InstitutionID, antecedente ya documentado en C1.681; la integración filtra por año/grado y por política institucional, pero no afirma aislamiento institucional del catálogo de tarifas. BETA-FUNC-057 valida la configuración real en despliegue.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ---
 
@@ -3311,7 +3311,7 @@
 - **Avance C1.672:** el portal integra listado de períodos y descarga/recuperación de boletas PDF privadas. Empleado y RecursosHumanos consultan mediante getStaffPayrollReceipt con identidad firmada y ownership/ámbito; el cliente usa getPayrollReceiptPDFFile/generatePayrollReceiptPDF y descarga Base64 como Blob. Contrato ACCOUNTING PASS en CI run 43359254980.
 - **Avance C1.673:** el autoservicio incorpora la pestaña Mi Asistencia. El cliente resuelve effectiveUserId desde getEmployeeSelfServicePortal y consulta getStaffAttendanceLogs para ese empleado; harness aislado de identidad/render/vacío/error/XSS PASS. Commits f54fb207 y c149f321.
 - **Verificación C1.676/C1.677:** GitHub Actions Department Scope run 43364730161 (Node.js 24.22.2) ejecutó el contrato ACCOUNTING completo, incluidos autoservicio, identidad, asistencia, PDF y cliente; todos los 19 pasos SUCCESS. El run Task-Service 43364715823 (Node.js 22.23.4) también SUCCESS. La suite completa del repositorio no pudo ejecutarse en el CLI local por DNS; la evidencia CI sí cubre los contratos Node aplicables.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ---
 
@@ -3592,7 +3592,7 @@
 - **Implementación C1.973:** la consola permite cambiar estado a registrado, activo, degradado, desconectado, suspendido o retirado; cada cambio utiliza `updateServiceStatus` y registra actor/motivo en `HistorialServiciosDistribuidos`.
 - **Verificación C1.973:** Developer Service Registry 45321021206, Regional Formatting 45321021158 y Department Scope 45321021104 — SUCCESS. Contrato Node.js recorre los seis estados y rechaza valores inválidos.
 - **Pendiente de ciclo de vida:** el servicio maestro todavía no enruta llamadas ni bloquea solicitudes reales a endpoints suspendidos/retirados; falta implementar resolver/router central y cambios auditados de propietario/recursos.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 ### [AUD-NG-082] Exigir sesión autenticada en el plano de control y rechazar roles declarados por el cliente
 - **Origen del Hallazgo:** Auditoria.txt / AUD-NG-082 (TASK-047 / F23-Task04)
@@ -4004,7 +4004,7 @@ La versión histórica de este bloque en commit `40c9e15f85224f716d0ddfa597b72e1
   - [ ] Comprobar que las preferencias personales no alteran configuraciones compartidas.
   - [ ] Verificar que las configuraciones antiguas siguen resolviéndose correctamente después de la transición.
   - [ ] Comprobar que no existen dos valores efectivos contradictorios para un mismo parámetro y ámbito.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Evidencia de cierre:** commits 62352f7e792c8a13cefdeb6bb0ac3147f890742c (integración ACADEMIC/ACCOUNTING y UI), 91e5ba07166c95cfc8bf8e401433896ce374ce60 (administración jerárquica UI y contrato Node), 08de23d093549b8c2d51d34b2d421c8828aa0ed0 (validación estricta del endpoint USER desde ACADEMIC). Hierarchical Configuration Contract run 44078085385 SUCCESS; Department Reference Consumers run 44078085217 SUCCESS; UI Accessibility and Metadata run 44077873551 SUCCESS.
 - **Cierre técnico:** USER sigue siendo autoridad única para catálogo, resolución y escrituras; ACADEMIC y ACCOUNTING delegan únicamente lectura a USER, validan la sesión firmada y reenvían solo token y campos permitidos. Se rechazan acciones de escritura desde los wrappers consumidores. Ambos servicios validan endpoint Apps Script de USER; ACADEMIC se endureció para aceptar exclusivamente el endpoint oficial https://script.google.com/macros/s/<deployment>/exec. La UI expone catálogo, valor efectivo, origen, estado de herencia, política y ámbitos permitidos; permite editar el ámbito permitido y restablecer herencia, con verificación final server-side. El ID departamental ingresado en UI no otorga acceso: USER verifica membresía y ámbito.
 - **Preservación de fuentes de verdad:** ConfiguracionAcademica, facturación de matrícula, nómina y otras estructuras especializadas permanecen en sus módulos. No se copiaron sus registros al catálogo central ni se creó una segunda fuente de verdad; los wrappers de ACADEMIC/ACCOUNTING ofrecen resolución central cuando una funcionalidad decide consumir un parámetro jerárquico.
@@ -5209,7 +5209,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - **Exclusiones:** sin código, esquemas productivos, migraciones, datos, permisos reales o despliegues; no afirma equivalencia ni cumplimiento legal universal.
 - **Criterios de aceptación:** [x] cobertura de niveles/plataformas/estándares; [x] separación tenant/institución/unidad; [x] estructuras separadas; [x] trayectoria longitudinal; [x] ownership y autorización contextual; [x] configuración/perfiles; [x] interoperabilidad/localización/privacidad/accesibilidad; [x] aprovisionamiento/migración/pruebas; [x] UNI-S01…S10 con dependencias/criterios; [x] unicidad verificada en fuentes legibles.
 - **Prioridad:** P0. **Fase:** PM-02, diseño documental; no autoriza saltar puertas PM-01.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 - **Evidencia:** informe, subplan y commit C1.404.
 
 
@@ -5230,7 +5230,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - **Opiniones:** señales cualitativas de navegación lenta, clics excesivos, sincronización SIS/LMS frágil, discrepancias de notas, carga documental de primera infancia, mensajes fuera de horario, rutas inviables y costos de migración; estrategias/fuentes en el subplan.
 - **Dependencias/riesgos:** TASK-694; PM-01/TASK-153; TASK-060/F26-TASK01; TASK-506/TASK-171/TASK-668; AUD-NG-164/TASK-005; FASE2-T04; F29-TASK17. Riesgo de duplicación o de generalizar opiniones aisladas; mitigación mediante matriz y validación institucional.
 - **Alcance/exclusiones:** diseño y reconciliación documental; no modificar código, datos, esquemas, permisos, configuración, integraciones ni despliegue; no afirmar paridad con proveedores ni cumplimiento legal universal.
-- **Prioridad:** P0. **Estado:** Pendiente (reinicio del ciclo).
+- **Prioridad:** P0. **Estado:** Pendiente.
 - **Evidencia:** subplan, Plan Maestro §10.78, mapa de dependencias y checkpoint C1.405. Sin pruebas de producto.
 
 ---
@@ -5267,7 +5267,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 ### Avance C1.441 — TASK-153 / AUD-NG-386 / EXAM
 - `createExam` ahora exige sesión firmada y ámbito departamental autorizado; deriva el creador de claims y registra ResourceOwnership antes del examen/preguntas.
 - Escritura protegida por ScriptLock y rollback compensatorio. Contratos locales y parseo PASS; GitHub Actions run 42870106305 PASS en ambos contratos EXAM. La prueba beta continúa Pendiente beta.
-- **Estado:** Pendiente (reinicio del ciclo).
+- **Estado:** Pendiente.
 
 
 ### Avance C1.473 — TASK-153 / USER: contrato genérico de callback autenticado
@@ -5276,7 +5276,7 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - Contratos locales: aceptación autenticada, replay, HMAC incorrecto, secreto ausente, timestamp vencido, destino incorrecto, campos extra en payload y lock ocupado. V8 aislado: 5 comprobaciones de comportamiento PASS; parseo JavaScript del servicio PASS.
 - CI: Department Scope Contract run 42909005349 — SUCCESS; USER signature ownership, ACADEMIC, ACCOUNTING, ResourceOwnership ABAC, sintaxis Apps Script y voucher client PASS. Task-Service security local contracts run 42909005375 — SUCCESS.
 - Commit: deda3ef0e2bff98b79f703fd6971940bce33df59 (servicio y contrato).
-- Estado: Pendiente (reinicio del ciclo).
+- Estado: Pendiente.
 
 
 ### Avance C1.474 — AUD-NG-063 / USER: protección de credenciales de proveedores de firma
