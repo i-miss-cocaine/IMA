@@ -2217,6 +2217,14 @@ function validateRolePermission(action, payload) {
   if (["getUserContextScope", "validateRoleScopeAccess", "getUserRoleMemberships", "switchActiveRole"].indexOf(action) !== -1) {
     return { authorized: true, role: userRole, userId: payload && payload._verifiedUserId };
   }
+  var accountingBridgeActions = ["verifyAccountingSession","authorizeAccountingImport","authorizeAccountingAuditRead","getMigrationIdentityMapSnapshot","getMigrationTargetExistenceSnapshot","writeMigratedEntity","compensateMigratedEntity"];
+  if (accountingBridgeActions.indexOf(action) !== -1) {
+    var accountingActorId = String(payload && payload._verifiedUserId || "").trim();
+    if (!accountingActorId || userRole === "NO_ACCESS") return { authorized: false, role: userRole };
+    if (action === "verifyAccountingSession") return { authorized: true, role: userRole, userId: accountingActorId };
+    if (action === "authorizeAccountingAuditRead") return { authorized: userRole === "Auditor", role: userRole, userId: accountingActorId };
+    return { authorized: userRole !== "Auditor" && getDynamicPermissionsForRole(userRole, "importDataWithColumnMapping") === true, role: userRole, userId: accountingActorId };
+  }
   if (IDENTITY_MANAGER_ACTIONS_.indexOf(action) !== -1) return { authorized: IDENTITY_MANAGER_ROLES_.indexOf(userRole) !== -1, role: userRole };
   // La administración de propiedad depende exclusivamente de la matriz dinámica de cada institución.
   if (action === "registerResourceOwnership") {
@@ -2419,14 +2427,11 @@ function handleTrustedDepartmentReferenceEnvelope_(envelope) {
 
 function getTrustedMigrationIdentityMapSnapshot_(payload) {
   var input = payload || {};
-  var claims = verifySessionToken(String(input.sessionToken || ""));
-  var institutionId = "";
-  try { institutionId = getIdentityInstitutionId_(); }
-  catch (error) { return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" }; }
-  if (!claims || !claims.userId || !claims.role || !claims.institutionId ||
-      String(claims.institutionId) !== institutionId || String(input.institutionId || "") !== institutionId) {
-    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
-  }
+  var sessionContext = getAccountingVerifiedSessionContext_(input);
+  if (!sessionContext || sessionContext.status !== "success") return sessionContext || { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  var claims = sessionContext.claims;
+  var institutionId = sessionContext.institutionId;
+  if (String(input.institutionId || "") !== institutionId) return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
   if (getDynamicPermissionsForRole(String(claims.role), "importDataWithColumnMapping") !== true) {
     return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
   }
@@ -2489,13 +2494,11 @@ function getTrustedMigrationIdentityMapSnapshot_(payload) {
 
 function getTrustedMigrationTargetExistenceSnapshot_(payload) {
   var input = payload || {};
-  var claims = verifySessionToken(String(input.sessionToken || ""));
-  var institutionId = "";
-  try { institutionId = getIdentityInstitutionId_(); } catch (error) { return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" }; }
-  if (!claims || !claims.userId || !claims.role || !claims.institutionId ||
-      String(claims.institutionId) !== institutionId || String(input.institutionId || "") !== institutionId) {
-    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
-  }
+  var sessionContext = getAccountingVerifiedSessionContext_(input);
+  if (!sessionContext || sessionContext.status !== "success") return sessionContext || { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  var claims = sessionContext.claims;
+  var institutionId = sessionContext.institutionId;
+  if (String(input.institutionId || "") !== institutionId) return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
   if (getDynamicPermissionsForRole(String(claims.role), "importDataWithColumnMapping") !== true) {
     return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
   }
@@ -2666,48 +2669,83 @@ function getSaceStudentIdentityDirectory_(payload) {
   }
 }
 
-function handleTrustedMigrationEnvelope_(envelope){
- const verified=verifyInterServiceEnvelope(envelope,"USER","IMA_MIGRATION_HMAC_SECRET");
- if(verified.sourceService==="ACADEMIC"&&verified.action==="getSaceStudentIdentityDirectory")return getSaceStudentIdentityDirectory_(verified.payload);
- if(verified.sourceService!=="ACCOUNTING")throw new Error("MIGRATION_SOURCE_NOT_ALLOWED");
- if(verified.action==="verifyAccountingSession" || verified.action==="authorizeAccountingImport" ||
-    verified.action==="authorizeAccountingAuditRead") {
-  var request = verified.payload || {};
-  var claims = verifySessionToken(String(request.sessionToken || ""));
-  if (!claims || !claims.userId || !claims.role || !claims.institutionId) {
-   return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+function getAccountingVerifiedSessionContext_(payload) {
+  var role = getUserVerifiedRole(payload);
+  var claims = payload && payload._verifiedClaims || {};
+  if (role === "NO_ACCESS" || !claims.userId || !claims.role || !claims.institutionId) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
   }
-  if (verified.action === "authorizeAccountingImport") {
-   if (String(claims.role) === "Auditor") return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
-   var permission = getDynamicPermissionsForRole(String(claims.role), "importDataWithColumnMapping");
-   if (permission !== true) return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
-  }
-  if (verified.action === "authorizeAccountingAuditRead") {
-   if (String(claims.role) !== "Auditor") return { status: "error", code: "AUDIT_READ_PERMISSION_DENIED" };
-   var auditScope = getUserContextScope(request);
-   if (!auditScope || auditScope.status !== "success" || auditScope.authorized !== true ||
-       auditScope.institutionWide !== true ||
-       String(request.institutionId || claims.institutionId) !== String(claims.institutionId)) {
-    return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
-   }
-  }
-  return { status: "success", authorized: true,
-   importPermissionVerified: verified.action === "authorizeAccountingImport",
-   auditReadPermissionVerified: verified.action === "authorizeAccountingAuditRead",
-   userId: String(claims.userId), role: String(claims.role),
-   membershipId: String(claims.membershipId || ""), institutionId: String(claims.institutionId) };
- }
- if(verified.action==="getMigrationIdentityMapSnapshot")return getTrustedMigrationIdentityMapSnapshot_(verified.payload);
- if(verified.action==="getMigrationTargetExistenceSnapshot")return getTrustedMigrationTargetExistenceSnapshot_(verified.payload);
- if(verified.action==="writeMigratedEntity")return applyTrustedMigrationWrite_(verified.payload);
- if(verified.action==="compensateMigratedEntity")return compensateTrustedMigrationWrite_(verified.payload);
- if(verified.action==="registerMigratedResourceOwnership")return registerMigratedResourceOwnership_(verified.payload);
- if(verified.action==="compensateMigratedResourceOwnership")return compensateMigratedResourceOwnership_(verified.payload);
- throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
+  var institutionId = "";
+  try { institutionId = getIdentityInstitutionId_(); }
+  catch (error) { return { status: "error", code: "IDENTITY_CONFIGURATION_REQUIRED" }; }
+  if (String(claims.institutionId) !== institutionId) return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
+  return { status: "success", authorized: true, userId: String(claims.userId), role: String(claims.role),
+    membershipId: String(claims.membershipId || ""), institutionId: institutionId, claims: claims };
 }
 
-// Generic authenticated callback contract for external signature providers.
-// Provider-specific certificate/OCSP/CRL validation and transaction state changes are intentionally separate.
+function verifyAccountingSession(payload) {
+  var context = getAccountingVerifiedSessionContext_(payload);
+  if (context.status !== "success") return context;
+  return { status: "success", authorized: true, userId: context.userId, role: context.role,
+    membershipId: context.membershipId, institutionId: context.institutionId };
+}
+
+function authorizeAccountingImport(payload) {
+  var context = getAccountingVerifiedSessionContext_(payload);
+  if (context.status !== "success") return context;
+  return { status: "success", authorized: true, importPermissionVerified: true, userId: context.userId,
+    role: context.role, membershipId: context.membershipId, institutionId: context.institutionId };
+}
+
+function authorizeAccountingAuditRead(payload) {
+  var context = getAccountingVerifiedSessionContext_(payload);
+  if (context.status !== "success") return context;
+  if (context.role !== "Auditor" || String(payload && payload.institutionId || context.institutionId) !== context.institutionId) {
+    return { status: "error", code: "AUDIT_READ_PERMISSION_DENIED" };
+  }
+  var auditScope = getUserContextScope(payload);
+  if (!auditScope || auditScope.status !== "success" || auditScope.authorized !== true ||
+      auditScope.institutionWide !== true || String(auditScope.institutionId || context.institutionId) !== context.institutionId) {
+    return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
+  }
+  return { status: "success", authorized: true, auditReadPermissionVerified: true, userId: context.userId,
+    role: context.role, membershipId: context.membershipId, institutionId: context.institutionId };
+}
+
+function getMigrationIdentityMapSnapshot(payload) {
+  return getTrustedMigrationIdentityMapSnapshot_(payload);
+}
+
+function getMigrationTargetExistenceSnapshot(payload) {
+  return getTrustedMigrationTargetExistenceSnapshot_(payload);
+}
+
+function writeMigratedEntity(payload) {
+  var context = getAccountingVerifiedSessionContext_(payload);
+  if (context.status !== "success") return context;
+  if (String(payload && payload.institutionId || "") !== context.institutionId) {
+    return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
+  }
+  return applyTrustedMigrationWrite_(payload);
+}
+
+function compensateMigratedEntity(payload) {
+  var context = getAccountingVerifiedSessionContext_(payload);
+  if (context.status !== "success") return context;
+  if (String(payload && payload.institutionId || "") !== context.institutionId) {
+    return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
+  }
+  return compensateTrustedMigrationWrite_(payload);
+}
+
+function handleTrustedMigrationEnvelope_(envelope) {
+  const verified = verifyInterServiceEnvelope(envelope, "USER", "IMA_MIGRATION_HMAC_SECRET");
+  if (verified.sourceService === "ACADEMIC" && verified.action === "getSaceStudentIdentityDirectory") {
+    return getSaceStudentIdentityDirectory_(verified.payload);
+  }
+  throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
+}
+
 function handleSignatureProviderCallback_(envelope) {
   if (!envelope || typeof envelope !== "object" || Array.isArray(envelope)) {
     throw new Error("SIGNATURE_CALLBACK_ENVELOPE_INVALID");
@@ -2849,6 +2887,13 @@ function doPost(e) {
       case "requestPasswordRecovery": result = requestPasswordRecovery(payload); break;
       case "resetPassword": result = resetPassword(payload); break;
       case "updateUserProfile": result = updateUserProfile(payload); break;
+      case "verifyAccountingSession": result = verifyAccountingSession(payload); break;
+      case "authorizeAccountingImport": result = authorizeAccountingImport(payload); break;
+      case "authorizeAccountingAuditRead": result = authorizeAccountingAuditRead(payload); break;
+      case "getMigrationIdentityMapSnapshot": result = getMigrationIdentityMapSnapshot(payload); break;
+      case "getMigrationTargetExistenceSnapshot": result = getMigrationTargetExistenceSnapshot(payload); break;
+      case "writeMigratedEntity": result = writeMigratedEntity(payload); break;
+      case "compensateMigratedEntity": result = compensateMigratedEntity(payload); break;
       case "registerLegacyIdentifierMapping": result = registerLegacyIdentifierMapping(payload); break;
       case "resolveInternalIdFromLegacy": result = resolveInternalIdFromLegacy(payload); break;
       case "resolveLegacyIdFromInternal": result = resolveLegacyIdFromInternal(payload); break;

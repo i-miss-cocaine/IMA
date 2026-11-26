@@ -504,43 +504,9 @@ function resolveInterServiceSecret_(sourceService, credentialType, purpose) {
 }
 
 function requestAccountingTrustedOwnerSnapshot_(service, payload) {
-  var target = String(service || "").toUpperCase();
-  var propertyName = target === "USER" ? "IMA_USER_SERVICE_URL" : (target === "ACADEMIC" ? "IMA_ACADEMIC_SERVICE_URL" : "");
-  if (!propertyName) return { status: "error", code: "MIGRATION_OWNER_SERVICE_NOT_ALLOWED" };
-  var properties = PropertiesService.getScriptProperties();
-  var endpoint = String(properties.getProperty(propertyName) || "").trim();
-  var secret;
-  try { secret = resolveInterServiceSecret_("ACCOUNTING", "IMA_MIGRATION_HMAC_SECRET", "SIGN"); }
-  catch (error) { return { status: "error", code: "MIGRATION_OWNER_SERVICE_NOT_CONFIGURED" }; }
-  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || typeof UrlFetchApp === "undefined") {
-    return { status: "error", code: "MIGRATION_OWNER_SERVICE_NOT_CONFIGURED" };
-  }
-  var now = Date.now();
-  var requestId = "REQ-" + now + "-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12);
-  var correlationId = "CORR-" + Utilities.getUuid().replace(/-/g, "");
-  var body = payload || {};
-  var bodyToSign = [requestId, now, correlationId, "ACCOUNTING", target, "getMigrationTargetExistenceSnapshot", JSON.stringify(body)].join("|");
-  recordInterServiceCredentialUsage_({direction:"OUTBOUND",sourceService:"ACCOUNTING",targetService:target,action:"getMigrationTargetExistenceSnapshot",requestId:requestId,correlationId:correlationId,credentialType:"IMA_MIGRATION_HMAC_SECRET"},secret,false);
-  var envelope = {
-    sourceService: "ACCOUNTING", targetService: target, action: "getMigrationTargetExistenceSnapshot",
-    requestId: requestId, timestamp: now, correlationId: correlationId, payload: body,
-    hmacSignature: accountingComputeHmacSignature_(bodyToSign, secret)
-  };
-  try {
-    var response = UrlFetchApp.fetch(endpoint, {
-      method: "post", contentType: "application/json", payload: JSON.stringify(envelope), muteHttpExceptions: true
-    });
-    var httpStatus = response.getResponseCode();
-    var parsed = {};
-    try { parsed = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
-    if (httpStatus < 200 || httpStatus >= 300 || !parsed || parsed.status !== "success") {
-      return { status: "error", code: parsed && parsed.code || "MIGRATION_OWNER_SNAPSHOT_UNAVAILABLE" };
-    }
-    var data = parsed.data && typeof parsed.data === "object" ? parsed.data : parsed;
-    return Object.assign({}, data, { status: parsed.status });
-  } catch (error) {
-    return { status: "error", code: "MIGRATION_OWNER_SNAPSHOT_UNAVAILABLE" };
-  }
+  var target = String(service || "").trim().toUpperCase();
+  if (target !== "USER" && target !== "ACADEMIC") return { status: "error", code: "MIGRATION_OWNER_SERVICE_NOT_ALLOWED" };
+  return requestAccountingService_(target, "getMigrationTargetExistenceSnapshot", payload || {});
 }
 
 function normalizeMigrationNaturalKey_(field, value) {
@@ -1063,48 +1029,7 @@ function buildAccountingDepartmentalImportPreflight_(payload, ss, schema) {
 }
 
 function requestAccountingIdentityMapSnapshot_(payload) {
-  var input = payload || {};
-  var properties = PropertiesService.getScriptProperties();
-  var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
-  var secret;
-  try { secret = resolveInterServiceSecret_("ACCOUNTING", "IMA_MIGRATION_HMAC_SECRET", "SIGN"); }
-  catch (error) { return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" }; }
-  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) ||
-      typeof UrlFetchApp === "undefined" || typeof createInterServiceEnvelope !== "function") {
-    return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" };
-  }
-  var now = Date.now();
-  var requestId = "REQ-" + now + "-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12);
-  var correlationId = String(input.correlationId || ("CORR-" + Utilities.getUuid().replace(/-/g, "")));
-  var body = { sessionToken: String(input.sessionToken || ""), institutionId: String(input.institutionId || ""),
-    lookups: Array.isArray(input.lookups) ? input.lookups : [] };
-  var bodyToSign = [requestId, now, correlationId, "ACCOUNTING", "USER",
-    "getMigrationIdentityMapSnapshot", JSON.stringify(body)].join("|");
-  recordInterServiceCredentialUsage_({direction:"OUTBOUND",sourceService:"ACCOUNTING",targetService:"USER",action:"getMigrationIdentityMapSnapshot",requestId:requestId,correlationId:correlationId,credentialType:"IMA_MIGRATION_HMAC_SECRET"},secret,false);
-  var envelope = {
-    sourceService: "ACCOUNTING", targetService: "USER", action: "getMigrationIdentityMapSnapshot",
-    requestId: requestId, timestamp: now, correlationId: correlationId, payload: body,
-    hmacSignature: accountingComputeHmacSignature_(bodyToSign, secret)
-  };
-  try {
-    var response = UrlFetchApp.fetch(endpoint, {
-      method: "post", contentType: "application/json", payload: JSON.stringify(envelope), muteHttpExceptions: true
-    });
-    var httpStatus = response.getResponseCode(), parsed = {};
-    try { parsed = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
-    if (httpStatus < 200 || httpStatus >= 300 || !parsed || parsed.status !== "success") {
-      return { status: "error", code: parsed && parsed.code || "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" };
-    }
-    var data = parsed.data && typeof parsed.data === "object" ? parsed.data : parsed;
-    if (data.verified !== true || String(data.service || "") !== "USER" ||
-        String(data.institutionId || "") !== String(input.institutionId || "") ||
-        !Array.isArray(data.entries) || !Array.isArray(data.uniquenessViolations)) {
-      return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_UNVERIFIED" };
-    }
-    return Object.assign({}, data, { status: "success" });
-  } catch (error) {
-    return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_UNAVAILABLE" };
-  }
+  return requestAccountingService_("USER", "getMigrationIdentityMapSnapshot", payload || {});
 }
 
 function buildImportPreview_(payload) {
@@ -1715,7 +1640,7 @@ function importDataWithColumnMapping(payload) {
     var idempotentOwnershipFailure = String(error && error.message || error) === "RESOURCE_OWNERSHIP_REPAIR_REQUIRED" &&
       applied.some(function(item) { return item.tipoEntidad === "empleadoOwnership"; }) &&
       !applied.some(function(item) { return item.tipoEntidad === input.tipoEntidad; });
-    var rollbackFailures = applied.length ? rollbackMigrationOwnerWrites_(applied) : [];
+    var rollbackFailures = applied.length ? rollbackMigrationOwnerWrites_(applied, input.sessionToken, actor.institutionId) : [];
     if (rollbackFailures && rollbackFailures.length) {
       errors.push({ severity: "ERROR", codigo: "MIGRATION_COMPENSATION_REQUIRED",
         operacionesPendientesCompensacion: rollbackFailures.length });
@@ -5399,6 +5324,40 @@ const MIGRATION_WRITER_JOURNAL_HEADERS_ = ["IdempotencyKey","TipoEntidad","IdNue
 const MIGRATION_WRITER_JOURNAL_SHEET_ = "MigracionEscrituras_ACCOUNTING";
 const ACCOUNTING_IMPORT_ROW_DEPARTMENT_SNAPSHOT_HEADERS_ = ["ImportBatchID","SnapshotID","RowID","InstitutionID","Domain","DepartmentID","Status","VerifiedBy","VerifiedAt","SnapshotVersion"];
 
+const ACCOUNTING_SERVICE_ENDPOINTS_ = {
+  USER: "https://script.google.com/macros/s/AKfycbwwJatltmNlynkPPTZtTL8TfRJWWL_1Ho9Xe7-AWAU2ZOv6QnvaATsCzvXJzYTyIGY/exec",
+  ACADEMIC: "https://script.google.com/macros/s/AKfycbyrLQkH5QZemaTVbAbNfTB2MXgy7Aq4grSVxrwLegbGbnKshAAE1KEpAxqp9DuMW33s/exec"
+};
+
+function requestAccountingService_(service, action, payload) {
+  var target = String(service || "").trim().toUpperCase();
+  var endpoint = ACCOUNTING_SERVICE_ENDPOINTS_[target];
+  if (!endpoint || !isAccountingTrustedAppsScriptEndpoint_(endpoint) || typeof UrlFetchApp === "undefined") {
+    return { status: "error", code: "ACCOUNTING_SERVICE_NOT_CONFIGURED" };
+  }
+  try {
+    var response = UrlFetchApp.fetch(endpoint, {
+      method: "post", contentType: "text/plain",
+      payload: JSON.stringify({ action: String(action || ""), payload: payload || {} }),
+      muteHttpExceptions: true
+    });
+    var httpStatus = response.getResponseCode(), parsed = {};
+    try { parsed = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
+    if (httpStatus < 200 || httpStatus >= 300 || !parsed || typeof parsed !== "object") {
+      return { status: "error", code: "ACCOUNTING_SERVICE_UNAVAILABLE" };
+    }
+    var result = parsed.data && typeof parsed.data === "object" ? parsed.data : parsed;
+    if (parsed.status === "error" || result.status === "error") {
+      if (!result.code) result.code = parsed.error && parsed.error.code || parsed.code || "ACCOUNTING_SERVICE_REQUEST_FAILED";
+      return result;
+    }
+    if (!result.status) result.status = parsed.status || "success";
+    return result;
+  } catch (error) {
+    return { status: "error", code: "ACCOUNTING_SERVICE_UNAVAILABLE" };
+  }
+}
+
 function isAccountingTrustedAppsScriptEndpoint_(value) {
   var endpoint = String(value || "").trim();
   var standardDeployment = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/i.test(endpoint);
@@ -5412,40 +5371,7 @@ function accountingComputeHmacSignature_(message, secret) {
 }
 
 function requestAccountingUserAuthorization_(action, payload) {
-  var properties = PropertiesService.getScriptProperties();
-  var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
-  var secret;
-  try { secret = resolveInterServiceSecret_("ACCOUNTING", "IMA_MIGRATION_HMAC_SECRET", "SIGN"); }
-  catch (error) { return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_NOT_CONFIGURED" }; }
-  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || typeof UrlFetchApp === "undefined") {
-    return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_NOT_CONFIGURED" };
-  }
-  var now = Date.now();
-  var requestId = "REQ-" + now + "-" + Utilities.getUuid().replace(/-/g, "").slice(0, 12);
-  var correlationId = "CORR-" + Utilities.getUuid().replace(/-/g, "");
-  var body = payload || {};
-  var bodyToSign = [requestId, now, correlationId, "ACCOUNTING", "USER", String(action), JSON.stringify(body)].join("|");
-  recordInterServiceCredentialUsage_({direction:"OUTBOUND",sourceService:"ACCOUNTING",targetService:"USER",action:String(action),requestId:requestId,correlationId:correlationId,credentialType:"IMA_MIGRATION_HMAC_SECRET"},secret,false);
-  var envelope = {
-    sourceService: "ACCOUNTING", targetService: "USER", action: String(action),
-    requestId: requestId, timestamp: now, correlationId: correlationId,
-    payload: body, hmacSignature: accountingComputeHmacSignature_(bodyToSign, secret)
-  };
-  try {
-    var response = UrlFetchApp.fetch(endpoint, {
-      method: "post", contentType: "application/json",
-      payload: JSON.stringify(envelope), muteHttpExceptions: true
-    });
-    var status = response.getResponseCode();
-    var result = {};
-    try { result = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
-    if (status < 200 || status >= 300 || !result || typeof result !== "object") {
-      return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_UNAVAILABLE" };
-    }
-    return result;
-  } catch (error) {
-    return { status: "error", code: "ACCOUNTING_AUTH_SERVICE_UNAVAILABLE" };
-  }
+  return requestAccountingService_("USER", action, payload || {});
 }
 
 function getVerifiedAccountingIdentity_(payload) {
@@ -5514,22 +5440,30 @@ function createInterServiceEnvelope(sourceService,targetService,action,payload,c
 
 function sendMigrationOwnerRequest_(service, action, payload) {
   var target = String(service || "").toUpperCase();
-  if (String(action || "").indexOf("MigratedResourceOwnership") !== -1 || target === "USER" ||
-      String(action || "") === "compensateMigratedResourceOwnership") target = "USER";
+  if (String(action || "").indexOf("MigratedResourceOwnership") !== -1) target = "USER";
   if (target === "ACCOUNTING") {
     if (action === "writeMigratedEntity") return applyTrustedAccountingMigrationWrite_(payload || {});
     if (action === "compensateMigratedEntity") return compensateTrustedAccountingMigrationWrite_(payload || {});
     throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
   }
   if (target !== "USER" && target !== "ACADEMIC") throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
+  if (action === "writeMigratedEntity" || action === "compensateMigratedEntity") {
+    var directResult = requestAccountingService_(target, action, payload || {});
+    if (!directResult || directResult.status !== "success") {
+      throw new Error(String(directResult && directResult.code || "MIGRATION_OWNER_REQUEST_FAILED"));
+    }
+    return directResult;
+  }
+  if (action !== "registerMigratedResourceOwnership" && action !== "compensateMigratedResourceOwnership") {
+    throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
+  }
   var properties = PropertiesService.getScriptProperties();
-  var endpointKey = target === "ACADEMIC" ? "IMA_ACADEMIC_SERVICE_URL" : "IMA_USER_SERVICE_URL";
-  var endpoint = String(properties.getProperty(endpointKey) || "").trim();
+  var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
   if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) ||
       typeof createInterServiceEnvelope !== "function" || typeof UrlFetchApp === "undefined") {
     throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
   }
-  var envelope = createInterServiceEnvelope("ACCOUNTING", target, action, payload || {}, "IMA_MIGRATION_HMAC_SECRET");
+  var envelope = createInterServiceEnvelope("ACCOUNTING", "USER", action, payload || {}, "IMA_MIGRATION_HMAC_SECRET");
   var response = UrlFetchApp.fetch(endpoint, {
     method: "post", contentType: "application/json",
     payload: JSON.stringify(envelope), muteHttpExceptions: true
@@ -5542,21 +5476,23 @@ function sendMigrationOwnerRequest_(service, action, payload) {
   return body;
 }
 
-function rollbackMigrationOwnerWrites_(applied) {
-  var failures = [];
+function rollbackMigrationOwnerWrites_(applied, sessionToken, institutionId) {
+  var errors = [];
   (applied || []).slice().reverse().forEach(function(item) {
     try {
-      var ownership = String(item && item.tipoEntidad || "") === "empleadoOwnership";
-      var ownerService = ownership ? "USER" : String(item && item.service || "ACCOUNTING").toUpperCase();
-      sendMigrationOwnerRequest_(ownerService,
-        ownership ? "compensateMigratedResourceOwnership" : "compensateMigratedEntity",
-        { idempotencyKey: item.idempotencyKey || "", entityType: item.tipoEntidad || "",
-          payload: item.payload || {}, ownershipId: item.ownershipId || "" });
+      var action = item.ownership ? "compensateMigratedResourceOwnership" : "compensateMigratedEntity";
+      var compensationPayload = { idempotencyKey: item.idempotencyKey || "", entityType: item.tipoEntidad || "",
+        payload: item.payload || {}, ownershipId: item.ownershipId || "" };
+      if (!item.ownership) {
+        compensationPayload.sessionToken = String(sessionToken || "");
+        compensationPayload.institutionId = String(institutionId || "");
+      }
+      sendMigrationOwnerRequest_(item.service || "ACCOUNTING", action, compensationPayload);
     } catch (error) {
-      failures.push({ entityType: item && item.tipoEntidad || "", code: String(error && error.message || error) });
+      errors.push({ tipoEntidad: item.tipoEntidad || "", code: String(error && error.message || "ROLLBACK_FAILED") });
     }
   });
-  return failures;
+  return errors;
 }
 
 function getOrCreateSheet(ss, name) {

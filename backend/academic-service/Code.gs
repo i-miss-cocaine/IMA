@@ -1308,10 +1308,14 @@ function auditTeacherJustificationDenied_(action,payload,role,code) {
 
 function getRequestSessionToken_(payload) { return payload && (payload.sessionToken || payload.authToken || payload.token) || ""; }
 function getRequestPermissionAction_(action, payload) {
+  if (["getMigrationTargetExistenceSnapshot", "writeMigratedEntity", "compensateMigratedEntity"].indexOf(action) !== -1) {
+    return "importDataWithColumnMapping";
+  }
   if (action !== "getStudentDocumentFile") return action;
   const requestedDocumentOperation=String(payload&&payload.operation||"DOWNLOAD").trim().toUpperCase();
   return requestedDocumentOperation==="PREVIEW"?"previewStudentDocument":"getStudentDocumentFile";
 }
+
 function getVerifiedRequestSessionClaims_(payload) {
   const token=getRequestSessionToken_(payload);if(!token)return null;
   if(payload&&payload._imaVerifiedSessionToken===token&&payload._imaVerifiedSessionClaims)return payload._imaVerifiedSessionClaims;
@@ -1489,8 +1493,7 @@ function hasActiveDelegationForAction(userId, action) {
 
 function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
   var input = payload || {};
-  var token = String(input.sessionToken || "");
-  var claims = verifySessionToken(token);
+  var claims = getVerifiedRequestSessionClaims_(input);
   var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
   if (!claims || !claims.userId || !claims.role || !claims.institutionId ||
       !institutionId || String(claims.institutionId) !== institutionId || String(input.institutionId || "") !== institutionId) {
@@ -1590,13 +1593,41 @@ function getTrustedAcademicMigrationTargetExistenceSnapshot_(payload) {
     idField: "ExpedienteID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: targetRows,
     duplicateMatches: duplicateMatches, referenceErrors: referenceErrors };
 }
-function handleTrustedMigrationEnvelope_(envelope){
- const verified=verifyInterServiceEnvelope(envelope,"ACADEMIC","IMA_MIGRATION_HMAC_SECRET");
- if(verified.sourceService!=="ACCOUNTING")throw new Error("MIGRATION_SOURCE_NOT_ALLOWED");
- if(verified.action==="getMigrationTargetExistenceSnapshot")return getTrustedAcademicMigrationTargetExistenceSnapshot_(verified.payload);
- if(verified.action==="writeMigratedEntity")return applyTrustedMigrationWrite_(verified.payload);
- if(verified.action==="compensateMigratedEntity")return compensateTrustedMigrationWrite_(verified.payload);
- throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
+function getMigrationTargetExistenceSnapshot(payload) {
+  var claims = getVerifiedRequestSessionClaims_(payload);
+  var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+  if (!claims || !claims.userId || !claims.role || !claims.institutionId ||
+      !institutionId || String(claims.institutionId) !== institutionId ||
+      String(payload && payload.institutionId || "") !== institutionId) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  return getTrustedAcademicMigrationTargetExistenceSnapshot_(payload);
+}
+
+function writeMigratedEntity(payload) {
+  var claims = getVerifiedRequestSessionClaims_(payload);
+  var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+  if (!claims || !claims.userId || !claims.role || !claims.institutionId ||
+      !institutionId || String(claims.institutionId) !== institutionId ||
+      String(payload && payload.institutionId || "") !== institutionId) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  return applyTrustedMigrationWrite_(payload);
+}
+
+function compensateMigratedEntity(payload) {
+  var claims = getVerifiedRequestSessionClaims_(payload);
+  var institutionId = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") || "").trim();
+  if (!claims || !claims.userId || !claims.role || !claims.institutionId ||
+      !institutionId || String(claims.institutionId) !== institutionId ||
+      String(payload && payload.institutionId || "") !== institutionId) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  return compensateTrustedMigrationWrite_(payload);
+}
+
+function handleTrustedMigrationEnvelope_(envelope) {
+  throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
 }
 
 function doPost(e) {
@@ -1636,6 +1667,9 @@ function doPost(e) {
       case "getQuestionBank": result = getQuestionBank(payload); break;
       case "saveQuestion": result = saveQuestion(payload); break;
       case "generateMigrationReport": result = generateMigrationReport(payload); break;
+      case "getMigrationTargetExistenceSnapshot": result = getMigrationTargetExistenceSnapshot(payload); break;
+      case "writeMigratedEntity": result = writeMigratedEntity(payload); break;
+      case "compensateMigratedEntity": result = compensateMigratedEntity(payload); break;
       case "registerStudentEnrollment": result = registerStudentEnrollment(payload); break;
       case "getStudentEnrollmentHistory": result = getStudentEnrollmentHistory(payload); break;
       case "createSystemBackup": result = createSystemBackup(payload); break;
