@@ -412,4 +412,3 @@ test("la confirmación requiere revisión humana, destino existente y deja audit
   assert.equal(rows[2][9], "PENDIENTE_REVISION");
   assert.equal(waits, releases);
 });
-
