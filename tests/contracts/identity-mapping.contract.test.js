@@ -317,7 +317,7 @@ test("las reimportaciones de estudiantes requieren snapshot y conservan idempote
   const base = { tipoEntidad: "estudiante", idNuevoPlataforma: "EST-1", institutionId: "INST-1",
     targetSnapshotVerified: true, expectedTargetPresent: false,
     datos: { CodigoInstitucional: "STU-001", NombreCompleto: "Ana Pérez" } };
-  assert.throws(() => context.applyTrustedMigrationWrite_({ ...base, idempotencyKey: "STU-1" }), /IMPORT_TARGET_SNAPSHOT_UNVERIFIED/);
+  assert.throws(() => context.applyTrustedMigrationWrite_({ ...base, targetSnapshotVerified: false, idempotencyKey: "STU-1" }), /IMPORT_TARGET_SNAPSHOT_UNVERIFIED/);
   const first = context.applyTrustedMigrationWrite_({ ...base, idempotencyKey: "STU-1" });
   const repeated = context.applyTrustedMigrationWrite_({ ...base, idempotencyKey: "STU-1" });
   assert.equal(first.idempotent, false);
@@ -349,4 +349,3 @@ test("los endpoints de ACCOUNTING coinciden con los endpoints registrados en con
   assert.equal(endpoints.match(/USER\s*:\s*"([^"]+)"/)[1], userMatch[1]);
   assert.equal(endpoints.match(/ACADEMIC\s*:\s*"([^"]+)"/)[1], academicMatch[1]);
 });
-
