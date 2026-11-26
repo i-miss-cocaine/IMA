@@ -656,4 +656,3 @@ test("altas concurrentes de responsabilidades serializadas generan IDs y código
   assert.notEqual(first.rolInternoId, secondResult.rolInternoId);
   assert.notEqual(first.codigoInterno, secondResult.codigoInterno);
 });
-
