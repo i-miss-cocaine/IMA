@@ -12260,40 +12260,38 @@ function openAttendanceSession(payload) {
 }
 
 // [F10-Task14] [P1] - Optimizar las consultas batch de asistencia y resiliencia de servicios
+const ACADEMIC_USER_SERVICE_ENDPOINT_ = "https://script.google.com/macros/s/AKfycbwwJatltmNlynkPPTZtTL8TfRJWWL_1Ho9Xe7-AWAU2ZOv6QnvaATsCzvXJzYTyIGY/exec";
+
 function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, institutionId, teacherUserId, revisionOnly) {
   const input = request || {};
   const token = String(getRequestSessionToken_(input) || "");
-  if (!token || (!revisionOnly && (!Array.isArray(studentIds) || !studentIds.length))) throw new Error("SACE_IDENTITY_TRANSPORT_CONTEXT_REQUIRED");
-  const requestedIds = studentIds.map(function(value) {
+  if (!token || (!revisionOnly && (!Array.isArray(studentIds) || !studentIds.length))) {
+    throw new Error("SACE_IDENTITY_TRANSPORT_CONTEXT_REQUIRED");
+  }
+  const requestedIds = Array.isArray(studentIds) ? studentIds.map(function(value) {
     const id = String(value == null ? "" : value).trim();
     if (!id) throw new Error("SACE_IDENTITY_STUDENT_ID_REQUIRED");
     return id;
-  });
-  if (new Set(requestedIds).size !== requestedIds.length) {
-    throw new Error("SACE_IDENTITY_ROSTER_DUPLICATE");
-  }
-  if (typeof UrlFetchApp === "undefined" || typeof PropertiesService === "undefined") {
-    throw new Error("SACE_IDENTITY_TRANSPORT_UNAVAILABLE");
-  }
-  const endpoint = String(PropertiesService.getScriptProperties().getProperty("IMA_USER_SERVICE_URL") || "").trim();
+  }) : [];
+  if (!revisionOnly && !requestedIds.length) throw new Error("SACE_IDENTITY_STUDENT_ID_REQUIRED");
+  if (new Set(requestedIds).size !== requestedIds.length) throw new Error("SACE_IDENTITY_ROSTER_DUPLICATE");
+  if (typeof UrlFetchApp === "undefined") throw new Error("SACE_IDENTITY_TRANSPORT_UNAVAILABLE");
+  const endpoint = String(ACADEMIC_USER_SERVICE_ENDPOINT_ || "").trim();
   if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) {
     throw new Error("SACE_IDENTITY_TRANSPORT_NOT_CONFIGURED");
   }
-  const envelope = createInterServiceEnvelope("ACADEMIC", "USER", "getSaceStudentIdentityDirectory", {
-    sessionToken: token,
-    institutionId: institutionId,
-    teacherUserId: teacherUserId,
-    studentIds: requestedIds.slice(), revisionOnly:revisionOnly===true
-  }, "IMA_MIGRATION_HMAC_SECRET");
+  const requestPayload = {
+    sessionToken: token, institutionId: String(institutionId || ""),
+    teacherUserId: String(teacherUserId || ""), studentIds: requestedIds.slice(), revisionOnly: revisionOnly === true
+  };
   let response;
   try {
     response = UrlFetchApp.fetch(endpoint, {
-      method: "post", contentType: "application/json",
-      payload: JSON.stringify(envelope), muteHttpExceptions: true
+      method: "post", contentType: "text/plain",
+      payload: JSON.stringify({ action: "getSaceStudentIdentityDirectory", payload: requestPayload }),
+      muteHttpExceptions: true
     });
-  } catch (error) {
-    throw new Error("SACE_IDENTITY_AUTHORITY_UNAVAILABLE");
-  }
+  } catch (error) { throw new Error("SACE_IDENTITY_AUTHORITY_UNAVAILABLE"); }
   const status = response.getResponseCode();
   let body;
   try { body = JSON.parse(response.getContentText() || "{}"); }
@@ -12301,11 +12299,12 @@ function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, insti
   if (status < 200 || status >= 300 || !body || body.status !== "success") {
     throw new Error(body && body.code || "SACE_IDENTITY_AUTHORITY_UNAVAILABLE");
   }
-  if(revisionOnly===true){if(typeof body.sourceRevision!=='string')throw Error('SACE_IDENTITY_REVISION_INVALID');return body.sourceRevision;}
-  if(!Array.isArray(body.data))throw Error('SACE_IDENTITY_RESPONSE_INCOMPLETE');
-  const requested = new Set(requestedIds);
-  const returned = new Set();
-  const normalizedIdentities = new Set();
+  if (revisionOnly === true) {
+    if (typeof body.sourceRevision !== "string") throw new Error("SACE_IDENTITY_REVISION_INVALID");
+    return body.sourceRevision;
+  }
+  if (!Array.isArray(body.data)) throw new Error("SACE_IDENTITY_RESPONSE_INCOMPLETE");
+  const requested = new Set(requestedIds), returned = new Set(), normalizedIdentities = new Set();
   const identityRecords = body.data.map(function(record) {
     const userId = String(record && record.userId || "").trim();
     const identity = String(record && record.identity || "").trim();
@@ -12314,19 +12313,13 @@ function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, insti
     if (!requested.has(userId) || returned.has(userId) || !identity || !normalizedIdentity || !name) {
       throw new Error("SACE_IDENTITY_RESPONSE_SCOPE_INVALID");
     }
-    if (normalizedIdentities.has(normalizedIdentity)) {
-      throw new Error("SACE_IDENTITY_DUPLICATE_DOCUMENT");
-    }
-    returned.add(userId);
-    normalizedIdentities.add(normalizedIdentity);
-    return {
-      userId: userId, identity: identity,
-      documentType: String(record.documentType || "").trim(),
-      documentMarker: "", name: name
-    };
+    if (normalizedIdentities.has(normalizedIdentity)) throw new Error("SACE_IDENTITY_DUPLICATE_DOCUMENT");
+    returned.add(userId); normalizedIdentities.add(normalizedIdentity);
+    return { userId: userId, identity: identity, documentType: String(record.documentType || "").trim(), documentMarker: "", name: name };
   });
   if (returned.size !== requested.size) throw new Error("SACE_IDENTITY_RESPONSE_INCOMPLETE");
-  identityRecords.sourceRevision=body.sourceRevision;return identityRecords;
+  identityRecords.sourceRevision = body.sourceRevision;
+  return identityRecords;
 }
 
 function requestSaceGradebookSnapshotFromExam_(request, studentIds, teacherUserId, expectedContext, period, examPartial) {

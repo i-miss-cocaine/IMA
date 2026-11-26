@@ -412,3 +412,73 @@ test("la confirmación requiere revisión humana, destino existente y deja audit
   assert.equal(rows[2][9], "PENDIENTE_REVISION");
   assert.equal(waits, releases);
 });
+
+test("USER publica el directorio SACE solo al docente autenticado dueño de la solicitud", () => {
+  const context = {
+    getUserVerifiedRole: payload => {
+      payload._verifiedClaims = { userId: "TEACHER-1", role: "Profesor", institutionId: "INST-1" };
+      return "Profesor";
+    },
+    SPREADSHEET_ID: "USER-SS",
+    SpreadsheetApp: { openById: () => ({ getSheetByName(name) {
+      const data = {
+        Usuarios: [
+          ["UserId","Rol","PersonaID","EstadoCuenta"],
+          ["TEACHER-1","Profesor","P-TEACHER","ACTIVA"],
+          ["STUDENT-1","Estudiante","P-STUDENT","ACTIVA"]
+        ],
+        Personas: [
+          ["PersonaID","Nombres","Apellidos","Identificacion","EstadoPersona","TipoIdentificacion"],
+          ["P-TEACHER","Docente","Prueba","0801-T","ACTIVA","DNI"],
+          ["P-STUDENT","Ana","Pérez","0801-1111","ACTIVA","DNI"]
+        ]
+      };
+      return { getDataRange: () => ({ getValues: () => data[name] }) };
+    } }) },
+    getSaceUserSourceRevisionLocked_: () => "REV-1",
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) }
+  };
+  run(userSource, ["getSaceStudentIdentityDirectory_"], context);
+  const result = context.getSaceStudentIdentityDirectory_({
+    sessionToken: "SESSION", teacherUserId: "TEACHER-1", institutionId: "INST-1", studentIds: ["STUDENT-1"]
+  });
+  assert.equal(result.status, "success");
+  assert.equal(result.data[0].userId, "STUDENT-1");
+  assert.equal(result.data[0].identity, "0801-1111");
+  assert.throws(() => context.getSaceStudentIdentityDirectory_({
+    sessionToken: "SESSION", teacherUserId: "TEACHER-2", institutionId: "INST-1", studentIds: ["STUDENT-1"]
+  }), /SACE_IDENTITY_CALLER_INVALID/);
+});
+
+test("ACADEMIC consulta el directorio SACE mediante POST directo con sesión, sin HMAC ni Script Properties", () => {
+  const requests = [];
+  const context = {
+    ACADEMIC_USER_SERVICE_ENDPOINT_: "https://script.google.com/macros/s/USER/exec",
+    getRequestSessionToken_: () => "SESSION",
+    UrlFetchApp: { fetch(url, options) {
+      requests.push({ url, options });
+      return { getResponseCode: () => 200, getContentText: () => JSON.stringify({
+        status: "success", sourceRevision: "REV-1", data: [{ userId: "STUDENT-1", identity: "0801-1111", name: "Ana Pérez", documentType: "DNI" }]
+      }) };
+    } }
+  };
+  run(academicSource, ["requestSaceStudentIdentityDirectoryFromUser_"], context);
+  const result = context.requestSaceStudentIdentityDirectoryFromUser_(
+    { sessionToken: "SESSION" }, ["STUDENT-1"], "INST-1", "TEACHER-1", false
+  );
+  assert.equal(result.length, 1);
+  assert.equal(result.sourceRevision, "REV-1");
+  assert.equal(requests[0].url, context.ACADEMIC_USER_SERVICE_ENDPOINT_);
+  const body = JSON.parse(requests[0].options.payload);
+  assert.equal(body.action, "getSaceStudentIdentityDirectory");
+  assert.equal(body.payload.sessionToken, "SESSION");
+  assert.equal(Object.prototype.hasOwnProperty.call(body, "hmacSignature"), false);
+  assert.equal(requests[0].options.contentType, "text/plain");
+});
+
+test("el directorio SACE no depende de sobres HMAC en el manejador USER", () => {
+  const handler = extractFunction(userSource, "handleTrustedMigrationEnvelope_");
+  assert.doesNotMatch(handler, /verifyInterServiceEnvelope|IMA_MIGRATION_HMAC_SECRET|getSaceStudentIdentityDirectory/);
+  const request = extractFunction(academicSource, "requestSaceStudentIdentityDirectoryFromUser_");
+  assert.doesNotMatch(request, /createInterServiceEnvelope|PropertiesService|IMA_MIGRATION_HMAC_SECRET/);
+});
