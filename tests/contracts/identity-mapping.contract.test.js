@@ -341,11 +341,75 @@ test("el rollback entrega el contexto de sesión sin almacenarlo en registros te
 
 test("los endpoints de ACCOUNTING coinciden con los endpoints registrados en config.js", () => {
   const config = read("js/config.js");
-  const userMatch = config.match(/USER\s*:\s*"([^"]+)"/);
-  const academicMatch = config.match(/ACADEMIC\s*:\s*"([^"]+)"/);
+  const serviceConfig = config.slice(config.indexOf("SERVICE_URLS"), config.indexOf("window.SERVICE_REGISTRY"));
+  const userMatch = serviceConfig.match(/USER\s*:\s*[\'"]([^\'"]+)[\'"]/);
+  const academicMatch = serviceConfig.match(/ACADEMIC\s*:\s*[\'"]([^\'"]+)[\'"]/);
   const endpointsMatch = accountingSource.match(/const ACCOUNTING_SERVICE_ENDPOINTS_\s*=\s*\{([\s\S]*?)\};/);
   assert.ok(userMatch && academicMatch && endpointsMatch);
   const endpoints = endpointsMatch[1];
   assert.equal(endpoints.match(/USER\s*:\s*"([^"]+)"/)[1], userMatch[1]);
   assert.equal(endpoints.match(/ACADEMIC\s*:\s*"([^"]+)"/)[1], academicMatch[1]);
 });
+
+test("los resolutores directo e inverso respetan fuente, institución y revisión", () => {
+  const rows = [
+    ["Id","Sistema","Tipo","Legado","Interno","Institucion","Hash","Fecha","Version","Estado","Metodo","Confianza","Actor"],
+    ["M-1","SACE","estudiante","001","EST-1","INST-1","H1","","1","CONFIRMADA","","","HR-1"],
+    ["M-2","ERP","estudiante","001","EST-1","INST-1","H2","","1","CONFIRMADA","","","HR-1"],
+    ["M-3","SACE","estudiante","002","EST-2","INST-1","H3","","1","PENDIENTE_REVISION","","","HR-1"],
+    ["M-4","SACE","usuario","U-OLD","USR-1","INST-1","H4","","1","CONFIRMADA","","","HR-1"],
+    ["M-5","SACE","estudiante","001","EST-9","INST-2","H5","","1","CONFIRMADA","","","HR-1"]
+  ];
+  const context = run(userSource, ["identityCompositeKey_", "resolveInternalIdFromLegacy", "resolveLegacyIdFromInternal", "resolveUserByLegacyId"], {
+    requireIdentityManager_: () => ({ actorId: "HR-1", role: "Administrador" }),
+    getIdentityInstitutionId_: () => "INST-1",
+    getIdentityMappingSheet_: () => ({ getDataRange: () => ({ getValues: () => rows }) })
+  });
+  const forward = context.resolveInternalIdFromLegacy({ sistemaOrigen: "SACE", tipoEntidad: "estudiante", idOriginalLegado: "001" });
+  assert.equal(forward.status, "success");
+  assert.equal(forward.idNuevoPlataforma, "EST-1");
+  const pending = context.resolveInternalIdFromLegacy({ sistemaOrigen: "SACE", tipoEntidad: "estudiante", idOriginalLegado: "002" });
+  assert.equal(pending.status, "pending_review");
+  const reverse = context.resolveLegacyIdFromInternal({ tipoEntidad: "estudiante", idNuevoPlataforma: "EST-1" });
+  assert.deepEqual(reverse.referencias.map(item => item.sistemaOrigen).sort(), ["ERP", "SACE"]);
+  const filtered = context.resolveLegacyIdFromInternal({ tipoEntidad: "estudiante", idNuevoPlataforma: "EST-1", sistemaOrigen: "ERP" });
+  assert.equal(filtered.referencias.length, 1);
+  const user = context.resolveUserByLegacyId({ sistemaOrigen: "SACE", idOriginalLegado: "U-OLD" });
+  assert.equal(user.idNuevoPlataforma, "USR-1");
+  assert.equal(context.resolveLegacyIdFromInternal({ tipoEntidad: "estudiante", idNuevoPlataforma: "EST-9" }).referencias.length, 0);
+});
+
+test("la confirmación requiere revisión humana, destino existente y deja auditoría inmutable", () => {
+  const rows = [
+    ["Id","Sistema","Tipo","Legado","Interno","Institucion","Hash","Fecha","Version","Estado","Metodo","Confianza","Actor"],
+    ["M-1","SACE","estudiante","001","EST-1","INST-1","H1","","1","PENDIENTE_REVISION","","","HR-1"],
+    ["M-2","SACE","estudiante","002","EST-404","INST-1","H2","","1","PENDIENTE_REVISION","","","HR-1"]
+  ];
+  const audit = [];
+  const sheet = {
+    getDataRange: () => ({ getValues: () => rows.map(row => row.slice()) }),
+    getRange(row, col) { return { setValue(value) { rows[row - 1][col - 1] = value; } }; }
+  };
+  let targetExists = true, waits = 0, releases = 0;
+  const context = run(userSource, ["reviewLegacyIdentifierMapping"], {
+    requireIdentityManager_: () => ({ actorId: "HR-1", role: "Administrador" }),
+    getIdentityInstitutionId_: () => "INST-1",
+    ensureIdentityMappingSheet_: () => sheet,
+    ensureIdentityDecisionSheet_: () => ({}),
+    identityTargetExists_: () => targetExists,
+    appendIdentityDecisionAudit_: (auditSheet, entry) => audit.push(entry),
+    LockService: { getScriptLock: () => ({ waitLock() { waits++; }, releaseLock() { releases++; } }) }
+  });
+  const confirmed = context.reviewLegacyIdentifierMapping({ idMapeo: "M-1", decision: "CONFIRMAR", motivo: "Validación documental" });
+  assert.equal(confirmed.estadoCorrespondencia, "CONFIRMADA");
+  assert.equal(rows[1][9], "CONFIRMADA");
+  assert.equal(audit.length, 1);
+  assert.equal(context.reviewLegacyIdentifierMapping({ idMapeo: "M-1", decision: "CONFIRMAR", motivo: "Reintento idempotente" }).idempotent, true);
+  assert.equal(audit.length, 1);
+  assert.throws(() => context.reviewLegacyIdentifierMapping({ idMapeo: "M-1", decision: "RECHAZAR", motivo: "Cambio posterior" }), /IDENTITY_DECISION_CONFLICT/);
+  targetExists = false;
+  assert.throws(() => context.reviewLegacyIdentifierMapping({ idMapeo: "M-2", decision: "CONFIRMAR", motivo: "Destino inexistente" }), /IDENTITY_TARGET_NOT_FOUND_OR_UNSUPPORTED/);
+  assert.equal(rows[2][9], "PENDIENTE_REVISION");
+  assert.equal(waits, releases);
+});
+
