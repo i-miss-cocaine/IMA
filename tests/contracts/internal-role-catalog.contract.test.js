@@ -590,3 +590,70 @@ test("la consola HR marca las asignaciones no vinculadas como historial y no ofr
   assert.match(dashboard, /item\.responsibilityStatus!=='LEGACY_UNLINKED'/);
   assert.match(dashboard, /responsibility&&String\(responsibility\.estado\|\|''\)\.toUpperCase\(\)==='ACTIVO'/);
 });
+
+test("dos asignaciones concurrentes serializadas por LockService no duplican la misma clave", () => {
+  const { context, assignments } = assignmentContext();
+  let lockHeld = false, secondStarted = false, secondResult = null;
+  const secondPayload = {
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    userId: "EMP-1", roleId: "Docente", responsibilityId: "ROL-1",
+    scopeType: "DEPARTAMENTO", scopeValues: ["DEP-1", "DEP-2"],
+    fechaInicio: "2026-01-01", fechaFin: "2026-12-31",
+    estado: "Activo", motivo: "Actualización concurrente autorizada."
+  };
+  context.LockService = { getScriptLock: () => ({
+    waitLock() {
+      if (lockHeld) throw new Error("LOCK_CONTENDED");
+      lockHeld = true;
+    },
+    releaseLock() {
+      lockHeld = false;
+      if (!secondStarted) {
+        secondStarted = true;
+        secondResult = context.assignRoleScope(secondPayload);
+      }
+    }
+  }) };
+
+  const first = assign(context, "EMP-1", "ROL-1");
+  assert.equal(first.status, "success");
+  assert.equal(secondResult.status, "success");
+  assert.equal(secondResult.assignmentId, first.assignmentId);
+  assert.equal(assignments.rows.length, 2);
+  assert.deepEqual(JSON.parse(assignments.rows[1][4]), ["DEP-1", "DEP-2"]);
+});
+
+test("altas concurrentes de responsabilidades serializadas generan IDs y códigos únicos", () => {
+  const roles = sheet([roleHeaders]);
+  const context = makeContext({ sheets: { CatalogoRolesInternos: roles } });
+  let lockHeld = false, secondStarted = false, secondResult = null;
+  context.LockService = { getScriptLock: () => ({
+    waitLock() {
+      if (lockHeld) throw new Error("LOCK_CONTENDED");
+      lockHeld = true;
+    },
+    releaseLock() {
+      lockHeld = false;
+      if (!secondStarted) {
+        secondStarted = true;
+        secondResult = context.manageInternalRoleCatalog({
+          _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+          nombreResponsabilidad: "Secretaría Académica", tipoResponsabilidad: "Administrativa",
+          vigenciaMeses: 12, motivo: "Alta concurrente autorizada."
+        });
+      }
+    }
+  }) };
+
+  const first = context.manageInternalRoleCatalog({
+    _verifiedUserId: "HR-1", _verifiedRole: "RecursosHumanos",
+    nombreResponsabilidad: "Coordinación Académica", tipoResponsabilidad: "Administrativa",
+    vigenciaMeses: 12, motivo: "Alta concurrente autorizada."
+  });
+  assert.equal(first.status, "success");
+  assert.equal(secondResult.status, "success");
+  assert.equal(roles.rows.length, 3);
+  assert.notEqual(first.rolInternoId, secondResult.rolInternoId);
+  assert.notEqual(first.codigoInterno, secondResult.codigoInterno);
+});
+
