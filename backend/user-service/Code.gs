@@ -2726,6 +2726,13 @@ function compensateMigratedEntity(payload) {
 }
 
 function handleTrustedMigrationEnvelope_(envelope) {
+  const verified = verifyInterServiceEnvelope(envelope, "USER", "IMA_MIGRATION_HMAC_SECRET");
+  if (verified.sourceService === "ACCOUNTING" && verified.action === "registerMigratedResourceOwnership") {
+    return registerMigratedResourceOwnership_(verified.payload);
+  }
+  if (verified.sourceService === "ACCOUNTING" && verified.action === "compensateMigratedResourceOwnership") {
+    return compensateMigratedResourceOwnership_(verified.payload);
+  }
   throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
 }
 

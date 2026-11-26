@@ -478,7 +478,9 @@ test("ACADEMIC consulta el directorio SACE mediante POST directo con sesión, si
 
 test("el directorio SACE no depende de sobres HMAC en el manejador USER", () => {
   const handler = extractFunction(userSource, "handleTrustedMigrationEnvelope_");
-  assert.doesNotMatch(handler, /verifyInterServiceEnvelope|IMA_MIGRATION_HMAC_SECRET|getSaceStudentIdentityDirectory/);
+  assert.doesNotMatch(handler, /getSaceStudentIdentityDirectory/);
+  assert.match(handler, /registerMigratedResourceOwnership/);
+  assert.match(handler, /compensateMigratedResourceOwnership/);
   const request = extractFunction(academicSource, "requestSaceStudentIdentityDirectoryFromUser_");
   assert.doesNotMatch(request, /createInterServiceEnvelope|PropertiesService|IMA_MIGRATION_HMAC_SECRET/);
 });
