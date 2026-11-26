@@ -243,3 +243,110 @@ test("el transporte directo no depende de Script Properties ni de secretos HMAC 
   const directHelper = extractFunction(accountingSource, "requestAccountingService_");
   assert.doesNotMatch(directHelper, /PropertiesService|resolveInterServiceSecret_|hmacSignature|accountingComputeHmacSignature_/);
 });
+
+test("las reimportaciones de persona son idempotentes y no duplican filas", () => {
+  const targetHeaders = ["PersonaID", "NombreCompleto", "Identificacion", "EmailContacto"];
+  const journalHeaders = ["Key", "Type", "Id", "Payload", "State", "Action", "Before", "After", "Date", "Correlation"];
+  function makeSheet(rows) {
+    return {
+      rows,
+      getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; },
+      appendRow(row) { rows.push(row.slice()); },
+      getLastRow() { return rows.length; },
+      deleteRow(index) { rows.splice(index - 1, 1); },
+      getRange(row, col, numRows, numCols) {
+        return { setValues(values) { for (let r = 0; r < numRows; r++) for (let c = 0; c < numCols; c++) rows[row - 1 + r][col - 1 + c] = values[r][c]; } };
+      }
+    };
+  }
+  const sheets = { Personas: makeSheet([targetHeaders]), MigracionEscrituras: makeSheet([journalHeaders]) };
+  const context = {
+    MIGRATION_WRITER_SCHEMAS_: { persona: { sheet: "Personas", headers: targetHeaders } },
+    MIGRATION_WRITER_JOURNAL_HEADERS_: journalHeaders,
+    SPREADSHEET_ID: "SS-1",
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    SpreadsheetApp: { openById: () => ({}) },
+    ensureMigrationWriterSheet_: (ss, name) => sheets[name],
+    migrationStableJson_: value => JSON.stringify(value),
+    migrationSafeCell_: value => String(value == null ? "" : value),
+    migrationEncodeSnapshot_: value => value
+  };
+  run(userSource, ["applyTrustedMigrationWrite_"], context);
+  const base = { tipoEntidad: "persona", idNuevoPlataforma: "PER-1",
+    datos: { NombreCompleto: "Ana Pérez", Identificacion: "0801-1111", EmailContacto: "ana@example.test" } };
+  const first = context.applyTrustedMigrationWrite_({ ...base, idempotencyKey: "SACE-FILE-1-ROW-1" });
+  const repeated = context.applyTrustedMigrationWrite_({ ...base, idempotencyKey: "SACE-FILE-1-ROW-1" });
+  const secondSource = context.applyTrustedMigrationWrite_({ ...base, idempotencyKey: "ERP-FILE-2-ROW-1" });
+  assert.equal(first.idempotent, false);
+  assert.equal(repeated.idempotent, true);
+  assert.equal(secondSource.accion, "UPDATE");
+  assert.equal(sheets.Personas.rows.length, 2);
+  assert.equal(sheets.MigracionEscrituras.rows.length, 3);
+});
+
+test("las reimportaciones de estudiantes requieren snapshot y conservan idempotencia", () => {
+  const targetHeaders = ["EstudianteID", "CodigoInstitucional", "NombreCompleto"];
+  const journalHeaders = ["Key", "Type", "Id", "Payload", "State", "Action", "Before", "After", "Date", "Correlation"];
+  function makeSheet(rows) {
+    return {
+      rows,
+      getDataRange() { return { getValues: () => rows.map(row => row.slice()) }; },
+      appendRow(row) { rows.push(row.slice()); },
+      getLastRow() { return rows.length; },
+      deleteRow(index) { rows.splice(index - 1, 1); },
+      getRange(row, col, numRows, numCols) {
+        return { setValues(values) { for (let r = 0; r < numRows; r++) for (let c = 0; c < numCols; c++) rows[row - 1 + r][col - 1 + c] = values[r][c]; } };
+      }
+    };
+  }
+  const sheets = { Estudiantes: makeSheet([targetHeaders]), MigracionEscrituras: makeSheet([journalHeaders]) };
+  const context = {
+    MIGRATION_WRITER_SCHEMAS_: { estudiante: { sheet: "Estudiantes", headers: targetHeaders } },
+    MIGRATION_WRITER_JOURNAL_HEADERS_: journalHeaders,
+    SPREADSHEET_ID: "SS-2",
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    SpreadsheetApp: { openById: () => ({}) },
+    ensureMigrationWriterSheet_: (ss, name) => sheets[name],
+    migrationStableJson_: value => JSON.stringify(value),
+    migrationSafeCell_: value => String(value == null ? "" : value),
+    migrationEncodeSnapshot_: value => value,
+    migrationNormalizeImportDate_: (field, value) => value,
+    migrationHash_: value => "HASH-" + String(value)
+  };
+  run(academicSource, ["applyTrustedMigrationWrite_"], context);
+  const base = { tipoEntidad: "estudiante", idNuevoPlataforma: "EST-1", institutionId: "INST-1",
+    targetSnapshotVerified: true, expectedTargetPresent: false,
+    datos: { CodigoInstitucional: "STU-001", NombreCompleto: "Ana Pérez" } };
+  assert.throws(() => context.applyTrustedMigrationWrite_({ ...base, idempotencyKey: "STU-1" }), /IMPORT_TARGET_SNAPSHOT_UNVERIFIED/);
+  const first = context.applyTrustedMigrationWrite_({ ...base, idempotencyKey: "STU-1" });
+  const repeated = context.applyTrustedMigrationWrite_({ ...base, idempotencyKey: "STU-1" });
+  assert.equal(first.idempotent, false);
+  assert.equal(repeated.idempotent, true);
+  assert.equal(sheets.Estudiantes.rows.length, 2);
+  assert.equal(sheets.MigracionEscrituras.rows.length, 2);
+});
+
+test("el rollback entrega el contexto de sesión sin almacenarlo en registros temporales", () => {
+  const calls = [];
+  const context = { sendMigrationOwnerRequest_: (service, action, payload) => { calls.push({ service, action, payload }); } };
+  run(accountingSource, ["rollbackMigrationOwnerWrites_"], context);
+  const applied = [{ service: "USER", ownership: false, tipoEntidad: "persona", idempotencyKey: "KEY-1", payload: { id: "PER-1" } }];
+  context.rollbackMigrationOwnerWrites_(applied, "SESSION", "INST-1");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].action, "compensateMigratedEntity");
+  assert.equal(calls[0].payload.sessionToken, "SESSION");
+  assert.equal(calls[0].payload.institutionId, "INST-1");
+  assert.equal(Object.prototype.hasOwnProperty.call(applied[0], "sessionToken"), false);
+});
+
+test("los endpoints de ACCOUNTING coinciden con los endpoints registrados en config.js", () => {
+  const config = read("js/config.js");
+  const userMatch = config.match(/USER\s*:\s*"([^"]+)"/);
+  const academicMatch = config.match(/ACADEMIC\s*:\s*"([^"]+)"/);
+  const endpointsMatch = accountingSource.match(/const ACCOUNTING_SERVICE_ENDPOINTS_\s*=\s*\{([\s\S]*?)\};/);
+  assert.ok(userMatch && academicMatch && endpointsMatch);
+  const endpoints = endpointsMatch[1];
+  assert.equal(endpoints.match(/USER\s*:\s*"([^"]+)"/)[1], userMatch[1]);
+  assert.equal(endpoints.match(/ACADEMIC\s*:\s*"([^"]+)"/)[1], academicMatch[1]);
+});
+
