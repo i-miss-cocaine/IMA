@@ -2197,6 +2197,14 @@ function validateRolePermission(action, payload) {
   if (userRole === "NO_ACCESS") {
     return { authorized: false, role: "Cuenta Inactiva/Bloqueada" };
   }
+  var accountingBridgeActions = ["verifyAccountingSession","authorizeAccountingImport","authorizeAccountingAuditRead","getMigrationIdentityMapSnapshot","getMigrationTargetExistenceSnapshot","writeMigratedEntity","compensateMigratedEntity"];
+  if (accountingBridgeActions.indexOf(action) !== -1) {
+    var accountingActorId = String(payload && payload._verifiedUserId || "").trim();
+    if (!accountingActorId || userRole === "NO_ACCESS") return { authorized: false, role: userRole };
+    if (action === "verifyAccountingSession") return { authorized: true, role: userRole, userId: accountingActorId };
+    if (action === "authorizeAccountingAuditRead") return { authorized: userRole === "Auditor", role: userRole, userId: accountingActorId };
+    return { authorized: userRole !== "Auditor" && getDynamicPermissionsForRole(userRole, "importDataWithColumnMapping") === true, role: userRole, userId: accountingActorId };
+  }
   if (["resolveHierarchicalConfiguration","getHierarchicalConfigurationCatalog"].indexOf(action)!==-1) {
     return { authorized: !!(payload && payload._verifiedUserId), role: userRole, userId: payload && payload._verifiedUserId };
   }
@@ -2216,14 +2224,6 @@ function validateRolePermission(action, payload) {
   }
   if (["getUserContextScope", "validateRoleScopeAccess", "getUserRoleMemberships", "switchActiveRole"].indexOf(action) !== -1) {
     return { authorized: true, role: userRole, userId: payload && payload._verifiedUserId };
-  }
-  var accountingBridgeActions = ["verifyAccountingSession","authorizeAccountingImport","authorizeAccountingAuditRead","getMigrationIdentityMapSnapshot","getMigrationTargetExistenceSnapshot","writeMigratedEntity","compensateMigratedEntity"];
-  if (accountingBridgeActions.indexOf(action) !== -1) {
-    var accountingActorId = String(payload && payload._verifiedUserId || "").trim();
-    if (!accountingActorId || userRole === "NO_ACCESS") return { authorized: false, role: userRole };
-    if (action === "verifyAccountingSession") return { authorized: true, role: userRole, userId: accountingActorId };
-    if (action === "authorizeAccountingAuditRead") return { authorized: userRole === "Auditor", role: userRole, userId: accountingActorId };
-    return { authorized: userRole !== "Auditor" && getDynamicPermissionsForRole(userRole, "importDataWithColumnMapping") === true, role: userRole, userId: accountingActorId };
   }
   if (IDENTITY_MANAGER_ACTIONS_.indexOf(action) !== -1) return { authorized: IDENTITY_MANAGER_ROLES_.indexOf(userRole) !== -1, role: userRole };
   // La administración de propiedad depende exclusivamente de la matriz dinámica de cada institución.
@@ -2429,12 +2429,8 @@ function getTrustedMigrationIdentityMapSnapshot_(payload) {
   var input = payload || {};
   var sessionContext = getAccountingVerifiedSessionContext_(input);
   if (!sessionContext || sessionContext.status !== "success") return sessionContext || { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
-  var claims = sessionContext.claims;
   var institutionId = sessionContext.institutionId;
   if (String(input.institutionId || "") !== institutionId) return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
-  if (getDynamicPermissionsForRole(String(claims.role), "importDataWithColumnMapping") !== true) {
-    return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
-  }
   if (!Array.isArray(input.lookups) || !input.lookups.length || input.lookups.length > 4) {
     return { status: "error", code: "IDENTITY_MAPPING_SNAPSHOT_CONTRACT_INVALID" };
   }
@@ -2492,16 +2488,13 @@ function getTrustedMigrationIdentityMapSnapshot_(payload) {
     entries: entries, uniquenessViolations: uniquenessViolations };
 }
 
+
 function getTrustedMigrationTargetExistenceSnapshot_(payload) {
   var input = payload || {};
   var sessionContext = getAccountingVerifiedSessionContext_(input);
   if (!sessionContext || sessionContext.status !== "success") return sessionContext || { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
-  var claims = sessionContext.claims;
   var institutionId = sessionContext.institutionId;
   if (String(input.institutionId || "") !== institutionId) return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
-  if (getDynamicPermissionsForRole(String(claims.role), "importDataWithColumnMapping") !== true) {
-    return { status: "error", code: "IMPORT_PERMISSION_DENIED" };
-  }
   if (String(input.entityType || "").toLowerCase() !== "persona" || !Array.isArray(input.targetIds) ||
       (input.duplicateKeys !== undefined && (!Array.isArray(input.duplicateKeys) || input.duplicateKeys.length > 5000))) {
     return { status: "error", code: "MIGRATION_SNAPSHOT_CONTRACT_INVALID" };
@@ -2563,6 +2556,7 @@ function getTrustedMigrationTargetExistenceSnapshot_(payload) {
     idField: "PersonaID", institutionId: institutionId, existingTargetIds: existing.sort(), targetRows: [],
     duplicateMatches: duplicateMatches };
 }
+
 function getSaceUserSourceRevisionLocked_() {
   const p=PropertiesService.getScriptProperties(), k="IMA_SACE_USER_SOURCE_REVISION";
   let t=p.getProperty(k);
