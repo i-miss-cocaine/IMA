@@ -97,7 +97,7 @@ test("el registro legado es idempotente, separa fuentes y exige revisión humana
   const otherInstitution = context.registerLegacyIdentifierMapping({ sistemaOrigen: "SACE", tipoEntidad: "estudiante", idOriginalLegado: "001" });
   assert.equal(otherInstitution.idempotent, false);
   assert.equal(mapping.rows.length, 4);
-  assert.equal(audit.rows.length, 3);
+  assert.equal(audit.rows.length, 5);
   assert.equal(waits, releases);
 });
 
@@ -184,6 +184,7 @@ test("USER reutiliza la identidad verificada y aplica el alcance institucional a
 
 test("USER autoriza el puente de importación solo con permiso y no concede acceso a Auditor", () => {
   const context = {
+    PUBLIC_ACTIONS: [],
     getUserVerifiedRole: payload => { payload._verifiedUserId = "U-1"; return payload.role; },
     getDynamicPermissionsForRole: (role, action) => role === "Importador" && action === "importDataWithColumnMapping"
   };
