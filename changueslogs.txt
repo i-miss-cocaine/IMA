@@ -4817,3 +4817,17 @@ C3.015 — IMA-ITER-20261124-012 — CIERRE TASK-004 / INICIO TASK-505
 - TASK-505 recuperada desde Auditoría/legacy/Pendientes.md: TAREA-F4-P1-07; AUD-NG-225 recuperado íntegro. Estado En ejecución; siguiente trabajo es auditar criterios y completar faltantes, sin duplicar TASK-004.
 - Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59.
 ===============================================================================
+
+===============================================================================
+C3.016 — IMA-ITER-20261125-013 — CIERRE TASK-505 / INICIO TASK-068
+===============================================================================
+- TASK-505 / AUD-NG-225 / TAREA-F4-P1-07 completada en alcance de código/CI; se reutilizó la implementación posterior a C3.015 sin duplicar TASK-004.
+- Revisión de criterios: FK activa, unicidad, actualizaciones parciales no destructivas, vigencias y consultas, suplencias, historial/revocación, IDs/códigos, consola HR, rol de dashboard, rutas reales y separación RBAC.
+- Se añadieron dos contratos de concurrencia serializada por LockService para evitar duplicados y colisiones de IDs/códigos.
+- GitHub Actions run 45746285013 — SUCCESS; 96/96 pruebas Node.js PASS; nueve node --check PASS; git diff --check PASS; Node.js 24.22.3.
+- Run intermedio 45746207831 falló únicamente por línea vacía final en el contrato; corregido en b4def610da72ffa4b04f0a03b515ac036c8963c7 y reejecutado con PASS.
+- Verificación en runner GitHub Actions con checkout; no se afirma ejecución local.
+- Beta USER Apps Script/Sheets y dashboard dinámico desplegado Pendiente beta, no bloquea el cierre local.
+- Siguiente tarea elegible: TASK-068 / PM-01 / P0 / orden 1; revalidar código y evidencia histórica antes de cambios.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+===============================================================================

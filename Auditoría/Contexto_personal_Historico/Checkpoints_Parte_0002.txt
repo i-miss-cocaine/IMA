@@ -16,3 +16,20 @@
 - Siguiente tarea: TASK-505 / AUD-NG-225, recuperada desde Auditoría/legacy/Pendientes.md. Estado En ejecución. Alcance: integridad referencial, no-destructividad, vigencias y consultas, suplencias, historial, unicidad bajo concurrencia, consola HR, rol de dashboard y navegación de tarjetas, sin elevación RBAC.
 - Normativa actualizada en §17.6: no detenerse ante errores de herramientas; resolver en la misma iteración con métodos equivalentes y pruebas completas.
 - Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+
+# IMA — Checkpoint C3.016
+- Sesión: IMA-ITER-20261125-013.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- Rama base de solo lectura: NG_beta_0.0.0.1.
+- HEAD funcional verificado: b4def610da72ffa4b04f0a03b515ac036c8963c7.
+- Checkpoint anterior: C3.015.
+- TASK-505 / AUD-NG-225 / TAREA-F4-P1-07: Completada en alcance de código/CI.
+- Se reutilizó la implementación posterior a C3.015 sin duplicar TASK-004: FK a responsabilidad activa, unicidad, actualizaciones parciales no destructivas, vigencias/consultas, suplencias, historial, consola HR, rol de dashboard y rutas reales, sin elevación RBAC.
+- Pruebas nuevas: dos escenarios conductuales de concurrencia serializada con LockService; no se duplican asignaciones y los IDs/códigos generados son únicos.
+- GitHub Actions run 45746285013 — SUCCESS: 96/96 pruebas Node.js PASS; nueve node --check PASS; git diff --check PASS; Node.js 24.22.3.
+- Run 45746207831 falló solo por una línea vacía final en el contrato; se corrigió en b4def610da72ffa4b04f0a03b515ac036c8963c7 y se repitió la suite completa con PASS.
+- Ejecución en runner GitHub Actions con checkout; no se declara ejecución local.
+- Beta: integración real USER Apps Script/Sheets y dashboard desplegado Pendiente beta, registrada en beta_test.txt; no bloquea el cierre de código/CI.
+- Archivos funcionales modificados en esta iteración: tests/contracts/internal-role-catalog.contract.test.js. No se eliminaron archivos ni se modificó código ajeno.
+- Siguiente tarea elegible: TASK-068 (PM-01, P0, orden 1), revalidar su evidencia histórica y el estado real del código antes de implementar.
+- Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.

@@ -4,14 +4,14 @@
 
 
 **Versión:** 1.6 — ciclo 3 y arquitectura de servicios por rol
-**Fecha:** 2026-11-24
+**Fecha:** 2026-11-25
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
-**Estado:** Implementación continua; tarea en ejecución: PM-00A / TASK-505.
+**Estado:** Implementación continua; tarea en ejecución: PM-01 / TASK-068.
 **Línea base operativa Ciclo 3:** todas las tareas conservadas en los siete backlogs y en el Plan Maestro inician en `Pendiente`; no se elimina, resume ni sustituye ningún requisito técnico, criterio, dependencia ni identificador de tarea.  
 **Checkpoint de origen:** C3.001 (base histórica del ciclo 3).  
-**Checkpoint de planificación:** C3.015.
-**Ciclo operativo vigente:** 3 — implementación continua; TASK-047 cerrada en alcance local/contractual (C3.013); TASK-004 cerrada en C3.015 con verificación de código aprobada en runner aislado; integración USER Apps Script/Sheets Pendiente beta. TASK-505 seleccionada como siguiente tarea elegible en C3.015, tras recuperar su bloque original íntegro de AUD-NG-225/TAREA-F4-P1-07. F16-TASK01 conserva trazabilidad de origen y no se ejecuta en paralelo. El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
+**Checkpoint de planificación:** C3.016.
+**Ciclo operativo vigente:** 3 — implementación continua; TASK-047 cerrada en alcance local/contractual (C3.013); TASK-004 cerrada en C3.015 con verificación de código aprobada en runner aislado; integración USER Apps Script/Sheets Pendiente beta. TASK-505 completada en C3.016 en alcance de código/CI tras recuperar y satisfacer AUD-NG-225/TAREA-F4-P1-07. Su integración USER Apps Script/Sheets y dashboard desplegado queda Pendiente beta. F16-TASK01 conserva trazabilidad de origen y no se ejecuta en paralelo. Siguiente tarea elegible: TASK-068 (PM-01, P0, orden 1), cuya evidencia histórica se revalidará antes de cualquier cambio. El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
 
 ---
 
@@ -202,7 +202,7 @@ Las pruebas de seguridad, unidad y contrato no se posponen hasta PM-08: se ejecu
 
 **Avance C3.015 — cierre TASK-004 y selección TASK-505:** TASK-004 queda Completada en alcance local/código. GitHub Actions run 45389871296 — SUCCESS; suite completa 70/70 Node.js PASS (incluye 21 pruebas del contrato de catálogo/asignaciones), ocho node --check PASS y git diff --check PASS. Se añadieron pruebas de liberación de LockService tras alta exitosa y de rollback del catálogo cuando falla auditoría. El runner aislado ejecutó el código fuente del commit; el intento de checkout local en este entorno sigue sin ser posible por DNS y se registra con precisión, sin etiquetarlo como ejecución en máquina local. La prueba de integración desplegada USER Apps Script/Sheets sigue Pendiente beta y no bloquea el cierre local. Se recuperó de Auditoría/legacy/Pendientes.md el bloque original íntegro de TASK-505 y AUD-NG-225; TASK-505 es la siguiente tarea elegible, con alcance de integridad referencial, no-destructividad, vigencias, historial, UI y dashboard dinámico. F16-TASK01 queda como trazabilidad de origen, sin implementación paralela.
 
-**Puerta de salida:** el portal inicia sesión una sola vez; el contexto se reutiliza sin prompts redundantes; Desarrollador y Administrador están separados; el panel permite registrar puestos/servicios; las modalidades y restricciones de privacidad están verificadas localmente. Despliegues reales se validan en beta. TASK-004 cerrada localmente en C3.015; TASK-505 es la siguiente tarea en ejecución.
+**Puerta de salida:** el portal inicia sesión una sola vez; el contexto se reutiliza sin prompts redundantes; Desarrollador y Administrador están separados; el panel permite registrar puestos/servicios; las modalidades y restricciones de privacidad están verificadas localmente. Despliegues reales se validan en beta. TASK-004 cerrada localmente en C3.015; TASK-505 completada en C3.016; TASK-068 (PM-01, P0, orden 1) es la siguiente tarea elegible, sujeta a revalidar la evidencia histórica vigente.
 
 ### PM-00T — Inventario, triage y resolución de dependencias
 
@@ -6585,3 +6585,20 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Revisión de integridad del árbol: tras detectar un árbol temporal incompleto en commits de reparación, el commit 8c49d5e restauró el árbol completo. Comparación con el padre íntegro b99bf8f confirma que solo cambiaron `backend/user-service/Code.gs` y `tests/contracts/internal-role-catalog.contract.test.js`; no hay eliminaciones de archivos ajenos a la tarea. La rama base no se modificó.
 - Pendiente beta: prueba del panel RR. HH. contra USER Apps Script y persistencia real en Sheets; ver `beta_test.txt`.
 - Siguiente acción: ejecutar localmente el contrato de TASK-004 y regresiones; solo después cerrar y recuperar el bloque original completo de TASK-505.
+
+## C3.016 — cierre TASK-505 / AUD-NG-225 y continuidad PM-01
+
+- Sesión: IMA-ITER-20261125-013.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- HEAD funcional verificado: b4def610da72ffa4b04f0a03b515ac036c8963c7.
+- Tarea cerrada: PM-00A / TASK-505 / AUD-NG-225 (TAREA-F4-P1-07 recuperada desde Auditoría/legacy/Pendientes.md).
+- Revisión de continuidad: se reutilizaron los cambios vigentes posteriores a C3.015; no se repitió TASK-004. Se revisaron FK a responsabilidad activa, unicidad de asignaciones, actualizaciones parciales no destructivas, fechas ISO y vigencias, consultas activas/históricas, suplencias y solapamientos, revocación e historial, IDs/códigos, consola HR, lectura del rol desde Usuarios y rutas reales del dashboard.
+- Cobertura nueva: dos contratos conductuales simulan solicitudes concurrentes serializadas por LockService; verifican que dos asignaciones con la misma clave no duplican filas y que altas concurrentes producen IDs y códigos únicos.
+- GitHub Actions run 45746285013 — SUCCESS: 96/96 pruebas Node.js PASS; nueve comprobaciones node --check PASS; git diff --check PASS. Runner Node.js 24.22.3.
+- Incidencia intermedia: run 45746207831 falló únicamente en git diff --check por una línea vacía final añadida al contrato. Se corrigió en b4def610da72ffa4b04f0a03b515ac036c8963c7 y se ejecutó de nuevo la suite completa; no se ocultó el fallo ni se redujeron aserciones.
+- Ejecución local: no se declara. La verificación se realizó en runner GitHub Actions con checkout del commit verificado.
+- Revisión del diff de esta iteración: el cambio funcional de prueba se limita a tests/contracts/internal-role-catalog.contract.test.js; la segunda corrección elimina únicamente la línea vacía final. No se eliminaron archivos ni se modificó código ajeno.
+- Beta: la persistencia real USER Apps Script/Sheets y la navegación desplegada del dashboard quedan Pendiente beta en beta_test.txt; no bloquean el cierre de código/CI.
+- Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- Siguiente tarea elegible: TASK-068 (PM-01, P0, orden 1). El backlog conserva criterios marcados y evidencia histórica, pero mantiene estado operativo Pendiente; se revalidará el código, los consumidores y la evidencia CI antes de decidir si requiere implementación o solo reconciliación verificable.
+

@@ -32,3 +32,18 @@
 - Resultado esperado: UI y servicio USER mantienen el catálogo y asignaciones coherentes; errores se muestran sin duplicar escrituras; historial íntegro; RBAC permanece separado.
 - Evidencia requerida: fecha, versión del deployment, resultados por escenario y registros de prueba redactados. No incluir tokens, datos personales reales ni URLs sensibles.
 - No bloqueante para implementación local: esta validación depende de Apps Script/Sheets desplegados y se ejecutará en beta.
+
+## TASK-505 / AUD-NG-225 — dashboard dinámico y navegación por rol
+
+- Estado: Pendiente beta.
+- Motivo: los contratos actuales verifican la lectura del rol desde la columna real de Usuarios y que cada tarjeta tenga una ruta a un dashboard existente, pero no sustituyen la validación del USER Apps Script desplegado ni la navegación real en navegador.
+- Precondiciones: deployment USER institucional disponible; Spreadsheet de prueba aislada; dos cuentas sintéticas activas con roles Docente y Secretaría; dashboards destino desplegados; permisos RBAC de prueba configurados.
+- Pasos:
+  1. Iniciar sesión como Docente y abrir el dashboard dinámico; comprobar que rolPrincipal coincide con Usuarios.Rol y que las tarjetas corresponden al catálogo de ese rol.
+  2. Repetir con Secretaría y confirmar que no se reutilizan módulos del usuario anterior.
+  3. Abrir cada tarjeta y comprobar que navega al dashboard existente correcto; volver atrás y repetir tras cambiar de usuario/rol.
+  4. Intentar una acción backend no autorizada para cada rol mediante llamada directa; comprobar denegación RBAC aunque el módulo o enlace se manipule desde el cliente.
+  5. Verificar que una cuenta inexistente/inactiva no recibe datos de otra cuenta ni una navegación privilegiada.
+- Resultado esperado: el rol y las tarjetas reflejan el usuario autenticado; cada ruta existe y navega al destino previsto; la navegación no concede permisos backend adicionales.
+- Evidencia requerida: fecha, versión del deployment, rol sintético, rutas probadas, resultado de acciones permitidas/denegadas y capturas redactadas. No incluir tokens, datos personales reales ni URLs sensibles.
+- No bloqueante para implementación local: contratos Node.js y revisión de rutas pasan; la validación requiere despliegue institucional y navegador.

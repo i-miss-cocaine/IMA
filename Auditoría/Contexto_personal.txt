@@ -3,28 +3,26 @@ IMA — CONTEXTO ACTIVO DEL CICLO 3
 
 Rama exclusiva: NG_beta_0.0.0.1_work
 Rama base de solo lectura: NG_beta_0.0.0.1
-Sesión: IMA-ITER-20261124-012
-Checkpoint: C3.015
-HEAD de código de cierre TASK-004: 5fc3862a9335cde031dfafd037275b2a58600f68
-HEAD de cierre documental C3.015: pendiente de publicación en esta misma iteración.
-Tarea cerrada: PM-00A / TASK-004.
-Tarea siguiente: TASK-505 / AUD-NG-225, En ejecución.
+Sesión: IMA-ITER-20261125-013
+Checkpoint: C3.016
+HEAD de código de cierre TASK-505: b4def610da72ffa4b04f0a03b515ac036c8963c7
+Tarea cerrada: PM-00A / TASK-505 / AUD-NG-225.
+Tarea siguiente: PM-01 / TASK-068 (P0, orden 1), revalidación de evidencia histórica.
 
-TASK-004 — EVIDENCIA
-- Catálogo configurable, asignaciones múltiples, vigencias, suplencias, revocación histórica, motivos auditables, compatibilidad de roles heredados y UI de RR. HH.
-- Corrección de vigencia fin de mes; LockService; rollback ante fallo de auditoría; separación RBAC.
-- GitHub Actions run 45389871296 SUCCESS: 70/70 pruebas Node.js PASS, ocho node --check PASS, git diff --check PASS.
-- Runner aislado ejecutó el código fuente. El checkout de la máquina local no se obtuvo por fallo DNS; no se etiqueta como ejecución local.
-- Integración desplegada USER Apps Script/Sheets permanece Pendiente beta, no bloquea el cierre de código.
+TASK-505 — RESULTADO
+- Se reutilizó la implementación vigente posterior a C3.015; no se duplicó TASK-004.
+- Cobertura verificada: FK a responsabilidad activa; unicidad; actualización parcial no destructiva; fechas y vigencias; consultas activas/históricas; suplencias; historial/revocación; IDs y códigos; consola HR; rol leído desde la columna real de Usuarios; tarjetas con rutas existentes; separación de RBAC.
+- Se añadieron dos contratos de concurrencia serializada por LockService: asignaciones sin duplicados y altas con IDs/códigos únicos.
+- GitHub Actions run 45746285013 SUCCESS: 96/96 pruebas Node.js PASS, nueve node --check PASS y git diff --check PASS; Node.js 24.22.3.
+- Run intermedio 45746207831 falló solo por una línea vacía al final del archivo de prueba; se corrigió en b4def610da72ffa4b04f0a03b515ac036c8963c7 y se repitió la suite completa con PASS.
+- Verificación en runner GitHub Actions con checkout del commit; no se declara ejecución local.
+- Beta: deployment USER Apps Script/Sheets y navegación real del dashboard siguen Pendiente beta; ver beta_test.txt. No bloquea el cierre de código/CI.
 
-TASK-505 — RECUPERACIÓN ORIGINAL
-- Recuperado el bloque original íntegro desde Auditoría/legacy/Pendientes.md, tarea TAREA-F4-P1-07, y AUD-NG-225.
-- Alcance: FK de asignaciones a responsabilidades activas; unicidad; actualización no destructiva; validación temporal y consultas uniformes; suplencias; historial; IDs/códigos bajo concurrencia; consola HR; rol correcto en getUserDynamicDashboardConfig y tarjetas con rutas reales; no elevación RBAC.
-- No duplicar la implementación ya cerrada de TASK-004. Auditar los criterios de TASK-505 y completar únicamente faltantes.
+TASK-068 — SIGUIENTE
+- PM-01, P0, orden 1, sin dependencias declaradas.
+- El bloque de Dirección mantiene criterios marcados y evidencia histórica, pero su estado operativo actual es Pendiente. Revalidar la implementación actual de CorrespondenciaIdentificadores, resolvers bidireccionales, detección/revisión humana e idempotencia antes de modificar o cerrar.
+- No asumir que un run histórico sigue vigente sin comprobar el código y los tests actuales.
 
 NORMATIVA
-- Normas_Desarollo.md §17.6: continuidad obligatoria hasta el cierre, resolver fallos de herramientas en la misma iteración y usar alternativas equivalentes sin debilitar pruebas.
-- Rama base verificada sin modificaciones.
-
-CHECKPOINT
-C3.015 cierra TASK-004 en alcance local de código y selecciona TASK-505 como siguiente tarea elegible. La prueba beta de despliegue USER/Sheets sigue pendiente.
+- Normas_Desarollo.md versión 1.6; aplicar §§2.1, 10, 11 y 17.6.
+- Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59; sin modificaciones.
