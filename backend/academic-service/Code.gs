@@ -12262,6 +12262,61 @@ function openAttendanceSession(payload) {
 // [F10-Task14] [P1] - Optimizar las consultas batch de asistencia y resiliencia de servicios
 const ACADEMIC_USER_SERVICE_ENDPOINT_ = "https://script.google.com/macros/s/AKfycbwwJatltmNlynkPPTZtTL8TfRJWWL_1Ho9Xe7-AWAU2ZOv6QnvaATsCzvXJzYTyIGY/exec";
 
+function authorizeAcademicDepartmentReferenceReadViaUser_(request, resourceType, resourceId, requestedFields, requestedDocumentIds) {
+  const input = request || {};
+  const token = String(getRequestSessionToken_(input) || "");
+  const type = String(resourceType || "").trim().toUpperCase();
+  const id = String(resourceId || "").trim();
+  const allowedFields = ["tipoDocumento", "fechaRecepcion", "estadoRevision"];
+  const fields = Array.isArray(requestedFields) ? requestedFields.map(function(value) { return String(value || "").trim(); }) : [];
+  const documents = Array.isArray(requestedDocumentIds) ? requestedDocumentIds.map(function(value) { return String(value || "").trim(); }) : [];
+  if (!token || !id || ["EXPEDIENTE_ESTUDIANTE", "SOLICITUD_ADMISION"].indexOf(type) === -1 ||
+      !fields.length || fields.some(function(field, index) { return allowedFields.indexOf(field) === -1 || fields.indexOf(field) !== index; }) ||
+      !documents.length || documents.some(function(documentId, index) { return !documentId || documents.indexOf(documentId) !== index; })) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  }
+  if (typeof UrlFetchApp === "undefined") return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  const endpoint = String(ACADEMIC_USER_SERVICE_ENDPOINT_ || "").trim();
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  }
+  const referencePayload = {
+    resourceType: type, resourceId: id, sessionToken: token,
+    requestedFields: fields, requestedDocumentIds: documents
+  };
+  if (Object.prototype.hasOwnProperty.call(input, "activeDepartmentId") && input.activeDepartmentId !== undefined) {
+    referencePayload.activeDepartmentId = input.activeDepartmentId;
+  }
+  if (input.correlationId) referencePayload.correlationId = String(input.correlationId);
+  try {
+    const response = UrlFetchApp.fetch(endpoint, {
+      method: "post", contentType: "text/plain",
+      payload: JSON.stringify({ action: "authorizeDepartmentReferenceRead", payload: referencePayload }),
+      muteHttpExceptions: true
+    });
+    const httpStatus = response.getResponseCode();
+    let body = {};
+    try { body = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
+    const result = body && body.data && typeof body.data === "object" ? body.data : body;
+    const approvedFields = result && result.approvedFields;
+    const approvedDocuments = result && result.approvedDocumentIds;
+    if (httpStatus < 200 || httpStatus >= 300 || !result || result.status !== "success" ||
+        result.authorized !== true || result.requiresStandardAuthorization !== true ||
+        !Array.isArray(approvedFields) || !Array.isArray(approvedDocuments) ||
+        fields.some(function(field) { return approvedFields.indexOf(field) === -1; }) ||
+        approvedFields.length !== fields.length ||
+        documents.some(function(documentId) { return approvedDocuments.indexOf(documentId) === -1; }) ||
+        approvedDocuments.length !== documents.length ||
+        !String(result.grantId || "").trim() || !String(result.auditEventId || "").trim()) {
+      return { status: "error", code: "RESOURCE_NOT_FOUND" };
+    }
+    return { status: "success", authorized: true, approvedFields: approvedFields,
+      approvedDocumentIds: approvedDocuments, grantId: result.grantId, auditEventId: result.auditEventId };
+  } catch (error) {
+    return { status: "error", code: "RESOURCE_NOT_FOUND" };
+  }
+}
+
 function requestSaceStudentIdentityDirectoryFromUser_(request, studentIds, institutionId, teacherUserId, revisionOnly) {
   const input = request || {};
   const token = String(getRequestSessionToken_(input) || "");
@@ -16725,20 +16780,65 @@ function getStudentDocuments(payload) {
   const documentSheet = ss.getSheetByName("DocumentosEstudiante");
   const expSheet = ss.getSheetByName("ExpedientesEstudiantes");
   if (!documentSheet) return { status: "success", documents: [] };
+  const requestAccess = assertStudentRequestScopeAccess_(request, ss,
+    String(request.expedienteId || "").trim(), String(request.solicitudId || "").trim());
+  if (!requestAccess || requestAccess.authorized !== true) {
+    if (!requestAccess || requestAccess.code !== "RESOURCE_SCOPE_DENIED" || !cleanExpId) {
+      return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
+    }
+    const rowsForReference = documentSheet.getDataRange().getValues().slice(1);
+    const candidatesForReference = rowsForReference.filter(function(row) {
+      const rowExpId = String(row[1] || "").trim().toLowerCase();
+      const rowSolId = String(row[2] || "").trim().toLowerCase();
+      if (cleanExpId && cleanSolId) return rowExpId === cleanExpId && rowSolId === cleanSolId;
+      return rowExpId === cleanExpId;
+    });
+    const requestedFields = Array.isArray(request.referenceRequestedFields) ? request.referenceRequestedFields : [];
+    const requestedDocumentIds = Array.isArray(request.referenceDocumentIds)
+      ? request.referenceDocumentIds.map(function(value) { return String(value || "").trim(); }) : [];
+    const allowedReferenceFields = ["tipoDocumento", "fechaRecepcion", "estadoRevision"];
+    const candidateCounts = {};
+    candidatesForReference.forEach(function(row) {
+      const documentId = String(row[0] || "").trim();
+      if (documentId) candidateCounts[documentId] = (candidateCounts[documentId] || 0) + 1;
+    });
+    if (!requestedFields.length || requestedFields.some(function(field, index) {
+      return allowedReferenceFields.indexOf(field) === -1 || requestedFields.indexOf(field) !== index;
+    }) || !requestedDocumentIds.length || requestedDocumentIds.some(function(documentId, index) {
+      return !documentId || requestedDocumentIds.indexOf(documentId) !== index || candidateCounts[documentId] !== 1;
+    })) {
+      return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
+    }
+    const referenceAccess = authorizeAcademicDepartmentReferenceReadViaUser_(
+      request, "EXPEDIENTE_ESTUDIANTE", String(request.expedienteId || "").trim(), requestedFields, requestedDocumentIds
+    );
+    if (!referenceAccess || referenceAccess.status !== "success") {
+      return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
+    }
+    const fieldMap = { tipoDocumento: 3, fechaRecepcion: 7, estadoRevision: 9 };
+    const referenceDocuments = requestedDocumentIds.map(function(documentId) {
+      const row = candidatesForReference.find(function(item) { return String(item[0] || "").trim() === documentId; });
+      if (!row) return null;
+      const document = { documentoId: documentId };
+      referenceAccess.approvedFields.forEach(function(field) { document[field] = row[fieldMap[field]]; });
+      return document;
+    });
+    if (referenceDocuments.some(function(document) { return !document; })) {
+      return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
+    }
+    return { status: "success", referenceOnly: true, grantId: referenceAccess.grantId,
+      auditEventId: referenceAccess.auditEventId, documents: referenceDocuments };
+  }
   const rows = documentSheet.getDataRange().getValues().slice(1);
+  const candidates = rows.filter(function(row) {
+    const rowExpId = String(row[1] || "").trim().toLowerCase(), rowSolId = String(row[2] || "").trim().toLowerCase();
+    if (cleanExpId && cleanSolId) return rowExpId === cleanExpId && rowSolId === cleanSolId;
+    if (cleanExpId) return rowExpId === cleanExpId;
+    return rowSolId === cleanSolId;
+  });
   const versionSheet = ss.getSheetByName("HistorialVersionesDocumentos");
   if (versionSheet) ensureDocumentVersionHistorySchema_(versionSheet);
   const verRows = versionSheet ? versionSheet.getDataRange().getValues().slice(1) : [];
-  const candidates = rows.filter(function(row) {
-    const rowExpId=String(row[1]||"").trim().toLowerCase(),rowSolId=String(row[2]||"").trim().toLowerCase();
-    if(cleanExpId&&cleanSolId)return rowExpId===cleanExpId&&rowSolId===cleanSolId;
-    if(cleanExpId)return rowExpId===cleanExpId;
-    return rowSolId===cleanSolId;
-  });
-  const requestAccess=assertStudentRequestScopeAccess_(request,ss,String(request.expedienteId||"").trim(),String(request.solicitudId||"").trim());
-  if(!requestAccess||requestAccess.authorized!==true){
-    return {status:"error",code:"RESOURCE_SCOPE_DENIED",message:"No existen documentos disponibles dentro del ámbito autorizado."};
-  }
   const mapped = candidates.map(function(row) {
     const docId = String(row[0] || "");
     const fileId = String(row[5] || "").trim();
@@ -16746,21 +16846,18 @@ function getStudentDocuments(payload) {
     const versions = verRows.filter(function(versionRow) {
       return String(versionRow[1] || "").trim() === docId.trim();
     }).map(function(versionRow) {
-      return {versionId:versionRow[0],documentoId:versionRow[1],nombreArchivo:versionRow[2],
-        fechaCreacion:versionRow[5],archivadoPor:versionRow[6],motivoArchivado:versionRow[7],
-        fechaArchivado:versionRow[8],versionDocumento:versionRow[9] || "",sha256Hash:versionRow[10] || ""};
+      return { versionId: versionRow[0], documentoId: versionRow[1], nombreArchivo: versionRow[2],
+        fechaCreacion: versionRow[5], archivadoPor: versionRow[6], motivoArchivado: versionRow[7],
+        fechaArchivado: versionRow[8], versionDocumento: versionRow[9] || "", sha256Hash: versionRow[10] || "" };
     });
-    return {documentoId:docId,expedienteId:row[1],solicitudId:row[2],tipoDocumento:row[3],
-      nombreArchivo:row[4],fechaRecepcion:row[7],fechaVencimiento:row[8],estadoRevision:row[9],
-      subidoPor:row[10],validadoPor:row[11],observaciones:row[12],tieneArchivo:!!fileId,
-      versionDocumento:version,importBatchId:String(row[16] || ""),documentoReferenciaId:String(row[17] || ""),
-      esReferenciaSinCopia:!!String(row[17] || ""),totalVersionesPrevias:versions.length,historialVersiones:versions};
+    return { documentoId: docId, expedienteId: row[1], solicitudId: row[2], tipoDocumento: row[3],
+      nombreArchivo: row[4], fechaRecepcion: row[7], fechaVencimiento: row[8], estadoRevision: row[9],
+      subidoPor: row[10], validadoPor: row[11], observaciones: row[12], tieneArchivo: !!fileId,
+      versionDocumento: version, importBatchId: String(row[16] || ""), documentoReferenciaId: String(row[17] || ""),
+      esReferenciaSinCopia: !!String(row[17] || ""), totalVersionesPrevias: versions.length, historialVersiones: versions };
   });
   return { status: "success", documents: mapped };
 }
-
-// [TAREA-F6-022] [Fase 6: Expediente Institucional y Ciclo de Vida] - Restauración autorizada de versión previa de documento
-
 
 function getStudentDocumentFile_(payload) {
   const p = payload || {};

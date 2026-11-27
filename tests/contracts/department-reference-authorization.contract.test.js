@@ -21,6 +21,7 @@ function run(source, names, context) {
 const vm = require("node:vm");
 const userSource = read("backend/user-service/Code.gs");
 const accountingSource = read("backend/accounting-service/Code.gs");
+const academicSource = read("backend/academic-service/Code.gs");
 
 test("USER autoriza la lectura de referencias solo con el permiso dinámico y la identidad verificada", () => {
   const context = {
@@ -133,5 +134,82 @@ test("getEmployeeDocuments entrega solo metadatos expresamente aprobados para un
   assert.equal(Object.prototype.hasOwnProperty.call(result.documentos[0], "archivoUrl"), false);
   assert.equal(Object.prototype.hasOwnProperty.call(result.documentos[0], "observaciones"), false);
   assert.equal(scopeCalls, 1);
+  assert.equal(referenceCalls, 1);
+});
+
+
+test("ACADEMIC autoriza referencias de expedientes estudiantiles con POST directo y sesión existente", () => {
+  const requests = [];
+  const context = {
+    ACADEMIC_USER_SERVICE_ENDPOINT_: "https://script.google.com/macros/s/USER/exec",
+    getRequestSessionToken_: payload => payload.sessionToken,
+    UrlFetchApp: { fetch(url, options) {
+      requests.push({ url, options });
+      return { getResponseCode: () => 200, getContentText: () => JSON.stringify({
+        status: "success", authorized: true, requiresStandardAuthorization: true,
+        approvedFields: ["tipoDocumento"], approvedDocumentIds: ["DOC-1"], grantId: "DRG-1", auditEventId: "LOG-1"
+      }) };
+    } }
+  };
+  run(academicSource, ["authorizeAcademicDepartmentReferenceReadViaUser_"], context);
+  const result = context.authorizeAcademicDepartmentReferenceReadViaUser_(
+    { sessionToken: "SESSION", activeDepartmentId: "DEP-2" },
+    "EXPEDIENTE_ESTUDIANTE", "EXP-1", ["tipoDocumento"], ["DOC-1"]
+  );
+  assert.equal(result.status, "success");
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].url, context.ACADEMIC_USER_SERVICE_ENDPOINT_);
+  const sent = JSON.parse(requests[0].options.payload);
+  assert.equal(sent.action, "authorizeDepartmentReferenceRead");
+  assert.equal(sent.payload.sessionToken, "SESSION");
+  assert.equal(sent.payload.resourceType, "EXPEDIENTE_ESTUDIANTE");
+  assert.equal(sent.payload.resourceId, "EXP-1");
+  assert.equal(sent.payload.activeDepartmentId, "DEP-2");
+  assert.doesNotMatch(extractFunction(academicSource, "authorizeAcademicDepartmentReferenceReadViaUser_"),
+    /PropertiesService|HMAC|hmacSignature|createInterServiceEnvelope/);
+});
+
+test("getStudentDocuments devuelve solo metadatos autorizados y no lee historial ni archivos en modo referencia", () => {
+  const employeeDocuments = [
+    ["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId", "DriveUrl",
+      "FechaRecepcion", "FechaVencimiento", "EstadoRevision", "SubidoPor", "ValidadoPor", "Observaciones"],
+    ["DOC-1", "EXP-1", "SOL-1", "Acta", "Acta privada.pdf", "FILE-1", "https://drive.google.com/file/d/FILE-1",
+      "2026-01-01", "2026-02-01", "Validado", "U-1", "U-2", "Nota privada"]
+  ];
+  let versionReads = 0, referenceCalls = 0;
+  const context = {
+    SPREADSHEET_ID: "SS-1",
+    SpreadsheetApp: { openById: () => ({
+      getSheetByName(name) {
+        if (name === "DocumentosEstudiante") return { getDataRange: () => ({ getValues: () => employeeDocuments }) };
+        if (name === "ExpedientesEstudiantes") return {};
+        if (name === "HistorialVersionesDocumentos") { versionReads++; return { getDataRange: () => ({ getValues: () => [] }) }; }
+        return null;
+      }
+    }) },
+    assertStudentRequestScopeAccess_: () => ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
+    authorizeAcademicDepartmentReferenceReadViaUser_: (request, type, id, fields, ids) => {
+      referenceCalls++;
+      assert.equal(type, "EXPEDIENTE_ESTUDIANTE");
+      assert.equal(id, "EXP-1");
+      assert.deepEqual(fields, ["tipoDocumento"]);
+      assert.deepEqual(ids, ["DOC-1"]);
+      return { status: "success", approvedFields: ["tipoDocumento"], approvedDocumentIds: ["DOC-1"],
+        grantId: "DRG-1", auditEventId: "LOG-1" };
+    }
+  };
+  run(academicSource, ["getStudentDocuments"], context);
+  const result = context.getStudentDocuments({
+    expedienteId: "EXP-1", sessionToken: "SESSION",
+    referenceRequestedFields: ["tipoDocumento"], referenceDocumentIds: ["DOC-1"]
+  });
+  assert.equal(result.status, "success");
+  assert.equal(result.referenceOnly, true);
+  assert.equal(result.documents.length, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.documents[0])), { documentoId: "DOC-1", tipoDocumento: "Acta" });
+  assert.equal(Object.prototype.hasOwnProperty.call(result.documents[0], "nombreArchivo"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(result.documents[0], "driveFileId"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(result.documents[0], "observaciones"), false);
+  assert.equal(versionReads, 0);
   assert.equal(referenceCalls, 1);
 });
