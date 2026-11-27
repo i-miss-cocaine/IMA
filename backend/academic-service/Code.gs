@@ -16782,7 +16782,7 @@ function getStudentDocuments(payload) {
   const requestAccess = assertStudentRequestScopeAccess_(request, ss,
     String(request.expedienteId || "").trim(), String(request.solicitudId || "").trim());
   if (!requestAccess || requestAccess.authorized !== true) {
-    if (!requestAccess || requestAccess.code !== "RESOURCE_SCOPE_DENIED" || !cleanExpId) {
+    if (!requestAccess || requestAccess.code !== "RESOURCE_SCOPE_DENIED" || (!cleanExpId && !cleanSolId)) {
       return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
     }
     const rowsForReference = documentSheet.getDataRange().getValues().slice(1);
@@ -16790,7 +16790,9 @@ function getStudentDocuments(payload) {
       const rowExpId = String(row[1] || "").trim().toLowerCase();
       const rowSolId = String(row[2] || "").trim().toLowerCase();
       if (cleanExpId && cleanSolId) return rowExpId === cleanExpId && rowSolId === cleanSolId;
-      return rowExpId === cleanExpId;
+      if (cleanExpId) return rowExpId === cleanExpId;
+      if (cleanSolId) return rowSolId === cleanSolId;
+      return false;
     });
     const requestedFields = Array.isArray(request.referenceRequestedFields) ? request.referenceRequestedFields : [];
     const requestedDocumentIds = Array.isArray(request.referenceDocumentIds)
@@ -16808,8 +16810,10 @@ function getStudentDocuments(payload) {
     })) {
       return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };
     }
+    const referenceResourceType = cleanSolId ? "SOLICITUD_ADMISION" : "EXPEDIENTE_ESTUDIANTE";
+    const referenceResourceId = cleanSolId ? String(request.solicitudId || "").trim() : String(request.expedienteId || "").trim();
     const referenceAccess = authorizeAcademicDepartmentReferenceReadViaUser_(
-      request, "EXPEDIENTE_ESTUDIANTE", String(request.expedienteId || "").trim(), requestedFields, requestedDocumentIds
+      request, referenceResourceType, referenceResourceId, requestedFields, requestedDocumentIds
     );
     if (!referenceAccess || referenceAccess.status !== "success") {
       return { status: "error", code: "RESOURCE_SCOPE_DENIED", message: "No existen documentos disponibles dentro del ámbito autorizado." };

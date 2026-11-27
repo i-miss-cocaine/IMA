@@ -5344,3 +5344,5 @@ TAREAS DERIVADAS — AUDITORÍA TASK-639 / C1.302
 - AUD-NG-063 completada en código; BETA-FUNC-028 Pendiente beta. TASK-153 y AUD-NG-386 siguen En ejecución/abiertos.
 
 - **Siguiente iteración registrada:** revisar `createAdvancedSignatureRequest`; exigir proveedor de firma explícitamente configurado/activo y eliminar el fallback PSC-HN-DEFAULT. No simular PSC ni declarar validez criptográfica sin contrato/material oficial.
+
+- **Avance C1.688 — referencias interdepartamentales de documentos de admisión:** `getStudentDocuments` ahora admite solicitudes de referencia limitadas identificadas únicamente por `solicitudId`; resuelve la propiedad como `SOLICITUD_ADMISION`, filtra documentos por la solicitud exacta y conserva el modo de metadatos allowlisted sin leer historial ni entregar archivos. Cuando se proporcionan expediente y solicitud, se mantiene la validación de correspondencia existente antes de autorizar. Se añadieron contratos positivos y negativos para solicitud-only y aislamiento entre solicitudes. **Estado de verificación:** pendiente de GitHub Actions; no se afirma prueba local ni beta real.

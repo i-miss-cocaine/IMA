@@ -258,6 +258,82 @@ test("el evaluador de referencias aplica revocación, vigencia, allowlists y sol
 });
 
 
+
+test("getStudentDocuments admite referencias de solo lectura vinculadas a una solicitud de admisión sin expedienteId", () => {
+  const documents = [
+    ["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId", "DriveUrl",
+      "FechaRecepcion", "FechaVencimiento", "EstadoRevision", "SubidoPor", "ValidadoPor", "Observaciones"],
+    ["DOC-ADM-1", "EXP-ADM-1", "SOL-ADM-1", "Partida", "Partida privada.pdf", "FILE-PRIVATE",
+      "https://drive.google.com/file/d/FILE-PRIVATE", "2026-02-01", "2026-03-01", "Recibido", "U-OWNER", "U-STAFF", "Dato privado"],
+    ["DOC-OTHER", "EXP-OTHER", "SOL-OTHER", "Acta", "Otra.pdf", "FILE-OTHER",
+      "https://drive.google.com/file/d/FILE-OTHER", "2026-02-02", "2026-03-02", "Validado", "U-OWNER", "U-STAFF", "Otro dato"]
+  ];
+  let referenceRequest = null, historyReads = 0;
+  const context = {
+    SPREADSHEET_ID: "SS-1",
+    SpreadsheetApp: { openById: () => ({ getSheetByName(name) {
+      if (name === "DocumentosEstudiante") return { getDataRange: () => ({ getValues: () => documents }) };
+      if (name === "ExpedientesEstudiantes") return {};
+      if (name === "HistorialVersionesDocumentos") { historyReads++; return { getDataRange: () => ({ getValues: () => [] }) }; }
+      return null;
+    } }) },
+    assertStudentRequestScopeAccess_: (request, ss, expedienteId, solicitudId) => {
+      assert.equal(expedienteId, "");
+      assert.equal(solicitudId, "SOL-ADM-1");
+      return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    },
+    authorizeAcademicDepartmentReferenceReadViaUser_: (request, type, id, fields, ids) => {
+      referenceRequest = { type, id, fields, ids };
+      return { status: "success", approvedFields: ["tipoDocumento", "estadoRevision"],
+        approvedDocumentIds: ["DOC-ADM-1"], grantId: "DRG-ADM-1", auditEventId: "LOG-ADM-1" };
+    }
+  };
+  run(academicSource, ["getStudentDocuments"], context);
+  const result = context.getStudentDocuments({
+    solicitudId: "SOL-ADM-1", sessionToken: "SESSION",
+    referenceRequestedFields: ["tipoDocumento", "estadoRevision"], referenceDocumentIds: ["DOC-ADM-1"]
+  });
+  assert.equal(result.status, "success");
+  assert.equal(result.referenceOnly, true);
+  assert.equal(result.grantId, "DRG-ADM-1");
+  assert.deepEqual(referenceRequest, {
+    type: "SOLICITUD_ADMISION", id: "SOL-ADM-1",
+    fields: ["tipoDocumento", "estadoRevision"], ids: ["DOC-ADM-1"]
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(result.documents)), [
+    { documentoId: "DOC-ADM-1", tipoDocumento: "Partida", estadoRevision: "Recibido" }
+  ]);
+  assert.equal(historyReads, 0);
+});
+
+test("getStudentDocuments no mezcla documentos de solicitudes distintas al resolver referencias", () => {
+  const documents = [
+    ["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId", "DriveUrl",
+      "FechaRecepcion", "FechaVencimiento", "EstadoRevision", "SubidoPor", "ValidadoPor", "Observaciones"],
+    ["DOC-ADM-1", "EXP-ADM-1", "SOL-ADM-1", "Partida", "Partida.pdf", "FILE-1", "", "2026-02-01", "", "Recibido", "", "", ""],
+    ["DOC-ADM-2", "EXP-ADM-2", "SOL-ADM-2", "Acta", "Acta.pdf", "FILE-2", "", "2026-02-02", "", "Validado", "", "", ""]
+  ];
+  let referenceCalls = 0;
+  const context = {
+    SPREADSHEET_ID: "SS-1",
+    SpreadsheetApp: { openById: () => ({ getSheetByName(name) {
+      if (name === "DocumentosEstudiante") return { getDataRange: () => ({ getValues: () => documents }) };
+      if (name === "ExpedientesEstudiantes") return {};
+      return null;
+    } }) },
+    assertStudentRequestScopeAccess_: () => ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
+    authorizeAcademicDepartmentReferenceReadViaUser_: () => { referenceCalls++; return { status: "success", approvedFields: ["tipoDocumento"], approvedDocumentIds: ["DOC-ADM-1"], grantId: "DRG-1", auditEventId: "LOG-1" }; }
+  };
+  run(academicSource, ["getStudentDocuments"], context);
+  const result = context.getStudentDocuments({
+    solicitudId: "SOL-ADM-1", sessionToken: "SESSION",
+    referenceRequestedFields: ["tipoDocumento"], referenceDocumentIds: ["DOC-ADM-2"]
+  });
+  assert.equal(result.status, "error");
+  assert.equal(result.code, "RESOURCE_SCOPE_DENIED");
+  assert.equal(referenceCalls, 0);
+});
+
 test("el export heredado de calificaciones falla cerrado y no queda expuesto por doPost", () => {
   const context = { SpreadsheetApp: { openById: () => { throw new Error("No debe leer calificaciones"); } } };
   run(academicSource, ["exportAcademicGradesData"], context);
