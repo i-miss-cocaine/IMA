@@ -213,3 +213,46 @@ test("getStudentDocuments devuelve solo metadatos autorizados y no lee historial
   assert.equal(versionReads, 0);
   assert.equal(referenceCalls, 1);
 });
+
+
+test("el evaluador de referencias aplica revocación, vigencia, allowlists y solo lectura en cada solicitud", () => {
+  const userSource = read("backend/user-service/Code.gs");
+  const context = run(userSource, ["evaluateDepartmentReferenceAccess_"], {});
+  const grant = {
+    InstitutionID: "INST-1", GrantID: "GRANT-1", ResourceType: "EXPEDIENTE_ESTUDIANTE", ResourceID: "EXP-1",
+    OwnerDepartmentID: "DEP-1", TargetDepartmentID: "DEP-2",
+    AllowedFieldsJSON: '["tipoDocumento"]', AllowedDocumentIDsJSON: '["DOC-1"]',
+    AuthorizedBy: "ADMIN-1", AuthorizedAt: "2026-11-01T00:00:00Z",
+    ValidFrom: "2026-11-01T00:00:00Z", ExpiresAt: "2026-12-01T00:00:00Z",
+    Status: "ACTIVE", RevokedAt: ""
+  };
+  const base = {
+    actorContext: { status: "success", verified: true, userId: "U-1", membershipId: "MEM-1",
+      roleId: "Director", institutionId: "INST-1", activeDepartmentId: "DEP-2", institutionWide: false },
+    resourceOwnership: { authorized: true, institutionId: "INST-1", departmentId: "DEP-1",
+      resourceType: "EXPEDIENTE_ESTUDIANTE", resourceId: "EXP-1" },
+    institutionalConfig: { institutionId: "INST-1", key: "POLITICA_ESTRICTA_AISLAMIENTO_DEPARTAMENTAL",
+      value: "PERMITIR_REFERENCIA_SOLO_LECTURA_INTERDEPARTAMENTAL" },
+    referenceGrants: [grant], operation: "READ_REFERENCE",
+    requestedFields: ["tipoDocumento"], requestedDocumentIds: ["DOC-1"], now: "2026-11-26T12:00:00Z"
+  };
+  const allowed = context.evaluateDepartmentReferenceAccess_(base);
+  assert.equal(allowed.authorized, true);
+  assert.equal(allowed.requiresStandardAuthorization, true);
+  assert.equal(allowed.auditEvent.decision, "ALLOW");
+  const revoked = context.evaluateDepartmentReferenceAccess_({ ...base,
+    referenceGrants: [{ ...grant, Status: "REVOKED", RevokedAt: "2026-11-25T00:00:00Z" }] });
+  assert.equal(revoked.authorized, false);
+  assert.equal(revoked.code, "DEPARTMENT_REFERENCE_GRANT_INVALID");
+  assert.equal(revoked.auditEvent.decision, "DENY");
+  const expired = context.evaluateDepartmentReferenceAccess_({ ...base,
+    referenceGrants: [{ ...grant, ExpiresAt: "2026-11-26T00:00:00Z" }] });
+  assert.equal(expired.code, "DEPARTMENT_REFERENCE_GRANT_OUT_OF_WINDOW");
+  const wildcard = context.evaluateDepartmentReferenceAccess_({ ...base,
+    referenceGrants: [{ ...grant, AllowedFieldsJSON: '["*"]' }] });
+  assert.equal(wildcard.code, "DEPARTMENT_REFERENCE_ALLOWLIST_INVALID");
+  const exceeded = context.evaluateDepartmentReferenceAccess_({ ...base, requestedDocumentIds: ["DOC-OTHER"] });
+  assert.equal(exceeded.code, "DEPARTMENT_REFERENCE_SCOPE_EXCEEDED");
+  const write = context.evaluateDepartmentReferenceAccess_({ ...base, operation: "WRITE" });
+  assert.equal(write.code, "CROSS_DEPARTMENT_OPERATION_DENIED");
+});
