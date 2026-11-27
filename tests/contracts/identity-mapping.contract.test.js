@@ -22,6 +22,7 @@ function run(source, names, context) {
 const userSource = read("backend/user-service/Code.gs");
 const academicSource = read("backend/academic-service/Code.gs");
 const accountingSource = read("backend/accounting-service/Code.gs");
+const persistenceSource = read("js/persistence.js");
 
 test("la clave de correspondencia incluye sistema, entidad, identificador legado e institución", () => {
   const context = run(userSource, ["identityCompositeKey_"], {});
@@ -499,4 +500,110 @@ test("el directorio SACE no depende de sobres HMAC en el manejador USER", () => 
   assert.match(handler, /MIGRATION_ACTION_NOT_ALLOWED/);
   const request = extractFunction(academicSource, "requestSaceStudentIdentityDirectoryFromUser_");
   assert.doesNotMatch(request, /createInterServiceEnvelope|PropertiesService|IMA_MIGRATION_HMAC_SECRET/);
+});
+
+
+test("la caché IndexedDB solo almacena correspondencias confirmadas y queda aislada por institución y fuente", async () => {
+  const sandbox = { window: {}, console, Date, Promise };
+  vm.runInNewContext(persistenceSource, sandbox);
+  const manager = sandbox.window.PersistenceManager;
+  const reads = [], writes = [];
+  manager.get = (store, key) => { reads.push({ store, key }); return Promise.resolve(null); };
+  manager.set = (store, record, key) => { writes.push({ store, record, key }); return Promise.resolve(record); };
+  await manager.getIdentityMappingCache("INST-1", "SACE", "Estudiante", "001");
+  await manager.getIdentityMappingCache("INST-2", "SACE", "Estudiante", "001");
+  await manager.getIdentityMappingCache("INST-1", "ERP", "Estudiante", "001");
+  assert.equal(new Set(reads.map(item => item.key)).size, 3);
+  assert.deepEqual(JSON.parse(reads[0].key), ["INST-1", "SACE", "estudiante", "001"]);
+  const mapping = {
+    institutionId: "INST-1", sourceSystem: "SACE", entityType: "Estudiante", legacyId: "001",
+    status: "success", confirmed: true, internalId: "EST-1", sessionToken: "MUST_NOT_BE_CACHED",
+    sourceRecord: { privateField: "MUST_NOT_BE_CACHED" }
+  };
+  await manager.setIdentityMappingCache(mapping);
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].store, "identity_mapping_cache");
+  assert.equal(writes[0].record.status, "CONFIRMADA");
+  assert.equal(writes[0].record.internalId, "EST-1");
+  assert.equal(Object.prototype.hasOwnProperty.call(writes[0].record, "sessionToken"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(writes[0].record, "sourceRecord"), false);
+  await assert.rejects(manager.setIdentityMappingCache({ ...mapping, status: "pending", confirmed: false }), /IDENTITY_CACHE_ONLY_CONFIRMED_MAPPINGS/);
+  assert.equal(writes.length, 1);
+  const deleted = [];
+  manager.getAll = () => Promise.resolve([
+    { id: "I1", data: { institutionId: "INST-1" } },
+    { id: "I2", data: { institutionId: "INST-2" } }
+  ]);
+  manager.delete = (store, key) => { deleted.push({ store, key }); return Promise.resolve(true); };
+  assert.equal(await manager.clearIdentityMappingCache("INST-1"), 1);
+  assert.deepEqual(deleted, [{ store: "identity_mapping_cache", key: "I1" }]);
+});
+
+test("la búsqueda de coincidencias conserva las relaciones familiares y de matrícula sin fusionar registros", () => {
+  const people = [
+    ["PersonaID", "Nombres", "Apellidos", "Identificacion", "EmailContacto", "TelefonoContacto", "EstadoPersona"],
+    ["P-STUDENT", "Ana", "Pérez", "", "", "", "ACTIVA"]
+  ];
+  const related = {
+    ExpedientesEstudiantes: [["ExpedienteID", "PersonaID", "CodigoInstitucional", "FechaNacimiento"], ["EXP-1", "P-STUDENT", "CODE-1", "2000-01-01"]],
+    ResponsablesTutores: [["Id", "ResponsableID", "Nombre", "Tipo", "Identificacion"], ["R-1", "RESP-1", "Tutor", "DNI", "0801-RESP"]],
+    RelacionesFamiliares: [["Id", "PersonaID", "ResponsableID", "Tipo", "Estado", "FechaInicio", "FechaFin"], ["REL-1", "P-STUDENT", "RESP-1", "Tutor", "Activa", "2020-01-01", ""]],
+    Usuarios: [["UserId", "A", "B", "C", "D", "E", "F", "G", "H", "PersonaID"], ["U-STUDENT", "", "", "", "", "", "", "", "", "P-STUDENT"]],
+    Matriculas: [["MatriculaID", "A", "UserId"], ["MAT-1", "", "U-STUDENT"]]
+  };
+  const before = JSON.stringify({ people, related });
+  const context = run(userSource, ["identityClassifyCandidate_", "findPersonMatches"], {
+    SPREADSHEET_ID: "SS-1",
+    SpreadsheetApp: { openById: () => ({}) },
+    getSheetOrThrow: (ss, name) => ({ getDataRange: () => ({ getValues: () => people }) }),
+    identityReadOptionalRows_: (ss, name) => related[name].slice(1),
+    requireIdentityManager_: () => ({ actorId: "HR-1", role: "Administrador" }),
+    normalizeString: value => String(value || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(),
+    identityDateKey_: value => String(value || "").slice(0, 10)
+  });
+  const result = context.findPersonMatches({ responsableIdentificacion: "0801-RESP", matriculaId: "MAT-1" });
+  assert.equal(result.matches.length, 1);
+  assert.equal(result.matches[0].personaId, "P-STUDENT");
+  assert.equal(result.matches[0].evidencia.responsableCoincidente, true);
+  assert.equal(result.matches[0].evidencia.historialMatriculaCoincidente, true);
+  assert.equal(result.matches[0].fusionAutomaticaPermitida, false);
+  assert.equal(JSON.stringify({ people, related }), before);
+});
+
+test("la vinculación cuenta-persona conserva el historial y las relaciones existentes", () => {
+  const users = [
+    ["UserId", "A", "B", "C", "D", "E", "F", "G", "H", "PersonaID"],
+    ["U-1", "", "", "", "", "", "", "", "", "P-OLD"]
+  ];
+  const people = [["PersonaID"], ["P-OLD"], ["P-NEW"]];
+  const audit = [];
+  let lockWaits = 0, lockReleases = 0, revisions = 0;
+  const userSheet = {
+    getDataRange: () => ({ getValues: () => users }),
+    getRange(row, column) { return { setValue(value) { users[row - 1][column - 1] = value; } }; }
+  };
+  const peopleSheet = { getDataRange: () => ({ getValues: () => people }) };
+  const context = run(userSource, ["linkPersonAccount"], {
+    SPREADSHEET_ID: "SS-1",
+    requireIdentityManager_: () => ({ actorId: "HR-1", role: "Administrador" }),
+    getIdentityInstitutionId_: () => "INST-1",
+    SpreadsheetApp: { openById: () => ({}) },
+    getSheetOrThrow: (ss, name) => name === "Usuarios" ? userSheet : peopleSheet,
+    LockService: { getScriptLock: () => ({ waitLock() { lockWaits++; }, releaseLock() { lockReleases++; } }) },
+    advanceSaceUserSourceRevisionLocked_: () => { revisions++; },
+    ensureIdentityDecisionSheet_: () => ({}),
+    identityTextCell_: value => String(value),
+    appendIdentityDecisionAudit_: (sheet, entry) => audit.push(entry)
+  });
+  const result = context.linkPersonAccount({ userId: "U-1", personaId: "P-NEW", motivo: "Vinculación validada" });
+  assert.equal(result.status, "success");
+  assert.equal(users.length, 2);
+  assert.equal(users[1][9], "P-NEW");
+  assert.equal(people.length, 3);
+  assert.equal(audit.length, 1);
+  assert.equal(audit[0].idNuevoPlataformaAnterior, "P-OLD");
+  assert.equal(audit[0].idNuevoPlataformaNuevo, "P-NEW");
+  assert.equal(audit[0].actorId, "HR-1");
+  assert.equal(revisions, 1);
+  assert.equal(lockWaits, lockReleases);
 });
