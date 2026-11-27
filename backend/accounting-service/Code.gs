@@ -1600,7 +1600,7 @@ function importDataWithColumnMapping(payload) {
           }))
         };
         if (!ownershipPayload.resourceId || !ownershipPayload.departmentId) throw new Error("RESOURCE_OWNERSHIP_CONTEXT_INVALID");
-        var ownershipIntent = { tipoEntidad: "empleadoOwnership", service: "USER", idempotencyKey: ownershipPayload.idempotencyKey, payload: ownershipPayload };
+        var ownershipIntent = { tipoEntidad: "empleadoOwnership", service: "USER", ownership: true, idempotencyKey: ownershipPayload.idempotencyKey, payload: ownershipPayload };
         applied.push(ownershipIntent);
         var ownershipResult;
         try {
@@ -5447,46 +5447,32 @@ function sendMigrationOwnerRequest_(service, action, payload) {
     throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
   }
   if (target !== "USER" && target !== "ACADEMIC") throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
-  if (action === "writeMigratedEntity" || action === "compensateMigratedEntity") {
-    var directResult = requestAccountingService_(target, action, payload || {});
-    if (!directResult || directResult.status !== "success") {
-      throw new Error(String(directResult && directResult.code || "MIGRATION_OWNER_REQUEST_FAILED"));
-    }
-    return directResult;
-  }
-  if (action !== "registerMigratedResourceOwnership" && action !== "compensateMigratedResourceOwnership") {
+  if (["writeMigratedEntity", "compensateMigratedEntity",
+       "registerMigratedResourceOwnership", "compensateMigratedResourceOwnership"].indexOf(action) === -1) {
     throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
   }
-  var properties = PropertiesService.getScriptProperties();
-  var endpoint = String(properties.getProperty("IMA_USER_SERVICE_URL") || "").trim();
-  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) ||
-      typeof createInterServiceEnvelope !== "function" || typeof UrlFetchApp === "undefined") {
-    throw new Error("MIGRATION_OWNER_SERVICE_NOT_CONFIGURED");
+  var directResult = requestAccountingService_(target, action, payload || {});
+  if (!directResult || directResult.status !== "success") {
+    throw new Error(String(directResult && directResult.code || "MIGRATION_OWNER_REQUEST_FAILED"));
   }
-  var envelope = createInterServiceEnvelope("ACCOUNTING", "USER", action, payload || {}, "IMA_MIGRATION_HMAC_SECRET");
-  var response = UrlFetchApp.fetch(endpoint, {
-    method: "post", contentType: "application/json",
-    payload: JSON.stringify(envelope), muteHttpExceptions: true
-  });
-  var status = response.getResponseCode(), body = {};
-  try { body = JSON.parse(response.getContentText() || "{}"); } catch (ignored) {}
-  if (status < 200 || status >= 300 || body.status !== "success") {
-    throw new Error(String(body.code || "MIGRATION_OWNER_REQUEST_FAILED"));
-  }
-  return body;
+  return directResult;
 }
 
 function rollbackMigrationOwnerWrites_(applied, sessionToken, institutionId) {
   var errors = [];
   (applied || []).slice().reverse().forEach(function(item) {
     try {
-      var action = item.ownership ? "compensateMigratedResourceOwnership" : "compensateMigratedEntity";
-      var compensationPayload = { idempotencyKey: item.idempotencyKey || "", entityType: item.tipoEntidad || "",
-        payload: item.payload || {}, ownershipId: item.ownershipId || "" };
-      if (!item.ownership) {
-        compensationPayload.sessionToken = String(sessionToken || "");
-        compensationPayload.institutionId = String(institutionId || "");
-      }
+      var isOwnership = item.ownership === true || item.tipoEntidad === "empleadoOwnership";
+      var action = isOwnership ? "compensateMigratedResourceOwnership" : "compensateMigratedEntity";
+      var originalPayload = item.payload || {};
+      var compensationPayload = {
+        idempotencyKey: item.idempotencyKey || "",
+        entityType: item.tipoEntidad || "",
+        payload: originalPayload,
+        ownershipId: item.ownershipId || "",
+        sessionToken: String(sessionToken || originalPayload.sessionToken || ""),
+        institutionId: String(institutionId || originalPayload.institutionId || "")
+      };
       sendMigrationOwnerRequest_(item.service || "ACCOUNTING", action, compensationPayload);
     } catch (error) {
       errors.push({ tipoEntidad: item.tipoEntidad || "", code: String(error && error.message || "ROLLBACK_FAILED") });

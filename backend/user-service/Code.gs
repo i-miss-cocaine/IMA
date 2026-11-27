@@ -2197,13 +2197,16 @@ function validateRolePermission(action, payload) {
   if (userRole === "NO_ACCESS") {
     return { authorized: false, role: "Cuenta Inactiva/Bloqueada" };
   }
-  var accountingBridgeActions = ["verifyAccountingSession","authorizeAccountingImport","authorizeAccountingAuditRead","getMigrationIdentityMapSnapshot","getMigrationTargetExistenceSnapshot","writeMigratedEntity","compensateMigratedEntity","getSaceStudentIdentityDirectory"];
+  var accountingBridgeActions = ["verifyAccountingSession","authorizeAccountingImport","authorizeAccountingAuditRead","getMigrationIdentityMapSnapshot","getMigrationTargetExistenceSnapshot","writeMigratedEntity","compensateMigratedEntity","registerMigratedResourceOwnership","compensateMigratedResourceOwnership","getSaceStudentIdentityDirectory"];
   if (accountingBridgeActions.indexOf(action) !== -1) {
     var accountingActorId = String(payload && payload._verifiedUserId || "").trim();
     if (!accountingActorId || userRole === "NO_ACCESS") return { authorized: false, role: userRole };
     if (action === "verifyAccountingSession") return { authorized: true, role: userRole, userId: accountingActorId };
     if (action === "getSaceStudentIdentityDirectory") return { authorized: userRole === "Profesor" &&
       String(payload && payload.teacherUserId || "").trim() === accountingActorId, role: userRole, userId: accountingActorId };
+    if (action === "registerMigratedResourceOwnership") return { authorized: userRole !== "Auditor" &&
+      getDynamicPermissionsForRole(userRole, "registerResourceOwnership") === true, role: userRole, userId: accountingActorId };
+    if (action === "compensateMigratedResourceOwnership") return { authorized: userRole !== "Auditor", role: userRole, userId: accountingActorId };
     if (action === "authorizeAccountingAuditRead") return { authorized: userRole === "Auditor", role: userRole, userId: accountingActorId };
     return { authorized: userRole !== "Auditor" && getDynamicPermissionsForRole(userRole, "importDataWithColumnMapping") === true, role: userRole, userId: accountingActorId };
   }
@@ -2332,41 +2335,180 @@ function saveIdempotentResult(action, payload, result) {
 const RESOURCE_OWNERSHIP_HEADERS_=["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"];
 const RESOURCE_OWNERSHIP_MIGRATION_JOURNAL_HEADERS_=["IdempotencyKey","PayloadJSON","OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","RegisteredBy","Estado","CreatedAt","UpdatedAt","CorrelationId"];
 function ensureResourceOwnershipMigrationSheet_(ss,name,headers){var sh=ss.getSheetByName(name);if(!sh)sh=ss.insertSheet(name);if(sh.getLastRow()===0)sh.appendRow(headers);var rows=sh.getDataRange().getValues();if(!rows.length||JSON.stringify(rows[0].map(String))!==JSON.stringify(headers))throw new Error("RESOURCE_OWNERSHIP_SCHEMA_MISMATCH");return sh;}
-function registerMigratedResourceOwnership_(p){
- p=p||{};var token=String(p.sessionToken||"").trim(),type=String(p.resourceType||"").trim().toUpperCase(),id=String(p.resourceId||"").trim(),dep=String(p.departmentId||"").trim(),key=String(p.idempotencyKey||"").trim(),correlation=String(p.correlationId||"").trim();
- if(!token||type!=="EXPEDIENTE_LABORAL"||!id||!dep||!/^OWN-[A-Za-z0-9_-]{8,128}$/.test(key))return{status:"error",code:"RESOURCE_OWNERSHIP_MIGRATION_REQUEST_INVALID"};
- var lock=LockService.getScriptLock(),held=false;
- try{held=lock.tryLock(10000);if(!held)return{status:"error",code:"RESOURCE_OWNERSHIP_LOCK_TIMEOUT"};
-  var auth={sessionToken:token},role=getUserVerifiedRole(auth),actor=String(auth._verifiedUserId||"").trim();if(!actor||!role||role==="NO_ACCESS")return{status:"error",code:"VERIFIED_IDENTITY_REQUIRED"};if(getDynamicPermissionsForRole(role,"registerResourceOwnership")!==true)return{status:"error",code:"AUTH_PERMISSION_DENIED"};
-  var scope=getUserContextScope(auth);if(!scope||scope.status!=="success"||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};
-  var institution=String(scope.institutionId||"").trim();if(!institution||String(p.institutionId||"").trim()!==institution)return{status:"error",code:"RESOURCE_OWNERSHIP_TENANT_MISMATCH"};
-  var wide=scope.institutionWide===true;
-  if(wide){if(p.rowDepartmentSnapshotVerified!==true||!String(p.rowDepartmentSnapshotId||"").trim()||!String(p.rowDepartmentSnapshotRowId||"").trim()||String(p.rowDepartmentSnapshotInstitutionId||"").trim()!==institution||String(p.rowDepartmentSnapshotDomain||"").trim()!=="ACCOUNTING")return{status:"error",code:"RESOURCE_OWNERSHIP_ROW_SNAPSHOT_REQUIRED"};}
-  else{auth.activeDepartmentId=dep;scope=getUserContextScope(auth);if(!scope||scope.status!=="success"||scope.authorized!==true)return{status:"error",code:scope&&scope.code||"DEPARTMENT_SCOPE_NOT_ASSIGNED"};if(String(scope.activeDepartmentId||"").trim()!==dep||!Array.isArray(scope.departmentIds)||scope.departmentIds.indexOf(dep)<0||scope.institutionWide===true)return{status:"error",code:"DEPARTMENT_SCOPE_DENIED"};}
-  var record={institutionId:institution,resourceType:type,resourceId:id,departmentId:dep,registeredBy:actor};if(wide)record.rowDepartmentSnapshot={snapshotId:String(p.rowDepartmentSnapshotId).trim(),rowId:String(p.rowDepartmentSnapshotRowId).trim(),institutionId:institution,domain:"ACCOUNTING"};
-  var payloadJSON=JSON.stringify(record),ss=SpreadsheetApp.openById(SPREADSHEET_ID),owners=ensureResourceOwnershipMigrationSheet_(ss,"ResourceOwnership",RESOURCE_OWNERSHIP_HEADERS_),journal=ensureResourceOwnershipMigrationSheet_(ss,"MigracionOwnershipAccounting",RESOURCE_OWNERSHIP_MIGRATION_JOURNAL_HEADERS_),jr=journal.getDataRange().getValues(),prior=[];
-  for(var i=1;i<jr.length;i++)if(String(jr[i][0]||"").trim()===key)prior.push({row:jr[i],n:i+1});if(prior.length>1)return{status:"error",code:"RESOURCE_OWNERSHIP_IDEMPOTENCY_AMBIGUOUS"};
-  if(prior.length===1){var e=prior[0].row;if(String(e[1])!==payloadJSON)return{status:"error",code:"RESOURCE_OWNERSHIP_IDEMPOTENCY_CONFLICT"};if(String(e[8])!=="APPLIED")return{status:"error",code:"RESOURCE_OWNERSHIP_ALREADY_COMPENSATED"};var retry=owners.getDataRange().getValues().slice(1).filter(function(r){return String(r[0]||"")===String(e[2]||"")&&String(r[5]||"")==="ACTIVE";});if(retry.length!==1)return{status:"error",code:"RESOURCE_OWNERSHIP_RETRY_STATE_INVALID"};return{status:"success",idempotent:true,ownershipId:String(e[2]),institutionId:institution,resourceType:type,resourceId:id,departmentId:dep};}
-  var duplicate=owners.getDataRange().getValues().slice(1).filter(function(r){return String(r[1]||"").trim()===institution&&String(r[2]||"").trim().toUpperCase()===type&&String(r[3]||"").trim()===id;});if(duplicate.length)return{status:"error",code:duplicate.length>1?"RESOURCE_OWNERSHIP_AMBIGUOUS":"RESOURCE_OWNERSHIP_ALREADY_EXISTS"};
-  var now=new Date().toISOString(),ownershipId="OWN-"+Utilities.getUuid();owners.appendRow([ownershipId,institution,type,id,dep,"ACTIVE",actor,now,now]);
-  try{journal.appendRow([key,payloadJSON,ownershipId,institution,type,id,dep,actor,"APPLIED",now,now,correlation]);}catch(writeError){var rows=owners.getDataRange().getValues(),ix=-1;for(var j=1;j<rows.length;j++)if(String(rows[j][0]||"")===ownershipId){if(ix!==-1)throw new Error("RESOURCE_OWNERSHIP_COMPENSATION_AMBIGUOUS");ix=j+1;}if(ix>0){owners.getRange(ix,6).setValue("REVOKED");owners.getRange(ix,9).setValue(new Date().toISOString());}throw new Error("RESOURCE_OWNERSHIP_JOURNAL_WRITE_FAILED");}
-  try{logStructuredEvent("USER","registerMigratedResourceOwnership","INFO","RESOURCE_OWNERSHIP_MIGRATION_REGISTERED","Titularidad registrada por importación autenticada.",{ownershipId:ownershipId,institutionId:institution,resourceType:type,resourceId:id,departmentId:dep,correlationId:correlation,rowDepartmentSnapshotId:wide?String(p.rowDepartmentSnapshotId).trim():null,rowDepartmentSnapshotRowId:wide?String(p.rowDepartmentSnapshotRowId).trim():null},role);}catch(_){}
-  return{status:"success",idempotent:false,ownershipId:ownershipId,institutionId:institution,resourceType:type,resourceId:id,departmentId:dep};
- }catch(error){return{status:"error",code:String(error&&error.message||"RESOURCE_OWNERSHIP_MIGRATION_FAILED")};}finally{if(held){try{lock.releaseLock();}catch(_){}}}
+function registerMigratedResourceOwnership_(p) {
+  p = p || {};
+  var token = String(p.sessionToken || "").trim();
+  var type = String(p.resourceType || "").trim().toUpperCase();
+  var id = String(p.resourceId || "").trim();
+  var dep = String(p.departmentId || "").trim();
+  var key = String(p.idempotencyKey || "").trim();
+  var correlation = String(p.correlationId || "").trim();
+  var role = getUserVerifiedRole(p);
+  var actor = String(p._verifiedUserId || "").trim();
+  var claims = p._verifiedClaims || {};
+  if (!token || !actor || role === "NO_ACCESS" || !claims.institutionId ||
+      type !== "EXPEDIENTE_LABORAL" || !id || !dep || !/^OWN-[A-Za-z0-9_-]{8,128}$/.test(key)) {
+    return { status: "error", code: "RESOURCE_OWNERSHIP_MIGRATION_REQUEST_INVALID" };
+  }
+  if (getDynamicPermissionsForRole(role, "registerResourceOwnership") !== true) {
+    return { status: "error", code: "AUTH_PERMISSION_DENIED" };
+  }
+  var lock = LockService.getScriptLock(), held = false;
+  try {
+    held = lock.tryLock(10000);
+    if (!held) return { status: "error", code: "RESOURCE_OWNERSHIP_LOCK_TIMEOUT" };
+    var scope = getUserContextScope(p);
+    if (!scope || scope.status !== "success" || scope.authorized !== true) {
+      return { status: "error", code: scope && scope.code || "DEPARTMENT_SCOPE_NOT_ASSIGNED" };
+    }
+    var institution = String(scope.institutionId || "").trim();
+    if (!institution || String(claims.institutionId) !== institution ||
+        String(p.institutionId || "").trim() !== institution) {
+      return { status: "error", code: "RESOURCE_OWNERSHIP_TENANT_MISMATCH" };
+    }
+    var wide = scope.institutionWide === true;
+    if (wide) {
+      if (p.rowDepartmentSnapshotVerified !== true || !String(p.rowDepartmentSnapshotId || "").trim() ||
+          !String(p.rowDepartmentSnapshotRowId || "").trim() ||
+          String(p.rowDepartmentSnapshotInstitutionId || "").trim() !== institution ||
+          String(p.rowDepartmentSnapshotDomain || "").trim() !== "ACCOUNTING") {
+        return { status: "error", code: "RESOURCE_OWNERSHIP_ROW_SNAPSHOT_REQUIRED" };
+      }
+    } else {
+      p.activeDepartmentId = dep;
+      scope = getUserContextScope(p);
+      if (!scope || scope.status !== "success" || scope.authorized !== true ||
+          String(scope.activeDepartmentId || "").trim() !== dep ||
+          !Array.isArray(scope.departmentIds) || scope.departmentIds.indexOf(dep) < 0 ||
+          scope.institutionWide === true) return { status: "error", code: "DEPARTMENT_SCOPE_DENIED" };
+    }
+    var record = { institutionId: institution, resourceType: type, resourceId: id,
+      departmentId: dep, registeredBy: actor };
+    if (wide) record.rowDepartmentSnapshot = {
+      snapshotId: String(p.rowDepartmentSnapshotId).trim(), rowId: String(p.rowDepartmentSnapshotRowId).trim(),
+      institutionId: institution, domain: "ACCOUNTING"
+    };
+    var payloadJSON = JSON.stringify(record);
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var owners = ensureResourceOwnershipMigrationSheet_(ss, "ResourceOwnership", RESOURCE_OWNERSHIP_HEADERS_);
+    var journal = ensureResourceOwnershipMigrationSheet_(ss, "MigracionOwnershipAccounting", RESOURCE_OWNERSHIP_MIGRATION_JOURNAL_HEADERS_);
+    var jr = journal.getDataRange().getValues(), prior = [];
+    for (var i = 1; i < jr.length; i++) if (String(jr[i][0] || "").trim() === key) prior.push({ row: jr[i], n: i + 1 });
+    if (prior.length > 1) return { status: "error", code: "RESOURCE_OWNERSHIP_IDEMPOTENCY_AMBIGUOUS" };
+    if (prior.length === 1) {
+      var e = prior[0].row;
+      if (String(e[1]) !== payloadJSON) return { status: "error", code: "RESOURCE_OWNERSHIP_IDEMPOTENCY_CONFLICT" };
+      if (String(e[8]) !== "APPLIED") return { status: "error", code: "RESOURCE_OWNERSHIP_ALREADY_COMPENSATED" };
+      var retry = owners.getDataRange().getValues().slice(1).filter(function(r) {
+        return String(r[0] || "") === String(e[2] || "") && String(r[5] || "") === "ACTIVE";
+      });
+      if (retry.length !== 1) return { status: "error", code: "RESOURCE_OWNERSHIP_RETRY_STATE_INVALID" };
+      return { status: "success", idempotent: true, ownershipId: String(e[2]), institutionId: institution,
+        resourceType: type, resourceId: id, departmentId: dep };
+    }
+    var duplicate = owners.getDataRange().getValues().slice(1).filter(function(r) {
+      return String(r[1] || "").trim() === institution && String(r[2] || "").trim().toUpperCase() === type &&
+        String(r[3] || "").trim() === id;
+    });
+    if (duplicate.length) return { status: "error", code: duplicate.length > 1 ?
+      "RESOURCE_OWNERSHIP_AMBIGUOUS" : "RESOURCE_OWNERSHIP_ALREADY_EXISTS" };
+    var now = new Date().toISOString(), ownershipId = "OWN-" + Utilities.getUuid();
+    owners.appendRow([ownershipId, institution, type, id, dep, "ACTIVE", actor, now, now]);
+    try {
+      journal.appendRow([key, payloadJSON, ownershipId, institution, type, id, dep, actor, "APPLIED", now, now, correlation]);
+    } catch (writeError) {
+      var rows = owners.getDataRange().getValues(), ix = -1;
+      for (var j = 1; j < rows.length; j++) if (String(rows[j][0] || "") === ownershipId) {
+        if (ix !== -1) throw new Error("RESOURCE_OWNERSHIP_COMPENSATION_AMBIGUOUS");
+        ix = j + 1;
+      }
+      if (ix > 0) {
+        owners.getRange(ix, 6).setValue("REVOKED");
+        owners.getRange(ix, 9).setValue(new Date().toISOString());
+      }
+      throw new Error("RESOURCE_OWNERSHIP_JOURNAL_WRITE_FAILED");
+    }
+    try {
+      logStructuredEvent("USER", "registerMigratedResourceOwnership", "INFO", "RESOURCE_OWNERSHIP_MIGRATION_REGISTERED",
+        "Titularidad registrada por importación autenticada.", { ownershipId: ownershipId, institutionId: institution,
+          resourceType: type, resourceId: id, departmentId: dep, correlationId: correlation,
+          rowDepartmentSnapshotId: wide ? String(p.rowDepartmentSnapshotId).trim() : null,
+          rowDepartmentSnapshotRowId: wide ? String(p.rowDepartmentSnapshotRowId).trim() : null }, role);
+    } catch (_) {}
+    return { status: "success", idempotent: false, ownershipId: ownershipId, institutionId: institution,
+      resourceType: type, resourceId: id, departmentId: dep };
+  } catch (error) {
+    return { status: "error", code: String(error && error.message || "RESOURCE_OWNERSHIP_MIGRATION_FAILED") };
+  } finally {
+    if (held) { try { lock.releaseLock(); } catch (_) {} }
+  }
 }
-function compensateMigratedResourceOwnership_(p){
- p=p||{};var key=String(p.idempotencyKey||"").trim();if(!/^OWN-[A-Za-z0-9_-]{8,128}$/.test(key))return{status:"error",code:"RESOURCE_OWNERSHIP_IDEMPOTENCY_KEY_REQUIRED"};
- var lock=LockService.getScriptLock(),held=false;
- try{held=lock.tryLock(10000);if(!held)return{status:"error",code:"RESOURCE_OWNERSHIP_LOCK_TIMEOUT"};var ss=SpreadsheetApp.openById(SPREADSHEET_ID),journal=ensureResourceOwnershipMigrationSheet_(ss,"MigracionOwnershipAccounting",RESOURCE_OWNERSHIP_MIGRATION_JOURNAL_HEADERS_),jr=journal.getDataRange().getValues(),matches=[];
-  for(var i=1;i<jr.length;i++)if(String(jr[i][0]||"").trim()===key)matches.push({row:jr[i],n:i+1});
-  if(!matches.length)return{status:"success",compensated:true,notApplied:true,idempotent:true};if(matches.length!==1)return{status:"error",code:"RESOURCE_OWNERSHIP_IDEMPOTENCY_AMBIGUOUS"};
-  var e=matches[0].row;if(String(e[8])==="COMPENSATED")return{status:"success",compensated:true,idempotent:true};if(String(e[8])!=="APPLIED")return{status:"error",code:"RESOURCE_OWNERSHIP_JOURNAL_STATE_INVALID"};
-  var owners=ensureResourceOwnershipMigrationSheet_(ss,"ResourceOwnership",RESOURCE_OWNERSHIP_HEADERS_),rows=owners.getDataRange().getValues(),found=[];for(var j=1;j<rows.length;j++)if(String(rows[j][0]||"").trim()===String(e[2]||"").trim())found.push({row:rows[j],n:j+1});
-  if(found.length!==1)return{status:"error",code:"RESOURCE_OWNERSHIP_COMPENSATION_CONFLICT"};var o=found[0].row;
-  if(String(o[1]||"")!==String(e[3]||"")||String(o[2]||"")!==String(e[4]||"")||String(o[3]||"")!==String(e[5]||"")||String(o[4]||"")!==String(e[6]||"")||String(o[6]||"")!==String(e[7]||"")||["ACTIVE","REVOKED"].indexOf(String(o[5]||""))<0)return{status:"error",code:"RESOURCE_OWNERSHIP_COMPENSATION_CONFLICT"};
-  if(String(o[5])==="ACTIVE"){owners.getRange(found[0].n,6).setValue("REVOKED");owners.getRange(found[0].n,9).setValue(new Date().toISOString());}
-  journal.getRange(matches[0].n,9).setValue("COMPENSATED");journal.getRange(matches[0].n,11).setValue(new Date().toISOString());return{status:"success",compensated:true,idempotent:false};
- }catch(error){return{status:"error",code:String(error&&error.message||"RESOURCE_OWNERSHIP_COMPENSATION_FAILED")};}finally{if(held){try{lock.releaseLock();}catch(_){}}}
+
+function compensateMigratedResourceOwnership_(p) {
+  p = p || {};
+  var key = String(p.idempotencyKey || "").trim();
+  var role = getUserVerifiedRole(p);
+  var actor = String(p._verifiedUserId || "").trim();
+  var claims = p._verifiedClaims || {};
+  var institution = String(claims.institutionId || "").trim();
+  if (!String(p.sessionToken || "").trim() || !actor || role === "NO_ACCESS" || !institution ||
+      String(p.institutionId || "").trim() !== institution ||
+      !/^OWN-[A-Za-z0-9_-]{8,128}$/.test(key)) {
+    return { status: "error", code: "VERIFIED_IDENTITY_REQUIRED" };
+  }
+  var lock = LockService.getScriptLock(), held = false;
+  try {
+    held = lock.tryLock(10000);
+    if (!held) return { status: "error", code: "RESOURCE_OWNERSHIP_LOCK_TIMEOUT" };
+    var scope = getUserContextScope(p);
+    if (!scope || scope.status !== "success" || scope.authorized !== true ||
+        String(scope.institutionId || "").trim() !== institution) {
+      return { status: "error", code: scope && scope.code || "INSTITUTION_SCOPE_DENIED" };
+    }
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var journal = ensureResourceOwnershipMigrationSheet_(ss, "MigracionOwnershipAccounting", RESOURCE_OWNERSHIP_MIGRATION_JOURNAL_HEADERS_);
+    var jr = journal.getDataRange().getValues(), matches = [];
+    for (var i = 1; i < jr.length; i++) if (String(jr[i][0] || "").trim() === key) matches.push({ row: jr[i], n: i + 1 });
+    if (!matches.length) return { status: "success", compensated: true, notApplied: true, idempotent: true };
+    if (matches.length !== 1) return { status: "error", code: "RESOURCE_OWNERSHIP_IDEMPOTENCY_AMBIGUOUS" };
+    var e = matches[0].row;
+    if (String(e[3] || "").trim() !== institution) return { status: "error", code: "INSTITUTION_SCOPE_DENIED" };
+    if (String(e[7] || "").trim() !== actor && role !== "Administrador") {
+      return { status: "error", code: "RESOURCE_OWNERSHIP_COMPENSATION_DENIED" };
+    }
+    if (String(e[8]) === "COMPENSATED") return { status: "success", compensated: true, idempotent: true };
+    if (String(e[8]) !== "APPLIED") return { status: "error", code: "RESOURCE_OWNERSHIP_JOURNAL_STATE_INVALID" };
+    var departmentId = String(e[6] || "").trim();
+    if (scope.institutionWide !== true) {
+      p.activeDepartmentId = departmentId;
+      scope = getUserContextScope(p);
+      if (!scope || scope.status !== "success" || scope.authorized !== true ||
+          String(scope.activeDepartmentId || "").trim() !== departmentId ||
+          !Array.isArray(scope.departmentIds) || scope.departmentIds.indexOf(departmentId) < 0 ||
+          scope.institutionWide === true) return { status: "error", code: "DEPARTMENT_SCOPE_DENIED" };
+    }
+    var owners = ensureResourceOwnershipMigrationSheet_(ss, "ResourceOwnership", RESOURCE_OWNERSHIP_HEADERS_);
+    var rows = owners.getDataRange().getValues(), found = [];
+    for (var j = 1; j < rows.length; j++) if (String(rows[j][0] || "").trim() === String(e[2] || "").trim()) found.push({ row: rows[j], n: j + 1 });
+    if (found.length !== 1) return { status: "error", code: "RESOURCE_OWNERSHIP_COMPENSATION_CONFLICT" };
+    var o = found[0].row;
+    if (String(o[1] || "") !== String(e[3] || "") || String(o[2] || "") !== String(e[4] || "") ||
+        String(o[3] || "") !== String(e[5] || "") || String(o[4] || "") !== String(e[6] || "") ||
+        String(o[6] || "") !== String(e[7] || "") || ["ACTIVE", "REVOKED"].indexOf(String(o[5] || "")) < 0) {
+      return { status: "error", code: "RESOURCE_OWNERSHIP_COMPENSATION_CONFLICT" };
+    }
+    if (String(o[5]) === "ACTIVE") {
+      owners.getRange(found[0].n, 6).setValue("REVOKED");
+      owners.getRange(found[0].n, 9).setValue(new Date().toISOString());
+    }
+    journal.getRange(matches[0].n, 9).setValue("COMPENSATED");
+    journal.getRange(matches[0].n, 11).setValue(new Date().toISOString());
+    return { status: "success", compensated: true, idempotent: false };
+  } catch (error) {
+    return { status: "error", code: String(error && error.message || "RESOURCE_OWNERSHIP_COMPENSATION_FAILED") };
+  } finally {
+    if (held) { try { lock.releaseLock(); } catch (_) {} }
+  }
 }
 
 function verifyDepartmentReferenceEnvelope_(envelope, expectedTargetService, secret) {
@@ -2726,13 +2868,6 @@ function compensateMigratedEntity(payload) {
 }
 
 function handleTrustedMigrationEnvelope_(envelope) {
-  const verified = verifyInterServiceEnvelope(envelope, "USER", "IMA_MIGRATION_HMAC_SECRET");
-  if (verified.sourceService === "ACCOUNTING" && verified.action === "registerMigratedResourceOwnership") {
-    return registerMigratedResourceOwnership_(verified.payload);
-  }
-  if (verified.sourceService === "ACCOUNTING" && verified.action === "compensateMigratedResourceOwnership") {
-    return compensateMigratedResourceOwnership_(verified.payload);
-  }
   throw new Error("MIGRATION_ACTION_NOT_ALLOWED");
 }
 
@@ -2884,6 +3019,8 @@ function doPost(e) {
       case "getMigrationTargetExistenceSnapshot": result = getMigrationTargetExistenceSnapshot(payload); break;
       case "writeMigratedEntity": result = writeMigratedEntity(payload); break;
       case "compensateMigratedEntity": result = compensateMigratedEntity(payload); break;
+      case "registerMigratedResourceOwnership": result = registerMigratedResourceOwnership_(payload); break;
+      case "compensateMigratedResourceOwnership": result = compensateMigratedResourceOwnership_(payload); break;
       case "getSaceStudentIdentityDirectory": result = getSaceStudentIdentityDirectory_(payload); break;
       case "registerLegacyIdentifierMapping": result = registerLegacyIdentifierMapping(payload); break;
       case "resolveInternalIdFromLegacy": result = resolveInternalIdFromLegacy(payload); break;

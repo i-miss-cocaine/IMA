@@ -153,8 +153,11 @@ test("los writes de migración a USER/ACADEMIC usan el transporte directo", () =
   const context = { requestAccountingService_: (service, action, payload) => { calls.push({ service, action, payload }); return { status: "success", idempotent: false }; } };
   run(accountingSource, ["sendMigrationOwnerRequest_"], context);
   const result = context.sendMigrationOwnerRequest_("ACADEMIC", "writeMigratedEntity", { sessionToken: "SESSION", institutionId: "INST-1" });
+  const ownership = context.sendMigrationOwnerRequest_("USER", "registerMigratedResourceOwnership", { sessionToken: "SESSION", institutionId: "INST-1" });
   assert.equal(result.status, "success");
+  assert.equal(ownership.status, "success");
   assert.deepEqual(calls[0], { service: "ACADEMIC", action: "writeMigratedEntity", payload: { sessionToken: "SESSION", institutionId: "INST-1" } });
+  assert.deepEqual(calls[1], { service: "USER", action: "registerMigratedResourceOwnership", payload: { sessionToken: "SESSION", institutionId: "INST-1" } });
 });
 
 test("USER reutiliza la identidad verificada y aplica el alcance institucional a la sesión", () => {
@@ -186,13 +189,17 @@ test("USER autoriza el puente de importación solo con permiso y no concede acce
   const context = {
     PUBLIC_ACTIONS: [],
     getUserVerifiedRole: payload => { payload._verifiedUserId = "U-1"; return payload.role; },
-    getDynamicPermissionsForRole: (role, action) => role === "Importador" && action === "importDataWithColumnMapping"
+    getDynamicPermissionsForRole: (role, action) => role === "Importador" &&
+      ["importDataWithColumnMapping", "registerResourceOwnership"].indexOf(action) !== -1
   };
   run(userSource, ["validateRolePermission"], context);
   assert.equal(context.validateRolePermission("writeMigratedEntity", { role: "Importador" }).authorized, true);
   assert.equal(context.validateRolePermission("writeMigratedEntity", { role: "Auditor" }).authorized, false);
   assert.equal(context.validateRolePermission("verifyAccountingSession", { role: "Auditor" }).authorized, true);
   assert.equal(context.validateRolePermission("authorizeAccountingAuditRead", { role: "Auditor" }).authorized, true);
+  assert.equal(context.validateRolePermission("registerMigratedResourceOwnership", { role: "Importador" }).authorized, true);
+  assert.equal(context.validateRolePermission("registerMigratedResourceOwnership", { role: "Auditor" }).authorized, false);
+  assert.equal(context.validateRolePermission("compensateMigratedResourceOwnership", { role: "Auditor" }).authorized, false);
 });
 
 test("USER rechaza escrituras de migración fuera de la institución verificada", () => {
@@ -241,7 +248,9 @@ test("el transporte directo no depende de Script Properties ni de secretos HMAC 
     assert.doesNotMatch(fn, /PropertiesService|resolveInterServiceSecret_|hmacSignature|accountingComputeHmacSignature_/);
   }
   const directHelper = extractFunction(accountingSource, "requestAccountingService_");
+  const ownerRouter = extractFunction(accountingSource, "sendMigrationOwnerRequest_");
   assert.doesNotMatch(directHelper, /PropertiesService|resolveInterServiceSecret_|hmacSignature|accountingComputeHmacSignature_/);
+  assert.doesNotMatch(ownerRouter, /PropertiesService|createInterServiceEnvelope|IMA_MIGRATION_HMAC_SECRET|hmacSignature/);
 });
 
 test("las reimportaciones de persona son idempotentes y no duplican filas", () => {
@@ -330,12 +339,19 @@ test("el rollback entrega el contexto de sesión sin almacenarlo en registros te
   const calls = [];
   const context = { sendMigrationOwnerRequest_: (service, action, payload) => { calls.push({ service, action, payload }); } };
   run(accountingSource, ["rollbackMigrationOwnerWrites_"], context);
-  const applied = [{ service: "USER", ownership: false, tipoEntidad: "persona", idempotencyKey: "KEY-1", payload: { id: "PER-1" } }];
+  const applied = [
+    { service: "USER", ownership: false, tipoEntidad: "persona", idempotencyKey: "KEY-1", payload: { id: "PER-1" } },
+    { service: "USER", ownership: true, tipoEntidad: "empleadoOwnership", idempotencyKey: "OWN-12345678",
+      payload: { resourceId: "EMP-1", sessionToken: "SESSION", institutionId: "INST-1" } }
+  ];
   context.rollbackMigrationOwnerWrites_(applied, "SESSION", "INST-1");
-  assert.equal(calls.length, 1);
-  assert.equal(calls[0].action, "compensateMigratedEntity");
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].action, "compensateMigratedResourceOwnership");
   assert.equal(calls[0].payload.sessionToken, "SESSION");
   assert.equal(calls[0].payload.institutionId, "INST-1");
+  assert.equal(calls[1].action, "compensateMigratedEntity");
+  assert.equal(calls[1].payload.sessionToken, "SESSION");
+  assert.equal(calls[1].payload.institutionId, "INST-1");
   assert.equal(Object.prototype.hasOwnProperty.call(applied[0], "sessionToken"), false);
 });
 
@@ -479,8 +495,8 @@ test("ACADEMIC consulta el directorio SACE mediante POST directo con sesión, si
 test("el directorio SACE no depende de sobres HMAC en el manejador USER", () => {
   const handler = extractFunction(userSource, "handleTrustedMigrationEnvelope_");
   assert.doesNotMatch(handler, /getSaceStudentIdentityDirectory/);
-  assert.match(handler, /registerMigratedResourceOwnership/);
-  assert.match(handler, /compensateMigratedResourceOwnership/);
+  assert.doesNotMatch(handler, /verifyInterServiceEnvelope|registerMigratedResourceOwnership|compensateMigratedResourceOwnership/);
+  assert.match(handler, /MIGRATION_ACTION_NOT_ALLOWED/);
   const request = extractFunction(academicSource, "requestSaceStudentIdentityDirectoryFromUser_");
   assert.doesNotMatch(request, /createInterServiceEnvelope|PropertiesService|IMA_MIGRATION_HMAC_SECRET/);
 });
