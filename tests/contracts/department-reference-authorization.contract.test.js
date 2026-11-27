@@ -48,7 +48,7 @@ test("ACCOUNTING consulta USER mediante POST directo con sesión, sin HMAC ni Sc
     { sessionToken: "SESSION", activeDepartmentId: "DEP-1" }, "EXP-1", ["categoriaDoc"], ["DOC-1"]
   );
   assert.equal(result.status, "success");
-  assert.deepEqual(calls[0], {
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0])), {
     service: "USER", action: "authorizeDepartmentReferenceRead",
     payload: { resourceType: "EXPEDIENTE_LABORAL", resourceId: "EXP-1", sessionToken: "SESSION",
       requestedFields: ["categoriaDoc"], requestedDocumentIds: ["DOC-1"], activeDepartmentId: "DEP-1" }
