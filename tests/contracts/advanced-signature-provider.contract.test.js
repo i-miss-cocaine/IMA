@@ -43,6 +43,7 @@ test("el proveedor de firma exige ID, configuración única, endpoint HTTPS y es
   assert.throws(() => context.assertAdvancedSignatureProviderActive_(ss, "../PSC"), /SIGNATURE_PROVIDER_ID_INVALID/);
   assert.throws(() => context.assertAdvancedSignatureProviderActive_({ getSheetByName: () => null }, "PSC-HN-01"), /SIGNATURE_PROVIDER_NOT_CONFIGURED/);
   assert.throws(() => context.assertAdvancedSignatureProviderActive_({ getSheetByName: () => providerSheet([headers, row(), row()]) }, "PSC-HN-01"), /SIGNATURE_PROVIDER_CONFIGURATION_AMBIGUOUS/);
+  assert.throws(() => context.assertAdvancedSignatureProviderActive_({ getSheetByName: () => providerSheet([headers.map((value, index) => index === 2 ? "Endpoint" : value), row()]) }, "PSC-HN-01"), /SIGNATURE_PROVIDER_CONFIGURATION_SCHEMA_MISMATCH/);
   assert.throws(() => context.assertAdvancedSignatureProviderActive_({ getSheetByName: () => providerSheet([headers, row({1:""})]) }, "PSC-HN-01"), /SIGNATURE_PROVIDER_NOT_CONFIGURED/);
   assert.throws(() => context.assertAdvancedSignatureProviderActive_({ getSheetByName: () => providerSheet([headers, row({2:""})]) }, "PSC-HN-01"), /SIGNATURE_PROVIDER_ENDPOINT_INVALID/);
   assert.throws(() => context.assertAdvancedSignatureProviderActive_({ getSheetByName: () => providerSheet([headers, row({2:"http://firma.example.hn/api"})]) }, "PSC-HN-01"), /SIGNATURE_PROVIDER_ENDPOINT_INVALID/);

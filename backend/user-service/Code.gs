@@ -12064,7 +12064,14 @@ function assertAdvancedSignatureProviderActive_(ss, providerId) {
   const sheet = ss && ss.getSheetByName("ConfiguracionFirmaAvanzada");
   if (!sheet || sheet.getLastRow() < 1) throw new Error("SIGNATURE_PROVIDER_NOT_CONFIGURED");
   const data = sheet.getDataRange().getValues();
-  const start = String((data[0] || [])[0] || "").trim().toLowerCase() === "proveedorid" ? 1 : 0;
+  const expectedHeaders = ["ProveedorID","NombreProveedor","EndpointURL","ApiKeyLegacy","TipoMecanismo",
+    "PoliticaSelladoTiempo","FormatoCertificado","Estado","ConfiguracionJSON","FechaActualizacion","ActualizadoPor"];
+  const firstRow = (data[0] || []).map(value => String(value || "").trim());
+  const hasHeader = String(firstRow[0] || "").toLowerCase() === "proveedorid";
+  if (hasHeader && JSON.stringify(firstRow) !== JSON.stringify(expectedHeaders)) {
+    throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_SCHEMA_MISMATCH");
+  }
+  const start = hasHeader ? 1 : 0;
   const matches = data.slice(start).filter(row => String(row[0] || "").trim() === id);
   if (!matches.length) throw new Error("SIGNATURE_PROVIDER_NOT_CONFIGURED");
   if (matches.length !== 1) throw new Error("SIGNATURE_PROVIDER_CONFIGURATION_AMBIGUOUS");
