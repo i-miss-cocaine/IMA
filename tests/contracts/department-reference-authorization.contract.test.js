@@ -48,7 +48,7 @@ test("ACCOUNTING consulta USER mediante POST directo con sesión, sin HMAC ni Sc
     { sessionToken: "SESSION", activeDepartmentId: "DEP-1" }, "EXP-1", ["categoriaDoc"], ["DOC-1"]
   );
   assert.equal(result.status, "success");
-  assert.deepEqual(JSON.parse(JSON.stringify(calls[0])), {
+  assert.deepEqual(calls[0], {
     service: "USER", action: "authorizeDepartmentReferenceRead",
     payload: { resourceType: "EXPEDIENTE_LABORAL", resourceId: "EXP-1", sessionToken: "SESSION",
       requestedFields: ["categoriaDoc"], requestedDocumentIds: ["DOC-1"], activeDepartmentId: "DEP-1" }
@@ -78,4 +78,60 @@ test("USER ya no acepta sobres HMAC para autorizar referencias departamentales",
   const permission = extractFunction(userSource, "validateRolePermission");
   assert.match(permission, /action === "authorizeDepartmentReferenceRead"/);
   assert.match(permission, /readDepartmentReference/);
+});
+
+
+test("getEmployeeDocuments entrega solo metadatos expresamente aprobados para una referencia interdepartamental", () => {
+  const employeeValues = [
+    ["ExpedienteID", "UserId"],
+    ["EXP-1", "U-OWNER"]
+  ];
+  const documentValues = [
+    ["DocumentoID", "ExpedienteID", "CategoriaDoc", "TituloDocumento", "ArchivoUrl", "FechaCarga", "CargadoPor", "EstadoVisibilidad", "Observaciones"],
+    ["DOC-1", "EXP-1", "Contrato", "Contrato privado", "https://drive.google.com/file/d/FILE-PRIVATE", "2026-01-01", "U-OWNER", "Privado", "Nota privada"]
+  ];
+  const ownershipValues = [
+    ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"]
+  ];
+  const sheets = {
+    ExpedientesLaborales: { getDataRange: () => ({ getValues: () => employeeValues }) },
+    DocumentosLaborales: { getDataRange: () => ({ getValues: () => documentValues }) },
+    ResourceOwnership: { getDataRange: () => ({ getValues: () => ownershipValues }) }
+  };
+  let scopeCalls = 0, referenceCalls = 0;
+  const context = {
+    SPREADSHEET_ID: "SS-1",
+    getVerifiedAccountingIdentity_: () => ({ authorized: true, userId: "U-READER", role: "Director", institutionId: "INST-1" }),
+    getVerifiedAccountingDepartmentScope_: () => {
+      scopeCalls++;
+      return { valid: true, institutionId: "INST-1", departmentIds: ["DEP-READER"], institutionWide: false };
+    },
+    SpreadsheetApp: { openById: () => ({ getSheetByName: name => sheets[name] || null }) },
+    assertEmployeeExpedienteScopeAccess_: () => ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
+    authorizeAccountingDepartmentReferenceReadViaUser_: (payload, resourceId, fields, documentIds) => {
+      referenceCalls++;
+      assert.equal(resourceId, "EXP-1");
+      assert.deepEqual(fields, ["categoriaDoc"]);
+      assert.deepEqual(documentIds, ["DOC-1"]);
+      return { status: "success", authorized: true, approvedFields: ["categoriaDoc"],
+        approvedDocumentIds: ["DOC-1"], grantId: "DRG-1", auditEventId: "LOG-1" };
+    }
+  };
+  run(accountingSource, ["getEmployeeDocuments"], context);
+  const result = context.getEmployeeDocuments({
+    sessionToken: "SESSION", expedienteId: "EXP-1", activeDepartmentId: "DEP-READER",
+    referenceRequestedFields: ["categoriaDoc"], referenceDocumentIds: ["DOC-1"]
+  });
+  assert.equal(result.status, "success");
+  assert.equal(result.referenceOnly, true);
+  assert.equal(result.grantId, "DRG-1");
+  assert.equal(result.documentos.length, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.documentos[0])), {
+    documentoId: "DOC-1", categoriaDoc: "Contrato"
+  });
+  assert.equal(Object.prototype.hasOwnProperty.call(result.documentos[0], "tituloDocumento"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(result.documentos[0], "archivoUrl"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(result.documentos[0], "observaciones"), false);
+  assert.equal(scopeCalls, 1);
+  assert.equal(referenceCalls, 1);
 });
