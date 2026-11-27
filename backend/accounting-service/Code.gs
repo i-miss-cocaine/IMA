@@ -1712,15 +1712,24 @@ function authorizeAccountingDepartmentReferenceReadViaUser_(payload, resourceId,
     approvedDocumentIds: approvedDocuments, grantId: body.grantId, auditEventId: body.auditEventId };
 }
 
-function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
-  var input = payload || {}, actor = getVerifiedAccountingIdentity_(input);
+function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId, verifiedActor, verifiedScope, employeeSnapshot, ownershipSnapshot) {
+  var input = payload || {}, actor = verifiedActor || getVerifiedAccountingIdentity_(input);
   if (!actor || actor.authorized !== true) return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
-  var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
-  if (!sheet) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-  var values = sheet.getDataRange().getValues();
+  var values, expedienteIndex, userIndex;
+  if (employeeSnapshot && Array.isArray(employeeSnapshot.values)) {
+    values = employeeSnapshot.values;
+    expedienteIndex = Number(employeeSnapshot.expedienteIndex);
+    userIndex = Number(employeeSnapshot.userIndex);
+  } else {
+    var sheet = ss && ss.getSheetByName ? ss.getSheetByName("ExpedientesLaborales") : null;
+    if (!sheet) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    values = sheet.getDataRange().getValues();
+    if (!values || values.length < 2) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    var headers = values[0].map(function(value) { return String(value || "").trim(); });
+    expedienteIndex = headers.indexOf("ExpedienteID");
+    userIndex = headers.indexOf("UserId");
+  }
   if (!values || values.length < 2) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-  var headers = values[0].map(function(value) { return String(value || "").trim(); });
-  var expedienteIndex = headers.indexOf("ExpedienteID"), userIndex = headers.indexOf("UserId");
   if (expedienteIndex < 0 || userIndex < 0) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
   var targetId = String(expedienteId || "").trim();
   if (!targetId) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
@@ -1733,13 +1742,10 @@ function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
       ? { authorized: true, accessType: "SELF" }
       : { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
   }
-  var scope = getVerifiedAccountingDepartmentScope_(input, ss, actor);
-  if (!scope || scope.valid !== true) {
-    return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
-  }
-  return assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", targetId, "READ");
+  var scope = arguments.length >= 5 ? verifiedScope : getVerifiedAccountingDepartmentScope_(input, ss, actor);
+  if (!scope || scope.valid !== true) return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+  return assertResourceOwnershipForScope_(ss, scope, "EXPEDIENTE_LABORAL", targetId, "READ", ownershipSnapshot);
 }
-
 
 function enforcePrivateEmployeeDocumentFile_(fileUrl) {
   var url = String(fileUrl || "").trim();
@@ -1772,10 +1778,18 @@ function getEmployeeDocuments(payload) {
       requiredDocument.some(function(name) { return documentIndex[name] === undefined; })) return { status: "error", code: "RESOURCE_SCHEMA_INVALID" };
   var role = String(actor.role || "").trim().toLowerCase(), requestedId = String(input.expedienteId || "").trim();
   var employeeRows = employeeValues.slice(1), allowedIds = [], referenceAccess = null;
+  var isSelfRole = role === "empleado" || role === "profesor";
+  var employeeSnapshot = { values: employeeValues, expedienteIndex: employeeIndex.ExpedienteID, userIndex: employeeIndex.UserId };
+  var departmentScopeSnapshot = null, ownershipSnapshot = null;
+  if (!isSelfRole) {
+    departmentScopeSnapshot = getVerifiedAccountingDepartmentScope_(input, ss, actor);
+    var ownershipSheet = ss.getSheetByName("ResourceOwnership");
+    ownershipSnapshot = { resourceRows: employeeValues, ownershipRows: ownershipSheet ? ownershipSheet.getDataRange().getValues() : [] };
+  }
   if (requestedId) {
     var matches = employeeRows.filter(function(row) { return String(row[employeeIndex.ExpedienteID] || "").trim() === requestedId; });
     if (matches.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-    var access = assertEmployeeExpedienteScopeAccess_(input, ss, requestedId);
+    var access = assertEmployeeExpedienteScopeAccess_(input, ss, requestedId, actor, departmentScopeSnapshot, employeeSnapshot, ownershipSnapshot);
     if (access && access.authorized === true) allowedIds = [requestedId];
     else {
       if (!access || access.code !== "RESOURCE_SCOPE_DENIED" || role === "empleado") return { status: "error", code: "RESOURCE_NOT_FOUND" };
@@ -1815,7 +1829,7 @@ function getEmployeeDocuments(payload) {
     var selfRows = employeeRows.filter(function(row) { return String(row[employeeIndex.UserId] || "").trim() === String(actor.userId || "").trim(); });
     if (selfRows.length !== 1) return { status: "error", code: "RESOURCE_NOT_FOUND" };
     var selfId = String(selfRows[0][employeeIndex.ExpedienteID] || "").trim();
-    var selfAccess = assertEmployeeExpedienteScopeAccess_(input, ss, selfId);
+    var selfAccess = assertEmployeeExpedienteScopeAccess_(input, ss, selfId, actor, null, employeeSnapshot, null);
     if (!selfAccess || selfAccess.authorized !== true) return { status: "error", code: "RESOURCE_NOT_FOUND" };
     allowedIds = [selfId];
   } else {
@@ -1824,7 +1838,7 @@ function getEmployeeDocuments(payload) {
       var id = String(row[employeeIndex.ExpedienteID] || "").trim();
       if (!id || seenExpedientes[id]) return;
       seenExpedientes[id] = true;
-      var access = assertEmployeeExpedienteScopeAccess_(input, ss, id);
+      var access = assertEmployeeExpedienteScopeAccess_(input, ss, id, actor, departmentScopeSnapshot, employeeSnapshot, ownershipSnapshot);
       if (access && access.authorized === true) allowedIds.push(id);
     });
   }
@@ -2070,36 +2084,61 @@ function resolveEmployeeDepartmentId_(ss, expedienteId) {
   return matches.length === 1 ? String(matches[0][departmentIndex] || "").trim() : "";
 }
 
-function assertResourceOwnershipForScope_(payload, ss, expedienteId, resourceId, operation) {
+function assertResourceOwnershipForScope_(payload, ss, expedienteId, resourceId, operation, snapshot) {
   if (arguments.length >= 5) {
-    var spreadsheet=payload,scope=ss,resourceType=String(expedienteId||"").trim().toUpperCase();
-    var targetId=String(resourceId||"").trim(),action=String(operation||"").trim().toUpperCase();
-    if(!spreadsheet||!scope||(scope.valid!==true&&scope.authorized!==true)||
-      ["EXPEDIENTE_LABORAL","EXPEDIENTE_ESTUDIANTE"].indexOf(resourceType)===-1||
-      ["READ","WRITE"].indexOf(action)===-1||!targetId)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
-    var resourceSheet=spreadsheet.getSheetByName(resourceType==="EXPEDIENTE_LABORAL"?"ExpedientesLaborales":"ExpedientesEstudiantes");
-    if(!resourceSheet)return{authorized:false,code:"RESOURCE_NOT_FOUND"};
-    var resourceRows=resourceSheet.getDataRange().getValues();
-    if(!resourceRows||!resourceRows.length)return{authorized:false,code:"RESOURCE_NOT_FOUND"};
-    var resourceHeaders=resourceRows[0].map(function(v){return String(v||"").trim();}),resourceIdIndex=resourceHeaders.indexOf("ExpedienteID");
-    if(resourceIdIndex<0)return{authorized:false,code:"RESOURCE_SCHEMA_INVALID"};
-    var resourceMatches=resourceRows.slice(1).filter(function(row){return String(row[resourceIdIndex]||"").trim()===targetId;});
-    if(resourceMatches.length!==1)return{authorized:false,code:"RESOURCE_NOT_FOUND"};
-    var ownershipSheet=spreadsheet.getSheetByName("ResourceOwnership");
-    if(!ownershipSheet)return{authorized:false,code:"RESOURCE_OWNERSHIP_UNVERIFIED"};
-    var ownershipRows=ownershipSheet.getDataRange().getValues();
-    var expected=["OwnershipID","InstitutionID","ResourceType","ResourceID","DepartmentID","Status","RegisteredBy","CreatedAt","UpdatedAt"];
-    if(!ownershipRows||!ownershipRows.length||JSON.stringify(ownershipRows[0].map(function(v){return String(v||"").trim();}))!==JSON.stringify(expected))
-      return{authorized:false,code:"RESOURCE_OWNERSHIP_UNVERIFIED"};
-    var institutionId=String(scope.institutionId||"").trim();
-    var owners=ownershipRows.slice(1).filter(function(row){return String(row[1]||"").trim()===institutionId&&String(row[2]||"").trim().toUpperCase()===resourceType&&String(row[3]||"").trim()===targetId;});
-    if(owners.length!==1||String(owners[0][5]||"").trim().toUpperCase()!=="ACTIVE")return{authorized:false,code:"RESOURCE_OWNERSHIP_UNVERIFIED"};
-    var departmentId=String(owners[0][4]||"").trim();if(!departmentId)return{authorized:false,code:"RESOURCE_OWNERSHIP_UNVERIFIED"};
-    var departments=Array.isArray(scope.departmentIds)?scope.departmentIds.map(function(v){return String(v||"").trim();}):[];
-    if(scope.institutionWide!==true&&departments.indexOf(departmentId)===-1)return{authorized:false,code:"RESOURCE_SCOPE_DENIED"};
-    return{authorized:true,accessType:scope.institutionWide===true?"INSTITUTION":"DEPARTMENT",departmentId:departmentId,institutionId:institutionId,operation:action};
+    var spreadsheet = payload, scope = ss, resourceType = String(expedienteId || "").trim().toUpperCase();
+    var targetId = String(resourceId || "").trim(), action = String(operation || "").trim().toUpperCase();
+    if (!spreadsheet || !scope || (scope.valid !== true && scope.authorized !== true) ||
+        ["EXPEDIENTE_LABORAL", "EXPEDIENTE_ESTUDIANTE"].indexOf(resourceType) === -1 ||
+        ["READ", "WRITE"].indexOf(action) === -1 || !targetId) {
+      return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    }
+    var resourceRows;
+    if (snapshot && Array.isArray(snapshot.resourceRows)) resourceRows = snapshot.resourceRows;
+    else {
+      var resourceSheet = spreadsheet.getSheetByName(resourceType === "EXPEDIENTE_LABORAL" ? "ExpedientesLaborales" : "ExpedientesEstudiantes");
+      if (!resourceSheet) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+      resourceRows = resourceSheet.getDataRange().getValues();
+    }
+    if (!resourceRows || !resourceRows.length) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+    var resourceHeaders = resourceRows[0].map(function(v) { return String(v || "").trim(); });
+    var resourceIdIndex = resourceHeaders.indexOf("ExpedienteID");
+    if (resourceIdIndex < 0) return { authorized: false, code: "RESOURCE_SCHEMA_INVALID" };
+    var resourceMatches = resourceRows.slice(1).filter(function(row) {
+      return String(row[resourceIdIndex] || "").trim() === targetId;
+    });
+    if (resourceMatches.length !== 1) return { authorized: false, code: "RESOURCE_NOT_FOUND" };
+    var ownershipRows;
+    if (snapshot && Array.isArray(snapshot.ownershipRows)) ownershipRows = snapshot.ownershipRows;
+    else {
+      var ownershipSheet = spreadsheet.getSheetByName("ResourceOwnership");
+      if (!ownershipSheet) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+      ownershipRows = ownershipSheet.getDataRange().getValues();
+    }
+    var expected = ["OwnershipID", "InstitutionID", "ResourceType", "ResourceID", "DepartmentID", "Status", "RegisteredBy", "CreatedAt", "UpdatedAt"];
+    if (!ownershipRows || !ownershipRows.length ||
+        JSON.stringify(ownershipRows[0].map(function(v) { return String(v || "").trim(); })) !== JSON.stringify(expected)) {
+      return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    }
+    var institutionId = String(scope.institutionId || "").trim();
+    var owners = ownershipRows.slice(1).filter(function(row) {
+      return String(row[1] || "").trim() === institutionId &&
+        String(row[2] || "").trim().toUpperCase() === resourceType &&
+        String(row[3] || "").trim() === targetId;
+    });
+    if (owners.length !== 1 || String(owners[0][5] || "").trim().toUpperCase() !== "ACTIVE") {
+      return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    }
+    var departmentId = String(owners[0][4] || "").trim();
+    if (!departmentId) return { authorized: false, code: "RESOURCE_OWNERSHIP_UNVERIFIED" };
+    var departments = Array.isArray(scope.departmentIds) ? scope.departmentIds.map(function(v) { return String(v || "").trim(); }) : [];
+    if (scope.institutionWide !== true && departments.indexOf(departmentId) === -1) {
+      return { authorized: false, code: "RESOURCE_SCOPE_DENIED" };
+    }
+    return { authorized: true, accessType: scope.institutionWide === true ? "INSTITUTION" : "DEPARTMENT",
+      departmentId: departmentId, institutionId: institutionId, operation: action };
   }
-  return assertEmployeeExpedienteScopeAccess_(payload,ss,expedienteId);
+  return assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId);
 }
 
 function auditEmployeeSelfServiceDenied_(actor, action) {
@@ -5346,31 +5385,43 @@ function getVerifiedAccountingIdentity_(payload) {
   if (!payload || typeof payload.sessionToken !== "string" || !payload.sessionToken) {
     return { authorized: false, code: "VERIFIED_IDENTITY_REQUIRED" };
   }
+  var cached = payload.__imaVerifiedAccountingIdentity;
+  if (cached && cached.sessionToken === payload.sessionToken && cached.result &&
+      cached.result.authorized === true) return cached.result;
   var verified, delegated = typeof requestAccountingUserAuthorization_ === "function";
   if (delegated) {
     verified = requestAccountingUserAuthorization_("verifyAccountingSession", { sessionToken: payload.sessionToken });
   } else if (typeof verifySessionToken === "function") {
     var claims = verifySessionToken(payload.sessionToken);
-    if (claims) verified = { status:"success", authorized:true, userId:claims.userId, role:claims.role,
-      membershipId:claims.membershipId || "", institutionId:claims.institutionId || "" };
+    if (claims) verified = { status: "success", authorized: true, userId: claims.userId, role: claims.role,
+      membershipId: claims.membershipId || "", institutionId: claims.institutionId || "" };
   }
   if (!verified || verified.status !== "success" || verified.authorized !== true ||
       !verified.userId || !verified.role || !verified.institutionId) {
     return { authorized: false, code: verified && verified.code || "VERIFIED_IDENTITY_REQUIRED" };
   }
-  if (!delegated) return { authorized:true,userId:String(verified.userId),role:String(verified.role),
-    membershipId:String(verified.membershipId || ""),institutionId:String(verified.institutionId) };
-  var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") ||
-    PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
-  if (!configuredInstitution || String(verified.institutionId) !== configuredInstitution) {
-    return { authorized: false, code: "INSTITUTION_SCOPE_DENIED" };
+  var result;
+  if (!delegated) {
+    result = { authorized: true, userId: String(verified.userId), role: String(verified.role),
+      membershipId: String(verified.membershipId || ""), institutionId: String(verified.institutionId) };
+  } else {
+    var configuredInstitution = String(PropertiesService.getScriptProperties().getProperty("IMA_INSTITUTION_ID") ||
+      PropertiesService.getScriptProperties().getProperty("INSTITUTION_ID") || "").trim();
+    if (!configuredInstitution || String(verified.institutionId) !== configuredInstitution) {
+      return { authorized: false, code: "INSTITUTION_SCOPE_DENIED" };
+    }
+    result = { authorized: true, userId: String(verified.userId), role: String(verified.role),
+      membershipId: String(verified.membershipId || ""), institutionId: configuredInstitution };
   }
-  return { authorized: true, userId: String(verified.userId), role: String(verified.role),
-    membershipId: String(verified.membershipId || ""), institutionId: configuredInstitution };
+  try {
+    Object.defineProperty(payload, "__imaVerifiedAccountingIdentity", {
+      value: { sessionToken: payload.sessionToken, result: result },
+      configurable: true, writable: true, enumerable: false
+    });
+  } catch (ignored) {}
+  return result;
 }
 
-
-const IMA_CREDENTIAL_USAGE_AUDIT_HEADERS_=["EventID","Direction","SourceService","TargetService","Action","RequestID","CorrelationID","CredentialType","CredentialID","CredentialVersion","OccurredAt"];
 function recordInterServiceCredentialUsage_(event,secret,lockAlreadyHeld){
  var item=event||{},source=String(item.sourceService||"").trim().toUpperCase(),target=String(item.targetService||"").trim().toUpperCase();
  var direction=String(item.direction||"").trim().toUpperCase(),requestId=String(item.requestId||"").trim(),correlationId=String(item.correlationId||"").trim();
@@ -9689,6 +9740,7 @@ function doPost(e) {
       return respond({ status: "error", code: "REQUEST_SCHEMA_INVALID" });
     }
     var actionPayload = Object.assign({}, request.payload, { correlationId: correlationId });
+    delete actionPayload.__imaVerifiedAccountingIdentity;
     const requestedContractVersion = String(actionPayload.contractVersion || "").trim();
     if (requestedContractVersion && requestedContractVersion !== SERVICE_CONTRACT_VERSION) return respond({ status: "error", code: "SERVICE_CONTRACT_VERSION_MISMATCH", expectedVersion: SERVICE_CONTRACT_VERSION, receivedVersion: requestedContractVersion });
     var pinSensitiveActions = ["configureFamilyCreditPin","configureFamilyCreditAuthorization","processFamilyCreditPurchase"];
