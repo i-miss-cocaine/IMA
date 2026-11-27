@@ -334,6 +334,31 @@ test("getStudentDocuments no mezcla documentos de solicitudes distintas al resol
   assert.equal(referenceCalls, 0);
 });
 
+
+test("una referencia interdepartamental de metadatos no autoriza descargar el archivo del estudiante", () => {
+  const documents = [
+    ["DocumentoID", "ExpedienteID", "SolicitudID", "TipoDocumento", "NombreArchivo", "DriveFileId"],
+    ["DOC-ADM-1", "EXP-ADM-1", "SOL-ADM-1", "Partida", "Partida privada.pdf", "FILE-PRIVATE"]
+  ];
+  let driveReads = 0;
+  const context = {
+    SPREADSHEET_ID: "SS-1",
+    getVerifiedAcademicIdentity_: () => ({ authorized: true, userId: "U-READER", role: "Director" }),
+    SpreadsheetApp: { openById: () => ({ getSheetByName(name) {
+      if (name === "DocumentosEstudiante") return { getDataRange: () => ({ getValues: () => documents }) };
+      if (name === "ExpedientesEstudiantes") return {};
+      return null;
+    } }) },
+    assertStudentDocumentScopeAccess_: () => ({ authorized: false, code: "RESOURCE_SCOPE_DENIED" }),
+    DriveApp: { getFileById: () => { driveReads++; throw new Error("No debe abrirse el archivo"); } }
+  };
+  run(academicSource, ["getStudentDocumentFile_"], context);
+  const result = context.getStudentDocumentFile_({ documentoId: "DOC-ADM-1", sessionToken: "SESSION" });
+  assert.equal(result.status, "error");
+  assert.equal(result.code, "RESOURCE_NOT_FOUND");
+  assert.equal(driveReads, 0);
+});
+
 test("el export heredado de calificaciones falla cerrado y no queda expuesto por doPost", () => {
   const context = { SpreadsheetApp: { openById: () => { throw new Error("No debe leer calificaciones"); } } };
   run(academicSource, ["exportAcademicGradesData"], context);
