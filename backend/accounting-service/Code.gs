@@ -1677,20 +1677,14 @@ function importDataWithColumnMapping(payload) {
 
 function authorizeAccountingDepartmentReferenceReadViaUser_(payload, resourceId, requestedFields, requestedDocumentIds) {
   var input = payload || {};
-  var endpoint = String(PropertiesService.getScriptProperties().getProperty("IMA_USER_SERVICE_URL") || "").trim();
-  var secret = String(PropertiesService.getScriptProperties().getProperty("IMA_DEPARTMENT_REFERENCE_HMAC_SECRET") || "");
   var allowedFields = ["categoriaDoc", "fechaCarga", "estadoVisibilidad"];
   var fields = Array.isArray(requestedFields) ? requestedFields.slice() : [];
   var documents = Array.isArray(requestedDocumentIds) ? requestedDocumentIds.slice() : [];
-  if (!isAccountingTrustedAppsScriptEndpoint_(endpoint) || secret.length < 32 ||
-      !fields.length || !documents.length ||
+  if (!fields.length || !documents.length ||
       fields.some(function(field, index) { return allowedFields.indexOf(field) === -1 || fields.indexOf(field) !== index; }) ||
       documents.some(function(id, index) { return !String(id || "").trim() || documents.indexOf(id) !== index; })) {
     return { status: "error", code: "RESOURCE_NOT_FOUND" };
   }
-  var requestId = Utilities.getUuid();
-  var correlationId = Utilities.getUuid();
-  var timestamp = Date.now();
   var referencePayload = {
     resourceType: "EXPEDIENTE_LABORAL",
     resourceId: String(resourceId || "").trim(),
@@ -1702,46 +1696,20 @@ function authorizeAccountingDepartmentReferenceReadViaUser_(payload, resourceId,
     referencePayload.activeDepartmentId = input.activeDepartmentId;
   }
   if (!referencePayload.resourceId || !referencePayload.sessionToken) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-  var envelope = {
-    requestId: requestId,
-    timestamp: timestamp,
-    correlationId: correlationId,
-    sourceService: "ACCOUNTING",
-    targetService: "USER",
-    action: "authorizeDepartmentReferenceRead",
-    payload: referencePayload
-  };
-  var signedBody = envelope.requestId + "|" + envelope.timestamp + "|" + envelope.correlationId + "|" +
-    envelope.sourceService + "|" + envelope.targetService + "|" + envelope.action + "|" + JSON.stringify(envelope.payload);
-  var signature = Utilities.computeHmacSignature(Utilities.MacAlgorithm.HMAC_SHA_256, signedBody, secret);
-  envelope.hmacSignature = signature.map(function(byte) {
-    return ("0" + ((Number(byte) + 256) % 256).toString(16)).slice(-2);
-  }).join("");
-  try {
-    var response = UrlFetchApp.fetch(endpoint, {
-      method: "post",
-      contentType: "application/json",
-      payload: JSON.stringify(envelope),
-      muteHttpExceptions: true
-    });
-    if (!response || response.getResponseCode() !== 200) return { status: "error", code: "RESOURCE_NOT_FOUND" };
-    var body = JSON.parse(response.getContentText() || "{}");
-    var approvedFields = body.approvedFields;
-    var approvedDocuments = body.approvedDocumentIds;
-    if (body.status !== "success" || body.authorized !== true || body.requiresStandardAuthorization !== true ||
-        !Array.isArray(approvedFields) || !Array.isArray(approvedDocuments) ||
-        fields.some(function(field) { return approvedFields.indexOf(field) === -1; }) ||
-        approvedFields.length !== fields.length ||
-        documents.some(function(id) { return approvedDocuments.indexOf(id) === -1; }) ||
-        approvedDocuments.length !== documents.length ||
-        !String(body.grantId || "").trim() || !String(body.auditEventId || "").trim()) {
-      return { status: "error", code: "RESOURCE_NOT_FOUND" };
-    }
-    return { status: "success", authorized: true, approvedFields: approvedFields,
-      approvedDocumentIds: approvedDocuments, grantId: body.grantId, auditEventId: body.auditEventId };
-  } catch (error) {
+  var body = requestAccountingService_("USER", "authorizeDepartmentReferenceRead", referencePayload);
+  var approvedFields = body && body.approvedFields;
+  var approvedDocuments = body && body.approvedDocumentIds;
+  if (!body || body.status !== "success" || body.authorized !== true || body.requiresStandardAuthorization !== true ||
+      !Array.isArray(approvedFields) || !Array.isArray(approvedDocuments) ||
+      fields.some(function(field) { return approvedFields.indexOf(field) === -1; }) ||
+      approvedFields.length !== fields.length ||
+      documents.some(function(id) { return approvedDocuments.indexOf(id) === -1; }) ||
+      approvedDocuments.length !== documents.length ||
+      !String(body.grantId || "").trim() || !String(body.auditEventId || "").trim()) {
     return { status: "error", code: "RESOURCE_NOT_FOUND" };
   }
+  return { status: "success", authorized: true, approvedFields: approvedFields,
+    approvedDocumentIds: approvedDocuments, grantId: body.grantId, auditEventId: body.auditEventId };
 }
 
 function assertEmployeeExpedienteScopeAccess_(payload, ss, expedienteId) {
