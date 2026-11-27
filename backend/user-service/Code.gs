@@ -12074,7 +12074,7 @@ function assertAdvancedSignatureProviderActive_(ss, providerId) {
   const endpoint = String(provider[2] || "").trim();
   const endpointHasCredentials = /\/\/[^/@]+:[^/@]+@/.test(endpoint) ||
     /[?&](?:api[_-]?key|hmac[_-]?secret|secret|token|password|credential|access[_-]?token|client[_-]?secret)=/i.test(endpoint);
-  if (!/^https:\/\/[A-Za-z0-9.-]+(?::\\d{1,5})?(?:[/?#][^\\s]*)?$/i.test(endpoint) || endpointHasCredentials) {
+  if (!/^https:\/\/[A-Za-z0-9.-]+(?::\d{1,5})?(?:[/?#][^\s]*)?$/i.test(endpoint) || endpointHasCredentials) {
     throw new Error("SIGNATURE_PROVIDER_ENDPOINT_INVALID");
   }
   return id;
