@@ -37,6 +37,8 @@ test("el proveedor de firma exige ID, configuración única, endpoint HTTPS y es
   const sheet = providerSheet([headers, row()]);
   const ss = { getSheetByName: () => sheet };
   assert.equal(context.assertAdvancedSignatureProviderActive_(ss, "PSC-HN-01"), "PSC-HN-01");
+  const portSheet = providerSheet([headers, row({2:"https://signing.example.hn:8443/api/signatures"})]);
+  assert.equal(context.assertAdvancedSignatureProviderActive_({ getSheetByName: () => portSheet }, "PSC-HN-01"), "PSC-HN-01");
   assert.throws(() => context.assertAdvancedSignatureProviderActive_(ss, ""), /SIGNATURE_PROVIDER_ID_REQUIRED/);
   assert.throws(() => context.assertAdvancedSignatureProviderActive_(ss, "../PSC"), /SIGNATURE_PROVIDER_ID_INVALID/);
   assert.throws(() => context.assertAdvancedSignatureProviderActive_({ getSheetByName: () => null }, "PSC-HN-01"), /SIGNATURE_PROVIDER_NOT_CONFIGURED/);
