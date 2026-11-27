@@ -256,3 +256,14 @@ test("el evaluador de referencias aplica revocación, vigencia, allowlists y sol
   const write = context.evaluateDepartmentReferenceAccess_({ ...base, operation: "WRITE" });
   assert.equal(write.code, "CROSS_DEPARTMENT_OPERATION_DENIED");
 });
+
+
+test("el export heredado de calificaciones falla cerrado y no queda expuesto por doPost", () => {
+  const context = { SpreadsheetApp: { openById: () => { throw new Error("No debe leer calificaciones"); } } };
+  run(academicSource, ["exportAcademicGradesData"], context);
+  const result = context.exportAcademicGradesData({ userId: "U-ATTACKER", authRole: "Administrador", incluirBorradores: true });
+  assert.equal(result.status, "error");
+  assert.equal(result.code, "DEPARTMENT_SCOPED_EXPORT_REQUIRED");
+  const dispatcher = extractFunction(academicSource, "doPost");
+  assert.doesNotMatch(dispatcher, /case "exportAcademicGradesData"/);
+});
