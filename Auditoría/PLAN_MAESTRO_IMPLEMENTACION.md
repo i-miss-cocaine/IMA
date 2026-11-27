@@ -7,11 +7,11 @@
 **Fecha:** 2026-11-25
 **Repositorio:** `i-miss-cocaine/IMA`  
 **Rama de trabajo:** `NG_beta_0.0.0.1_work`  
-**Estado:** Implementación continua; tarea en ejecución: PM-01 / TASK-068.
+**Estado:** Implementación continua; tarea en ejecución: PM-01 / TASK-153.
 **Línea base operativa Ciclo 3:** todas las tareas conservadas en los siete backlogs y en el Plan Maestro inician en `Pendiente`; no se elimina, resume ni sustituye ningún requisito técnico, criterio, dependencia ni identificador de tarea.  
 **Checkpoint de origen:** C3.001 (base histórica del ciclo 3).  
-**Checkpoint de planificación:** C3.016.
-**Ciclo operativo vigente:** 3 — implementación continua; TASK-047 cerrada en alcance local/contractual (C3.013); TASK-004 cerrada en C3.015 con verificación de código aprobada en runner aislado; integración USER Apps Script/Sheets Pendiente beta. TASK-505 completada en C3.016 en alcance de código/CI tras recuperar y satisfacer AUD-NG-225/TAREA-F4-P1-07. Su integración USER Apps Script/Sheets y dashboard desplegado queda Pendiente beta. F16-TASK01 conserva trazabilidad de origen y no se ejecuta en paralelo. Siguiente tarea elegible: TASK-068 (PM-01, P0, orden 1), cuya evidencia histórica se revalidará antes de cualquier cambio. El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
+**Checkpoint de planificación:** C3.017.
+**Ciclo operativo vigente:** 3 — implementación continua; TASK-047 cerrada en alcance local/contractual (C3.013); TASK-004 cerrada en C3.015 con verificación de código aprobada en runner aislado; integración USER Apps Script/Sheets Pendiente beta. TASK-505 completada en C3.016 en alcance de código/CI tras recuperar y satisfacer AUD-NG-225/TAREA-F4-P1-07. Su integración USER Apps Script/Sheets y dashboard desplegado queda Pendiente beta. F16-TASK01 conserva trazabilidad de origen y no se ejecuta en paralelo. TASK-068 cerrada en C3.017 en alcance de código/CI; el transporte entre deployments, la importación con fuentes reales y la persistencia en Sheets quedan Pendiente beta. Siguiente tarea elegible: TASK-153 (PM-01, P0, orden 1). El reinicio extraordinario de §10.95 es un antecedente histórico concluido.
 
 ---
 
@@ -6602,3 +6602,11 @@ Cada subcapacidad solo volverá a Completada cuando el servicio valide sesión/r
 - Rama base: 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
 - Siguiente tarea elegible: TASK-068 (PM-01, P0, orden 1). El backlog conserva criterios marcados y evidencia histórica, pero mantiene estado operativo Pendiente; se revalidará el código, los consumidores y la evidencia CI antes de decidir si requiere implementación o solo reconciliación verificable.
 
+
+## Registro de ejecución C3.017 — TASK-068
+- Sesión IMA-ITER-20261126-014; commit funcional verificado 19ece00509590ff4cc285ce33e184e7201033e75.
+- Revalidación del requisito original: criterios de correspondencia, resolutores, homónimos, revisión humana, auditoría, relaciones e idempotencia satisfechos en código y contratos. La caché IndexedDB fue revalidada con pruebas de aislamiento por institución/fuente y persistencia exclusiva de mappings confirmados.
+- Alineación normativa: las llamadas ACCOUNTING→USER/ACADEMIC y la titularidad laboral usan POST directo con sesión firmada; no se crean secretos HMAC interservicio. El rollback de titularidad conserva el contexto verificado.
+- CI final 45939436440 SUCCESS: 120/120 Node tests, nueve node --check y git diff --check PASS. Runner Node.js 24; no se declara ejecución local.
+- Integración de deployments privados y fuentes reales permanece en BETA-FUNC-008, no bloqueante para cierre local/contractual.
+- TASK-068: Completada en código/CI. Siguiente elegible: TASK-153, PM-01 P0 orden 1; TASK-006 permanece en espera de acreditar F16-TASK02.

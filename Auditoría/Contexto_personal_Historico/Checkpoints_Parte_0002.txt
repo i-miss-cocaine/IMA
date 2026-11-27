@@ -33,3 +33,21 @@
 - Archivos funcionales modificados en esta iteración: tests/contracts/internal-role-catalog.contract.test.js. No se eliminaron archivos ni se modificó código ajeno.
 - Siguiente tarea elegible: TASK-068 (PM-01, P0, orden 1), revalidar su evidencia histórica y el estado real del código antes de implementar.
 - Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59, sin cambios.
+
+# IMA — Checkpoint C3.017
+- Sesión: IMA-ITER-20261126-014.
+- Rama exclusiva: NG_beta_0.0.0.1_work.
+- Rama base de solo lectura: NG_beta_0.0.0.1.
+- HEAD funcional verificado: 19ece00509590ff4cc285ce33e184e7201033e75.
+- Checkpoint anterior: C3.016.
+- TASK-068 / F29-TASK01: Completada en alcance de código y CI tras revalidación de evidencia histórica y revisión del estado real del repositorio.
+- Se conservó la tabla CorrespondenciaIdentificadores y el historial; se revalidaron clave compuesta tenant/source/type/legacy ID, resolutores bidireccionales, múltiples referencias, revisión humana, veto de homónimos con evidencia contradictoria, idempotencia, writers por propietario y compensación.
+- Se alineó el transporte ACCOUNTING→USER/ACADEMIC con Normas_Desarollo.md §17.8: POST directo con sesión firmada existente, sin sobres HMAC ni secretos interservicio. El flujo de titularidad de expedientes laborales también se migró a sesión verificada y reutilización del contexto; se corrigió el rollback para identificar la operación de titularidad y transmitir institución/sesión. El handler de sobres de migración HMAC quedó fail-closed.
+- Pruebas nuevas: caché IndexedDB solo para correspondencias confirmadas y aislada por institución/fuente; búsqueda de coincidencias conserva relaciones familiares/matrícula sin mutarlas; vinculación cuenta-persona conserva auditoría e historial.
+- GitHub Actions run 45939436440 — SUCCESS: 120/120 pruebas Node.js PASS; nueve comprobaciones node --check PASS; git diff --check PASS; runner Node.js 24. Ejecución en runner GitHub Actions con checkout; no se declara ejecución local. No se identificó una CLI de producto adicional; Node CLI ejecutó directamente node --test y node --check.
+- Fallos intermedios de CI por fixtures/aserciones fueron investigados y corregidos sin reducir cobertura; la ejecución final completa fue repetida.
+- Revisión de código: cambios funcionales limitados a USER, ACCOUNTING y ACADEMIC; contrato identity-mapping ampliado. Se corrigió un defecto real en la ruta de compensación de titularidad; no se eliminaron archivos ni se modificó código ajeno al alcance.
+- Concurrencia: los contratos cubren locks, idempotencia, reintentos y liberación de lock; no se afirma una prueba de carga concurrente en Apps Script real.
+- Beta: despliegues privados USER/ACADEMIC/ACCOUNTING, Sheets aisladas, importación real de dos fuentes y validación en navegador/IndexedDB quedan Pendiente beta en BETA-FUNC-008; no bloquean el cierre de código/CI.
+- Rama base verificada: 44d9891132332e692dbe2ba8602b41f50a508a59, sin modificaciones.
+- Siguiente tarea elegible: TASK-153 (PM-01, P0, orden 1). Su dependencia genérica de usuarios, departamentos, roles y propiedad documental está presente en el código; la aclaración C1.427 permite desarrollar y probar el motor con datos sintéticos sin esperar un catálogo institucional aprobado. TASK-006 no se adelanta mientras su dependencia F16-TASK02 no esté acreditada.

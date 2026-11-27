@@ -50,9 +50,9 @@
 - **Alcance:** persistir la relación por institución entre sistema de origen, tipo de entidad e ID legado con su ID interno; evitar duplicados/conflictos en reimportaciones; conservar hash de origen, versión, estado, método, confianza y actor; resolver referencias en ambos sentidos; exigir revisión humana para confirmar o rechazar; mantener historial auditable y aislamiento institucional.
 - **Dependencias:** ninguna declarada en el Plan Maestro.
 - **Evidencia de implementación previa:** satisfecha como parte de TASK-068; hoja CorrespondenciaIdentificadores con esquema canónico, inicialización segura, clave compuesta fuente/tipo/ID/institución, registro idempotente, conflicto de destino, resolución bidireccional, revisión humana y HistorialDecisionesIdentidad. La auditoría de consistencia detecta duplicados, filas incompletas y destinos huérfanos sin autocorregir ni fusionar.
-- **Verificación:** Auditoría TASK-068 C1.363 dictaminó criterios locales PASS; Identity Mapping and Transport Security Contract run 45291418277 SUCCESS en SHA 364e4dc4c01471226be6fbe47511b306bcc09a73; incluye identity-mapping-contract.test.js y accounting-identity-map-snapshot.test.js, con aislamiento por institución y transporte HMAC firmado ACCOUNTING→USER.
+- **Verificación histórica:** Auditoría TASK-068 C1.363 dictaminó criterios locales PASS. Revalidación C3.017: GitHub Actions run 45939436440 SUCCESS en SHA 19ece00509590ff4cc285ce33e184e7201033e75; 120/120 pruebas Node.js, nueve node --check y git diff --check PASS. El transporte actual ACCOUNTING→USER/ACADEMIC usa POST directo con sesión firmada existente, sin HMAC interservicio, conforme a §17.8.
 - **Estado histórico anterior:** Completada en código/CI por implementación previa TASK-068; BETA-FUNC-008 permanece PENDIENTE DE BETA para validar transporte entre despliegues, fuentes reales y persistencia en servicios vivos.
-- **Estado:** Pendiente.
+- **Estado:** Completada como subcapacidad de TASK-068 en C3.017; BETA-FUNC-008 Pendiente beta.
 - **Nota de trazabilidad:** se recupera esta entrada faltante del backlog porque el Plan Maestro ya la referencia. No se duplicó ni reimplementó el módulo; se vinculó la evidencia existente al identificador F29-TASK01.
 
 

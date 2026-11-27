@@ -78,18 +78,6 @@ C3.006 — IMA-ITER-20261124-004
 ===============================================================================
 
 ===============================================================================
-C3.007 — IMA-ITER-20261124-005
-===============================================================================
-- Objetivo: resolver AUD-NG-084 por contradicción con la norma operativa vigente.
-- Resolución: La provisión, rotación y revocación de secretos HMAC por par de servicios queda supersedida por Normas_Desarollo.md §17.8. No crear propiedades de secretos interservicio ni automatizar copias de claves entre proyectos. No eliminar ni modificar AUTH_TOKEN_SECRET destinado a firmar/verificar la sesión de usuario; ese secreto pertenece al login, no al canal interservicio. La evidencia de propiedades/deployments reales no se afirma ni se necesita para esta resolución normativa.
-- Decisión: conservar el requisito original como antecedente; no implementar ni afirmar rotación/provisión de secretos interservicio.
-- Verificación: lectura de Normas_Desarollo.md §17.8 y del alcance original AUD-NG-084; no se modificó código ni se ejecutaron pruebas de producto en esta unidad documental.
-- Estado: resuelto por supersesión normativa; no se declara una prueba de secretos HMAC aprobada.
-- HEAD de entrada: 605c543f596acedb50d45def98ac9c968ab5845f.
-- Siguiente acción: continuar con requisitos compatibles y mantener pendiente la prueba autorizada multi-cuenta de TASK-047.
-===============================================================================
-
-===============================================================================
 C3.008 — IMA-ITER-20261124-006
 ===============================================================================
 - Objetivo: resolver AUD-NG-085 por dependencia de un protocolo HMAC interservicio incompatible con la norma vigente.

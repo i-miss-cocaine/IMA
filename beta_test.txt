@@ -47,3 +47,20 @@
 - Resultado esperado: el rol y las tarjetas reflejan el usuario autenticado; cada ruta existe y navega al destino previsto; la navegación no concede permisos backend adicionales.
 - Evidencia requerida: fecha, versión del deployment, rol sintético, rutas probadas, resultado de acciones permitidas/denegadas y capturas redactadas. No incluir tokens, datos personales reales ni URLs sensibles.
 - No bloqueante para implementación local: contratos Node.js y revisión de rutas pasan; la validación requiere despliegue institucional y navegador.
+
+
+## BETA-FUNC-008 — TASK-068: correspondencia de identidades entre servicios
+- **Estado:** Pendiente beta; no bloquea el cierre de código/CI.
+- **Objetivo:** validar con deployments Apps Script privados y hojas aisladas la correspondencia persistente, la resolución bidireccional, la importación idempotente y la compensación entre ACCOUNTING, USER y ACADEMIC.
+- **Precondiciones:** deployments institucionales disponibles y accesibles en modalidad privada; hojas de cálculo de prueba aisladas; cuentas sintéticas con permisos dinámicos explícitos; dos archivos de origen sintéticos con identificadores diferentes que correspondan al mismo registro interno. No usar datos personales reales.
+- **Pasos:**
+  1. Iniciar sesión una sola vez y ejecutar una consulta de correspondencia desde ACCOUNTING; confirmar que USER responde por POST directo usando el contexto de sesión firmado existente, sin login adicional ni secreto HMAC interservicio.
+  2. Importar una fila sintética desde SACE y otra desde ERP hacia el mismo ID interno; verificar dos referencias externas, una sola entidad destino y aislamiento por institución.
+  3. Repetir el mismo lote y confirmar idempotencia, sin duplicar filas ni alterar el historial.
+  4. Crear un candidato ambiguo/homónimo; verificar que queda pendiente de revisión y no se fusiona automáticamente; confirmar o rechazar mediante Secretaría/Administrador y revisar la bitácora.
+  5. Intentar resolver o escribir desde otra institución y con rol sin permiso; comprobar denegación sin revelar datos del otro tenant.
+  6. Provocar un fallo controlado después de escribir en el propietario; verificar compensación inversa, journal y ausencia de titularidad huérfana.
+  7. En navegador, confirmar que IndexedDB solo almacena mappings confirmados y separa institución, sistema de origen, tipo e ID legado; comprobar limpieza selectiva por institución.
+- **Resultado esperado:** persistencia y transporte interservicio funcionan con la sesión existente y el acceso institucional privado; los reintentos son idempotentes; la compensación deja un estado recuperable; ninguna coincidencia ambigua se fusiona sin revisión.
+- **Evidencia requerida:** fecha, versiones de deployments, institución sintética, IDs anonimizados, conteos antes/después, resultados por escenario y capturas redactadas. No incluir tokens, secretos, URLs sensibles ni datos personales reales.
+- **Límite:** si las restricciones de Apps Script impiden la comunicación privada entre cuentas con configuración ordinaria, registrar el error concreto y la modalidad efectiva; no abrir endpoints públicos ni introducir secretos interservicio para forzar el resultado.

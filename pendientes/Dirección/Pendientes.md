@@ -347,7 +347,7 @@
 <!-- ID: TASK-068 | Fuentes: Pendientes.md ; pendientes/Dirección/Pendientes.md -->
 ### [ ] [TASK-068] [P0] Sistema Centralizado de Correspondencia de Identificadores y Resolución de Identidades
 - **Requisito transversal C2:** aplica `IMA-REQ-20261123-PORTAL-SERVICES-ROLES-01` (Plan Maestro §1.1); conservar íntegros todos los requisitos originales.
-- **Estado operativo:** Pendiente; evidencia histórica conservada en Git.
+- **Estado operativo:** Completada en C3.017 en alcance de código/CI; evidencia histórica conservada en Git.
 - **Orden de Ejecución:** 1
 - **Prioridad:** P0 (Crítica)
 - **Componentes Afectados:**
@@ -393,7 +393,9 @@
   - [x] Las decisiones de vinculación pueden consultarse y auditarse en bitácora.
   - [x] Las relaciones académicas, familiares y administrativas permanecen asociadas al identificador interno correcto.
   - [x] Se demuestra la resolución de identidades provenientes de, al menos, dos fuentes diferentes.
-- **Estado:** Pendiente.
+- **Estado:** Completada (código/CI); BETA-FUNC-008 Pendiente beta.
+
+- **Cierre C3.017:** GitHub Actions run 45939436440 SUCCESS (120/120 pruebas Node.js, nueve node --check, git diff --check). El transporte de identidad y titularidad usa POST directo con sesión verificada, conforme a Normas_Desarollo.md §17.8; sin HMAC interservicio. La validación de deployments privados, dos fuentes reales y Sheets/IndexedDB en navegador permanece Pendiente beta.
 
 <!-- Fuente: RECUPERACION/Pendientes_RECUPERADO.md, líneas 3638-3673; clave TASK-073; asignación única: Dirección -->
 
